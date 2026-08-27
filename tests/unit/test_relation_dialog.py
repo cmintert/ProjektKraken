@@ -125,3 +125,173 @@ def test_default_attributes_omitted(qtbot):
 
     assert "weight" not in attributes
     assert "confidence" not in attributes
+
+
+def test_entity_to_entity_has_no_state_changes_ui(qtbot):
+    dialog = RelationEditDialog(
+        suggestion_items=[("entity-1", "Target", "entity")]
+    )
+    qtbot.addWidget(dialog)
+    dialog.target_edit.setText("Target")
+
+    assert not hasattr(dialog, "state_changes_group")
+    assert "payload" not in dialog.get_data()[3]
+
+
+def test_event_to_entity_round_trips_payload_v2(qtbot):
+    dialog = RelationEditDialog(
+        target_id="entity-1",
+        source_event_date=100.0,
+        source_event_name="Battle",
+        suggestion_items=[
+            ("entity-1", "Grey Ford", "entity"),
+            ("event-2", "Later Event", "event"),
+        ],
+        attributes={
+            "payload": {
+                "attributes": {"status": "Ruined", "ruler": None},
+                "unset_attributes": ["garrison"],
+                "description": "",
+            }
+        },
+    )
+    qtbot.addWidget(dialog)
+
+    assert not dialog.state_changes_group.isHidden()
+    _, _, _, attributes = dialog.get_data()
+    assert attributes["payload"] == {
+        "attributes": {"status": "Ruined", "ruler": None},
+        "unset_attributes": ["garrison"],
+        "description": "",
+    }
+
+
+def test_event_to_event_hides_and_omits_mutation_controls(qtbot):
+    dialog = RelationEditDialog(
+        target_id="event-2",
+        source_event_date=100.0,
+        source_event_name="Source Event",
+        suggestion_items=[
+            ("entity-1", "Grey Ford", "entity"),
+            ("event-2", "Target Event", "event"),
+        ],
+        attributes={"payload": {"attributes": {"status": "Ruined"}}},
+    )
+    qtbot.addWidget(dialog)
+
+    assert dialog.state_changes_group.isHidden()
+    assert "payload" not in dialog.get_data()[3]
+
+    dialog.target_edit.setText("Grey Ford")
+    assert not dialog.state_changes_group.isHidden()
+    assert dialog.get_data()[3]["payload"]["attributes"]["status"] == "Ruined"
+
+
+def test_empty_event_to_entity_mutation_omits_payload(qtbot):
+    dialog = RelationEditDialog(
+        target_id="entity-1",
+        source_event_date=100.0,
+        suggestion_items=[("entity-1", "Target", "entity")],
+    )
+    qtbot.addWidget(dialog)
+
+    assert "payload" not in dialog.get_data()[3]
+
+
+def test_change_description_checkbox_reveals_editor(qtbot):
+    """Description edits are only shown and enabled when explicitly requested."""
+    dialog = RelationEditDialog(
+        target_id="entity-1",
+        source_event_date=100.0,
+        suggestion_items=[("entity-1", "Target", "entity")],
+    )
+    qtbot.addWidget(dialog)
+    dialog.show()
+
+    assert dialog.state_description_edit.isHidden()
+    assert not dialog.state_description_edit.isEnabled()
+
+    dialog.change_description_check.setChecked(True)
+
+    assert not dialog.state_description_edit.isHidden()
+    assert dialog.state_description_edit.isEnabled()
+
+
+def test_tall_event_relation_keeps_approval_buttons_below_scrollable_form(qtbot):
+    """Long event relation forms scroll without hiding the approval actions."""
+    dialog = RelationEditDialog(
+        target_id="entity-1",
+        source_event_date=100.0,
+        suggestion_items=[("entity-1", "Target", "entity")],
+        attributes={
+            "payload": {
+                "attributes": {f"key_{index}": "value" for index in range(12)},
+                "unset_attributes": [f"remove_{index}" for index in range(8)],
+                "description": "A long state-change description.",
+            }
+        },
+    )
+    qtbot.addWidget(dialog)
+    dialog.show()
+
+    qtbot.waitUntil(
+        lambda: dialog.form_scroll_area.verticalScrollBar().maximum() > 0
+    )
+
+    assert dialog.form_scroll_area.geometry().bottom() < dialog.button_box.geometry().top()
+
+
+def test_relation_dialog_themes_scroll_area_and_fits_attribute_rows(qtbot):
+    """The scroll viewport is themed and state rows do not consume spare space."""
+    dialog = RelationEditDialog(
+        target_id="entity-1",
+        source_event_date=100.0,
+        suggestion_items=[("entity-1", "Target", "entity")],
+        attributes={"payload": {"attributes": {"status": "dead"}}},
+    )
+    qtbot.addWidget(dialog)
+    dialog.show()
+
+    table = dialog.state_attribute_editor.table
+    expected_table_height = (
+        table.horizontalHeader().height()
+        + table.rowHeight(0)
+        + (2 * table.frameWidth())
+    )
+
+    assert "QDialog" in dialog.styleSheet()
+    assert "QScrollArea" in dialog.form_scroll_area.styleSheet()
+    assert table.height() == expected_table_height
+    assert dialog.unset_attributes_list.height() == (
+        2 * dialog.unset_attributes_list.frameWidth()
+    )
+
+    dialog.unset_attributes_list.addItem("garrison")
+    assert dialog.unset_attributes_list.height() > (
+        2 * dialog.unset_attributes_list.frameWidth()
+    )
+
+
+@pytest.mark.parametrize("invalid_key", ["status", "_tags", "name"])
+def test_invalid_state_changes_keep_dialog_open(
+    qtbot, monkeypatch, invalid_key
+):
+    dialog = RelationEditDialog(
+        target_id="entity-1",
+        source_event_date=100.0,
+        suggestion_items=[("entity-1", "Target", "entity")],
+    )
+    qtbot.addWidget(dialog)
+    dialog.state_attribute_editor.load_attributes({invalid_key: "Changed"})
+    if invalid_key == "status":
+        dialog.unset_attributes_list.addItem("status")
+
+    warnings = []
+    monkeypatch.setattr(
+        "src.gui.dialogs.relation_dialog.QMessageBox.warning",
+        lambda *args: warnings.append(args),
+    )
+    dialog.accept()
+
+    assert dialog.result() == 0
+    assert warnings

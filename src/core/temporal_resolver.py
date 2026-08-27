@@ -5,9 +5,10 @@ and merging relation-driven overrides.
 """
 
 import logging
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from src.core.entities import Entity
+from src.core.temporal_state import ResolvedEntityState, apply_payload
 from src.core.temporal_window import resolve_temporal_window
 
 logger = logging.getLogger(__name__)
@@ -19,26 +20,25 @@ class TemporalResolver:
     def resolve_entity_state(
         self,
         entity: Entity,
-        relations: List[Dict[str, Any]],
+        relations: list[dict[str, Any]],
         time: float,
-        include_base_state: bool = True,
-    ) -> Dict[str, Any]:
-        """Computes the merged state of an entity at a specific time.
+    ) -> ResolvedEntityState:
+        """Compute the resolved state of an entity at a specific time.
 
         Args:
             entity: The base Entity object (contains static/default attributes).
             relations: List of relation dicts targeted at this entity.
                        Must include 'attributes' with 'valid_from', 'payload'.
             time: The timestamp (lore_date) to resolve at.
-            include_base_state: If True, starts with entity.attributes.
-                                If False, returns only the temporal overrides.
-
         Returns:
-            Dict[str, Any]: The merged dictionary of attributes.
+            The resolved description and attributes.
 
         """
-        # 1. Start with base state
-        current_state = entity.attributes.copy() if include_base_state else {}
+        current_state = ResolvedEntityState(
+            entity_id=entity.id,
+            description=entity.description,
+            attributes=dict(entity.attributes),
+        )
 
         # 2. Filter applicable relations
         applicable_relations = []
@@ -63,15 +63,24 @@ class TemporalResolver:
 
         # 4. Merge payloads
         for rel in active_sorted:
-            payload = rel.get("attributes", {}).get("payload", {})
-            if not payload:
+            if rel.get("source_event_date") is None:
                 continue
 
-            self._merge_payload(current_state, payload)
+            relation_attributes = rel.get("attributes", {})
+            if "payload" not in relation_attributes:
+                continue
+            payload = relation_attributes["payload"]
+            try:
+                current_state = apply_payload(current_state, payload)
+            except ValueError as exc:
+                relation_id = rel.get("id", "<unknown>")
+                raise ValueError(
+                    f"Invalid temporal payload on relation {relation_id}: {exc}"
+                ) from exc
 
         return current_state
 
-    def _sort_key(self, relation: Dict[str, Any]) -> Tuple[float, int, float, str]:
+    def _sort_key(self, relation: dict[str, Any]) -> tuple[float, int, float, str]:
         """Returns a sort key for deterministic application order.
 
         Tuple order: (ValidFrom, PriorityScore, ModifiedAt, ID)
@@ -95,11 +104,3 @@ class TemporalResolver:
         rel_id = relation.get("id", "")
 
         return (valid_from, priority_score, modified_at, rel_id)
-
-    def _merge_payload(self, state: Dict[str, Any], payload: Dict[str, Any]) -> None:
-        """Merges a payload into the state.
-
-        Currently implements a shallow merge (overwrite).
-        """
-        for key, value in payload.items():
-            state[key] = value

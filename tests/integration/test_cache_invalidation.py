@@ -55,13 +55,13 @@ def test_moving_event_invalidates_linked_entities(db_service, temporal_manager):
         attributes={
             "valid_from": 1000.0,
             "valid_from_event": True,
-            "payload": {"status": "Traveling"},
+            "payload": {"attributes": {"status": "Traveling"}},
         },
     )
 
     # 4. Warm the cache
     state_at_1500 = temporal_manager.get_entity_state_at(entity.id, time=1500.0)
-    assert state_at_1500["status"] == "Traveling"
+    assert state_at_1500.attributes["status"] == "Traveling"
 
     # 5. Move the event to a later date
     update_cmd = UpdateEventCommand(
@@ -100,7 +100,10 @@ def test_adding_relation_invalidates_target_entity(db_service, temporal_manager)
         source_id=event.id,
         target_id=entity.id,
         rel_type="involved",
-        attributes={"valid_from": 3019.0, "payload": {"title": "King"}},
+        attributes={
+            "valid_from": 3019.0,
+            "payload": {"attributes": {"title": "King"}},
+        },
         bidirectional=False,
     )
     add_cmd.execute(db_service)
@@ -112,7 +115,7 @@ def test_adding_relation_invalidates_target_entity(db_service, temporal_manager)
     state_after = temporal_manager.get_entity_state_at(entity.id, time=3020.0)
 
     # Should now include "title": "King"
-    assert state_after.get("title") == "King"
+    assert state_after.attributes.get("title") == "King"
     assert state_before != state_after
 
 
@@ -132,12 +135,15 @@ def test_deleting_relation_invalidates_target_entity(db_service, temporal_manage
         source_id=event.id,
         target_id=entity.id,
         rel_type="located_at",
-        attributes={"valid_from": 1000.0, "payload": {"location": "Shire"}},
+        attributes={
+            "valid_from": 1000.0,
+            "payload": {"attributes": {"location": "Shire"}},
+        },
     )
 
     # 3. Warm cache
     state_with_relation = temporal_manager.get_entity_state_at(entity.id, time=1500.0)
-    assert state_with_relation.get("location") == "Shire"
+    assert state_with_relation.attributes.get("location") == "Shire"
 
     # 4. Delete the relation
     # Get the relation ID
@@ -154,5 +160,5 @@ def test_deleting_relation_invalidates_target_entity(db_service, temporal_manage
     state_after_delete = temporal_manager.get_entity_state_at(entity.id, time=1500.0)
 
     # Should no longer have "location"
-    assert "location" not in state_after_delete
+    assert "location" not in state_after_delete.attributes
     assert state_with_relation != state_after_delete

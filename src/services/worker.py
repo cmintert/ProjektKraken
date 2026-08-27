@@ -88,7 +88,7 @@ class DatabaseWorker(QObject):
     )  # owner_type, owner_id, List[ImageAttachment]
 
     filter_results_ready = Signal(list, list)  # List[Event], List[Entity]
-    entity_state_resolved = Signal(str, dict)  # entity_id, resolved_attributes
+    entity_state_resolved = Signal(str, dict)  # entity_id, serialized state
 
     command_finished = Signal(CommandResult)
     history_loaded = Signal(list)
@@ -1312,7 +1312,7 @@ class DatabaseWorker(QObject):
             # self.operation_started.emit(f"Resolving state for {entity_id} at {time}...")
             # (Quiet operation for smooth scrubbing)
             state = self.temporal_manager.get_entity_state_at(entity_id, time)
-            self.entity_state_resolved.emit(entity_id, state)
+            self.entity_state_resolved.emit(entity_id, state.to_dict())
             # self.operation_finished.emit("State Resolved.")
         except Exception:
             logger.error(

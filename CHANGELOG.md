@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-08-24
-**Commit:** 6777f5be
+**Last Updated:** 2026-08-27
+**Commit:** e99fecf4
 ---
 
 # Changelog
@@ -13,11 +13,19 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-08-27)* **Temporal State / Editor**: Added validated Payload v2
+  event-to-entity state changes, deterministic resolution, cache invalidation,
+  editable relation controls, and end-to-end regression coverage.
+
 - *(2026-08-24)* **Testing / CI**: Added a curated `ci_fast` regression suite
   for pull requests and full coverage regression on nightly, beta-tag, and
   manual workflow runs.
 
 ### Fixed
+
+- *(2026-08-27)* **UI / Theming**: Kept long relation editors compact and
+  scrollable with reachable approval actions, and applied active Windows theme
+  chrome to modal dialogs.
 
 - *(2026-08-24)* **Packaging / Compliance**: Bundled the complete GPL-3.0
   license in the Windows package and enforced it through package-contract

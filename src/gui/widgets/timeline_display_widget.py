@@ -198,13 +198,7 @@ class TimelineDisplayWidget(QWidget):
 
             # Payload attributes (if any)
             if payload and isinstance(payload, dict):
-                for key, value in payload.items():
-                    display_val = "—" if value is None else str(value)
-                    html_parts.append(
-                        f"<br><span class='payload-key' style='margin-left: 16px;'>"
-                        f"{key}:</span> "
-                        f"<span class='payload-value'>{display_val}</span>"
-                    )
+                self._append_payload_v2(html_parts, payload)
 
             self._close_card_anchor(
                 html_parts, anchor_id, has_desc or has_event
@@ -234,6 +228,38 @@ class TimelineDisplayWidget(QWidget):
                         )
 
         self._text_display.setHtml("\n".join(html_parts))
+
+    @staticmethod
+    def _append_payload_v2(
+        html_parts: list[str], payload: dict[str, Any]
+    ) -> None:
+        """Append readable Payload v2 mutations to a timeline card."""
+        changed_attributes = payload.get("attributes", {})
+        if isinstance(changed_attributes, dict):
+            for key, value in changed_attributes.items():
+                display_val = "—" if value is None else str(value)
+                html_parts.append(
+                    "<br><span class='payload-key' style='margin-left: 16px;'>"
+                    f"{key}:</span> "
+                    f"<span class='payload-value'>{display_val}</span>"
+                )
+
+        unset_attributes = payload.get("unset_attributes", [])
+        if isinstance(unset_attributes, list):
+            for key in unset_attributes:
+                html_parts.append(
+                    "<br><span class='payload-key' style='margin-left: 16px;'>"
+                    "Remove:</span> "
+                    f"<span class='payload-value'>{key}</span>"
+                )
+
+        if "description" in payload:
+            display_val = str(payload["description"])
+            html_parts.append(
+                "<br><span class='payload-key' style='margin-left: 16px;'>"
+                "Description:</span> "
+                f"<span class='payload-value'>{display_val}</span>"
+            )
 
     def _extract_and_map_description(self, anchor_id: str, raw_desc: str) -> None:
         """Extract description text and add to description map.

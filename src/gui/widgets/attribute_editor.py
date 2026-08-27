@@ -4,7 +4,7 @@ Provides a table-based interface for editing key-value attribute pairs with supp
 different data types.
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import (
@@ -25,19 +25,26 @@ from src.gui.widgets.standard_buttons import DestructiveButton, StandardButton
 class AttributeEditorWidget(QWidget):
     """A widget for editing a dictionary of attributes (Key-Value pairs).
 
-    Supports String, Number (Float/Int), and Boolean types.
+    Supports String, Number (Float/Int), Boolean, and optional null values.
     """
 
     attributes_changed = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(
+        self,
+        parent: Optional[QWidget] = None,
+        *,
+        allow_null: bool = False,
+    ) -> None:
         """Initializes the AttributeEditorWidget.
 
         Args:
             parent (QWidget, optional): The parent widget. Defaults to None.
+            allow_null: Whether the type selector permits an explicit null value.
 
         """
         super().__init__(parent)
+        self._allow_null = allow_null
         main_layout = QVBoxLayout(self)
         from src.gui.utils.style_helper import StyleHelper
 
@@ -184,7 +191,10 @@ class AttributeEditorWidget(QWidget):
 
         # Determine strict type
         val_type = "String"
-        if isinstance(value, bool):
+        if value is None and self._allow_null:
+            val_type = "Null"
+            str_val = ""
+        elif isinstance(value, bool):
             val_type = "Boolean"
             str_val = str(value)  # "True"/"False"
         elif isinstance(value, (int, float)):
@@ -202,6 +212,8 @@ class AttributeEditorWidget(QWidget):
         # Type ComboBox
         combo = QComboBox()
         combo.addItems(["String", "Number", "Boolean"])
+        if self._allow_null:
+            combo.addItem("Null")
         combo.setCurrentText(val_type)
         combo.currentTextChanged.connect(lambda: self._on_type_changed(row))
         self.table.setCellWidget(row, 2, combo)
@@ -282,17 +294,20 @@ class AttributeEditorWidget(QWidget):
         if not self._block_signals:
             self.attributes_changed.emit()
 
-    def _parse_value(self, raw_val: str, val_type: str) -> Union[str, int, float, bool]:
+    def _parse_value(self, raw_val: str, val_type: str) -> Any:
         """Parses a raw string value to the specified type.
 
         Args:
             raw_val (str): The raw value as a string.
-            val_type (str): The target type ("String", "Number", or "Boolean").
+            val_type: The selected value type.
 
         Returns:
             Any: The parsed value in the appropriate type.
 
         """
+        if val_type == "Null" and self._allow_null:
+            return None
+
         if val_type == "Number":
             try:
                 if "." in raw_val:

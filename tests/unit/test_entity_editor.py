@@ -60,12 +60,64 @@ def test_temporal_state_hides_internal_attributes(editor):
 
     editor.display_temporal_state(
         entity.id,
-        {"visible": "shown", "_internal": "preserved"},
+        {
+            "entity_id": entity.id,
+            "description": "Temporal description",
+            "attributes": {"visible": "shown", "_internal": "preserved"},
+        },
     )
 
+    assert editor.desc_edit.get_wiki_text() == "Temporal description"
     assert editor.attribute_editor.table.rowCount() == 1
     assert editor.attribute_editor.table.item(0, 0).text() == "visible"
     assert editor.attribute_editor.get_attributes()["_internal"] == "preserved"
+
+
+def test_temporal_state_is_read_only_and_does_not_mark_dirty(editor):
+    entity = Entity(
+        id="1",
+        name="Grey Ford",
+        type="Location",
+        description="Base description",
+        attributes={"controller": "Crown"},
+    )
+    editor.load_entity(entity)
+
+    editor.display_temporal_state(
+        entity.id,
+        {
+            "entity_id": entity.id,
+            "description": "Ruined remains",
+            "attributes": {"controller": "Northern League", "status": "Ruined"},
+        },
+        playhead_time=736.0,
+    )
+
+    assert editor.desc_edit.get_wiki_text() == "Ruined remains"
+    assert editor.attribute_editor.get_attributes()["status"] == "Ruined"
+    assert editor.name_edit.text() == "Grey Ford"
+    assert editor.type_edit.currentText() == "Location"
+    assert editor._is_dirty is False
+    assert editor.name_edit.isReadOnly()
+    assert not editor.attribute_editor.isEnabled()
+
+    editor.display_temporal_state(
+        entity.id,
+        {
+            "entity_id": entity.id,
+            "description": "Earlier state",
+            "attributes": {"controller": "Crown"},
+        },
+        playhead_time=731.0,
+    )
+    assert editor.desc_edit.get_wiki_text() == "Earlier state"
+    assert editor.attribute_editor.get_attributes() == {"controller": "Crown"}
+    assert editor._is_dirty is False
+
+    editor.load_entity(entity)
+    assert editor.desc_edit.get_wiki_text() == "Base description"
+    assert editor.attribute_editor.get_attributes() == {"controller": "Crown"}
+    assert editor._is_dirty is False
 
 
 def test_save_clicked(editor, qtbot):

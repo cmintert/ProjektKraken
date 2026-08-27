@@ -5,6 +5,7 @@ import pytest
 from src.commands.base_command import CommandResult
 from src.commands.entity_commands import CreateEntityCommand
 from src.commands.registry import get_command_types
+from src.core.temporal_state import ResolvedEntityState
 from src.services.worker import DatabaseWorker
 
 
@@ -211,3 +212,25 @@ def test_save_current_time(worker, mock_db_service):
     worker.save_current_time(200.0)
 
     mock_db_service.set_current_time.assert_called_once_with(200.0)
+
+
+def test_resolve_entity_state_emits_serialized_snapshot(worker):
+    worker.temporal_manager = MagicMock()
+    worker.temporal_manager.get_entity_state_at.return_value = ResolvedEntityState(
+        entity_id="entity-1",
+        description="Resolved description",
+        attributes={"status": "Ruined"},
+    )
+    spy = MagicMock()
+    worker.entity_state_resolved.connect(spy)
+
+    worker.resolve_entity_state("entity-1", 736.0)
+
+    spy.assert_called_once_with(
+        "entity-1",
+        {
+            "entity_id": "entity-1",
+            "description": "Resolved description",
+            "attributes": {"status": "Ruined"},
+        },
+    )

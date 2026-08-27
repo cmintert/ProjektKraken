@@ -61,7 +61,10 @@ def test_entity_state_evolution_over_time(db_service, temporal_manager):
         source_id=fight.id,
         target_id=gandalf.id,
         rel_type="involved",
-        attributes={"valid_from": 3019.0, "payload": {"status": "Missing"}},
+        attributes={
+            "valid_from": 3019.0,
+            "payload": {"attributes": {"status": "Missing"}},
+        },
     )
 
     # Relation 2: Returns -> White
@@ -71,7 +74,9 @@ def test_entity_state_evolution_over_time(db_service, temporal_manager):
         rel_type="involved",
         attributes={
             "valid_from": 3019.1,
-            "payload": {"color": "White", "status": "Active"},
+            "payload": {
+                "attributes": {"color": "White", "status": "Active"}
+            },
         },
     )
 
@@ -79,19 +84,19 @@ def test_entity_state_evolution_over_time(db_service, temporal_manager):
 
     # Before Fight (3018.9) -> Base State
     state_early = temporal_manager.get_entity_state_at(gandalf.id, 3018.9)
-    assert state_early["color"] == "Grey"
-    assert "status" not in state_early
+    assert state_early.attributes["color"] == "Grey"
+    assert "status" not in state_early.attributes
 
     # During Missing Period (3019.05) -> Missing, but still Grey (unless overwritten)
     # Payload only had status: Missing. Color remains Grey.
     state_mid = temporal_manager.get_entity_state_at(gandalf.id, 3019.05)
-    assert state_mid["status"] == "Missing"
-    assert state_mid["color"] == "Grey"
+    assert state_mid.attributes["status"] == "Missing"
+    assert state_mid.attributes["color"] == "Grey"
 
     # After Return (3019.2) -> White and Active
     state_late = temporal_manager.get_entity_state_at(gandalf.id, 3019.2)
-    assert state_late["color"] == "White"
-    assert state_late["status"] == "Active"
+    assert state_late.attributes["color"] == "White"
+    assert state_late.attributes["status"] == "Active"
 
 
 def test_upstream_event_change_propagates(db_service, temporal_manager):
@@ -116,13 +121,18 @@ def test_upstream_event_change_propagates(db_service, temporal_manager):
         attributes={
             "valid_from": 100.0,
             "valid_from_event": True,
-            "payload": {"health": "Low"},
+            "payload": {"attributes": {"health": "Low"}},
         },
     )
 
     # Check initial state
-    assert "health" not in temporal_manager.get_entity_state_at(hero.id, 90.0)
-    assert temporal_manager.get_entity_state_at(hero.id, 110.0)["health"] == "Low"
+    assert "health" not in temporal_manager.get_entity_state_at(
+        hero.id, 90.0
+    ).attributes
+    assert (
+        temporal_manager.get_entity_state_at(hero.id, 110.0).attributes["health"]
+        == "Low"
+    )
 
     # Move Event to 80.0
     # Note: We must update the relation's cached valid_from or rely on dynamic
@@ -138,4 +148,7 @@ def test_upstream_event_change_propagates(db_service, temporal_manager):
 
     # Verify Propagation
     # t=90 should now be Low health because event happened at 80
-    assert temporal_manager.get_entity_state_at(hero.id, 90.0)["health"] == "Low"
+    assert (
+        temporal_manager.get_entity_state_at(hero.id, 90.0).attributes["health"]
+        == "Low"
+    )

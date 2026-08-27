@@ -61,7 +61,7 @@ class DataHandler(QObject):
     markers_ready = Signal(str, list)  # (map_id, markers)
     trajectories_ready = Signal(str, list)  # (map_id, trajectory snapshots)
     feature_geometry_states_ready = Signal(str, list)
-    entity_state_resolved = Signal(str, dict)  # (entity_id, attributes)
+    entity_state_resolved = Signal(str, dict)  # (entity_id, serialized state)
     graph_data_ready = Signal(list, list)  # (nodes, edges)
     graph_metadata_ready = Signal(list, list)  # (tags, rel_types)
     graph_lexicon_ready = Signal(dict, dict)  # (raw_lexicon, resolved_lexicon)
@@ -562,9 +562,9 @@ class DataHandler(QObject):
             logger.error(f"[DataHandler] Exception in on_command_finished: {e}")
 
     @Slot(str, dict)
-    def on_entity_state_resolved(self, entity_id: str, attributes: dict) -> None:
+    def on_entity_state_resolved(self, entity_id: str, state: dict) -> None:
         """Emits signal when entity state is resolved."""
-        self.entity_state_resolved.emit(entity_id, attributes)
+        self.entity_state_resolved.emit(entity_id, state)
 
     @Slot(list, list)
     def on_graph_data_loaded(self, nodes: List[Any], edges: List[Any]) -> None:

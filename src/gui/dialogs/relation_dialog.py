@@ -8,6 +8,7 @@ from collections import Counter
 from typing import Any, Dict, Optional
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
     QAbstractButton,
     QButtonGroup,
@@ -19,17 +20,24 @@ from PySide6.QtWidgets import (
     QDoubleSpinBox,
     QFormLayout,
     QGroupBox,
+    QHBoxLayout,
+    QInputDialog,
     QLabel,
     QLineEdit,
+    QListWidget,
     QMessageBox,
     QRadioButton,
+    QScrollArea,
     QTextEdit,
     QVBoxLayout,
     QWidget,
 )
 
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.compact_date_widget import CompactDateWidget
+from src.gui.widgets.standard_buttons import DestructiveButton, StandardButton
+from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
 
 class RelationEditDialog(QDialog):
@@ -72,6 +80,8 @@ class RelationEditDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Edit Relation")
         self.setMinimumWidth(400)
+        self.setStyleSheet(StyleHelper.get_dialog_base_style())
+        self._limit_height_to_available_screen()
 
         self.attributes = attributes or {}
         self.calendar_converter = calendar_converter
@@ -81,8 +91,15 @@ class RelationEditDialog(QDialog):
 
         main_layout = QVBoxLayout(self)
 
-        # Form
-        self.form_layout = QFormLayout()
+        # Keep the approval buttons reachable when an event relation has a
+        # large state-change payload. Only the form scrolls.
+        self.form_scroll_area = QScrollArea()
+        self.form_scroll_area.setWidgetResizable(True)
+        self.form_scroll_area.setStyleSheet(
+            StyleHelper.get_scroll_area_style() + StyleHelper.get_scrollbar_style()
+        )
+        self.form_container = QWidget()
+        self.form_layout = QFormLayout(self.form_container)
 
         self._setup_target_field(target_id, suggestion_items)
 
@@ -260,54 +277,16 @@ class RelationEditDialog(QDialog):
         if self.source_event_date is not None:
             self._on_logic_changed(self.logic_btn_group.checkedButton(), True)
 
-        # 5. Payload / Custom Attributes
-        self.custom_attrs_group = QGroupBox("Payload / Attributes")
-
-        # Check if there are any non-standard attributes to load
-        # Standard now includes temporal keys and payload
-        standard_keys = {
-            "weight",
-            "confidence",
-            "notes",
-            "valid_from",
-            "valid_to",
-            "payload",
-        }
-
-        # Merge 'payload' dict into the custom attribute editor for easy editing
-        # We flatten 'payload' into the attribute list for the user,
-        # but re-nest it when saving IF it was originally nested,
-        # OR we just let the attribute editor handle flat keys and later we decide what goes into payload?
-        # DECISION: For MVP, we treat the 'Attribute Editor'
-        # as the place to put Payload data.
-        # We will map these back to 'payload' in _get_attributes.
-
-        custom_attrs = {
-            k: v for k, v in self.attributes.items() if k not in standard_keys
-        }
-        # If there is an existing payload dict, flatten it for the editor
-        if "payload" in self.attributes and isinstance(
-            self.attributes["payload"], dict
-        ):
-            for k, v in self.attributes["payload"].items():
-                custom_attrs[k] = v
-
-        custom_layout = QVBoxLayout()
-        from src.gui.widgets.attribute_editor import AttributeEditorWidget
-
-        self.custom_attr_editor = AttributeEditorWidget()
-        self.custom_attr_editor.load_attributes(custom_attrs)
-        custom_layout.addWidget(self.custom_attr_editor)
-        self.custom_attrs_group.setLayout(custom_layout)
-
-        self.form_layout.addRow(self.custom_attrs_group)
+        if self.source_event_date is not None:
+            self._setup_state_changes()
 
         # 5. Bidirectional
         self.bi_check = QCheckBox("Bidirectional (Create reverse link)")
         self.bi_check.setChecked(is_bidirectional)
         self.form_layout.addRow("", self.bi_check)
 
-        main_layout.addLayout(self.form_layout)
+        self.form_scroll_area.setWidget(self.form_container)
+        main_layout.addWidget(self.form_scroll_area, 1)
 
         # Buttons
         self.button_box = QDialogButtonBox(
@@ -320,6 +299,15 @@ class RelationEditDialog(QDialog):
         # Initial focus
         self.target_edit.setFocus()
 
+    def _limit_height_to_available_screen(self) -> None:
+        """Keep the dialog within the usable vertical screen area."""
+        screen = QGuiApplication.primaryScreen()
+        if screen is None:
+            return
+
+        available_height = screen.availableGeometry().height()
+        self.setMaximumHeight(max(400, int(available_height * 0.85)))
+
     def _setup_target_field(
         self,
         target_id: str,
@@ -330,6 +318,7 @@ class RelationEditDialog(QDialog):
         self.target_edit.setPlaceholderText("Search for entity or event...")
         self._display_to_id: dict[str, str] = {}
         self._id_to_display: dict[str, str] = {}
+        self._id_to_kind: dict[str, str] = {}
         self._name_to_ids: dict[str, list[str]] = {}
         display_names: list[str] = []
         if suggestion_items:
@@ -340,6 +329,7 @@ class RelationEditDialog(QDialog):
                     display = f"{name} ({item_type}, {item_id[:8]})"
                 self._display_to_id[display] = item_id
                 self._id_to_display[item_id] = display
+                self._id_to_kind[item_id] = item_type.casefold()
                 self._name_to_ids.setdefault(name.casefold(), []).append(item_id)
                 display_names.append(display)
             display_names.sort(key=str.lower)
@@ -350,6 +340,179 @@ class RelationEditDialog(QDialog):
         if target_id:
             self.target_edit.setText(self._id_to_display.get(target_id, target_id))
         self.form_layout.addRow("Target:", self.target_edit)
+
+    def _setup_state_changes(self) -> None:
+        """Build Payload v2 controls for an Event-sourced relation."""
+        self.state_changes_group = QGroupBox("Entity State Changes")
+        state_layout = QVBoxLayout()
+
+        state_layout.addWidget(QLabel("Set / Change Attributes"))
+        self.state_attribute_editor = AttributeEditorWidget(allow_null=True)
+        payload = self.attributes.get("payload")
+        payload_data = payload if isinstance(payload, dict) else {}
+        set_attributes = payload_data.get("attributes", {})
+        self.state_attribute_editor.load_attributes(
+            set_attributes if isinstance(set_attributes, dict) else {}
+        )
+        self.state_attribute_editor.attributes_changed.connect(
+            self._fit_state_attribute_editor_to_contents
+        )
+        self._fit_state_attribute_editor_to_contents()
+        state_layout.addWidget(self.state_attribute_editor)
+
+        state_layout.addWidget(QLabel("Remove Attributes"))
+        self.unset_attributes_list = QListWidget()
+        self.unset_attributes_list.setMaximumHeight(96)
+        unset_attributes = payload_data.get("unset_attributes", [])
+        if isinstance(unset_attributes, list):
+            self.unset_attributes_list.addItems(
+                [key for key in unset_attributes if isinstance(key, str)]
+            )
+        self.unset_attributes_list.model().rowsInserted.connect(
+            self._fit_unset_attributes_list_to_contents
+        )
+        self.unset_attributes_list.model().rowsRemoved.connect(
+            self._fit_unset_attributes_list_to_contents
+        )
+        self._fit_unset_attributes_list_to_contents()
+        state_layout.addWidget(self.unset_attributes_list)
+
+        unset_buttons = QHBoxLayout()
+        self.btn_add_unset = StandardButton("Add")
+        self.btn_remove_unset = DestructiveButton("Remove")
+        self.btn_remove_unset.setEnabled(False)
+        self.btn_add_unset.clicked.connect(self._add_unset_attribute)
+        self.btn_remove_unset.clicked.connect(self._remove_unset_attribute)
+        self.unset_attributes_list.itemSelectionChanged.connect(
+            lambda: self.btn_remove_unset.setEnabled(
+                self.unset_attributes_list.currentRow() >= 0
+            )
+        )
+        unset_buttons.addWidget(self.btn_add_unset)
+        unset_buttons.addWidget(self.btn_remove_unset)
+        unset_buttons.addStretch()
+        state_layout.addLayout(unset_buttons)
+
+        self.change_description_check = QCheckBox("Change Description")
+        self.state_description_edit = WikiTextEdit()
+        self.state_description_edit.setMaximumHeight(180)
+        has_description = "description" in payload_data
+        self.change_description_check.setChecked(has_description)
+        if has_description and isinstance(payload_data["description"], str):
+            self.state_description_edit.set_wiki_text(payload_data["description"])
+        self.state_description_edit.setEnabled(has_description)
+        self.state_description_edit.setVisible(has_description)
+        self.change_description_check.toggled.connect(
+            self.state_description_edit.setEnabled
+        )
+        self.change_description_check.toggled.connect(
+            self.state_description_edit.setVisible
+        )
+        state_layout.addWidget(self.change_description_check)
+        state_layout.addWidget(self.state_description_edit)
+
+        self.state_changes_group.setLayout(state_layout)
+        self.form_layout.addRow(self.state_changes_group)
+        self.target_edit.textChanged.connect(self._update_state_changes_visibility)
+        self._update_state_changes_visibility()
+
+    def _fit_state_attribute_editor_to_contents(self) -> None:
+        """Size the state attribute table to its visible rows."""
+        table = self.state_attribute_editor.table
+        row_height = sum(table.rowHeight(row) for row in range(table.rowCount()))
+        table_height = (
+            table.horizontalHeader().height() + row_height + (2 * table.frameWidth())
+        )
+        table.setFixedHeight(table_height)
+
+        layout = self.state_attribute_editor.layout()
+        if layout is None:
+            return
+
+        margins = layout.contentsMargins()
+        editor_height = (
+            margins.top()
+            + self.state_attribute_editor.toolbar_layout.sizeHint().height()
+            + layout.spacing()
+            + table_height
+            + margins.bottom()
+        )
+        self.state_attribute_editor.setFixedHeight(editor_height)
+
+    def _fit_unset_attributes_list_to_contents(self) -> None:
+        """Size the removed-attribute list to its visible entries."""
+        row_height = sum(
+            self.unset_attributes_list.sizeHintForRow(row)
+            for row in range(self.unset_attributes_list.count())
+        )
+        list_height = row_height + (2 * self.unset_attributes_list.frameWidth())
+        self.unset_attributes_list.setFixedHeight(list_height)
+
+    def _is_event_to_entity(self) -> bool:
+        """Return whether the current source and resolved target permit mutation."""
+        if self.source_event_date is None:
+            return False
+        target_id = self._resolve_target_id(self.target_edit.text())
+        return bool(target_id and self._id_to_kind.get(target_id) == "entity")
+
+    def _update_state_changes_visibility(self) -> None:
+        """Expose mutation controls only for Event-to-Entity relations."""
+        if hasattr(self, "state_changes_group"):
+            enabled = self._is_event_to_entity()
+            self.state_changes_group.setVisible(enabled)
+            self.state_changes_group.setEnabled(enabled)
+
+    def _add_unset_attribute(self) -> None:
+        """Add one unique attribute key to the removal list."""
+        set_keys = self.state_attribute_editor.get_attributes().keys()
+        existing = [
+            self.unset_attributes_list.item(row).text()
+            for row in range(self.unset_attributes_list.count())
+        ]
+        suggestions = sorted(set(set_keys) | set(existing), key=str.casefold)
+        key, accepted = QInputDialog.getItem(
+            self,
+            "Remove Attribute",
+            "Attribute Name:",
+            suggestions,
+            0,
+            True,
+        )
+        key = key.strip()
+        if accepted and key and key not in existing:
+            self.unset_attributes_list.addItem(key)
+
+    def _remove_unset_attribute(self) -> None:
+        """Remove the selected key from the removal list."""
+        row = self.unset_attributes_list.currentRow()
+        if row >= 0:
+            self.unset_attributes_list.takeItem(row)
+
+    def _collect_state_payload(self) -> dict[str, Any]:
+        """Collect the canonical Payload v2 object from visible controls."""
+        if not self._is_event_to_entity():
+            return {}
+
+        payload: dict[str, Any] = {}
+        attributes = self.state_attribute_editor.get_attributes()
+        if attributes:
+            payload["attributes"] = attributes
+
+        unset_attributes = [
+            self.unset_attributes_list.item(row).text().strip()
+            for row in range(self.unset_attributes_list.count())
+            if self.unset_attributes_list.item(row).text().strip()
+        ]
+        if unset_attributes:
+            payload["unset_attributes"] = unset_attributes
+
+        if self.change_description_check.isChecked():
+            payload["description"] = (
+                self.state_description_edit.get_wiki_text()
+                if self.state_description_edit.toPlainText()
+                else ""
+            )
+        return payload
 
     def _update_preview(self) -> None:
         """Refresh the live direction preview label."""
@@ -435,23 +598,9 @@ class RelationEditDialog(QDialog):
         if notes:
             attrs["notes"] = notes
 
-        # Custom Attributes / Payload
-        custom = self.custom_attr_editor.get_attributes()
-
-        # Standard keys to exclude from payload
-        standard_keys = {"weight", "confidence", "notes", "valid_from", "valid_to"}
-
-        # Payload accumulator
-        payload: Dict[str, Any] = {}
-
-        for k, v in custom.items():
-            if k in standard_keys:
-                continue
-            # For MVP: Everything in the Attribute Editor that isn't a standard key
-            # is considered part of the "Payload" (the state override).
-            # This is a simplification but aligns with the goal "State at Time T".
-            payload[k] = v
-
+        payload = self._collect_state_payload() if hasattr(
+            self, "state_changes_group"
+        ) else {}
         if payload:
             attrs["payload"] = payload
 
@@ -522,6 +671,8 @@ class RelationEditDialog(QDialog):
 
     def accept(self) -> None:
         """Accept only canonical targets and manually supported relation types."""
+        from src.core.temporal_state import validate_payload
+
         target_id, rel_type, _, _ = self.get_data()
         if not target_id:
             QMessageBox.warning(
@@ -537,4 +688,13 @@ class RelationEditDialog(QDialog):
                 "Mentions are managed from description wikilinks.",
             )
             return
+        payload = self._collect_state_payload() if hasattr(
+            self, "state_changes_group"
+        ) else {}
+        if payload:
+            try:
+                validate_payload(payload)
+            except ValueError as exc:
+                QMessageBox.warning(self, "Invalid Entity State Changes", str(exc))
+                return
         super().accept()

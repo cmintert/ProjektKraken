@@ -1439,7 +1439,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
     def display_temporal_state(
         self,
         entity_id: str,
-        attributes: dict,
+        state: dict,
         playhead_time: float | None = None,
     ) -> None:
         """Displays the resolved temporal state for the current entity. Sets the editor
@@ -1447,16 +1447,21 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         Args:
             entity_id: ID of the entity being displayed.
-            attributes: Resolved temporal attributes.
+            state: Serialized resolved description and attributes.
             playhead_time: Current playhead time for timeline highlighting.
 
         """
         if entity_id != self._current_entity_id:
             return
 
-        # Load attributes (filter internal keys)
-        display_attrs = {k: v for k, v in attributes.items() if k != "_tags"}
-        self.attribute_editor.load_attributes(display_attrs)
+        was_dirty = self._is_dirty
+        self.desc_edit.blockSignals(True)
+        try:
+            self.desc_edit.set_wiki_text(state["description"])
+            self.attribute_editor.load_attributes(state["attributes"])
+        finally:
+            self.desc_edit.blockSignals(False)
+        self.set_dirty(was_dirty)
 
         # Update timeline display with playhead time for highlighting
         if playhead_time is not None:

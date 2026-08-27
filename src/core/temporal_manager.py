@@ -5,11 +5,12 @@ caching of resolved states to ensure performance.
 """
 
 import logging
-from typing import Any, Dict, Tuple
+from typing import Any
 
 from PySide6.QtCore import QObject, Slot
 
 from src.core.temporal_resolver import TemporalResolver
+from src.core.temporal_state import ResolvedEntityState
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +31,11 @@ class TemporalManager(QObject):
         # This is a naive cache. In reality, state is valid for a RANGE.
         # But for MVP playhead scrubbing, exact match or simple LRU is
         # a starting point.
-        self._cache: Dict[Tuple[str, float], Dict[str, Any]] = {}
+        self._cache: dict[tuple[str, float], ResolvedEntityState] = {}
 
-    def get_entity_state_at(self, entity_id: str, time: float) -> Dict[str, Any]:
+    def get_entity_state_at(
+        self, entity_id: str, time: float
+    ) -> ResolvedEntityState:
         """Returns the resolved state of an entity at a specific time.
 
         Uses cache if available.
@@ -46,7 +49,7 @@ class TemporalManager(QObject):
         entity = self._db.get_entity(entity_id)
         if not entity:
             logger.warning(f"TemporalManager: Entity {entity_id} not found.")
-            return {}
+            raise LookupError(f"Entity {entity_id} not found")
 
         # Fetch ALL incoming relations for this entity
         # Optimization Todo: Fetch only relations relevant to time window?

@@ -54,7 +54,14 @@ def test_single_event_display(widget):
             "rel_type": "involved",
             "attributes": {
                 "valid_from": 3018.0,
-                "payload": {"status": "Ring Bearer", "carrying": "One Ring"},
+                "payload": {
+                    "attributes": {
+                        "status": "Ring Bearer",
+                        "carrying": "One Ring",
+                    },
+                    "unset_attributes": ["home"],
+                    "description": "Bearer of the One Ring.",
+                },
             },
         }
     ]
@@ -65,6 +72,10 @@ def test_single_event_display(widget):
     assert "Frodo Departs the Shire" in html
     assert "Ring Bearer" in html
     assert "One Ring" in html
+    assert "Remove:" in html
+    assert "home" in html
+    assert "Description:" in html
+    assert "Bearer of the One Ring." in html
 
 
 def test_multiple_events_sorted_chronologically(widget):

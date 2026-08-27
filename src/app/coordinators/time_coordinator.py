@@ -117,11 +117,11 @@ class TimeCoordinator(BaseCoordinator):
             )
 
     @Slot(str, dict)
-    def on_entity_state_resolved(self, entity_id: str, attributes: dict) -> None:
+    def on_entity_state_resolved(self, entity_id: str, state: dict) -> None:
         """Updates entity editor with resolved state."""
         # Pass playhead time for timeline highlighting
         self.main_window.entity_editor.display_temporal_state(
-            entity_id, attributes, self._current_playhead_time
+            entity_id, state, self._current_playhead_time
         )
 
     # ------------------------------------------------------------------
