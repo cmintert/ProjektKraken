@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-27
-**Commit:** 101210ef
+**Commit:** f18f4178
 ---
 
 # Changelog
@@ -22,6 +22,13 @@ All notable changes to this project will be documented in this file.
   manual workflow runs.
 
 ### Fixed
+
+- *(2026-08-27)* **Security / Packaging**: Replaced the end-of-life HTML
+  sanitizer, updated vulnerable Windows runtime dependencies, and made a
+  hash-pinned audit gate fail release packaging on known advisories.
+
+- *(2026-08-27)* **Packaging / Compliance**: Copied the tracked GPL license
+  to the extracted Windows ZIP root under PyInstaller's `_internal` layout.
 
 - *(2026-08-27)* **Temporal State / Security**: Preserved state changes when
   editing relations with unavailable suggestions and escaped stored timeline

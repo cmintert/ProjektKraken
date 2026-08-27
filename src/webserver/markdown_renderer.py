@@ -6,8 +6,8 @@ from typing import Any
 from urllib.parse import unquote, urlsplit
 from xml.etree import ElementTree
 
-import bleach  # type: ignore[import-untyped]  # Package has no py.typed marker.
 import markdown  # type: ignore[import-untyped]  # Package has no py.typed marker.
+import nh3
 from markdown.extensions import Extension  # type: ignore[import-untyped]
 from markdown.extensions.fenced_code import (  # type: ignore[import-untyped]
     FencedBlockPreprocessor,
@@ -205,12 +205,29 @@ def _allow_attribute(tag: str, name: str, value: str) -> bool:
     return False
 
 
-_CLEANER = bleach.Cleaner(
+def _sanitize_attribute(tag: str, name: str, value: str) -> str | None:
+    """Keep only allowed attributes and their validated values."""
+    return value if _allow_attribute(tag, name, value) else None
+
+
+def _allow_fragment_or_reject_relative_url(value: str) -> str | None:
+    """Preserve in-document anchors while rejecting all other relative URLs."""
+    if value.startswith("#") and len(value) > 1:
+        return value
+    return None
+
+
+_CLEANER = nh3.Cleaner(
     tags=_ALLOWED_TAGS,
-    attributes=_allow_attribute,
-    protocols=_ALLOWED_PROTOCOLS,
-    strip=True,
+    attributes={
+        "a": {"class", "data-target", "href", "title"},
+        "code": {"class"},
+    },
+    attribute_filter=_sanitize_attribute,
+    url_schemes=_ALLOWED_PROTOCOLS,
+    url_relative=_allow_fragment_or_reject_relative_url,
     strip_comments=True,
+    link_rel=None,
 )
 
 

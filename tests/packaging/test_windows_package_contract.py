@@ -46,6 +46,13 @@ class WindowsPackageContractTests(unittest.TestCase):
         self.assertIn("GNU GENERAL PUBLIC LICENSE", license_text)
         self.assertIn("Version 3, 29 June 2007", license_text)
         self.assertIn('(str(ROOT / "LICENSE"), ".")', spec)
+        packaging_script = (ROOT / "scripts/build_windows_package.ps1").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            'Copy-Item -LiteralPath (Join-Path $repoRoot "LICENSE")',
+            packaging_script,
+        )
         self.assertIn("LICENSE", contract["required_package_paths"])
 
     def test_lock_is_hash_pinned(self) -> None:
@@ -57,6 +64,19 @@ class WindowsPackageContractTests(unittest.TestCase):
         self.assertIn("pyinstaller==6.17.0", lock.lower())
         self.assertIn("setuptools==", lock.lower())
         self.assertNotIn("# WARNING:", lock)
+
+    def test_workflow_audits_the_hash_pinned_runtime_lock(self) -> None:
+        """Make a known-vulnerable runtime dependency fail the release build."""
+        workflow = (ROOT / ".github/workflows/windows-package.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("Audit pinned runtime dependencies", workflow)
+        self.assertIn(
+            "pypa/gh-action-pip-audit@1220774d901786e6f652ae159f7b6bc8fea6d266 # v1.1.0",
+            workflow,
+        )
+        self.assertIn("inputs: packaging/windows/requirements.lock", workflow)
+        self.assertIn("require-hashes: true", workflow)
 
     def test_workflow_keeps_publication_approval_gated(self) -> None:
         """Require the protected environment and validated beta tag gate."""

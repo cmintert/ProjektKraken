@@ -143,6 +143,17 @@ def test_obfuscated_markdown_links_lose_navigation_authority() -> None:
     assert "href=" not in rendered
 
 
+def test_only_in_document_fragment_links_survive_sanitization() -> None:
+    rendered = render_longform_markdown(
+        "[fragment](#section-2) [absolute](https://example.com) "
+        "[relative](/outside-the-viewer)"
+    )
+
+    assert '<a href="#section-2">fragment</a>' in rendered
+    assert '<a href="https://example.com">absolute</a>' in rendered
+    assert 'href="/outside-the-viewer"' not in rendered
+
+
 def test_author_markdown_cannot_forge_server_wikilink_attributes() -> None:
     rendered = render_longform_markdown(
         "[Forged](https://example.com){.wikilink data-target=Target}"

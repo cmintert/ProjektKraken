@@ -161,6 +161,11 @@ VSVersionInfo(
         throw "SkipBuild requested, but staged package does not exist: $packageRoot"
     }
 
+    # PyInstaller stores data files below _internal in one-directory builds.
+    # Keep the project's GPL text readily accessible at the extracted ZIP root.
+    Copy-Item -LiteralPath (Join-Path $repoRoot "LICENSE") `
+        -Destination (Join-Path $packageRoot "LICENSE") -Force
+
     $stripDirectoryNames = @($contract.strip_and_forbid_recursive_directories)
     $stripDirectories = @(Get-ChildItem -LiteralPath $packageRoot -Recurse -Directory |
         Where-Object { $_.Name.ToLowerInvariant() -in $stripDirectoryNames } |
