@@ -13,6 +13,7 @@ from PySide6.QtWidgets import QSizePolicy, QVBoxLayout, QWidget
 from src.core.logging_config import get_logger
 from src.gui.widgets.graph_view.graph_builder import GraphBuilder
 from src.gui.widgets.graph_view.graph_filter_bar import GraphFilterBar
+from src.gui.widgets.graph_view.graph_projection import GraphProjection
 from src.gui.widgets.graph_view.graph_web_view import GraphWebView
 
 MIN_GRAPH_WIDTH = 100
@@ -389,7 +390,15 @@ class GraphWidget(QWidget):
 
             filtered_edges.append(edge)
 
-        # -- Step 3: Render --
+        # -- Step 3: Project edges for GraphView presentation --
+        projected_edges = GraphProjection.project_edges(
+            filtered_edges,
+            suppress_redundant_mentions=(
+                self._should_suppress_redundant_mentions(rel_config)
+            ),
+        )
+
+        # -- Step 4: Render --
         if not filtered_nodes:
             self._web_view.load_html(
                 self._builder.build_empty_html(self._current_theme_config)
@@ -426,7 +435,7 @@ class GraphWidget(QWidget):
             if self._is_renderer_ready:
                 self._web_view.update_graph_data(
                     filtered_nodes,
-                    filtered_edges,
+                    projected_edges,
                     focus_id=focus_node_id,
                     theme_config=self._current_theme_config,
                     lexicon_config=lexicon,
@@ -434,7 +443,7 @@ class GraphWidget(QWidget):
             else:
                 html = self._builder.build_html(
                     filtered_nodes,
-                    filtered_edges,
+                    projected_edges,
                     theme_config=self._current_theme_config,
                     focus_node_id=focus_node_id,
                     view_state=view_state,
@@ -447,9 +456,18 @@ class GraphWidget(QWidget):
             self._last_focus_node_id = focus_node_id
             self._logger.debug(
                 f"Refreshed graph: {len(filtered_nodes)} nodes, "
-                f"{len(filtered_edges)} edges, focus_id={focus_node_id}, "
+                f"{len(projected_edges)} edges, focus_id={focus_node_id}, "
                 f"incremental={self._is_renderer_ready}"
             )
+
+    def _should_suppress_redundant_mentions(self, rel_config: dict) -> bool:
+        """Return whether generated mention suppression applies to this view.
+
+        An include filter that explicitly requests ``mentions`` takes precedence
+        over the default noise-reduction projection.
+        """
+        included = rel_config.get("include", [])
+        return not any(str(rel_type).casefold() == "mentions" for rel_type in included)
 
     def _passes_tag_filter(self, node: dict, config: dict) -> bool:
         """Checks if a node passes the tag filter configuration.

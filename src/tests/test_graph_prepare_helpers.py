@@ -103,6 +103,82 @@ class TestPrepareEdge:
 
         assert result["id"] == "e1"
 
+    def test_single_edge_does_not_receive_smoothing(self) -> None:
+        """A non-parallel edge retains the straight default rendering."""
+        edge = {
+            "id": "e1",
+            "source_id": "n1",
+            "target_id": "n2",
+            "parallel_count": 1,
+            "parallel_index": 0,
+        }
+
+        result = GraphBuilder.prepare_edge(edge, "#CCC")
+
+        assert result["smooth"] == {"enabled": False}
+
+    def test_parallel_edges_receive_opposing_curves(self) -> None:
+        """Same-direction parallel lanes curve clockwise and counter-clockwise."""
+        left = GraphBuilder.prepare_edge(
+            {
+                "source_id": "n1",
+                "target_id": "n2",
+                "parallel_count": 2,
+                "parallel_index": -0.5,
+            },
+            "#CCC",
+        )
+        right = GraphBuilder.prepare_edge(
+            {
+                "source_id": "n1",
+                "target_id": "n2",
+                "parallel_count": 2,
+                "parallel_index": 0.5,
+            },
+            "#CCC",
+        )
+
+        assert left["smooth"]["type"] == "curvedCCW"
+        assert right["smooth"]["type"] == "curvedCW"
+        assert left["smooth"]["roundness"] == right["smooth"]["roundness"]
+
+    def test_center_parallel_edge_remains_straight(self) -> None:
+        """The center lane of an odd-sized group does not receive smoothing."""
+        edge = {
+            "source_id": "n1",
+            "target_id": "n2",
+            "parallel_count": 3,
+            "parallel_index": 0,
+        }
+
+        result = GraphBuilder.prepare_edge(edge, "#CCC")
+
+        assert result["smooth"] == {"enabled": False}
+
+    def test_reverse_edge_curve_is_normalized_to_pair_orientation(self) -> None:
+        """Reverse arrows use curve sides relative to the unordered pair."""
+        forward = GraphBuilder.prepare_edge(
+            {
+                "source_id": "A",
+                "target_id": "B",
+                "parallel_count": 2,
+                "parallel_index": -0.5,
+            },
+            "#CCC",
+        )
+        reverse = GraphBuilder.prepare_edge(
+            {
+                "source_id": "B",
+                "target_id": "A",
+                "parallel_count": 2,
+                "parallel_index": 0.5,
+            },
+            "#CCC",
+        )
+
+        assert forward["smooth"]["type"] == "curvedCCW"
+        assert reverse["smooth"]["type"] == "curvedCCW"
+
 
 class TestHelperConsistency:
     """Tests that full and incremental paths produce the same mapping."""

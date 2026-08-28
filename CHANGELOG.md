@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-28
-**Commit:** 4ff0b92b
+**Commit:** 4eadba03
 ---
 
 # Changelog
@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-08-28)* **Graph View / Relations**: Added deterministic parallel-edge
+  lanes, suppressible generated WikiLink mention noise, and regression coverage
+  for full and incremental graph rendering.
 
 - *(2026-08-27)* **Temporal State / Editor**: Added validated Payload v2
   event-to-entity state changes, deterministic resolution, cache invalidation,

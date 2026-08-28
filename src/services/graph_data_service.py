@@ -37,7 +37,8 @@ class GraphDataService:
         Returns:
             Tuple of (nodes, edges) where:
             - nodes: List of dicts with id, name, type, object_type keys
-            - edges: List of dicts with source_id, target_id, rel_type keys
+            - edges: List of dicts with source_id, target_id, rel_type, and
+              attributes keys
 
         """
         # Collect all relations by iterating over all entities and events
@@ -73,6 +74,7 @@ class GraphDataService:
                 "source_id": strip_id_prefix(r["source_id"]),
                 "target_id": strip_id_prefix(r["target_id"]),
                 "rel_type": r["rel_type"],
+                "attributes": r.get("attributes", {}),
             }
             for r in relations
         ]

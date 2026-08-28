@@ -155,14 +155,15 @@ class GraphBuilder:
         (GraphWebView.update_graph_data) produce identical output.
 
         Args:
-            edge: Internal edge dict with source_id, target_id, rel_type keys.
+            edge: Internal edge dict with source_id, target_id, rel_type, and
+                optional parallel_count/parallel_index keys.
             edge_color: Hex color for edges.
             lexicon: Optional lexicon edge config dict keyed by rel_type.
                 Each value may contain 'color', 'width', and 'dashes' keys.
 
         Returns:
             Dict with Vis.js-compatible keys (id, from, to, label, title,
-            color).
+            color), plus edge-specific smoothing for non-center parallel lanes.
 
         """
         rel_type = edge.get("rel_type", "")
@@ -195,6 +196,31 @@ class GraphBuilder:
             result["width"] = width
         if dashes is not None:
             result["dashes"] = dashes
+
+        has_projection_metadata = (
+            "parallel_count" in edge or "parallel_index" in edge
+        )
+        parallel_count = edge.get("parallel_count", 1)
+        parallel_index = edge.get("parallel_index", 0)
+        if has_projection_metadata and (
+            parallel_count <= 1 or parallel_index == 0
+        ):
+            # Explicitly clear any curve retained by vis DataSet.update() when
+            # an incremental refresh changes a formerly parallel edge's lane.
+            result["smooth"] = {"enabled": False}
+        elif parallel_count > 1:
+            index = float(parallel_index)
+            source_id = str(edge["source_id"])
+            target_id = str(edge["target_id"])
+            curves_clockwise = index > 0
+            if source_id > target_id:
+                curves_clockwise = not curves_clockwise
+
+            result["smooth"] = {
+                "enabled": True,
+                "type": "curvedCW" if curves_clockwise else "curvedCCW",
+                "roundness": min(0.5, 0.1 + (abs(index) * 0.1)),
+            }
 
         return result
 
@@ -452,8 +478,7 @@ class GraphBuilder:
                     "align": "middle"
                 },
                 "smooth": {
-                    "type": "curvedCW",
-                    "roundness": 0.2
+                    "enabled": false
                 }
             },
             "interaction": {

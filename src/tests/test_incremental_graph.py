@@ -26,6 +26,11 @@ def _web_view_mock(widget: GraphWidget) -> MagicMock:
     return cast(MagicMock, widget._web_view)
 
 
+def _builder_mock(widget: GraphWidget) -> MagicMock:
+    """Return the deliberately mocked graph builder collaborator."""
+    return cast(MagicMock, widget._builder)
+
+
 def test_initial_load_uses_full_reload(graph_widget: GraphWidget) -> None:
     """Test that the first call to display_graph uses load_html (full reload)."""
     nodes = [{"id": "1"}]
@@ -72,6 +77,74 @@ def test_subsequent_load_uses_incremental_update(graph_widget: GraphWidget) -> N
     assert call_args[0][0] == nodes_2
     assert call_args[0][1] == edges_2
     assert call_args[1]["focus_id"] is None
+
+
+def test_full_and_incremental_paths_receive_projected_edges(
+    graph_widget: GraphWidget,
+) -> None:
+    """Both render paths use one projected edge list."""
+    nodes = [{"id": "A"}, {"id": "B"}]
+    edges = [
+        {
+            "id": "mention",
+            "source_id": "A",
+            "target_id": "B",
+            "rel_type": "mentions",
+            "attributes": {
+                "is_auto_generated": True,
+                "generator": "wikilink",
+            },
+        },
+        {
+            "id": "semantic",
+            "source_id": "A",
+            "target_id": "B",
+            "rel_type": "commands",
+            "attributes": {},
+        },
+    ]
+
+    graph_widget.display_graph(nodes, edges)
+    full_edges = _builder_mock(graph_widget).build_html.call_args.args[1]
+    graph_widget.display_graph(nodes, edges)
+    incremental_edges = _web_view_mock(
+        graph_widget
+    ).update_graph_data.call_args.args[1]
+
+    assert [edge["id"] for edge in full_edges] == ["semantic"]
+    assert incremental_edges == full_edges
+
+
+def test_mentions_include_filter_disables_generated_mention_suppression(
+    graph_widget: GraphWidget,
+) -> None:
+    """Explicitly requesting mentions shows generated mention relations."""
+    graph_widget._advanced_filter_config["rel_types"]["include"] = ["mentions"]
+    nodes = [{"id": "A"}, {"id": "B"}]
+    edges = [
+        {
+            "id": "mention",
+            "source_id": "A",
+            "target_id": "B",
+            "rel_type": "mentions",
+            "attributes": {
+                "is_auto_generated": True,
+                "generator": "wikilink",
+            },
+        },
+        {
+            "id": "semantic",
+            "source_id": "A",
+            "target_id": "B",
+            "rel_type": "commands",
+            "attributes": {},
+        },
+    ]
+
+    graph_widget.display_graph(nodes, edges)
+    rendered_edges = _builder_mock(graph_widget).build_html.call_args.args[1]
+
+    assert [edge["id"] for edge in rendered_edges] == ["mention"]
 
 
 def test_theme_change_forces_full_reload(graph_widget: GraphWidget) -> None:

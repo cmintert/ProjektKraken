@@ -158,6 +158,32 @@ class TestGetGraphData:
         assert len(nodes) == 0
         assert len(edges) == 0
 
+    def test_relation_attributes_are_preserved_on_graph_edges(self, populated_db):
+        """Relation metadata needed by GraphView survives edge conversion."""
+        db = populated_db["db"]
+        source, target = populated_db["entities"][:2]
+        result = db.reconcile_mentions(
+            source.id,
+            "description",
+            {
+                target.id: [
+                    {
+                        "field": "description",
+                        "start_offset": 0,
+                        "end_offset": len(target.name) + 4,
+                        "raw_target": target.name,
+                    }
+                ]
+            },
+        )
+        relation_id = result["after"][0]["id"]
+
+        _, edges = GraphDataService().get_graph_data(db)
+        edge = next(item for item in edges if item["id"] == relation_id)
+
+        assert edge["attributes"]["is_auto_generated"] is True
+        assert edge["attributes"]["generator"] == "wikilink"
+
 
 class TestGetAllTags:
     """Tests for GraphDataService.get_all_tags method."""
