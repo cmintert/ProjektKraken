@@ -29,10 +29,11 @@ def test_calendar_button_styling_updates_on_theme_change(qtbot):
     # Store original themes to restore
     original_themes = tm.themes.copy()
     original_current = tm.current_theme_name
+    base_theme = tm.get_theme().copy()
 
     try:
         # Inject a test theme
-        test_theme = {
+        test_theme = base_theme | {
             "surface": "#112233",
             "border": "#445566",
             "text_main": "#778899",

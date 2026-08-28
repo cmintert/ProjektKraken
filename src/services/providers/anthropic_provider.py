@@ -140,7 +140,7 @@ class AnthropicProvider(Provider):
 
         def _generate_impl() -> Dict[str, Any]:
             """Inner implementation for retry wrapper."""
-            payload = {
+            payload: Dict[str, Any] = {
                 "model": self.model,
                 "messages": [{"role": "user", "content": prompt}],
                 "max_tokens": max_tokens,
@@ -230,7 +230,7 @@ class AnthropicProvider(Provider):
             Exception: If streaming fails.
 
         """
-        payload = {
+        payload: Dict[str, Any] = {
             "model": self.model,
             "messages": [{"role": "user", "content": prompt}],
             "max_tokens": max_tokens,
@@ -263,11 +263,11 @@ class AnthropicProvider(Provider):
                 if not line:
                     continue
 
-                line = line.decode("utf-8")
+                decoded_line = line.decode("utf-8")
 
                 # SSE format: "event: {type}" and "data: {...}"
-                if line.startswith("data: "):
-                    data_str = line[6:]  # Remove "data: " prefix
+                if decoded_line.startswith("data: "):
+                    data_str = decoded_line[6:]  # Remove "data: " prefix
 
                     try:
                         data = json.loads(data_str)
@@ -306,7 +306,7 @@ class AnthropicProvider(Provider):
             start_time = time.time()
 
             # Test messages endpoint with minimal request
-            payload = {
+            payload: Dict[str, Any] = {
                 "model": self.model,
                 "messages": [{"role": "user", "content": "hi"}],
                 "max_tokens": 10,

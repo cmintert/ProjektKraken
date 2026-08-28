@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-08-27
-**Commit:** f18f4178
+**Last Updated:** 2026-08-28
+**Commit:** 4ff0b92b
 ---
 
 # Changelog
@@ -22,6 +22,10 @@ All notable changes to this project will be documented in this file.
   manual workflow runs.
 
 ### Fixed
+
+- *(2026-08-28)* **Testing / CI**: Aligned full-regression coverage with
+  hardened local hosts, current marker defaults, complete theme palettes, and
+  platform-specific title-bar behavior; repaired provider typing checks.
 
 - *(2026-08-27)* **Security / Packaging**: Replaced the end-of-life HTML
   sanitizer, updated vulnerable Windows runtime dependencies, and made a

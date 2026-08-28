@@ -13,11 +13,12 @@ def test_on_theme_changed_forces_rerender(qtbot):
     # Store original themes to restore later (good practice)
     original_themes = tm.themes.copy()
     original_current = tm.current_theme_name
+    base_theme = tm.get_theme().copy()
 
     try:
         # Inject test themes
         tm.themes = {
-            "test_theme_a": {
+            "test_theme_a": base_theme | {
                 "text_main": "#AAAAAA",
                 "accent_secondary": "#BBBBBB",
                 "font_size_body": "10pt",
@@ -33,7 +34,7 @@ def test_on_theme_changed_forces_rerender(qtbot):
                 "app_bg": "#111111",  # Required for GraphicsScene
                 "text_dim": "#888888",
             },
-            "test_theme_b": {
+            "test_theme_b": base_theme | {
                 "text_main": "#CCCCCC",
                 "accent_secondary": "#DDDDDD",
                 "font_size_body": "10pt",

@@ -79,7 +79,10 @@ def db_service(test_db_path):
 def client(test_db_path, db_service):  # dependent on db_service to ensure data is there
     config = ServerConfig(db_path=test_db_path)
     app = create_app(config)
-    return TestClient(app)
+    # The embedded server accepts only real local hosts. TestClient otherwise
+    # sends its synthetic ``testserver`` Host header and exercises rejection,
+    # rather than the longform endpoint.
+    return TestClient(app, headers={"host": "localhost"})
 
 
 def test_get_longform_no_filter(client):

@@ -103,10 +103,10 @@ def test_delete_map_exits_editing_before_emitting_command(map_handler, mock_map_
     assert order == ["exit", "emit"]
 
 
-def test_create_marker_persists_native_fifty_pixel_relative_size(
+def test_create_marker_persists_native_icon_relative_size(
     map_handler, mock_map_widget
 ):
-    """New marker placement stores the map-relative size derived from its image."""
+    """New placement derives size from its icon's native diameter."""
     pixmap_item = MagicMock()
     pixmap_item.boundingRect.return_value.width.return_value = 1000.0
     mock_map_widget.view.pixmap_item = pixmap_item
@@ -117,4 +117,4 @@ def test_create_marker_persists_native_fifty_pixel_relative_size(
 
     command = spy.call_args.args[0]
     settings = command._marker.attributes[MARKER_SIZING_ATTRIBUTE]
-    assert settings["map_value"] == pytest.approx(5.0)
+    assert settings["map_value"] == pytest.approx(2.5)

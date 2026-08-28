@@ -30,6 +30,7 @@ def unified_list_widget(qtbot):
 
 
 def test_outline_colors_update_on_theme_change(outline_widget, theme_manager):
+    base_theme = theme_manager.get_theme().copy()
     # Setup initial items
     sequence = [
         {"table": "events", "id": "1", "name": "Event 1", "meta": {}},
@@ -54,7 +55,7 @@ def test_outline_colors_update_on_theme_change(outline_widget, theme_manager):
         assert item_entity.foreground(0).color().name() == "#000000"
 
     # Change theme - include all required keys
-    new_theme = {
+    new_theme = base_theme | {
         "accent_secondary": "#123456",  # Event color
         "primary": "#654321",  # Entity color
         "destructive": "#FF0000",  # Required for DestructiveButton
@@ -75,6 +76,7 @@ def test_outline_colors_update_on_theme_change(outline_widget, theme_manager):
 
 
 def test_unified_list_colors_update_on_theme_change(unified_list_widget, theme_manager):
+    base_theme = theme_manager.get_theme().copy()
     # Setup data
     from src.core.entities import Entity
     from src.core.events import Event
@@ -87,7 +89,7 @@ def test_unified_list_colors_update_on_theme_change(unified_list_widget, theme_m
     model = unified_list_widget._model
 
     # Mock initial theme with all required keys
-    initial_theme = {
+    initial_theme = base_theme | {
         "accent_secondary": "#000000",
         "primary": "#000000",
         "text_main": "#FFFFFF",  # Required for checkbox style
@@ -126,7 +128,7 @@ def test_unified_list_colors_update_on_theme_change(unified_list_widget, theme_m
         assert entity_color.name() == "#000000"
 
     # Change theme
-    new_theme = {
+    new_theme = base_theme | {
         "accent_secondary": "#aabbcc",  # Event color
         "primary": "#ddeeff",  # Entity color
         "text_main": "#FFFFFF",  # Required for checkbox style

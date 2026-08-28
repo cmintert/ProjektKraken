@@ -343,7 +343,7 @@ def test_load_real_fantasy_worldbuilder_v1():
         assert template.template_id == "fantasy_worldbuilder"
         assert template.version == "1.0"
         assert "fantasy world-builder" in template.content.lower()
-        assert "numeric calendar" in template.content
+        assert "raw lore-date numbers" in template.content
     except FileNotFoundError:
         pytest.skip("Real templates not found (expected during isolated testing)")
 

@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from PySide6.QtCore import QPointF, Qt
+from PySide6.QtCore import QPoint, QPointF, Qt
 from PySide6.QtWidgets import QGraphicsObject
 
 # Import from new map package structure
@@ -23,6 +23,9 @@ class MockMouseEvent:
 
     def scenePos(self):
         return QPointF(self._pos)
+
+    def screenPos(self):
+        return QPoint(round(self._pos.x()), round(self._pos.y()))
 
 
 @pytest.fixture

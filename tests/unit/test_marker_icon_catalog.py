@@ -45,7 +45,7 @@ def test_new_marker_attributes_store_only_id_and_default_provenance() -> None:
     assert attributes[MARKER_SIZING_SOURCE_ATTRIBUTE] == (
         MarkerSizingSource.ICON_DEFAULT.value
     )
-    assert attributes[MARKER_SIZING_ATTRIBUTE]["map_value"] == pytest.approx(5.0)
+    assert attributes[MARKER_SIZING_ATTRIBUTE]["map_value"] == pytest.approx(2.5)
 
 
 def test_project_icon_gets_stable_id_across_catalog_reloads(tmp_path: Path) -> None:

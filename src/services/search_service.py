@@ -383,8 +383,10 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
         import requests  # type: ignore[import-untyped]
 
         self.requests = requests
-        self.url = url or os.getenv(
-            "LMSTUDIO_EMBED_URL", "http://localhost:8080/v1/embeddings"
+        self.url = (
+            url
+            or os.getenv("LMSTUDIO_EMBED_URL")
+            or "http://localhost:8080/v1/embeddings"
         )
         self.model = model or os.getenv("LMSTUDIO_MODEL")
         if not self.model:

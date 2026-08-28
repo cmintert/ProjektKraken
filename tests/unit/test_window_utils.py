@@ -21,7 +21,10 @@ def mock_window():
 
 def test_apply_style_calls_dwm(mock_window):
     """Test that DwmSetWindowAttribute is called with correct arguments."""
-    with patch("src.gui.utils.window_utils.ctypes") as mock_ctypes:
+    with (
+        patch("src.gui.utils.window_utils.ctypes") as mock_ctypes,
+        patch("src.gui.utils.window_utils.sys.platform", "win32"),
+    ):
         # Setup mock dwmapi
         mock_dwmapi = MagicMock()
         mock_ctypes.WinDLL.return_value = mock_dwmapi
@@ -41,7 +44,10 @@ def test_apply_style_calls_dwm(mock_window):
 
 def test_apply_style_fallback(mock_window):
     """Test fallback to legacy attribute if primary fails."""
-    with patch("src.gui.utils.window_utils.ctypes") as mock_ctypes:
+    with (
+        patch("src.gui.utils.window_utils.ctypes") as mock_ctypes,
+        patch("src.gui.utils.window_utils.sys.platform", "win32"),
+    ):
         mock_dwmapi = MagicMock()
         mock_ctypes.WinDLL.return_value = mock_dwmapi
 
@@ -60,7 +66,10 @@ def test_apply_style_fallback(mock_window):
 
 def test_apply_style_color(mock_window):
     """Test setting caption color."""
-    with patch("src.gui.utils.window_utils.ctypes") as mock_ctypes:
+    with (
+        patch("src.gui.utils.window_utils.ctypes") as mock_ctypes,
+        patch("src.gui.utils.window_utils.sys.platform", "win32"),
+    ):
         mock_dwmapi = MagicMock()
         mock_ctypes.WinDLL.return_value = mock_dwmapi
         mock_dwmapi.DwmSetWindowAttribute.return_value = 0

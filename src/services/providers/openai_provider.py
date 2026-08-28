@@ -177,7 +177,7 @@ class OpenAIProvider(Provider):
 
         def _generate_impl() -> Dict[str, Any]:
             """Inner implementation for retry wrapper."""
-            payload = {
+            payload: Dict[str, Any] = {
                 "model": self.model,
                 "messages": [{"role": "user", "content": prompt}],
                 "max_tokens": max_tokens,
@@ -257,7 +257,7 @@ class OpenAIProvider(Provider):
             Exception: If streaming fails.
 
         """
-        payload = {
+        payload: Dict[str, Any] = {
             "model": self.model,
             "messages": [{"role": "user", "content": prompt}],
             "max_tokens": max_tokens,
@@ -290,11 +290,11 @@ class OpenAIProvider(Provider):
                 if not line:
                     continue
 
-                line = line.decode("utf-8")
+                decoded_line = line.decode("utf-8")
 
                 # SSE format: "data: {...}"
-                if line.startswith("data: "):
-                    data_str = line[6:]  # Remove "data: " prefix
+                if decoded_line.startswith("data: "):
+                    data_str = decoded_line[6:]  # Remove "data: " prefix
 
                     # Check for stream end marker
                     if data_str.strip() == "[DONE]":

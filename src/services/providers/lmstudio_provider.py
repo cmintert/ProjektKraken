@@ -463,11 +463,11 @@ class LMStudioProvider(Provider):
                 if not line:
                     continue
 
-                line = line.decode("utf-8")
+                decoded_line = line.decode("utf-8")
 
                 # SSE format: "data: {...}"
-                if line.startswith("data: "):
-                    data_str = line[6:]  # Remove "data: " prefix
+                if decoded_line.startswith("data: "):
+                    data_str = decoded_line[6:]  # Remove "data: " prefix
 
                     # Check for stream end marker
                     if data_str.strip() == "[DONE]":
