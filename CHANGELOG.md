@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-29
-**Commit:** acac9ab2
+**Commit:** 6257b0d5
 ---
 
 # Changelog
@@ -12,6 +12,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-08-29)* **Packaging / CI**: Removed a stale nonexistent PyInstaller
+  data path and added source-existence validation before Windows packaging.
 
 - *(2026-08-29)* **Testing / CI**: Removed redundant native WebEngine widget
   traversal from per-test teardown after it caused Linux full-regression

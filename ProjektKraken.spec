@@ -14,7 +14,6 @@ datas = [
     (str(ROOT / "default_assets"), "default_assets"),
     (str(ROOT / "themes.json"), "."),
     (str(ROOT / "src" / "resources"), "src/resources"),
-    (str(ROOT / "src" / "assets"), "src/assets"),
     (str(ROOT / "src" / "webserver" / "static"), "src/webserver/static"),
     (str(ROOT / "src" / "webserver" / "templates"), "src/webserver/templates"),
     (str(ROOT / "lib"), "lib"),

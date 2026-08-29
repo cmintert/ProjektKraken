@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import json
 import re
 import unittest
@@ -33,6 +34,37 @@ class WindowsPackageContractTests(unittest.TestCase):
         for relative_path in contract["smoke_resources"]:
             with self.subTest(path=relative_path):
                 self.assertTrue((ROOT / relative_path).is_file())
+
+    def test_spec_data_sources_exist(self) -> None:
+        """Reject stale static data paths before invoking PyInstaller."""
+        spec_path = ROOT / "ProjektKraken.spec"
+        module = ast.parse(spec_path.read_text(encoding="utf-8"), str(spec_path))
+        datas_assignment = next(
+            node
+            for node in module.body
+            if isinstance(node, ast.Assign)
+            and any(
+                isinstance(target, ast.Name) and target.id == "datas"
+                for target in node.targets
+            )
+        )
+        self.assertIsInstance(datas_assignment.value, ast.List)
+        for entry in datas_assignment.value.elts:
+            self.assertIsInstance(entry, ast.Tuple)
+            source = entry.elts[0]
+            self.assertIsInstance(source, ast.Call)
+            source_path = source.args[0]
+            parts: list[str] = []
+            while isinstance(source_path, ast.BinOp) and isinstance(
+                source_path.op, ast.Div
+            ):
+                self.assertIsInstance(source_path.right, ast.Constant)
+                parts.append(source_path.right.value)
+                source_path = source_path.left
+            self.assertIsInstance(source_path, ast.Name)
+            self.assertEqual(source_path.id, "ROOT")
+            with self.subTest(path="/".join(reversed(parts))):
+                self.assertTrue((ROOT.joinpath(*reversed(parts))).exists())
 
     def test_gpl_license_is_included_in_the_windows_package(self) -> None:
         """Ship the declared GPL-3.0-only licence with every Windows ZIP."""
