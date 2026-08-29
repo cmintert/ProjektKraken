@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-29
-**Commit:** 23c6bf79
+**Commit:** 28a9f374
 ---
 
 # Changelog
@@ -12,6 +12,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-08-29)* **Architecture / Testing**: Added AST-based public-API and
+  growth-budget guardrails for transitional application choke points.
 
 - *(2026-08-29)* **Workspace / Layouts**: Added a unified four-zone workspace
   shell with movable panel tabs, empty-zone drop targets, semantic panel
@@ -34,6 +37,9 @@ All notable changes to this project will be documented in this file.
   manual workflow runs.
 
 ### Fixed
+
+- *(2026-08-29)* **Testing / Theming**: Repaired compact-date icon refresh
+  coverage to emit the theme payload required by the widget signal.
 
 - *(2026-08-29)* **UI / Narrow Panels**: Kept native tab-scroll arrows themed,
   fully sized, and aligned beside tabs instead of overlapping them.

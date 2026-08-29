@@ -57,3 +57,39 @@
 - `.agents/skills/` is the canonical home for ProjektKraken-specific Codex
   workflows. Keep project-only skills there rather than installing global copies.
 
+## Strangler Migration Guardrails
+
+`src/app/map_handler.py`, `src/services/worker.py`,
+`src/app/connection_manager.py`, `src/app/main_window.py`, and
+`src/services/db_service.py` are transitional architectural choke points. Do
+not add a new feature responsibility to them. Bug fixes and small changes to an
+existing responsibility are allowed.
+
+- Put new capabilities in feature-specific controllers, coordinators, services,
+  repositories, or domain models. Prefer a suitable repository/service over a
+  new feature-specific `DatabaseService` method.
+- Do not turn every new asynchronous/domain operation into a `DatabaseWorker`
+  slot, every cross-feature signal into `ConnectionManager` wiring, or feature
+  logic into `MainWindow`.
+- When work in a choke point is substantial, first consider extracting the
+  touched capability and leaving a delegating compatibility method behind.
+- Prefer explicit, narrow dependencies over passing `MainWindow` or another
+  large application object into a feature component. Do not add a dependency-
+  injection framework.
+
+Preferred direction:
+
+```text
+UI
+  -> feature-specific controller/coordinator
+  -> application/domain service
+  -> repository/domain model
+```
+
+Qt threading and signal plumbing are infrastructure concerns; they do not
+define feature boundaries. This is a strangler migration: existing choke points
+may remain facades, extracted components may initially be called through them,
+and new behavior should increasingly bypass them. Move old behavior when its
+capability next needs substantial modification; no immediate reorganization is
+required.
+

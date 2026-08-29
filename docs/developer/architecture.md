@@ -9,6 +9,45 @@ src/app → src/gui → src/commands → src/services → src/core
 Keep dependencies moving in this direction. `AppCoordinator` is the facade for
 cross-feature orchestration.
 
+## Strangler migration guardrails
+
+The following transitional modules are established choke points:
+
+- `src/app/map_handler.py`
+- `src/services/worker.py`
+- `src/app/connection_manager.py`
+- `src/app/main_window.py`
+- `src/services/db_service.py`
+
+Do not add a new feature responsibility to them. Bug fixes and small
+modifications to existing responsibilities remain appropriate. New capabilities
+belong in capability-specific controllers, coordinators, services, repositories,
+or domain models. In particular, prefer the relevant repository/service to a new
+feature-specific `DatabaseService` method; do not make a new `DatabaseWorker`
+slot or `ConnectionManager` signal connection the default home for new work; and
+do not add feature logic to `MainWindow`.
+
+For substantial work in a choke point, first consider extracting the touched
+capability and retaining a delegating compatibility method. Prefer explicit,
+narrow dependencies such as `SomeCoordinator(repository, navigation,
+command_executor)` instead of passing `MainWindow` or another large application
+object into a feature component. Do not introduce a dependency-injection
+framework.
+
+```text
+UI
+  -> feature-specific controller/coordinator
+  -> application/domain service
+  -> repository/domain model
+```
+
+Qt threading and signal plumbing are infrastructure concerns, not feature
+boundaries. This is a strangler migration: choke points may temporarily remain
+facades, extracted components can initially be invoked through them, and new
+behavior should increasingly bypass them. Existing code does not need to be
+reorganized immediately; move old behavior when that capability is next
+substantially modified.
+
 ## Mutation flow
 
 ```text

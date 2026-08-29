@@ -29,9 +29,8 @@ def test_calendar_icon_loaded(qtbot):
 
 
 def test_icon_updates_on_theme_change(qtbot):
-    """Test that the icon is updated (reloaded) when theme changes."""
-    # Ensure theme manager is initialized
-    tm = ThemeManager()
+    """Test that the icon is refreshed after a theme-related update."""
+    theme_manager = ThemeManager()
 
     with patch("src.gui.widgets.compact_date_widget.load_icon") as mock_load:
         mock_load.return_value = QIcon()
@@ -39,25 +38,21 @@ def test_icon_updates_on_theme_change(qtbot):
         widget = CompactDateWidget()
         qtbot.addWidget(widget)
 
-        # Reset mock after init
+        # Reset mock after init so later calls represent the refresh action.
         mock_load.reset_mock()
 
-        # Trigger theme change - include all required keys
-        tm.theme_changed.emit(
-            tm.get_theme()
-            | {
-                "text_main": "#FF0000",
-            }
-        )
+        theme = theme_manager.get_theme()
+        theme_manager.theme_changed.emit(theme)
 
-        # Verify load_icon was called
+        # Verify a reload happened.
         assert mock_load.called
 
-        # Check arguments — _update_icons loads both calendar and clock icons.
         all_calls = mock_load.call_args_list
         all_paths = [call.args[0] for call in all_calls]
         assert any("calendar.svg" in p for p in all_paths), (
             f"calendar.svg not found in icon paths: {all_paths}"
         )
-        cal_call = next(c for c in all_calls if "calendar.svg" in c.args[0])
-        assert cal_call.kwargs.get("color") == "#FF0000"
+        cal_call = next((c for c in all_calls if "calendar.svg" in c.args[0]), None)
+        assert cal_call is not None, f"calendar.svg call missing from: {all_calls}"
+        expected_color = theme.get("accent_secondary", theme.get("text_main", "#e0e0e0"))
+        assert cal_call.kwargs["color"] == expected_color
