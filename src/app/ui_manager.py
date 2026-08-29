@@ -1,1089 +1,369 @@
-"""UIManager Module.
+"""Menus and semantic workspace actions for the production main window."""
 
-Handles the creation and layout of dock widgets and menus for the MainWindow.
-"""
+from __future__ import annotations
 
-import logging
-from typing import Any, Dict, Optional, cast
+import json
+from collections.abc import Mapping
+from typing import Any, Optional, cast
 
-# NOTE: PySide6 Fully Qualified Enum Paths
-# =========================================
-# Uses fully qualified enum paths (e.g., Qt.DockWidgetArea.LeftDockWidgetArea)
-# per PySide6 6.4+ best practices. See src/app/main.py for full explanation.
-from PySide6.QtCore import QEvent, QObject, QSettings, Qt
-from PySide6.QtWidgets import (
-    QDockWidget,
-    QInputDialog,
-    QMainWindow,
-    QMenuBar,
-    QMessageBox,
-    QTabWidget,
-    QWidget,
-)
+from PySide6.QtCore import QObject, QSettings, Qt
+from PySide6.QtGui import QAction, QActionGroup
+from PySide6.QtWidgets import QInputDialog, QMenuBar, QMessageBox, QWidget
 
 from src.app.constants import (
-    DOCK_OBJ_AI_SEARCH,
-    DOCK_OBJ_ANALYSIS,
-    DOCK_OBJ_ENTITY_INSPECTOR,
-    DOCK_OBJ_EVENT_INSPECTOR,
-    DOCK_OBJ_GRAPH,
-    DOCK_OBJ_HISTORY,
-    DOCK_OBJ_LONGFORM,
-    DOCK_OBJ_MAP,
-    DOCK_OBJ_PROJECT,
-    DOCK_OBJ_TIMELINE,
-    DOCK_TITLE_AI_SEARCH,
-    DOCK_TITLE_ANALYSIS,
-    DOCK_TITLE_ENTITY_INSPECTOR,
-    DOCK_TITLE_EVENT_INSPECTOR,
-    DOCK_TITLE_GRAPH,
-    DOCK_TITLE_HISTORY,
-    DOCK_TITLE_LONGFORM,
-    DOCK_TITLE_MAP,
-    DOCK_TITLE_PROJECT,
-    DOCK_TITLE_TIMELINE,
     SETTINGS_LAYOUTS_KEY,
     WINDOW_SETTINGS_APP,
     WINDOW_SETTINGS_KEY,
 )
 from src.app.qt_invocation import invoke_queued
 from src.core.protocols import MainWindowProtocol
-
-logger = logging.getLogger(__name__)
-
-
-class _DockEventFilter(QObject):
-    """Event filter for dock widgets to log visibility and resize events.
-
-    This diagnostic helper logs show/hide/resize events for debugging disappearing
-    widget issues.
-    """
-
-    def __init__(self, dock_name: str, logger: Any) -> None:
-        """Initialize the event filter.
-
-        Args:
-            dock_name: Name of the dock widget being monitored.
-            logger: Logger instance for output.
-
-        """
-        super().__init__()
-        self._name = dock_name
-        self._logger = logger
-
-    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
-        """Filter events and log relevant ones.
-
-        Args:
-            obj: Object receiving the event.
-            event: Event to filter.
-
-        Returns:
-            bool: Always False (don't consume events).
-
-        """
-        if event.type() == QEvent.Type.Resize:
-            # s = event.size()
-            # self._logger.debug(
-            #     f"Dock widget '{self._name}' resized -> {s.width()}x{s.height()}"
-            # )
-            pass
-        elif event.type() == QEvent.Type.Show:
-            # self._logger.debug(f"Dock widget '{self._name}' showEvent")
-            pass
-        elif event.type() == QEvent.Type.Hide:
-            # self._logger.debug(f"Dock widget '{self._name}' hideEvent")
-            pass
-        return False
+from src.gui.workspace.panel_registry import ZoneName
 
 
 class UIManager:
-    """Manages the UI components of the MainWindow, including Docks and Menus.
-
-    This class uses the MainWindowProtocol to define its expectations of the main
-    window, making the interface explicit and verifiable.
-    """
+    """Build menus that operate on panels and application coordinators."""
 
     def __init__(self, main_window: MainWindowProtocol) -> None:
-        """Initializes the UIManager.
-
-        Args:
-            main_window: A MainWindow instance implementing MainWindowProtocol.
-
-        """
+        """Bind menu actions to the production main window."""
         self.main_window = main_window
-        # MainWindowProtocol deliberately lives in core and cannot inherit Qt types.
-        # UIManager is only constructed with the real QMainWindow, so keep the Qt
-        # parent view explicit at this boundary.
         self._window_widget = cast(QWidget, main_window)
-        self.docks: dict[str, QDockWidget] = {}
-
-    def _attach_diagnostics(self, dock: QDockWidget) -> None:
-        """Attach diagnostic logging to a dock widget.
-
-        Logs visibility changes, top-level changes, and widget events
-        (show/hide/resize) to help diagnose disappearing widget issues.
-
-        Args:
-            dock: The dock widget to monitor.
-
-        """
-        from src.core.logging_config import get_logger
-
-        logger = get_logger(__name__)
-        name = dock.objectName()
-        logger.info(f"Attaching diagnostics to dock '{name}'")
-
-        # Log visibility changes with size info
-        # Log visibility changes with size info
-        # dock.visibilityChanged.connect(
-        #     lambda vis, n=name, d=dock: logger.debug(
-        #         f"Dock '{n}' visibilityChanged={vis} "
-        #         f"size={d.size().width()}x{d.size().height()}"
-        #     )
-        # )
-
-        # Log top-level (floating) changes
-        dock.topLevelChanged.connect(
-            lambda top, n=name: logger.debug(f"Dock '{n}' topLevelChanged={top}")
-        )
-
-        # Install event filter on the contained widget
-        widget = dock.widget()
-        if widget is not None:
-            f = _DockEventFilter(name, logger)
-            widget.installEventFilter(f)
-            # Store filter as attribute to prevent garbage collection
-            setattr(dock, "_diag_event_filter", f)
-
-    def setup_docks(self, widgets: Dict[str, QWidget]) -> None:  # noqa: C901
-        """Creates and arranges all dock widgets.
-
-        Args:
-            widgets (dict): Dictionary containing the widget instances:
-                - 'unified_list': UnifiedListWidget
-                - 'event_editor': EventEditorWidget
-                - 'entity_editor': EntityEditorWidget
-                - 'timeline': TimelineWidget
-                - 'longform_editor': LongformEditorWidget
-                - 'map_widget': MapWidget
-                - 'ai_search_panel': AISearchPanelWidget (optional)
-                - 'history_panel': HistoryPanelWidget (optional)
-
-        """
-        from src.core.logging_config import get_logger
-
-        logger = get_logger(__name__)
-
-        # Track dock creation results
-        failed_docks = []
-
-        # Enable advanced docking
-        self.main_window.setDockOptions(
-            QMainWindow.DockOption.AnimatedDocks
-            | QMainWindow.DockOption.AllowNestedDocks
-            | QMainWindow.DockOption.AllowTabbedDocks
-        )
-        self.main_window.setTabPosition(
-            Qt.DockWidgetArea.AllDockWidgetAreas, QTabWidget.TabPosition.North
-        )
-
-        # Configure Corners to prioritize Side Panels (Full Height)
-        self.main_window.setCorner(
-            Qt.Corner.TopLeftCorner, Qt.DockWidgetArea.LeftDockWidgetArea
-        )
-        self.main_window.setCorner(
-            Qt.Corner.TopRightCorner, Qt.DockWidgetArea.RightDockWidgetArea
-        )
-        self.main_window.setCorner(
-            Qt.Corner.BottomLeftCorner, Qt.DockWidgetArea.LeftDockWidgetArea
-        )
-        self.main_window.setCorner(
-            Qt.Corner.BottomRightCorner, Qt.DockWidgetArea.RightDockWidgetArea
-        )
-
-        # 1. Project Explorer (Left)
-        dock = self._create_dock(
-            DOCK_TITLE_PROJECT, DOCK_OBJ_PROJECT, widgets.get("unified_list")
-        )
-        if dock:
-            self.docks["list"] = dock
-            self.main_window.addDockWidget(
-                Qt.DockWidgetArea.LeftDockWidgetArea, self.docks["list"]
-            )
-            self._attach_diagnostics(self.docks["list"])
-        else:
-            failed_docks.append("list")
-
-        # 2. Event Inspector (Right)
-        dock = self._create_dock(
-            DOCK_TITLE_EVENT_INSPECTOR,
-            DOCK_OBJ_EVENT_INSPECTOR,
-            widgets.get("event_editor"),
-        )
-        if dock:
-            self.docks["event"] = dock
-            self.main_window.addDockWidget(
-                Qt.DockWidgetArea.RightDockWidgetArea, self.docks["event"]
-            )
-            self._attach_diagnostics(self.docks["event"])
-        else:
-            failed_docks.append("event")
-
-        # 3. Entity Inspector (Right)
-        dock = self._create_dock(
-            DOCK_TITLE_ENTITY_INSPECTOR,
-            DOCK_OBJ_ENTITY_INSPECTOR,
-            widgets.get("entity_editor"),
-        )
-        if dock:
-            self.docks["entity"] = dock
-            self.main_window.addDockWidget(
-                Qt.DockWidgetArea.RightDockWidgetArea, self.docks["entity"]
-            )
-            self._attach_diagnostics(self.docks["entity"])
-        else:
-            failed_docks.append("entity")
-
-        # Tabify Inspectors (only if both exist)
-        if "event" in self.docks and "entity" in self.docks:
-            self.main_window.tabifyDockWidget(self.docks["event"], self.docks["entity"])
-
-        # 4. Timeline (Bottom)
-        dock = self._create_dock(
-            DOCK_TITLE_TIMELINE, DOCK_OBJ_TIMELINE, widgets.get("timeline")
-        )
-        if dock:
-            self.docks["timeline"] = dock
-            self.main_window.addDockWidget(
-                Qt.DockWidgetArea.BottomDockWidgetArea, self.docks["timeline"]
-            )
-            self._attach_diagnostics(self.docks["timeline"])
-        else:
-            failed_docks.append("timeline")
-
-        # 5. Longform Editor (Right)
-        if "longform_editor" in widgets:
-            dock = self._create_dock(
-                DOCK_TITLE_LONGFORM, DOCK_OBJ_LONGFORM, widgets["longform_editor"]
-            )
-            if dock:
-                self.docks["longform"] = dock
-                self.main_window.addDockWidget(
-                    Qt.DockWidgetArea.RightDockWidgetArea, self.docks["longform"]
-                )
-                self._attach_diagnostics(self.docks["longform"])
-            else:
-                failed_docks.append("longform")
-
-        # 6. Map Widget (Bottom, tabbed with Timeline by default)
-        if "map_widget" in widgets:
-            dock = self._create_dock(
-                DOCK_TITLE_MAP, DOCK_OBJ_MAP, widgets["map_widget"]
-            )
-            if dock:
-                self.docks["map"] = dock
-                self.main_window.addDockWidget(
-                    Qt.DockWidgetArea.BottomDockWidgetArea, self.docks["map"]
-                )
-                self._attach_diagnostics(self.docks["map"])
-                if "timeline" in self.docks:
-                    self.main_window.tabifyDockWidget(
-                        self.docks["timeline"], self.docks["map"]
-                    )
-            else:
-                failed_docks.append("map")
-
-        # 7. AI Search Panel (Right, tabbed with inspectors)
-        if "ai_search_panel" in widgets:
-            dock = self._create_dock(
-                DOCK_TITLE_AI_SEARCH, DOCK_OBJ_AI_SEARCH, widgets["ai_search_panel"]
-            )
-            if dock:
-                self.docks["ai_search"] = dock
-                self.main_window.addDockWidget(
-                    Qt.DockWidgetArea.RightDockWidgetArea, self.docks["ai_search"]
-                )
-                self._attach_diagnostics(self.docks["ai_search"])
-                # Tabify with entity inspector if it exists
-                if "entity" in self.docks:
-                    self.main_window.tabifyDockWidget(
-                        self.docks["entity"], self.docks["ai_search"]
-                    )
-            else:
-                failed_docks.append("ai_search")
-
-        # 8. Graph Widget (Bottom, tabbed with Map)
-        if "graph_widget" in widgets:
-            dock = self._create_dock(
-                DOCK_TITLE_GRAPH, DOCK_OBJ_GRAPH, widgets["graph_widget"]
-            )
-            if dock:
-                self.docks["graph"] = dock
-                self.main_window.addDockWidget(
-                    Qt.DockWidgetArea.BottomDockWidgetArea, self.docks["graph"]
-                )
-                self._attach_diagnostics(self.docks["graph"])
-
-                # Tabify with map if it exists, otherwise with timeline
-                if "map" in self.docks:
-                    self.main_window.tabifyDockWidget(
-                        self.docks["map"], self.docks["graph"]
-                    )
-                elif "timeline" in self.docks:
-                    self.main_window.tabifyDockWidget(
-                        self.docks["timeline"], self.docks["graph"]
-                    )
-            else:
-                failed_docks.append("graph")
-
-        # 9. History Panel (Right, tabbed with inspectors)
-        if "history_panel" in widgets:
-            dock = self._create_dock(
-                DOCK_TITLE_HISTORY, DOCK_OBJ_HISTORY, widgets["history_panel"]
-            )
-            if dock:
-                self.docks["history"] = dock
-                self.main_window.addDockWidget(
-                    Qt.DockWidgetArea.RightDockWidgetArea, self.docks["history"]
-                )
-                self._attach_diagnostics(self.docks["history"])
-                # Tabify with entity inspector if it exists
-                if "entity" in self.docks:
-                    self.main_window.tabifyDockWidget(
-                        self.docks["entity"], self.docks["history"]
-                    )
-            else:
-                failed_docks.append("history")
-
-        # 10. Analysis Suite (Right, tabbed with entity inspector)
-        if "analysis_panel" in widgets:
-            dock = self._create_dock(
-                DOCK_TITLE_ANALYSIS, DOCK_OBJ_ANALYSIS, widgets["analysis_panel"]
-            )
-            if dock:
-                self.docks["analysis"] = dock
-                self.main_window.addDockWidget(
-                    Qt.DockWidgetArea.RightDockWidgetArea, self.docks["analysis"]
-                )
-                self._attach_diagnostics(self.docks["analysis"])
-                if "entity" in self.docks:
-                    self.main_window.tabifyDockWidget(
-                        self.docks["entity"], self.docks["analysis"]
-                    )
-            else:
-                failed_docks.append("analysis")
-
-        # Report results
-        if failed_docks:
-            logger.warning(f"Failed to create docks: {failed_docks}")
-
-        # Validate critical docks are present
-        critical_docks = ["list", "event", "entity", "timeline"]
-        missing_critical = [d for d in critical_docks if d not in self.docks]
-
-        if missing_critical:
-            error_msg = f"Critical docks missing: {missing_critical}"
-            logger.error(error_msg)
-            raise RuntimeError(
-                f"UI initialization failed - {error_msg}. Cannot continue."
-            )
-
-        logger.info(
-            f"Successfully created {len(self.docks)} docks: {list(self.docks.keys())}"
-        )
-
-    def _create_dock(
-        self, title: str, obj_name: str, widget: QWidget | None
-    ) -> Optional[QDockWidget]:
-        """Helper to create a configured dock widget with size constraints.
-
-        Sets minimum sizes to prevent dock collapse during resize/rearrangement.
-        Includes validation and error handling to ensure robust dock creation.
-
-        Args:
-            title: Display title for the dock widget.
-            obj_name: Object name for state persistence.
-            widget: The widget to contain in the dock.
-
-        Returns:
-            Configured QDockWidget with size constraints, or None if creation fails.
-
-        """
-        from PySide6.QtWidgets import QSizePolicy
-
-        from src.core.logging_config import get_logger
-
-        logger = get_logger(__name__)
-
-        try:
-            # Validate widget parameter
-            if widget is None:
-                logger.error(f"Cannot create dock '{title}': widget is None")
-                return None
-
-            if not isinstance(widget, QWidget):
-                logger.error(
-                    f"Invalid widget type for dock '{title}': {type(widget).__name__}"
-                )
-                return None
-
-            logger.debug(
-                f"Creating dock '{title}' ({obj_name}) "
-                f"with widget {type(widget).__name__}"
-            )
-
-            # Create dock widget
-            dock = QDockWidget(title, self._window_widget)
-            dock.setObjectName(obj_name)
-            dock.setWidget(widget)
-
-            # Validate widget was set correctly
-            if dock.widget() is not widget:
-                logger.error(f"Widget assignment failed for dock '{title}'")
-                return None
-
-            # Configure dock properties
-            dock.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
-            dock.setFeatures(
-                QDockWidget.DockWidgetFeature.DockWidgetMovable
-                | QDockWidget.DockWidgetFeature.DockWidgetFloatable
-                | QDockWidget.DockWidgetFeature.DockWidgetClosable
-            )
-
-            # Set minimum sizes to prevent collapse
-            # Base minimum that shows title bar + some content
-            dock.setMinimumWidth(250)  # Enough for form labels
-            dock.setMinimumHeight(150)  # Enough for controls
-
-            # Set size policy to allow shrinking but with limits
-            policy = QSizePolicy(
-                QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred
-            )
-            policy.setHorizontalStretch(1)
-            policy.setVerticalStretch(1)
-            dock.setSizePolicy(policy)
-
-            logger.debug(f"Successfully created dock: {title} ({obj_name})")
-            return dock
-
-        except Exception as e:
-            logger.exception(f"Failed to create dock '{title}': {e}")
-            return None
+        self._zone_actions: dict[ZoneName, QAction] = {}
 
     def create_file_menu(self, menu_bar: QMenuBar) -> None:
-        """Create and populate the File menu on the given menu bar.
-
-        Adds the following items:
-
-        - **Manage Databases…** – opens the database manager dialog.
-        - **Import Item…** – triggers the import-item workflow.
-        - *Separator*
-        - **Backup & Restore** submenu containing *Create Backup…*,
-          *Restore from Backup…*, *Show Backup Location*, and
-          *Backup Settings…*.
-        - *Separator*
-        - **Exit** – closes the main window.
-
-        Args:
-            menu_bar: The application menu bar to which the File menu
-                is added.
-
-        """
+        """Create the File menu."""
         file_menu = menu_bar.addMenu("File")
-
-        # Open Database
         db_action = file_menu.addAction("Manage Databases...")
         db_action.triggered.connect(
             self.main_window.import_coordinator.show_database_manager
         )
-
-        # Import Item
         import_action = file_menu.addAction("Import Item...")
-        if hasattr(self.main_window, "import_coordinator"):
-            import_action.triggered.connect(
-                self.main_window.import_coordinator.import_item_requested
-            )
-
-        # Import Pasted JSON
-        paste_json_action = file_menu.addAction("Import Pasted JSON...")
-        if hasattr(self.main_window, "import_coordinator"):
-            paste_json_action.triggered.connect(
-                self.main_window.import_coordinator.import_pasted_json_requested
-            )
+        import_action.triggered.connect(
+            self.main_window.import_coordinator.import_item_requested
+        )
+        paste_action = file_menu.addAction("Import Pasted JSON...")
+        paste_action.triggered.connect(
+            self.main_window.import_coordinator.import_pasted_json_requested
+        )
 
         file_menu.addSeparator()
-
-        # Export submenu
         export_menu = file_menu.addMenu("Export")
-
-        # Export to Markdown
         export_md_action = export_menu.addAction("Export Longform to Markdown...")
         export_md_action.triggered.connect(
             self.main_window.longform_manager.export_longform_document
         )
-
-        # Export as Vault
         export_vault_action = export_menu.addAction("Export as Obsidian Vault...")
         export_vault_action.triggered.connect(
             self.main_window.longform_manager.export_as_vault
         )
 
         file_menu.addSeparator()
-
-        # Backup submenu
         backup_menu = file_menu.addMenu("Backup && Restore")
-
-        # Create Backup
         backup_action = backup_menu.addAction("Create Backup...")
         backup_action.triggered.connect(
             self.main_window.backup_coordinator.create_manual_backup
         )
-
-        # Restore from Backup
         restore_action = backup_menu.addAction("Restore from Backup...")
         restore_action.triggered.connect(
             self.main_window.backup_coordinator.restore_from_backup
         )
-
         backup_menu.addSeparator()
-
-        # Show Backup Location
         location_action = backup_menu.addAction("Show Backup Location")
         location_action.triggered.connect(
             self.main_window.backup_coordinator.show_backup_location
         )
-
-        # Backup Settings
         settings_action = backup_menu.addAction("Backup Settings...")
         settings_action.triggered.connect(
             self.main_window.backup_coordinator.show_backup_settings
         )
 
         file_menu.addSeparator()
-
-        # Exit
         exit_action = file_menu.addAction("Exit")
         exit_action.triggered.connect(self.main_window.close)
 
     def create_edit_menu(self, menu_bar: QMenuBar) -> None:
-        """Create and populate the Edit menu on the given menu bar.
-
-        Adds **Undo** (Ctrl+Z) and **Redo** (Ctrl+Y / Ctrl+Shift+Z) actions
-        with application-wide shortcut scope.  Both actions are disabled by
-        default; enable them by calling :meth:`connect_undo_redo_actions` once
-        the command coordinator is ready.
-
-        Args:
-            menu_bar: The application menu bar to which the Edit menu
-                is added.
-
-        """
+        """Create application-wide undo and redo actions."""
         from PySide6.QtGui import QKeySequence
 
         from src.gui.utils.shortcut_manager import ShortcutManager
 
         edit_menu = menu_bar.addMenu("Edit")
-
-        # Undo Action
         self.undo_action = edit_menu.addAction("Undo")
         self.undo_action.setShortcut(ShortcutManager.UNDO.key_sequence)
         self.undo_action.setShortcutContext(Qt.ShortcutContext.ApplicationShortcut)
-        self.undo_action.setEnabled(False)  # Disabled by default
-        self.main_window.addAction(self.undo_action)  # Ensure global capture
+        self.undo_action.setEnabled(False)
+        self.main_window.addAction(self.undo_action)
 
-        # Redo Action
         self.redo_action = edit_menu.addAction("Redo")
-        self.redo_action.setShortcut(ShortcutManager.REDO.key_sequence)
-        # Add secondary shortcut for Redo (Ctrl+Shift+Z)
         self.redo_action.setShortcuts(
             [ShortcutManager.REDO.key_sequence, QKeySequence("Ctrl+Shift+Z")]
         )
         self.redo_action.setShortcutContext(Qt.ShortcutContext.ApplicationShortcut)
-        self.redo_action.setEnabled(False)  # Disabled by default
-        self.main_window.addAction(self.redo_action)  # Ensure global capture
-        # Note: Connection deferred to connect_undo_redo_actions()
-        # (called after coordinator is initialized)
+        self.redo_action.setEnabled(False)
+        self.main_window.addAction(self.redo_action)
 
     def connect_undo_redo_actions(self) -> None:
-        """Connects undo/redo actions to the coordinator.
-
-        Must be called after the command coordinator is initialized.
-        """
-        if hasattr(self, "undo_action") and hasattr(self, "redo_action"):
-            self.undo_action.triggered.connect(self.main_window.coordinator.undo)
-            self.redo_action.triggered.connect(self.main_window.coordinator.redo)
+        """Connect undo and redo after the command coordinator exists."""
+        self.undo_action.triggered.connect(self.main_window.coordinator.undo)
+        self.redo_action.triggered.connect(self.main_window.coordinator.redo)
 
     def update_undo_redo_state(self, *_args: object) -> None:
-        """Updates the enabled/disabled state of undo/redo actions.
-
-        Should be called when the command history changes.
-
-        Args:
-            *_args: Ignored; accepts the snapshot lists emitted by
-                ``history_changed(list, list)`` so the slot signature
-                is compatible.
-        """
-        if hasattr(self, "undo_action") and hasattr(self, "redo_action"):
-            coordinator = self.main_window.coordinator
-            self.undo_action.setEnabled(coordinator.can_undo())
-            self.redo_action.setEnabled(coordinator.can_redo())
+        """Refresh undo and redo enabled state."""
+        coordinator = self.main_window.coordinator
+        self.undo_action.setEnabled(coordinator.can_undo())
+        self.redo_action.setEnabled(coordinator.can_redo())
 
     def create_view_menu(self, menu_bar: QMenuBar) -> None:
-        """Creates the View menu for toggling docks."""
+        """Create semantic panel, zone, theme, and reset actions."""
         view_menu = menu_bar.addMenu("View")
-        for dock in self.docks.values():
-            view_menu.addAction(dock.toggleViewAction())
+        panels_menu = view_menu.addMenu("Panels")
+        workspace = self.main_window.workspace
+        for definition in workspace.registry.definitions():
+            action = panels_menu.addAction(definition.title)
+            action.setObjectName(f"ViewPanel_{definition.id}")
+            action.triggered.connect(
+                lambda _checked=False, panel_id=definition.id: workspace.show_panel(
+                    panel_id
+                )
+            )
+
+        zones_menu = view_menu.addMenu("Zones")
+        for zone in ("left", "right", "bottom"):
+            zone_name = cast(ZoneName, zone)
+            action = zones_menu.addAction(zone.title())
+            action.setCheckable(True)
+            action.setChecked(workspace.zone_visible(zone_name))
+            action.triggered.connect(
+                lambda checked=False, target=zone_name: (
+                    workspace.show_zone(target)
+                    if checked
+                    else workspace.hide_zone(target)
+                )
+            )
+            self._zone_actions[zone_name] = action
+        workspace.zone_visibility_changed.connect(self._sync_zone_action)
 
         view_menu.addSeparator()
-
-        # Theme Submenu (moved from Settings)
+        theme_menu = view_menu.addMenu("Theme")
         from src.core.theme_manager import ThemeManager
 
-        theme_menu = view_menu.addMenu("Theme")
-        tm = ThemeManager()
-        available_themes = tm.get_available_themes()
-
-        # Create action group for exclusivity
-        from PySide6.QtGui import QActionGroup
-
+        theme_manager = ThemeManager()
         action_group = QActionGroup(self._window_widget)
-
-        for theme_name in available_themes:
+        for theme_name in theme_manager.get_available_themes():
             action = theme_menu.addAction(theme_name.replace("_", " ").title())
             action.setCheckable(True)
-            if theme_name == tm.current_theme_name:
-                action.setChecked(True)
-
+            action.setChecked(theme_name == theme_manager.current_theme_name)
             action.triggered.connect(
-                lambda checked=False, name=theme_name: tm.set_theme(name)
+                lambda _checked=False, name=theme_name: theme_manager.set_theme(name)
             )
             action_group.addAction(action)
 
         view_menu.addSeparator()
-        # Layouts Menu
+        reset_action = view_menu.addAction("Reset Layout")
+        reset_action.triggered.connect(self.reset_layout)
         self.create_layouts_menu(menu_bar)
 
+    def _sync_zone_action(self, zone: str, visible: bool) -> None:
+        if zone in self._zone_actions:
+            self._zone_actions[cast(ZoneName, zone)].setChecked(visible)
+
     def create_layouts_menu(self, menu_bar: QMenuBar) -> None:
-        """Creates the Layouts menu for saving/restoring window layouts."""
+        """Create named workspace layout actions."""
         self.layouts_menu = menu_bar.addMenu("Layouts")
         self._refresh_layouts_menu()
 
     def _refresh_layouts_menu(self) -> None:
-        """Refreshes the Layouts menu items."""
         if not hasattr(self, "layouts_menu"):
             return
-
         self.layouts_menu.clear()
-
-        # Save Layout Action
         save_action = self.layouts_menu.addAction("Save Current Layout...")
         save_action.triggered.connect(self.prompt_save_layout)
-
-        # Save Override Defaults Action
-        save_default_action = self.layouts_menu.addAction("Save as Default Layout")
-        save_default_action.triggered.connect(self.save_as_default_layout)
-
         self.layouts_menu.addSeparator()
 
-        # Existing Layouts
         layouts = self.get_saved_layouts()
         if not layouts:
             no_layouts = self.layouts_menu.addAction("No Saved Layouts")
             no_layouts.setEnabled(False)
-        else:
-            for name in layouts:
-                # Add a submenu or just click to restore?
-                # Let's do: Name -> Restore
-                # And a separate "Manage Layouts" or Delete in submenu?
-                # Simplest: Click to restore.
-                # To delete, maybe a "Manage..." or "Delete..." submenu.
-
-                # Let's try a submenu for each layout:
-                # Layout Name >
-                #   Restore
-                #   Delete
-
-                layout_menu = self.layouts_menu.addMenu(name)
-
-                restore_action = layout_menu.addAction("Restore")
-                restore_action.triggered.connect(
-                    lambda checked=False, n=name: self.restore_layout(n)
+        for name in layouts:
+            layout_menu = self.layouts_menu.addMenu(name)
+            restore_action = layout_menu.addAction("Restore")
+            restore_action.triggered.connect(
+                lambda _checked=False, layout_name=name: self.restore_layout(
+                    layout_name
                 )
-
-                delete_action = layout_menu.addAction("Delete")
-                delete_action.triggered.connect(
-                    lambda checked=False, n=name: self.delete_layout(n)
-                )
+            )
+            delete_action = layout_menu.addAction("Delete")
+            delete_action.triggered.connect(
+                lambda _checked=False, layout_name=name: self.delete_layout(layout_name)
+            )
 
         self.layouts_menu.addSeparator()
-
-        # Reset Layout Action
         reset_action = self.layouts_menu.addAction("Reset Layout")
         reset_action.triggered.connect(self.reset_layout)
 
     def prompt_save_layout(self) -> None:
-        """Prompts user for a layout name and saves it."""
-        name, ok = QInputDialog.getText(
+        """Ask for a name and save the current explicit workspace layout."""
+        name, accepted = QInputDialog.getText(
             self._window_widget, "Save Layout", "Layout Name:"
         )
-        if ok and name:
-            if name in self.get_saved_layouts():
-                reply = QMessageBox.question(
-                    self._window_widget,
-                    "Overwrite Layout?",
-                    f"Layout '{name}' already exists. Overwrite?",
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                )
-                if reply != QMessageBox.StandardButton.Yes:
-                    return
-            self.save_layout(name)
+        if not accepted or not name:
+            return
+        if name in self.get_saved_layouts():
+            reply = QMessageBox.question(
+                self._window_widget,
+                "Overwrite Layout?",
+                f"Layout '{name}' already exists. Overwrite?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                return
+        self.save_layout(name)
 
     def save_layout(self, name: str) -> None:
-        """Saves the current window layout (state and geometry).
-
-        Args:
-            name: The name of the layout.
-
-        """
+        """Save panel membership, order, active tabs, sizes, and visibility."""
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        layouts = settings.value(SETTINGS_LAYOUTS_KEY, {})
-
-        # We need to explicitly convert to dict if it's not
-        # (first run might return something else or None)
-        if not isinstance(layouts, dict):
-            layouts = {}
-
-        layouts[name] = {
-            "state": self.main_window.saveState(),
-            "geometry": self.main_window.saveGeometry(),
-        }
-
-        settings.setValue(SETTINGS_LAYOUTS_KEY, layouts)
+        layouts = self._load_saved_layouts(settings)
+        layouts[name] = self.main_window.workspace.capture_layout()
+        settings.setValue(SETTINGS_LAYOUTS_KEY, json.dumps(layouts, sort_keys=True))
         self._refresh_layouts_menu()
 
     def restore_layout(self, name: str) -> None:
-        """Restores a saved window layout.
-
-        Args:
-            name: The name of the layout to restore.
-
-        """
+        """Restore a named workspace layout without changing window geometry."""
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        layouts = settings.value(SETTINGS_LAYOUTS_KEY, {})
-
-        if not isinstance(layouts, dict) or name not in layouts:
-            return
-
-        layout_data = layouts[name]
-
-        # Restore geometry first, then state
-        if "geometry" in layout_data:
-            self.main_window.restoreGeometry(layout_data["geometry"])
-        if "state" in layout_data:
-            self.main_window.restoreState(layout_data["state"])
+        layouts = self._load_saved_layouts(settings)
+        layout = layouts.get(name)
+        if layout is not None:
+            self.main_window.workspace.apply_layout(layout)
 
     def delete_layout(self, name: str) -> None:
-        """Deletes a saved layout.
-
-        Args:
-            name: The name of the layout to delete.
-
-        """
+        """Delete a named workspace layout after confirmation."""
         reply = QMessageBox.question(
             self._window_widget,
             "Delete Layout",
             f"Are you sure you want to delete layout '{name}'?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
-        if reply == QMessageBox.StandardButton.Yes:
-            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-            layouts = settings.value(SETTINGS_LAYOUTS_KEY, {})
-
-            if isinstance(layouts, dict) and name in layouts:
-                del layouts[name]
-                settings.setValue(SETTINGS_LAYOUTS_KEY, layouts)
-                self._refresh_layouts_menu()
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        layouts = self._load_saved_layouts(settings)
+        if name in layouts:
+            del layouts[name]
+            settings.setValue(
+                SETTINGS_LAYOUTS_KEY,
+                json.dumps(layouts, sort_keys=True),
+            )
+            self._refresh_layouts_menu()
 
     def get_saved_layouts(self) -> list[str]:
-        """Returns a list of saved layout names.
-
-        Returns:
-            List[str]: Sorted list of layout names.
-
-        """
+        """Return named layouts in display order."""
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        layouts = settings.value(SETTINGS_LAYOUTS_KEY, {})
-        if isinstance(layouts, dict):
-            return sorted(layouts.keys())
-        return []
+        return sorted(self._load_saved_layouts(settings))
+
+    @staticmethod
+    def _load_saved_layouts(settings: QSettings) -> dict[str, object]:
+        """Load readable JSON layouts and tolerate the legacy mapping form."""
+        raw_layouts = settings.value(SETTINGS_LAYOUTS_KEY, {})
+        if isinstance(raw_layouts, str):
+            try:
+                raw_layouts = json.loads(raw_layouts)
+            except (TypeError, ValueError):
+                return {}
+        if isinstance(raw_layouts, Mapping):
+            return {str(name): layout for name, layout in raw_layouts.items()}
+        return {}
+
+    def reset_layout(self) -> None:
+        """Restore the deterministic factory workspace only."""
+        self.main_window.workspace.reset_layout()
 
     def create_timeline_menu(self, menu_bar: QMenuBar) -> None:
-        """Creates the Timeline menu for grouping and calendar."""
+        """Create timeline grouping and calendar actions."""
         timeline_menu = menu_bar.addMenu("Timeline")
-
-        # Grouping
-        self.grouping_config_action = timeline_menu.addAction("Configure Grouping...")
+        self.grouping_config_action = timeline_menu.addAction(
+            "Configure Grouping..."
+        )
         self.grouping_config_action.triggered.connect(
             self.main_window.grouping_manager.on_configure_grouping_requested
         )
-
         self.grouping_clear_action = timeline_menu.addAction("Clear Grouping")
         self.grouping_clear_action.triggered.connect(
             self.main_window.grouping_manager.on_clear_grouping_requested
         )
-
         timeline_menu.addSeparator()
-
-        # Calendar Configuration
         calendar_action = timeline_menu.addAction("Calendar Configuration...")
         calendar_action.triggered.connect(self._open_calendar_config)
 
-    def reset_layout(self) -> None:
-        """Restores the default docking layout.
-
-        Positions ALL docks to their canonical locations:
-        - Left: Project Explorer
-        - Right: Event Inspector, Entity Inspector (tabified), plus
-          Longform, AI Search, History (tabified)
-        - Bottom: Timeline, Map, Graph (tabified)
-
-        After positioning, raises Event Inspector and Timeline as
-        the active tabs and allocates a reasonable height for the
-        bottom dock area via ``resizeDocks``.
-        """
-        # 1. Try to load from default_layout.json
-        from src.core.paths import get_default_layout_path
-
-        default_path = get_default_layout_path()
-        import json
-        from pathlib import Path
-
-        if Path(default_path).exists():
-            try:
-                with open(default_path, "r", encoding="utf-8") as f:
-                    layout_data = json.load(f)
-
-                if "geometry" in layout_data:
-                    self.main_window.restoreGeometry(
-                        bytes.fromhex(layout_data["geometry"])
-                    )
-                if "state" in layout_data:
-                    self.main_window.restoreState(bytes.fromhex(layout_data["state"]))
-                return
-            except Exception as e:
-                logger.warning(f"Failed to load custom layout: {e}")
-
-        # 2. Hardcoded fallback — position ALL docks explicitly
-        # --- Left panel ---
-        if "list" in self.docks:
-            self.main_window.addDockWidget(
-                Qt.DockWidgetArea.LeftDockWidgetArea, self.docks["list"]
-            )
-            self.docks["list"].show()
-
-        # --- Right panel (editors + optional panels, all tabified) ---
-        right_order = ["event", "entity", "longform", "ai_search", "history"]
-        first_right = None
-        for key in right_order:
-            if key not in self.docks:
-                continue
-            self.main_window.addDockWidget(
-                Qt.DockWidgetArea.RightDockWidgetArea, self.docks[key]
-            )
-            self.docks[key].show()
-            if first_right is not None:
-                self.main_window.tabifyDockWidget(first_right, self.docks[key])
-            else:
-                first_right = self.docks[key]
-
-        # Raise Event Inspector as default active tab
-        if "event" in self.docks:
-            self.docks["event"].raise_()
-
-        # --- Bottom panel (timeline + map + graph, all tabified) ---
-        bottom_order = ["timeline", "map", "graph"]
-        first_bottom = None
-        for key in bottom_order:
-            if key not in self.docks:
-                continue
-            self.main_window.addDockWidget(
-                Qt.DockWidgetArea.BottomDockWidgetArea, self.docks[key]
-            )
-            self.docks[key].show()
-            if first_bottom is not None:
-                self.main_window.tabifyDockWidget(first_bottom, self.docks[key])
-            else:
-                first_bottom = self.docks[key]
-
-        # Raise Timeline as default active tab
-        if "timeline" in self.docks:
-            self.docks["timeline"].raise_()
-
-        # --- Allocate reasonable height for the bottom dock area ---
-        # Without explicit sizing the bottom area can collapse to zero
-        # because all four corners are assigned to left/right.
-        self._ensure_bottom_dock_height()
-
-    def _ensure_bottom_dock_height(self) -> None:
-        """Allocates explicit height for bottom dock area via resizeDocks.
-
-        All four corners are assigned to left/right panels, so Qt may
-        give the bottom area zero height unless we explicitly request
-        space.  This uses ``QMainWindow.resizeDocks`` which is the only
-        API that can influence splitter positions programmatically.
-        """
-        bottom_docks = [
-            self.docks[k]
-            for k in ("timeline", "map", "graph")
-            if k in self.docks and not self.docks[k].isHidden()
-        ]
-        if not bottom_docks:
-            return
-
-        # Request 30% of window height for the bottom area (min 200px)
-        window_height = self.main_window.height()
-        target_height = max(200, int(window_height * 0.30))
-
-        try:
-            self.main_window.resizeDocks(
-                bottom_docks,
-                [target_height] * len(bottom_docks),
-                Qt.Orientation.Vertical,
-            )
-        except Exception as e:
-            logger.warning(f"resizeDocks failed: {e}")
-
-    def save_as_default_layout(self) -> None:
-        """Saves the current layout as the default factory layout.
-
-        Writes to src/assets/default_layout.json.
-        """
-        from src.core.paths import get_default_layout_path
-
-        default_path = get_default_layout_path()
-        import json
-        from pathlib import Path
-
-        # Ensure directory exists
-        Path(default_path).parent.mkdir(parents=True, exist_ok=True)
-
-        layout_data = {
-            "state": self.main_window.saveState().toHex().data().decode("utf-8"),
-            "geometry": self.main_window.saveGeometry().toHex().data().decode("utf-8"),
-        }
-
-        with open(default_path, "w", encoding="utf-8") as f:
-            json.dump(layout_data, f, indent=2)
-
-        print(f"Default layout saved to: {default_path}")
-
     def create_settings_menu(self, menu_bar: QMenuBar) -> None:
-        """Creates the Settings menu (AI and other system settings)."""
+        """Create AI and editing preference actions."""
         settings_menu = menu_bar.addMenu("Settings")
-
-        # AI Search Index and Settings (moved from AI menu)
         search_settings_action = settings_menu.addAction(
             "AI Search Index and Settings..."
         )
-        if hasattr(self.main_window, "ai_search_manager"):
-            search_settings_action.triggered.connect(
-                self.main_window.ai_search_manager.show_ai_settings_dialog
-            )
-
+        search_settings_action.triggered.connect(
+            self.main_window.ai_search_manager.show_ai_settings_dialog
+        )
         settings_menu.addSeparator()
 
-        # Wiki Auto-Relation Setting
         from src.app.constants import SETTINGS_AUTO_RELATION_KEY
 
         self.auto_relation_action = settings_menu.addAction(
             "Auto-Create Relations from Wikilinks"
         )
         self.auto_relation_action.setCheckable(True)
-        # Connect to MainWindow slot (to be created)
-        if hasattr(self.main_window, "toggle_auto_relation_setting"):
-            self.auto_relation_action.triggered.connect(
-                self.main_window.toggle_auto_relation_setting
+        self.auto_relation_action.triggered.connect(
+            self.main_window.toggle_auto_relation_setting
+        )
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        self.auto_relation_action.setChecked(
+            cast(
+                bool,
+                settings.value(SETTINGS_AUTO_RELATION_KEY, False, type=bool),
             )
+        )
 
-            # Init state
-            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-            is_checked = cast(
-                bool, settings.value(SETTINGS_AUTO_RELATION_KEY, False, type=bool)
-            )
-            self.auto_relation_action.setChecked(is_checked)
-
-        # Longform Auto-Refresh Setting
         self.longform_refresh_action = settings_menu.addAction(
             "Auto-Refresh Longform Editor"
         )
         self.longform_refresh_action.setCheckable(True)
-
-        if hasattr(self.main_window, "toggle_longform_auto_refresh"):
-            self.longform_refresh_action.triggered.connect(
-                self.main_window.toggle_longform_auto_refresh
-            )
-            # Init state (default True)
-            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-            is_checked = cast(
-                bool, settings.value("longform_auto_refresh", True, type=bool)
-            )
-            self.longform_refresh_action.setChecked(is_checked)
-
-        # Track pending dialog state
+        self.longform_refresh_action.triggered.connect(
+            self.main_window.toggle_longform_auto_refresh
+        )
+        self.longform_refresh_action.setChecked(
+            cast(bool, settings.value("longform_auto_refresh", True, type=bool))
+        )
         self._calendar_dialog_pending = False
 
-    def create_help_menu(self, menu_bar: "QMenuBar") -> None:
-        """Creates the Help menu with documentation and shortcuts.
-
-        Args:
-            menu_bar: The menu bar to add the Help menu to.
-        """
+    def create_help_menu(self, menu_bar: QMenuBar) -> None:
+        """Create shortcut and About actions."""
         help_menu = menu_bar.addMenu("Help")
-
-        # Keyboard Shortcuts
         shortcuts_action = help_menu.addAction("Keyboard Shortcuts...")
         shortcuts_action.triggered.connect(self._show_keyboard_shortcuts)
-
         help_menu.addSeparator()
-
-        # About (placeholder for future)
         about_action = help_menu.addAction("About ProjektKraken")
         about_action.triggered.connect(self._show_about_dialog)
 
     def _show_keyboard_shortcuts(self) -> None:
-        """Show the keyboard shortcuts dialog."""
         from src.gui.dialogs.keyboard_shortcuts_dialog import KeyboardShortcutsDialog
 
-        dialog = KeyboardShortcutsDialog(self._window_widget)
-        dialog.exec()
+        KeyboardShortcutsDialog(self._window_widget).exec()
 
     def _show_about_dialog(self) -> None:
-        """Show a simple about dialog."""
         from src.gui.dialogs.about_dialog import AboutDialog
 
-        dialog = AboutDialog(self._window_widget)
-        dialog.exec()
+        AboutDialog(self._window_widget).exec()
 
     def _open_calendar_config(self) -> None:
-        """Requests loading of calendar config to open dialog."""
         self._calendar_dialog_pending = True
         self._request_calendar_config()
 
     def _request_calendar_config(self) -> None:
-        """Queue a calendar-config load on the database worker thread."""
         invoke_queued(
             cast(QObject, self.main_window.worker),
             "load_calendar_config",
         )
 
     def show_calendar_dialog(self, current_config: Optional[Any]) -> None:
-        """Shows the calendar configuration dialog.
-
-        Args:
-            current_config: CalendarConfig or None.
-
-        """
+        """Show calendar configuration after its worker snapshot arrives."""
         if not self._calendar_dialog_pending:
             return
         self._calendar_dialog_pending = False
@@ -1099,24 +379,15 @@ class UIManager:
         dialog = CalendarConfigDialog(self._window_widget, config=current_config)
 
         def on_config_saved(config: Any) -> None:
-            """Handles calendar config save by creating appropriate commands.
-
-            Args:
-                config: The calendar configuration to save.
-
-            """
-            # Save the config
+            command: BaseCommand
             if current_config and current_config.id == config.id:
-                cmd: BaseCommand = UpdateCalendarConfigCommand(config)
+                command = UpdateCalendarConfigCommand(config)
             else:
-                cmd = CreateCalendarConfigCommand(config)
-            self.main_window.command_requested.emit(cmd)
-
-            # Set as active
-            active_cmd = SetActiveCalendarCommand(config.id)
-            self.main_window.command_requested.emit(active_cmd)
-
-            # Refresh the calendar converter
+                command = CreateCalendarConfigCommand(config)
+            self.main_window.command_requested.emit(command)
+            self.main_window.command_requested.emit(
+                SetActiveCalendarCommand(config.id)
+            )
             self._request_calendar_config()
 
         dialog.config_saved.connect(on_config_saved)

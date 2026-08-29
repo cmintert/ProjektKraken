@@ -68,8 +68,7 @@ def main_window(qapp, qtbot, mock_settings):
         qtbot.addWidget(window)
 
         # Mock UI components accessed in tests
-        window.ui_manager = MagicMock()
-        window.ui_manager.docks = {"event": MagicMock(), "entity": MagicMock()}
+        window.workspace.show_panel = MagicMock()
         window.unified_list = MagicMock()
         window.event_editor = MagicMock()
         window.event_editor.has_unsaved_changes.return_value = False
@@ -122,7 +121,7 @@ def test_restore_last_selection_event(main_window):
 
     # Verify actions
     main_window.data_coordinator.load_event_details.assert_called_with(test_id)
-    main_window.ui_manager.docks["event"].raise_.assert_called_once()
+    main_window.workspace.show_panel.assert_called_once_with("event")
     main_window.unified_list.select_item.assert_called_with(test_type, test_id)
     main_window.data_coordinator.load_entity_details.assert_not_called()
 
@@ -145,7 +144,7 @@ def test_restore_last_selection_entity(main_window):
 
     # Verify actions
     main_window.data_coordinator.load_entity_details.assert_called_with(test_id)
-    main_window.ui_manager.docks["entity"].raise_.assert_called_once()
+    main_window.workspace.show_panel.assert_called_once_with("entity")
     main_window.unified_list.select_item.assert_called_with(test_type, test_id)
     main_window.data_coordinator.load_event_details.assert_not_called()
 

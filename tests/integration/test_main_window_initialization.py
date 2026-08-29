@@ -12,11 +12,11 @@ from PySide6.QtCore import QSettings
 
 from src.app.connection_manager import ConnectionManager
 from src.app.constants import (
-    LAYOUT_VERSION,
-    SETTINGS_LAYOUT_VERSION_KEY,
+    SETTINGS_WORKSPACE_LAYOUT_KEY,
     WINDOW_SETTINGS_APP,
     WINDOW_SETTINGS_KEY,
 )
+from src.gui.workspace import WORKSPACE_LAYOUT_VERSION
 
 
 @pytest.fixture
@@ -60,7 +60,7 @@ def mock_main_window(qapp):
     window._on_graph_data_ready = Mock()
     window._on_graph_metadata_ready = Mock()
     window._on_command_failed = Mock()
-    window._on_dock_raise_requested = Mock()
+    window._on_panel_show_requested = Mock()
     window._on_selection_requested = Mock()
     window.load_events = Mock()
     window.load_entities = Mock()
@@ -223,19 +223,17 @@ class TestConnectionManagerIntegration:
         assert isinstance(graph_failures, int)
 
 
-class TestLayoutVersioning:
-    """Tests for layout versioning logic."""
+class TestWorkspaceLayoutVersioning:
+    """Tests for explicit workspace layout versioning."""
 
     def test_layout_version_constant_exists(self):
-        """Test that LAYOUT_VERSION constant is defined."""
-        assert LAYOUT_VERSION is not None
-        assert isinstance(LAYOUT_VERSION, str)
-        assert len(LAYOUT_VERSION) > 0
+        """The workspace schema version is defined."""
+        assert isinstance(WORKSPACE_LAYOUT_VERSION, int)
+        assert WORKSPACE_LAYOUT_VERSION > 0
 
     def test_settings_key_constant_exists(self):
         """Test that settings key constant is defined."""
-        assert SETTINGS_LAYOUT_VERSION_KEY is not None
-        assert isinstance(SETTINGS_LAYOUT_VERSION_KEY, str)
+        assert isinstance(SETTINGS_WORKSPACE_LAYOUT_KEY, str)
 
 
 class TestSignalValidation:

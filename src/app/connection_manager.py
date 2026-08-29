@@ -299,7 +299,12 @@ class ConnectionManager:
                     "DataHandler",
                 ),
                 (dh, "command_failed", dc.on_command_failed, "DataHandler"),
-                (dh, "dock_raise_requested", dc.on_dock_raise_requested, "DataHandler"),
+                (
+                    dh,
+                    "panel_show_requested",
+                    dc.on_panel_show_requested,
+                    "DataHandler",
+                ),
                 (dh, "selection_requested", dc.on_selection_requested, "DataHandler"),
                 (dh, "reload_events", dc.load_events, "DataHandler"),
                 (dh, "reload_entities", dc.load_entities, "DataHandler"),

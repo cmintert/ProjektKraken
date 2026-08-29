@@ -1,3 +1,4 @@
+import json
 from unittest.mock import MagicMock, patch
 
 import PySide6.QtCore
@@ -14,8 +15,10 @@ from src.app.ui_manager import UIManager
 @pytest.fixture
 def mock_main_window():
     mw = MagicMock()
-    mw.saveState.return_value = b"mock_state"
-    mw.saveGeometry.return_value = b"mock_geometry"
+    mw.workspace.capture_layout.return_value = {
+        "layout_version": 2,
+        "zones": {"left": {"panels": ["project"]}},
+    }
     return mw
 
 
@@ -62,15 +65,11 @@ def test_save_layout_stores_data(ui_manager, mock_main_window, clean_settings):
 
     # Access the backing store via a new QSettings (which is mocked)
     settings = PySide6.QtCore.QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-    layouts = settings.value(SETTINGS_LAYOUTS_KEY)
+    layouts = json.loads(settings.value(SETTINGS_LAYOUTS_KEY))
 
     assert "Test Layout" in layouts
-    assert layouts["Test Layout"]["state"] == b"mock_state"
-    assert layouts["Test Layout"]["geometry"] == b"mock_geometry"
-
-    # Verify main window methods called
-    mock_main_window.saveState.assert_called_once()
-    mock_main_window.saveGeometry.assert_called_once()
+    assert layouts["Test Layout"]["layout_version"] == 2
+    mock_main_window.workspace.capture_layout.assert_called_once()
 
 
 def test_restore_layout_applies_data(ui_manager, mock_main_window, clean_settings):
@@ -81,8 +80,13 @@ def test_restore_layout_applies_data(ui_manager, mock_main_window, clean_setting
     ui_manager.restore_layout("Test Layout")
 
     # Verify
-    mock_main_window.restoreState.assert_called_with(b"mock_state")
-    mock_main_window.restoreGeometry.assert_called_with(b"mock_geometry")
+    mock_main_window.workspace.apply_layout.assert_called_once_with(
+        {
+            "layout_version": 2,
+            "zones": {"left": {"panels": ["project"]}},
+        }
+    )
+    mock_main_window.restoreGeometry.assert_not_called()
 
 
 def test_delete_layout_removes_data(ui_manager, clean_settings):

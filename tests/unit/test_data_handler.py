@@ -115,10 +115,12 @@ class TestDataHandlerSignals:
         self, data_handler, sample_events, qtbot
     ):
         """Test that on_event_details_loaded emits the correct signals."""
-        dock_raise_signal = []
+        panel_show_signal = []
         event_details_signal = []
 
-        data_handler.dock_raise_requested.connect(lambda d: dock_raise_signal.append(d))
+        data_handler.panel_show_requested.connect(
+            lambda panel_id: panel_show_signal.append(panel_id)
+        )
         data_handler.event_details_ready.connect(
             lambda e, r, i: event_details_signal.append((e, r, i))
         )
@@ -131,7 +133,7 @@ class TestDataHandlerSignals:
 
         # Verify signals were emitted
         # Dock raise shouldn't be emitted anymore to prevent focus stealing
-        assert len(dock_raise_signal) == 0
+        assert len(panel_show_signal) == 0
         assert len(event_details_signal) == 1
         assert event_details_signal[0] == (event, relations, incoming)
 

@@ -93,13 +93,13 @@ class NavigationCoordinator(BaseCoordinator):
         settings.setValue(SETTINGS_LAST_ITEM_TYPE_KEY, item_type)
 
         if item_type == "event":
-            self.main_window.ui_manager.docks["event"].raise_()
+            self.main_window.workspace.show_panel("event")
             self.main_window.data_coordinator.load_event_details(item_id)
             # Sync Timeline (Focus and Select)
             self.main_window.timeline.focus_event(item_id)
 
         elif item_type == "entity":
-            self.main_window.ui_manager.docks["entity"].raise_()
+            self.main_window.workspace.show_panel("entity")
             self.main_window.data_coordinator.load_entity_details(item_id)
 
         # 5. Sync Project Explorer (Unified List)

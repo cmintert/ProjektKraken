@@ -496,6 +496,27 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_overflow_button_style() -> str:
+        """Return theme-aware styling for compact overflow menu buttons."""
+        theme = ThemeManager().get_theme()
+        return (
+            "QToolButton#OverflowToolBarMenuButton { "
+            f"background-color: {theme['surface']}; "
+            f"color: {theme['text_main']}; "
+            f"border: 1px solid {theme['border']}; "
+            "border-radius: 4px; padding: 0; font-size: 18px; "
+            "font-weight: bold; }"
+            "QToolButton#OverflowToolBarMenuButton:hover { "
+            f"background-color: {theme['border']}; "
+            f"border-color: {theme['primary']}; }}"
+            "QToolButton#OverflowToolBarMenuButton:pressed, "
+            "QToolButton#OverflowToolBarMenuButton:open { "
+            f"background-color: {theme['app_bg']}; }}"
+            "QToolButton#OverflowToolBarMenuButton::menu-indicator { "
+            "image: none; width: 0; height: 0; }"
+        )
+
+    @staticmethod
     def get_raster_tool_button_style() -> str:
         """Style for raster editing tool buttons with prominent checked state.
 

@@ -14,6 +14,7 @@ def mock_main_window():
         # Initialize attributes used in _on_item_selected
         window.event_editor = MagicMock()
         window.entity_editor = MagicMock()
+        window.workspace = MagicMock()
         window.ui_manager = MagicMock()
         window.unified_list = MagicMock()
         window.timeline = MagicMock()  # Add timeline mock

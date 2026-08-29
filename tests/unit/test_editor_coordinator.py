@@ -34,8 +34,7 @@ class FakeMainWindow(QObject):
         self.navigation_coordinator = MagicMock()
         self.navigation_coordinator.selected_type = None
         self.navigation_coordinator.selected_id = None
-        self.ui_manager = MagicMock()
-        self.ui_manager.docks = {"event": MagicMock(), "entity": MagicMock()}
+        self.workspace = MagicMock()
         self.status_bar = MagicMock()
         self.worker = MagicMock()
 
@@ -377,18 +376,16 @@ class TestEditorState:
         assert result is False
 
     def test_on_editor_dirty_changed_sets_asterisk(self, coordinator, fake_window):
-        """Dirty editor should have asterisk in dock title."""
+        """Dirty editor should have an asterisk in its panel title."""
         coordinator.on_editor_dirty_changed(fake_window.event_editor, True)
 
-        dock = fake_window.ui_manager.docks["event"]
-        dock.setWindowTitle.assert_called_with("Event Inspector *")
+        fake_window.workspace.set_panel_title.assert_called_with("event", "Event *")
 
     def test_on_editor_dirty_changed_clears_asterisk(self, coordinator, fake_window):
-        """Clean editor should have no asterisk in dock title."""
+        """Clean editor should have no asterisk in its panel title."""
         coordinator.on_editor_dirty_changed(fake_window.event_editor, False)
 
-        dock = fake_window.ui_manager.docks["event"]
-        dock.setWindowTitle.assert_called_with("Event Inspector")
+        fake_window.workspace.set_panel_title.assert_called_with("event", "Event")
 
 
 class TestEventDateChanged:

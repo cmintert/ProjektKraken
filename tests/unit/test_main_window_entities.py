@@ -24,12 +24,10 @@ def main_window(qtbot):
             yield window
 
 
-def test_entity_docks_exist(main_window):
-    """Test that entity docks are created."""
-    assert main_window.list_dock is not None
-    assert main_window.entity_editor_dock is not None
-    # "Project Explorer" is the name of the dock now
-    assert main_window.list_dock.toggleViewAction().text() == "Project Explorer"
+def test_entity_workspace_panels_exist(main_window):
+    """Project and Entity use their original widget instances."""
+    assert main_window.workspace.panel("project") is main_window.unified_list
+    assert main_window.workspace.panel("entity") is main_window.entity_editor
 
 
 def test_create_entity(main_window, qtbot):

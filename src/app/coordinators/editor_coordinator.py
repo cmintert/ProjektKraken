@@ -54,7 +54,7 @@ class EditorCoordinator(BaseCoordinator):
     - Creating, updating, and deleting events and entities
     - Adding, removing, and updating relations
     - Unsaved changes prompts
-    - Editor dirty state tracking (dock title asterisk)
+    - Editor dirty state tracking (panel title asterisk)
     - Inline creation from map widgets
     - Toast notifications for relation creation
     """
@@ -428,27 +428,26 @@ class EditorCoordinator(BaseCoordinator):
             return False
 
     def on_editor_dirty_changed(self, editor: QWidget, dirty: bool) -> None:
-        """Updates the dock title with an asterisk if dirty.
+        """Update the editor panel title with an asterisk if dirty.
 
         Args:
             editor: The editor widget that changed state.
             dirty: True if editor has unsaved changes.
 
         """
-        dock_key = None
+        panel_id = None
         base_title = ""
 
         if editor == self.main_window.event_editor:
-            dock_key = "event"
-            base_title = "Event Inspector"
+            panel_id = "event"
+            base_title = "Event"
         elif editor == self.main_window.entity_editor:
-            dock_key = "entity"
-            base_title = "Entity Inspector"
+            panel_id = "entity"
+            base_title = "Entity"
 
-        if dock_key:
-            if dock := self.main_window.ui_manager.docks.get(dock_key):
-                new_title = base_title + (" *" if dirty else "")
-                dock.setWindowTitle(new_title)
+        if panel_id:
+            new_title = base_title + (" *" if dirty else "")
+            self.main_window.workspace.set_panel_title(panel_id, new_title)
 
     # ------------------------------------------------------------------
     # Timeline / Map Integration

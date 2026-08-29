@@ -77,7 +77,7 @@ def mock_main_window(qapp):
     window._on_graph_data_ready = Mock()
     window._on_graph_metadata_ready = Mock()
     window._on_command_failed = Mock()
-    window._on_dock_raise_requested = Mock()
+    window._on_panel_show_requested = Mock()
     window._on_selection_requested = Mock()
     window.load_events = Mock()
     window.load_entities = Mock()

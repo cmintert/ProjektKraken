@@ -32,13 +32,13 @@ class FakeMainWindow(QObject):
         self.longform_editor = MagicMock()
         self.longform_manager = MagicMock()
         self.status_bar = MagicMock()
-        self.ui_manager = MagicMock()
-        self.ui_manager.docks = {
-            "event": MagicMock(),
-            "entity": MagicMock(),
-            "list": MagicMock(),
-            "timeline": MagicMock(),
-        }
+        self.workspace = MagicMock()
+        self.workspace.panel_ids.return_value = [
+            "project",
+            "event",
+            "entity",
+            "timeline",
+        ]
         self.navigation_coordinator = MagicMock()
         self.navigation_coordinator.selected_type = None
         self.navigation_coordinator.selected_id = None
@@ -236,15 +236,15 @@ class TestSignalHandlers:
             items=items
         )
 
-    def test_on_dock_raise_requested(self, coordinator, fake_window):
-        """on_dock_raise_requested should raise the requested dock."""
-        coordinator.on_dock_raise_requested("event")
-        fake_window.ui_manager.docks["event"].raise_.assert_called_once()
+    def test_on_panel_show_requested(self, coordinator, fake_window):
+        """A semantic request reveals the requested panel."""
+        coordinator.on_panel_show_requested("event")
+        fake_window.workspace.show_panel.assert_called_once_with("event")
 
-    def test_on_dock_raise_requested_unknown_dock(self, coordinator, fake_window):
-        """on_dock_raise_requested should handle unknown dock names safely."""
-        # Should not raise
-        coordinator.on_dock_raise_requested("unknown_dock")
+    def test_on_panel_show_requested_unknown_panel(self, coordinator, fake_window):
+        """An unknown panel request is ignored safely."""
+        coordinator.on_panel_show_requested("unknown_panel")
+        fake_window.workspace.show_panel.assert_not_called()
 
     def test_on_selection_requested(self, coordinator, fake_window):
         """on_selection_requested should select item in unified list."""

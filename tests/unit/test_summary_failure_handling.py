@@ -34,13 +34,7 @@ class FakeMainWindow(QObject):
         self.longform_editor = MagicMock()
         self.longform_manager = MagicMock()
         self.status_bar = MagicMock()
-        self.ui_manager = MagicMock()
-        self.ui_manager.docks = {
-            "event": MagicMock(),
-            "entity": MagicMock(),
-            "list": MagicMock(),
-            "timeline": MagicMock(),
-        }
+        self.workspace = MagicMock()
         self.navigation_coordinator = MagicMock()
         self.navigation_coordinator.selected_type = None
         self.navigation_coordinator.selected_id = None

@@ -32,10 +32,11 @@ Raster editing pauses when a save fails or the selected raster target becomes
 stale. Read the visible error, reselect an existing Base or dated state, and
 resume only after the underlying save problem is resolved.
 
-## A dock seems to be missing
+## A panel seems to be missing
 
-Check **View** and the tabs around the right and bottom dock areas. Use
-**Layouts → Reset Layout** when necessary.
+Choose the panel under **View → Panels**. Kraken reopens its current zone and
+activates the panel wherever you moved it. Use **Layouts → Reset Layout** when
+necessary.
 
 ## Changes are not where expected
 

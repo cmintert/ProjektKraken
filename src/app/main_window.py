@@ -6,6 +6,7 @@ signal/slot connections.
 
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 # NOTE: Uses fully qualified PySide6 enum paths. See docs/PYSIDE6_ENUM_SOLUTION.md.
@@ -23,7 +24,6 @@ from PySide6.QtWidgets import (
     QAbstractSpinBox,
     QComboBox,
     QDialog,
-    QDockWidget,
     QLabel,
     QLineEdit,
     QMainWindow,
@@ -45,10 +45,8 @@ from src.app.constants import (
     SETTINGS_ACTIVE_DB_KEY,
     SETTINGS_AUTO_RELATION_KEY,
     SETTINGS_FILTER_CONFIG_KEY,
-    UI_DOCK_RESTORE_DELAY_MS,
-    UI_DOCK_VALIDATE_DELAY_MS,
+    SETTINGS_WORKSPACE_LAYOUT_KEY,
     UI_INIT_DELAY_MS,
-    UI_OPTIONAL_DOCK_DELAY_MS,
     WINDOW_SETTINGS_APP,
     WINDOW_SETTINGS_KEY,
     WINDOW_TITLE,
@@ -67,7 +65,6 @@ from src.core.logging_config import get_logger
 from src.core.paths import get_worlds_dir
 from src.core.timeline_grouping import build_group_metadata, events_for_group
 from src.gui.dialogs.filter_dialog import FilterDialog
-from src.gui.mixins.layout_guard import LayoutGuardMixin
 from src.gui.widgets.ai_search_panel import AISearchPanelWidget
 from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.event_editor import EventEditorWidget
@@ -76,6 +73,7 @@ from src.gui.widgets.longform import LongformEditorWidget
 from src.gui.widgets.map_widget import MapWidget
 from src.gui.widgets.timeline import TimelineWidget
 from src.gui.widgets.unified_list import UnifiedListWidget
+from src.gui.workspace import WorkspaceShell
 
 if TYPE_CHECKING:
     from PySide6.QtCore import QThread
@@ -258,11 +256,11 @@ class GlobalShortcutFilter(QObject):
         return False
 
 
-class MainWindow(QMainWindow, LayoutGuardMixin):
+class MainWindow(QMainWindow):
     """The main application window.
 
     Acts as the central controller for the UI, managing:
-    - Dockable widgets (Lists, Editors, Timeline).
+    - Unified workspace panels (Project, editors, Timeline, and tools).
     - DatabaseWorker thread for async operations.
     - Signal/Slot connections between UI and persistent storage.
 
@@ -271,7 +269,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
     Initialization follows a three-phase approach to avoid blocking the Qt
     event loop during startup:
     - Phase 1: Core services (data handler, worker thread, window properties).
-    - Phase 2: UI skeleton (widgets, dock layout, menus) — no data loaded.
+    - Phase 2: UI skeleton (widgets, workspace shell, menus) — no data loaded.
     - Phase 3: Deferred via QTimer (DB init, signal wiring, state restore).
     """
 
@@ -294,15 +292,12 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
     command_coordinator: CommandCoordinator
     coordinator: CommandCoordinator
 
-    def __init__(self, capture_layout_on_exit: bool = False) -> None:
+    def __init__(self) -> None:
         """Initializes the MainWindow using three-phase initialization.
 
         Phase 1: Core services (data handler, worker thread)
         Phase 2: UI skeleton (widgets, layout, menus)
         Phase 3: Deferred completion (DB init, signals, state restoration)
-
-        Args:
-            capture_layout_on_exit: If True, saves current layout as default on exit.
 
         """
         super().__init__()
@@ -310,8 +305,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         logger = get_logger(__name__)
         logger.debug("MainWindow initialization started")
-
-        self.capture_layout_on_exit = capture_layout_on_exit
 
         # Phase 1: Core infrastructure
         self._init_core_services()
@@ -582,26 +575,79 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.app_coordinator.trajectory_edit.bind_ui()
         self.app_coordinator.feature_geometry.bind_ui()
 
-        # Setup UI Layout via UIManager
-        self.ui_manager = UIManager(self)
-        self.ui_manager.setup_docks(
-            {
-                "unified_list": self.unified_list,
-                "event_editor": self.event_editor,
-                "entity_editor": self.entity_editor,
-                "timeline": self.timeline,
-                "longform_editor": self.longform_editor,
-                "map_widget": self.map_widget,
-                "ai_search_panel": self.ai_search_panel,
-                "graph_widget": self.graph_widget,
-                "history_panel": self.history_panel,
-                "analysis_panel": self.analysis_panel,
-            }
+        # Install one real central workspace around the existing feature widgets.
+        self.workspace = WorkspaceShell(self)
+        self.workspace_shell = self.workspace
+        self.setCentralWidget(self.workspace)
+        self.workspace.register_panel(
+            "project",
+            "Project",
+            self.unified_list,
+            "left",
+            activity_id="project",
         )
+        self.workspace.register_panel(
+            "entity",
+            "Entity",
+            self.entity_editor,
+            "center",
+        )
+        self.workspace.register_panel(
+            "event",
+            "Event",
+            self.event_editor,
+            "center",
+        )
+        self.workspace.register_panel(
+            "map",
+            "Map",
+            self.map_widget,
+            "center",
+            activity_id="map",
+        )
+        self.workspace.register_panel(
+            "timeline",
+            "Timeline",
+            self.timeline,
+            "bottom",
+            activity_id="timeline",
+        )
+        self.workspace.register_panel(
+            "graph",
+            "Graph",
+            self.graph_widget,
+            "center",
+            activity_id="graph",
+        )
+        self.workspace.register_panel(
+            "longform",
+            "Longform",
+            self.longform_editor,
+            "center",
+            activity_id="longform",
+        )
+        self.workspace.register_panel(
+            "analysis",
+            "Analysis",
+            self.analysis_panel,
+            "right",
+            activity_id="analysis",
+        )
+        self.workspace.register_panel(
+            "ai_search",
+            "AI Search",
+            self.ai_search_panel,
+            "right",
+        )
+        self.workspace.register_panel(
+            "history",
+            "History",
+            self.history_panel,
+            "bottom",
+        )
+        self.workspace.reset_layout()
 
-        # Central Widget
-        self.setCentralWidget(QWidget())
-        self.centralWidget().hide()
+        self.ui_manager = UIManager(self)
 
         # Status Bar Time Labels
         from src.core.theme_manager import ThemeManager
@@ -791,233 +837,33 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         logger.debug("Initialization complete")
 
-    @property
-    def list_dock(self) -> QDockWidget:
-        """Gets the project list dock widget.
-
-        Returns:
-            QDockWidget: The dock widget containing the unified list.
-
-        """
-        return cast(QDockWidget, self.ui_manager.docks.get("list"))
-
-    @property
-    def editor_dock(self) -> QDockWidget:
-        """Gets the event editor dock widget.
-
-        Returns:
-            QDockWidget: The dock widget containing the event editor.
-
-        """
-        return cast(QDockWidget, self.ui_manager.docks.get("event"))
-
-    @property
-    def entity_editor_dock(self) -> QDockWidget:
-        """Gets the entity editor dock widget.
-
-        Returns:
-            QDockWidget: The dock widget containing the entity editor.
-
-        """
-        return cast(QDockWidget, self.ui_manager.docks.get("entity"))
-
-    @property
-    def timeline_dock(self) -> QDockWidget:
-        """Gets the timeline dock widget.
-
-        Returns:
-            QDockWidget: The dock widget containing the timeline.
-
-        """
-        return cast(QDockWidget, self.ui_manager.docks.get("timeline"))
-
-    @property
-    def longform_dock(self) -> QDockWidget:
-        """Gets the longform editor dock widget.
-
-        Returns:
-            QDockWidget: The dock widget containing the longform editor.
-
-        """
-        return cast(QDockWidget, self.ui_manager.docks.get("longform"))
-
-    @property
-    def map_dock(self) -> QDockWidget:
-        """Gets the map dock widget.
-
-        Returns:
-            QDockWidget: The dock widget containing the map.
-
-        """
-        return cast(QDockWidget, self.ui_manager.docks.get("map"))
-
     def _restore_window_state(self) -> None:
-        """Restores window geometry and state using staged approach.
-
-        Stage 1: Immediate - Restore geometry only
-        Stage 2: 100ms - Restore critical docks (list, editors, timeline)
-        Stage 3: 500ms - Restore optional docks (longform, map, AI, graph)
-        """
-        from src.core.logging_config import get_logger
-
-        logger = get_logger(__name__)
-        logger.debug("Starting staged layout restoration")
-
-        # Stage 1: Immediate geometry restoration
-        self._restore_geometry()
-
-        # Check for crash loop / blocked docks immediately
-        if self.guard_check_crash_flag():
-            logger.info(
-                "Crash flag detected - considering safety measures "
-                "(logging only for now)"
-            )
-            # We could force reset here if enabled
-
-        # Stage 2: Critical docks after defined delay
-        QTimer.singleShot(UI_DOCK_RESTORE_DELAY_MS, self._restore_critical_docks)
-
-        # Stage 3: Optional docks after longer delay
-        QTimer.singleShot(UI_OPTIONAL_DOCK_DELAY_MS, self._restore_optional_docks)
-
-    def _restore_geometry(self) -> None:
-        """Stage 1: Restore window geometry immediately.
-
-        This provides instant visual feedback to the user.
-        """
-        from src.app.constants import LAYOUT_VERSION, SETTINGS_LAYOUT_VERSION_KEY
-        from src.core.logging_config import get_logger
-
-        logger = get_logger(__name__)
+        """Restore outer geometry and explicit workspace state independently."""
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-
-        # Check layout version compatibility
-        saved_version = settings.value(SETTINGS_LAYOUT_VERSION_KEY, "0.0.0")
-
-        if saved_version != LAYOUT_VERSION:
-            logger.warning(
-                f"Layout version mismatch: saved={saved_version}, "
-                f"current={LAYOUT_VERSION}. Will use default layout."
-            )
-            # Don't restore anything, will reset in critical docks stage
-            return
-
-        # Restore geometry only (fast)
         if geometry := settings.value("geometry"):
-            # Use Guard implementation
-            if self.guard_restore_geometry(geometry):
-                logger.debug("Window geometry restored safely")
+            if self.restoreGeometry(geometry):
+                from src.gui.utils.geometry_utils import GeometryUtils
+
+                safe_geometry = GeometryUtils.ensure_on_screen(self.geometry())
+                if safe_geometry != self.geometry():
+                    self.setGeometry(safe_geometry)
             else:
-                logger.warning("Failed to restore window geometry")
+                logger.warning("Failed to restore saved outer-window geometry")
+
+        saved_layout = settings.value(SETTINGS_WORKSPACE_LAYOUT_KEY)
+        if saved_layout is None:
+            self.workspace.reset_layout()
         else:
-            logger.debug("No saved geometry found")
+            if isinstance(saved_layout, str):
+                try:
+                    saved_layout = json.loads(saved_layout)
+                except (TypeError, ValueError):
+                    logger.warning("Ignoring malformed workspace layout settings")
+                    saved_layout = None
+            self.workspace.apply_layout(saved_layout)
 
-    def _restore_critical_docks(self) -> None:
-        """Stage 2: Restore critical docks and their state.
-
-        Critical docks: list, event editor, entity editor, timeline.
-        These are essential for basic functionality.
-
-        Always schedules ``guard_validate_dock_sizes`` after layout
-        is established — whether from saved state or from reset_layout.
-        """
-        from src.app.constants import LAYOUT_VERSION, SETTINGS_LAYOUT_VERSION_KEY
-        from src.core.logging_config import get_logger
-
-        logger = get_logger(__name__)
-        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-
-        saved_version = settings.value(SETTINGS_LAYOUT_VERSION_KEY, "0.0.0")
-
-        # If version mismatch, reset layout
-        if saved_version != LAYOUT_VERSION:
-            logger.info("Resetting to default layout due to version mismatch")
-            self.ui_manager.reset_layout()
-            settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
-        elif state := settings.value("windowState"):
-            # Restore window state (includes dock positions)
-            if self.restoreState(state):
-                logger.debug("Critical docks state restored")
-
-                # Validate critical docks are present
-                if not self._validate_dock_state():
-                    logger.warning("Critical dock validation failed, resetting layout")
-                    self.ui_manager.reset_layout()
-                    settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
-            else:
-                logger.warning("Failed to restore window state, using default layout")
-                self.ui_manager.reset_layout()
-                settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
-        else:
-            logger.info("No saved state found, using default layout")
-            self.ui_manager.reset_layout()
-            settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
-
-        # Always schedule dock size validation regardless of which code
-        # path was taken above.  Qt's internal layout negotiation may
-        # leave bottom docks (timeline, map, graph) collapsed.
-        QTimer.singleShot(
-            UI_DOCK_VALIDATE_DELAY_MS,
-            self.guard_validate_dock_sizes,
-        )
-
-    def _restore_optional_docks(self) -> None:
-        """Stage 3: Restore optional dock configurations.
-
-        Optional docks: longform, map, AI search, graph.
-        These enhance functionality but aren't critical for startup.
-        """
-        from src.core.logging_config import get_logger
-
-        logger = get_logger(__name__)
-        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-
-        # Restore Advanced Filter for Unified List
         if filter_config := settings.value(SETTINGS_FILTER_CONFIG_KEY):
             self.unified_list.set_advanced_filter(filter_config)
-            logger.debug("Advanced filter configuration restored")
-
-        # Optional docks are already positioned by restoreState in stage 2
-        # This stage is for any additional configuration
-        logger.debug("Optional dock restoration complete")
-
-    def _validate_dock_state(self) -> bool:
-        """Ensures all expected docks are accessible after restoration.
-
-        Returns:
-            bool: True if all critical docks are present and valid, False otherwise.
-
-        """
-        from src.core.logging_config import get_logger
-
-        logger = get_logger(__name__)
-
-        # Define critical docks that must be present
-        expected_docks = ["list", "event", "entity", "timeline"]
-        missing_docks = []
-        invalid_docks = []
-
-        for dock_key in expected_docks:
-            dock = self.ui_manager.docks.get(dock_key)
-            if dock is None:
-                missing_docks.append(dock_key)
-                logger.error(f"Critical dock missing after restoration: {dock_key}")
-            elif not isinstance(dock, QDockWidget):
-                invalid_docks.append(dock_key)
-                logger.error(f"Invalid dock type for {dock_key}: {type(dock)}")
-            elif dock.widget() is None:
-                invalid_docks.append(dock_key)
-                logger.error(f"Dock {dock_key} has no widget")
-
-        if missing_docks or invalid_docks:
-            logger.error(
-                f"Dock validation failed - Missing: {missing_docks}, "
-                f"Invalid: {invalid_docks}"
-            )
-            return False
-
-        logger.debug("Dock state validation passed")
-        return True
 
     def load_longform_sequence(self) -> None:
         """Loads the longform sequence. Delegates to LongformManager."""
@@ -1215,17 +1061,13 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
                 event.ignore()
                 return
 
-        # Save State
-        from src.app.constants import LAYOUT_VERSION, SETTINGS_LAYOUT_VERSION_KEY
-
+        # Save outer geometry and machine-independent workspace state separately.
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         settings.setValue("geometry", self.saveGeometry())
-        settings.setValue("windowState", self.saveState())
-        settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
-
-        # Save as Default Layout if requested
-        if self.capture_layout_on_exit:
-            self.ui_manager.save_as_default_layout()
+        settings.setValue(
+            SETTINGS_WORKSPACE_LAYOUT_KEY,
+            json.dumps(self.workspace.capture_layout(), sort_keys=True),
+        )
 
         # Save Persistent Widget States
         if hasattr(self, "timeline"):

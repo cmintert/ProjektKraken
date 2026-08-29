@@ -10,7 +10,7 @@ temporal trajectories, nested detail maps, and optional editable raster layers.
 1. Open the Explorer's **New** menu.
 2. Select **Create Map**.
 3. Choose an image and provide a name.
-4. Select the map in the Explorer or Map dock.
+4. Select the map in Project or the Map panel.
 
 ## Add markers and features
 

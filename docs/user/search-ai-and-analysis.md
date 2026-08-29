@@ -19,7 +19,7 @@ Cloud-provider controls remain unavailable until their adapters are enabled.
 
 ## Search the world
 
-Open the **AI Search** dock, build or refresh the index, and enter a natural
+Open the **AI Search** panel, build or refresh the index, and enter a natural
 language query. Results can include events and entities ranked by relevance.
 
 Search quality depends on the selected embedding model and the freshness of the

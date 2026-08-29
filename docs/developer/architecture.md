@@ -75,3 +75,17 @@ instant, dynamic, open, and invalid interval semantics cannot drift.
 - Declare Qt signals with `Signal`.
 - Use fully qualified Qt enum names.
 - Guard delayed widget access during teardown with `shiboken6.isValid`.
+
+### Workspace shell
+
+The production `src/app/main_window.py` owns one central `WorkspaceShell`.
+Project, Entity, Event, Map, Timeline, Graph, Longform, Analysis, AI Search, and
+History remain their original feature-widget instances and are registered as
+semantic panels. The shell provides exactly four generic destinations: Left,
+Center, Right, and Bottom.
+
+Application code reveals panels through `workspace.show_panel(panel_id)` and
+must not infer a panel's current physical zone. Workspace persistence is the
+explicit versioned panel/order/visibility/size structure in
+`src/gui/workspace/layout_state.py`; outer window geometry is stored
+separately.

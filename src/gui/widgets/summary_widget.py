@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QLayout,
     QMessageBox,
     QVBoxLayout,
     QWidget,
@@ -18,6 +19,7 @@ from PySide6.QtWidgets import (
 
 from src.core.summary_data import SummaryData
 from src.core.theme_manager import ThemeManager
+from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.standard_buttons import (
     DestructiveButton,
     PrimaryButton,
@@ -57,6 +59,7 @@ class SummaryWidget(QWidget):
     def _setup_ui(self) -> None:
         """Set up the user interface components."""
         layout = QVBoxLayout(self)
+        layout.setSizeConstraint(QLayout.SizeConstraint.SetNoConstraint)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
 
@@ -82,41 +85,50 @@ class SummaryWidget(QWidget):
         layout.addWidget(self.text_display)
 
         # Footer
-        footer_layout = QHBoxLayout()
-
         self.metadata_label = QLabel()
         self.metadata_label.setObjectName("metadata")
-        footer_layout.addWidget(self.metadata_label)
+        layout.addWidget(self.metadata_label)
 
-        footer_layout.addStretch()
+        self.action_toolbar = OverflowToolBar(self)
 
         self.cancel_btn = StandardButton("Cancel")
         self.cancel_btn.clicked.connect(self._cancel_edit)
-        self.cancel_btn.hide()
-        footer_layout.addWidget(self.cancel_btn)
+        self.action_toolbar.add_button(
+            self.cancel_btn,
+            priority=80,
+            available=False,
+        )
 
         self.done_btn = PrimaryButton("Done")
         self.done_btn.clicked.connect(self._commit_edit)
-        self.done_btn.hide()
-        footer_layout.addWidget(self.done_btn)
+        self.action_toolbar.add_button(
+            self.done_btn,
+            priority=100,
+            pinned=True,
+            available=False,
+        )
 
         self.delete_btn = DestructiveButton("Delete")
         self.delete_btn.clicked.connect(self._confirm_delete)
-        footer_layout.addWidget(self.delete_btn)
+        self.action_toolbar.add_button(self.delete_btn, priority=20)
 
         self.edit_btn = StandardButton("Edit")
         self.edit_btn.clicked.connect(self._begin_edit)
-        footer_layout.addWidget(self.edit_btn)
+        self.action_toolbar.add_button(self.edit_btn, priority=70)
 
         self.copy_btn = StandardButton("Copy")
         self.copy_btn.clicked.connect(self._copy_to_clipboard)
-        footer_layout.addWidget(self.copy_btn)
+        self.action_toolbar.add_button(self.copy_btn, priority=40)
 
         self.generate_btn = PrimaryButton("Generate")
         self.generate_btn.clicked.connect(self.generate_requested.emit)
-        footer_layout.addWidget(self.generate_btn)
+        self.action_toolbar.add_button(
+            self.generate_btn,
+            priority=100,
+            pinned=True,
+        )
 
-        layout.addLayout(footer_layout)
+        layout.addWidget(self.action_toolbar)
         self.clear_summary()
 
     def set_summary(self, data: SummaryData) -> None:
@@ -146,6 +158,7 @@ class SummaryWidget(QWidget):
         self.stale_banner.setVisible(stale)
         if stale:
             self.generate_btn.setText("Update Summary")
+            self.action_toolbar.refresh()
 
     def clear_summary(self) -> None:
         """Reset the widget to its empty state."""
@@ -215,12 +228,12 @@ class SummaryWidget(QWidget):
 
     def _set_edit_mode(self, editing: bool) -> None:
         """Update action visibility for inline editing."""
-        self.edit_btn.setVisible(not editing)
-        self.delete_btn.setVisible(not editing)
-        self.copy_btn.setVisible(not editing)
-        self.generate_btn.setVisible(not editing)
-        self.done_btn.setVisible(editing)
-        self.cancel_btn.setVisible(editing)
+        self.action_toolbar.set_button_available(self.edit_btn, not editing)
+        self.action_toolbar.set_button_available(self.delete_btn, not editing)
+        self.action_toolbar.set_button_available(self.copy_btn, not editing)
+        self.action_toolbar.set_button_available(self.generate_btn, not editing)
+        self.action_toolbar.set_button_available(self.done_btn, editing)
+        self.action_toolbar.set_button_available(self.cancel_btn, editing)
 
     def _leave_edit_mode(self) -> None:
         """Return to the read-only summary display."""
@@ -229,9 +242,9 @@ class SummaryWidget(QWidget):
 
     def _update_action_visibility(self, has_summary: bool) -> None:
         """Show actions that are valid for the current summary state."""
-        self.edit_btn.setVisible(has_summary)
-        self.delete_btn.setVisible(has_summary)
-        self.copy_btn.setVisible(has_summary)
+        self.action_toolbar.set_button_available(self.edit_btn, has_summary)
+        self.action_toolbar.set_button_available(self.delete_btn, has_summary)
+        self.action_toolbar.set_button_available(self.copy_btn, has_summary)
 
     def _copy_to_clipboard(self) -> None:
         """Copies summary text to clipboard."""

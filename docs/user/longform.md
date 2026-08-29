@@ -7,7 +7,7 @@ without duplicating the underlying world content.
 
 ## Build an outline
 
-1. Open the **Longform Editor** dock from **View**.
+1. Open **View → Panels → Longform**.
 2. Add or arrange world items in the outline.
 3. Use the context menu to move an item, promote it, demote it, or remove it
    from the document.
@@ -28,4 +28,3 @@ an Obsidian workspace.
   appear immediately.
 - Very large documents may be easier to maintain as several top-level sections.
 - Wiki links remain useful after Markdown or Obsidian export.
-

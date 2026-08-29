@@ -13,6 +13,7 @@ from PySide6.QtGui import QDrag, QMouseEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
+    QLayout,
     QLineEdit,
     QListView,
     QMenu,
@@ -30,6 +31,7 @@ from src.gui.models.explorer_model import ExplorerItem, ExplorerModel
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.auto_closing_message_box import AutoClosingMessageBox
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
+from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.standard_buttons import DestructiveButton
 
 KRAKEN_ITEM_MIME_TYPE = "application/x-kraken-item"
@@ -189,10 +191,11 @@ class UnifiedListWidget(QWidget):
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         main_layout = QVBoxLayout(self)
+        main_layout.setSizeConstraint(QLayout.SizeConstraint.SetNoConstraint)
         StyleHelper.apply_standard_list_spacing(main_layout)
 
         # Toolbar
-        top_bar = QHBoxLayout()
+        self.action_toolbar = OverflowToolBar(self)
 
         # New Button with Menu
         # New Button with Menu
@@ -237,20 +240,24 @@ class UnifiedListWidget(QWidget):
         )
         self.btn_new.setToolTip(tooltip_text)
 
-        top_bar.addWidget(self.btn_new)
+        self.action_toolbar.add_button(
+            self.btn_new,
+            priority=100,
+            pinned=True,
+        )
 
         self.btn_refresh = QPushButton("Refresh")
         self.btn_refresh.setToolTip("Reload the list from the project database")
         self.btn_refresh.clicked.connect(self.refresh_requested.emit)
-        top_bar.addWidget(self.btn_refresh)
+        self.action_toolbar.add_button(self.btn_refresh, priority=60)
 
         self.btn_delete = DestructiveButton("Delete")
         self.btn_delete.setToolTip("Permanently delete the selected item(s)")
         self.btn_delete.clicked.connect(self._on_delete_clicked)
         self.btn_delete.setEnabled(False)
-        top_bar.addWidget(self.btn_delete)
+        self.action_toolbar.add_button(self.btn_delete, priority=80)
 
-        main_layout.addLayout(top_bar)
+        main_layout.addWidget(self.action_toolbar)
 
         from src.gui.widgets.context_tag_bar import ContextTagBar
 

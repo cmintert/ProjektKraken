@@ -366,16 +366,15 @@ class DataCoordinator(BaseCoordinator):
         self.main_window.status_bar.showMessage(f"Filter applied. Found {count} items.")
 
     @Slot(str)
-    def on_dock_raise_requested(self, dock_name: str) -> None:
-        """Handle dock raise request from DataHandler.
+    def on_panel_show_requested(self, panel_id: str) -> None:
+        """Handle a semantic panel reveal request from DataHandler.
 
         Args:
-            dock_name: Name of the dock to raise ("event", "entity", etc).
+            panel_id: Stable workspace panel identifier.
 
         """
-        ui_manager = getattr(self.main_window, "ui_manager")
-        if dock_name in ui_manager.docks:
-            ui_manager.docks[dock_name].raise_()
+        if panel_id in self.main_window.workspace.panel_ids():
+            self.main_window.workspace.show_panel(panel_id)
 
     @Slot(str, str)
     def on_selection_requested(self, item_type: str, item_id: str) -> None:

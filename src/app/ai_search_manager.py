@@ -455,13 +455,8 @@ class AISearchManager(QObject):
             object_id: Object UUID.
 
         """
-        # Select the item in the unified list via the dock widget
-        ui_manager = getattr(self.window, "ui_manager", None)
-        if ui_manager is not None and "list" in ui_manager.docks:
-            list_dock = ui_manager.docks["list"]
-            list_widget = list_dock.widget()
-            if list_widget and hasattr(list_widget, "select_item"):
-                list_widget.select_item(object_type, object_id)
+        self.window.workspace.show_panel("project")
+        self.window.unified_list.select_item(object_type, object_id)
 
     @Slot()
     def refresh_search_index_status(self) -> None:

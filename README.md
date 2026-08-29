@@ -108,7 +108,7 @@ multiple users simultaneously.
 ### Data & UI
 - **Event-Driven Architecture**: Signal-based communication between components
 - **Hybrid Data Model**: Strict SQL schema for relationships + flexible JSON attributes
-- **Dockable Workspace**: Configurable panels with state persistence and layout management
+- **Unified Workspace**: Movable panels across four stable zones with explicit layout persistence
 - **Theme Support**: Dark mode and custom themes via `ThemeManager`
 - **Fast Inject**: Rapid entity/event creation with template support and variable resolution
 - **Advanced Import**: Two-pass JSON import strategy with deduplication and cycle resolution
@@ -149,7 +149,6 @@ Open the extracted `ProjektKraken` folder and double-click
 
 **Developer / Advanced Options:**
 
-- `--set-default-layout`: Launches the application in "Capture Mode". When you close the application, the current window layout is saved as the new factory default (to `src/assets/default_layout.json`).
 - `--reset-settings`: Clears all persistent settings (window state, preferences) to defaults.
 
 ### CLI Tools
@@ -261,7 +260,7 @@ pytest --cov=src --cov-report=term-missing
 ### Quick Start
 - **[Getting Started](docs/user/getting-started.md)** - Launch, worlds, and the
   first editing workflow
-- **[User Manual](docs/user/index.md)** - Current menus, docks, and workflows
+- **[User Manual](docs/user/index.md)** - Current menus, workspace panels, and workflows
 - **[Maps, Layers, and Rasters](docs/user/maps.md)** - Drawing, nesting,
   temporal states, queries, and calibration
 - **[Troubleshooting](docs/user/troubleshooting.md)** - Startup, layout, AI,

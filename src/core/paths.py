@@ -111,14 +111,6 @@ def _resolve_ms_store_path(virtualized_path: Path) -> Path:
         return virtualized_path
 
 
-def get_default_layout_path() -> str:
-    """Returns the absolute path to the default layout file.
-
-    Default layout is stored in src/assets/default_layout.json.
-    """
-    return get_resource_path(os.path.join("src", "assets", "default_layout.json"))
-
-
 def get_backup_directory() -> Path:
     """Returns the backup directory, creating it if necessary.
 

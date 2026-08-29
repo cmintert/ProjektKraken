@@ -6,31 +6,14 @@ from src.app.constants import (
     AUTOSAVE_DELAY_MS,
     DEFAULT_WINDOW_HEIGHT,
     DEFAULT_WINDOW_WIDTH,
-    DOCK_OBJ_AI_SEARCH,
-    DOCK_OBJ_ENTITY_INSPECTOR,
-    DOCK_OBJ_EVENT_INSPECTOR,
-    DOCK_OBJ_GRAPH,
-    DOCK_OBJ_LONGFORM,
-    DOCK_OBJ_MAP,
-    DOCK_OBJ_PROJECT,
-    DOCK_OBJ_TIMELINE,
-    DOCK_TITLE_AI_SEARCH,
-    DOCK_TITLE_ENTITY_INSPECTOR,
-    DOCK_TITLE_EVENT_INSPECTOR,
-    DOCK_TITLE_GRAPH,
-    DOCK_TITLE_LONGFORM,
-    DOCK_TITLE_MAP,
-    DOCK_TITLE_PROJECT,
-    DOCK_TITLE_TIMELINE,
     IMAGE_FILE_FILTER,
-    LAYOUT_VERSION,
     SETTINGS_ACTIVE_DB_KEY,
     SETTINGS_AUTO_RELATION_KEY,
     SETTINGS_FILTER_CONFIG_KEY,
     SETTINGS_LAST_ITEM_ID_KEY,
     SETTINGS_LAST_ITEM_TYPE_KEY,
-    SETTINGS_LAYOUT_VERSION_KEY,
     SETTINGS_LAYOUTS_KEY,
+    SETTINGS_WORKSPACE_LAYOUT_KEY,
     STATUS_DB_INIT_FAIL,
     STATUS_ERROR_PREFIX,
     SUPPORTED_IMAGE_FORMATS,
@@ -38,6 +21,7 @@ from src.app.constants import (
     WINDOW_SETTINGS_KEY,
     WINDOW_TITLE,
 )
+from src.gui.workspace import WORKSPACE_LAYOUT_VERSION
 
 
 def test_window_constants():
@@ -60,89 +44,13 @@ def test_settings_keys():
     assert isinstance(SETTINGS_LAST_ITEM_TYPE_KEY, str)
     assert isinstance(SETTINGS_AUTO_RELATION_KEY, str)
     assert isinstance(SETTINGS_FILTER_CONFIG_KEY, str)
-    assert isinstance(SETTINGS_LAYOUT_VERSION_KEY, str)
+    assert isinstance(SETTINGS_WORKSPACE_LAYOUT_KEY, str)
 
 
-def test_layout_version():
-    """Test layout version constant."""
-    assert isinstance(LAYOUT_VERSION, str)
-    # Should be in semantic version format (X.Y.Z)
-    parts = LAYOUT_VERSION.split(".")
-    assert len(parts) == 3
-    for part in parts:
-        assert part.isdigit()
-
-
-def test_dock_object_names():
-    """Test dock object name constants."""
-    dock_names = [
-        DOCK_OBJ_PROJECT,
-        DOCK_OBJ_EVENT_INSPECTOR,
-        DOCK_OBJ_ENTITY_INSPECTOR,
-        DOCK_OBJ_TIMELINE,
-        DOCK_OBJ_LONGFORM,
-        DOCK_OBJ_MAP,
-        DOCK_OBJ_AI_SEARCH,
-        DOCK_OBJ_GRAPH,
-    ]
-
-    # All dock names should be unique
-    assert len(dock_names) == len(set(dock_names))
-
-    # All should end with "Dock"
-    for name in dock_names:
-        assert isinstance(name, str)
-        assert name.endswith("Dock")
-
-
-def test_dock_titles():
-    """Test dock title constants."""
-    dock_titles = [
-        DOCK_TITLE_PROJECT,
-        DOCK_TITLE_EVENT_INSPECTOR,
-        DOCK_TITLE_ENTITY_INSPECTOR,
-        DOCK_TITLE_TIMELINE,
-        DOCK_TITLE_LONGFORM,
-        DOCK_TITLE_MAP,
-        DOCK_TITLE_AI_SEARCH,
-        DOCK_TITLE_GRAPH,
-    ]
-
-    # All dock titles should be unique
-    assert len(dock_titles) == len(set(dock_titles))
-
-    # All should be non-empty strings
-    for title in dock_titles:
-        assert isinstance(title, str)
-        assert len(title) > 0
-
-
-def test_dock_name_title_pairing():
-    """Test that dock names and titles have matching counts."""
-    dock_names = [
-        DOCK_OBJ_PROJECT,
-        DOCK_OBJ_EVENT_INSPECTOR,
-        DOCK_OBJ_ENTITY_INSPECTOR,
-        DOCK_OBJ_TIMELINE,
-        DOCK_OBJ_LONGFORM,
-        DOCK_OBJ_MAP,
-        DOCK_OBJ_AI_SEARCH,
-        DOCK_OBJ_GRAPH,
-    ]
-
-    dock_titles = [
-        DOCK_TITLE_PROJECT,
-        DOCK_TITLE_EVENT_INSPECTOR,
-        DOCK_TITLE_ENTITY_INSPECTOR,
-        DOCK_TITLE_TIMELINE,
-        DOCK_TITLE_LONGFORM,
-        DOCK_TITLE_MAP,
-        DOCK_TITLE_AI_SEARCH,
-        DOCK_TITLE_GRAPH,
-    ]
-
-    # Should have same number of names and titles
-    assert len(dock_names) == len(dock_titles)
+def test_workspace_layout_version():
+    """Workspace layout state uses a positive integer schema version."""
+    assert isinstance(WORKSPACE_LAYOUT_VERSION, int)
+    assert WORKSPACE_LAYOUT_VERSION > 0
 
 
 def test_status_messages():
@@ -210,7 +118,7 @@ def test_settings_keys_unique():
         SETTINGS_LAST_ITEM_TYPE_KEY,
         SETTINGS_AUTO_RELATION_KEY,
         SETTINGS_FILTER_CONFIG_KEY,
-        SETTINGS_LAYOUT_VERSION_KEY,
+        SETTINGS_WORKSPACE_LAYOUT_KEY,
     ]
 
     assert len(settings_keys) == len(set(settings_keys))
@@ -220,7 +128,7 @@ def test_constants_are_immutable_types():
     """Test that constants use immutable types where appropriate."""
     # Strings should be immutable (Python strings are always immutable)
     assert isinstance(WINDOW_TITLE, str)
-    assert isinstance(DOCK_OBJ_PROJECT, str)
+    assert isinstance(SETTINGS_WORKSPACE_LAYOUT_KEY, str)
 
     # Numbers should be immutable
     assert isinstance(DEFAULT_WINDOW_WIDTH, int)

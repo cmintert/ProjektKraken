@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-08-28
-**Commit:** 4eadba03
+**Last Updated:** 2026-08-29
+**Commit:** 23c6bf79
 ---
 
 # Changelog
@@ -12,6 +12,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-08-29)* **Workspace / Layouts**: Added a unified four-zone workspace
+  shell with movable panel tabs, empty-zone drop targets, semantic panel
+  navigation, and versioned layout persistence.
+
+- *(2026-08-29)* **UI / Responsive Actions**: Added priority-aware overflow
+  toolbars that preserve primary actions and expose secondary controls through
+  a themed menu on narrow panels.
 
 - *(2026-08-28)* **Graph View / Relations**: Added deterministic parallel-edge
   lanes, suppressible generated WikiLink mention noise, and regression coverage
@@ -26,6 +34,9 @@ All notable changes to this project will be documented in this file.
   manual workflow runs.
 
 ### Fixed
+
+- *(2026-08-29)* **UI / Narrow Panels**: Kept native tab-scroll arrows themed,
+  fully sized, and aligned beside tabs instead of overlapping them.
 
 - *(2026-08-28)* **Testing / CI**: Aligned full-regression coverage with
   hardened local hosts, current marker defaults, complete theme palettes, and
@@ -65,6 +76,11 @@ All notable changes to this project will be documented in this file.
   that do not report a usable vector dimension, with regression coverage.
 
 ### Changed
+
+- *(2026-08-29)* **Workspace / Architecture**: Replaced legacy dock widgets,
+  dock-state recovery, and packaged default-layout assets with one central
+  splitter shell, updated user and developer documentation, and focused
+  workspace, persistence, packaging, and responsive-UI regression coverage.
 
 - *(2026-08-27)* **Temporal State / Editor**: Clarified Event-to-Entity
   state-change relations and marked relations that carry effective changes.

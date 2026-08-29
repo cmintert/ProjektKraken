@@ -5,7 +5,6 @@
 | Option | Effect |
 | --- | --- |
 | `--reset-settings` | Clears saved interface preferences and active-world selection |
-| `--set-default-layout` | Captures the closing layout as the factory default |
 
 ## Semantic search environment variables
 

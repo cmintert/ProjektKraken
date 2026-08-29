@@ -18,8 +18,8 @@ from typing import Any
 from PySide6.QtCore import QSettings, Slot
 from PySide6.QtWidgets import (
     QCheckBox,
-    QHBoxLayout,
     QLabel,
+    QLayout,
     QPushButton,
     QTabWidget,
     QVBoxLayout,
@@ -32,6 +32,7 @@ from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
 from src.gui.widgets.analysis.intelligence_panel import IntelligencePanel
 from src.gui.widgets.analysis.temporal_panel import TemporalPanel
+from src.gui.widgets.overflow_toolbar import OverflowToolBar
 
 logger = logging.getLogger(__name__)
 
@@ -81,9 +82,10 @@ class MainAnalysisPanel(QWidget):
     def _init_ui(self) -> None:
         """Build and wire the widget layout."""
         layout = QVBoxLayout(self)
+        layout.setSizeConstraint(QLayout.SizeConstraint.SetNoConstraint)
 
         # --- Trigger buttons ---
-        btn_layout = QHBoxLayout()
+        self.action_toolbar = OverflowToolBar(self)
         self.validate_btn = QPushButton("Validate World")
         self.temporal_btn = QPushButton("Analyze Timeline")
         self.intelligence_btn = QPushButton("Run AI Analysis")
@@ -103,16 +105,20 @@ class MainAnalysisPanel(QWidget):
         )
         self.status_label = QLabel("")
         self.status_label.setStyleSheet(StyleHelper.get_preview_label_style())
-        for btn in (
+        self.action_toolbar.add_button(
             self.validate_btn,
-            self.temporal_btn,
-            self.intelligence_btn,
+            priority=100,
+            pinned=True,
+        )
+        self.action_toolbar.add_button(self.temporal_btn, priority=70)
+        self.action_toolbar.add_button(self.intelligence_btn, priority=80)
+        self.action_toolbar.add_button(
             self.cancel_intelligence_btn,
-        ):
-            btn_layout.addWidget(btn)
-        btn_layout.addWidget(self.editorial_checks)
-        btn_layout.addWidget(self.status_label, stretch=1)
-        layout.addLayout(btn_layout)
+            priority=90,
+        )
+        self.action_toolbar.add_button(self.editorial_checks, priority=10)
+        layout.addWidget(self.action_toolbar)
+        layout.addWidget(self.status_label)
 
         # --- Tab widget ---
         self.tab_widget = QTabWidget()
@@ -121,9 +127,13 @@ class MainAnalysisPanel(QWidget):
         self.temporal_panel = TemporalPanel()
         self.intelligence_panel = IntelligencePanel()
 
-        self.tab_widget.addTab(self.validation_panel, "Validation")
-        self.tab_widget.addTab(self.temporal_panel, "Timeline")
-        self.tab_widget.addTab(self.intelligence_panel, "Intelligence")
+        for panel, label in (
+            (self.validation_panel, "Validation"),
+            (self.temporal_panel, "Timeline"),
+            (self.intelligence_panel, "Intelligence"),
+        ):
+            index = self.tab_widget.addTab(panel, label)
+            self.tab_widget.setTabToolTip(index, label)
 
         layout.addWidget(self.tab_widget)
 

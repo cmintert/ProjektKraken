@@ -24,6 +24,7 @@ class TestMainWindowProtocol:
             def __init__(self):
                 self.worker = object()
                 self.command_requested = object()
+                self.workspace = object()
 
             def _on_configure_grouping_requested(self):
                 pass
@@ -46,39 +47,8 @@ class TestMainWindowProtocol:
             def close(self) -> bool:
                 return True
 
-            # QMainWindow methods
-            def setDockOptions(self, options):
+            def addAction(self, action):
                 pass
-
-            def setTabPosition(self, areas, places):
-                pass
-
-            def setCorner(self, corner, area):
-                pass
-
-            def addDockWidget(self, area, dockwidget):
-                pass
-
-            def tabifyDockWidget(self, first, second):
-                pass
-
-            def addToolBar(self, toolbar):
-                pass
-
-            def removeDockWidget(self, dockwidget):
-                pass
-
-            def saveState(self, version: int = 0) -> bytes:
-                return b""
-
-            def restoreState(self, state: bytes, version: int = 0) -> bool:
-                return True
-
-            def saveGeometry(self) -> bytes:
-                return b""
-
-            def restoreGeometry(self, geometry: bytes) -> bool:
-                return True
 
         window = ValidMainWindow()
 
@@ -91,17 +61,7 @@ class TestMainWindowProtocol:
             "show_ai_settings_dialog",
             "toggle_auto_relation_setting",
             "close",
-            "setDockOptions",
-            "setTabPosition",
-            "setCorner",
-            "addDockWidget",
-            "tabifyDockWidget",
-            "addToolBar",
-            "removeDockWidget",
-            "saveState",
-            "restoreState",
-            "saveGeometry",
-            "restoreGeometry",
+            "addAction",
         ]
         for method in required_methods:
             assert hasattr(window, method), f"Missing method: {method}"

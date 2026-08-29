@@ -69,7 +69,7 @@ class DataHandler(QObject):
     # Signals for UI actions
     status_message = Signal(str)  # Status bar message updates
     command_failed = Signal(str)  # Command failure message
-    dock_raise_requested = Signal(str)  # Request to raise a dock ("event", "entity")
+    panel_show_requested = Signal(str)
     selection_requested = Signal(str, str)  # (item_type, item_id)
 
     # Signals for command-driven reloads
@@ -209,7 +209,7 @@ class DataHandler(QObject):
             incoming: Incoming relations.
 
         """
-        # Dock raising is now handled by the Controller (MainWindow) via user actions,
+        # Panel activation is handled by semantic workspace navigation,
         # not automatically on data load. This prevents focus stealing during
         # background refreshes.
         self.event_details_ready.emit(event, relations, incoming)
@@ -226,7 +226,7 @@ class DataHandler(QObject):
             incoming: Incoming relations.
 
         """
-        # Dock raising is now handled by the Controller (MainWindow) via user actions.
+        # Panel activation is handled by semantic workspace navigation.
         self.entity_details_ready.emit(entity, relations, incoming)
 
     @Slot(list)

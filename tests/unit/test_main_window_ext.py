@@ -140,31 +140,24 @@ def test_update_relation_emits_command(main_window):
         MockCmd.assert_called_once_with("rel1", "tgt", "type", attributes=None)
 
 
-def test_dock_options_set(main_window):
-    """Test advanced docking options are enabled."""
-    from PySide6.QtWidgets import QMainWindow
-
-    options = main_window.dockOptions()
-    assert options & QMainWindow.AnimatedDocks
-    assert options & QMainWindow.AllowNestedDocks
-    assert options & QMainWindow.AllowTabbedDocks
-
-
-def test_central_widget_is_hidden(main_window):
-    """Test central widget is hidden to allow full docking."""
-    assert main_window.centralWidget() is not None
-    assert main_window.centralWidget().isHidden()
+def test_fixed_workspace_zones_exist(main_window):
+    """The production window exposes exactly four structural zones."""
+    assert set(main_window.workspace.panes) == {
+        "left",
+        "center",
+        "right",
+        "bottom",
+    }
 
 
-def test_all_docks_are_floatable(main_window):
-    """Test all dock widgets can be floated."""
-    from PySide6.QtWidgets import QDockWidget
+def test_central_widget_is_workspace(main_window):
+    """The real central widget is the visible workspace shell."""
+    assert main_window.centralWidget() is main_window.workspace
+    assert not main_window.centralWidget().isHidden()
 
-    for dock in [
-        main_window.list_dock,
-        main_window.editor_dock,
-        main_window.timeline_dock,
-    ]:
-        features = dock.features()
-        assert features & QDockWidget.DockWidgetFloatable
-        assert features & QDockWidget.DockWidgetMovable
+
+def test_panel_move_reuses_widget(main_window):
+    """Moving a feature panel does not recreate its widget."""
+    timeline = main_window.timeline
+    main_window.workspace.move_panel("timeline", "center")
+    assert main_window.workspace.panel("timeline") is timeline

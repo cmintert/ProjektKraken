@@ -55,7 +55,7 @@ worlds/
 2. Create an event, entity, or map.
 3. Select the new item to open its inspector.
 4. Add a description, attributes, tags, images, or relations.
-5. Open the Timeline, Map, Graph, or Longform dock when you need another view.
+5. Open the Timeline, Map, Graph, or Longform panel when you need another view.
 
 ## Tips and gotchas
 

@@ -209,42 +209,13 @@ DEFAULT_WINDOW_WIDTH = 1280
 DEFAULT_WINDOW_HEIGHT = 720
 DEFAULT_WORLD_NAME = "Default World"
 SETTINGS_LAYOUTS_KEY = "saved_layouts"
+SETTINGS_WORKSPACE_LAYOUT_KEY = "workspace_layout"
 SETTINGS_LAST_ITEM_ID_KEY = "last_selected_item_id"
 SETTINGS_LAST_ITEM_TYPE_KEY = "last_selected_item_type"
 SETTINGS_AUTO_RELATION_KEY = "wiki/auto_create_relations"
 SETTINGS_FILTER_CONFIG_KEY = "tag_filter_config"
-SETTINGS_LAYOUT_VERSION_KEY = "layout_version"
 SETTINGS_RASTER_BRUSH_PRESETS_KEY = "raster/brush_presets"
 SETTINGS_CONTEXT_TAGS_PREFIX = "worlds/{world_id}/context_tags/v1"
-
-# Layout Version (increment when layout structure changes incompatibly)
-LAYOUT_VERSION = "1.0.0"
-
-
-# Dock Titles
-# Dock Object Names
-DOCK_OBJ_PROJECT = "ProjectExplorerDock"
-DOCK_OBJ_EVENT_INSPECTOR = "EventInspectorDock"
-DOCK_OBJ_ENTITY_INSPECTOR = "EntityInspectorDock"
-DOCK_OBJ_TIMELINE = "TimelineDock"
-DOCK_OBJ_LONGFORM = "LongformDock"
-DOCK_OBJ_MAP = "MapDock"
-DOCK_OBJ_AI_SEARCH = "AISearchDock"
-DOCK_OBJ_GRAPH = "GraphDock"
-DOCK_OBJ_HISTORY = "HistoryDock"
-DOCK_OBJ_ANALYSIS = "AnalysisDock"
-
-# Dock Titles
-DOCK_TITLE_PROJECT = "Project Explorer"
-DOCK_TITLE_EVENT_INSPECTOR = "Event Inspector"
-DOCK_TITLE_ENTITY_INSPECTOR = "Entity Inspector"
-DOCK_TITLE_TIMELINE = "Timeline"
-DOCK_TITLE_LONGFORM = "Longform Document"
-DOCK_TITLE_MAP = "Map"
-DOCK_TITLE_AI_SEARCH = "AI Search"
-DOCK_TITLE_GRAPH = "Relationship Graph"
-DOCK_TITLE_HISTORY = "History"
-DOCK_TITLE_ANALYSIS = "Analysis Suite"
 
 # Status Messages
 STATUS_DB_INIT_FAIL = "Database Initialization Failed!"
@@ -262,10 +233,6 @@ SEMANTIC_COMPLETION_DEBOUNCE_MS = 350  # Keystroke debounce before querying the 
 # UI Timing Constants
 # Delays for deferred initialization and UI updates
 UI_INIT_DELAY_MS = 100  # Initial delay for completing app initialization
-UI_DOCK_RESTORE_DELAY_MS = 100  # Delay for restoring critical docks
-UI_OPTIONAL_DOCK_DELAY_MS = 500  # Delay for restoring optional docks
-UI_LAYOUT_GUARD_DELAY_MS = 100  # Delay for layout constraint resets
-UI_DOCK_VALIDATE_DELAY_MS = 200  # Delay for dock size validation after restoreState
 UI_SEARCH_INDEX_REFRESH_DELAY_MS = 100  # Delay for search index status refresh
 UI_CLEANUP_DELAY_MS = 200  # Delay for cleanup operations
 

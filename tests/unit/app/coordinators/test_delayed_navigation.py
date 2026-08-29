@@ -10,8 +10,7 @@ from src.commands.event_commands import CreateEventCommand
 class MockMainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.ui_manager = Mock()
-        self.ui_manager.docks = {"event": Mock(), "entity": Mock()}
+        self.workspace = Mock()
         self.event_editor = Mock()
         self.entity_editor = Mock()
         self.unified_list = Mock()

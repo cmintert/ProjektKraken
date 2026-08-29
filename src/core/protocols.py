@@ -10,18 +10,6 @@ methods automatically satisfies the protocol without explicit inheritance.
 from typing import Any, Protocol, runtime_checkable
 
 
-class ByteArrayProtocol(Protocol):
-    """Structural subset of Qt's QByteArray used for layout persistence."""
-
-    def toHex(self) -> "ByteArrayProtocol":
-        """Return a hexadecimal representation of this byte array."""
-        ...
-
-    def data(self) -> bytes:
-        """Return the byte array contents."""
-        ...
-
-
 class SignalProtocol(Protocol):
     """Minimal contract shared by bound Qt signals used across app layers."""
 
@@ -54,6 +42,10 @@ class MainWindowProtocol(Protocol):
         """Toggle the auto-relation setting."""
         ...
 
+    def toggle_longform_auto_refresh(self) -> None:
+        """Toggle automatic Longform refresh."""
+        ...
+
     def load_maps(self) -> None:
         """Request the current world's maps."""
         ...
@@ -70,52 +62,8 @@ class MainWindowProtocol(Protocol):
         """Close the window."""
         ...
 
-    def setDockOptions(self, options: Any) -> None:
-        """Set dock widget options for the main window."""
-        ...
-
-    def setTabPosition(self, areas: Any, places: Any) -> None:
-        """Set tab position for dock widgets in specified areas."""
-        ...
-
-    def setCorner(self, corner: Any, area: Any) -> None:
-        """Set which dock widget area occupies a corner."""
-        ...
-
-    def addDockWidget(self, area: Any, dockwidget: Any) -> None:
-        """Add a dock widget to the specified area."""
-        ...
-
-    def tabifyDockWidget(self, first: Any, second: Any) -> None:
-        """Stack second dock widget on top of first as tabs."""
-        ...
-
     def addAction(self, action: Any) -> None:
         """Add an action to the main window."""
-        ...
-
-    def height(self) -> int:
-        """Return the current window height."""
-        ...
-
-    def resizeDocks(self, docks: Any, sizes: Any, orientation: Any) -> None:
-        """Resize dock widgets along the supplied orientation."""
-        ...
-
-    def saveState(self, version: int = 0) -> ByteArrayProtocol:
-        """Save the current window state (docks/toolbars)."""
-        ...
-
-    def restoreState(self, state: Any, version: int = 0) -> bool:
-        """Restore the window state."""
-        ...
-
-    def saveGeometry(self) -> ByteArrayProtocol:
-        """Save the current window geometry."""
-        ...
-
-    def restoreGeometry(self, geometry: Any) -> bool:
-        """Restore the window geometry."""
         ...
 
     @property
@@ -153,6 +101,7 @@ class MainWindowProtocol(Protocol):
     time_coordinator: Any
     timeline: Any
     unified_list: Any
+    workspace: Any
     worker_manager: Any
 
 

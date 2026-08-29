@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from PySide6.QtCore import Signal
@@ -117,6 +117,15 @@ class MockEditor(QWidget):
         return []
 
 
+class MockPanel(QWidget):
+    """Lightweight QWidget whose feature-specific API can be mocked on demand."""
+
+    def __getattr__(self, name):
+        attribute = MagicMock()
+        setattr(self, name, attribute)
+        return attribute
+
+
 def test_mainwindow_check_unsaved_changes(qtbot):
     # We need to test the logic of check_unsaved_changes logic specifically.
 
@@ -125,18 +134,23 @@ def test_mainwindow_check_unsaved_changes(qtbot):
     # Create mock editors that are actual QWidgets to satisfy setWidget logic
     mock_event_editor = MockEditor()
     mock_entity_editor = MockEditor()
+    mock_unified_list = MockPanel()
+    mock_timeline = MockPanel()
+    mock_map = MockPanel()
 
     # We'll use a real instance but mock internal components to avoid side effects
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
-        patch("src.app.main_window.UnifiedListWidget"),
+        patch(
+            "src.app.main_window.UnifiedListWidget",
+            return_value=mock_unified_list,
+        ),
         patch("src.app.main_window.EventEditorWidget", return_value=mock_event_editor),
         patch(
             "src.app.main_window.EntityEditorWidget", return_value=mock_entity_editor
         ),
-        patch("src.app.main_window.TimelineWidget"),
-        patch("src.app.main_window.MapWidget"),
-        patch("src.app.ui_manager.UIManager.setup_docks"),
+        patch("src.app.main_window.TimelineWidget", return_value=mock_timeline),
+        patch("src.app.main_window.MapWidget", return_value=mock_map),
         patch("src.app.worker_manager.QThread"),
         patch("src.app.main_window.QTimer"),
     ):

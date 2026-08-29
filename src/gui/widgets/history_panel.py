@@ -11,8 +11,8 @@ import shiboken6
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QBrush, QColor, QFont
 from PySide6.QtWidgets import (
-    QHBoxLayout,
     QLabel,
+    QLayout,
     QListWidget,
     QListWidgetItem,
     QVBoxLayout,
@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.standard_buttons import DestructiveButton, StandardButton
 
 logger = logging.getLogger(__name__)
@@ -67,35 +68,39 @@ class HistoryPanelWidget(QWidget):
         """Set up the user interface components."""
         # Main layout
         layout = QVBoxLayout(self)
+        layout.setSizeConstraint(QLayout.SizeConstraint.SetNoConstraint)
         layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(5)
 
         # Header with buttons
-        header_layout = QHBoxLayout()
-        header_layout.setSpacing(5)
+        self.action_toolbar = OverflowToolBar(self)
 
         # Undo button
         self.undo_btn = StandardButton("⟲ Undo")
         self.undo_btn.setToolTip("Undo last action (Ctrl+Z)")
         self.undo_btn.clicked.connect(self.undo_clicked.emit)
         self.undo_btn.setEnabled(False)
-        header_layout.addWidget(self.undo_btn)
+        self.action_toolbar.add_button(
+            self.undo_btn,
+            priority=100,
+            pinned=True,
+        )
 
         # Redo button
         self.redo_btn = StandardButton("⟳ Redo")
         self.redo_btn.setToolTip("Redo undone action (Ctrl+Y)")
         self.redo_btn.clicked.connect(self.redo_clicked.emit)
         self.redo_btn.setEnabled(False)
-        header_layout.addWidget(self.redo_btn)
+        self.action_toolbar.add_button(self.redo_btn, priority=80)
 
         # Clear button (destructive action)
         self.clear_btn = DestructiveButton("✕ Clear")
         self.clear_btn.setToolTip("Clear all history")
         self.clear_btn.clicked.connect(self.clear_history_clicked.emit)
         self.clear_btn.setEnabled(False)
-        header_layout.addWidget(self.clear_btn)
+        self.action_toolbar.add_button(self.clear_btn, priority=20)
 
-        layout.addLayout(header_layout)
+        layout.addWidget(self.action_toolbar)
 
         # Status label
         self.status_label = QLabel("No history")

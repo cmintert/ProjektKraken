@@ -16,12 +16,14 @@ from PySide6.QtCore import QSettings, QSize, Qt, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
+    QLayout,
     QPushButton,
     QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
 
+from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.timeline.event_item import EventItem
 from src.gui.widgets.timeline.timeline_scene import (
     CurrentTimeLineItem,
@@ -54,37 +56,41 @@ class TimelineWidget(QWidget):
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         main_layout = QVBoxLayout(self)
+        main_layout.setSizeConstraint(QLayout.SizeConstraint.SetNoConstraint)
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0, 0, 0, 0)
 
         # Toolbar Container (Header)
         self.header_frame = QWidget()
         self.header_frame.setObjectName("TimelineHeader")
-        self.toolbar_layout = QHBoxLayout(self.header_frame)
-        self.toolbar_layout.setContentsMargins(4, 4, 4, 4)
+        header_layout = QHBoxLayout(self.header_frame)
+        header_layout.setContentsMargins(4, 4, 4, 4)
+        self.action_toolbar = OverflowToolBar(self.header_frame)
+        header_layout.addWidget(self.action_toolbar)
 
         # Playback controls
         self.btn_step_back = QPushButton("◄")
         self.btn_step_back.setToolTip("Step Backward")
         self.btn_step_back.setMaximumWidth(40)
         self.btn_step_back.clicked.connect(self.step_backward)
-        self.toolbar_layout.addWidget(self.btn_step_back)
+        self.action_toolbar.add_button(self.btn_step_back, priority=80)
 
         self.btn_play_pause = QPushButton("▶")
         self.btn_play_pause.setToolTip("Play/Pause")
         self.btn_play_pause.setCheckable(True)
         self.btn_play_pause.setMaximumWidth(40)
         self.btn_play_pause.clicked.connect(self.toggle_playback)
-        self.toolbar_layout.addWidget(self.btn_play_pause)
+        self.action_toolbar.add_button(
+            self.btn_play_pause,
+            priority=100,
+            pinned=True,
+        )
 
         self.btn_step_forward = QPushButton("►")
         self.btn_step_forward.setToolTip("Step Forward")
         self.btn_step_forward.setMaximumWidth(40)
         self.btn_step_forward.clicked.connect(self.step_forward)
-        self.toolbar_layout.addWidget(self.btn_step_forward)
-
-        # Separator
-        self.toolbar_layout.addSpacing(20)
+        self.action_toolbar.add_button(self.btn_step_forward, priority=80)
 
         # Current time control
         self.btn_set_current_time = QPushButton("Set Current Time")
@@ -92,14 +98,14 @@ class TimelineWidget(QWidget):
             "Set the current time in the world to the playhead position"
         )
         self.btn_set_current_time.clicked.connect(self.set_current_time_to_playhead)
-        self.toolbar_layout.addWidget(self.btn_set_current_time)
+        self.action_toolbar.add_button(self.btn_set_current_time, priority=50)
 
         self.btn_return_present = QPushButton("Return to Present")
         self.btn_return_present.setToolTip(
             "Move the playhead to the current story time"
         )
         self.btn_return_present.clicked.connect(self.return_to_present)
-        self.toolbar_layout.addWidget(self.btn_return_present)
+        self.action_toolbar.add_button(self.btn_return_present, priority=70)
 
         settings = QSettings()
         snap_to_events = cast(
@@ -111,13 +117,14 @@ class TimelineWidget(QWidget):
             "Snap manual playhead drags and ruler clicks to nearby event dates."
         )
         self.chk_snap_playhead_to_events.setChecked(snap_to_events)
-        self.toolbar_layout.addWidget(self.chk_snap_playhead_to_events)
-
-        self.toolbar_layout.addStretch()
+        self.action_toolbar.add_button(
+            self.chk_snap_playhead_to_events,
+            priority=20,
+        )
 
         self.btn_fit = QPushButton("Fit View")
         self.btn_fit.clicked.connect(self.fit_view)
-        self.toolbar_layout.addWidget(self.btn_fit)
+        self.action_toolbar.add_button(self.btn_fit, priority=60)
 
         main_layout.addWidget(self.header_frame)
 

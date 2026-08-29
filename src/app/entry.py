@@ -134,13 +134,6 @@ def main() -> None:
             splash.show()
             app.processEvents()
 
-        # CLI Argument Parsing for Layout Capture
-        capture_layout = "--set-default-layout" in sys.argv
-        if capture_layout:
-            logger.info(
-                "Layout Capture Mode Active: Default layout will be updated on exit."
-            )
-
         # Check for reset settings flag
         if "--reset-settings" in sys.argv:
             logger.info("Resetting Application Settings...")
@@ -151,7 +144,7 @@ def main() -> None:
             settings.sync()
             logger.info("Settings cleared. Starting in default state.")
 
-        window = MainWindow(capture_layout_on_exit=capture_layout)
+        window = MainWindow()
         if splash is not None:
             splash.set_status("Loading world data…")
             window.startup_completed.connect(

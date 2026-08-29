@@ -92,6 +92,29 @@ QTabBar::tab:hover {{
     color: {text_main};
 }}
 
+/* Reserve enough room for both native tab-scroll controls. Generic
+   QToolButton padding otherwise makes them overlap the final tab. */
+QTabBar::scroller {{
+    width: 50px;
+}}
+QTabBar QToolButton {{
+    background-color: {surface};
+    color: {text_main};
+    border: 1px solid {border};
+    border-radius: 3px;
+    padding: 0px;
+    margin: 1px;
+    min-width: 20px;
+    max-width: 20px;
+}}
+QTabBar QToolButton:hover {{
+    background-color: {border};
+    border-color: {primary};
+}}
+QTabBar QToolButton:pressed {{
+    background-color: {app_bg};
+}}
+
 /* Fix for Tab Content Background */
 QTabWidget::pane {{
     border: 1px solid {border};
@@ -116,47 +139,6 @@ QGroupBox::title {{
     color: {primary};
 }}
 
-QDockWidget {{
-    border: 1px solid {border};
-}}
-QDockWidget::close-button, QDockWidget::float-button {{
-    subcontrol-origin: padding;
-    subcontrol-position: top right;
-    background: transparent;
-    border: none;
-    width: 20px;
-    height: 20px;
-    opacity: 1; 
-}}
-
-QDockWidget::close-button {{
-    image: url(src/resources/close.svg);
-    right: 4px;
-    top: 2px;
-}}
-
-QDockWidget::float-button {{
-    image: url(src/resources/float.svg);
-    right: 28px;
-    top: 2px;
-}}
-
-QDockWidget::close-button:hover, QDockWidget::float-button:hover {{
-    background: {border};
-    border-radius: 3px;
-}}
-
-QDockWidget::title {{
-    background: {surface};
-    text-align: left;
-    padding-left: 8px;
-    padding-right: 50px;
-    border-bottom: 1px solid {border};
-    margin: 0px;
-    border-top-left-radius: 4px;
-    border-top-right-radius: 4px;
-    min-height: 24px;
-}}
 QLineEdit, QAbstractSpinBox, QTextEdit, QComboBox {{
     background-color: {surface};
     border: 1px solid {border};

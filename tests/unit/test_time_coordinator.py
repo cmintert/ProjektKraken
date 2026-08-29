@@ -29,7 +29,7 @@ class FakeMainWindow(QObject):
         self.longform_editor = MagicMock()
         self.longform_editor.content = MagicMock()
         self.ui_manager = MagicMock()
-        self.ui_manager.docks = {"event": MagicMock(), "entity": MagicMock()}
+        self.workspace = MagicMock()
         self.lbl_world_time = MagicMock()
         self.lbl_playhead_time = MagicMock()
         self.calendar_converter = None
