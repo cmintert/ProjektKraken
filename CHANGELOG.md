@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-29
-**Commit:** 0289f70c
+**Commit:** acac9ab2
 ---
 
 # Changelog
@@ -10,6 +10,12 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Fixed
+
+- *(2026-08-29)* **Testing / CI**: Removed redundant native WebEngine widget
+  traversal from per-test teardown after it caused Linux full-regression
+  segmentation faults despite the existing lightweight test stub.
 
 ## [0.19.6]
 

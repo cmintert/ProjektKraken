@@ -246,52 +246,14 @@ def mock_invoke_method(request):
         yield None
 
 
-@pytest.fixture(autouse=True)
-def _shutdown_web_engines():
-    """Shut down all QWebEngineView instances after each test.
-
-    QWebEngineView must release its page before the profile is deleted,
-    otherwise Qt crashes with a segfault during event processing.
-    This fixture finds and shuts down all GraphWebView instances,
-    then processes pending events to complete the cleanup.
-    """
-    yield
-
-    if QApplication is None:
-        return
-
-    app = QApplication.instance()
-    if app is None:
-        return
-
-    try:
-        from PySide6.QtWebEngineWidgets import QWebEngineView
-    except ImportError:
-        return
-
-    for widget in app.allWidgets():
-        if isinstance(widget, QWebEngineView):
-            try:
-                page = widget.page()
-                if page:
-                    page.setWebChannel(None)
-                widget.setParent(None)
-                widget.close()
-                widget.deleteLater()
-            except RuntimeError:
-                pass
-
-    app.processEvents()
-
-
 @pytest.fixture(autouse=True, scope="session")
 def _mock_web_engine_view():
     """Replace QWebEngineView with a lightweight stub for all tests.
 
     QWebEngineView creates a Chromium subprocess that causes segfaults
-    during pytest-qt's event processing on teardown. This replaces it
-    with a lightweight QWidget stub that has the same API surface used
-    by GraphWebView.
+    during pytest-qt's event processing on teardown. This replaces the
+    application's only QWebEngineView subclass with a lightweight QWidget
+    stub, so no native WebEngine instances require per-test cleanup.
     """
     from unittest.mock import patch
 
