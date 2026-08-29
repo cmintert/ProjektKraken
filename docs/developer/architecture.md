@@ -48,6 +48,12 @@ behavior should increasingly bypass them. Existing code does not need to be
 reorganized immediately; move old behavior when that capability is next
 substantially modified.
 
+The first production extraction follows this pattern for raster management:
+`MapHandler` retains its existing public raster API as a compatibility facade,
+while `RasterController` owns raster rendering, editing, temporal state, and
+command intent. Shared marker and layer-tree synchronization remains in
+`MapHandler`; dependencies flow only from the facade to the raster controller.
+
 ## Mutation flow
 
 ```text

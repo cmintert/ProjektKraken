@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-29
-**Commit:** 28a9f374
+**Commit:** 30d46dd2
 ---
 
 # Changelog
@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-08-29)* **Testing / Maps**: Added raster-controller characterization
+  coverage for facade delegation, signal forwarding, map lifecycle, temporal
+  cache identity, edit-target safeguards, and queued stroke recovery.
 
 - *(2026-08-29)* **Architecture / Testing**: Added AST-based public-API and
   growth-budget guardrails for transitional application choke points.
@@ -37,6 +41,9 @@ All notable changes to this project will be documented in this file.
   manual workflow runs.
 
 ### Fixed
+
+- *(2026-08-29)* **Raster / Pillow**: Removed the deprecated explicit PNG mode
+  override while preserving exact 16-bit raster values across encoding.
 
 - *(2026-08-29)* **Testing / Theming**: Repaired compact-date icon refresh
   coverage to emit the theme payload required by the widget signal.
@@ -82,6 +89,11 @@ All notable changes to this project will be documented in this file.
   that do not report a usable vector dimension, with regression coverage.
 
 ### Changed
+
+- *(2026-08-29)* **Maps / Architecture**: Extracted raster rendering, editing,
+  temporal state, and command intent into a dedicated controller behind the
+  existing `MapHandler` compatibility facade and documented the strangler
+  boundary.
 
 - *(2026-08-29)* **Workspace / Architecture**: Replaced legacy dock widgets,
   dock-state recovery, and packaged default-layout assets with one central

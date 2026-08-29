@@ -9,7 +9,7 @@ Covers:
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from src.app.map_handler import MapHandler
+from src.app.raster_controller import RasterController
 from src.gui.widgets.map.map_data_buffer import ColorMap, MapDataBuffer
 
 # ── helpers ───────────────────────────────────────────────────────────
@@ -20,7 +20,7 @@ def _make_temporal_handler(
     node_id: str = "node-A",
     world_dir: str = "/tmp/world",
     snapshots: dict | None = None,
-) -> tuple[MapHandler, MagicMock, MagicMock]:
+) -> tuple[RasterController, MagicMock, MagicMock]:
     """Build a MapHandler wired for temporal-raster tests.
 
     ``snapshots`` is a ``{str_lore_date: rel_path}`` dict that will
@@ -51,17 +51,14 @@ def _make_temporal_handler(
     mock_item.buffer = MagicMock()
     mock_widget.view._raster_items = {node_id: mock_item}
 
-    mock_worker = MagicMock()
-    handler = MapHandler(
+    controller = RasterController(
         map_widget=mock_widget,
-        worker=mock_worker,
         db_path_accessor=lambda: str(Path(world_dir) / "world.kraken"),
-        navigation_set_selection=MagicMock(),
     )
     # Simulate that the handler already has a current map loaded
-    handler._current_map_id = map_id
+    controller._current_map_id = map_id
 
-    return handler, mock_widget, mock_item
+    return controller, mock_widget, mock_item
 
 
 # ── Tests: immediate apply on playhead change ─────────────────────────
@@ -78,9 +75,7 @@ class TestPlayheadImmediateApply:
         )
 
         fake_buf = MagicMock(spec=MapDataBuffer)
-        with patch.object(
-            MapDataBuffer, "from_file", return_value=fake_buf
-        ):
+        with patch.object(MapDataBuffer, "from_file", return_value=fake_buf):
             handler.on_playhead_changed(7.0)
 
         # swap_buffer should have been called immediately (not after 300ms)
@@ -243,7 +238,9 @@ class TestSnapshotSelectionAndDeletion:
         emitted: list = []
         handler.command_requested.connect(emitted.append)
 
-        with patch("src.app.map_handler.QMessageBox.question", return_value=0x4000):
+        with patch(
+            "src.app.raster_controller.QMessageBox.question", return_value=0x4000
+        ):
             handler.on_raster_snapshot_delete_requested("node-A", 5.0)
 
         from src.commands.raster_commands import RemoveRasterSnapshotCommand

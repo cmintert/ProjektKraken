@@ -225,7 +225,10 @@ class TestRasterLayerItemDisplay:
         buf = MapDataBuffer(width=32, height=32, default_value=32768)
         cmap = ColorMap(
             type="gradient",
-            gradient_stops=[GradientStop(0.0, "#000000FF"), GradientStop(1.0, "#FF0000FF")],
+            gradient_stops=[
+                GradientStop(0.0, "#000000FF"),
+                GradientStop(1.0, "#FF0000FF"),
+            ],
         )
         scene_rect = QRectF(0, 0, 100, 100)
         item = RasterLayerItem(buffer=buf, color_map=cmap, scene_rect=scene_rect)
@@ -268,7 +271,10 @@ class TestRasterLayerItemDisplay:
         buf = MapDataBuffer(width=32, height=32, default_value=0)
         cmap = ColorMap(
             type="gradient",
-            gradient_stops=[GradientStop(0.0, "#000000FF"), GradientStop(1.0, "#FFFFFFFF")],
+            gradient_stops=[
+                GradientStop(0.0, "#000000FF"),
+                GradientStop(1.0, "#FFFFFFFF"),
+            ],
         )
         scene_rect = QRectF(0, 0, 64, 64)
         item = RasterLayerItem(buffer=buf, color_map=cmap, scene_rect=scene_rect)
@@ -334,7 +340,9 @@ class TestMapDeleteStopsRasterEditing:
 
         widget.exit_editing_modes = wrapped_exit
         emitted: list[object] = []
-        handler.command_requested.connect(lambda cmd: (order.append("emit"), emitted.append(cmd)))
+        handler.command_requested.connect(
+            lambda cmd: (order.append("emit"), emitted.append(cmd))
+        )
 
         widget.view.start_raster_editing("delete-map-raster")
         assert widget.view._raster_edit_tool.is_active
@@ -1640,16 +1648,16 @@ class TestTemporalRasters:
 
     def test_find_best_snapshot_no_snapshots(self, qtbot) -> None:
         """_find_best_snapshot_path returns base path when no snapshots."""
-        from src.app.map_handler import MapHandler
+        from src.app.raster_controller import RasterController
 
         meta = {"file_path": "rasters/base.png", "snapshots": {}}
-        handler = MapHandler.__new__(MapHandler)
-        result = handler._find_best_snapshot_path(meta, 10.0)
+        controller = RasterController.__new__(RasterController)
+        result = controller._find_best_snapshot_path(meta, 10.0)
         assert result == "rasters/base.png"
 
     def test_find_best_snapshot_exact_match(self, qtbot) -> None:
         """_find_best_snapshot_path returns snapshot at exact lore_date."""
-        from src.app.map_handler import MapHandler
+        from src.app.raster_controller import RasterController
 
         meta = {
             "file_path": "rasters/base.png",
@@ -1658,13 +1666,13 @@ class TestTemporalRasters:
                 "10.0": "rasters/snap_10.png",
             },
         }
-        handler = MapHandler.__new__(MapHandler)
-        result = handler._find_best_snapshot_path(meta, 10.0)
+        controller = RasterController.__new__(RasterController)
+        result = controller._find_best_snapshot_path(meta, 10.0)
         assert result == "rasters/snap_10.png"
 
     def test_find_best_snapshot_nearest_past(self, qtbot) -> None:
         """_find_best_snapshot_path returns most recent past snapshot."""
-        from src.app.map_handler import MapHandler
+        from src.app.raster_controller import RasterController
 
         meta = {
             "file_path": "rasters/base.png",
@@ -1674,14 +1682,14 @@ class TestTemporalRasters:
                 "20.0": "rasters/snap_20.png",
             },
         }
-        handler = MapHandler.__new__(MapHandler)
+        controller = RasterController.__new__(RasterController)
         # playhead at 12.0 → snap at 5.0 is the nearest past
-        result = handler._find_best_snapshot_path(meta, 12.0)
+        result = controller._find_best_snapshot_path(meta, 12.0)
         assert result == "rasters/snap_5.png"
 
     def test_find_best_snapshot_before_all(self, qtbot) -> None:
         """_find_best_snapshot_path returns base when playhead is before all snapshots."""
-        from src.app.map_handler import MapHandler
+        from src.app.raster_controller import RasterController
 
         meta = {
             "file_path": "rasters/base.png",
@@ -1690,9 +1698,9 @@ class TestTemporalRasters:
                 "20.0": "rasters/snap_20.png",
             },
         }
-        handler = MapHandler.__new__(MapHandler)
+        controller = RasterController.__new__(RasterController)
         # playhead at 5.0 → before all snapshots → return base
-        result = handler._find_best_snapshot_path(meta, 5.0)
+        result = controller._find_best_snapshot_path(meta, 5.0)
         assert result == "rasters/base.png"
 
     def test_set_raster_snapshot_command_execute(self) -> None:
@@ -1738,9 +1746,10 @@ class TestTemporalRasters:
         layers = (stored.attributes or {}).get("raster_layers", [])
         layer = next(la for la in layers if la["node_id"] == node_id)
         snapshots = layer.get("snapshots", {})
-        assert next(
-            path for key, path in snapshots.items() if float(key) == 5.0
-        ) == "rasters/base_snap_5.00.png"
+        assert (
+            next(path for key, path in snapshots.items() if float(key) == 5.0)
+            == "rasters/base_snap_5.00.png"
+        )
 
     def test_set_raster_snapshot_command_undo(self) -> None:
         """SetRasterSnapshotCommand undo restores old snapshots."""

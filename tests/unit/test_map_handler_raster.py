@@ -60,9 +60,7 @@ def _make_handler(
     # Provide a mock raster item on the view
     mock_item = MagicMock()
     mock_item.color_map = (
-        ColorMap(type="passthrough")
-        if mode == "color"
-        else ColorMap(type="gradient")
+        ColorMap(type="passthrough") if mode == "color" else ColorMap(type="gradient")
     )
     mock_item.buffer = MagicMock()
     mock_widget.view._raster_items = {node_id: mock_item}
@@ -176,7 +174,9 @@ class TestPaletteEditEmitsCommand:
             handler.on_raster_palette_edit("node-456")
 
         assert len(emitted) == 1
-        applied_cmap = mock_widget.view._raster_items["node-456"].update_display.call_args[0][0]
+        applied_cmap = mock_widget.view._raster_items[
+            "node-456"
+        ].update_display.call_args[0][0]
         assert applied_cmap.type == "passthrough"
         assert applied_cmap.linked_entity_id == "event-123"
         assert emitted[0].new_color_map["type"] == "passthrough"
@@ -204,7 +204,7 @@ class TestSaveRasterToDisk:
             buf.paint_brush(0.5, 0.5, radius_px=1, value=99, falloff=0.0)
             mock_widget.view._raster_items["node-456"].buffer = buf
 
-            handler._save_raster_to_disk("node-456")
+            handler._raster_controller._save_raster_to_disk("node-456")
 
             # The PNG must have been written
             buf.save(str(png_path))  # pre-create so we can check timestamps
@@ -213,7 +213,7 @@ class TestSaveRasterToDisk:
     def test_logs_warning_when_no_map_selected(self, qapp):
         """A warning is logged and no crash occurs when no map is selected."""
         handler, mock_widget, _ = _make_handler(map_id=None)
-        handler._save_raster_to_disk("node-456")  # must not raise
+        handler._raster_controller._save_raster_to_disk("node-456")  # must not raise
 
 
 # ── Tests: stroke completed ────────────────────────────────────────────
@@ -255,12 +255,15 @@ class TestRasterProbeResolution:
         }
         mock_widget._cached_events = [SimpleNamespace(id="event-123", name="Ashfall")]
 
-        with patch(
-            "src.gui.widgets.map.raster_mapping.probe_all_layers",
-            return_value=[ProbeResult(node_id="node-456", value=17)],
-        ), patch(
-            "src.services.db_service.DatabaseService"
-        ) as MockDbService, patch.object(handler, "_show_probe_popup") as show_popup:
+        controller = handler._raster_controller
+        with (
+            patch(
+                "src.gui.widgets.map.raster_mapping.probe_all_layers",
+                return_value=[ProbeResult(node_id="node-456", value=17)],
+            ),
+            patch("src.services.db_service.DatabaseService") as MockDbService,
+            patch.object(controller, "_show_probe_popup") as show_popup,
+        ):
             handler.on_raster_value_probed("node-456", 17, 0.5, 0.5)
 
         MockDbService.assert_not_called()
@@ -295,9 +298,10 @@ def test_historical_raster_selection_uses_canonical_state_resolver(qapp) -> None
         },
     }
 
-    assert handler._find_best_snapshot_path(metadata, 4.0) == "rasters/base.png"
-    assert handler._find_best_snapshot_path(metadata, 9.0) == "rasters/five.png"
-    assert handler._find_best_snapshot_path(metadata, 10.0) == "rasters/ten.png"
+    controller = handler._raster_controller
+    assert controller._find_best_snapshot_path(metadata, 4.0) == "rasters/base.png"
+    assert controller._find_best_snapshot_path(metadata, 9.0) == "rasters/five.png"
+    assert controller._find_best_snapshot_path(metadata, 10.0) == "rasters/ten.png"
 
 
 # ── Tests: no main-thread DB access in raster loading ─────────────
