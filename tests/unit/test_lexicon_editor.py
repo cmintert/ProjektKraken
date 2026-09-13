@@ -91,6 +91,29 @@ class TestLexiconEditorDialogCreation:
         assert len(dialog._node_rows) == 0
         assert len(dialog._edge_rows) == 0
 
+    def test_node_and_relation_rows_stay_compact_in_tall_dialog(self, qtbot):
+        dialog = LexiconEditorDialog(
+            entity_types=["Character", "Concept", "Faction"],
+            relation_types=["allied_with", "opposes", "protects"],
+        )
+        qtbot.addWidget(dialog)
+        dialog.show()
+        qtbot.wait(1)
+
+        node_colors = [
+            dialog._node_rows[name]["color"]
+            for name in ("Character", "Concept", "Faction")
+        ]
+        edge_colors = [
+            dialog._edge_rows[name]["color"]
+            for name in ("allied_with", "opposes", "protects")
+        ]
+
+        assert node_colors[0].y() < 80
+        assert edge_colors[0].y() < 80
+        assert node_colors[1].y() - node_colors[0].y() <= 36
+        assert edge_colors[1].y() - edge_colors[0].y() <= 36
+
 
 # ---------------------------------------------------------------------------
 # LexiconEditorDialog config readback

@@ -28,6 +28,37 @@ def test_narrow_toolbar_overflows_low_priority_without_clipping(qtbot) -> None:
     assert primary.text() == "Primary Action"
 
 
+def test_wide_toolbar_keeps_actions_packed_left(qtbot) -> None:
+    toolbar = OverflowToolBar()
+    buttons = [QPushButton(label) for label in ("One", "Two", "Three")]
+    for button in buttons:
+        toolbar.add_button(button)
+    toolbar.resize(800, toolbar.sizeHint().height())
+    qtbot.addWidget(toolbar)
+    toolbar.show()
+    qtbot.wait(1)
+
+    assert buttons[0].geometry().left() == 0
+    for previous, current in zip(buttons, buttons[1:]):
+        gap = current.geometry().left() - previous.geometry().right() - 1
+        assert gap == toolbar._layout.spacing()
+
+
+def test_wide_toolbar_keeps_checkbox_at_right(qtbot) -> None:
+    toolbar = OverflowToolBar()
+    action = QPushButton("Action")
+    option = QCheckBox("Optional checks")
+    toolbar.add_button(action, priority=100)
+    toolbar.add_button(option, priority=10)
+    toolbar.resize(800, toolbar.sizeHint().height())
+    qtbot.addWidget(toolbar)
+    toolbar.show()
+    qtbot.wait(1)
+
+    assert action.geometry().left() == 0
+    assert option.geometry().right() == toolbar.contentsRect().right()
+
+
 def test_overflow_menu_action_uses_original_button_signal(qtbot) -> None:
     toolbar = OverflowToolBar()
     primary = QPushButton("Primary")

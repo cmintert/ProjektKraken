@@ -25,6 +25,18 @@ def test_init(unified_list):
     assert unified_list.filter_combo.currentText() == "All Items"
 
 
+def test_empty_explorer_keeps_context_tag_bar_compact(unified_list, qtbot):
+    unified_list.resize(320, 600)
+    unified_list.show()
+    qtbot.waitUntil(lambda: unified_list.context_tag_bar.height() > 0)
+
+    assert unified_list.list_widget.isHidden()
+    assert (
+        unified_list.context_tag_bar.height()
+        == unified_list.context_tag_bar.sizeHint().height()
+    )
+
+
 def test_set_data(unified_list):
     events = [Event(id="e1", name="Event 1", lore_date=10.0)]
     entities = [Entity(id="n1", name="Entity 1", type="Person")]

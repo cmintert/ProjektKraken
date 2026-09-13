@@ -99,6 +99,25 @@ def test_primary_button_style_contains_theme_values(theme_manager):
     assert "background-color:" in style
 
 
+@pytest.mark.parametrize(
+    "style_factory",
+    [
+        StyleHelper.get_primary_button_style,
+        StyleHelper.get_secondary_button_style,
+        StyleHelper.get_tool_button_style,
+        StyleHelper.get_raster_tool_button_style,
+        StyleHelper.get_icon_raster_tool_button_style,
+        StyleHelper.get_flat_tool_button_style,
+        StyleHelper.get_destructive_button_style,
+        StyleHelper.get_toggle_button_style,
+        StyleHelper.get_ghost_destructive_button_style,
+        StyleHelper.get_icon_button_style,
+    ],
+)
+def test_button_styles_share_the_inactive_rule(style_factory):
+    assert StyleHelper.get_disabled_button_style() in style_factory()
+
+
 def test_destructive_button_style_contains_theme_values(theme_manager):
     """Test that destructive button style includes theme destructive color."""
     theme = theme_manager.get_theme()

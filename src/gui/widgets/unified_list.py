@@ -292,15 +292,22 @@ class UnifiedListWidget(QWidget):
         # Category filter (Events/Entities)
         self.filter_combo = QComboBox()
         self.filter_combo.addItems(["All Items", "Events Only", "Entities Only"])
+        self.filter_combo.setSizeAdjustPolicy(
+            QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+        )
+        self.filter_combo.setMinimumContentsLength(7)
+        self.filter_combo.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
         self.filter_combo.setToolTip("Filter the list by primary category type")
         self.filter_combo.currentTextChanged.connect(self._on_filter_changed)
-        filter_row.addWidget(self.filter_combo)
+        filter_row.addWidget(self.filter_combo, stretch=1)
 
         # Advanced Filter Button
         self.btn_filter = QPushButton("Filter...")
         self.btn_filter.setToolTip("Open advanced filtering options (tags, subtypes)")
         self.btn_filter.clicked.connect(self.show_filter_dialog_requested.emit)
-        filter_row.addWidget(self.btn_filter)
 
         # Clear Filters button - keeps concept but might need to signal to clear backend
         # filter. For now, we'll keep it to clear the backend filter via signal
@@ -309,14 +316,21 @@ class UnifiedListWidget(QWidget):
         self.btn_clear_filters = QPushButton("Clear Filters")
         self.btn_clear_filters.setToolTip("Reset all search terms and active filters")
         self.btn_clear_filters.clicked.connect(self._request_clear_filters)
-        filter_row.addWidget(self.btn_clear_filters)
 
         # Sort dropdown
         self.sort_combo = QComboBox()
         self.sort_combo.addItems(["Name", "Created", "Lore Date", "Type"])
+        self.sort_combo.setSizeAdjustPolicy(
+            QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+        )
+        self.sort_combo.setMinimumContentsLength(5)
+        self.sort_combo.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
         self.sort_combo.setToolTip("Sort list items by the selected property")
         self.sort_combo.currentTextChanged.connect(self._on_sort_changed)
-        filter_row.addWidget(self.sort_combo)
+        filter_row.addWidget(self.sort_combo, stretch=1)
 
         # Sort direction toggle
         from src.core.theme_manager import ThemeManager
@@ -331,7 +345,6 @@ class UnifiedListWidget(QWidget):
         )
         self.btn_sort_dir.setStyleSheet(StyleHelper.get_flat_tool_button_style())
         self.btn_sort_dir.clicked.connect(self._toggle_sort_direction)
-        filter_row.addWidget(self.btn_sort_dir)
 
         # Hashed Colors toggle
         self.btn_hashed_colors = QToolButton()
@@ -344,7 +357,13 @@ class UnifiedListWidget(QWidget):
             load_icon("default_assets/icons/ui_icons/palette.svg", color=text_dim)
         )
         self.btn_hashed_colors.clicked.connect(self._on_hashed_colors_toggled)
-        filter_row.addWidget(self.btn_hashed_colors)
+
+        self.filter_action_toolbar = OverflowToolBar(self)
+        self.filter_action_toolbar.add_button(self.btn_filter, priority=100)
+        self.filter_action_toolbar.add_button(self.btn_sort_dir, priority=80)
+        self.filter_action_toolbar.add_button(self.btn_hashed_colors, priority=60)
+        self.filter_action_toolbar.add_button(self.btn_clear_filters, priority=20)
+        filter_row.addWidget(self.filter_action_toolbar)
 
         main_layout.addLayout(filter_row)
 

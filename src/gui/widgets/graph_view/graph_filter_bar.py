@@ -11,9 +11,13 @@ from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
+    QLayout,
     QPushButton,
+    QSizePolicy,
     QWidget,
 )
+
+from src.gui.widgets.overflow_toolbar import OverflowToolBar
 
 logger = logging.getLogger(__name__)
 
@@ -49,31 +53,47 @@ class GraphFilterBar(QWidget):
         """Sets up the filter bar UI."""
         from PySide6.QtWidgets import QLineEdit
 
+        self.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
         layout = QHBoxLayout(self)
+        layout.setSizeConstraint(QLayout.SizeConstraint.SetNoConstraint)
         layout.setContentsMargins(4, 4, 4, 4)
-        layout.setSpacing(8)
+        layout.setSpacing(4)
 
         # Search Bar
         self._search_input = QLineEdit()
         self._search_input.setPlaceholderText("Search nodes...")
-        self._search_input.setMinimumWidth(150)
+        self._search_input.setMinimumWidth(90)
+        self._search_input.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
         self._search_input.setClearButtonEnabled(True)
         self._search_input.textChanged.connect(self.search_text_changed.emit)
-        layout.addWidget(self._search_input)
+        layout.addWidget(self._search_input, stretch=3)
 
         # Advanced Filter Button
-        self._adv_filter_btn = QPushButton("Advanced Filter...")
+        self._adv_filter_btn = QPushButton("Filter...")
+        self._adv_filter_btn.setToolTip("Open advanced graph filters")
         self._adv_filter_btn.clicked.connect(self.show_advanced_filter_requested.emit)
-        layout.addWidget(self._adv_filter_btn)
 
         # Simple single-tag graph filter
         self._tag_filter_label = QLabel("Tag Filter:")
         self._tag_filter_label.setToolTip(
             "Show only graph nodes with the selected tag. Tags are not changed."
         )
-        layout.addWidget(self._tag_filter_label)
+        self._tag_filter_label.hide()
         self._tag_combo = QComboBox()
-        self._tag_combo.setMinimumWidth(150)
+        self._tag_combo.setSizeAdjustPolicy(
+            QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+        )
+        self._tag_combo.setMinimumContentsLength(4)
+        self._tag_combo.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
         self._tag_combo.setEditable(False)
         self._tag_combo.setAccessibleName("Graph tag filter")
         self._tag_combo.setToolTip(
@@ -81,30 +101,46 @@ class GraphFilterBar(QWidget):
         )
         self._tag_combo.addItem("All Tags", None)
         self._tag_combo.currentIndexChanged.connect(self._on_filter_changed)
-        layout.addWidget(self._tag_combo)
+        layout.addWidget(self._tag_combo, stretch=2)
 
         # Relation type filter
-        layout.addWidget(QLabel("Relation Types:"))
         self._rel_type_combo = QComboBox()
-        self._rel_type_combo.setMinimumWidth(150)
+        self._rel_type_combo.setSizeAdjustPolicy(
+            QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+        )
+        self._rel_type_combo.setMinimumContentsLength(4)
+        self._rel_type_combo.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
         self._rel_type_combo.setEditable(False)
+        self._rel_type_combo.setAccessibleName("Graph relation type filter")
+        self._rel_type_combo.setToolTip(
+            "Show only graph edges with the selected relation type."
+        )
         self._rel_type_combo.addItem("All Types", None)
         self._rel_type_combo.currentIndexChanged.connect(self._on_filter_changed)
-        layout.addWidget(self._rel_type_combo)
+        layout.addWidget(self._rel_type_combo, stretch=2)
 
         # Visual Lexicon editor button
-        self._lexicon_btn = QPushButton("🎨 Lexicon")
+        self._lexicon_btn = QPushButton("Lexicon")
         self._lexicon_btn.setToolTip("Edit visual styles for entity and relation types")
         self._lexicon_btn.clicked.connect(self.show_lexicon_editor_requested.emit)
-        layout.addWidget(self._lexicon_btn)
 
         # Refresh button
-        self._refresh_btn = QPushButton("🔄 Refresh")
+        self._refresh_btn = QPushButton("Refresh")
+        self._refresh_btn.setToolTip("Reload graph data using the selected filters")
         self._refresh_btn.clicked.connect(self.refresh_requested.emit)
-        layout.addWidget(self._refresh_btn)
 
-        # Stretch to push controls to the left
-        layout.addStretch()
+        self.action_toolbar = OverflowToolBar(self)
+        self.action_toolbar.add_button(
+            self._refresh_btn,
+            priority=100,
+            pinned=True,
+        )
+        self.action_toolbar.add_button(self._adv_filter_btn, priority=70)
+        self.action_toolbar.add_button(self._lexicon_btn, priority=40)
+        layout.addWidget(self.action_toolbar)
 
     def _on_filter_changed(self) -> None:
         """Handles filter combo box changes."""

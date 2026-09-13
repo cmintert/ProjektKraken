@@ -2,10 +2,11 @@
 
 from pathlib import Path
 
-from PySide6.QtWidgets import QToolButton
+from PySide6.QtWidgets import QToolButton, QVBoxLayout, QWidget
 
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.analysis.main_analysis_panel import MainAnalysisPanel
+from src.gui.widgets.graph_view.graph_filter_bar import GraphFilterBar
 from src.gui.widgets.history_panel import HistoryPanelWidget
 from src.gui.widgets.timeline import TimelineWidget
 from src.gui.widgets.unified_list import UnifiedListWidget
@@ -29,6 +30,21 @@ def test_analysis_keeps_primary_action_and_overflows_editorial(qtbot) -> None:
     assert panel.validate_btn.width() >= panel.validate_btn.sizeHint().width()
 
 
+def test_analysis_checkbox_stays_at_the_right_edge(qtbot) -> None:
+    panel = MainAnalysisPanel()
+    qtbot.addWidget(panel)
+    panel.resize(900, 500)
+    panel.show()
+    qtbot.wait(1)
+    panel.action_toolbar.refresh()
+
+    assert not panel.editorial_checks.isHidden()
+    assert (
+        panel.editorial_checks.geometry().right()
+        == panel.action_toolbar.contentsRect().right()
+    )
+
+
 def test_timeline_keeps_playback_and_overflows_secondary_options(qtbot) -> None:
     panel = TimelineWidget()
     _show_narrow(qtbot, panel)
@@ -47,6 +63,41 @@ def test_project_panel_keeps_new_menu_available_at_narrow_width(qtbot) -> None:
     assert not panel.btn_new.isHidden()
     assert panel.btn_refresh in panel.action_toolbar.overflowed_buttons()
     assert panel.btn_new.width() >= panel.btn_new.sizeHint().width()
+
+
+def test_project_filters_keep_selectors_and_overflow_actions(qtbot) -> None:
+    panel = UnifiedListWidget()
+    _show_narrow(qtbot, panel, width=300)
+    panel.filter_action_toolbar.refresh()
+
+    assert not panel.filter_combo.isHidden()
+    assert not panel.sort_combo.isHidden()
+    assert panel.filter_action_toolbar.overflowed_buttons()
+    assert panel.filter_action_toolbar.geometry().right() <= panel.contentsRect().right()
+
+
+def test_graph_filters_fit_one_compact_row_and_overflow_actions(qtbot) -> None:
+    bar = GraphFilterBar()
+    host = QWidget()
+    qtbot.addWidget(host)
+    layout = QVBoxLayout(host)
+    layout.setContentsMargins(0, 0, 0, 0)
+    layout.addWidget(bar)
+    layout.addStretch(1)
+    host.resize(530, 500)
+    host.show()
+    qtbot.wait(1)
+    bar.action_toolbar.refresh()
+
+    assert bar.width() == 530
+    assert bar.height() == bar.sizeHint().height()
+    assert bar._tag_filter_label.isHidden()
+    assert not bar._search_input.isHidden()
+    assert not bar._tag_combo.isHidden()
+    assert not bar._rel_type_combo.isHidden()
+    assert not bar._refresh_btn.isHidden()
+    assert bar.action_toolbar.overflowed_buttons()
+    assert bar.minimumSizeHint().width() <= 530
 
 
 def test_history_keeps_undo_and_overflows_clear_at_narrow_width(qtbot) -> None:

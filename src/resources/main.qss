@@ -195,10 +195,11 @@ QPushButton:pressed {{
     background-color: {primary}; 
     color: #121212; /* High contrast on primary */
 }}
-QPushButton:disabled {{ 
+QPushButton:disabled, QToolButton:disabled {{
     background-color: {app_bg}; 
     color: {text_dim}; 
-    border-style: dashed; 
+    border: 1px solid {border};
+    border-style: solid;
 }}
 
 /* Lists and Tables */

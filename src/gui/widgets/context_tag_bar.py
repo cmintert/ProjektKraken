@@ -5,7 +5,14 @@ from __future__ import annotations
 from typing import Any
 
 from PySide6.QtCore import Signal, Slot
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QWidget
+from PySide6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSizePolicy,
+    QWidget,
+)
 
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.tag_chip_view import tag_color_for_theme
@@ -26,6 +33,10 @@ class ContextTagBar(QFrame):
         super().__init__(parent)
         self.setObjectName("contextTagBar")
         self.setAccessibleName("Context tags")
+        self.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
         self._state: dict[str, object] = {
             "tags": [],
             "active": False,

@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from PySide6.QtCore import QObject, QSettings
+from PySide6.QtWidgets import QSizePolicy
 
 from src.app.coordinators.context_tag_coordinator import ContextTagCoordinator
 from src.app.coordinators.editor_coordinator import EditorCoordinator
@@ -223,6 +224,8 @@ def test_editor_creation_and_map_creation_use_context_factory(qapp):
 def test_context_bar_renders_inactive_active_and_review_states(qtbot):
     bar = ContextTagBar()
     qtbot.addWidget(bar)
+
+    assert bar.sizePolicy().verticalPolicy() == QSizePolicy.Policy.Fixed
 
     bar.set_state({"tags": [], "active": False, "affected_count": 0})
     assert bar.lbl_state.text() == "Context Tags: Off"

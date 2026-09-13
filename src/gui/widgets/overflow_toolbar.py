@@ -64,6 +64,7 @@ class OverflowToolBar(QWidget):
         ThemeManager().theme_changed.connect(self._apply_theme)
         self.overflow_button.hide()
         self._layout.addWidget(self.overflow_button)
+        self._layout.addStretch(1)
 
     def _apply_theme(self, _theme: dict | None = None) -> None:
         """Refresh overflow styling from the active application theme."""
@@ -107,7 +108,13 @@ class OverflowToolBar(QWidget):
         self._items.append(
             _ToolbarItem(button, action, priority, pinned, available)
         )
-        self._layout.insertWidget(self._layout.count() - 1, button)
+        if isinstance(button, QCheckBox):
+            self._layout.addWidget(button)
+        else:
+            self._layout.insertWidget(
+                self._layout.indexOf(self.overflow_button),
+                button,
+            )
         self._update_overflow()
 
     def overflowed_buttons(self) -> list[QAbstractButton]:
@@ -201,6 +208,7 @@ class OverflowToolBar(QWidget):
             candidates = sorted(
                 (item for item in active_items if not item.pinned),
                 key=lambda item: (
+                    isinstance(item.button, QCheckBox),
                     item.priority if item.button.isEnabled() else -10_000,
                     -self._items.index(item),
                 ),

@@ -245,8 +245,9 @@ class LexiconEditorDialog(QDialog):
 
         inner_widget = QWidget()
         grid = QGridLayout(inner_widget)
-        grid.setSpacing(6)
-        grid.setContentsMargins(8, 8, 8, 8)
+        grid.setHorizontalSpacing(6)
+        grid.setVerticalSpacing(4)
+        grid.setContentsMargins(8, 6, 8, 6)
 
         # Header row
         headers = [
@@ -274,6 +275,10 @@ class LexiconEditorDialog(QDialog):
             for row_idx, etype in enumerate(self._entity_types, start=1):
                 style = nodes_cfg.get(etype, {})
                 self._add_node_row(grid, row_idx, etype, style)
+
+        # Keep the header and type rows compact; the scroll area gives the
+        # remaining height to this final row instead of expanding every row.
+        grid.setRowStretch(len(self._entity_types) + 1, 1)
 
         scroll.setWidget(inner_widget)
         outer.addWidget(scroll)
@@ -460,8 +465,9 @@ class LexiconEditorDialog(QDialog):
 
         inner_widget = QWidget()
         grid = QGridLayout(inner_widget)
-        grid.setSpacing(6)
-        grid.setContentsMargins(8, 8, 8, 8)
+        grid.setHorizontalSpacing(6)
+        grid.setVerticalSpacing(4)
+        grid.setContentsMargins(8, 6, 8, 6)
 
         # Header row
         for col, text in enumerate(["Relation", "Color", "Width", "Dashed"]):
@@ -479,6 +485,9 @@ class LexiconEditorDialog(QDialog):
             for row_idx, rtype in enumerate(self._relation_types, start=1):
                 style = edges_cfg.get(rtype, {})
                 self._add_edge_row(grid, row_idx, rtype, style)
+
+        # Keep the header and relation rows compact in a tall dialog.
+        grid.setRowStretch(len(self._relation_types) + 1, 1)
 
         scroll.setWidget(inner_widget)
         outer.addWidget(scroll)

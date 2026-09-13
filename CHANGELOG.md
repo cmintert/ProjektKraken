@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-08-29
-**Commit:** 6257b0d5
+**Last Updated:** 2026-09-13
+**Commit:** dc702a10
 ---
 
 # Changelog
@@ -11,7 +11,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- *(2026-09-13)* **Testing / UI**: Added rendered layout coverage for compact
+  context controls, responsive toolbars, right-aligned checkboxes, shared
+  inactive styling, and Visual Lexicon rows.
+
 ### Fixed
+
+- *(2026-09-13)* **UI / Responsive Panels**: Kept action bars compact and
+  left-packed, moved secondary Project and Graph actions into overflow, anchored
+  checkboxes to the right, and unified inactive button styling.
+
+- *(2026-09-13)* **UI / Compact Layouts**: Prevented empty Project Explorer
+  context controls and Visual Lexicon entity and relation rows from consuming
+  excess vertical space.
 
 - *(2026-08-29)* **Packaging / CI**: Removed a stale nonexistent PyInstaller
   data path and added source-existence validation before Windows packaging.

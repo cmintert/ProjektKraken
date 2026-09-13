@@ -428,6 +428,18 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_disabled_button_style() -> str:
+        """Return the shared inactive appearance for button controls."""
+        theme = ThemeManager().get_theme()
+        return (
+            "QPushButton:disabled, QToolButton:disabled { "
+            f"background-color: {theme['app_bg']}; "
+            f"color: {theme['text_dim']}; "
+            f"border: 1px solid {theme['border']}; "
+            "border-style: solid; }"
+        )
+
+    @staticmethod
     def get_primary_button_style() -> str:
         """Returns QSS for primary action buttons.
 
@@ -447,6 +459,7 @@ class StyleHelper:
             f"QPushButton:hover {{ background-color: {theme['border']}; "
             f"color: {theme['text_main']}; }}"
             f"QPushButton:pressed {{ background-color: {theme['surface']}; }}"
+            + StyleHelper.get_disabled_button_style()
         )
 
     @staticmethod
@@ -468,6 +481,7 @@ class StyleHelper:
             f"border-radius: 4px; padding: 6px 16px; }}"
             f"QPushButton:hover {{ background-color: {theme['surface']}; }}"
             f"QPushButton:pressed {{ background-color: {theme['border']}; }}"
+            + StyleHelper.get_disabled_button_style()
         )
 
     @staticmethod
@@ -493,6 +507,7 @@ class StyleHelper:
             f"QToolButton:checked, QPushButton:checked {{ "
             f"background-color: {theme['border']}; "
             f"border: 1px solid {theme['primary']}; }}"
+            + StyleHelper.get_disabled_button_style()
         )
 
     @staticmethod
@@ -543,6 +558,7 @@ class StyleHelper:
             f"QPushButton:checked {{ "
             f"background-color: {primary}; color: {checked_text}; "
             f"border: 2px solid {primary}; font-weight: bold; }}"
+            + StyleHelper.get_disabled_button_style()
         )
 
     @staticmethod
@@ -572,6 +588,7 @@ class StyleHelper:
             f"QPushButton:checked {{ "
             f"background-color: {primary}; color: {checked_text}; "
             f"border: 2px solid {primary}; }}"
+            + StyleHelper.get_disabled_button_style()
         )
 
     @staticmethod
@@ -594,6 +611,7 @@ class StyleHelper:
             f"QToolButton:hover {{ color: {text_main}; "
             f"background-color: {border}; border: 1px solid {border}; }}"
             f"QToolButton:pressed {{ background-color: {primary}; color: white; }}"
+            + StyleHelper.get_disabled_button_style()
         )
 
     @staticmethod
@@ -614,9 +632,7 @@ class StyleHelper:
             f"border-radius: 4px; padding: 6px 16px; }}"
             f"QPushButton:hover {{ background-color: {theme['destructive']}; "
             f"color: white; border: 1px solid {theme['destructive']}; }}"
-            f"QPushButton:disabled {{ background-color: {theme['surface']}; "
-            f"color: {theme['text_dim']}; "
-            f"border: 1px solid {theme['border']}; }}"
+            + StyleHelper.get_disabled_button_style()
         )
 
     @staticmethod
@@ -639,6 +655,7 @@ class StyleHelper:
             f"QPushButton:checked {{ background-color: {theme['surface']}; "
             f"color: {theme['text_main']}; "
             f"border: 2px solid {theme['accent_secondary']}; font-weight: bold; }}"
+            + StyleHelper.get_disabled_button_style()
         )
 
     @staticmethod
@@ -659,8 +676,7 @@ class StyleHelper:
             f"border-radius: 4px; padding: 4px 8px; }}"
             f"QPushButton:hover {{ background-color: {theme['destructive']}; "
             f"color: white; }}"
-            f"QPushButton:disabled {{ color: {theme['text_dim']}; "
-            f"border-color: {theme['border']}; }}"
+            + StyleHelper.get_disabled_button_style()
         )
 
     @staticmethod
@@ -762,6 +778,7 @@ class StyleHelper:
             f"border-radius: 4px; padding: 2px; }}"
             f"QPushButton:hover {{ background-color: {theme['border']}; }}"
             f"QPushButton:pressed {{ background-color: {theme['app_bg']}; }}"
+            + StyleHelper.get_disabled_button_style()
         )
 
     @staticmethod
