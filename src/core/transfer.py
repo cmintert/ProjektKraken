@@ -117,7 +117,7 @@ LORE_JSON_EXAMPLE = {
             "id": "00000000-0000-4000-8000-000000000102",
             "type": "discovery",
             "name": "The Signal",
-            "lore_date": 42.0,
+            "lore_date": "23 AUG 1895",
             "lore_duration": 0.5,
             "description": "Aria detects a repeating signal beyond the rim.",
             "tags": ["mystery", "first-contact"],

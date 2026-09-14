@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-09-14
-**Commit:** fa59a636
+**Commit:** 39f2539aec042de75c2f34eaae14fb87bd61e884
 ---
 
 # Changelog
@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-09-14)* **Dates / Import**: Added validated complete date ranges,
+  including calendar-aware endpoints, duration conversion, and human-readable
+  Paste Lore JSON examples.
 
 - *(2026-09-14)* **Import / Export**: Added one reviewed workflow for lore JSON,
   CSV, TSV, Markdown notes, Longform Markdown, DOCX, PDF, backups, and portable

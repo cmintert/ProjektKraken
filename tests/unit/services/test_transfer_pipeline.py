@@ -7,6 +7,8 @@ import zipfile
 import pytest
 
 from src.commands.transfer_commands import ApplyTransferCommand
+from src.core.calendar import CalendarConfig
+from src.core.date_parser import DateParser
 from src.core.entities import Entity
 from src.core.transfer import LORE_JSON_EXAMPLE_TEXT
 from src.services.repositories.transfer_repository import snapshot
@@ -140,6 +142,32 @@ def test_bad_late_row_and_invalid_date_leave_database_unchanged(db_service):
     )
     assert review["errors"]
     assert snapshot(db_service.get_connection()) == before
+
+
+def test_complete_date_range_is_reviewed_and_imported(db_service):
+    parser = DateParser(CalendarConfig.create_default())
+    expected_start = parser.calculate_timestamp(parser.parse_date("23 AUG 1895"))
+    review = prepare_import(
+        db_service,
+        batch(
+            events=[
+                {
+                    "id": "complete-range",
+                    "name": "Complete Date Range",
+                    "lore_date": "23 AUG 1895 - 30 AUG 1895",
+                    "type": "outbreak",
+                }
+            ]
+        ),
+        {"mode": "skip"},
+    )
+
+    assert not review["errors"]
+    assert ApplyTransferCommand(review).execute(db_service).success
+    imported_event = db_service.get_event("complete-range")
+    assert imported_event is not None
+    assert imported_event.lore_date == expected_start
+    assert imported_event.lore_duration == 7.0
 
 
 def test_numeric_csv_date_and_multiline_tags_round_trip(db_service, tmp_path):

@@ -540,6 +540,13 @@ class TestRange:
         r = DateParser(got_calendar).parse_date("from Moon of Ice to Moon of Fire 300")
         assert (r.range_start.month, r.range_end.month) == (10, 11)
 
+    def test_complete_endpoints_with_multiword_months(self, got_calendar):
+        r = DateParser(got_calendar).parse_date(
+            "1 Moon of Ice 300 - 2 Moon of Fire 301"
+        )
+        assert (r.range_start.month, r.range_start.year) == (10, 300)
+        assert (r.range_end.month, r.range_end.year) == (11, 301)
+
     def test_month_range_precision(self, gregorian_like):
         r = DateParser(gregorian_like).parse_date("from January to March 2023")
         assert r.range_start.precision == DatePrecision.MONTH

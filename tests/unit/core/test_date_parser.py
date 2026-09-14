@@ -237,6 +237,58 @@ class TestRangeParsingCrossMonth:
         assert parsed.range_end.month == 9
 
 
+class TestRangeParsingCompleteEndpoints:
+    """Tests for ranges that repeat the complete date at both endpoints."""
+
+    @pytest.mark.parametrize("dash", ["-", "\u2013", "\u2014"])
+    def test_complete_same_month_range(self, gregorian_calendar, dash):
+        parsed = DateParser(gregorian_calendar).parse_date(
+            f"23 AUG 1895 {dash} 30 AUG 1895"
+        )
+
+        assert parsed.precision == DatePrecision.RANGE
+        assert (
+            parsed.range_start.day,
+            parsed.range_start.month,
+            parsed.range_start.year,
+        ) == (23, 8, 1895)
+        assert (
+            parsed.range_end.day,
+            parsed.range_end.month,
+            parsed.range_end.year,
+        ) == (30, 8, 1895)
+
+    def test_complete_range_without_dash_whitespace(self, gregorian_calendar):
+        parsed = DateParser(gregorian_calendar).parse_date(
+            "23 August 1895\u201330 September 1895"
+        )
+
+        assert (parsed.range_start.month, parsed.range_end.month) == (8, 9)
+
+    def test_complete_cross_year_range(self, gregorian_calendar):
+        parsed = DateParser(gregorian_calendar).parse_date(
+            "31 DEC 1895 - 2 JAN 1896"
+        )
+
+        assert parsed.range_start.year == 1895
+        assert parsed.range_end.year == 1896
+
+    def test_complete_signed_year_range(self, gregorian_calendar):
+        parsed = DateParser(gregorian_calendar).parse_date(
+            "23 AUG -2 - 30 AUG -1"
+        )
+
+        assert parsed.range_start.year == -2
+        assert parsed.range_end.year == -1
+
+    def test_complete_custom_calendar_range(self, simple_calendar):
+        parsed = DateParser(simple_calendar).parse_date(
+            "30 Month1 2 - 1 Month2 2"
+        )
+
+        assert (parsed.range_start.month, parsed.range_end.month) == (1, 2)
+
+
 class TestRangeParsingMonthToMonth:
     """Tests for month-to-month ranges using dash notation."""
 
@@ -333,3 +385,26 @@ class TestRangeEdgeCases:
         end_ts = parser.calculate_timestamp(parsed.range_end)
         # Aug has 31 days: 31-23=8 remaining days in Aug + 6 days in Sep = 14
         assert end_ts - start_ts == 14.0
+
+    def test_complete_range_allows_equal_endpoints(self, gregorian_calendar):
+        parser = DateParser(gregorian_calendar)
+        parsed = parser.parse_date("23 AUG 1895 - 23 AUG 1895")
+
+        assert (
+            parser.calculate_timestamp(parsed.range_end)
+            - parser.calculate_timestamp(parsed.range_start)
+            == 0.0
+        )
+
+    @pytest.mark.parametrize(
+        "value",
+        [
+            "31 FEB 1895 - 2 MAR 1895",
+            "23 AUG 1895 - 31 FEB 1896",
+            "30 AUG 1895 - 23 AUG 1895",
+            "SEP-AUG 1895",
+        ],
+    )
+    def test_invalid_or_reversed_range_is_rejected(self, gregorian_calendar, value):
+        with pytest.raises(ValueError):
+            DateParser(gregorian_calendar).parse_date(value)

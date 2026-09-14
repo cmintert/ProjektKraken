@@ -28,7 +28,7 @@ class DateParser:
     - Season: "spring 3019", "early winter 3019"
     - Relative: "3 days before Battle", "during the Siege"
     - Fuzzy: "around March 3019", "circa 3019", "sometime in 3019"
-    - Range: "from March to June 3019", "from 1 to 15 March 3019"
+    - Range: "from March to June 3019", "23 March 3019 - 2 April 3019"
     - Time: "14:30", "2:30 PM"
     - Exact with time: "15 March 3019 14:30"
     """
@@ -100,7 +100,8 @@ class DateParser:
         all_month_tokens = sorted(
             list(self.month_lookup.keys()), key=len, reverse=True
         )
-        month_pattern_with_abbrev = f"({'|'.join(re.escape(t) for t in all_month_tokens)})"
+        month_tokens = "|".join(re.escape(token) for token in all_month_tokens)
+        month_pattern_with_abbrev = f"({month_tokens})"
 
         # Regex building blocks
         day = r"(\d{1,2})(?:st|nd|rd|th)?"
@@ -251,6 +252,16 @@ class DateParser:
             ],
             # ── Range ────────────────────────────────────────────────────────
             "range": [
+                # Complete endpoints: "23 AUG 1895 - 30 AUG 1895"
+                re.compile(
+                    f"^(?P<range_start_day>\\d{{1,2}})(?:st|nd|rd|th)?{space}"
+                    f"(?P<range_start_month>{month_tokens}){space}"
+                    f"(?P<range_start_year>-?\\d+){opt_dash_space}"
+                    f"(?P<range_end_day>\\d{{1,2}})(?:st|nd|rd|th)?{space}"
+                    f"(?P<range_end_month>{month_tokens}){space}"
+                    f"(?P<range_end_year>-?\\d+)$",
+                    re.IGNORECASE,
+                ),
                 # Cross-month day range: "23 AUG–6 SEP 1895"
                 re.compile(
                     f"^{day}{space}{mp}{opt_dash_space}{day}{space}{mp}{space}{year}$",
@@ -587,39 +598,66 @@ class DateParser:
     def _parse_date_range(self, match: re.Match) -> ParsedDate:
         """Parse a date range (RANGE precision).
 
-        Handles three range shapes:
+        Handles four range shapes:
+        - 2 complete dates: full endpoint range
+          (e.g. "23 AUG 1895 - 30 AUG 1895")
         - 2 days + 1 month: same-month day range (e.g. "23–30 AUG 1895")
         - 2 days + 2 months: cross-month day range (e.g. "23 AUG–6 SEP 1895")
         - 0 days + 2 months: month-to-month range (e.g. "AUG–SEP 1895")
         """
-        groups = [g for g in match.groups() if g is not None]
-        year = int(next(g for g in reversed(groups) if re.match(r"^-?\d+$", g)))
-
-        months = [self.month_lookup[g.lower()] for g in groups if g.lower() in self.month_lookup]
-        days: list[int] = []
-        for group in groups:
-            if not re.match(r"^\d{1,2}(?:st|nd|rd|th)?$", group):
-                continue
-            day_match = re.match(r"\d+", group)
-            if day_match is None:
-                raise ValueError(f"Invalid day: {group}")
-            days.append(int(day_match.group()))
-
-        if (
-            len(days) == _RANGE_ENDPOINT_COUNT
-            and len(months) >= _RANGE_ENDPOINT_COUNT
-        ):
-            # Cross-month: "23 AUG–6 SEP 1895"
-            start_date = ParsedDate(year=year, month=months[0], day=days[0])
-            end_date = ParsedDate(year=year, month=months[1], day=days[1])
-        elif len(days) == _RANGE_ENDPOINT_COUNT:
-            # Same-month: "23–30 AUG 1895"
-            start_date = ParsedDate(year=year, month=months[0], day=days[0])
-            end_date = ParsedDate(year=year, month=months[0], day=days[1])
+        groupdict = match.groupdict()
+        if groupdict.get("range_start_year") is not None:
+            start_date = ParsedDate(
+                year=int(groupdict["range_start_year"]),
+                month=self.month_lookup[groupdict["range_start_month"].lower()],
+                day=int(groupdict["range_start_day"]),
+            )
+            end_date = ParsedDate(
+                year=int(groupdict["range_end_year"]),
+                month=self.month_lookup[groupdict["range_end_month"].lower()],
+                day=int(groupdict["range_end_day"]),
+            )
+            year = start_date.year
         else:
-            # Month-to-month: "AUG–SEP 1895"
-            start_date = ParsedDate(year=year, month=months[0], precision=DatePrecision.MONTH)
-            end_date = ParsedDate(year=year, month=months[1], precision=DatePrecision.MONTH)
+            groups = [g for g in match.groups() if g is not None]
+            year = int(
+                next(g for g in reversed(groups) if re.match(r"^-?\d+$", g))
+            )
+            months = [
+                self.month_lookup[g.lower()]
+                for g in groups
+                if g.lower() in self.month_lookup
+            ]
+            days: list[int] = []
+            for group in groups:
+                if not re.match(r"^\d{1,2}(?:st|nd|rd|th)?$", group):
+                    continue
+                day_match = re.match(r"\d+", group)
+                if day_match is None:
+                    raise ValueError(f"Invalid day: {group}")
+                days.append(int(day_match.group()))
+
+            if (
+                len(days) == _RANGE_ENDPOINT_COUNT
+                and len(months) >= _RANGE_ENDPOINT_COUNT
+            ):
+                # Cross-month: "23 AUG–6 SEP 1895"
+                start_date = ParsedDate(year=year, month=months[0], day=days[0])
+                end_date = ParsedDate(year=year, month=months[1], day=days[1])
+            elif len(days) == _RANGE_ENDPOINT_COUNT:
+                # Same-month: "23–30 AUG 1895"
+                start_date = ParsedDate(year=year, month=months[0], day=days[0])
+                end_date = ParsedDate(year=year, month=months[0], day=days[1])
+            else:
+                # Month-to-month: "AUG–SEP 1895"
+                start_date = ParsedDate(
+                    year=year, month=months[0], precision=DatePrecision.MONTH
+                )
+                end_date = ParsedDate(
+                    year=year, month=months[1], precision=DatePrecision.MONTH
+                )
+
+        self._validate_range(start_date, end_date)
 
         return ParsedDate(
             year=year,
@@ -627,6 +665,20 @@ class DateParser:
             range_start=start_date,
             range_end=end_date,
         )
+
+    def _validate_range(self, start_date: ParsedDate, end_date: ParsedDate) -> None:
+        """Validate both range endpoints and their chronological order."""
+        for endpoint in (start_date, end_date):
+            month = endpoint.month or 1
+            day = endpoint.day or 1
+            if not self._validate_date(endpoint.year, month, day):
+                raise ValueError(
+                    f"Invalid range endpoint: day {day} month {month} "
+                    f"year {endpoint.year}"
+                )
+
+        if self.calculate_timestamp(end_date) < self.calculate_timestamp(start_date):
+            raise ValueError("Range end cannot precede range start")
 
     # ─────────────────────────────────────────────────────────────────────────
     # Validation

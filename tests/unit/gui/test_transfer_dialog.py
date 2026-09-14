@@ -52,6 +52,7 @@ def test_complete_lore_json_example_is_inserted_as_editable_text(qtbot):
         "created_at",
         "modified_at",
     }
+    assert example["events"][0]["lore_date"] == "23 AUG 1895"
     assert set(example["relations"][0]) == {
         "id",
         "source_id",
