@@ -718,29 +718,11 @@ def export_longform_to_markdown(conn: Connection, doc_id: str = DOC_ID_DEFAULT) 
         str: Markdown-formatted document.
 
     """
+    from src.services.transfer_document import document_snapshot
+
     ensure_all_items_indexed(conn, doc_id)
     sequence = build_longform_sequence(conn, doc_id)
-
-    lines = []
-    lines.append(f"# Longform Document: {doc_id}\n")
-
-    for item in sequence:
-        # Add ID marker comment
-        lines.append(
-            f"<!-- PK-LONGFORM id={item['id']} table={item['table']} doc={doc_id} -->\n"
-        )
-
-        # Add heading
-        heading_level = item["heading_level"]
-        title = item["meta"].get("title_override") or item["name"]
-        heading = "#" * heading_level + " " + title
-        lines.append(heading + "\n")
-
-        # Add content
-        content = item.get("content", "").strip()
-        if content:
-            lines.append("\n" + content + "\n")
-
-        lines.append("\n")
-
-    return "".join(lines)
+    document = document_snapshot(
+        sequence, {"title": f"Longform Document: {doc_id}"}, ""
+    )
+    return str(document["markdown"])

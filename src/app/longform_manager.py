@@ -8,7 +8,7 @@ import json
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Q_ARG, QObject, Signal, Slot
-from PySide6.QtWidgets import QDialog, QFileDialog, QMessageBox
+from PySide6.QtWidgets import QDialog, QMessageBox
 
 from src.app.qt_invocation import invoke_queued
 from src.commands.entity_commands import DeleteEntityCommand
@@ -311,60 +311,16 @@ class LongformManager(QObject):
         self.window.command_requested.emit(cmd)
 
     def export_longform_document(self) -> None:
-        """Exports the current longform document to Markdown.
-
-        Opens a file dialog for the user to choose save location.
-        """
-        file_path, _ = QFileDialog.getSaveFileName(
-            self.window,
-            "Export Longform Document",
-            "longform_document.md",
-            "Markdown Files (*.md);;All Files (*)",
+        """Open the shared publishing workflow with Markdown selected."""
+        self.window.import_coordinator.transfer_coordinator().show(
+            tab=1, format_key="markdown"
         )
-
-        if file_path:
-            try:
-                lines = []
-                for item in self.window.data_coordinator.cached_longform_sequence:
-                    heading_level = item["heading_level"]
-                    title = item["meta"].get("title_override") or item["name"]
-                    heading = "#" * heading_level + " " + title
-                    lines.append(heading)
-                    lines.append("")
-
-                    content = item.get("content", "").strip()
-                    if content:
-                        lines.append(content)
-                        lines.append("")
-                    lines.append("")
-
-                with open(file_path, "w", encoding="utf-8") as f:
-                    f.write("\n".join(lines))
-
-                self.window.status_bar.showMessage(f"Exported to {file_path}", 3000)
-            except Exception as e:
-                logger.error(f"Failed to export longform document: {e}")
-                self.window.status_bar.showMessage(f"Export failed: {e}", 5000)
 
     def export_as_vault(self) -> None:
-        """Exports entities and events as individual Obsidian-compatible .md files.
-
-        Opens a folder dialog for the user to choose export location. Each entity/event
-        becomes a separate file with YAML frontmatter.
-        """
-        # Get output directory from user
-        output_dir = QFileDialog.getExistingDirectory(
-            self.window,
-            "Select Export Folder for Vault",
-            "",
-            QFileDialog.Option.ShowDirsOnly,
+        """Open the shared note export workflow."""
+        self.window.import_coordinator.transfer_coordinator().show(
+            tab=1, format_key="notes"
         )
-
-        if not output_dir:
-            return
-
-        self.window.status_bar.showMessage("Exporting vault...")
-        self.export_vault_requested.emit(output_dir)
 
     @Slot(dict)
     def on_vault_export_finished(self, result: dict[str, object]) -> None:

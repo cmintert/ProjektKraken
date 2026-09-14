@@ -32,28 +32,13 @@ class UIManager:
     def create_file_menu(self, menu_bar: QMenuBar) -> None:
         """Create the File menu."""
         file_menu = menu_bar.addMenu("File")
+        transfer_action = file_menu.addAction("Import / Export...")
+        transfer_action.triggered.connect(
+            self.main_window.import_coordinator.show_transfer
+        )
         db_action = file_menu.addAction("Manage Databases...")
         db_action.triggered.connect(
             self.main_window.import_coordinator.show_database_manager
-        )
-        import_action = file_menu.addAction("Import Item...")
-        import_action.triggered.connect(
-            self.main_window.import_coordinator.import_item_requested
-        )
-        paste_action = file_menu.addAction("Import Pasted JSON...")
-        paste_action.triggered.connect(
-            self.main_window.import_coordinator.import_pasted_json_requested
-        )
-
-        file_menu.addSeparator()
-        export_menu = file_menu.addMenu("Export")
-        export_md_action = export_menu.addAction("Export Longform to Markdown...")
-        export_md_action.triggered.connect(
-            self.main_window.longform_manager.export_longform_document
-        )
-        export_vault_action = export_menu.addAction("Export as Obsidian Vault...")
-        export_vault_action.triggered.connect(
-            self.main_window.longform_manager.export_as_vault
         )
 
         file_menu.addSeparator()

@@ -10,18 +10,16 @@ Handles:
 """
 
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import QDialog, QFileDialog, QMessageBox
 
 from src.app.coordinators.base_coordinator import BaseCoordinator
 from src.gui.dialogs.database_manager_dialog import DatabaseManagerDialog
-from src.gui.dialogs.import_preview_dialog import ImportPreviewDialog
-from src.gui.dialogs.paste_json_import_dialog import PasteJsonImportDialog
 from src.gui.dialogs.progress_dialog import ProgressDialog
 from src.gui.widgets.auto_closing_message_box import AutoClosingMessageBox
-from src.services.import_service import ImportResult, ImportService
+from src.services.import_service import ImportResult
 from src.services.obsidian_exporter import (
     ObsidianExportCompletion,
     ObsidianExportPreparation,
@@ -59,151 +57,32 @@ class ImportCoordinator(BaseCoordinator):
         """
         super().__init__(main_window)
         self._import_progress_dialog: Optional[ProgressDialog] = None
+        self._transfer: Any = None
+
+    def transfer_coordinator(self) -> Any:
+        """Return the feature coordinator, creating its worker adapter lazily."""
+        if self._transfer is None:
+            from src.app.coordinators.transfer_coordinator import (
+                create_transfer_coordinator,
+            )
+
+            self._transfer = create_transfer_coordinator(self.main_window)
+        return self._transfer
+
+    @Slot()
+    def show_transfer(self) -> None:
+        """Open the unified format chooser."""
+        self.transfer_coordinator().show()
 
     @Slot()
     def import_item_requested(self) -> None:
-        """Handles the request to import items from JSON or Markdown files.
-
-        This method:
-        1. Opens a file dialog to select one or more JSON/Markdown files
-        2. For a single file: parses, previews, and dispatches as before
-        3. For multiple .md files: collects contents and dispatches a batch
-        """
-        file_paths, _ = QFileDialog.getOpenFileNames(
-            self.main_window,
-            "Import Item",
-            "",
-            "All Supported (*.json *.md);;JSON Files (*.json);;"
-            "Markdown Files (*.md);;All Files (*)",
-        )
-
-        if not file_paths:
-            return
-
-        try:
-            # Batch path: multiple Markdown files
-            md_paths = [p for p in file_paths if p.lower().endswith(".md")]
-            if len(file_paths) > 1 and len(md_paths) == len(file_paths):
-                self._import_markdown_batch(md_paths)
-                return
-
-            # Single-file path (original behaviour)
-            file_path = file_paths[0]
-            with open(file_path, "r", encoding="utf-8") as f:
-                content = f.read()
-
-            is_markdown = file_path.lower().endswith(".md")
-
-            if is_markdown:
-                from pathlib import Path
-
-                filename_stem = Path(file_path).stem
-                parsed_data = ImportService.parse_markdown_file(
-                    content, fallback_title=filename_stem
-                )
-            else:
-                parsed_data = ImportService.parse_only(content)
-
-            dialog = ImportPreviewDialog(self.main_window, parsed_data)
-            if dialog.exec() == QDialog.DialogCode.Accepted:
-                import json
-
-                options = dialog.get_options()
-                # Extracted filename stem for fallback title
-                from pathlib import Path
-
-                filename_stem = Path(file_path).stem
-                options["filename"] = filename_stem
-                options_json = json.dumps(options)
-
-                if is_markdown:
-                    self.run_markdown_import_requested.emit(content, options_json)
-                else:
-                    parsed_json = json.dumps(parsed_data)
-                    self.run_import_requested.emit(parsed_json, options_json)
-
-                self._show_import_progress()
-
-        except Exception as e:
-            logger.exception("Import error")
-            QMessageBox.critical(
-                self.main_window,
-                "Import Error",
-                f"An unexpected error occurred during import: {e}\n\n"
-                "Your existing data is safe and unchanged.\n\n"
-                "Possible causes:\n"
-                "• Invalid file format or corrupted data\n"
-                "• Unsupported import format\n"
-                "• File encoding issues (try UTF-8)\n\n"
-                "To fix:\n"
-                "1. Check that the file is a valid import format\n"
-                "2. Verify file is not corrupted\n"
-                "3. Check application logs for detailed error\n"
-                "4. Try exporting and re-importing a small test dataset",
-            )
+        """Open the shared file, folder and pasted-lore import workflow."""
+        self.transfer_coordinator().show(tab=0)
 
     @Slot()
     def import_pasted_json_requested(self) -> None:
-        """Import JSON data entered directly in a text dialog."""
-        dialog = PasteJsonImportDialog(self.main_window)
-        if dialog.exec() != QDialog.DialogCode.Accepted:
-            return
-
-        json_text = dialog.get_json_text().strip()
-        if not json_text:
-            return
-
-        try:
-            parsed_data = ImportService.parse_only(json_text)
-
-            preview = ImportPreviewDialog(self.main_window, parsed_data)
-            if preview.exec() != QDialog.DialogCode.Accepted:
-                return
-
-            import json
-
-            options = preview.get_options()
-            options_json = json.dumps(options)
-            parsed_json = json.dumps(parsed_data)
-
-            self.run_import_requested.emit(parsed_json, options_json)
-
-            self._show_import_progress()
-
-        except ValueError as e:
-            QMessageBox.critical(
-                self.main_window,
-                "Invalid JSON",
-                f"Failed to parse pasted JSON: {e}",
-            )
-        except Exception as e:
-            logger.exception("Pasted JSON import error")
-            QMessageBox.critical(
-                self.main_window,
-                "Import Error",
-                f"An unexpected error occurred during pasted JSON import: {e}",
-            )
-
-    def _import_markdown_batch(self, file_paths: list[str]) -> None:
-        """Read multiple Markdown files and dispatch a batch import.
-
-        Args:
-            file_paths: List of absolute paths to .md files.
-
-        """
-        import json
-
-        contents = []
-        for fp in file_paths:
-            with open(fp, "r", encoding="utf-8") as f:
-                contents.append(f.read())
-
-        contents_json = json.dumps(contents)
-        options_json = json.dumps({})
-
-        self.run_markdown_batch_import_requested.emit(contents_json, options_json)
-
-        self._show_import_progress()
+        """Open the same import workflow with pasted JSON available."""
+        self.transfer_coordinator().show(tab=0)
 
     def _show_import_progress(self) -> None:
         """Display a non-cancellable progress dialog during import."""
@@ -247,7 +126,10 @@ class ImportCoordinator(BaseCoordinator):
                         f"{len(item['candidates'])} matches"
                     )
                 if len(result.ambiguous_items) > _AMBIGUOUS_ITEM_PREVIEW_LIMIT:
-                    remaining = len(result.ambiguous_items) - _AMBIGUOUS_ITEM_PREVIEW_LIMIT
+                    remaining = (
+                        len(result.ambiguous_items)
+                        - _AMBIGUOUS_ITEM_PREVIEW_LIMIT
+                    )
                     msg += f"\n  ...and {remaining} more."
             if result.unparsed_date_count > 0:
                 msg += (
@@ -290,22 +172,11 @@ class ImportCoordinator(BaseCoordinator):
 
     @Slot(str, str)
     def export_single_obsidian(self, item_type: str, item_id: str) -> None:
-        """Export a single entity or event as an Obsidian Markdown file.
-
-        Args:
-            item_type: "event" or "entity".
-            item_id: The ID of the item to export.
-
-        """
-        if item_type not in {"entity", "event"}:
-            logger.warning("Unsupported Obsidian export item type: %s", item_type)
-            self.main_window.status_bar.showMessage(
-                f"Cannot export unsupported item type '{item_type}'", 3000
+        """Open the shared note export with the contextual record selected."""
+        if item_type in {"entity", "event"}:
+            self.transfer_coordinator().show(
+                tab=1, format_key="notes", selected=[item_id]
             )
-            return
-
-        self.prepare_obsidian_export_requested.emit(item_type, item_id)
-        self.main_window.status_bar.showMessage("Preparing export...", 0)
 
     @Slot(dict)
     def on_obsidian_export_prepared(

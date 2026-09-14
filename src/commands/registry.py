@@ -112,6 +112,7 @@ def _init_registry() -> None:
         UpdateTagColorCommand,
     )
     from src.commands.trajectory_commands import UpdateTrajectoryCommand
+    from src.commands.transfer_commands import ApplyTransferCommand
     from src.commands.wiki_commands import ProcessWikiLinksCommand
 
     _COMMAND_TYPES.update(
@@ -139,6 +140,7 @@ def _init_registry() -> None:
             "ClearTimelineGroupingCommand": ClearTimelineGroupingCommand,
             "UpdateTagColorCommand": UpdateTagColorCommand,
             "InjectTemplateCommand": InjectTemplateCommand,
+            "ApplyTransferCommand": ApplyTransferCommand,
             "MoveLongformEntryCommand": MoveLongformEntryCommand,
             "PromoteLongformEntryCommand": PromoteLongformEntryCommand,
             "DemoteLongformEntryCommand": DemoteLongformEntryCommand,

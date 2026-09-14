@@ -21,6 +21,7 @@ datas = [
 ]
 datas += collect_data_files("pyvis", includes=["templates/**"])
 datas += copy_metadata("keyring")
+datas += collect_data_files("docx")
 
 hiddenimports = [
     "PySide6.QtSvg",

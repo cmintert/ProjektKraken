@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-09-13
-**Commit:** dc702a10
+**Last Updated:** 2026-09-14
+**Commit:** fa59a636
 ---
 
 # Changelog
@@ -13,11 +13,32 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-09-14)* **Import / Export**: Added one reviewed workflow for lore JSON,
+  CSV, TSV, Markdown notes, Longform Markdown, DOCX, PDF, backups, and portable
+  worlds with clear format capabilities and limitations.
+
+- *(2026-09-14)* **Import / Export / Safety**: Added multi-source previews,
+  spreadsheet column mapping, per-record conflict choices, stale-input checks,
+  staged output replacement, persistent import undo/redo, and validated
+  `.krakenworld` asset packages.
+
+- *(2026-09-14)* **Documentation / Testing / Packaging**: Added the complete
+  user guide, focused transfer service and rendered-dialog coverage, an editable
+  full JSON example, and packaged `python-docx` support for Word publishing.
+
 - *(2026-09-13)* **Testing / UI**: Added rendered layout coverage for compact
   context controls, responsive toolbars, right-aligned checkboxes, shared
   inactive styling, and Visual Lexicon rows.
 
 ### Fixed
+
+- *(2026-09-14)* **Import / Integrity**: Made failed record batches atomic,
+  preserved supplied relation identities, and kept repeated skip-mode imports
+  from modifying existing relationships.
+
+- *(2026-09-14)* **Import / Export / Theming**: Applied the active theme to all
+  transfer text surfaces and replaced the truncated JSON placeholder with a
+  scrollable, editable example action.
 
 - *(2026-09-13)* **UI / Responsive Panels**: Kept action bars compact and
   left-packed, moved secondary Project and Graph actions into overflow, anchored

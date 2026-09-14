@@ -58,6 +58,11 @@ class ImportResult:
     # New field to track actions taken
     actions: List[Dict[str, Any]] = field(default_factory=list)
 
+
+class _ImportRollback(Exception):
+    """Abort an unsuccessful batch without committing its earlier records."""
+
+
 class ImportService:
     """Service for importing data from JSON and Markdown."""
 
@@ -389,7 +394,7 @@ class ImportService:
                     # In dry run we might want to see all errors?
                     # Proceeding to allow users to see all potential issues?
                     # Existing logic returns early. Let's keep it safe.
-                    return result
+                    raise _ImportRollback()
 
                 # ------------------------------------------------------------------
                 # PASS 2: Linking (Process Nested Relations)
@@ -473,6 +478,11 @@ class ImportService:
                 if deferred_relations:
                     self._retry_unresolved_relations(deferred_relations, result, options)
 
+        except _ImportRollback:
+            result.success = False
+            result.created_entities.clear()
+            result.created_events.clear()
+            result.created_relations.clear()
         except Exception as e:
             result.success = False
             result.errors.insert(0, f"Fatal import error: {e}")
@@ -1068,7 +1078,8 @@ class ImportService:
 
         if existing:
             # Relation already exists - optionally update attributes if they differ
-            if attributes and attributes != existing.get("attributes", {}):
+            mode = data.get("import_action") or (options or {}).get("mode", "update")
+            if mode != "skip" and attributes != existing.get("attributes", {}):
                 self._db._relation_repo.update(existing["id"], rel_type, attributes)
                 logger.info(
                     f"Updated existing relation {existing['id']}: "
@@ -1082,7 +1093,18 @@ class ImportService:
             return existing["id"], False, False
 
         # Create new relation
-        rel_id = self._db.insert_relation(source_id, target_id, rel_type, attributes)
+        if data.get("id"):
+            rel_id = str(data["id"])
+            self._db._validate_relation_endpoint(source_id, "source")
+            self._db._validate_relation_endpoint(target_id, "target")
+            if str(uuid.UUID(rel_id)) != rel_id:
+                raise ValueError("Relation ID must be a canonical UUID")
+            self._db._relation_repo.insert(
+                rel_id, source_id, target_id, rel_type, attributes,
+                float(data.get("created_at") or time.time()),
+            )
+        else:
+            rel_id = self._db.insert_relation(source_id, target_id, rel_type, attributes)
         return rel_id, True, False
 
     def _retry_unresolved_relations(
