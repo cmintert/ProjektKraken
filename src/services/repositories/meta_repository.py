@@ -6,11 +6,21 @@ timeline grouping configuration, graph lexicon, and generic name lookups.
 
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from collections.abc import Iterable
+from typing import Any, Dict, List, Literal, Optional, TypedDict
 
 from src.services.repositories.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
+
+_OBJECT_METADATA_CHUNK_SIZE = 900
+
+
+class ObjectDisplayMetadata(TypedDict):
+    """Display metadata shared by Event and Entity references."""
+
+    name: str | None
+    kind: Literal["entity", "event"]
 
 
 class MetaRepository(BaseRepository):
@@ -270,3 +280,44 @@ class MetaRepository(BaseRepository):
             return row["name"]
 
         return None
+
+    def get_object_display_metadata(
+        self, object_ids: Iterable[str]
+    ) -> dict[str, ObjectDisplayMetadata]:
+        """Resolve names and kinds for Event or Entity IDs in bounded batches.
+
+        Entity rows intentionally take precedence if malformed data contains the
+        same identifier in both object tables, matching :meth:`get_name`.
+
+        Args:
+            object_ids: Object IDs to resolve. Duplicates are ignored.
+
+        Returns:
+            Metadata keyed by IDs that currently exist. Missing IDs are omitted.
+
+        """
+        unique_ids = list(dict.fromkeys(object_ids))
+        if not unique_ids:
+            return {}
+
+        connection = self._require_connection()
+        result: dict[str, ObjectDisplayMetadata] = {}
+        for start in range(0, len(unique_ids), _OBJECT_METADATA_CHUNK_SIZE):
+            chunk = unique_ids[start : start + _OBJECT_METADATA_CHUNK_SIZE]
+            placeholders = ",".join("?" for _object_id in chunk)
+            entity_rows = connection.execute(
+                f"SELECT id, name FROM entities WHERE id IN ({placeholders})",
+                chunk,
+            ).fetchall()
+            for row in entity_rows:
+                result[row["id"]] = {"name": row["name"], "kind": "entity"}
+
+            event_rows = connection.execute(
+                f"SELECT id, name FROM events WHERE id IN ({placeholders})",
+                chunk,
+            ).fetchall()
+            for row in event_rows:
+                result.setdefault(
+                    row["id"], {"name": row["name"], "kind": "event"}
+                )
+        return result

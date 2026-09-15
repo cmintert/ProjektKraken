@@ -38,7 +38,12 @@ class FakeMainWindow(QObject):
             "event",
             "entity",
             "timeline",
+            "graph",
+            "longform",
         ]
+        self.workspace.panel_zone.return_value = "center"
+        self.workspace.zone_visible.return_value = True
+        self.workspace.active_panel.return_value = "entity"
         self.navigation_coordinator = MagicMock()
         self.navigation_coordinator.selected_type = None
         self.navigation_coordinator.selected_id = None
@@ -130,8 +135,8 @@ class TestDataLoading:
                 "load_completer_data",
             )
 
-    def test_load_data_calls_all_loaders(self, coordinator, fake_window):
-        """load_data should refresh all data and reload active editors."""
+    def test_load_data_defers_hidden_secondary_views(self, coordinator, fake_window):
+        """load_data should not queue hidden Graph or Longform hydration."""
         with (
             patch.object(coordinator, "load_events") as m_events,
             patch.object(coordinator, "load_entities") as m_entities,
@@ -142,7 +147,8 @@ class TestDataLoading:
             m_events.assert_called_once()
             m_entities.assert_called_once()
             m_completer.assert_called_once()
-            m_graph.assert_called_once()
+            m_graph.assert_not_called()
+            fake_window.longform_manager.load_longform_sequence.assert_not_called()
 
     def test_load_data_reloads_active_event_editor(self, coordinator, fake_window):
         """load_data should reload the active event editor."""
@@ -271,10 +277,73 @@ class TestGraphData:
 
     def test_on_graph_data_ready_updates_widget(self, coordinator, fake_window):
         """on_graph_data_ready should display graph data."""
+        fake_window.workspace.active_panel.return_value = "graph"
+        coordinator._graph_revision = 1
+        coordinator._graph_request_revision = 1
+        coordinator._graph_load_in_flight = True
         nodes = [{"id": "n1"}]
         edges = [{"source": "n1", "target": "n2"}]
         coordinator.on_graph_data_ready(nodes, edges)
         fake_window.graph_widget.display_graph.assert_called_once()
+
+    def test_hidden_graph_changes_do_not_request_or_render(
+        self, coordinator, fake_window, qapp
+    ):
+        """Hidden Graph invalidation should remain demand-driven."""
+        emitted = []
+        fake_window.load_graph_data_requested.connect(
+            lambda tags, relations: emitted.append((tags, relations))
+        )
+
+        coordinator.on_events_ready([])
+        coordinator.on_entities_ready([])
+        qapp.processEvents()
+
+        assert emitted == []
+        fake_window.graph_widget.display_graph.assert_not_called()
+        assert fake_window.longform_manager.mark_dirty.call_count == 2
+
+    def test_repeated_active_graph_changes_coalesce(
+        self, coordinator, fake_window, qtbot
+    ):
+        """Closely spaced dataset changes should submit one Graph request."""
+        fake_window.workspace.active_panel.return_value = "graph"
+        emitted = []
+        fake_window.load_graph_data_requested.connect(
+            lambda tags, relations: emitted.append((tags, relations))
+        )
+
+        coordinator.on_events_ready([])
+        coordinator.on_entities_ready([])
+        qtbot.wait(120)
+
+        assert len(emitted) == 1
+
+    def test_graph_result_received_while_hidden_renders_on_activation(
+        self, coordinator, fake_window
+    ):
+        """A fresh hidden result should be cached until Graph becomes active."""
+        coordinator._graph_revision = 2
+        coordinator._graph_request_revision = 2
+        coordinator._graph_load_in_flight = True
+        nodes = [{"id": "n1"}]
+        edges = [{"source": "n1", "target": "n2"}]
+
+        coordinator.on_graph_data_ready(nodes, edges)
+        fake_window.graph_widget.display_graph.assert_not_called()
+
+        fake_window.workspace.active_panel.return_value = "graph"
+        coordinator.on_panel_activated("graph")
+        fake_window.graph_widget.display_graph.assert_called_once_with(
+            nodes, edges, focus_node_id=None
+        )
+
+    def test_longform_activation_is_forwarded(self, coordinator, fake_window):
+        """Longform activation should enter its demand-loading coordinator."""
+        coordinator.on_panel_activated("longform")
+        fake_window.longform_manager.on_panel_activated.assert_called_once_with(
+            "longform"
+        )
 
     def test_on_graph_metadata_ready_updates_widget(self, coordinator, fake_window):
         """on_graph_metadata_ready should set available tags and types."""

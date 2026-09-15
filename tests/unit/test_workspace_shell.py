@@ -151,6 +151,17 @@ def test_show_panel_reopens_hidden_zone(qtbot) -> None:
     assert shell.active_panel("bottom") == "timeline"
 
 
+def test_panel_activation_emits_for_tab_changes_and_reselection(qtbot) -> None:
+    shell = _shell(qtbot)
+    activated: list[str] = []
+    shell.panel_activated.connect(activated.append)
+
+    shell.show_panel("graph")
+    shell.show_panel("graph")
+
+    assert activated == ["graph", "graph"]
+
+
 def test_empty_peripheral_zone_collapses_and_reopens_on_move(qtbot) -> None:
     shell = _shell(qtbot)
     shell.move_panel("project", "center")

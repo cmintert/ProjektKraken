@@ -276,6 +276,31 @@ def test_get_name_nonexistent(db):
     assert name is None
 
 
+def test_get_object_display_metadata_handles_empty_duplicates_and_missing(db):
+    event = Event(name="Test Event", lore_date=1.0)
+    entity = Entity(name="Test Entity", type="character")
+    db.insert_event(event)
+    db.insert_entity(entity)
+
+    assert db.get_object_display_metadata([]) == {}
+    assert db.get_object_display_metadata(
+        [entity.id, event.id, entity.id, "missing"]
+    ) == {
+        entity.id: {"name": "Test Entity", "kind": "entity"},
+        event.id: {"name": "Test Event", "kind": "event"},
+    }
+
+
+def test_get_object_display_metadata_uses_entity_first_precedence(db):
+    shared_id = "shared-object-id"
+    db.insert_entity(Entity(name="Entity Name", type="character", id=shared_id))
+    db.insert_event(Event(name="Event Name", lore_date=1.0, id=shared_id))
+
+    assert db.get_object_display_metadata([shared_id]) == {
+        shared_id: {"name": "Entity Name", "kind": "entity"}
+    }
+
+
 def test_foreign_keys_enabled(db):
     """Test that foreign keys are enabled."""
     cursor = db._connection.execute("PRAGMA foreign_keys")

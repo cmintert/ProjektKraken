@@ -56,6 +56,13 @@ class DataCoordinator(BaseCoordinator):
         self._cached_tags: list[str] = []
         self._cached_entity_types: list[str] = []
         self._graph_reload_timer: Optional[QTimer] = None
+        self._graph_revision = 0
+        self._graph_request_revision: int | None = None
+        self._graph_snapshot_revision: int | None = None
+        self._graph_snapshot: tuple[list, list] | None = None
+        self._graph_load_in_flight = False
+        self._graph_dirty = True
+        self._render_graph_when_hidden_once = False
         self._startup_datasets_pending = {"events", "entities"}
         self._startup_completion_emitted = False
 
@@ -108,9 +115,6 @@ class DataCoordinator(BaseCoordinator):
         """Refreshes all data and active editors."""
         self.load_events()
         self.load_entities()
-        self.main_window.longform_manager.load_longform_sequence()
-        self.load_graph_data()
-        self.load_completer_data()
 
         # Reload active editors to ensure they reflect current state
         if (
@@ -124,6 +128,10 @@ class DataCoordinator(BaseCoordinator):
             and self.main_window.entity_editor._current_entity_id
         ):
             self.load_entity_details(self.main_window.entity_editor._current_entity_id)
+
+        # Suggestions remain an automatic editor dependency, but hidden Graph and
+        # Longform work is requested only when those panels become active.
+        self.load_completer_data()
 
     def load_events(self) -> None:
         """Requests loading of all events from the worker thread."""
@@ -173,20 +181,16 @@ class DataCoordinator(BaseCoordinator):
         )
 
     def load_graph_data(self, filter_config: Optional[dict] = None) -> None:
-        """Requests loading of graph data, optionally filtered.
+        """Request an explicit Graph refresh, optionally filtered.
 
         Args:
             filter_config: Optional dictionary with 'tags' and 'rel_types'.
                            If not provided, uses current widget config.
 
         """
-        if filter_config is None and self.main_window.graph_widget:
-            filter_config = self.main_window.graph_widget.get_filter_config()
-
-        tags = filter_config.get("tags") if filter_config else None
-        rel_types = filter_config.get("rel_types") if filter_config else None
-
-        self.main_window.load_graph_data_requested.emit(tags, rel_types)
+        self._graph_revision += 1
+        self._graph_dirty = True
+        self._request_graph_data(filter_config)
 
     # ------------------------------------------------------------------
     # Signal Handlers (Data Ready)
@@ -211,7 +215,7 @@ class DataCoordinator(BaseCoordinator):
         )
         self._reconcile_context_tags()
 
-        self._schedule_graph_refresh()
+        self._mark_secondary_views_dirty()
         self._mark_startup_dataset_ready("events")
 
     @Slot(list)
@@ -231,7 +235,7 @@ class DataCoordinator(BaseCoordinator):
         )
         self._reconcile_context_tags()
 
-        self._schedule_graph_refresh()
+        self._mark_secondary_views_dirty()
         self._mark_startup_dataset_ready("entities")
 
     def _mark_startup_dataset_ready(self, dataset: str) -> None:
@@ -297,11 +301,20 @@ class DataCoordinator(BaseCoordinator):
             edges: List of edge dictionaries.
 
         """
-        if self.main_window.graph_widget:
-            focus_id = self.main_window.navigation_coordinator.selected_id
-            self.main_window.graph_widget.display_graph(
-                nodes, edges, focus_node_id=focus_id
-            )
+        request_revision = self._graph_request_revision
+        self._graph_load_in_flight = False
+        self._graph_request_revision = None
+        if request_revision is None:
+            request_revision = self._graph_revision
+        self._graph_snapshot = (nodes, edges)
+        self._graph_snapshot_revision = request_revision
+        if request_revision == self._graph_revision:
+            self._graph_dirty = False
+            force_hidden_render = self._render_graph_when_hidden_once
+            self._render_graph_when_hidden_once = False
+            self._render_cached_graph(allow_hidden=force_hidden_render)
+            return
+        self._schedule_graph_refresh()
 
     @Slot(list, list)
     def on_graph_metadata_ready(self, tags: list, rel_types: list) -> None:
@@ -375,6 +388,17 @@ class DataCoordinator(BaseCoordinator):
         """
         if panel_id in self.main_window.workspace.panel_ids():
             self.main_window.workspace.show_panel(panel_id)
+
+    @Slot(str)
+    def on_panel_activated(self, panel_id: str) -> None:
+        """Hydrate deferred secondary views when their panel becomes active."""
+        if panel_id == "graph":
+            if not self._graph_dirty:
+                self._render_cached_graph()
+            else:
+                self._schedule_graph_refresh()
+        elif panel_id == "longform":
+            self.main_window.longform_manager.on_panel_activated(panel_id)
 
     @Slot(str, str)
     def on_selection_requested(self, item_type: str, item_id: str) -> None:
@@ -568,12 +592,56 @@ class DataCoordinator(BaseCoordinator):
     # ------------------------------------------------------------------
 
     def _schedule_graph_refresh(self) -> None:
-        """Schedules a debounced graph refresh to avoid double-loading."""
+        """Schedule one Graph refresh when the Graph panel is active."""
+        if not self._is_panel_active("graph"):
+            return
         if self._graph_reload_timer is None:
             self._graph_reload_timer = QTimer(self)
             self._graph_reload_timer.setSingleShot(True)
-            self._graph_reload_timer.timeout.connect(self.load_graph_data)
+            self._graph_reload_timer.timeout.connect(self._request_graph_data)
         self._graph_reload_timer.start(100)  # 100ms debounce
+
+    def _mark_secondary_views_dirty(self) -> None:
+        """Invalidate Graph and Longform projections after primary data changes."""
+        self._graph_revision += 1
+        self._graph_dirty = True
+        self._schedule_graph_refresh()
+        self.main_window.longform_manager.mark_dirty()
+
+    def _request_graph_data(self, filter_config: Optional[dict] = None) -> None:
+        """Submit the latest Graph revision unless another request is running."""
+        if self._graph_load_in_flight:
+            return
+        if filter_config is None and self.main_window.graph_widget:
+            filter_config = self.main_window.graph_widget.get_filter_config()
+        tags = filter_config.get("tags") if filter_config else None
+        rel_types = filter_config.get("rel_types") if filter_config else None
+        self._graph_load_in_flight = True
+        self._graph_request_revision = self._graph_revision
+        self.main_window.load_graph_data_requested.emit(tags, rel_types)
+
+    def _render_cached_graph(self, *, allow_hidden: bool = False) -> None:
+        """Render only the current Graph snapshot while its panel is visible."""
+        if (
+            self._graph_snapshot is None
+            or self._graph_snapshot_revision != self._graph_revision
+            or (not allow_hidden and not self._is_panel_active("graph"))
+            or not self.main_window.graph_widget
+        ):
+            return
+        nodes, edges = self._graph_snapshot
+        focus_id = self.main_window.navigation_coordinator.selected_id
+        self.main_window.graph_widget.display_graph(
+            nodes, edges, focus_node_id=focus_id
+        )
+
+    def _is_panel_active(self, panel_id: str) -> bool:
+        """Return whether a semantic panel is the visible tab in its zone."""
+        workspace = self.main_window.workspace
+        if panel_id not in workspace.panel_ids():
+            return False
+        zone = workspace.panel_zone(panel_id)
+        return workspace.zone_visible(zone) and workspace.active_panel(zone) == panel_id
 
     def stop_graph_reload_timer(self) -> None:
         """Stops the graph reload timer. Called during shutdown."""

@@ -190,6 +190,7 @@ CHOKE_POINT_BASELINES: dict[str, ChokePointBaseline] = {
             method:DatabaseService.get_relation
             method:DatabaseService.delete_relation
             method:DatabaseService.update_relation method:DatabaseService.get_name
+            method:DatabaseService.get_object_display_metadata
             method:DatabaseService.insert_events_bulk
             method:DatabaseService.insert_entities_bulk
             method:DatabaseService.insert_calendar_config

@@ -7,7 +7,7 @@ MainWindow to reduce its size and improve maintainability.
 import json
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Q_ARG, QObject, Signal, Slot
+from PySide6.QtCore import Q_ARG, QObject, QTimer, Signal, Slot
 from PySide6.QtWidgets import QDialog, QMessageBox
 
 from src.app.qt_invocation import invoke_queued
@@ -49,9 +49,48 @@ class LongformManager(QObject):
         """
         super().__init__()
         self.window = main_window
+        self._revision = 0
+        self._request_revision: int | None = None
+        self._snapshot_revision: int | None = None
+        self._pending_sequence: list | None = None
+        self._load_in_flight = False
+        self._dirty = True
+        self._reload_timer = QTimer(self)
+        self._reload_timer.setSingleShot(True)
+        self._reload_timer.setInterval(100)
+        self._reload_timer.timeout.connect(self._request_if_needed)
 
     def load_longform_sequence(self) -> None:
-        """Loads the longform sequence, applying active filters if any."""
+        """Explicitly refresh the active Longform sequence."""
+        self._revision += 1
+        self._dirty = True
+        self._request_if_needed()
+
+    def mark_dirty(self) -> None:
+        """Invalidate Longform data and refresh only when its panel is active."""
+        self._revision += 1
+        self._dirty = True
+        if self._is_active():
+            self._reload_timer.start()
+
+    @Slot(str)
+    def on_panel_activated(self, panel_id: str) -> None:
+        """Render or load Longform content when its panel becomes active."""
+        if panel_id != "longform":
+            return
+        if (
+            not self._dirty
+            and self._pending_sequence is not None
+            and self._snapshot_revision == self._revision
+        ):
+            self.window.longform_editor.load_sequence(self._pending_sequence)
+            return
+        self._reload_timer.start(0)
+
+    def _request_if_needed(self) -> None:
+        """Submit the latest Longform revision if it still needs hydration."""
+        if self._load_in_flight or not self._dirty or not self._is_active():
+            return
         # PySide6 cross-thread signal/slot type issues.
         filter_json = (
             json.dumps(self.window.longform_filter_config)
@@ -59,6 +98,8 @@ class LongformManager(QObject):
             else ""
         )
 
+        self._load_in_flight = True
+        self._request_revision = self._revision
         invoke_queued(
             self.window.worker,
             "load_longform_sequence",
@@ -69,12 +110,36 @@ class LongformManager(QObject):
     @Slot(list)
     def on_longform_sequence_loaded(self, sequence: list) -> None:
         """Handler for when longform sequence is loaded."""
-        self.window.longform_editor.load_sequence(sequence)
+        request_revision = self._request_revision
+        self._load_in_flight = False
+        self._request_revision = None
+        if request_revision is None:
+            request_revision = self._revision
+        self._pending_sequence = sequence
+        self._snapshot_revision = request_revision
+        if request_revision != self._revision:
+            if self._is_active():
+                self._reload_timer.start(0)
+            return
+        self._dirty = False
         self.window.data_coordinator.cached_longform_sequence = sequence
+        if self._is_active():
+            self.window.longform_editor.load_sequence(sequence)
 
     def on_command_finished_reload_longform(self) -> None:
         """Handler to reload longform sequence after command completion."""
-        self.load_longform_sequence()
+        self.mark_dirty()
+
+    def _is_active(self) -> bool:
+        """Return whether Longform is the visible tab in its workspace zone."""
+        workspace = self.window.workspace
+        if "longform" not in workspace.panel_ids():
+            return False
+        zone = workspace.panel_zone("longform")
+        return (
+            workspace.zone_visible(zone)
+            and workspace.active_panel(zone) == "longform"
+        )
 
     def show_longform_filter_dialog(self) -> None:
         """Shows filter dialog for the Longform editor (independent state)."""

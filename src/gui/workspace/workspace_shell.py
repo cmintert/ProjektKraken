@@ -31,6 +31,7 @@ class WorkspaceShell(QWidget):
 
     layout_changed = Signal()
     zone_visibility_changed = Signal(str, bool)
+    panel_activated = Signal(str)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         """Create the fixed activity bar and splitter topology."""
@@ -92,6 +93,7 @@ class WorkspaceShell(QWidget):
             pane.panel_move_requested.connect(self.move_panel)
             pane.panel_drag_started.connect(self._begin_panel_drag)
             pane.panel_drag_finished.connect(self._finish_panel_drag)
+            pane.panel_activated.connect(self.panel_activated)
         self.horizontal_splitter.splitterMoved.connect(self._remember_horizontal_sizes)
         self.vertical_splitter.splitterMoved.connect(self._remember_vertical_sizes)
 
@@ -144,7 +146,10 @@ class WorkspaceShell(QWidget):
         """Reveal the panel's current zone and activate its tab."""
         zone = self.panel_zone(panel_id)
         self.show_zone(zone)
+        already_active = self.panes[zone].current_panel_id() == panel_id
         self.panes[zone].activate_panel(panel_id)
+        if already_active:
+            self.panel_activated.emit(panel_id)
         widget = self.panel(panel_id)
         widget.show()
         if focus:

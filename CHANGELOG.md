@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-09-15
-**Commit:** e3674f7d4e748e2de3bebe43cfdb8c12773f1a59
+**Commit:** 5402afe5d103d413dde5bf044f7f75ed9306acc5
 ---
 
 # Changelog
@@ -41,6 +41,14 @@ All notable changes to this project will be documented in this file.
   inactive styling, and Visual Lexicon rows.
 
 ### Fixed
+
+- *(2026-09-15)* **Performance / Detail Loading**: Batched relation endpoint
+  metadata lookups and deferred hidden Graph and Longform hydration, eliminating
+  interactive detail timeouts while preserving relation and editor behavior.
+
+- *(2026-09-15)* **Testing / Performance**: Added regression coverage for
+  demand-driven panel hydration, bounded metadata queries, payload equivalence,
+  missing endpoints, ordering, and entity-first endpoint precedence.
 
 - *(2026-09-14)* **Import / Integrity**: Made failed record batches atomic,
   preserved supplied relation identities, and kept repeated skip-mode imports

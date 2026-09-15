@@ -107,6 +107,7 @@ class PaneContainer(QWidget):
     panel_move_requested = Signal(str, str)
     panel_drag_started = Signal(str)
     panel_drag_finished = Signal()
+    panel_activated = Signal(str)
 
     def __init__(self, zone: ZoneName, parent: QWidget | None = None) -> None:
         """Create a tab container for one fixed workspace zone."""
@@ -135,6 +136,7 @@ class PaneContainer(QWidget):
         tab_bar.panel_drop_requested.connect(self._request_drop)
         tab_bar.panel_drag_started.connect(self.panel_drag_started)
         tab_bar.panel_drag_finished.connect(self.panel_drag_finished)
+        self.tabs.currentChanged.connect(self._on_current_changed)
         tab_bar.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         tab_bar.customContextMenuRequested.connect(self._show_tab_menu)
         layout.addWidget(self.tabs)
@@ -237,6 +239,12 @@ class PaneContainer(QWidget):
             return None
         panel_id = self.tabs.tabBar().tabData(index)
         return panel_id if isinstance(panel_id, str) else None
+
+    def _on_current_changed(self, _index: int) -> None:
+        """Publish the semantic ID of the newly active tab."""
+        panel_id = self.current_panel_id()
+        if panel_id is not None:
+            self.panel_activated.emit(panel_id)
 
     def index_of(self, panel_id: str) -> int:
         """Return the tab index for *panel_id*, or ``-1``."""

@@ -11,6 +11,7 @@ import sqlite3
 import time
 import uuid
 from collections import defaultdict
+from collections.abc import Iterable
 from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
@@ -35,6 +36,7 @@ from src.services.repositories import (
     TagRepository,
     TrajectoryRepository,
 )
+from src.services.repositories.meta_repository import ObjectDisplayMetadata
 from src.services.text_parser import WikiLinkParser
 
 if TYPE_CHECKING:
@@ -1398,6 +1400,12 @@ class DatabaseService:
 
         """
         return self._meta_repo.get_name(object_id)
+
+    def get_object_display_metadata(
+        self, object_ids: Iterable[str]
+    ) -> dict[str, ObjectDisplayMetadata]:
+        """Resolve Event and Entity display metadata in bounded batches."""
+        return self._meta_repo.get_object_display_metadata(object_ids)
 
     def insert_events_bulk(self, events: List[Event]) -> None:
         """Inserts multiple events efficiently using executemany.

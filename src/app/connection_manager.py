@@ -162,6 +162,12 @@ class ConnectionManager:
         self._connection_stats = {"attempted": 0, "succeeded": 0, "failed": 0}
 
         self.connect_data_handler()
+        self._connect_signal_safe(
+            getattr(self.window, "workspace", None),
+            "panel_activated",
+            self.window.data_coordinator.on_panel_activated,
+            "WorkspaceShell",
+        )
         self.connect_unified_list()
         self.connect_editors()
         self.connect_timeline()
@@ -312,7 +318,7 @@ class ConnectionManager:
                 (
                     dh,
                     "reload_longform",
-                    self.window.longform_manager.load_longform_sequence,
+                    self.window.longform_manager.mark_dirty,
                     "DataHandler",
                 ),
                 (

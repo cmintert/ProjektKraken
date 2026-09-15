@@ -27,6 +27,7 @@ from src.services import longform_builder
 from src.services.asset_store import AssetStore
 from src.services.attachment_service import AttachmentService
 from src.services.db_service import DatabaseService
+from src.services.detail_snapshot_service import DetailSnapshotService
 from src.services.import_service import ImportResult
 from src.services.obsidian_exporter import (
     ObsidianExportCompletion,
@@ -461,26 +462,12 @@ class DatabaseWorker(QObject):
 
         try:
             self.operation_started.emit(f"Loading Event {event_id}...")
-            event = self.db_service.get_event(event_id)
-            if event:
-                rels = self.db_service.get_relations(event_id)
-                # Enrich with names
-                for rel in rels:
-                    rel["target_name"] = self.db_service.get_name(rel["target_id"])
-                    target_id = rel["target_id"]
-                    if self.db_service.get_entity(target_id) is not None:
-                        rel["target_kind"] = "entity"
-                    elif self.db_service.get_event(target_id) is not None:
-                        rel["target_kind"] = "event"
-
-                incoming = self.db_service.get_incoming_relations(event_id)
-                for rel in incoming:
-                    rel["source_name"] = self.db_service.get_name(rel["source_id"])
-
-                self.event_details_loaded.emit(event, rels, incoming)
-            else:
-                # Signal that the requested event was not found so UI can clear editors
-                self.event_details_loaded.emit(None, [], [])
+            snapshot = DetailSnapshotService(self.db_service).load_event(event_id)
+            self.event_details_loaded.emit(
+                snapshot.item,
+                snapshot.relations,
+                snapshot.incoming_relations,
+            )
             self.operation_finished.emit("Event Details Loaded.")
         except Exception:
             logger.error(f"Failed to load event details: {traceback.format_exc()}")
@@ -536,20 +523,12 @@ class DatabaseWorker(QObject):
 
         try:
             self.operation_started.emit(f"Loading Entity {entity_id}...")
-            entity = self.db_service.get_entity(entity_id)
-            if entity:
-                rels = self.db_service.get_relations(entity_id)
-                for rel in rels:
-                    rel["target_name"] = self.db_service.get_name(rel["target_id"])
-
-                incoming = self.db_service.get_incoming_relations(entity_id)
-                for rel in incoming:
-                    rel["source_name"] = self.db_service.get_name(rel["source_id"])
-
-                self.entity_details_loaded.emit(entity, rels, incoming)
-            else:
-                # Signal that the requested entity was not found so UI can clear editors
-                self.entity_details_loaded.emit(None, [], [])
+            snapshot = DetailSnapshotService(self.db_service).load_entity(entity_id)
+            self.entity_details_loaded.emit(
+                snapshot.item,
+                snapshot.relations,
+                snapshot.incoming_relations,
+            )
             self.operation_finished.emit("Entity Details Loaded.")
         except Exception:
             logger.error(f"Failed to load entity details: {traceback.format_exc()}")

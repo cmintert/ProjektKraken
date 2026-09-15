@@ -313,11 +313,16 @@ class PerformanceProbeController(QObject):
     def _measure_graph_refresh(self) -> None:
         elapsed, completed = self._time_signal_action(
             self._window.data_handler.graph_data_ready,
-            self._window.data_coordinator.load_graph_data,
+            self._request_measured_graph_refresh,
         )
         self._record("visualization.graph_refresh", elapsed)
         if not completed:
             self._warnings.append("Timed out refreshing graph data.")
+
+    def _request_measured_graph_refresh(self) -> None:
+        """Include one real hidden render without exposing offscreen WebEngine."""
+        self._window.data_coordinator._render_graph_when_hidden_once = True
+        self._window.data_coordinator.load_graph_data()
 
     def _measure_map_refresh(self) -> None:
         elapsed, completed = self._time_signal_action(
