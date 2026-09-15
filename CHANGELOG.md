@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-09-14
-**Commit:** 39f2539aec042de75c2f34eaae14fb87bd61e884
+**Last Updated:** 2026-09-15
+**Commit:** e3674f7d4e748e2de3bebe43cfdb8c12773f1a59
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-09-15)* **Performance / Diagnostics**: Added a manually initiated,
+  measurement-only large-world suite with isolated deterministic fixtures,
+  source and packaged targets, UI/playbar/resource metrics, comparison reports,
+  timeouts, tracked/world-data integrity verification, developer documentation,
+  and focused regression coverage.
 
 - *(2026-09-14)* **Dates / Import**: Added validated complete date ranges,
   including calendar-aware endpoints, duration conversion, and human-readable

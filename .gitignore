@@ -94,6 +94,7 @@ worlds/
 failed_tests*.log
 pytest_no_qt.ini
 tests_conftest_qt_mock.py
+/tmp/performance/
 
 # Claude Code local settings (contains secrets)
 .mcp.json

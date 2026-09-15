@@ -57,8 +57,14 @@ def main() -> None:
         PackageSmokeController,
         parse_package_smoke_options,
     )
+    from src.performance.probe import (
+        PerformanceProbeController,
+        configure_performance_probe,
+        parse_performance_probe_options,
+    )
 
     package_smoke_options = parse_package_smoke_options(sys.argv)
+    performance_probe_options = parse_performance_probe_options(sys.argv)
 
     setup_logging(debug_mode=True)
     from datetime import datetime
@@ -86,12 +92,17 @@ def main() -> None:
             Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
         )
 
-        qt_argv = [sys.argv[0]] if package_smoke_options is not None else sys.argv
+        internal_mode = (
+            package_smoke_options is not None or performance_probe_options is not None
+        )
+        qt_argv = [sys.argv[0]] if internal_mode else sys.argv
         app = QApplication(qt_argv)
-        if package_smoke_options is not None:
+        if internal_mode:
             app.setQuitOnLastWindowClosed(False)
         app.setOrganizationName(WINDOW_SETTINGS_KEY)
         app.setApplicationName(WINDOW_SETTINGS_APP)
+        if performance_probe_options is not None:
+            configure_performance_probe(performance_probe_options)
 
         # 1.5 Custom Tooltip Timing
         from src.gui.utils.style_helper import TooltipEventFilter, TooltipProxyStyle
@@ -127,7 +138,7 @@ def main() -> None:
         setattr(app, "_modal_window_theme_filter", modal_theme_filter)
 
         splash = None
-        if package_smoke_options is None:
+        if package_smoke_options is None and performance_probe_options is None:
             from src.gui.splash_screen import SplashScreen
 
             splash = SplashScreen()
@@ -162,6 +173,14 @@ def main() -> None:
             # Keep the smoke controller alive for the QApplication lifetime.
             setattr(app, "_package_smoke_controller", package_smoke_controller)
             package_smoke_controller.start()
+
+        if performance_probe_options is not None:
+            performance_probe_controller = PerformanceProbeController(
+                window,
+                performance_probe_options,
+            )
+            setattr(app, "_performance_probe_controller", performance_probe_controller)
+            performance_probe_controller.start()
 
         logger.info("Entering Event Loop...")
         exit_code = app.exec()

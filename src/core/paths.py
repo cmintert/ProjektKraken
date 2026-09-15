@@ -135,7 +135,12 @@ def get_log_directory() -> Path:
         Path: The absolute application log directory.
 
     """
-    log_dir = get_executable_dir() / "logs"
+    performance_log_dir = os.environ.get("PROJEKTKRAKEN_PERFORMANCE_LOG_DIR")
+    log_dir = (
+        Path(performance_log_dir).resolve(strict=False)
+        if performance_log_dir
+        else get_executable_dir() / "logs"
+    )
     log_dir.mkdir(parents=True, exist_ok=True)
     return log_dir
 
@@ -170,6 +175,11 @@ def get_worlds_dir() -> Path:
         Path: Path to the worlds/ directory.
 
     """
+    performance_worlds_dir = os.environ.get(
+        "PROJEKTKRAKEN_PERFORMANCE_WORLDS_DIR"
+    )
+    if performance_worlds_dir:
+        return Path(performance_worlds_dir).resolve(strict=False)
     executable_dir = get_executable_dir()
     worlds_dir = executable_dir / "worlds"
     return worlds_dir
