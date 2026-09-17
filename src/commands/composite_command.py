@@ -7,6 +7,7 @@ import logging
 from typing import Dict, List
 
 from src.commands.base_command import BaseCommand, CommandResult
+from src.core.command import LoreMutationEffect, parse_lore_mutation_effects
 from src.services.db_service import DatabaseService
 
 logger = logging.getLogger(__name__)
@@ -45,6 +46,7 @@ class CompositeCommand(BaseCommand):
             CommandResult: Combined result of operation.
         """
         self._executed_commands.clear()
+        sub_results: list[CommandResult] = []
 
         for cmd in self.commands:
             try:
@@ -67,6 +69,8 @@ class CompositeCommand(BaseCommand):
                     )
 
                 self._executed_commands.append(cmd)
+                if isinstance(result, CommandResult):
+                    sub_results.append(result)
 
             except Exception as e:
                 self._rollback(db_service)
@@ -97,15 +101,65 @@ class CompositeCommand(BaseCommand):
                 map_id = getattr(command, "map_id", None)
                 if map_id and str(map_id) not in marker_map_ids:
                     marker_map_ids.append(str(map_id))
+        data: dict[str, object] = {
+            "index_requests": index_requests[:1],
+            "marker_map_ids": marker_map_ids,
+        }
+        effects = self._aggregate_lore_effects(sub_results)
+        if effects is not None:
+            data["lore_effects"] = effects
+            if any(
+                result.command_name
+                in {"CreateEventCommand", "CreateEntityCommand"}
+                for result in sub_results
+            ):
+                data["select_after_apply"] = {
+                    "object_type": effects[0]["object_type"],
+                    "object_id": effects[0]["object_id"],
+                }
         return CommandResult(
             success=True,
             message=f"{self.get_description()} completed.",
             command_name="CompositeCommand",
-            data={
-                "index_requests": index_requests[:1],
-                "marker_map_ids": marker_map_ids,
-            },
+            data=data,
         )
+
+    def _aggregate_lore_effects(
+        self, sub_results: list[CommandResult]
+    ) -> list[LoreMutationEffect] | None:
+        """Return effects only for a safe CRUD plus WikiLinks composite."""
+        allowed = {
+            "CreateEventCommand",
+            "UpdateEventCommand",
+            "DeleteEventCommand",
+            "CreateEntityCommand",
+            "UpdateEntityCommand",
+            "DeleteEntityCommand",
+            "ProcessWikiLinksCommand",
+        }
+        if not self.commands or any(
+            command.__class__.__name__ not in allowed for command in self.commands
+        ):
+            return None
+
+        effects: list[LoreMutationEffect] = []
+        for result in sub_results:
+            parsed = parse_lore_mutation_effects(result.data.get("lore_effects"))
+            if parsed:
+                effects.extend(parsed)
+        if len(effects) != 1:
+            return None
+
+        wiki_sources = {
+            str(getattr(command, "source_id"))
+            for command in self.commands
+            if command.__class__.__name__ == "ProcessWikiLinksCommand"
+        }
+        if wiki_sources and wiki_sources != {effects[0]["object_id"]}:
+            return None
+        if wiki_sources:
+            effects[0]["relations_changed"] = True
+        return effects
 
     def _rollback(self, db_service: DatabaseService) -> None:
         """Undoes all successfully executed commands in reverse order."""

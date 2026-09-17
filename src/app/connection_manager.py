@@ -314,6 +314,19 @@ class ConnectionManager:
                 (dh, "selection_requested", dc.on_selection_requested, "DataHandler"),
                 (dh, "reload_events", dc.load_events, "DataHandler"),
                 (dh, "reload_entities", dc.load_entities, "DataHandler"),
+                (dh, "reload_all_data", dc.load_data, "DataHandler"),
+                (
+                    dh,
+                    "lore_mutation_ready",
+                    dc.on_lore_mutation_ready,
+                    "DataHandler",
+                ),
+                (
+                    dh,
+                    "suggestion_effects_requested",
+                    dc.on_suggestion_effects,
+                    "DataHandler",
+                ),
                 (dh, "reload_maps", self.window.load_maps, "DataHandler"),
                 (
                     dh,
@@ -325,6 +338,12 @@ class ConnectionManager:
                     dh,
                     "reload_active_editor_relations",
                     dc.on_reload_active_editor_relations,
+                    "DataHandler",
+                ),
+                (
+                    dh,
+                    "reload_affected_editor_relations",
+                    dc.on_reload_affected_editor_relations,
                     "DataHandler",
                 ),
                 (

@@ -15,6 +15,11 @@ from PySide6.QtCore import QEventLoop, QObject, QSettings, QTimer, Signal
 from PySide6.QtWidgets import QApplication
 
 from src.app.qt_invocation import invoke_queued
+from src.commands.entity_commands import (
+    CreateEntityCommand,
+    DeleteEntityCommand,
+    UpdateEntityCommand,
+)
 from src.commands.event_commands import (
     CreateEventCommand,
     DeleteEventCommand,
@@ -500,6 +505,26 @@ class PerformanceProbeController(QObject):
             elapsed, metadata = self._run_command(command)
             self._record(name, elapsed)
             self._metrics[name]["metadata"] = metadata
+        entity_id = "22222222-3333-4444-8555-666666666666"
+        entity_commands = [
+            (
+                "mutation.create_entity",
+                CreateEntityCommand(
+                    {"id": entity_id, "name": "Performance Probe Entity", "type": "Person"}
+                ),
+            ),
+            (
+                "mutation.update_entity",
+                UpdateEntityCommand(
+                    entity_id, {"name": "Performance Probe Entity Updated"}
+                ),
+            ),
+            ("mutation.delete_entity", DeleteEntityCommand(entity_id)),
+        ]
+        for name, command in entity_commands:
+            elapsed, metadata = self._run_command(command, expect_layout=False)
+            self._record(name, elapsed)
+            self._metrics[name]["metadata"] = metadata
         if self._window.command_coordinator.can_undo():
             elapsed, completed = self._time_signal_action(
                 self._window.data_handler.events_ready,
@@ -517,8 +542,16 @@ class PerformanceProbeController(QObject):
             if not completed:
                 self._warnings.append("Timed out redoing the probe mutation.")
 
-    def _run_command(self, command: Any) -> tuple[float, dict[str, int]]:
-        counts = {"events_ready": 0, "entities_ready": 0, "graph_data_ready": 0}
+    def _run_command(
+        self, command: Any, *, expect_layout: bool = True
+    ) -> tuple[float, dict[str, object]]:
+        counts: dict[str, int] = {
+            "events_ready": 0,
+            "entities_ready": 0,
+            "graph_data_ready": 0,
+            "lore_mutation_applied": 0,
+            "timeline_layout_requested": 0,
+        }
 
         def count_events(*_args: object) -> None:
             counts["events_ready"] += 1
@@ -529,18 +562,47 @@ class PerformanceProbeController(QObject):
         def count_graph(*_args: object) -> None:
             counts["graph_data_ready"] += 1
 
+        def count_mutation(*_args: object) -> None:
+            counts["lore_mutation_applied"] += 1
+
+        def count_layout(*_args: object) -> None:
+            counts["timeline_layout_requested"] += 1
+
         handler = self._window.data_handler
         handler.events_ready.connect(count_events)
         handler.entities_ready.connect(count_entities)
         handler.graph_data_ready.connect(count_graph)
+        mutation_signal = self._window.data_coordinator.lore_mutation_applied
+        layout_signal = self._window.timeline.view.layout_requested
+        mutation_signal.connect(count_mutation)
+        layout_signal.connect(count_layout)
         elapsed, completed = self._time_signal_action(
-            handler.events_ready,
+            mutation_signal,
             lambda: self._window.command_requested.emit(command),
+            timestamp_at_signal=True,
         )
+        if completed and expect_layout:
+            self._wait_until(
+                lambda: counts["timeline_layout_requested"] > 0,
+                timeout_ms=2_000,
+            )
+        settle_started = time.perf_counter()
+        settled = self._wait_until(
+            lambda: not self._window.timeline.view._layout_in_progress
+            and self._window.timeline.view._pending_layout_request is None
+            and not self._window.timeline.view._incremental_layout_timer.isActive()
+        )
+        metadata: dict[str, object] = dict(counts)
+        metadata["timeline_layout_settled_ms"] = (
+            time.perf_counter() - settle_started
+        ) * 1000.0
+        metadata["timeline_layout_settled"] = settled
         for signal, callback in (
             (handler.events_ready, count_events),
             (handler.entities_ready, count_entities),
             (handler.graph_data_ready, count_graph),
+            (mutation_signal, count_mutation),
+            (layout_signal, count_layout),
         ):
             try:
                 signal.disconnect(callback)
@@ -550,7 +612,7 @@ class PerformanceProbeController(QObject):
             self._warnings.append(
                 f"Timed out running {command.__class__.__name__}."
             )
-        return elapsed, counts
+        return elapsed, metadata
 
     def _measure_repeated(self, name: str, action: Callable[[], object]) -> None:
         action()
@@ -577,15 +639,19 @@ class PerformanceProbeController(QObject):
         action: Callable[[], object],
         *,
         timeout_ms: int = 60_000,
+        timestamp_at_signal: bool = False,
     ) -> tuple[float, bool]:
         loop = QEventLoop()
         completed = False
+        finished_at: float | None = None
         timeout = QTimer()
         timeout.setSingleShot(True)
 
         def finish(*_args: object) -> None:
-            nonlocal completed
+            nonlocal completed, finished_at
             completed = True
+            if finished_at is None:
+                finished_at = time.perf_counter()
             loop.quit()
 
         signal.connect(finish)
@@ -594,7 +660,8 @@ class PerformanceProbeController(QObject):
         started = time.perf_counter()
         action()
         loop.exec()
-        elapsed = (time.perf_counter() - started) * 1000.0
+        stopped = finished_at if timestamp_at_signal and finished_at else time.perf_counter()
+        elapsed = (stopped - started) * 1000.0
         timeout.stop()
         try:
             signal.disconnect(finish)

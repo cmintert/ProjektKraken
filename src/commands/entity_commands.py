@@ -53,7 +53,18 @@ class CreateEntityCommand(BaseCommand):
                 success=True,
                 message=f"Entity '{self._entity.name}' created.",
                 command_name="CreateEntityCommand",
-                data={"id": self._entity.id},
+                data={
+                    "id": self._entity.id,
+                    "lore_effects": [
+                        {
+                            "object_type": "entity",
+                            "operation": "upsert",
+                            "object_id": self._entity.id,
+                            "snapshot": self._entity.to_dict(),
+                            "relations_changed": False,
+                        }
+                    ],
+                },
             )
         except Exception as e:
             logger.error(f"Failed to create entity: {e}")
@@ -168,7 +179,18 @@ class UpdateEntityCommand(BaseCommand):
                 success=True,
                 message="Entity updated.",
                 command_name="UpdateEntityCommand",
-                data={"id": self.entity_id},
+                data={
+                    "id": self.entity_id,
+                    "lore_effects": [
+                        {
+                            "object_type": "entity",
+                            "operation": "upsert",
+                            "object_id": self.entity_id,
+                            "snapshot": self._new_entity.to_dict(),
+                            "relations_changed": False,
+                        }
+                    ],
+                },
             )
         except Exception as e:
             logger.error(f"Failed to update entity: {e}")
@@ -288,6 +310,18 @@ class DeleteEntityCommand(BaseCommand):
                 success=True,
                 message="Entity deleted.",
                 command_name="DeleteEntityCommand",
+                data={
+                    "id": self.entity_id,
+                    "lore_effects": [
+                        {
+                            "object_type": "entity",
+                            "operation": "delete",
+                            "object_id": self.entity_id,
+                            "snapshot": None,
+                            "relations_changed": True,
+                        }
+                    ],
+                },
             )
         except Exception as e:
             logger.error(f"Failed to delete entity: {e}")

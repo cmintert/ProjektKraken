@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-09-15
-**Commit:** 5402afe5d103d413dde5bf044f7f75ed9306acc5
+**Last Updated:** 2026-09-17
+**Commit:** f394e2d67bbeaa0a3ae1a26573952a33bc974ff7
 ---
 
 # Changelog
@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-09-17)* **Performance / Diagnostics**: Added single-profile runs and
+  Event/Entity mutation, reload, and timeline-layout measurements, with focused
+  regression tests and developer usage guidance.
 
 - *(2026-09-15)* **Performance / Diagnostics**: Added a manually initiated,
   measurement-only large-world suite with isolated deterministic fixtures,
@@ -41,6 +45,12 @@ All notable changes to this project will be documented in this file.
   inactive styling, and Visual Lexicon rows.
 
 ### Fixed
+
+- *(2026-09-17)* **Performance / Mutation Refreshes**: Replaced competing
+  command refreshes with one owner and incremental Event/Entity cache, Explorer,
+  timeline, map, completer, and secondary-view updates, while retaining a
+  deduplicated full-refresh fallback for undo, redo, and complex commands.
+  Unrelated updates and deletions no longer rehydrate the active detail editor.
 
 - *(2026-09-15)* **Performance / Detail Loading**: Batched relation endpoint
   metadata lookups and deferred hidden Graph and Longform hydration, eliminating

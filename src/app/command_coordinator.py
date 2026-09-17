@@ -352,45 +352,9 @@ class CommandCoordinator(QObject):
                 self._emit_history_changed()
                 self.log_stack_state()
 
-            # Trigger data refresh based on command type.
-            # Skip for Undo/Redo results — DataHandler already handles
-            # those reloads via its own command_finished connection.
-            is_undo_redo = result.command_name.startswith(
-                (
-                    "Undo_",
-                    "Redo_",
-                )
-            )
-            if not is_undo_redo:
-                self._refresh_after_command(result)
         else:
             logger.error(f"Command failed: {result.message}")
             self._show_error(result.message)
-
-    def _refresh_after_command(self, result: "CommandResult") -> None:
-        """Refresh UI data after successful command execution.
-
-        Args:
-            result: CommandResult object.
-
-        """
-        # Raster paint commands already return immutable patch effects that the
-        # MapHandler applies directly to the active buffer.  Reloading all data
-        # after every stroke is redundant and can make the timeline re-emit its
-        # unchanged playhead.  A playhead event deliberately invalidates raster
-        # edit targets, so that generic refresh used to stop Paint after each
-        # successful stroke.
-        if result.command_name in {
-            "PaintRasterCommand",
-            "StrokeRasterCommand",
-            "UpdateTrajectoryCommand",
-        }:
-            return
-
-        # Determine what needs refreshing based on command type
-        # This could be enhanced to be more specific per command
-        if hasattr(self.window, "data_coordinator"):
-            self.window.data_coordinator.load_data()
 
     def log_stack_state(self) -> None:
         """Log a compact summary of the undo/redo stacks."""

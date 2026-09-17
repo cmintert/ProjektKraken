@@ -1,6 +1,12 @@
+import time
 from pathlib import Path
 
-from src.performance.probe import parse_performance_probe_options
+from PySide6.QtCore import QObject, QTimer, Signal
+
+from src.performance.probe import (
+    PerformanceProbeController,
+    parse_performance_probe_options,
+)
 from src.performance.runner import build_parser
 
 
@@ -38,3 +44,33 @@ def test_public_runner_requires_manual_mode_and_target() -> None:
     assert options.quick is True
     assert options.full is False
     assert options.target == "source"
+
+
+def test_public_runner_can_select_one_relation_heavy_profile() -> None:
+    options = build_parser().parse_args(
+        ["--profile", "relation-heavy", "--target", "source"]
+    )
+
+    assert options.profile == "relation-heavy"
+    assert options.full is False
+
+
+class _ProbeEmitter(QObject):
+    completed = Signal()
+
+
+def test_mutation_timer_records_signal_before_later_callbacks(qapp) -> None:
+    emitter = _ProbeEmitter()
+
+    def action() -> None:
+        emitter.completed.connect(lambda: time.sleep(0.08))
+        QTimer.singleShot(0, emitter.completed.emit)
+
+    started = time.perf_counter()
+    elapsed_ms, completed = PerformanceProbeController._time_signal_action(
+        object(), emitter.completed, action, timestamp_at_signal=True
+    )
+    wall_ms = (time.perf_counter() - started) * 1000
+
+    assert completed
+    assert wall_ms - elapsed_ms >= 40

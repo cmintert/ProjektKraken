@@ -39,6 +39,50 @@ def test_completer_update(qapp):
     assert editor._completer.model().stringList() == names_v2
 
 
+def test_incremental_completion_preserves_model_and_duplicate_precedence(qapp):
+    editor = WikiTextEdit()
+    editor.set_completer(
+        items=[
+            ("entity-1", "Alpha", "entity"),
+            ("event-1", "Alpha", "event"),
+            ("entity-2", "Zulu", "entity"),
+        ]
+    )
+    model = editor._completer.model()
+    editor.apply_completion_effects(
+        [
+            {
+                "object_type": "entity",
+                "operation": "upsert",
+                "object_id": "entity-2",
+                "snapshot": {
+                    "id": "entity-2",
+                    "name": "Beta",
+                    "type": "Person",
+                },
+                "relations_changed": False,
+            }
+        ]
+    )
+    assert editor._completer.model() is model
+    assert model.stringList() == ["Alpha", "Alpha", "Beta"]
+    assert editor.editor._completion_map["Alpha"] == ("event-1", "event")
+
+    editor.apply_completion_effects(
+        [
+            {
+                "object_type": "event",
+                "operation": "delete",
+                "object_id": "event-1",
+                "snapshot": None,
+                "relations_changed": True,
+            }
+        ]
+    )
+    assert model.stringList() == ["Alpha", "Beta"]
+    assert editor.editor._completion_map["Alpha"] == ("entity-1", "entity")
+
+
 def test_insert_completion(qapp):
     """Test inserting a completion replaces the token."""
     editor = WikiTextEdit()

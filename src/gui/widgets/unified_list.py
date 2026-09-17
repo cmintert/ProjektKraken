@@ -6,7 +6,7 @@ color-coded differentiation.
 
 import json
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from PySide6.QtCore import QMimeData, QSize, QSortFilterProxyModel, Qt, Signal, Slot
 from PySide6.QtGui import QDrag, QMouseEvent
@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.calendar import CalendarConverter
+from src.core.command import LoreMutationEffect
 from src.core.entities import Entity
 from src.core.events import Event
 from src.gui.models.explorer_filter_proxy import ExplorerFilterProxyModel
@@ -446,6 +447,102 @@ class UnifiedListWidget(QWidget):
 
         self._render_list()
 
+    def apply_lore_effects(self, effects: list[LoreMutationEffect]) -> None:
+        """Apply worker-confirmed lore mutations without resetting the list."""
+        current_index = self.list_widget.currentIndex()
+        selected: tuple[str, str] | None = None
+        if current_index.isValid():
+            source_index = self._proxy_model.mapToSource(current_index)
+            selected = (
+                self._model.data(source_index, ExplorerModel.ItemTypeRole),
+                self._model.data(source_index, ExplorerModel.ItemIdRole),
+            )
+        selected_deleted = selected is not None and any(
+            effect["operation"] == "delete"
+            and (effect["object_type"], effect["object_id"]) == selected
+            for effect in effects
+        )
+        if selected_deleted:
+            self.list_widget.selectionModel().clear()
+
+        filter_mode = self.filter_combo.currentText()
+        reverse = not self._sort_ascending
+        for effect in effects:
+            object_id = effect["object_id"]
+            item_type = effect["object_type"]
+            item: ExplorerItem | None = None
+            if item_type == "event":
+                self._events = [e for e in self._events if e.id != object_id]
+                if effect["operation"] == "upsert":
+                    snapshot = effect["snapshot"]
+                    assert snapshot is not None
+                    event = Event.from_dict(snapshot)
+                    self._events.append(event)
+                    self._events.sort(key=lambda value: value.lore_date)
+                    if filter_mode in {"All Items", "Events Only"}:
+                        item = ("event", event)
+            else:
+                self._entities = [e for e in self._entities if e.id != object_id]
+                if effect["operation"] == "upsert":
+                    snapshot = effect["snapshot"]
+                    assert snapshot is not None
+                    entity = Entity.from_dict(snapshot)
+                    self._entities.append(entity)
+                    self._entities.sort(key=lambda value: value.name)
+                    if filter_mode in {"All Items", "Entities Only"}:
+                        item = ("entity", entity)
+            self._model.apply_item(
+                item,
+                item_type,
+                object_id,
+                self._get_sort_key,
+                reverse,
+            )
+
+        if self._search_term or self._advanced_filter_config:
+            self._proxy_model.invalidate()
+
+        if selected is not None and not selected_deleted:
+            self._restore_lore_selection(selected)
+        has_items = self._proxy_model.rowCount() > 0
+        self.list_widget.setVisible(has_items)
+        self.empty_state.setVisible(not has_items)
+
+    def _restore_lore_selection(self, selected: tuple[str, str]) -> None:
+        """Keep the current Explorer row across an incremental model move."""
+        current = self.list_widget.currentIndex()
+        if current.isValid():
+            source = self._proxy_model.mapToSource(current)
+            current_identity = (
+                self._model.data(source, ExplorerModel.ItemTypeRole),
+                self._model.data(source, ExplorerModel.ItemIdRole),
+            )
+            if current_identity == selected:
+                return
+        found_source = self._model.find_item_index(*selected)
+        if found_source is not None:
+            proxy = self._proxy_model.mapFromSource(found_source)
+            if proxy.isValid():
+                self.list_widget.setCurrentIndex(proxy)
+
+    def _get_sort_key(self, item_tuple: ExplorerItem) -> str | float:
+        """Return the current Explorer sort key for one item."""
+        item_type, obj = item_tuple
+        sort_field = self.sort_combo.currentText()
+        reverse = not self._sort_ascending
+        if sort_field == "Name":
+            return obj.name.lower()
+        if sort_field == "Created":
+            return getattr(obj, "created_at", 0) or 0
+        if sort_field == "Lore Date":
+            if item_type == "event":
+                return getattr(obj, "lore_date", float("inf")) or float("inf")
+            return float("inf") if not reverse else float("-inf")
+        if sort_field == "Type":
+            object_type = getattr(obj, "type", "")
+            return object_type.lower() if isinstance(object_type, str) else ""
+        return obj.name.lower()
+
     def set_calendar_converter(self, converter: Optional[CalendarConverter]) -> None:
         """Sets the calendar converter for formatting lore dates.
 
@@ -541,37 +638,9 @@ class UnifiedListWidget(QWidget):
             items_to_display.extend([("event", e) for e in self._events])
 
         # Sort items based on current sort settings
-        sort_field = self.sort_combo.currentText()
         reverse = not self._sort_ascending
 
-        def get_sort_key(
-            item_tuple: ExplorerItem,
-        ) -> Union[str, float]:
-            """Get sort key for an item based on current sort field.
-
-            Args:
-                item_tuple: Tuple of (item_type, item_object).
-
-            Returns:
-                Sort key value (string or float).
-            """
-            item_type, obj = item_tuple
-            if sort_field == "Name":
-                return obj.name.lower()
-            elif sort_field == "Created":
-                return getattr(obj, "created_at", 0) or 0
-            elif sort_field == "Lore Date":
-                if item_type == "event":
-                    return getattr(obj, "lore_date", float("inf")) or float("inf")
-                else:
-                    # Entities go to end when sorting by lore date
-                    return float("inf") if not reverse else float("-inf")
-            elif sort_field == "Type":
-                t = getattr(obj, "type", "")
-                return t.lower() if isinstance(t, str) else ""
-            return obj.name.lower()
-
-        items_to_display.sort(key=get_sort_key, reverse=reverse)
+        items_to_display.sort(key=self._get_sort_key, reverse=reverse)
 
         # Update model with sorted items
         self._model.set_items(items_to_display)

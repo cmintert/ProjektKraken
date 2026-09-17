@@ -74,7 +74,18 @@ class CreateEventCommand(BaseCommand):
                 success=True,
                 message=f"Event '{self.event.name}' created.",
                 command_name="CreateEventCommand",
-                data={"id": self.event.id},
+                data={
+                    "id": self.event.id,
+                    "lore_effects": [
+                        {
+                            "object_type": "event",
+                            "operation": "upsert",
+                            "object_id": self.event.id,
+                            "snapshot": self.event.to_dict(),
+                            "relations_changed": False,
+                        }
+                    ],
+                },
             )
         except Exception as e:
             logger.error(f"Failed to create event: {e}")
@@ -216,7 +227,18 @@ class UpdateEventCommand(BaseCommand):
                 success=True,
                 message="Event updated successfully.",
                 command_name="UpdateEventCommand",
-                data={"id": self.event_id},
+                data={
+                    "id": self.event_id,
+                    "lore_effects": [
+                        {
+                            "object_type": "event",
+                            "operation": "upsert",
+                            "object_id": self.event_id,
+                            "snapshot": self._new_event.to_dict(),
+                            "relations_changed": False,
+                        }
+                    ],
+                },
             )
         except Exception as e:
             logger.error(f"Failed to update event: {e}")
@@ -332,6 +354,18 @@ class DeleteEventCommand(BaseCommand):
                 success=True,
                 message="Event deleted.",
                 command_name="DeleteEventCommand",
+                data={
+                    "id": self.event_id,
+                    "lore_effects": [
+                        {
+                            "object_type": "event",
+                            "operation": "delete",
+                            "object_id": self.event_id,
+                            "snapshot": None,
+                            "relations_changed": True,
+                        }
+                    ],
+                },
             )
         except Exception as e:
             logger.error(f"Failed to delete event: {e}")

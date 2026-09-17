@@ -4,6 +4,7 @@ Provides a virtualized QAbstractListModel for the project explorer list view.
 """
 
 import logging
+from collections.abc import Callable
 from typing import Any, Literal, Optional, TypeAlias
 
 from PySide6.QtCore import (
@@ -126,6 +127,59 @@ class ExplorerModel(QAbstractListModel):
         self.beginResetModel()
         self._items = list(items)
         self.endResetModel()
+
+    def apply_item(
+        self,
+        item: ExplorerItem | None,
+        item_type: str,
+        item_id: str,
+        sort_key: Callable[[ExplorerItem], str | float],
+        reverse: bool,
+    ) -> None:
+        """Insert, update, move, or remove one item without resetting the model."""
+        old_row = next(
+            (
+                row
+                for row, (existing_type, obj) in enumerate(self._items)
+                if existing_type == item_type and obj.id == item_id
+            ),
+            None,
+        )
+        remaining = list(self._items)
+        if old_row is not None:
+            remaining.pop(old_row)
+
+        if item is None:
+            if old_row is not None:
+                self.beginRemoveRows(QModelIndex(), old_row, old_row)
+                self._items.pop(old_row)
+                self.endRemoveRows()
+            self._checked_ids.discard((item_type, item_id))
+            return
+
+        item_key: Any = sort_key(item)
+        new_row = len(remaining)
+        for row, existing in enumerate(remaining):
+            existing_key: Any = sort_key(existing)
+            if (not reverse and item_key < existing_key) or (
+                reverse and item_key > existing_key
+            ):
+                new_row = row
+                break
+
+        if old_row is not None and old_row == new_row:
+            self._items[old_row] = item
+            index = self.index(old_row, 0)
+            self.dataChanged.emit(index, index)
+            return
+
+        if old_row is not None:
+            self.beginRemoveRows(QModelIndex(), old_row, old_row)
+            self._items.pop(old_row)
+            self.endRemoveRows()
+        self.beginInsertRows(QModelIndex(), new_row, new_row)
+        self._items.insert(new_row, item)
+        self.endInsertRows()
 
     def rowCount(
         self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()

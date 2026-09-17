@@ -24,6 +24,12 @@ Run the complete profile matrix:
 .venv\Scripts\python.exe -m src.performance.runner --full --target source
 ```
 
+Run one non-standard profile without the full matrix:
+
+```powershell
+.venv\Scripts\python.exe -m src.performance.runner --profile relation-heavy --target source
+```
+
 Measure an existing packaged build separately:
 
 ```powershell
@@ -38,7 +44,7 @@ report.
 
 Quick mode uses the 10,000-event / 25,000-entity standard profile. Full mode also
 tests dense dates, relation-heavy data, large content, and temporal-map data. Full
-runs take substantially longer.
+runs take substantially longer. `--profile` accepts any profile in that matrix.
 
 ## Outputs and isolation
 
@@ -57,4 +63,3 @@ repository's real `worlds/` directory. Any difference makes the run fail.
 
 Use `Ctrl+C` to stop a run. Completed profiles and partial failure information remain
 available in the run directory. No report is promoted to a baseline automatically.
-

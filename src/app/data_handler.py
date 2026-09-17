@@ -10,6 +10,7 @@ from typing import Any, Iterable, List, Optional, Tuple, cast
 from PySide6.QtCore import QObject, Signal, Slot
 
 from src.commands.base_command import CommandResult
+from src.core.command import LoreMutationEffect, parse_lore_mutation_effects
 from src.core.entities import Entity
 from src.core.events import Event
 
@@ -54,6 +55,7 @@ class DataHandler(QObject):
     events_ready = Signal(list)  # Emitted when events are processed
     entities_ready = Signal(list)  # Emitted when entities are processed
     suggestions_update_requested = Signal(list)  # (items: list of tuples)
+    suggestion_effects_requested = Signal(list)
     event_details_ready = Signal(object, list, list)  # (event, relations, incoming)
     entity_details_ready = Signal(object, list, list)  # (entity, relations, incoming)
     longform_sequence_ready = Signal(list)  # Emitted when longform data is processed
@@ -82,6 +84,9 @@ class DataHandler(QObject):
     reload_entity_details = Signal(str)  # (entity_id)
     reload_longform = Signal()
     reload_active_editor_relations = Signal()  # Reload relations for active editor
+    reload_affected_editor_relations = Signal(list)
+    reload_all_data = Signal()
+    lore_mutation_ready = Signal(list)
 
     # Auto-index: emitted when an entity/event is saved and should be re-embedded
     index_object_requested = Signal(str, str)  # (object_type, object_id)
@@ -196,6 +201,75 @@ class DataHandler(QObject):
 
         # Emit signal for editors to update
         self.suggestions_update_requested.emit(items)
+
+    def _apply_lore_effects_to_cache(
+        self, effects: list[LoreMutationEffect]
+    ) -> None:
+        """Patch worker-confirmed lore snapshots into local caches."""
+        for effect in effects:
+            object_id = effect["object_id"]
+            if effect["object_type"] == "event":
+                self._cached_events = [
+                    event for event in self._cached_events if event.id != object_id
+                ]
+                if effect["operation"] == "upsert":
+                    snapshot = effect["snapshot"]
+                    assert snapshot is not None
+                    self._cached_events.append(Event.from_dict(snapshot))
+                    self._cached_events.sort(key=lambda event: event.lore_date)
+            else:
+                self._cached_entities = [
+                    entity for entity in self._cached_entities if entity.id != object_id
+                ]
+                if effect["operation"] == "upsert":
+                    snapshot = effect["snapshot"]
+                    assert snapshot is not None
+                    self._cached_entities.append(Entity.from_dict(snapshot))
+                    self._cached_entities.sort(key=lambda entity: entity.name)
+
+    def _apply_incremental_lore_refresh(
+        self,
+        result: CommandResult,
+        effects: list[LoreMutationEffect],
+    ) -> None:
+        """Apply one validated lore mutation batch and emit side effects once."""
+        self._apply_lore_effects_to_cache(effects)
+        self.lore_mutation_ready.emit(effects)
+        self.suggestion_effects_requested.emit(effects)
+
+        marker_map_ids = [
+            str(map_id)
+            for map_id in cast(Iterable[object], result.data.get("marker_map_ids", []))
+            if map_id
+        ]
+        if marker_map_ids:
+            self.reload_markers.emit(marker_map_ids[0])
+        else:
+            self.reload_markers_for_current_map.emit()
+
+        for effect in effects:
+            if effect["operation"] == "upsert":
+                self.index_object_requested.emit(
+                    effect["object_type"], effect["object_id"]
+                )
+
+        selection = result.data.get("select_after_apply")
+        if result.command_name in {"CreateEventCommand", "CreateEntityCommand"}:
+            selection = {
+                "object_type": effects[0]["object_type"],
+                "object_id": effects[0]["object_id"],
+            }
+        if isinstance(selection, dict):
+            self.selection_requested.emit(
+                str(selection["object_type"]), str(selection["object_id"])
+            )
+        elif any(
+            effect["relations_changed"] and effect["operation"] != "delete"
+            for effect in effects
+        ):
+            self.reload_active_editor_relations.emit()
+        else:
+            self.reload_affected_editor_relations.emit(effects)
 
     @Slot(object, list, list)
     def on_event_details_loaded(
@@ -333,19 +407,25 @@ class DataHandler(QObject):
         self, object_type: str, map_id: str | None = None
     ) -> None:
         """Reload lore data before rebuilding marker tooltip content."""
+        self._schedule_marker_after_lore(object_type, map_id)
+        if object_type == "event":
+            self.reload_events.emit()
+        elif object_type == "entity":
+            self.reload_entities.emit()
+        self.reload_longform.emit()
+
+    def _schedule_marker_after_lore(
+        self, object_type: str, map_id: str | None = None
+    ) -> None:
+        """Schedule marker rebuilding after the next matching cache load."""
         if object_type == "event":
             self._reload_markers_after_events = True
             self._reload_marker_map_after_events = map_id
-            self.reload_events.emit()
         elif object_type == "entity":
             self._reload_markers_after_entities = True
             self._reload_marker_map_after_entities = map_id
-            self.reload_entities.emit()
         else:
             logger.warning("Unknown lore object type for reload: %s", object_type)
-            return
-
-        self.reload_longform.emit()
 
     @Slot(str, list)
     def on_trajectories_loaded(
@@ -396,9 +476,44 @@ class DataHandler(QObject):
                 "UpdateTrajectoryCommand",
                 "Undo_UpdateTrajectoryCommand",
                 "Redo_UpdateTrajectoryCommand",
+                "PaintRasterCommand",
+                "StrokeRasterCommand",
             }:
                 # Direct trajectory editing owns one map-scoped reload after
                 # persistence; generic undo reloads would duplicate it.
+                return
+
+            # Undo and redo retain one conservative full refresh, even when a
+            # redo reuses the original command's incremental result payload.
+            is_undo_redo = command_name.startswith(("Undo_", "Redo_"))
+            if is_undo_redo:
+                logger.debug("[DataHandler] UNDO/REDO detected - full reload")
+                self.reload_all_data.emit()
+                self.reload_markers_for_current_map.emit()
+                self.reload_maps.emit()
+                return
+
+            effects = parse_lore_mutation_effects(result.data.get("lore_effects"))
+            if effects is not None:
+                self._apply_incremental_lore_refresh(result, effects)
+                return
+            if "lore_effects" in result.data:
+                logger.warning(
+                    "Invalid lore mutation effects for %s; using full refresh",
+                    command_name,
+                )
+                if command_name == "CreateEventCommand" and result.data.get("id"):
+                    self._pending_select_type = "event"
+                    self._pending_select_id = str(result.data["id"])
+                elif command_name == "CreateEntityCommand" and result.data.get("id"):
+                    self._pending_select_type = "entity"
+                    self._pending_select_id = str(result.data["id"])
+                if "Event" in command_name:
+                    self._schedule_marker_after_lore("event")
+                if "Entity" in command_name:
+                    self._schedule_marker_after_lore("entity")
+                self.reload_all_data.emit()
+                self.reload_longform.emit()
                 return
 
             if command_name == "CreateEventCommand" and result.data.get("id"):
@@ -434,23 +549,7 @@ class DataHandler(QObject):
                 self.reload_maps.emit()
 
             if command_name == "RenameLayerCommand":
-                logger.debug(
-                    "[DataHandler] Emitting lore reloads for RenameLayerCommand"
-                )
-                self.reload_entities.emit()
-                self.reload_events.emit()
                 self.reload_markers_for_current_map.emit()
-
-            # Full reload on any UNDO operation to ensure UI consistency
-            is_undo_operation = command_name.startswith("Undo_")
-            if is_undo_operation:
-                logger.debug("[DataHandler] UNDO detected - full reload")
-                self.reload_events.emit()
-                self.reload_entities.emit()
-                self.reload_active_editor_relations.emit()
-                self.reload_markers_for_current_map.emit()
-                self.reload_maps.emit()
-                return  # Skip normal per-command logic for undo
 
             # Reload markers for creation/deletion (but not normal updates)
             is_update_operation = (
@@ -482,24 +581,13 @@ class DataHandler(QObject):
                 )
                 self.reload_markers_for_current_map.emit()
 
-            if "Event" in command_name:
-                logger.debug(
-                    "[DataHandler] Reloading event cache before map markers"
-                )
-                self._reload_lore_cache_then_markers("event")
-
-            if "Entity" in command_name:
-                logger.debug(
-                    "[DataHandler] Reloading entity cache before map markers"
-                )
-                self._reload_lore_cache_then_markers("entity")
             if "Relation" in command_name or "WikiLinks" in command_name:
-                logger.debug(
-                    "[DataHandler] Emitting reload signals (WikiLinks/Relation)"
-                )
-                self.reload_active_editor_relations.emit()
-                self.reload_events.emit()
-                self.reload_entities.emit()
+                logger.debug("[DataHandler] Relation change uses full refresh")
+
+            if "Event" in command_name:
+                self._schedule_marker_after_lore("event")
+            if "Entity" in command_name:
+                self._schedule_marker_after_lore("entity")
 
             if "Longform" in command_name:
                 logger.debug("[DataHandler] Emitting reload_longform")
@@ -537,9 +625,7 @@ class DataHandler(QObject):
                         object_type,
                         str(request["object_id"]),
                     )
-                    self._reload_lore_cache_then_markers(
-                        object_type, marker_map_id
-                    )
+                    self._schedule_marker_after_lore(object_type, marker_map_id)
                 else:
                     cmd_obj = result.data.get("command")
                     for sub in getattr(cmd_obj, "commands", []):
@@ -553,8 +639,12 @@ class DataHandler(QObject):
                                 self.index_object_requested.emit(
                                     object_type, obj_id
                                 )
-                                self._reload_lore_cache_then_markers(object_type)
+                                self._schedule_marker_after_lore(object_type)
                                 break
+
+            # This is the sole compatibility fallback for commands that do not
+            # provide a validated incremental mutation effect.
+            self.reload_all_data.emit()
 
             logger.debug(f"[DataHandler] on_command_finished completed: {command_name}")
 

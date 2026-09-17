@@ -139,8 +139,8 @@ class TestDataHandlerSignals:
 
     def test_command_finished_handles_success(self, data_handler, qtbot):
         """Test that on_command_finished handles successful commands."""
-        reload_events_signal = []
-        data_handler.reload_events.connect(lambda: reload_events_signal.append(True))
+        reload_all_signal = []
+        data_handler.reload_all_data.connect(lambda: reload_all_signal.append(True))
 
         # Create a successful command result
         result = CommandResult(
@@ -153,7 +153,7 @@ class TestDataHandlerSignals:
         data_handler.on_command_finished(result)
 
         # Verify reload signal was emitted
-        assert len(reload_events_signal) == 1
+        assert reload_all_signal == [True]
 
     def test_command_finished_handles_failure(self, data_handler, qtbot):
         """Test that on_command_finished handles failed commands."""
@@ -261,17 +261,13 @@ class TestDataHandlerSignals:
     def test_undo_update_marker_reloads(self, data_handler, qtbot):
         """Test that undoing UpdateMarkerCommand triggers FULL reload."""
         reload_markers_signal = []
-        reload_events_signal = []
-        reload_entities_signal = []
+        reload_all_signal = []
         reload_maps_signal = []
 
         data_handler.reload_markers_for_current_map.connect(
             lambda: reload_markers_signal.append(True)
         )
-        data_handler.reload_events.connect(lambda: reload_events_signal.append(True))
-        data_handler.reload_entities.connect(
-            lambda: reload_entities_signal.append(True)
-        )
+        data_handler.reload_all_data.connect(lambda: reload_all_signal.append(True))
         data_handler.reload_maps.connect(lambda: reload_maps_signal.append(True))
 
         # Create a successful Undo_UpdateMarkerCommand result
@@ -286,23 +282,18 @@ class TestDataHandlerSignals:
 
         # Verify FULL reload signals were emitted
         assert len(reload_markers_signal) == 1
-        assert len(reload_events_signal) == 1
-        assert len(reload_entities_signal) == 1
+        assert reload_all_signal == [True]
         assert len(reload_maps_signal) == 1
 
     def test_undo_any_command_triggers_full_reload(self, data_handler, qtbot):
         """Test that ANY undo operation triggers full reload."""
         reload_markers_signal = []
-        reload_events_signal = []
-        reload_entities_signal = []
+        reload_all_signal = []
 
         data_handler.reload_markers_for_current_map.connect(
             lambda: reload_markers_signal.append(True)
         )
-        data_handler.reload_events.connect(lambda: reload_events_signal.append(True))
-        data_handler.reload_entities.connect(
-            lambda: reload_entities_signal.append(True)
-        )
+        data_handler.reload_all_data.connect(lambda: reload_all_signal.append(True))
 
         # Test with Undo_CreateEventCommand
         result = CommandResult(
@@ -316,8 +307,7 @@ class TestDataHandlerSignals:
 
         # Verify FULL reload signals were emitted
         assert len(reload_markers_signal) == 1
-        assert len(reload_events_signal) == 1
-        assert len(reload_entities_signal) == 1
+        assert reload_all_signal == [True]
 
 
 class TestDataHandlerDecoupling:

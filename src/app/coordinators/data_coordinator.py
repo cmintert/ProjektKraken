@@ -15,7 +15,7 @@ Handles:
 import logging
 from typing import TYPE_CHECKING, Optional, cast
 
-from PySide6.QtCore import Q_ARG, QTimer, Slot
+from PySide6.QtCore import Q_ARG, QTimer, Signal, Slot
 from PySide6.QtWidgets import QMessageBox
 
 from src.app.constants import (
@@ -26,11 +26,12 @@ from src.app.constants import (
 )
 from src.app.coordinators.base_coordinator import BaseCoordinator
 from src.app.qt_invocation import invoke_queued
+from src.core.command import LoreMutationEffect, parse_lore_mutation_effects
+from src.core.entities import Entity
+from src.core.events import Event
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
-    from src.core.entities import Entity
-    from src.core.events import Event
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,8 @@ class DataCoordinator(BaseCoordinator):
     Manages cached data (events, entities) and routes data-ready signals
     from the DataHandler to the appropriate UI widgets.
     """
+
+    lore_mutation_applied = Signal(str, str, str)
 
     def __init__(self, main_window: "MainWindow") -> None:
         """Initialize the data coordinator.
@@ -65,6 +68,10 @@ class DataCoordinator(BaseCoordinator):
         self._render_graph_when_hidden_once = False
         self._startup_datasets_pending = {"events", "entities"}
         self._startup_completion_emitted = False
+        self._event_detail_id: str | None = None
+        self._entity_detail_id: str | None = None
+        self._event_relation_ids: set[str] = set()
+        self._entity_relation_ids: set[str] = set()
 
         # Semantic completion debounce
         self._pending_semantic_prefix: str = ""
@@ -238,6 +245,59 @@ class DataCoordinator(BaseCoordinator):
         self._mark_secondary_views_dirty()
         self._mark_startup_dataset_ready("entities")
 
+    @Slot(list)
+    def on_lore_mutation_ready(self, raw_effects: list) -> None:
+        """Apply validated worker-confirmed lore changes without full hydration."""
+        effects = parse_lore_mutation_effects(raw_effects)
+        if effects is None:
+            logger.error("Ignoring invalid lore mutation payload from DataHandler")
+            return
+
+        for effect in effects:
+            self._patch_lore_cache(effect)
+
+        self.main_window.unified_list.apply_lore_effects(effects)
+        event_effects = [
+            effect for effect in effects if effect["object_type"] == "event"
+        ]
+        if event_effects:
+            self.main_window.timeline.apply_event_effects(event_effects)
+        self.main_window.map_widget.set_cached_items(
+            self._cached_entities, self._cached_events
+        )
+        self._reconcile_context_tags()
+        self._mark_secondary_views_dirty()
+
+        for effect in effects:
+            self.lore_mutation_applied.emit(
+                effect["object_type"],
+                effect["object_id"],
+                effect["operation"],
+            )
+
+    def _patch_lore_cache(self, effect: LoreMutationEffect) -> None:
+        """Patch one effect into coordinator caches using repository ordering."""
+        object_id = effect["object_id"]
+        if effect["object_type"] == "event":
+            self._cached_events = [
+                event for event in self._cached_events if event.id != object_id
+            ]
+            if effect["operation"] == "upsert":
+                snapshot = effect["snapshot"]
+                assert snapshot is not None
+                self._cached_events.append(Event.from_dict(snapshot))
+                self._cached_events.sort(key=lambda event: event.lore_date)
+            return
+
+        self._cached_entities = [
+            entity for entity in self._cached_entities if entity.id != object_id
+        ]
+        if effect["operation"] == "upsert":
+            snapshot = effect["snapshot"]
+            assert snapshot is not None
+            self._cached_entities.append(Entity.from_dict(snapshot))
+            self._cached_entities.sort(key=lambda entity: entity.name)
+
     def _mark_startup_dataset_ready(self, dataset: str) -> None:
         """Dismiss startup only after the primary world data reaches the UI."""
         self._startup_datasets_pending.discard(dataset)
@@ -256,6 +316,12 @@ class DataCoordinator(BaseCoordinator):
         self.main_window.event_editor.update_suggestions(items=items)
         self.main_window.entity_editor.update_suggestions(items=items)
 
+    @Slot(list)
+    def on_suggestion_effects(self, effects: list) -> None:
+        """Patch editor WikiLink suggestions after an incremental mutation."""
+        self.main_window.event_editor.apply_suggestion_effects(effects)
+        self.main_window.entity_editor.apply_suggestion_effects(effects)
+
     @Slot(object, list, list)
     def on_event_details_ready(
         self, event: object, relations: list, incoming: list
@@ -268,6 +334,8 @@ class DataCoordinator(BaseCoordinator):
             incoming: List of incoming relations.
 
         """
+        self._event_detail_id = event.id if isinstance(event, Event) else None
+        self._event_relation_ids = self._relation_endpoint_ids(relations, incoming)
         map_widget = getattr(self.main_window, "map_widget", None)
         maps_data = map_widget.maps_data if map_widget is not None else []
         self.main_window.event_editor.load_event(
@@ -286,6 +354,8 @@ class DataCoordinator(BaseCoordinator):
             incoming: List of incoming relations.
 
         """
+        self._entity_detail_id = entity.id if isinstance(entity, Entity) else None
+        self._entity_relation_ids = self._relation_endpoint_ids(relations, incoming)
         map_widget = getattr(self.main_window, "map_widget", None)
         maps_data = map_widget.maps_data if map_widget is not None else []
         self.main_window.entity_editor.load_entity(
@@ -448,6 +518,41 @@ class DataCoordinator(BaseCoordinator):
         ):
             logger.debug("Reloading active entity details")
             self.load_entity_details(self.main_window.entity_editor._current_entity_id)
+
+    @staticmethod
+    def _relation_endpoint_ids(relations: list, incoming: list) -> set[str]:
+        """Return IDs represented by the active detail's relation snapshot."""
+        ids: set[str] = set()
+        for relation in (*relations, *incoming):
+            if not isinstance(relation, dict):
+                continue
+            for key in ("source_id", "target_id"):
+                value = relation.get(key)
+                if isinstance(value, str):
+                    ids.add(value)
+        return ids
+
+    @Slot(list)
+    def on_reload_affected_editor_relations(self, effects: list) -> None:
+        """Skip detail hydration when plain CRUD leaves the editor unchanged."""
+        active_type = self.main_window.navigation_coordinator.selected_type
+        if active_type == "event":
+            active_id = self.main_window.event_editor._current_event_id
+            snapshot_id = self._event_detail_id
+            endpoints = self._event_relation_ids
+        elif active_type == "entity":
+            active_id = self.main_window.entity_editor._current_entity_id
+            snapshot_id = self._entity_detail_id
+            endpoints = self._entity_relation_ids
+        else:
+            return
+        if not active_id:
+            return
+        if active_id != snapshot_id or any(
+            effect["object_id"] == active_id or effect["object_id"] in endpoints
+            for effect in effects
+        ):
+            self.on_reload_active_editor_relations()
 
     def on_completer_data_loaded(
         self,

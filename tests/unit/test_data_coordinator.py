@@ -99,6 +99,61 @@ class TestDataLoading:
                 "load_entities",
             )
 
+
+    def test_incremental_event_effect_updates_primary_consumers(
+        self, coordinator, fake_window
+    ) -> None:
+        """A lore effect patches caches and avoids the full data setters."""
+        from src.core.events import Event
+
+        existing = Event(id="event-1", name="Old", lore_date=10.0)
+        coordinator._cached_events = [existing]
+        applied: list[tuple[str, str, str]] = []
+        coordinator.lore_mutation_applied.connect(
+            lambda *args: applied.append(args)
+        )
+        updated = Event(id="event-1", name="New", lore_date=20.0)
+
+        coordinator.on_lore_mutation_ready(
+            [
+                {
+                    "object_type": "event",
+                    "operation": "upsert",
+                    "object_id": "event-1",
+                    "snapshot": updated.to_dict(),
+                    "relations_changed": True,
+                }
+            ]
+        )
+
+        assert coordinator.cached_events[0].name == "New"
+        fake_window.unified_list.apply_lore_effects.assert_called_once()
+        fake_window.unified_list.set_data.assert_not_called()
+        fake_window.timeline.apply_event_effects.assert_called_once()
+        fake_window.timeline.set_events.assert_not_called()
+        assert applied == [("event", "event-1", "upsert")]
+
+    def test_incremental_entity_effect_does_not_touch_timeline(
+        self, coordinator, fake_window
+    ) -> None:
+        from src.core.entities import Entity
+
+        entity = Entity(id="entity-1", name="Updated", type="Person")
+        coordinator.on_lore_mutation_ready(
+            [
+                {
+                    "object_type": "entity",
+                    "operation": "upsert",
+                    "object_id": entity.id,
+                    "snapshot": entity.to_dict(),
+                    "relations_changed": False,
+                }
+            ]
+        )
+
+        fake_window.timeline.apply_event_effects.assert_not_called()
+        fake_window.timeline.set_events.assert_not_called()
+
     def test_load_event_details_invokes_worker(self, coordinator, fake_window):
         """load_event_details should invoke worker with event_id."""
         with patch(
@@ -398,6 +453,32 @@ class TestReloadActiveEditorRelations:
             coordinator.on_reload_active_editor_relations()
             m_evt.assert_not_called()
             m_ent.assert_not_called()
+
+    def test_plain_update_reloads_only_if_active_detail_is_affected(
+        self, coordinator, fake_window
+    ):
+        fake_window.navigation_coordinator.selected_type = "event"
+        fake_window.event_editor._current_event_id = "active"
+        coordinator._event_detail_id = "active"
+        coordinator._event_relation_ids = {"linked"}
+
+        def effect(object_id):
+            return [{"object_id": object_id}]
+
+        with patch.object(coordinator, "load_event_details") as load:
+            coordinator.on_reload_affected_editor_relations(effect("unrelated"))
+            load.assert_not_called()
+            coordinator.on_reload_affected_editor_relations(effect("linked"))
+            load.assert_called_once_with("active")
+
+        with patch.object(coordinator, "load_event_details") as load:
+            coordinator.on_reload_affected_editor_relations(effect("active"))
+            load.assert_called_once_with("active")
+
+        coordinator._event_detail_id = "stale"
+        with patch.object(coordinator, "load_event_details") as load:
+            coordinator.on_reload_affected_editor_relations(effect("unrelated"))
+            load.assert_called_once_with("active")
 
 
 class TestCompleterData:

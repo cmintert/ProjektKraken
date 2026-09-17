@@ -37,6 +37,9 @@ def build_parser() -> argparse.ArgumentParser:
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--quick", action="store_true", help="Run the standard profile")
     mode.add_argument("--full", action="store_true", help="Run every workload profile")
+    mode.add_argument(
+        "--profile", choices=tuple(PROFILES), help="Run one workload profile"
+    )
     parser.add_argument("--target", choices=("source", "packaged"), required=True)
     parser.add_argument("--visible", action="store_true")
     parser.add_argument("--seed", type=int, default=20_260_914)
@@ -73,16 +76,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Run selected profiles and preserve a report even after interruption."""
     options = build_parser().parse_args(argv)
     repo_root = Path(__file__).resolve().parents[2]
-    mode = "full" if options.full else "quick"
+    mode = "full" if options.full else "profile" if options.profile else "quick"
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]
     run_root = validate_run_root(
         repo_root, repo_root / "tmp" / "performance" / run_id
     )
     run_root.mkdir(parents=True, exist_ok=False)
     partial_path = run_root / "partial-run.json"
-    profiles = list(PROFILES) if options.full else ["standard"]
+    profiles = list(PROFILES) if options.full else [options.profile or "standard"]
     repetitions = 5 if options.full else 2
-    timeout = options.timeout or (1200.0 if options.full else 600.0)
+    timeout = options.timeout or (1200.0 if options.full or options.profile else 600.0)
     manifest: dict[str, Any] = {
         "label": "MEASUREMENT ONLY",
         "schema_version": 1,

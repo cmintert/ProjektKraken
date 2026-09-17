@@ -33,6 +33,7 @@ from PySide6.QtWidgets import (
 
 from src.core.ai_generation import GenerationReviewResult, apply_reviewed_generation
 from src.core.authoring_context import EventAuthoringContext
+from src.core.command import LoreMutationEffect
 from src.core.events import Event
 from src.core.summary_data import (
     SummaryData,
@@ -52,6 +53,7 @@ from src.gui.mixins.autosave_mixin import AutoSaveManager
 from src.gui.mixins.editor_mixin import BaseEditorMixin
 from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.suggestion_effects import apply_suggestion_effects
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.authoring_context_widget import AuthoringContextWidget
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
@@ -918,6 +920,13 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
         """
         self.desc_edit.merge_completions(names)
+
+    def apply_suggestion_effects(self, effects: list[LoreMutationEffect]) -> None:
+        """Patch WikiLink and relation-dialog suggestions in place."""
+        self.desc_edit.apply_completion_effects(effects)
+        self._suggestion_items = apply_suggestion_effects(
+            self._suggestion_items, effects
+        )
 
     def update_tag_suggestions(self, tags: list[str]) -> None:
         """Updates tag suggestions."""

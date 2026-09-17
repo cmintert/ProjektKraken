@@ -154,6 +154,10 @@ class TimelineWidget(QWidget):
         """Passes the event list to the view."""
         self.view.set_events(events)
 
+    def apply_event_effects(self, effects: list) -> None:
+        """Apply worker-confirmed Event mutations to the timeline."""
+        self.view.apply_event_effects(effects)
+
     def focus_event(self, event_id: str) -> None:
         """Centers the timeline on the given event."""
         self.view.focus_event(event_id)

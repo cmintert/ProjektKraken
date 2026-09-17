@@ -31,6 +31,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QGraphicsLineItem, QGraphicsView, QSizePolicy, QWidget
 
+from src.core.command import LoreMutationEffect
 from src.core.events import Event
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
@@ -70,6 +71,7 @@ class TimelineView(QGraphicsView):
     current_time_changed = Signal(float)  # Emitted when current time is changed
     event_date_changed = Signal(str, float)  # (event_id, new_lore_date)
     create_event_requested = Signal()  # Emitted from empty state action
+    layout_requested = Signal()
 
     # Use the tallest event type height for lane spacing
     LANE_HEIGHT = EventItem.DURATION_EVENT_HEIGHT
@@ -146,6 +148,7 @@ class TimelineView(QGraphicsView):
         self.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
 
         self.events: list[Event] = []
+        self._event_items: dict[str, EventItem] = {}
         self.scale_factor = 20.0
         self._initial_fit_pending = False
         self._has_done_initial_fit = False  # Only fit_all on first load
@@ -192,6 +195,12 @@ class TimelineView(QGraphicsView):
         self._layout_worker: LayoutWorker | None = None
         self._pending_layout_request: float | None = None
         self._layout_start_time: float = 0.0
+        self._layout_generation = 0
+        self._active_layout_generation = 0
+        self._incremental_layout_timer = QTimer(self)
+        self._incremental_layout_timer.setSingleShot(True)
+        self._incremental_layout_timer.setInterval(50)
+        self._incremental_layout_timer.timeout.connect(self.repack_events)
 
         # Threshold for using async layout (number of events)
         self.ASYNC_LAYOUT_THRESHOLD = 50
@@ -562,6 +571,7 @@ class TimelineView(QGraphicsView):
         - Packs into first available lane.
         """
         # Show/hide empty state overlay based on event list
+        self._incremental_layout_timer.stop()
         if hasattr(self, "_empty_state"):
             if events:
                 self._empty_state.hide()
@@ -575,6 +585,7 @@ class TimelineView(QGraphicsView):
         # Sort by Date
         sorted_events = sorted(events, key=lambda e: e.lore_date)
         self.events = sorted_events
+        self._layout_generation += 1
 
         # Build a map of existing items by event ID
         existing_items: dict[str, EventItem] = {}
@@ -644,6 +655,12 @@ class TimelineView(QGraphicsView):
                 self.graphics_scene.removeItem(line)
                 del drop_lines[event_id]
 
+        self._event_items = {
+            event_id: item
+            for event_id, item in existing_items.items()
+            if event_id in current_ids
+        }
+
         # Now Repack
         self.repack_events()
 
@@ -690,6 +707,77 @@ class TimelineView(QGraphicsView):
             if not self._has_done_initial_fit:
                 self._has_done_initial_fit = True
 
+    def apply_event_effects(self, effects: list[LoreMutationEffect]) -> None:
+        """Patch EventItems in place and request no more than one repack."""
+        layout_changed = False
+        for effect in effects:
+            event_id = effect["object_id"]
+            previous = next(
+                (event for event in self.events if event.id == event_id), None
+            )
+            self.events = [event for event in self.events if event.id != event_id]
+
+            if effect["operation"] == "delete":
+                item = self._event_items.pop(event_id, None)
+                if item is not None:
+                    self.graphics_scene.removeItem(item)
+                line = self._drop_lines.pop(event_id, None)
+                if line is not None:
+                    self.graphics_scene.removeItem(line)
+                layout_changed = previous is not None
+                continue
+
+            snapshot = effect["snapshot"]
+            assert snapshot is not None
+            event = Event.from_dict(snapshot)
+            self.events.append(event)
+            self.events.sort(key=lambda value: value.lore_date)
+            item = self._event_items.get(event_id)
+            if item is None:
+                item = EventItem(event, self.scale_factor)
+                item.on_drag_complete = self._on_event_drag_complete
+                self.graphics_scene.addItem(item)
+                self._event_items[event_id] = item
+                line = self.graphics_scene.addLine(
+                    item.x(),
+                    -self.RULER_HEIGHT,
+                    item.x(),
+                    80,
+                    QPen(QColor(80, 80, 80), 1, Qt.PenStyle.DashLine),
+                )
+                line.setZValue(-1)
+                self._drop_lines[event_id] = line
+                layout_changed = True
+            else:
+                old_signature = self._event_layout_signature(previous)
+                item.update_event(event)
+                layout_changed = layout_changed or (
+                    old_signature != self._event_layout_signature(event)
+                )
+
+        if hasattr(self, "_empty_state"):
+            self._empty_state.setVisible(not self.events)
+        if self.events:
+            self._update_scene_rect_from_events(self.events)
+            if layout_changed:
+                self._layout_generation += 1
+                self._incremental_layout_timer.start()
+        else:
+            self._update_scene_rect_default()
+
+    @staticmethod
+    def _event_layout_signature(event: Event | None) -> tuple[object, ...] | None:
+        """Return fields that can change an event's timeline geometry."""
+        if event is None:
+            return None
+        return (
+            event.lore_date,
+            event.lore_duration,
+            event.name,
+            event.type,
+            tuple(event.tags),
+        )
+
     def repack_events(self) -> None:
         """Repacks events into lanes based on the current effective zoom level.
 
@@ -700,6 +788,7 @@ class TimelineView(QGraphicsView):
         For large datasets (>= ASYNC_LAYOUT_THRESHOLD events), uses async worker.
         For small datasets, uses synchronous packing for immediate response.
         """
+        self.layout_requested.emit()
         if not self.events:
             return
 
@@ -768,6 +857,7 @@ class TimelineView(QGraphicsView):
         # Mark layout as in progress
         self._layout_in_progress = True
         self._layout_start_time = time.perf_counter()
+        self._active_layout_generation = self._layout_generation
 
         # Import LayoutWorker here (already imported in __init__, but being explicit)
         from src.gui.workers.layout_worker import LayoutWorker
@@ -803,8 +893,9 @@ class TimelineView(QGraphicsView):
         """
         total_elapsed = time.perf_counter() - self._layout_start_time
 
-        # Apply the layout results to the scene
-        self._apply_layout_results(lane_assignments, lane_heights)
+        stale = self._active_layout_generation != self._layout_generation
+        if not stale:
+            self._apply_layout_results(lane_assignments, lane_heights)
 
         # Clear progress state
         self._layout_in_progress = False
@@ -816,11 +907,15 @@ class TimelineView(QGraphicsView):
         )
 
         # If there's a pending request, process it now
-        if self._pending_layout_request is not None:
+        if self._pending_layout_request is not None or stale:
             pending_scale = self._pending_layout_request
             self._pending_layout_request = None
             logger.debug("Processing pending layout request")
-            self._repack_events_async(pending_scale)
+            self._repack_events_async(
+                pending_scale
+                if pending_scale is not None
+                else self.scale_factor * self._current_zoom
+            )
 
     def _on_layout_error(self, error_message: str) -> None:
         """Called when async layout worker encounters an error.

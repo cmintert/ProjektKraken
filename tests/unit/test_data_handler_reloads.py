@@ -24,8 +24,7 @@ def test_on_command_finished_rename_layer_emits_reloads(data_handler):
     # Setup mocks for reload signals
     data_handler.reload_maps = MagicMock()
     data_handler.reload_markers_for_current_map = MagicMock()
-    data_handler.reload_entities = MagicMock()
-    data_handler.reload_events = MagicMock()
+    data_handler.reload_all_data = MagicMock()
 
     result = CommandResult(
         success=True, command_name="RenameLayerCommand", message="Renamed", data={}
@@ -36,8 +35,7 @@ def test_on_command_finished_rename_layer_emits_reloads(data_handler):
 
     # Verify
     data_handler.reload_maps.emit.assert_called_once()
-    data_handler.reload_entities.emit.assert_called_once()
-    data_handler.reload_events.emit.assert_called_once()
+    data_handler.reload_all_data.emit.assert_called_once()
     data_handler.reload_markers_for_current_map.emit.assert_called_once()
 
 
@@ -90,12 +88,12 @@ def test_composite_creation_reloads_exact_map_after_lore_cache(
     ]
     assert result.data["marker_map_ids"] == ["map-1"]
 
-    data_handler.reload_entities = MagicMock()
+    data_handler.reload_all_data = MagicMock()
     data_handler.reload_markers = MagicMock()
     data_handler.reload_markers_for_current_map = MagicMock()
 
     data_handler.on_command_finished(result)
-    data_handler.reload_entities.emit.assert_called_once()
+    data_handler.reload_all_data.emit.assert_called_once()
     data_handler.reload_markers.emit.assert_not_called()
 
     data_handler.on_entities_loaded([db_service.get_entity("entity-1")])
@@ -162,9 +160,7 @@ def test_on_command_finished_undo_emits_all_reloads(data_handler):
     """Verify undo commands trigger a full suite of reloads."""
     data_handler.reload_maps = MagicMock()
     data_handler.reload_markers_for_current_map = MagicMock()
-    data_handler.reload_entities = MagicMock()
-    data_handler.reload_events = MagicMock()
-    data_handler.reload_active_editor_relations = MagicMock()
+    data_handler.reload_all_data = MagicMock()
 
     result = CommandResult(
         success=True, command_name="Undo_EventCommand", message="Undone", data={}
@@ -173,10 +169,8 @@ def test_on_command_finished_undo_emits_all_reloads(data_handler):
     data_handler.on_command_finished(result)
 
     data_handler.reload_maps.emit.assert_called_once()
-    data_handler.reload_entities.emit.assert_called_once()
-    data_handler.reload_events.emit.assert_called_once()
+    data_handler.reload_all_data.emit.assert_called_once()
     data_handler.reload_markers_for_current_map.emit.assert_called_once()
-    data_handler.reload_active_editor_relations.emit.assert_called_once()
 
 
 def test_set_raster_mapping_command_emits_reload_maps(data_handler):

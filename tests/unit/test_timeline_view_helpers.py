@@ -54,6 +54,32 @@ class TestApplyZoom:
         assert timeline_view._playhead._zoom_level == expected_zoom
 
 
+def test_incremental_event_update_requests_one_layout(
+    timeline_view, sample_events, qtbot
+):
+    timeline_view.set_events(sample_events[:2])
+    layout_requests: list[bool] = []
+    timeline_view.layout_requested.connect(lambda: layout_requests.append(True))
+
+    updated = Event(id="e1", name="Renamed", lore_date=150.0, type="cosmic")
+    timeline_view.apply_event_effects(
+        [
+            {
+                "object_type": "event",
+                "operation": "upsert",
+                "object_id": "e1",
+                "snapshot": updated.to_dict(),
+                "relations_changed": True,
+            }
+        ]
+    )
+
+    qtbot.waitUntil(lambda: len(layout_requests) == 1)
+    assert layout_requests == [True]
+    assert [event.id for event in timeline_view.events] == ["e1", "e2"]
+    assert timeline_view._event_items["e1"].event.name == "Renamed"
+
+
 class TestSetupRulerFonts:
     """Tests for the _setup_ruler_fonts helper method."""
 

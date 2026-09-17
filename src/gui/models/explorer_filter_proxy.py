@@ -39,8 +39,10 @@ class ExplorerFilterProxyModel(QSortFilterProxyModel):
         self._filter_mode = "All Items"  # "All Items", "Events Only", "Entities Only"
         self._advanced_filter_config: dict = {}
 
-        # Enable dynamic sorting
-        self.setDynamicSortFilter(True)
+        # The source Explorer model already maintains the requested order.
+        # Dynamic proxy sorting re-evaluates the full large-world model for a
+        # single changed row; active filters are invalidated explicitly.
+        self.setDynamicSortFilter(False)
 
     def set_search_term(self, term: str) -> None:
         """Set the search term for filtering.

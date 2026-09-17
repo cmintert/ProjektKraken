@@ -104,8 +104,8 @@ def test_on_command_result_success_adds_to_undo_stack(coordinator, main_window):
     assert coordinator.undo_stack[0] == mock_command
     assert len(coordinator.redo_stack) == 0
 
-    # Should trigger load_data on window
-    main_window.load_data.assert_called_once()
+    # Refresh ownership belongs to DataHandler.
+    main_window.load_data.assert_not_called()
 
 
 @pytest.mark.parametrize(

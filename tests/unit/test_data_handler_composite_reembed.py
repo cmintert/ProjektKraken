@@ -114,9 +114,9 @@ class TestCompositeCommandReEmbed:
         self, handler, index_calls
     ):
         """Production composite results refresh marker summaries in order."""
-        entity_reloads: list[bool] = []
+        full_reloads: list[bool] = []
         marker_reloads: list[bool] = []
-        handler.reload_entities.connect(lambda: entity_reloads.append(True))
+        handler.reload_all_data.connect(lambda: full_reloads.append(True))
         handler.reload_markers_for_current_map.connect(
             lambda: marker_reloads.append(True)
         )
@@ -131,7 +131,7 @@ class TestCompositeCommandReEmbed:
 
         handler.on_command_finished(result)
 
-        assert entity_reloads == [True]
+        assert full_reloads == [True]
         assert marker_reloads == []
         handler.on_entities_loaded([])
         assert marker_reloads == [True]

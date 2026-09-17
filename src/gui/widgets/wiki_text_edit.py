@@ -49,10 +49,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.command import LoreMutationEffect
 from src.core.theme_manager import ThemeManager
 from src.core.wiki_ast import CursorMapper, WikiASTParser, WikiASTSerializer
 from src.gui.constants import SEMANTIC_COMPLETION_MIN_PREFIX_LEN
 from src.gui.editor_typography import EditorTypography
+from src.gui.utils.suggestion_effects import apply_suggestion_effects
 
 logger = logging.getLogger(__name__)
 
@@ -372,6 +374,7 @@ class WikiTextEditView(QTextEdit):
                 names = cast(list[str], items_or_names)
 
         if items is not None:
+            self._completion_items = list(items)
             # Build completion map: name -> (id, type)
             self._completion_map = {
                 name: (item_id, item_type) for item_id, name, item_type in items
@@ -383,6 +386,7 @@ class WikiTextEditView(QTextEdit):
             self._valid_ids = {item_id for item_id, _, _ in items}
 
         elif names is not None:
+            self._completion_items = []
             # Legacy mode - no ID mapping
             self._completion_map = {}
             display_names = names
@@ -405,6 +409,39 @@ class WikiTextEditView(QTextEdit):
         # Update link colors in-place to reflect new valid-target set.
         # Using _update_link_colors() avoids a full setHtml() re-render which
         # would collapse empty blocks and reset the cursor position.
+        if hasattr(self, "_view_mode") and self._view_mode == "rich":
+            self._update_link_colors()
+
+    def apply_completion_effects(self, effects: list[LoreMutationEffect]) -> None:
+        """Update only changed completer rows and ID/name lookup state."""
+        if self._completer is None or not hasattr(self, "_completion_items"):
+            return
+        model = cast(QStringListModel, self._completer.model())
+        items = self._completion_items
+        for effect in effects:
+            old_row = next(
+                (i for i, item in enumerate(items) if item[0] == effect["object_id"]),
+                None,
+            )
+            if old_row is not None:
+                model.removeRows(old_row, 1)
+                items.pop(old_row)
+            updated = apply_suggestion_effects(items, [effect])
+            if len(updated) != len(items):
+                new_row = next(
+                    i for i, item in enumerate(updated) if item[0] == effect["object_id"]
+                )
+                model.insertRows(new_row, 1)
+                model.setData(model.index(new_row, 0), updated[new_row][1])
+            items = updated
+        self._completion_items = items
+        self._completion_map = {
+            name: (item_id, item_type) for item_id, name, item_type in items
+        }
+        self._valid_targets_lower = {
+            name.lower() for name in self._completion_map
+        }
+        self._valid_ids = {item_id for item_id, _, _ in items}
         if hasattr(self, "_view_mode") and self._view_mode == "rich":
             self._update_link_colors()
 
@@ -2417,6 +2454,10 @@ class WikiTextEdit(QFrame):
 
         """
         self.editor.merge_completions(names)
+
+    def apply_completion_effects(self, effects: list[LoreMutationEffect]) -> None:
+        """Forward incremental WikiLink target changes to the text view."""
+        self.editor.apply_completion_effects(effects)
 
     def set_link_resolver(self, resolver: Any) -> None:
         """Set the link resolver for wiki links.

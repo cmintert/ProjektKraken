@@ -67,6 +67,61 @@ def test_set_data(unified_list):
     assert source_model.data(source_index1, source_model.ItemTypeRole) == "event"
 
 
+def test_apply_lore_effects_updates_rows_without_model_reset(unified_list):
+    unified_list.set_data(
+        [Event(id="e1", name="Zulu", lore_date=10.0)],
+        [Entity(id="n1", name="Bravo", type="Person")],
+    )
+    resets: list[bool] = []
+    unified_list._model.modelReset.connect(lambda: resets.append(True))
+
+    unified_list.apply_lore_effects(
+        [
+            {
+                "object_type": "event",
+                "operation": "upsert",
+                "object_id": "e1",
+                "snapshot": Event(
+                    id="e1", name="Alpha", lore_date=5.0
+                ).to_dict(),
+                "relations_changed": True,
+            }
+        ]
+    )
+
+    assert resets == []
+    assert unified_list._proxy_model.rowCount() == 2
+    assert "Alpha" in unified_list._proxy_model.data(
+        unified_list._proxy_model.index(0, 0), Qt.ItemDataRole.DisplayRole
+    )
+
+
+def test_apply_lore_effects_deleting_selected_row_clears_selection(unified_list):
+    event = Event(id="e1", name="Selected", lore_date=10.0)
+    unified_list.set_data([event], [Entity(id="n1", name="Other", type="Person")])
+    source = unified_list._model.find_item_index("event", "e1")
+    assert source is not None
+    unified_list.list_widget.setCurrentIndex(
+        unified_list._proxy_model.mapFromSource(source)
+    )
+    assert unified_list.list_widget.selectionModel().hasSelection()
+
+    unified_list.apply_lore_effects(
+        [
+            {
+                "object_type": "event",
+                "operation": "delete",
+                "object_id": "e1",
+                "snapshot": None,
+                "relations_changed": True,
+            }
+        ]
+    )
+
+    assert not unified_list.list_widget.selectionModel().hasSelection()
+    assert unified_list._proxy_model.rowCount() == 1
+
+
 def test_filtering(unified_list):
     events = [Event(id="e1", name="Event 1", lore_date=10.0)]
     entities = [Entity(id="n1", name="Entity 1", type="Person")]
