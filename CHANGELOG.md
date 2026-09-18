@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-09-18
-**Commit:** e9e914b59256d009db236bdd4ed2d2b384f92ab8
+**Commit:** 7289a8cc25ed63bcda8a4ce7bef4478fde7dfe3d
 ---
 
 # Changelog
@@ -10,6 +10,12 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Fixed
+
+- *(2026-09-18)* **Editors / Focus writing**: Dimmed every visible pane except
+  the active editor's pane after panel moves, and kept focus mode open for
+  clicks within that pane. Added regression coverage for all four zones.
 
 ### Added
 

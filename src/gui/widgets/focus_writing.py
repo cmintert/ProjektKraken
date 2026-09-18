@@ -99,7 +99,7 @@ class FocusWritingController(QObject):
         self._restoring = False
         self._tints = {
             zone: _PaneTint(self.workspace.panes[zone])
-            for zone in ("left", "right", "bottom")
+            for zone in ("left", "center", "right", "bottom")
         }
         self.action = view_menu.addAction("Focus writing")
         self.action.setCheckable(True)
@@ -360,10 +360,20 @@ class FocusWritingController(QObject):
                     + StyleHelper.get_inspector_focus_style()
                 )
 
+    def _active_zone(self) -> str | None:
+        """Return the workspace zone containing the focused editor."""
+        if self.active is None:
+            return None
+        panel_id = "event" if self.active is self.editors["event"] else "entity"
+        return self.workspace.panel_zone(panel_id)
+
     def _sync_tints(self) -> None:
+        active_zone = self._active_zone()
         for zone, tint in self._tints.items():
             pane = self.workspace.panes[zone]
-            tint.setVisible(self.active is not None and pane.isVisible())
+            tint.setVisible(
+                active_zone is not None and zone != active_zone and pane.isVisible()
+            )
             if tint.isVisible():
                 tint.raise_()
 
@@ -381,7 +391,7 @@ class FocusWritingController(QObject):
         if any(
             pane.isAncestorOf(now)
             for zone, pane in self.workspace.panes.items()
-            if zone != "center"
+            if zone != (self._active_zone() or "center")
         ):
             self.exit(restore_focus=False)
             self._active_panel_id = None
@@ -419,7 +429,7 @@ class FocusWritingController(QObject):
             if any(
                 pane is watched or pane.isAncestorOf(watched)
                 for zone, pane in self.workspace.panes.items()
-                if zone != "center"
+                if zone != (self._active_zone() or "center")
             ):
                 self.exit(restore_focus=False)
         return False

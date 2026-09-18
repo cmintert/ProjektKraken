@@ -142,6 +142,25 @@ def test_navigation_closes_focus_without_blocking_panel(focus_setup):
     assert not controller._tints["left"].isVisible()
 
 
+@pytest.mark.parametrize("zone", ["left", "center", "right", "bottom"])
+def test_focus_dims_every_visible_pane_except_its_own(focus_setup, qtbot, zone):
+    window, editor, controller = focus_setup
+    workspace = window.workspace
+    panel_id = "event" if isinstance(editor, EventEditorWidget) else "entity"
+    if zone != "center":
+        workspace.move_panel(panel_id, zone)
+    for pane_zone in ("left", "right", "bottom"):
+        workspace.show_zone(pane_zone)
+
+    controller.enter(editor)
+    assert controller.active is editor
+    for pane_zone, tint in controller._tints.items():
+        assert tint.isVisible() == (pane_zone != zone and workspace.panes[pane_zone].isVisible())
+
+    qtbot.mouseClick(editor.desc_edit.editor.viewport(), Qt.MouseButton.LeftButton)
+    assert controller.active is editor
+
+
 def test_same_item_reload_keeps_focus_new_item_exits(focus_setup):
     _window, editor, controller = focus_setup
     controller.enter(editor)
