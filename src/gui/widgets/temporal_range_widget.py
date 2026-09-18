@@ -28,6 +28,7 @@ from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.compact_duration_widget import CompactDurationWidget
+from src.gui.widgets.editor_presentation import DisclosureButton
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +56,7 @@ class TemporalRangeWidget(QWidget):
     start_changed = Signal(float)
     duration_changed = Signal(float)
     end_changed = Signal(float)
+    draft_changed = Signal(bool)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialises the temporal range widget.
@@ -89,14 +91,27 @@ class TemporalRangeWidget(QWidget):
         card_layout.setSpacing(4)
 
         # ── START row ─────────────────────────────────────────────────────
-        start_row = QHBoxLayout()
+        start_row = QVBoxLayout()
         start_row.setSpacing(6)
-        lbl_start = QLabel("Start")
+        lbl_start = QLabel("Date")
         lbl_start.setFixedWidth(36)
         start_row.addWidget(lbl_start)
-        self.date_start = CompactDateWidget()
+        self.date_start = CompactDateWidget(text_first=True)
         start_row.addWidget(self.date_start)
         card_layout.addLayout(start_row)
+        self.range_button = DisclosureButton("End date / duration…")
+        card_layout.addWidget(self.range_button)
+        self.range_summary = QLabel()
+        self.range_summary.setWordWrap(True)
+        card_layout.addWidget(self.range_summary)
+        self.range_content = QWidget()
+        card_layout.addWidget(self.range_content)
+        range_layout = QVBoxLayout(self.range_content)
+        range_layout.setContentsMargins(0, 0, 0, 0)
+        range_layout.setSpacing(8)
+        range_layout.addWidget(QLabel("When changing start, keep:"))
+        self.range_button.toggled.connect(self.range_content.setVisible)
+        self.range_content.hide()
 
         # ── Lock connector row ────────────────────────────────────────────
         lock_row = QHBoxLayout()
@@ -112,12 +127,16 @@ class TemporalRangeWidget(QWidget):
         self.btn_lock_duration = QPushButton("Duration")
         self.btn_lock_duration.setCheckable(True)
         self.btn_lock_duration.setChecked(True)
-        self.btn_lock_duration.setToolTip("Start changes move the end date (span stays fixed)")
+        self.btn_lock_duration.setToolTip(
+            "Start changes move the end date (span stays fixed)"
+        )
 
         self.btn_lock_end = QPushButton("End Date")
         self.btn_lock_end.setCheckable(True)
         self.btn_lock_end.setChecked(False)
-        self.btn_lock_end.setToolTip("Start changes adjust the span (end date stays fixed)")
+        self.btn_lock_end.setToolTip(
+            "Start changes adjust the span (end date stays fixed)"
+        )
 
         self._lock_group = QButtonGroup(self)
         self._lock_group.setExclusive(True)
@@ -133,34 +152,53 @@ class TemporalRangeWidget(QWidget):
         line_right.setLineWidth(1)
         lock_row.addWidget(line_right, stretch=1)
 
-        card_layout.addLayout(lock_row)
+        range_layout.addLayout(lock_row)
+        explanation = QLabel(
+            "Keep the duration to move the whole event; "
+            "keep the end date to adjust its duration."
+        )
+        explanation.setWordWrap(True)
+        range_layout.addWidget(explanation)
 
         # ── SPAN row ──────────────────────────────────────────────────────
-        span_row = QHBoxLayout()
+        span_row = QVBoxLayout()
         span_row.setSpacing(6)
         lbl_span = QLabel("Span")
         lbl_span.setFixedWidth(36)
         span_row.addWidget(lbl_span)
         self.duration_widget = CompactDurationWidget()
+        for spin in (
+            self.duration_widget.spin_years,
+            self.duration_widget.spin_months,
+            self.duration_widget.spin_days,
+            self.duration_widget.spin_hours,
+            self.duration_widget.spin_minutes,
+        ):
+            spin.setMinimumWidth(0)
+            spin.setMaximumWidth(16777215)
+            spin.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         span_row.addWidget(self.duration_widget)
-        card_layout.addLayout(span_row)
+        range_layout.addLayout(span_row)
 
         # ── Thin divider ──────────────────────────────────────────────────
         divider = QFrame()
         divider.setFrameShape(QFrame.Shape.HLine)
         divider.setFrameShadow(QFrame.Shadow.Plain)
         divider.setLineWidth(1)
-        card_layout.addWidget(divider)
+        range_layout.addWidget(divider)
 
         # ── END row ───────────────────────────────────────────────────────
-        end_row = QHBoxLayout()
+        end_row = QVBoxLayout()
         end_row.setSpacing(6)
         lbl_end = QLabel("End")
         lbl_end.setFixedWidth(36)
         end_row.addWidget(lbl_end)
-        self.date_end = CompactDateWidget()
+        self.date_end = CompactDateWidget(text_first=True)
+        self.date_end.txt_date.setAccessibleName("End date")
         end_row.addWidget(self.date_end)
-        card_layout.addLayout(end_row)
+        range_layout.addLayout(end_row)
+        self.date_start.draft_changed.connect(self._on_draft_changed)
+        self.date_end.draft_changed.connect(self._on_draft_changed)
 
         self._apply_styles()
 
@@ -186,10 +224,14 @@ class TemporalRangeWidget(QWidget):
         """Updates the segmented control button styles to reflect the current lock mode."""
         is_locked_end = self._lock_mode == self.LOCK_END
         self.btn_lock_duration.setStyleSheet(
-            StyleHelper.get_temporal_segment_style(active=not is_locked_end, position="left")
+            StyleHelper.get_temporal_segment_style(
+                active=not is_locked_end, position="left"
+            )
         )
         self.btn_lock_end.setStyleSheet(
-            StyleHelper.get_temporal_segment_style(active=is_locked_end, position="right")
+            StyleHelper.get_temporal_segment_style(
+                active=is_locked_end, position="right"
+            )
         )
 
     # ── Signal wiring ──────────────────────────────────────────────────────
@@ -201,6 +243,37 @@ class TemporalRangeWidget(QWidget):
         self.date_end.value_changed.connect(self._on_end_changed)
         self.btn_lock_end.toggled.connect(self._on_lock_toggled)
         ThemeManager().theme_changed.connect(self._on_theme_changed)
+        self.start_changed.connect(self._update_range_summary)
+        self.duration_changed.connect(self._update_range_summary)
+        self.end_changed.connect(self._update_range_summary)
+
+    def _on_draft_changed(self, _pending: bool) -> None:
+        self.draft_changed.emit(self.has_pending_draft())
+
+    def has_pending_draft(self) -> bool:
+        """Return whether either date has unaccepted text."""
+        return self.date_start.has_pending_draft() or self.date_end.has_pending_draft()
+
+    def commit_drafts(self) -> bool:
+        """Validate date drafts before an explicit save."""
+        start_valid = self.date_start.commit_draft()
+        end_valid = self.date_end.commit_draft()
+        return start_valid and end_valid
+
+    def cancel_drafts(self) -> None:
+        """Discard typed drafts without changing accepted dates."""
+        self.date_start.cancel_draft()
+        self.date_end.cancel_draft()
+
+    def _update_range_summary(self, _value: float = 0.0) -> None:
+        duration = self.get_duration()
+        self.range_summary.setText(
+            f"Duration: {duration:g} days · Ends: "
+            f"{self.date_end.txt_date.text() or self.get_end()}"
+            if duration
+            else ""
+        )
+        self.range_summary.setVisible(bool(duration))
 
     # ── Internal slot handlers ─────────────────────────────────────────────
 
@@ -250,6 +323,8 @@ class TemporalRangeWidget(QWidget):
             start = self.date_start.get_value()
             self.date_end.blockSignals(True)
             self.date_end.set_value(start + duration)
+            self.range_button.setChecked(duration != 0)
+            self._update_range_summary()
             self.date_end.blockSignals(False)
             self.duration_changed.emit(duration)
         finally:

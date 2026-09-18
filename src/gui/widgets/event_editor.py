@@ -42,7 +42,6 @@ from src.core.summary_data import (
 )
 from src.core.theme_manager import ThemeManager
 from src.gui.constants import (
-    EDITOR_DETAILS_MIN_HEIGHT,
     EDITOR_FORM_VERTICAL_SPACING,
     EDITOR_ICON_BUTTON_SIZE,
     EDITOR_LIST_SPACING,
@@ -56,6 +55,7 @@ from src.gui.utils.style_helper import StyleHelper
 from src.gui.utils.suggestion_effects import apply_suggestion_effects
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.authoring_context_widget import AuthoringContextWidget
+from src.gui.widgets.editor_presentation import DisclosureButton, EditorPresentation
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.gallery_widget import GalleryWidget
 from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
@@ -66,7 +66,6 @@ from src.gui.widgets.standard_buttons import (
     DestructiveButton,
     PrimaryButton,
     StandardButton,
-    StandardCheckbox,
 )
 from src.gui.widgets.summary_widget import SummaryWidget
 from src.gui.widgets.tag_editor import TagEditorWidget
@@ -150,6 +149,52 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self._build_secondary_tabs(parent)
         self._build_action_buttons(main_layout)
         self._initialize_editor_state()
+        self._date_draft_active = False
+        self._date_draft_base_dirty = False
+        self._date_draft_other_changes = False
+        self.temporal_widget.draft_changed.connect(self._on_date_draft_changed)
+        self._presentation = EditorPresentation(self)
+
+    def _on_date_draft_changed(self, pending: bool) -> None:
+        """Protect unaccepted date text from autosave and reloads."""
+        if self._is_loading:
+            return
+        if pending and not self._date_draft_active:
+            self._date_draft_active = True
+            self._date_draft_base_dirty = self._is_dirty
+            self._date_draft_other_changes = False
+        super().set_dirty(self._is_dirty or pending)
+        if pending:
+            self.autosave_manager.stop_timer()
+            self.btn_save.setEnabled(False)
+            self.btn_save.setToolTip(
+                "Apply or correct the date, or press Esc to restore."
+            )
+        else:
+            if self._date_draft_active:
+                self._date_draft_active = False
+                self.set_dirty(
+                    self._date_draft_base_dirty or self._date_draft_other_changes
+                )
+            self.btn_save.setEnabled(self._is_dirty)
+            self.btn_save.setToolTip("")
+            if self._is_dirty:
+                self.autosave_manager.start_timer()
+
+    def set_dirty(self, dirty: bool) -> None:
+        """Keep autosave paused whenever a date draft is outstanding."""
+        if dirty and getattr(self, "_date_draft_active", False):
+            # Actual fields also call set_dirty; draft tracking uses the base
+            # method below to distinguish cancellation from a real edit.
+            self._date_draft_other_changes = True
+        super().set_dirty(dirty)
+        if self.temporal_widget.has_pending_draft():
+            self.autosave_manager.stop_timer()
+            self.btn_save.setEnabled(False)
+
+    def has_unsaved_changes(self) -> bool:
+        """Include typed date drafts in navigation and close guards."""
+        return self._is_dirty or self.temporal_widget.has_pending_draft()
 
     def _build_editor_shell(self) -> QVBoxLayout:
         """Build empty/content containers and return the content layout."""
@@ -198,7 +243,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self._build_llm_section()
         self._build_raster_appearances_section()
         details_layout.addLayout(self.form_layout)
-        self.tab_details.setMinimumHeight(EDITOR_DETAILS_MIN_HEIGHT)
+        self.tab_details.setMinimumHeight(0)
         self.inspector.add_tab(
             self.tab_details, "Details", "Event timing, description, and AI summary"
         )
@@ -226,7 +271,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         section_layout = QVBoxLayout(self.summary_container)
         section_layout.setContentsMargins(0, 0, 0, 0)
         section_layout.setSpacing(EDITOR_SECTION_SPACING)
-        self.summary_checkbox = StandardCheckbox("")
+        self.summary_checkbox = DisclosureButton("Summary")
         section_layout.addWidget(self.summary_checkbox)
         self.summary_widget = SummaryWidget()
         self.summary_widget.setVisible(False)
@@ -234,12 +279,10 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             self._on_summary_generate_requested
         )
         self.summary_widget.edit_committed.connect(self._on_summary_edit_committed)
-        self.summary_widget.delete_requested.connect(
-            self._on_summary_delete_requested
-        )
+        self.summary_widget.delete_requested.connect(self._on_summary_delete_requested)
         section_layout.addWidget(self.summary_widget)
         self.summary_checkbox.toggled.connect(self.summary_widget.setVisible)
-        self.form_layout.addRow("Summary:", self.summary_container)
+        self.form_layout.addRow(self.summary_container)
 
     def _build_llm_section(self) -> None:
         """Build the collapsible event description-generation section."""
@@ -247,14 +290,14 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         section_layout = QVBoxLayout(self.llm_container)
         section_layout.setContentsMargins(0, 0, 0, 0)
         section_layout.setSpacing(EDITOR_SECTION_SPACING)
-        self.llm_checkbox = StandardCheckbox("")
+        self.llm_checkbox = DisclosureButton("Generate description")
         section_layout.addWidget(self.llm_checkbox)
         self.llm_generator = LLMGenerationWidget(self, context_provider=self)
         self.llm_generator.setVisible(False)
         self.llm_generator.text_generated.connect(self._on_text_generated)
         section_layout.addWidget(self.llm_generator)
         self.llm_checkbox.toggled.connect(self.llm_generator.setVisible)
-        self.form_layout.addRow("LLM Generation:", self.llm_container)
+        self.form_layout.addRow(self.llm_container)
 
     def _build_raster_appearances_section(self) -> None:
         """Build the read-only collapsible raster-appearance section."""
@@ -262,7 +305,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         section_layout = QVBoxLayout(self.raster_appearances_container)
         section_layout.setContentsMargins(0, 0, 0, 0)
         section_layout.setSpacing(EDITOR_SECTION_SPACING)
-        self.raster_appearances_checkbox = StandardCheckbox("")
+        self.raster_appearances_checkbox = DisclosureButton("Raster maps")
         section_layout.addWidget(self.raster_appearances_checkbox)
         self.raster_appearances_label = QLabel("Not linked to any raster map.")
         self.raster_appearances_label.setWordWrap(True)
@@ -271,16 +314,21 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.raster_appearances_checkbox.toggled.connect(
             self.raster_appearances_label.setVisible
         )
-        self.form_layout.addRow("Raster Maps:", self.raster_appearances_container)
+        self.form_layout.addRow(self.raster_appearances_container)
 
     def _connect_field_signals(self) -> None:
         """Connect editor fields to dirty tracking and live preview."""
         self.name_edit.textChanged.connect(self._on_field_changed)
-        self.temporal_widget.start_changed.connect(lambda _value: self._on_field_changed())
+        self.temporal_widget.start_changed.connect(
+            lambda _value: self._on_field_changed()
+        )
         self.temporal_widget.start_changed.connect(
             lambda _value: self.authoring_context_refresh_requested.emit()
         )
         self.temporal_widget.duration_changed.connect(
+            lambda _value: self._on_field_changed()
+        )
+        self.temporal_widget.end_changed.connect(
             lambda _value: self._on_field_changed()
         )
         self.type_edit.editTextChanged.connect(self._on_field_changed)
@@ -955,6 +1003,15 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             incoming_relations (list): List of incoming relation dicts.
 
         """
+        if (
+            event is not None
+            and event.id == self._current_event_id
+            and self.temporal_widget.has_pending_draft()
+        ):
+            return
+        same_event = event is not None and event.id == self._current_event_id
+        range_expanded = self.temporal_widget.range_button.isChecked()
+        self.temporal_widget.cancel_drafts()
         # Handle missing event (e.g., item was deleted)
         if event is None:
             self._current_event_id = None
@@ -986,6 +1043,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             self.desc_edit.blockSignals(True)
 
             self._load_event_fields(event)
+            if same_event:
+                self.temporal_widget.range_button.setChecked(range_expanded)
             self._load_event_attributes(event)
             self._load_event_relations(relations, incoming_relations)
 
@@ -1254,6 +1313,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         if not self._current_event_id:
             logger.warning("[EventEditor] _on_save aborted - no current event ID")
             return
+        if not self.temporal_widget.commit_drafts():
+            self._on_date_draft_changed(True)
+            return
 
         try:
             # Merge tags into attributes
@@ -1305,6 +1367,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         if not self._current_event_id:
             return
 
+        self.temporal_widget.cancel_drafts()
         self.discard_requested.emit(self._current_event_id)
 
     def _populate_inject_menu(self) -> None:

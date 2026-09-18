@@ -7,11 +7,13 @@ drag-and-drop functionality.
 from typing import Optional
 
 from PySide6.QtCore import QMimeData, QPoint, QSize, Qt, QTimer, Signal
-from PySide6.QtGui import QDrag, QDragEnterEvent, QDropEvent, QMouseEvent
+from PySide6.QtGui import QDrag, QDragEnterEvent, QDropEvent, QMouseEvent, QResizeEvent
 from PySide6.QtWidgets import (
+    QMenu,
     QSplitter,
     QTabBar,
     QTabWidget,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -235,6 +237,93 @@ class DraggableTabWidget(QTabWidget):
         self.setTabBar(DraggableTabBar(self))
         self.setAcceptDrops(True)
         self.setMovable(True)
+        self.currentChanged.connect(self._remember_section)
+        self.overflow_button = QToolButton(self)
+        self.overflow_button.setText("…")
+        self.overflow_button.setToolTip("All inspector tabs")
+        self.overflow_button.setAccessibleName("All inspector tabs")
+        self.overflow_button.setFixedSize(32, 32)
+        self.overflow_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.overflow_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self.overflow_menu = QMenu(self.overflow_button)
+        self.overflow_button.setMenu(self.overflow_menu)
+        self.overflow_menu.aboutToShow.connect(self._populate_overflow)
+        self.setCornerWidget(self.overflow_button, Qt.Corner.TopRightCorner)
+        self.overflow_button.hide()
+        self.tabBar().setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.tabBar().customContextMenuRequested.connect(self._show_layout_menu)
+        from src.core.theme_manager import ThemeManager
+
+        ThemeManager().theme_changed.connect(self._style_overflow)
+        self._style_overflow()
+
+    def _style_overflow(self) -> None:
+        from src.gui.utils.style_helper import StyleHelper
+
+        self.overflow_button.setStyleSheet(
+            StyleHelper.get_tool_button_style()
+            + StyleHelper.get_inspector_focus_style()
+        )
+
+    def _inspector(self) -> Optional["SplitterTabInspector"]:
+        parent = self.parentWidget()
+        while parent is not None:
+            if isinstance(parent, SplitterTabInspector):
+                return parent
+            parent = parent.parentWidget()
+        return None
+
+    def _populate_overflow(self) -> None:
+        self.overflow_menu.clear()
+        inspector = self._inspector()
+        if inspector is not None:
+            inspector.populate_sections(self.overflow_menu)
+
+    def _show_layout_menu(self, position: QPoint) -> None:
+        inspector = self._inspector()
+        if inspector is None:
+            return
+        index = self.tabBar().tabAt(position)
+        if index >= 0:
+            self.setCurrentIndex(index)
+        inspector._active_section = self.currentWidget()
+        menu = QMenu(self)
+        split = menu.addAction("Split active section below")
+        split.setEnabled(self.count() > 1)
+        split.triggered.connect(inspector.split_active_section)
+        menu.addAction("Reset inspector layout").triggered.connect(
+            inspector.reset_layout
+        )
+        menu.exec(self.tabBar().mapToGlobal(position))
+
+    def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
+        """Only show tab overflow access when the full tab strip cannot fit."""
+        super().resizeEvent(event)
+        self._update_overflow()
+
+    def tabInserted(self, index: int) -> None:  # noqa: N802
+        """Recheck overflow after drag, split, or initial tab insertion."""
+        super().tabInserted(index)
+        self._update_overflow()
+
+    def tabRemoved(self, index: int) -> None:  # noqa: N802
+        """Hide overflow again when removing a tab creates sufficient space."""
+        super().tabRemoved(index)
+        self._update_overflow()
+
+    def _update_overflow(self) -> None:
+        if hasattr(self, "overflow_button"):
+            self.overflow_button.setVisible(
+                self.tabBar().sizeHint().width() > self.width()
+            )
+
+    def _remember_section(self, index: int) -> None:
+        parent = self.parentWidget()
+        while parent is not None:
+            if isinstance(parent, SplitterTabInspector):
+                parent._active_section = self.widget(index)
+                return
+            parent = parent.parentWidget()
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """Accept drops to create vertical splits."""
@@ -362,6 +451,8 @@ class SplitterTabInspector(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
+        self._sections: list[tuple[QWidget, str]] = []
+        self._active_section: QWidget | None = None
         self.splitter = QSplitter(Qt.Orientation.Vertical)
 
         # Set splitter constraints to prevent collapse
@@ -389,8 +480,73 @@ class SplitterTabInspector(QWidget):
 
         """
         index = self.main_tabs.addTab(widget, title)
+        self._sections.append((widget, title))
         if tooltip:
             self.main_tabs.setTabToolTip(index, tooltip)
+
+    def populate_sections(self, menu: QMenu) -> None:
+        """Find each section in its current pane, including dragged sections."""
+        for widget, title in self._sections:
+            action = menu.addAction(title)
+            action.triggered.connect(
+                lambda _checked=False, section=widget: self.activate_section(section)
+            )
+
+    def activate_section(self, section: QWidget) -> None:
+        """Activate a section without moving it out of its split pane."""
+        for tabs in self.findChildren(DraggableTabWidget):
+            index = tabs.indexOf(section)
+            if index >= 0:
+                tabs.setCurrentIndex(index)
+                self._active_section = section
+                section.setFocus(Qt.FocusReason.OtherFocusReason)
+                return
+
+    def split_active_section(self) -> None:
+        """Split the focused pane's current section using a discoverable action."""
+        from PySide6.QtWidgets import QApplication
+
+        panes = [self.splitter.widget(i) for i in range(self.splitter.count())]
+        focus = QApplication.focusWidget()
+        tabs = next(
+            (p for p in panes if focus is not None and p.isAncestorOf(focus)),
+            next(
+                (
+                    p
+                    for p in panes
+                    if isinstance(p, DraggableTabWidget)
+                    and p.currentWidget() is self._active_section
+                ),
+                panes[0],
+            ),
+        )
+        if not isinstance(tabs, DraggableTabWidget) or tabs.count() <= 1:
+            return
+        new_tabs = DraggableTabWidget()
+        self.splitter.insertWidget(self.splitter.indexOf(tabs) + 1, new_tabs)
+        _move_tab(tabs, new_tabs, tabs.currentIndex(), 0)
+        self.splitter.setSizes([1] * self.splitter.count())
+
+    def reset_layout(self) -> None:
+        """Restore original section order without recreating any content."""
+        panes = self.findChildren(DraggableTabWidget)
+        target = panes[0]
+        for widget, title in self._sections:
+            tooltip = ""
+            for pane in panes:
+                index = pane.indexOf(widget)
+                if index >= 0:
+                    tooltip = pane.tabToolTip(index)
+                    pane.removeTab(index)
+                    break
+            index = target.addTab(widget, title)
+            target.setTabToolTip(index, tooltip)
+        for pane in panes[1:]:
+            pane.setParent(None)
+            pane.deleteLater()
+        self.main_tabs = target
+        self._tab_widgets = [target]
+        target.setCurrentIndex(0)
 
     def get_main_tabs(self) -> QTabWidget:
         """Return the main tab widget."""

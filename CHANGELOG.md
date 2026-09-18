@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-09-17
-**Commit:** f394e2d67bbeaa0a3ae1a26573952a33bc974ff7
+**Last Updated:** 2026-09-18
+**Commit:** ad8faa96964eef669a54c12bf66ba959e3f41419
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-09-18)* **Editors / UX**: Added compact adaptive Event and Entity forms,
+  named disclosures with subtle chevrons, tab overflow navigation, split/reset
+  actions, and responsive description and action layouts. Event dates now use
+  text-first entry with optional structured date, time, and duration controls;
+  pending or invalid drafts are protected from autosave and navigation loss.
 
 - *(2026-09-17)* **Performance / Diagnostics**: Added single-profile runs and
   Event/Entity mutation, reload, and timeline-layout measurements, with focused

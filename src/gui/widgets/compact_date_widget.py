@@ -13,15 +13,18 @@ import logging
 import os
 from typing import Optional
 
-from PySide6.QtCore import QSize, Signal, Slot
+from PySide6.QtCore import QEvent, QObject, QSize, Qt, Signal, Slot
+from PySide6.QtGui import QIcon, QKeyEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QFrame,
     QGridLayout,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QPushButton,
+    QSizePolicy,
     QSpinBox,
     QVBoxLayout,
     QWidget,
@@ -53,15 +56,22 @@ class CompactDateWidget(QWidget):
     """
 
     value_changed = Signal(float)
+    draft_changed = Signal(bool)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(
+        self, parent: Optional[QWidget] = None, *, text_first: bool = False
+    ) -> None:
         """Initializes the compact date widget.
 
         Args:
             parent: Parent widget.
+            text_first: Opt into draft-aware text entry for the event inspector.
 
         """
         super().__init__(parent)
+        self._text_first = text_first
+        self._draft_pending = False
+        self._accepted_value = 0.0
         # Set size policy to prevent vertical squashing
         from PySide6.QtWidgets import QSizePolicy
 
@@ -73,6 +83,156 @@ class CompactDateWidget(QWidget):
 
         self._setup_ui()
         self._connect_signals()
+        if text_first:
+            self._setup_text_first()
+
+    def _setup_text_first(self) -> None:
+        """Promote typed entry while retaining all structured controls."""
+        from src.gui.widgets.editor_presentation import DisclosureButton
+
+        layout = self.layout()
+        assert isinstance(layout, QVBoxLayout)
+        row_item = layout.itemAt(0)
+        assert row_item is not None
+        date_row = row_item.layout()
+        assert isinstance(date_row, QHBoxLayout)
+        date_row.removeWidget(self._date_chip)
+        date_row.removeWidget(self.btn_time_toggle)
+        date_row.takeAt(date_row.count() - 1)
+        time_layout = self._time_container.layout()
+        assert time_layout is not None
+        time_layout.removeWidget(self.txt_date)
+        self.txt_date.setMinimumWidth(0)
+        self.txt_date.setMaximumWidth(16777215)
+        self.txt_date.setMinimumHeight(32)
+        self.txt_date.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
+        self.txt_date.setAccessibleName("Date")
+        date_row.insertWidget(0, self.txt_date, 1)
+        date_row.setStretch(0, 1)
+        self.btn_calendar.setFixedSize(32, 32)
+        self.btn_calendar.setAccessibleName("Choose date from calendar")
+        self.date_fields_button = DisclosureButton("Date fields…", self)
+        options_row = QHBoxLayout()
+        options_row.setContentsMargins(0, 0, 0, 0)
+        options_row.addWidget(self.date_fields_button)
+        options_row.addWidget(self.btn_time_toggle)
+        layout.insertLayout(1, options_row)
+        layout.insertWidget(2, self._date_chip)
+        chip_layout = self._date_chip.layout()
+        assert chip_layout is not None
+        for field in (self.spin_year, self.combo_month, self.combo_day):
+            field.setMinimumWidth(0)
+            field.setMaximumWidth(16777215)
+            field.setMinimumHeight(32)
+            field.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self._date_chip.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
+        chip_layout.setSpacing(4)
+        self.date_fields_button.toggled.connect(self._date_chip.setVisible)
+        self.btn_time_toggle.setText("Time…")
+        self.btn_time_toggle.setIcon(QIcon())
+        self.btn_time_toggle.setMinimumSize(0, 32)
+        self.btn_time_toggle.setMaximumSize(16777215, 32)
+        self.btn_time_toggle.setAccessibleName("Show time fields")
+        self.feedback = QLabel(self)
+        self.feedback.setWordWrap(True)
+        layout.addWidget(self.feedback)
+        self.txt_date.textEdited.connect(self._on_draft_edited)
+        self.txt_date.installEventFilter(self)
+        self._sync_entry_availability()
+
+    def _sync_entry_availability(self) -> None:
+        if not self._text_first:
+            return
+        available = self._parser is not None
+        self.txt_date.setVisible(available)
+        self.btn_calendar.setEnabled(available)
+        self.date_fields_button.setChecked(not available)
+        self._date_chip.setVisible(not available)
+        self.feedback.setText(
+            "" if available else "Use date fields until a calendar is available."
+        )
+        if available and self._converter is not None:
+            example = self._entry_text()
+            self.txt_date.setPlaceholderText(example)
+            self.txt_date.setToolTip(f"Enter a calendar date, for example {example}")
+            self._accepted_value = self.get_value()
+            self._show_accepted_date()
+
+    def _on_draft_edited(self, _text: str) -> None:
+        self._draft_pending = True
+        self.feedback.setText("Date not applied yet. Enter to apply; Esc to restore.")
+        self.draft_changed.emit(True)
+
+    def has_pending_draft(self) -> bool:
+        """Return whether typed input is awaiting acceptance."""
+        return self._draft_pending
+
+    def commit_draft(self) -> bool:
+        """Accept parseable text without altering values on invalid input."""
+        if not self._draft_pending:
+            return True
+        try:
+            if self._parser is None:
+                raise ValueError("No calendar is available")
+            parsed = self._parser.parse_date(self.txt_date.text().strip())
+            timestamp = self._parser.calculate_timestamp(parsed)
+        except (ValueError, TypeError, OverflowError):
+            self.feedback.setText(
+                "Date not recognized. Use this calendar's date format, "
+                "choose a date, or press Esc to restore."
+            )
+            self.txt_date.setAccessibleDescription(self.feedback.text())
+            return False
+        self._draft_pending = False
+        self.set_value(timestamp)
+        self.value_changed.emit(timestamp)
+        self.draft_changed.emit(False)
+        return True
+
+    def cancel_draft(self) -> None:
+        """Restore the last accepted value without publishing an edit."""
+        if self._draft_pending:
+            self._draft_pending = False
+            self.set_value(self._accepted_value)
+            self.draft_changed.emit(False)
+
+    def _show_accepted_date(self) -> None:
+        if self._converter is not None and not self._draft_pending:
+            text = self._converter.format_date(self.get_value())
+            self.txt_date.setText(self._entry_text())
+            self.feedback.setText(f"Date: {text}")
+            self.txt_date.setAccessibleDescription("")
+
+    def _entry_text(self) -> str:
+        """Use existing parser syntax for the editable date representation."""
+        day = self.combo_day.currentIndex() + 1
+        year = self.spin_year.value()
+        month = self.combo_month.currentText()
+        if self._parser is not None and month.lower() in self._parser.month_lookup:
+            text = f"{day} {month} {year}"
+        else:
+            text = f"{year}-{self.combo_month.currentIndex() + 1:02d}-{day:02d}"
+        hour, minute = self.spin_hour.value(), self.spin_minute.value()
+        if hour or minute:
+            text += f" {hour:02d}:{minute:02d}"
+        return text
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:  # noqa: N802
+        """Let Escape cancel only this field's unaccepted date draft."""
+        if (
+            watched is self.txt_date
+            and isinstance(event, QKeyEvent)
+            and event.type() == QEvent.Type.KeyPress
+            and event.key() == Qt.Key.Key_Escape
+            and self._draft_pending
+        ):
+            self.cancel_draft()
+            return True
+        return super().eventFilter(watched, event)
 
     def _setup_ui(self) -> None:
         """Sets up the widget UI."""
@@ -97,9 +257,7 @@ class CompactDateWidget(QWidget):
         self.spin_year.setRange(-999999, 999999)
         self.spin_year.setValue(1)
         self.spin_year.setPrefix("Year ")
-        self.spin_year.setSizePolicy(
-            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
-        )
+        self.spin_year.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.spin_year.setFixedWidth(130)
         chip_layout.addWidget(self.spin_year, stretch=0)
 
@@ -111,9 +269,7 @@ class CompactDateWidget(QWidget):
         chip_layout.addWidget(self.combo_month, stretch=0)
 
         self.combo_day = QComboBox()
-        self.combo_day.setSizePolicy(
-            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
-        )
+        self.combo_day.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.combo_day.setFixedWidth(70)
         chip_layout.addWidget(self.combo_day, stretch=0)
 
@@ -156,9 +312,7 @@ class CompactDateWidget(QWidget):
         self.spin_hour.setRange(0, 23)
         self.spin_hour.setValue(0)
         self.spin_hour.setSuffix("h")
-        self.spin_hour.setSizePolicy(
-            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
-        )
+        self.spin_hour.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.spin_hour.setFixedWidth(65)
         time_row.addWidget(self.spin_hour, stretch=0)
 
@@ -175,9 +329,7 @@ class CompactDateWidget(QWidget):
         self.txt_date = QLineEdit()
         self.txt_date.setPlaceholderText("Type date...")
         self.txt_date.setToolTip("Enter date text (e.g. '15 Jan 3019')")
-        self.txt_date.setSizePolicy(
-            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
-        )
+        self.txt_date.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.txt_date.setFixedWidth(140)
         time_row.addWidget(self.txt_date, stretch=0)
         time_row.addStretch(1)
@@ -235,13 +387,11 @@ class CompactDateWidget(QWidget):
 
         """
         color = theme.get("accent_secondary", theme.get("text_main", "#e0e0e0"))
-        cal_path = os.path.join(
-            "default_assets", "icons", "ui_icons", "calendar.svg"
-        )
-        clock_path = os.path.join(
-            "default_assets", "icons", "ui_icons", "clock.svg"
-        )
+        cal_path = os.path.join("default_assets", "icons", "ui_icons", "calendar.svg")
+        clock_path = os.path.join("default_assets", "icons", "ui_icons", "clock.svg")
         self.btn_calendar.setIcon(load_icon(cal_path, color=color))
+        if self._text_first and self.btn_calendar.icon().isNull():
+            self.btn_calendar.setText("…")
         self.btn_calendar.setIconSize(QSize(16, 16))
         self.btn_time_toggle.setIcon(load_icon(clock_path, color=color))
         self.btn_time_toggle.setIconSize(QSize(14, 14))
@@ -270,10 +420,13 @@ class CompactDateWidget(QWidget):
         self._converter = converter
         if self._converter and self._converter._config:
             self._parser = DateParser(self._converter._config)
+        elif self._text_first:
+            self._parser = None
 
         self._populate_months()
         self._populate_days()
         self._update_preview()
+        self._sync_entry_availability()
 
     def _populate_months(self) -> None:
         """Populates month dropdown from calendar."""
@@ -345,7 +498,13 @@ class CompactDateWidget(QWidget):
 
         self._update_preview()
         value = self.get_value()
+        if self._text_first:
+            self._draft_pending = False
+            self._accepted_value = value
+            self._show_accepted_date()
         self.value_changed.emit(value)
+        if self._text_first:
+            self.draft_changed.emit(False)
 
     @Slot(dict)
     def _on_theme_changed(self, theme: dict) -> None:
@@ -356,6 +515,9 @@ class CompactDateWidget(QWidget):
     @Slot()
     def _on_text_edited(self) -> None:
         """Handles manual text input."""
+        if self._text_first:
+            self.commit_draft()
+            return
         if self._updating or not self._parser:
             return
 
@@ -481,6 +643,9 @@ class CompactDateWidget(QWidget):
                     self.combo_day.setCurrentIndex(day - 1)
 
             self._update_preview()
+            if self._text_first and hasattr(self, "feedback"):
+                self._accepted_value = self.get_value()
+                self._show_accepted_date()
         finally:
             self._updating = prev_updating
 
@@ -499,6 +664,18 @@ class CompactDateWidget(QWidget):
         )
         if popup.exec() == QDialog.DialogCode.Accepted:
             year, month, day = popup.get_selected_date()
+            if self._text_first:
+                self._updating = True
+                try:
+                    self.spin_year.setValue(year)
+                    self._populate_months()
+                    self.combo_month.setCurrentIndex(month - 1)
+                    self._populate_days()
+                    self.combo_day.setCurrentIndex(day - 1)
+                finally:
+                    self._updating = False
+                self._on_input_changed()
+                return
             self.spin_year.setValue(year)
             self.combo_month.setCurrentIndex(month - 1)
             self._populate_days()
@@ -511,6 +688,10 @@ class CompactDateWidget(QWidget):
             QSize: Minimum size reserved for the complete date control.
 
         """
+        if self._text_first:
+            layout = self.layout()
+            assert layout is not None
+            return layout.minimumSize()
         return QSize(250, 72)
 
     def sizeHint(self) -> QSize:
@@ -520,6 +701,10 @@ class CompactDateWidget(QWidget):
             QSize: Dynamic preferred size based on time row visibility.
 
         """
+        if self._text_first:
+            layout = self.layout()
+            assert layout is not None
+            return layout.sizeHint()
         if self._time_container.isVisible():
             return QSize(350, 72)
         return QSize(350, 34)

@@ -145,7 +145,9 @@ class WikiTextEditView(QTextEdit):
 
     link_clicked = Signal(str)  # Emits the target name (e.g. "Gandalf")
     completion_prefix_changed = Signal(str)  # Emits prefix when >= 3 chars inside [[
-    _lt_check_requested = Signal(str, str, str, str)  # (text, language, username, api_key)
+    _lt_check_requested = Signal(
+        str, str, str, str
+    )  # (text, language, username, api_key)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the WikiTextEdit.
@@ -429,7 +431,9 @@ class WikiTextEditView(QTextEdit):
             updated = apply_suggestion_effects(items, [effect])
             if len(updated) != len(items):
                 new_row = next(
-                    i for i, item in enumerate(updated) if item[0] == effect["object_id"]
+                    i
+                    for i, item in enumerate(updated)
+                    if item[0] == effect["object_id"]
                 )
                 model.insertRows(new_row, 1)
                 model.setData(model.index(new_row, 0), updated[new_row][1])
@@ -438,9 +442,7 @@ class WikiTextEditView(QTextEdit):
         self._completion_map = {
             name: (item_id, item_type) for item_id, name, item_type in items
         }
-        self._valid_targets_lower = {
-            name.lower() for name in self._completion_map
-        }
+        self._valid_targets_lower = {name.lower() for name in self._completion_map}
         self._valid_ids = {item_id for item_id, _, _ in items}
         if hasattr(self, "_view_mode") and self._view_mode == "rich":
             self._update_link_colors()
@@ -1341,9 +1343,7 @@ class WikiTextEditView(QTextEdit):
             fragment = iterator.fragment()
             if fragment.isValid():
                 fragment_format = QTextCharFormat(fragment.charFormat())
-                fragment_format.setFontFamilies(
-                    [self._typography.primary_font_family]
-                )
+                fragment_format.setFontFamilies([self._typography.primary_font_family])
                 fragment_format.setFontPointSize(font_size)
                 fragment_format.setFontWeight(weight)
                 updates.append(
@@ -1359,9 +1359,7 @@ class WikiTextEditView(QTextEdit):
             self._apply_fragment_formats(updates)
         else:
             insertion_format = QTextCharFormat(self.currentCharFormat())
-            insertion_format.setFontFamilies(
-                [self._typography.primary_font_family]
-            )
+            insertion_format.setFontFamilies([self._typography.primary_font_family])
             insertion_format.setFontPointSize(font_size)
             insertion_format.setFontWeight(weight)
             self.setCurrentCharFormat(insertion_format)
@@ -1626,7 +1624,10 @@ class WikiTextEditView(QTextEdit):
                 and (popup := self._completer.popup())
             ):
                 self._show_completion_popup(popup, prefix)
-                if len(prefix) >= SEMANTIC_COMPLETION_MIN_PREFIX_LEN and prefix != self._last_completion_prefix:
+                if (
+                    len(prefix) >= SEMANTIC_COMPLETION_MIN_PREFIX_LEN
+                    and prefix != self._last_completion_prefix
+                ):
                     self._last_completion_prefix = prefix
                     self.completion_prefix_changed.emit(prefix)
         elif self._completer and (popup := self._completer.popup()):
@@ -1833,7 +1834,11 @@ class WikiTextEditView(QTextEdit):
         """
         cursor_pos = self.cursorForPosition(event.pos()).position()
         hit = next(
-            (m for m in self._lt_matches if m.offset <= cursor_pos < m.offset + m.length),
+            (
+                m
+                for m in self._lt_matches
+                if m.offset <= cursor_pos < m.offset + m.length
+            ),
             None,
         )
 
@@ -2112,6 +2117,7 @@ class WikiTextEdit(QFrame):
 
         # Editor View (must be created before Toolbar to link actions)
         self.editor = WikiTextEditView(self)
+        self._adaptive_width = False
 
         # Toolbar
         self.toolbar = QToolBar("Editor Formatting", self)
@@ -2123,6 +2129,7 @@ class WikiTextEdit(QFrame):
         # Content Container (TOC + Editor)
         content_container = QWidget(self)
         content_layout = QHBoxLayout(content_container)
+        self._content_layout = content_layout
         content_layout.setContentsMargins(1, 1, 1, 1)  # Padding for border
         content_layout.setSpacing(0)
 
@@ -2137,8 +2144,7 @@ class WikiTextEdit(QFrame):
         style = self.toc_widget.styleSheet()
         border_color = ThemeManager().get_theme().get("border", "#454545")
         self.toc_widget.setStyleSheet(
-            style
-            + f"\nTOCWidget {{ border-right: 1px solid {border_color}; }}"
+            style + f"\nTOCWidget {{ border-right: 1px solid {border_color}; }}"
         )
         content_layout.addWidget(self.toc_widget)
         content_layout.addWidget(self.editor, stretch=1)
@@ -2177,15 +2183,36 @@ class WikiTextEdit(QFrame):
         frame_padding = 6
         toc_width = self.toc_widget.width() if not self.toc_widget.isHidden() else 0
         minimum_width = (
-            text_width
-            + document_margins
-            + scrollbar_width
-            + frame_padding
-            + toc_width
+            text_width + document_margins + scrollbar_width + frame_padding + toc_width
         )
+        if self._adaptive_width:
+            minimum_width = 120
         if minimum_width != self.minimumWidth():
             self.setMinimumWidth(minimum_width)
             self.minimum_width_changed.emit(minimum_width)
+
+    def set_adaptive_width(self, enabled: bool) -> None:
+        """Allow inspector text to wrap below the preferred reading width."""
+        self._adaptive_width = enabled
+        self._apply_editor_width_limit()
+
+    def resizeEvent(self, event: Any) -> None:  # noqa: N802
+        """Stack an open contents list in narrow adaptive inspectors."""
+        super().resizeEvent(event)
+        if self._adaptive_width:
+            from PySide6.QtWidgets import QBoxLayout
+
+            from src.gui.widgets.editor_presentation import COMPACT_EDITOR_WIDTH
+
+            compact = self.width() < COMPACT_EDITOR_WIDTH
+            self._content_layout.setDirection(
+                QBoxLayout.Direction.TopToBottom
+                if compact
+                else QBoxLayout.Direction.LeftToRight
+            )
+            self.toc_widget.setMinimumWidth(0 if compact else 200)
+            self.toc_widget.setMaximumWidth(16777215 if compact else 200)
+            self.toc_widget.setMaximumHeight(120 if compact else 16777215)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Stop the child editor's worker before closing the wrapper."""
@@ -2234,7 +2261,9 @@ class WikiTextEdit(QFrame):
         # Spell check button — always opens settings dialog; checked = currently enabled
         self.action_spell_check = self.toolbar.addAction("ABC")
         self.action_spell_check.setCheckable(True)
-        self.action_spell_check.setToolTip("Spell & grammar check settings (LanguageTool)")
+        self.action_spell_check.setToolTip(
+            "Spell & grammar check settings (LanguageTool)"
+        )
         self.action_spell_check.triggered.connect(self._open_spell_settings)
 
         # Sync visual state with persisted settings

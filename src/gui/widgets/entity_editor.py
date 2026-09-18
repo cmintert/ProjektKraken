@@ -52,6 +52,7 @@ from src.gui.utils.style_helper import StyleHelper
 from src.gui.utils.suggestion_effects import apply_suggestion_effects
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.authoring_context_widget import AuthoringContextWidget
+from src.gui.widgets.editor_presentation import DisclosureButton, EditorPresentation
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.gallery_widget import GalleryWidget
 from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
@@ -62,7 +63,6 @@ from src.gui.widgets.standard_buttons import (
     DestructiveButton,
     PrimaryButton,
     StandardButton,
-    StandardCheckbox,
 )
 from src.gui.widgets.summary_widget import SummaryWidget
 from src.gui.widgets.tag_editor import TagEditorWidget
@@ -135,6 +135,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self._build_secondary_tabs(parent)
         self._build_action_buttons(main_layout)
         self._initialize_editor_state()
+        self._presentation = EditorPresentation(self)
 
     def _build_editor_shell(self) -> QVBoxLayout:
         """Build empty/content containers and return the content layout."""
@@ -202,7 +203,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         section_layout = QVBoxLayout(self.timeline_container)
         section_layout.setContentsMargins(0, 0, 0, 0)
         section_layout.setSpacing(EDITOR_SECTION_SPACING)
-        self.timeline_checkbox = StandardCheckbox("")
+        self.timeline_checkbox = DisclosureButton("Timeline")
         section_layout.addWidget(self.timeline_checkbox)
         self.timeline_display = TimelineDisplayWidget()
         self.timeline_display.setMinimumWidth(self.desc_edit.minimumWidth())
@@ -213,7 +214,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self.timeline_display.setVisible(False)
         section_layout.addWidget(self.timeline_display)
         self.timeline_checkbox.toggled.connect(self.timeline_display.setVisible)
-        self.form_layout.addRow("Timeline:", self.timeline_container)
+        self.form_layout.addRow(self.timeline_container)
 
     def _build_summary_section(self) -> None:
         """Build the collapsible entity summary section."""
@@ -221,7 +222,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         section_layout = QVBoxLayout(self.summary_container)
         section_layout.setContentsMargins(0, 0, 0, 0)
         section_layout.setSpacing(EDITOR_SECTION_SPACING)
-        self.summary_checkbox = StandardCheckbox("")
+        self.summary_checkbox = DisclosureButton("Summary")
         section_layout.addWidget(self.summary_checkbox)
         self.summary_widget = SummaryWidget()
         self.summary_widget.setVisible(False)
@@ -229,12 +230,10 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self._on_summary_generate_requested
         )
         self.summary_widget.edit_committed.connect(self._on_summary_edit_committed)
-        self.summary_widget.delete_requested.connect(
-            self._on_summary_delete_requested
-        )
+        self.summary_widget.delete_requested.connect(self._on_summary_delete_requested)
         section_layout.addWidget(self.summary_widget)
         self.summary_checkbox.toggled.connect(self.summary_widget.setVisible)
-        self.form_layout.addRow("Summary:", self.summary_container)
+        self.form_layout.addRow(self.summary_container)
 
     def _build_llm_section(self) -> None:
         """Build the collapsible description-generation section."""
@@ -242,14 +241,14 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         section_layout = QVBoxLayout(self.llm_container)
         section_layout.setContentsMargins(0, 0, 0, 0)
         section_layout.setSpacing(EDITOR_SECTION_SPACING)
-        self.llm_checkbox = StandardCheckbox("")
+        self.llm_checkbox = DisclosureButton("Generate description")
         section_layout.addWidget(self.llm_checkbox)
         self.llm_generator = LLMGenerationWidget(self, context_provider=self)
         self.llm_generator.setVisible(False)
         self.llm_generator.text_generated.connect(self._on_text_generated)
         section_layout.addWidget(self.llm_generator)
         self.llm_checkbox.toggled.connect(self.llm_generator.setVisible)
-        self.form_layout.addRow("LLM Generation:", self.llm_container)
+        self.form_layout.addRow(self.llm_container)
 
     def _build_raster_appearances_section(self) -> None:
         """Build the read-only collapsible raster-appearance section."""
@@ -257,7 +256,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         section_layout = QVBoxLayout(self.raster_appearances_container)
         section_layout.setContentsMargins(0, 0, 0, 0)
         section_layout.setSpacing(EDITOR_SECTION_SPACING)
-        self.raster_appearances_checkbox = StandardCheckbox("")
+        self.raster_appearances_checkbox = DisclosureButton("Raster maps")
         section_layout.addWidget(self.raster_appearances_checkbox)
         self.raster_appearances_label = QLabel("Not linked to any raster map.")
         self.raster_appearances_label.setWordWrap(True)
@@ -266,7 +265,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self.raster_appearances_checkbox.toggled.connect(
             self.raster_appearances_label.setVisible
         )
-        self.form_layout.addRow("Raster Maps:", self.raster_appearances_container)
+        self.form_layout.addRow(self.raster_appearances_container)
 
     def _build_header(self, main_layout: QVBoxLayout) -> None:
         """Build the persistent entity name, type, and inject header."""
@@ -1072,7 +1071,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         # Timeline should only show relations from events, not entity-to-entity relations
         event_relations = [
-            rel for rel in (incoming_relations or [])
+            rel
+            for rel in (incoming_relations or [])
             if rel.get("source_event_date") is not None
         ]
         self.timeline_display.set_relations(event_relations)
@@ -1560,9 +1560,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
     create_template_requested = Signal(dict)
 
-    def set_read_only_mode(
-        self, readonly: bool, reason: str | None = None
-    ) -> None:
+    def set_read_only_mode(self, readonly: bool, reason: str | None = None) -> None:
         """Set the editor to read-only or editable mode.
 
         When in read-only mode, all form fields, buttons, and editors are

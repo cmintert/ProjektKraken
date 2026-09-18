@@ -81,7 +81,9 @@ class EditorCoordinator(BaseCoordinator):
             "context_tags",
             None,
         )
-        return context.create_event_command(data) if context else CreateEventCommand(data)
+        return (
+            context.create_event_command(data) if context else CreateEventCommand(data)
+        )
 
     def _create_entity_command(self, data: dict) -> CreateEntityCommand:
         context = getattr(
@@ -90,7 +92,9 @@ class EditorCoordinator(BaseCoordinator):
             None,
         )
         return (
-            context.create_entity_command(data) if context else CreateEntityCommand(data)
+            context.create_entity_command(data)
+            if context
+            else CreateEntityCommand(data)
         )
 
     def create_event(self) -> None:
@@ -103,9 +107,7 @@ class EditorCoordinator(BaseCoordinator):
             return
 
         lore_date = float(self.main_window.timeline.get_playhead_time())
-        cmd = self._create_event_command(
-            {"name": name.strip(), "lore_date": lore_date}
-        )
+        cmd = self._create_event_command({"name": name.strip(), "lore_date": lore_date})
         self.command_requested.emit(cmd)
 
     def create_entity(self) -> None:
@@ -269,9 +271,7 @@ class EditorCoordinator(BaseCoordinator):
             logger.debug("[EditorCoordinator] Emitting CompositeCommand (Update+Wiki)")
         else:
             command = cmds[0]
-            logger.debug(
-                f"[EditorCoordinator] Emitting {command.__class__.__name__}"
-            )
+            logger.debug(f"[EditorCoordinator] Emitting {command.__class__.__name__}")
 
         self.command_requested.emit(command)
 
@@ -298,7 +298,9 @@ class EditorCoordinator(BaseCoordinator):
         cmds.append(UpdateEntityCommand(entity_id, entity_data))
 
         if "description" in entity_data:
-            self._append_wiki_cmd_if_enabled(cmds, entity_id, entity_data["description"])
+            self._append_wiki_cmd_if_enabled(
+                cmds, entity_id, entity_data["description"]
+            )
 
         if len(cmds) > 1:
             desc = f"Update Entity '{entity_data.get('name', '?')}'"
@@ -306,9 +308,7 @@ class EditorCoordinator(BaseCoordinator):
             logger.debug("[EditorCoordinator] Emitting CompositeCommand (Update+Wiki)")
         else:
             command = cmds[0]
-            logger.debug(
-                f"[EditorCoordinator] Emitting {command.__class__.__name__}"
-            )
+            logger.debug(f"[EditorCoordinator] Emitting {command.__class__.__name__}")
 
         self.command_requested.emit(command)
 
@@ -366,7 +366,11 @@ class EditorCoordinator(BaseCoordinator):
         self.command_requested.emit(cmd)
 
     def update_relation(
-        self, rel_id: str, target_id: str, rel_type: str, attributes: Optional[dict] = None
+        self,
+        rel_id: str,
+        target_id: str,
+        rel_type: str,
+        attributes: Optional[dict] = None,
     ) -> None:
         """Updates an existing relation.
 
@@ -419,6 +423,9 @@ class EditorCoordinator(BaseCoordinator):
         )
 
         if reply == QMessageBox.StandardButton.Save:
+            temporal = getattr(editor, "temporal_widget", None)
+            if temporal is not None and not temporal.commit_drafts():
+                return False
             if hasattr(editor, "_on_save"):
                 editor._on_save()
             return True
@@ -467,9 +474,7 @@ class EditorCoordinator(BaseCoordinator):
         self.command_requested.emit(cmd)
 
     @Slot(str, str, str)
-    def on_map_create_entity(
-        self, new_id: str, name: str, entity_type: str
-    ) -> None:
+    def on_map_create_entity(self, new_id: str, name: str, entity_type: str) -> None:
         """Handle inline entity creation from the map.
 
         Args:

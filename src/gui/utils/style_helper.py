@@ -90,6 +90,19 @@ class StyleHelper:
     """
 
     @staticmethod
+    def get_inspector_focus_style() -> str:
+        """Give inspector controls visible keyboard focus using theme tokens."""
+        theme = ThemeManager().get_theme()
+        return (
+            "QLineEdit:enabled, QComboBox:enabled, QSpinBox:enabled, "
+            "QPushButton:enabled, QToolButton:enabled {"
+            f" border-color: {theme['text_dim']}; }}"
+            "QLineEdit:focus, QComboBox:focus, QSpinBox:focus, "
+            "QPushButton:focus, QToolButton:focus {"
+            f" border: 2px solid {theme['text_main']}; }}"
+        )
+
+    @staticmethod
     def get_contrasting_text_color(background: str) -> str:
         """Return the active theme text token with best background contrast.
 
