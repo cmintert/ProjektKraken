@@ -113,6 +113,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
     link_clicked = Signal(str)
     navigate_to_relation = Signal(str)
     dirty_changed = Signal(bool)
+    focus_writing_requested = Signal()
     current_data_changed = Signal(dict)
     completion_prefix_changed = Signal(str)
     create_new_requested = Signal()
@@ -1009,12 +1010,21 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             and self.temporal_widget.has_pending_draft()
         ):
             return
+        focus = getattr(self, "_focus_controller", None)
+        if (
+            focus is not None
+            and focus.active is self
+            and (event is None or event.id != self._current_event_id)
+        ):
+            focus.exit()
         same_event = event is not None and event.id == self._current_event_id
         range_expanded = self.temporal_widget.range_button.isChecked()
         self.temporal_widget.cancel_drafts()
         # Handle missing event (e.g., item was deleted)
         if event is None:
             self._current_event_id = None
+            if focus is not None:
+                focus._update_action()
             self._current_created_at = 0.0
             self._reset_pending_summary()
             self.summary_widget.clear_summary()
@@ -1028,6 +1038,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
         self._reset_pending_summary()
         self._current_event_id = event.id
+        if focus is not None:
+            focus._update_action()
         self._current_created_at = event.created_at  # Preserve validation data
 
         self._is_loading = True
@@ -1065,6 +1077,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         finally:
             self._is_loading = False
 
+        if focus is not None and focus.active is self:
+            focus._update_title(self, self.name_edit.text())
+            focus._update_status(self)
         self._update_raster_appearances(maps_data or [])
         self.authoring_context_refresh_requested.emit()
 

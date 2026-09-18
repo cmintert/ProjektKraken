@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-09-18
-**Commit:** ad8faa96964eef669a54c12bf66ba959e3f41419
+**Commit:** e9e914b59256d009db236bdd4ed2d2b384f92ab8
 ---
 
 # Changelog
@@ -12,6 +12,16 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-09-18)* **Editors / Focus writing**: Added a live, centered writing
+  presentation for Event and Entity descriptions with F11 and View menu entry,
+  accessible formatting and contents controls, readable workspace dimming,
+  and navigation-aware layout restoration.
+  Visual QA fixes keep focus controls theme-aware, size the writing column from
+  the reading-width preference, and guard reparenting against premature exits;
+  leaving focus mode restores field sizing without stealing navigation focus.
+  The toolbar action now sits before Bold and stays selected until focus mode
+  exits. Added focused regression coverage for layout and control state.
 
 - *(2026-09-18)* **Editors / UX**: Added compact adaptive Event and Entity forms,
   named disclosures with subtle chevrons, tab overflow navigation, split/reset

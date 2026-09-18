@@ -104,6 +104,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
     navigate_to_relation = Signal(str)
     navigate_to_map = Signal(str)
     dirty_changed = Signal(bool)
+    focus_writing_requested = Signal()
     return_to_present_requested = Signal()
     inject_ui_requested = Signal(str)
     summary_generation_requested = Signal(object)
@@ -822,9 +823,18 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
                 to leave the section unchanged.
 
         """
+        focus = getattr(self, "_focus_controller", None)
+        if (
+            focus is not None
+            and focus.active is self
+            and (entity is None or entity.id != self._current_entity_id)
+        ):
+            focus.exit()
         # Handle missing entity (e.g., deleted)
         if entity is None:
             self._current_entity_id = None
+            if focus is not None:
+                focus._update_action()
             self._current_created_at = 0.0
             self._reset_pending_summary()
             self.summary_widget.clear_summary()
@@ -839,6 +849,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         try:
             self._reset_pending_summary()
             self._current_entity_id = entity.id
+            if focus is not None:
+                focus._update_action()
             self._current_created_at = entity.created_at
 
             # Preserve scroll position and description cursor across reload
@@ -879,6 +891,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         finally:
             self._is_loading = False
 
+        if focus is not None and focus.active is self:
+            focus._update_title(self, self.name_edit.text())
+            focus._update_status(self)
         self._update_raster_appearances(maps_data or [])
         self.authoring_context_refresh_requested.emit()
 
@@ -1580,10 +1595,15 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             it becomes "Return to Present" button, otherwise it shows the reason
             text and is disabled.
         """
+        focus = getattr(self, "_focus_controller", None)
+        if readonly and focus is not None and focus.active is self:
+            focus.exit()
         # Disable form fields
         self.name_edit.setReadOnly(readonly)
         self.type_edit.setEnabled(not readonly)
         self.desc_edit.setReadOnly(readonly)
+        if focus is not None:
+            focus._update_action()
 
         # Disable attribute editor
         self.attribute_editor.setEnabled(not readonly)

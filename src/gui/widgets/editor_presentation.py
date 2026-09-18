@@ -100,6 +100,7 @@ class EditorPresentation(QObject):
         editor.header_widget.layout().addWidget(self._inject_row)
         self._inject_row.hide()
         editor.desc_edit.set_adaptive_width(True)
+        self._install_focus_button()
         editor.summary_widget.text_display.set_adaptive_width(True)
         editor.summary_widget.metadata_label.setWordWrap(True)
         editor.summary_widget.stale_label.setWordWrap(True)
@@ -147,6 +148,20 @@ class EditorPresentation(QObject):
         ThemeManager().theme_changed.connect(self._style_controls)
         self._style_controls()
         self.reflow()
+
+    def _install_focus_button(self) -> None:
+        """Put focus writing first in the description formatting toolbar."""
+        self.focus_button = QToolButton(self.editor.desc_edit.toolbar)
+        self.focus_button.setText("Focus writing")
+        self.focus_button.setAccessibleName("Focus writing")
+        self.focus_button.setToolTip("Focus writing (F11)")
+        self.focus_button.setCheckable(True)
+        self.focus_button.setMinimumHeight(32)
+        self.focus_button.clicked.connect(self.editor.focus_writing_requested.emit)
+        self._focus_toolbar_action = self.editor.desc_edit.toolbar.insertWidget(
+            self.editor.desc_edit.editor.action_bold,
+            self.focus_button,
+        )
 
     def _style_controls(self, _theme: dict | None = None) -> None:
         """Keep inspector focus and control boundaries visible in both themes."""

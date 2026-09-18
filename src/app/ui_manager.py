@@ -127,6 +127,10 @@ class UIManager:
             self._zone_actions[zone_name] = action
         workspace.zone_visibility_changed.connect(self._sync_zone_action)
 
+        from src.gui.widgets.focus_writing import FocusWritingController
+
+        self.focus_writing = FocusWritingController(self.main_window, view_menu)
+
         view_menu.addSeparator()
         theme_menu = view_menu.addMenu("Theme")
         from src.core.theme_manager import ThemeManager
@@ -264,9 +268,7 @@ class UIManager:
     def create_timeline_menu(self, menu_bar: QMenuBar) -> None:
         """Create timeline grouping and calendar actions."""
         timeline_menu = menu_bar.addMenu("Timeline")
-        self.grouping_config_action = timeline_menu.addAction(
-            "Configure Grouping..."
-        )
+        self.grouping_config_action = timeline_menu.addAction("Configure Grouping...")
         self.grouping_config_action.triggered.connect(
             self.main_window.grouping_manager.on_configure_grouping_requested
         )
@@ -370,9 +372,7 @@ class UIManager:
             else:
                 command = CreateCalendarConfigCommand(config)
             self.main_window.command_requested.emit(command)
-            self.main_window.command_requested.emit(
-                SetActiveCalendarCommand(config.id)
-            )
+            self.main_window.command_requested.emit(SetActiveCalendarCommand(config.id))
             self._request_calendar_config()
 
         dialog.config_saved.connect(on_config_saved)

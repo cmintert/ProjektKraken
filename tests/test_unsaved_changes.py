@@ -140,6 +140,7 @@ def test_mainwindow_check_unsaved_changes(qtbot):
 
     # We'll use a real instance but mock internal components to avoid side effects
     with (
+        patch("src.gui.widgets.focus_writing.FocusWritingController"),
         patch("src.app.worker_manager.DatabaseWorker"),
         patch(
             "src.app.main_window.UnifiedListWidget",
