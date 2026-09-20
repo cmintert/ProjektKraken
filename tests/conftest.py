@@ -45,6 +45,7 @@ _CI_FAST_FILES = {
     "tests/unit/test_relations_attributes.py",
     "tests/unit/test_search_service.py",
     "tests/unit/test_temporal_db_schema.py",
+    "tests/unit/test_temporal_entity_edit_command.py",
     "tests/unit/test_temporal_resolver.py",
     "tests/unit/test_timeline_grouping_commands.py",
     "tests/unit/test_trajectory_commands.py",

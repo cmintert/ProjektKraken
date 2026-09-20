@@ -212,6 +212,9 @@ class DataCoordinator(BaseCoordinator):
 
         """
         self._cached_events = events
+        self.main_window.entity_editor.set_dated_events(
+            [(event.id, event.name, event.lore_date) for event in events]
+        )
         logger.info(f"on_events_ready received {len(events)} events")
         self.main_window.unified_list.set_data(
             self._cached_events, self._cached_entities
@@ -358,9 +361,15 @@ class DataCoordinator(BaseCoordinator):
         self._entity_relation_ids = self._relation_endpoint_ids(relations, incoming)
         map_widget = getattr(self.main_window, "map_widget", None)
         maps_data = map_widget.maps_data if map_widget is not None else []
-        self.main_window.entity_editor.load_entity(
+        editor = self.main_window.entity_editor
+        if editor.current_entity_id == self._entity_detail_id and editor.has_unsaved_changes():
+            return
+        editor.load_entity(
             cast("Entity | None", entity), relations, incoming, maps_data=maps_data
         )
+        time_coordinator = getattr(self.main_window, "time_coordinator", None)
+        if entity is not None and time_coordinator is not None:
+            time_coordinator.resolve_selected_entity()
 
     @Slot(list, list)
     def on_graph_data_ready(self, nodes: list, edges: list) -> None:

@@ -106,6 +106,7 @@ def _init_registry() -> None:
         RemoveRelationCommand,
         UpdateRelationCommand,
     )
+    from src.commands.temporal_entity_edit_command import TemporalEntityEditCommand
     from src.commands.timeline_grouping_commands import (
         ClearTimelineGroupingCommand,
         SetTimelineGroupingCommand,
@@ -127,6 +128,7 @@ def _init_registry() -> None:
             "ProcessWikiLinksCommand": ProcessWikiLinksCommand,
             "CreateEntityCommand": CreateEntityCommand,
             "UpdateEntityCommand": UpdateEntityCommand,
+            "TemporalEntityEditCommand": TemporalEntityEditCommand,
             "DeleteEntityCommand": DeleteEntityCommand,
             "CreateMapCommand": CreateMapCommand,
             "UpdateMapCommand": UpdateMapCommand,

@@ -45,11 +45,11 @@ class _PaneTint(QWidget):
         return False
 
     def apply_theme(self) -> None:
-        """Use the theme background with a light alpha for legible dimming."""
-        color = QColor(ThemeManager().get_theme()["app_bg"])
+        """Darken the pane enough to make the inactive area visible."""
+        color = QColor(ThemeManager().get_theme()["app_bg"]).darker(150)
         self.setStyleSheet(
             "background-color: rgba("
-            f"{color.red()}, {color.green()}, {color.blue()}, 28);"
+            f"{color.red()}, {color.green()}, {color.blue()}, 60);"
         )
 
 

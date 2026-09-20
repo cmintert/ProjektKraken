@@ -6,7 +6,7 @@ different data types.
 
 from typing import Any, Dict, List, Optional
 
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -65,8 +65,8 @@ class AttributeEditorWidget(QWidget):
 
         # Table
         self.table = QTableWidget()
-        self.table.setColumnCount(3)
-        self.table.setHorizontalHeaderLabels(["Name", "Value", "Type"])
+        self.table.setColumnCount(4)
+        self.table.setHorizontalHeaderLabels(["Name", "Value", "Type", "Source"])
         self.table.horizontalHeader().setSectionResizeMode(
             0, QHeaderView.ResizeMode.Stretch
         )
@@ -76,6 +76,10 @@ class AttributeEditorWidget(QWidget):
         self.table.horizontalHeader().setSectionResizeMode(
             2, QHeaderView.ResizeMode.ResizeToContents
         )
+        self.table.horizontalHeader().setSectionResizeMode(
+            3, QHeaderView.ResizeMode.ResizeToContents
+        )
+        self.table.setColumnHidden(3, True)
         self.table.setSelectionBehavior(
             QTableWidget.SelectionBehavior.SelectRows
         )
@@ -107,6 +111,7 @@ class AttributeEditorWidget(QWidget):
         """
         self._block_signals = True
         self.table.setRowCount(0)
+        self.table.setColumnHidden(3, True)
         self._hidden_attributes = (
             {}
             if show_hidden
@@ -157,6 +162,38 @@ class AttributeEditorWidget(QWidget):
             attrs[key] = parsed_val
 
         return attrs
+
+    def set_source_labels(self, sources: dict[str, dict[str, Any]]) -> None:
+        """Show the effective owner of each visible attribute as a row tooltip."""
+        previous = self._block_signals
+        self._block_signals = True
+        try:
+            self.table.setColumnHidden(3, False)
+            for row in range(self.table.rowCount()):
+                name_item = self.table.item(row, 0)
+                value_item = self.table.item(row, 1)
+                if name_item is None:
+                    continue
+                source = sources.get(name_item.text().strip(), {})
+                label = (
+                    "Entity baseline"
+                    if source.get("kind") != "relation"
+                    else f"{source.get('event_name') or 'Event'} "
+                    f"(event payload at {source.get('event_date')})"
+                )
+                name_item.setToolTip(label)
+                if value_item is not None:
+                    value_item.setToolTip(label)
+                source_item = QTableWidgetItem(
+                    "Base" if source.get("kind") != "relation" else str(
+                        source.get("event_name") or "Event"
+                    )
+                )
+                source_item.setToolTip(label)
+                source_item.setFlags(source_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                self.table.setItem(row, 3, source_item)
+        finally:
+            self._block_signals = previous
 
     def update_attribute_value(self, key: str, value: Any) -> None:
         """Updates the value of an existing attribute in the table without breaking focus.

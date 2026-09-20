@@ -161,6 +161,25 @@ def test_focus_dims_every_visible_pane_except_its_own(focus_setup, qtbot, zone):
     assert controller.active is editor
 
 
+def test_focus_tint_changes_rendered_pane(focus_setup, qtbot):
+    window, editor, controller = focus_setup
+    pane = window.workspace.panes["left"]
+    qtbot.wait(10)
+    sample_x, sample_y = pane.width() // 2, pane.height() - 20
+    before = pane.grab().toImage().pixelColor(sample_x, sample_y)
+
+    controller.enter(editor)
+    qtbot.wait(10)
+    after = pane.grab().toImage().pixelColor(sample_x, sample_y)
+
+    assert controller._tints["left"].isVisible()
+    assert max(
+        abs(before.red() - after.red()),
+        abs(before.green() - after.green()),
+        abs(before.blue() - after.blue()),
+    ) >= 20
+
+
 def test_same_item_reload_keeps_focus_new_item_exits(focus_setup):
     _window, editor, controller = focus_setup
     controller.enter(editor)

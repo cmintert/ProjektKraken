@@ -120,6 +120,10 @@ class BaseEditorMixin:
             else:
                 self.btn_save.setText("Save Changes")
                 self.autosave_manager.stop_timer()
+        elif dirty:
+            # A draft stays dirty across keystrokes; each edit extends the
+            # debounce rather than saving midway through continuous typing.
+            self.autosave_manager.start_timer()
 
     def has_unsaved_changes(self) -> bool:
         """Returns True if the editor has unsaved changes."""

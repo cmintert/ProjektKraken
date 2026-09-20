@@ -525,8 +525,8 @@ class ConnectionManager:
                 ),
                 (
                     self.window.entity_editor,
-                    "return_to_present_requested",
-                    self.window.time_coordinator.on_return_to_present,
+                    "temporal_save_requested",
+                    ec.update_temporal_entity,
                     "EntityEditor",
                 ),
                 (

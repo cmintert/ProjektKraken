@@ -1,7 +1,7 @@
 """Resolved temporal entity state and Payload v2 operations."""
 
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 _PAYLOAD_KEYS = {"attributes", "unset_attributes", "description"}
@@ -21,6 +21,13 @@ class ResolvedEntityState:
     entity_id: str
     description: str
     attributes: dict[str, Any]
+    description_source: dict[str, Any] | None = field(default=None, compare=False)
+    attribute_sources: dict[str, dict[str, Any]] | None = field(
+        default=None, compare=False
+    )
+    absent_attribute_sources: dict[str, dict[str, Any]] | None = field(
+        default=None, compare=False
+    )
 
     def to_dict(self) -> dict[str, Any]:
         """Return a serializable snapshot suitable for queued Qt delivery."""
@@ -28,6 +35,11 @@ class ResolvedEntityState:
             "entity_id": self.entity_id,
             "description": self.description,
             "attributes": deepcopy(self.attributes),
+            "description_source": deepcopy(self.description_source),
+            "attribute_sources": deepcopy(self.attribute_sources or {}),
+            "absent_attribute_sources": deepcopy(
+                self.absent_attribute_sources or {}
+            ),
         }
 
 
@@ -98,4 +110,7 @@ def apply_payload(
         entity_id=state.entity_id,
         description=description,
         attributes=attributes,
+        description_source=state.description_source,
+        attribute_sources=state.attribute_sources,
+        absent_attribute_sources=state.absent_attribute_sources,
     )

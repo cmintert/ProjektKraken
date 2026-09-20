@@ -801,6 +801,10 @@ class MainWindow(QMainWindow):
             self.editor_coordinator.on_command_finished_check_toast,
             Qt.ConnectionType.QueuedConnection,
         )
+        self.worker.command_finished.connect(
+            self.editor_coordinator.on_temporal_command_result,
+            Qt.ConnectionType.QueuedConnection,
+        )
 
         # Connect Coordinator Signals
         self.editor_coordinator.command_requested.connect(

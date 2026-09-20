@@ -1619,6 +1619,23 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_temporal_snapshot_banner_style() -> str:
+        """Return the themed style for a read-only timeline snapshot notice."""
+        theme = ThemeManager().get_theme()
+        accent = theme.get("accent_secondary", theme.get("primary", "#5C82FF"))
+        surface_alt = theme.get("surface_alt", theme.get("surface", "#2A2A2A"))
+        text_main = theme.get("text_main", theme.get("text", "#E0E0E0"))
+        return (
+            "QFrame#TemporalSnapshotBanner { "
+            f"background-color: {surface_alt}; "
+            f"border: 1px solid {accent}; "
+            "border-radius: 4px; padding: 0; }"
+            "QLabel#TemporalSnapshotLabel { "
+            f"background-color: transparent; color: {text_main}; "
+            "border: none; font-size: 11px; font-weight: bold; }"
+        )
+
+    @staticmethod
     def get_legend_overlay_style() -> str:
         """Returns QSS for the floating raster legend overlay.
 

@@ -38,6 +38,11 @@ class TemporalResolver:
             entity_id=entity.id,
             description=entity.description,
             attributes=dict(entity.attributes),
+            description_source={"kind": "baseline"},
+            attribute_sources={
+                key: {"kind": "baseline"} for key in entity.attributes
+            },
+            absent_attribute_sources={},
         )
 
         # 2. Filter applicable relations
@@ -77,6 +82,24 @@ class TemporalResolver:
                 raise ValueError(
                     f"Invalid temporal payload on relation {relation_id}: {exc}"
                 ) from exc
+
+            source = {
+                "kind": "relation",
+                "relation_id": rel["id"],
+                "event_id": rel.get("source_id", ""),
+                "event_name": rel.get("source_event_name", ""),
+                "event_date": rel["source_event_date"],
+            }
+            if "description" in payload:
+                current_state.description_source = source.copy()
+            assert current_state.attribute_sources is not None
+            assert current_state.absent_attribute_sources is not None
+            for key in payload.get("unset_attributes", []):
+                current_state.attribute_sources.pop(key, None)
+                current_state.absent_attribute_sources[key] = source.copy()
+            for key in payload.get("attributes", {}):
+                current_state.attribute_sources[key] = source.copy()
+                current_state.absent_attribute_sources.pop(key, None)
 
         return current_state
 

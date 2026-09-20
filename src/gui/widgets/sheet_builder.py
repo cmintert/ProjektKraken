@@ -916,27 +916,27 @@ class SheetBuilderWidget(QWidget):
         self._toolbar.setMovable(False)
         self._toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
 
-        self._act_add_row = QAction("＋ Attribute", self)
+        self._act_add_row = QAction("Add Attribute", self)
         self._act_add_row.setToolTip("Add a new attribute row")
         self._act_add_row.triggered.connect(self._on_toolbar_add_attribute)
         self._toolbar.addAction(self._act_add_row)
 
-        self._act_add_spacer = QAction("⬜ Spacer", self)
+        self._act_add_spacer = QAction("Add Spacer", self)
         self._act_add_spacer.setToolTip("Add a spacer to the last row")
         self._act_add_spacer.triggered.connect(self._on_toolbar_add_spacer)
         self._toolbar.addAction(self._act_add_spacer)
 
-        self._act_add_divider = QAction("── Divider", self)
+        self._act_add_divider = QAction("Add Divider", self)
         self._act_add_divider.setToolTip("Add a horizontal divider row")
         self._act_add_divider.triggered.connect(self._on_toolbar_add_divider)
         self._toolbar.addAction(self._act_add_divider)
 
-        self._act_add_text = QAction("𝐓 Text", self)
+        self._act_add_text = QAction("Add Text", self)
         self._act_add_text.setToolTip("Add a flavour text row")
         self._act_add_text.triggered.connect(self._on_toolbar_add_text)
         self._toolbar.addAction(self._act_add_text)
 
-        self._act_add_header = QAction("𝐇 Header", self)
+        self._act_add_header = QAction("Add Header", self)
         self._act_add_header.setToolTip("Add a section header row")
         self._act_add_header.triggered.connect(self._on_toolbar_add_header)
         self._toolbar.addAction(self._act_add_header)
@@ -1004,16 +1004,20 @@ class SheetBuilderWidget(QWidget):
         self._container.setStyleSheet(f"QWidget {{ background-color: {surface}; }}")
 
         # Style the toolbar
-        tool_button_style = StyleHelper.get_flat_tool_button_style()
+        tool_button_style = StyleHelper.get_tool_button_style()
         self._toolbar.setStyleSheet(
             f"""
             QToolBar {{
                 background-color: {surface_alt};
                 border-bottom: 1px solid {border};
-                spacing: 2px;
-                padding: 2px;
+                spacing: 4px;
+                padding: 4px;
             }}
             {tool_button_style}
+            QToolButton {{
+                min-height: 28px;
+                padding: 5px 10px;
+            }}
         """
         )
 

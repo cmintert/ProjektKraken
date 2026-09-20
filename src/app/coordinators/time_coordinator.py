@@ -4,6 +4,7 @@ import logging
 from typing import TYPE_CHECKING, Optional
 
 from PySide6.QtCore import Q_ARG, Slot
+from PySide6.QtWidgets import QMessageBox
 
 from src.app.coordinators.base_coordinator import BaseCoordinator
 from src.app.qt_invocation import invoke_queued
@@ -29,6 +30,8 @@ class TimeCoordinator(BaseCoordinator):
         """Initialize lore-time and playhead coordination."""
         super().__init__(main_window)
         self._current_playhead_time: Optional[float] = None
+        self._follow_after_save: float | None = None
+        self._resolve_request_id = 0
 
     @property
     def current_playhead_time(self) -> Optional[float]:
@@ -75,20 +78,37 @@ class TimeCoordinator(BaseCoordinator):
 
     @Slot()
     def on_return_to_present(self) -> None:
-        """Exits "Viewing Past/Future State" mode.
-
-        Hides the playhead and reloads the current entity in editable mode.
-        """
-        # Set playhead to "Current Time" (Visual indicator that we are at "Now")
+        """Move the playhead to world current time without changing edit ownership."""
         current_time = self.main_window.timeline.get_current_time()
+        old_time = self._current_playhead_time
         self.main_window.timeline.set_playhead_time(current_time)
+        if old_time == current_time:
+            self.on_playhead_changed(current_time)
 
-        # Reload entity in normal editable mode
-        entity_editor = self.main_window.entity_editor
-        if entity_editor.isVisible() and entity_editor._current_entity_id:
-            self.main_window.data_coordinator.load_entity_details(
-                entity_editor._current_entity_id
-            )
+    def resolve_selected_entity(self) -> None:
+        """Resolve the selected entity at the actual playhead, including today."""
+        editor = self.main_window.entity_editor
+        entity_id = editor.current_entity_id
+        if entity_id is None or editor.has_unsaved_changes():
+            return
+        time = float(self.main_window.timeline.get_playhead_time())
+        self._current_playhead_time = time
+        self._resolve_request_id += 1
+        invoke_queued(
+            self.main_window.worker,
+            "resolve_entity_state",
+            Q_ARG(str, entity_id),
+            Q_ARG(float, time),
+            Q_ARG(int, self._resolve_request_id),
+        )
+
+    def on_temporal_save_completed(self) -> None:
+        """Follow a deferred scrub or refresh the saved state."""
+        target = self._follow_after_save
+        self._follow_after_save = None
+        if target is not None:
+            self._current_playhead_time = target
+        self.resolve_selected_entity()
 
     def _format_time_string(self, time_val: float) -> str:
         """Formats time using calendar converter if available."""
@@ -101,27 +121,52 @@ class TimeCoordinator(BaseCoordinator):
     @Slot(float)
     def on_playhead_changed(self, time: float) -> None:
         """Refreshes entity inspector based on playhead time."""
-        # Store current playhead time
-        self._current_playhead_time = time
-
-        # We need to access entity_editor via main_window for now
-        # Ideally, we should receive the editor or use a manager
         entity_editor = self.main_window.entity_editor
-
-        if entity_editor.isVisible() and entity_editor._current_entity_id:
-            invoke_queued(
-                self.main_window.worker,
-                "resolve_entity_state",
-                Q_ARG(str, entity_editor._current_entity_id),
-                Q_ARG(float, time),
+        old_time = entity_editor._temporal_time
+        if (
+            entity_editor.has_unsaved_changes()
+            and old_time is not None
+            and time != old_time
+        ):
+            prompt = QMessageBox(self.main_window)
+            prompt.setWindowTitle("Unsaved entity state")
+            prompt.setText(
+                "This draft belongs to the previous playhead time. "
+                "Save or discard it before following the new time."
             )
+            save = prompt.addButton("Save", QMessageBox.ButtonRole.AcceptRole)
+            discard = prompt.addButton("Discard", QMessageBox.ButtonRole.DestructiveRole)
+            prompt.addButton(QMessageBox.StandardButton.Cancel)
+            prompt.exec()
+            if prompt.clickedButton() == save:
+                entity_editor._on_save()
+                if entity_editor._temporal_save_pending:
+                    self._follow_after_save = time
+                    entity_editor.temporal_snapshot_label.setText(
+                        f"Saving draft from time {old_time}; following the playhead "
+                        "after the save."
+                    )
+                    return
+                self.main_window.timeline.set_playhead_time(old_time)
+                return
+            elif prompt.clickedButton() == discard:
+                entity_editor.set_dirty(False)
+            else:
+                self.main_window.timeline.set_playhead_time(old_time)
+                return
+        self._current_playhead_time = time
+        self.resolve_selected_entity()
 
     @Slot(str, dict)
     def on_entity_state_resolved(self, entity_id: str, state: dict) -> None:
         """Updates entity editor with resolved state."""
-        # Pass playhead time for timeline highlighting
+        if (
+            state.get("lore_time") != self._current_playhead_time
+            or state.get("resolve_request_id") != self._resolve_request_id
+        ):
+            return
         self.main_window.entity_editor.display_temporal_state(
-            entity_id, state, self._current_playhead_time
+            entity_id, state, state["lore_time"]
         )
 
     # ------------------------------------------------------------------

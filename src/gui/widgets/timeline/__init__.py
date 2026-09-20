@@ -100,7 +100,7 @@ class TimelineWidget(QWidget):
         self.btn_set_current_time.clicked.connect(self.set_current_time_to_playhead)
         self.action_toolbar.add_button(self.btn_set_current_time, priority=50)
 
-        self.btn_return_present = QPushButton("Return to Present")
+        self.btn_return_present = QPushButton("Return to Current Time")
         self.btn_return_present.setToolTip(
             "Move the playhead to the current story time"
         )

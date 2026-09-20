@@ -607,3 +607,13 @@ class TestCurrentTimeLine:
         # Current time should now match playhead
         current_time = timeline_widget.get_current_time()
         assert abs(current_time - 150.0) < 0.1
+
+    def test_return_to_current_time_button_restores_the_playhead(self, timeline_widget):
+        """The navigation control clearly returns the playhead to world time."""
+        timeline_widget.set_current_time(100.0)
+        timeline_widget.set_playhead_time(150.0)
+
+        assert timeline_widget.btn_return_present.text() == "Return to Current Time"
+        timeline_widget.btn_return_present.click()
+
+        assert timeline_widget.get_playhead_time() == 100.0

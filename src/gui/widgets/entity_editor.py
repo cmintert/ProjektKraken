@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QFrame,
     QHBoxLayout,
+    QInputDialog,
     QLabel,
     QLineEdit,
     QListWidget,
@@ -89,12 +90,12 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         link_clicked(str): Emitted when a wiki link is clicked; payload is target_name.
         navigate_to_relation(str): Emitted when Go-to is clicked; payload is target_id.
         dirty_changed(bool): Emitted when the editor's dirty state changes.
-        return_to_present_requested(): Emitted to exit temporal past/future view.
         inject_ui_requested(str): Request to open inject dialog for an entity_id.
         summary_generation_requested(object): Request AI summary for the given Entity.
     """
 
     save_requested = Signal(dict)
+    temporal_save_requested = Signal(dict)
     discard_requested = Signal(str)
     inject_requested = Signal(dict)
     add_relation_requested = Signal(str, str, str, dict, bool)
@@ -105,7 +106,6 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
     navigate_to_map = Signal(str)
     dirty_changed = Signal(bool)
     focus_writing_requested = Signal()
-    return_to_present_requested = Signal()
     inject_ui_requested = Signal(str)
     summary_generation_requested = Signal(object)
     completion_prefix_changed = Signal(str)
@@ -121,6 +121,11 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         """
         super().__init__(parent)
         self._current_entity_id: str | None = None
+        self._is_temporal_view = False
+        self._temporal_state: dict[str, Any] | None = None
+        self._temporal_time: float | None = None
+        self._dated_events: list[tuple[str, str, float]] = []
+        self._temporal_save_pending = False
         self.autosave_manager = AutoSaveManager(self)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
@@ -187,6 +192,13 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         )
         self.description_field = ResizableWikiTextEditField(self.desc_edit)
         self.form_layout.addRow("Description:", self.description_field)
+        self.description_source_label = QLabel()
+        self.form_layout.addRow("Source:", self.description_source_label)
+        self.btn_new_description = StandardButton("Start a new description at this time")
+        self.btn_new_description.clicked.connect(self._start_new_description)
+        self.form_layout.addRow(self.btn_new_description)
+        self.description_source_label.hide()
+        self.btn_new_description.hide()
         self._build_timeline_section()
         self._build_summary_section()
         self._build_llm_section()
@@ -306,6 +318,20 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self.header_form.addRow("Name:", name_layout)
         self.header_form.addRow("Type:", self.type_edit)
         header_layout.addLayout(self.header_form)
+        self.temporal_snapshot_banner = QFrame()
+        self.temporal_snapshot_banner.setObjectName("TemporalSnapshotBanner")
+        banner_layout = QHBoxLayout(self.temporal_snapshot_banner)
+        banner_layout.setContentsMargins(8, 5, 8, 5)
+        self.temporal_snapshot_label = QLabel(
+            "Timeline snapshot — read-only. Return to Current Time to resume editing."
+        )
+        self.temporal_snapshot_label.setObjectName("TemporalSnapshotLabel")
+        banner_layout.addWidget(self.temporal_snapshot_label)
+        self.temporal_snapshot_banner.setStyleSheet(
+            StyleHelper.get_temporal_snapshot_banner_style()
+        )
+        self.temporal_snapshot_banner.hide()
+        header_layout.addWidget(self.temporal_snapshot_banner)
         main_layout.addWidget(self.header_widget)
 
     def _build_secondary_tabs(self, parent: Optional[QWidget]) -> None:
@@ -833,6 +859,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         # Handle missing entity (e.g., deleted)
         if entity is None:
             self._current_entity_id = None
+            self._temporal_state = None
+            self._temporal_time = None
             if focus is not None:
                 focus._update_action()
             self._current_created_at = 0.0
@@ -849,6 +877,24 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         try:
             self._reset_pending_summary()
             self._current_entity_id = entity.id
+            self._temporal_state = None
+            self._temporal_time = None
+            self._temporal_save_pending = False
+            self._pending_new_description_event = None
+            self._baseline_name = entity.name
+            self._baseline_type = entity.type
+            self._baseline_tags = list(entity.tags)
+            self._baseline_sheet_layout = entity.attributes.get("_sheet_layout")
+            self._baseline_metadata_snapshot = {
+                "name": entity.name,
+                "type": entity.type,
+                "_tags": entity.attributes.get("_tags"),
+                "_sheet_layout": entity.attributes.get("_sheet_layout"),
+                "_summary_data": entity.attributes.get("_summary_data"),
+            }
+            self.temporal_snapshot_banner.hide()
+            self.description_source_label.hide()
+            self.btn_new_description.hide()
             if focus is not None:
                 focus._update_action()
             self._current_created_at = entity.created_at
@@ -872,6 +918,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
             self._load_entity_fields(entity)
             self._load_entity_attributes(entity)
+            self._displayed_sheet_layout = self.sheet_builder.get_layout()
             self.exit_read_only_mode()
             self._load_entity_relations(relations, incoming_relations)
 
@@ -1111,6 +1158,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             StyleHelper.get_tool_button_style()
             + " QToolButton::menu-indicator { image: none; }"
         )
+        self.temporal_snapshot_banner.setStyleSheet(
+            StyleHelper.get_temporal_snapshot_banner_style()
+        )
 
         # Update Checkboxes
         # StandardCheckbox handles its own styling on theme change
@@ -1120,9 +1170,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         """Handle the Save button click.
 
         Assembles the current form data into a dict and emits
-        :attr:`save_requested`.  If the save button currently reads
-        *"Return to Present"* (temporal-view mode), emits
-        :attr:`return_to_present_requested` instead and returns early.
+        :attr:`save_requested`, or emits source-aware field changes while a
+        resolved temporal state is displayed.
 
         The emitted dict contains the keys ``"id"``, ``"name"``, ``"type"``,
         ``"description"``, ``"attributes"``, and ``"tags"``.  Tags are also
@@ -1142,10 +1191,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             f"[EntityEditor] _on_save() called (entity_id={self._current_entity_id})"
         )
 
-        # Handle "Return to Present" action in special read-only mode
-        if self.btn_save.text() == "Return to Present":
-            logger.debug("[EntityEditor] Return to Present action triggered")
-            self.return_to_present_requested.emit()
+        if self._temporal_state is not None:
+            self._save_temporal(interactive=True)
             return
 
         if not self._current_entity_id:
@@ -1215,6 +1262,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         if not self._current_entity_id:
             return
 
+        self._pending_new_description_event = None
+        self.set_dirty(False)
         self.discard_requested.emit(self._current_entity_id)
 
     def clear(self) -> None:
@@ -1466,8 +1515,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         state: dict,
         playhead_time: float | None = None,
     ) -> None:
-        """Displays the resolved temporal state for the current entity. Sets the editor
-        to read-only mode.
+        """Display the resolved state and its editable field ownership.
 
         Args:
             entity_id: ID of the entity being displayed.
@@ -1477,25 +1525,245 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         """
         if entity_id != self._current_entity_id:
             return
+        if self._is_dirty or self._temporal_save_pending:
+            return
 
-        was_dirty = self._is_dirty
+        self._is_loading = True
         self.desc_edit.blockSignals(True)
+        self.attribute_editor.blockSignals(True)
+        self.sheet_builder.blockSignals(True)
         try:
             self.desc_edit.set_wiki_text(state["description"])
             self.attribute_editor.load_attributes(state["attributes"])
+            display_attrs = {
+                key: value
+                for key, value in state["attributes"].items()
+                if not key.startswith("_")
+            }
+            self.sheet_builder.load_attributes(
+                display_attrs, self.sheet_builder.get_layout()
+            )
         finally:
             self.desc_edit.blockSignals(False)
-        self.set_dirty(was_dirty)
+            self.attribute_editor.blockSignals(False)
+            self.sheet_builder.blockSignals(False)
+            self._is_loading = False
+        self._temporal_state = state
+        self._temporal_time = playhead_time
+        self._displayed_sheet_layout = self.sheet_builder.get_layout()
+        self._is_temporal_view = True
+        self.set_dirty(False)
+        self.description_source_label.setText(
+            self._source_caption(state.get("description_source"))
+        )
+        self.description_source_label.show()
+        self.btn_new_description.show()
+        self.temporal_snapshot_label.setText(
+            "Editing the visible state; corrections update the source shown below."
+        )
+        self.temporal_snapshot_banner.show()
+        self.attribute_editor.set_source_labels(state.get("attribute_sources", {}))
+        for key, pair in self.sheet_builder._pairs.items():
+            pair.setToolTip(
+                self._source_caption(state.get("attribute_sources", {}).get(key))
+            )
 
         # Update timeline display with playhead time for highlighting
         if playhead_time is not None:
             self.timeline_display.set_playhead_time(playhead_time)
 
-        # We need to update _on_save to include _pending_summary_data if present
-        # OR we rely on loading the entity fresh? No, overwrite is full replace.
+    @staticmethod
+    def _source_caption(source: dict[str, Any] | None) -> str:
+        """Return a concise source label for a visible field."""
+        if not source or source.get("kind") == "baseline":
+            return "Entity baseline"
+        name = source.get("event_name") or "Event"
+        return f"{name} (event payload at {source.get('event_date')})"
 
-        # Enter Read-Only Mode
-        self.set_read_only_mode(True, reason="Viewing Past/Future State")
+    def set_dated_events(self, events: list[tuple[str, str, float]]) -> None:
+        """Provide event choices already loaded by the application."""
+        self._dated_events = events
+
+    def _choose_dated_event(self) -> dict[str, Any] | None:
+        """Choose an event at the pinned time or name a new one."""
+        if self._temporal_time is None:
+            return None
+        candidates = [
+            (event_id, name)
+            for event_id, name, date in self._dated_events
+            if date == self._temporal_time
+        ]
+        labels = [f"{name} ({event_id[:8]})" for event_id, name in candidates]
+        labels.append("Create a new event...")
+        label, accepted = QInputDialog.getItem(
+            self, "Date this change", "Event at the viewed time:", labels, 0, False
+        )
+        if not accepted:
+            return None
+        if label != labels[-1]:
+            return {"event_id": candidates[labels.index(label)][0]}
+        name, accepted = QInputDialog.getText(
+            self, "New event", "Name for the event at this time:"
+        )
+        if not accepted or not name.strip():
+            return None
+        return {"event_name": name.strip()}
+
+    @Slot()
+    def _start_new_description(self) -> None:
+        """Create a fresh dated owner for the description currently on screen."""
+        if self._temporal_state is None or self._temporal_time is None:
+            return
+        if self._is_dirty:
+            QMessageBox.information(
+                self, "Save first", "Save or discard the current draft first."
+            )
+            return
+        event = self._choose_dated_event()
+        if event is None:
+            return
+        self._pending_new_description_event = event
+        self.set_dirty(True)
+
+    def _on_autosave(self) -> None:
+        """Autosave known-source corrections without opening choice dialogs."""
+        if self._temporal_state is not None:
+            self._save_temporal(interactive=False)
+        else:
+            self._on_save()
+
+    def _save_temporal(self, *, interactive: bool) -> None:  # noqa: C901
+        """Emit only changed visible fields and explicit ownership choices."""
+        state = self._temporal_state
+        if state is None or self._temporal_time is None or self._current_entity_id is None:
+            return
+        if self._temporal_save_pending:
+            return
+        patches: list[dict[str, Any]] = []
+        description = self.desc_edit.get_wiki_text()
+        new_description_event = getattr(self, "_pending_new_description_event", None)
+        if description != state["description"] or new_description_event is not None:
+            patch: dict[str, Any] = {
+                "field": "description",
+                "action": "set",
+                "value": description,
+            }
+            if new_description_event is not None:
+                patch.update({"scope": "dated", **new_description_event})
+            patches.append(patch)
+        original = {
+            key: value
+            for key, value in state["attributes"].items()
+            if not key.startswith("_")
+        }
+        current = {
+            key: value
+            for key, value in self.attribute_editor.get_attributes().items()
+            if not key.startswith("_")
+        }
+        for key, value in current.items():
+            if key in original and original[key] == value:
+                continue
+            patch = {"field": "attribute", "key": key, "action": "set", "value": value}
+            if key not in original:
+                if not interactive:
+                    return
+                choice = QMessageBox(self)
+                choice.setWindowTitle("New attribute")
+                choice.setText(f"Where should '{key}' begin?")
+                baseline = choice.addButton("Entity baseline", QMessageBox.ButtonRole.AcceptRole)
+                dated = choice.addButton("At this time", QMessageBox.ButtonRole.ActionRole)
+                choice.addButton(QMessageBox.StandardButton.Cancel)
+                choice.exec()
+                if choice.clickedButton() == baseline:
+                    if key in state.get("absent_attribute_sources", {}):
+                        confirmation = QMessageBox.question(
+                            self,
+                            "Hidden baseline value",
+                            "An event currently unsets this attribute. A baseline "
+                            "value will remain hidden at the viewed time. "
+                            "Create it anyway?",
+                        )
+                        if confirmation != QMessageBox.StandardButton.Yes:
+                            return
+                    patch["scope"] = "baseline"
+                elif choice.clickedButton() == dated:
+                    event = self._choose_dated_event()
+                    if event is None:
+                        return
+                    patch.update({"scope": "dated", **event})
+                else:
+                    return
+            patches.append(patch)
+        for key in original.keys() - current.keys():
+            if not interactive:
+                return
+            choice = QMessageBox(self)
+            choice.setWindowTitle("Remove visible attribute")
+            choice.setText(f"What should removing '{key}' mean?")
+            absent = choice.addButton("Absent from this state", QMessageBox.ButtonRole.AcceptRole)
+            override = choice.addButton("Remove source override", QMessageBox.ButtonRole.ActionRole)
+            choice.addButton(QMessageBox.StandardButton.Cancel)
+            choice.setInformativeText(
+                "Removing an override can reveal an earlier or baseline value."
+            )
+            choice.exec()
+            if choice.clickedButton() == absent:
+                patch = {"field": "attribute", "key": key, "action": "unset"}
+                if state["attribute_sources"][key]["kind"] == "baseline":
+                    event = self._choose_dated_event()
+                    if event is None:
+                        return
+                    patch.update({"scope": "dated", **event})
+                patches.append(patch)
+            elif choice.clickedButton() == override:
+                patches.append(
+                    {"field": "attribute", "key": key, "action": "remove_override"}
+                )
+            else:
+                return
+        metadata: dict[str, Any] = {}
+        if self.name_edit.text() != getattr(self, "_baseline_name", self.name_edit.text()):
+            metadata["name"] = self.name_edit.text()
+        if self.type_edit.currentText() != getattr(
+            self, "_baseline_type", self.type_edit.currentText()
+        ):
+            metadata["type"] = self.type_edit.currentText()
+        hidden: dict[str, Any] = {}
+        if self.tag_editor.get_tags() != getattr(self, "_baseline_tags", []):
+            hidden["_tags"] = self.tag_editor.get_tags()
+        sheet_layout = self.sheet_builder.get_layout()
+        if (
+            sheet_layout != getattr(self, "_displayed_sheet_layout", sheet_layout)
+            and current.keys() == original.keys()
+        ):
+            hidden["_sheet_layout"] = sheet_layout
+        if self._pending_summary_changed:
+            hidden["_summary_data"] = self._pending_summary_data
+        if hidden:
+            metadata["hidden_attributes"] = hidden
+        if not patches and not metadata:
+            self.set_dirty(False)
+            return
+        self._temporal_save_pending = True
+        self.autosave_manager.stop_timer()
+        self.temporal_save_requested.emit(
+            {
+                "entity_id": self._current_entity_id,
+                "lore_time": self._temporal_time,
+                "expected": state,
+                "patches": patches,
+                "metadata": metadata,
+                "expected_metadata": self._baseline_metadata_snapshot,
+            }
+        )
+
+    def finish_temporal_save(self, success: bool) -> None:
+        """Keep failed drafts; allow successful ones to reload."""
+        self._temporal_save_pending = False
+        if success:
+            self._pending_new_description_event = None
+            self.set_dirty(False)
 
     def _populate_inject_menu(self) -> None:
         """Populate the Fast Inject menu with available actions.
@@ -1579,25 +1847,18 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         """Set the editor to read-only or editable mode.
 
         When in read-only mode, all form fields, buttons, and editors are
-        disabled to prevent modifications. This is typically used when viewing
-        historical entity states or when the user lacks edit permissions.
+        disabled to prevent modifications. Temporal states are normally editable.
 
         Args:
             readonly: If True, disables all editing controls. If False, enables
                 normal editing mode.
-            reason: Optional string explaining why read-only mode is active.
-                Special handling for "Viewing Past/Future State" shows a
-                "Return to Present" button. Other reasons show generic read-only
-                state. If None, displays "Read Only".
-
-        Note:
-            The save button is repurposed in read-only mode: for temporal views
-            it becomes "Return to Present" button, otherwise it shows the reason
-            text and is disabled.
+            reason: Optional explanation shown on a disabled save button.
         """
         focus = getattr(self, "_focus_controller", None)
         if readonly and focus is not None and focus.active is self:
             focus.exit()
+        self._is_temporal_view = False
+        self.temporal_snapshot_banner.hide()
         # Disable form fields
         self.name_edit.setReadOnly(readonly)
         self.type_edit.setEnabled(not readonly)
@@ -1617,23 +1878,15 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         # Disable Save/Discard
         self.btn_save.setEnabled(not readonly)
         self.btn_discard.setEnabled(not readonly)
+        self.btn_discard.setVisible(True)
         self.summary_widget.set_controls_enabled(not readonly)
 
         if readonly:
-            if reason == "Viewing Past/Future State":
-                from src.core.theme_manager import ThemeManager
-
-                theme = ThemeManager().get_theme()
-                self._update_save_button(
-                    "Return to Present",
-                    True,
-                    f"background-color: {theme['accent_secondary']}; "
-                    f"color: white; font-weight: bold;",
-                )
-            else:
-                self._update_save_button(reason or "Read Only", False)
+            self._update_save_button(reason or "Read Only", False)
+            self.btn_save.setToolTip("")
         else:
             self._update_save_button("Save Changes", True)
+            self.btn_save.setToolTip("")
 
     def _update_save_button(self, text: str, enabled: bool, style: str = "") -> None:
         """Update the save button's text, state, and styling.

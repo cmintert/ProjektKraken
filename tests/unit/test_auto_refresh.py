@@ -33,8 +33,8 @@ class MockLongformManager:
 def test_auto_refresh_logic(qtbot):
     """
     Verifies that:
-    1. DataHandler emits reload_longform on Event/Entity updates.
-    2. MainWindow connects this signal to the refresh logic.
+    1. Legacy Event/Entity results request a full data refresh.
+    2. MainWindow's longform refresh respects its toggle.
     3. The toggle setting updates button visibility and triggers refresh.
     """
     # Setup
@@ -60,11 +60,10 @@ def test_auto_refresh_logic(qtbot):
     main_window.longform_editor.set_refresh_button_visible(not is_auto)
     assert main_window.longform_editor.refresh_button_visible is False
 
-    # Test 2: DataHandler Signal Emission
+    # Legacy command results without lore effects use the full-refresh fallback.
     data_handler = main_window.data_handler
 
-    # Connect signal to confirm it fires
-    with qtbot.waitSignal(data_handler.reload_longform, timeout=1000):
+    with qtbot.waitSignal(data_handler.reload_all_data, timeout=1000):
         # Simulate Event Command Success
         result = CommandResult(
             success=True,
@@ -74,14 +73,12 @@ def test_auto_refresh_logic(qtbot):
         )
         data_handler.on_command_finished(result)
 
-    # Check if Manager load was called via MainWindow connection
-    # MainWindow._on_auto_refresh_longform should be connected to data_handler.reload_longform
-    # We need to ensure that connection exists or call the slot manually to test logic
+    # Check the longform refresh toggle independently of the lore refresh path.
     main_window._on_auto_refresh_longform()
     assert main_window.longform_manager.load_count == 1
 
     # Test 3: DataHandler Signal for Entity
-    with qtbot.waitSignal(data_handler.reload_longform, timeout=1000):
+    with qtbot.waitSignal(data_handler.reload_all_data, timeout=1000):
         result = CommandResult(
             success=True,
             message="Success",

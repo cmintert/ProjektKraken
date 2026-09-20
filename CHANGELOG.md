@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-09-18
-**Commit:** 7289a8cc25ed63bcda8a4ce7bef4478fde7dfe3d
+**Last Updated:** 2026-09-20
+**Commit:** 74f6b832debb70d1f9437e0f20678f8309fe2ae8
 ---
 
 # Changelog
@@ -12,6 +12,16 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-09-20)* **Editors / Temporal state**: Made description and attribute
+  edits update the baseline or event payload that supplies the visible value,
+  with source labels, explicit dated changes and removals, conflict protection,
+  undo/redo, and draft-safe playhead navigation.
+- *(2026-09-20)* **Editors / UI**: Matched Sheet and related toolbar buttons to
+  the theme, kept button labels readable, clarified timeline navigation, and
+  preserved focus-writing dimming across pane changes.
+- *(2026-09-20)* **Testing**: Added temporal edit and editor regression coverage
+  and aligned the legacy auto-refresh test with incremental lore refreshes.
 
 - *(2026-09-18)* **Editors / Focus writing**: Dimmed every visible pane except
   the active editor's pane after panel moves, and kept focus mode open for

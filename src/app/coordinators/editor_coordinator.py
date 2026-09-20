@@ -37,6 +37,7 @@ from src.commands.relation_commands import (
     RemoveRelationCommand,
     UpdateRelationCommand,
 )
+from src.commands.temporal_entity_edit_command import TemporalEntityEditCommand
 from src.commands.wiki_commands import ProcessWikiLinksCommand
 from src.core.map import Map
 from src.services.marker_icon_catalog import MarkerIconCatalog
@@ -70,6 +71,64 @@ class EditorCoordinator(BaseCoordinator):
         """
         super().__init__(main_window)
         self._last_drag_drop_command_id: Optional[int] = None
+        self._pending_temporal_command_id: str | None = None
+
+    @Slot(dict)
+    def update_temporal_entity(self, request: dict) -> None:
+        """Turn an editor's field-level intent into one undoable command."""
+        command = TemporalEntityEditCommand(
+            request["entity_id"],
+            request["lore_time"],
+            request["expected"],
+            request["patches"],
+            request.get("metadata"),
+            request.get("expected_metadata"),
+        )
+        commands: list[BaseCommand] = [command]
+        for patch in request["patches"]:
+            if (
+                patch["field"] == "description"
+                and patch.get("scope", "source") == "source"
+                and request["expected"]["description_source"]["kind"] == "baseline"
+            ):
+                self._append_wiki_cmd_if_enabled(
+                    commands, request["entity_id"], patch["value"]
+                )
+                break
+        outgoing: BaseCommand = (
+            CompositeCommand(commands, description="Edit entity state")
+            if len(commands) > 1
+            else command
+        )
+        self._pending_temporal_command_id = outgoing.command_id
+        self.command_requested.emit(outgoing)
+
+    @Slot(object)
+    def on_temporal_command_result(self, result: CommandResult) -> None:
+        """Finish only the temporal draft whose command just completed."""
+        state = result.data.get("command_state", {})
+        serialized = state.get("data", {}) if isinstance(state, dict) else {}
+        children = serialized.get("commands", []) if isinstance(serialized, dict) else []
+        is_temporal_undo_redo = result.command_name.startswith(("Undo_", "Redo_")) and (
+            result.command_name.endswith("TemporalEntityEditCommand")
+            or any(child.get("type") == "TemporalEntityEditCommand" for child in children)
+        )
+        if is_temporal_undo_redo and result.success:
+            entity_id = self.main_window.entity_editor.current_entity_id
+            if entity_id:
+                self.main_window.data_coordinator.load_entity_details(entity_id)
+            return
+        if result.data.get("command_id") != self._pending_temporal_command_id:
+            return
+        self._pending_temporal_command_id = None
+        editor = self.main_window.entity_editor
+        editor.finish_temporal_save(result.success)
+        if result.success:
+            if editor.current_entity_id:
+                self.main_window.data_coordinator.load_entity_details(
+                    editor.current_entity_id
+                )
+            self.main_window.time_coordinator.on_temporal_save_completed()
 
     # ------------------------------------------------------------------
     # Create Operations

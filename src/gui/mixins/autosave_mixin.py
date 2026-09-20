@@ -73,7 +73,8 @@ class AutoSaveManager(QObject):
         """
         if self._target.has_unsaved_changes():
             logger.debug(f"[{self._target.__class__.__name__}] Autosave triggered.")
-            self._target._on_save()
+            autosave = getattr(self._target, "_on_autosave", self._target._on_save)
+            autosave()
         else:
             logger.debug(
                 f"[{self._target.__class__.__name__}] Autosave timer expired but no changes to save."

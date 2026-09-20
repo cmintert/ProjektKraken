@@ -71,9 +71,11 @@ def test_temporal_state_hides_internal_attributes(editor):
     assert editor.attribute_editor.table.rowCount() == 1
     assert editor.attribute_editor.table.item(0, 0).text() == "visible"
     assert editor.attribute_editor.get_attributes()["_internal"] == "preserved"
+    assert "_internal" not in editor.sheet_builder._pairs
+    assert not editor.attribute_editor.table.isColumnHidden(3)
 
 
-def test_temporal_state_is_read_only_and_does_not_mark_dirty(editor):
+def test_temporal_state_is_editable_and_does_not_mark_dirty_on_load(editor):
     entity = Entity(
         id="1",
         name="Grey Ford",
@@ -98,8 +100,14 @@ def test_temporal_state_is_read_only_and_does_not_mark_dirty(editor):
     assert editor.name_edit.text() == "Grey Ford"
     assert editor.type_edit.currentText() == "Location"
     assert editor._is_dirty is False
-    assert editor.name_edit.isReadOnly()
-    assert not editor.attribute_editor.isEnabled()
+    assert not editor.name_edit.isReadOnly()
+    assert editor.attribute_editor.isEnabled()
+    assert not editor.temporal_snapshot_banner.isHidden()
+    assert editor.temporal_snapshot_label.text() == (
+        "Editing the visible state; corrections update the source shown below."
+    )
+    assert editor.btn_save.text() == "Save Changes"
+    assert not editor.btn_discard.isHidden()
 
     editor.display_temporal_state(
         entity.id,
@@ -118,6 +126,72 @@ def test_temporal_state_is_read_only_and_does_not_mark_dirty(editor):
     assert editor.desc_edit.get_wiki_text() == "Base description"
     assert editor.attribute_editor.get_attributes() == {"controller": "Crown"}
     assert editor._is_dirty is False
+    assert editor.temporal_snapshot_banner.isHidden()
+    assert editor.btn_save.text() == "Save Changes"
+    assert not editor.btn_discard.isHidden()
+
+
+def test_temporal_save_emits_field_patch_instead_of_returning_to_current(editor, qtbot):
+    entity = Entity(id="1", name="Grey Ford", type="Location")
+    editor.load_entity(entity)
+    editor.display_temporal_state(
+        entity.id,
+        {
+            "entity_id": entity.id,
+            "description": "Ruined remains",
+            "attributes": {},
+            "description_source": {"kind": "baseline"},
+            "attribute_sources": {},
+        },
+        playhead_time=12.0,
+    )
+
+    editor.desc_edit.set_wiki_text("Rebuilt harbor")
+    with qtbot.waitSignal(editor.temporal_save_requested) as blocker:
+        editor.btn_save.click()
+    assert blocker.args[0]["patches"] == [
+        {"field": "description", "action": "set", "value": "Rebuilt harbor"}
+    ]
+    assert blocker.args[0]["lore_time"] == 12.0
+
+
+def test_temporal_sheet_edit_autosaves_only_the_sourced_attribute(editor, qtbot):
+    entity = Entity(
+        id="entity-1",
+        name="Harbor",
+        type="Location",
+        description="Base",
+        attributes={"owner": "Guild", "_tags": ["coast"]},
+    )
+    editor.load_entity(entity)
+    editor.display_temporal_state(
+        entity.id,
+        {
+            "entity_id": entity.id,
+            "description": "Occupied",
+            "attributes": {"owner": "Army", "_tags": ["coast"]},
+            "description_source": {"kind": "baseline"},
+            "attribute_sources": {
+                "owner": {
+                    "kind": "relation",
+                    "relation_id": "relation-1",
+                    "event_id": "event-1",
+                    "event_name": "Occupation",
+                    "event_date": 10.0,
+                }
+            },
+        },
+        playhead_time=15.0,
+    )
+    editor.sheet_builder._pairs["owner"].value_edit.setPlainText("Navy")
+    assert editor.attribute_editor.get_attributes()["owner"] == "Navy"
+    assert editor.attribute_editor.table.item(0, 3).text() == "Occupation"
+    with qtbot.waitSignal(editor.temporal_save_requested) as blocker:
+        editor._on_autosave()
+    assert blocker.args[0]["patches"] == [
+        {"field": "attribute", "key": "owner", "action": "set", "value": "Navy"}
+    ]
+    assert blocker.args[0]["metadata"] == {}
 
 
 def test_save_clicked(editor, qtbot):

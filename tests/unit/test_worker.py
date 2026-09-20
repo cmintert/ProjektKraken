@@ -3,8 +3,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from src.commands.base_command import CommandResult
-from src.commands.entity_commands import CreateEntityCommand
+from src.commands.entity_commands import CreateEntityCommand, UpdateEntityCommand
 from src.commands.registry import get_command_types
+from src.core.entities import Entity
 from src.core.temporal_state import ResolvedEntityState
 from src.services.worker import DatabaseWorker
 
@@ -232,5 +233,23 @@ def test_resolve_entity_state_emits_serialized_snapshot(worker):
             "entity_id": "entity-1",
             "description": "Resolved description",
             "attributes": {"status": "Ruined"},
+            "description_source": None,
+            "attribute_sources": {},
+            "absent_attribute_sources": {},
+            "lore_time": 736.0,
+            "resolve_request_id": 0,
         },
     )
+
+
+def test_successful_command_and_undo_invalidate_temporal_cache(worker, mock_db_service):
+    worker.db_service = mock_db_service
+    worker.temporal_manager = MagicMock()
+    mock_db_service.get_entity.return_value = Entity(
+        id="entity-1", name="Old", type="Location"
+    )
+    command = UpdateEntityCommand("entity-1", {"name": "New"})
+    worker.run_command(command)
+    assert worker.temporal_manager.clear_all_cache.call_count == 1
+    worker.run_undo(command)
+    assert worker.temporal_manager.clear_all_cache.call_count == 2

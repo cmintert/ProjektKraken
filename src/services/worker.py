@@ -771,6 +771,8 @@ class DatabaseWorker(QObject):
                 and command.persist_to_history
             ):
                 self.history_service.save_command(command)
+            if result_obj.success and self.temporal_manager is not None:
+                self.temporal_manager.clear_all_cache()
             result_obj.data["command_state"] = self._command_state(command)
             self.command_finished.emit(result_obj)
             self.operation_finished.emit(f"Finished {command_name}.")
@@ -838,6 +840,8 @@ class DatabaseWorker(QObject):
                 and command.persist_to_history
             ):
                 self.history_service.set_command_executed(command.command_id, False)
+            if result_obj.success and self.temporal_manager is not None:
+                self.temporal_manager.clear_all_cache()
             result_obj.data["command_state"] = self._command_state(command)
             self.command_finished.emit(result_obj)
             self.operation_finished.emit(f"Undone {command_name}.")
@@ -916,6 +920,8 @@ class DatabaseWorker(QObject):
                 and command.persist_to_history
             ):
                 self.history_service.set_command_executed(command.command_id, True)
+            if result_obj.success and self.temporal_manager is not None:
+                self.temporal_manager.clear_all_cache()
             result_obj.data["command_state"] = self._command_state(command)
             self.command_finished.emit(result_obj)
             self.operation_finished.emit(f"Redone {command_name}.")
@@ -1284,7 +1290,10 @@ class DatabaseWorker(QObject):
             self.error_occurred.emit("Failed to apply filter.")
 
     @Slot(str, float)
-    def resolve_entity_state(self, entity_id: str, time: float) -> None:
+    @Slot(str, float, int)
+    def resolve_entity_state(
+        self, entity_id: str, time: float, request_id: int = 0
+    ) -> None:
         """Resolves the state of an entity at a specific time using TemporalManager.
 
         Emits entity_state_resolved.
@@ -1296,7 +1305,10 @@ class DatabaseWorker(QObject):
             # self.operation_started.emit(f"Resolving state for {entity_id} at {time}...")
             # (Quiet operation for smooth scrubbing)
             state = self.temporal_manager.get_entity_state_at(entity_id, time)
-            self.entity_state_resolved.emit(entity_id, state.to_dict())
+            snapshot = state.to_dict()
+            snapshot["lore_time"] = time
+            snapshot["resolve_request_id"] = request_id
+            self.entity_state_resolved.emit(entity_id, snapshot)
             # self.operation_finished.emit("State Resolved.")
         except Exception:
             logger.error(

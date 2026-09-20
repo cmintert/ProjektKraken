@@ -14,7 +14,7 @@ Tests the SheetBuilderWidget and AttributePairWidget for:
 import pytest
 from PySide6.QtCore import QMimeData, QPoint, QPointF, Qt
 from PySide6.QtGui import QDragEnterEvent, QDropEvent
-from PySide6.QtWidgets import QFrame
+from PySide6.QtWidgets import QFrame, QToolButton
 
 from src.gui.widgets.sheet_builder import (
     AttributePairWidget,
@@ -219,6 +219,39 @@ def sheet(qtbot):
 
 class TestSheetBuilderWidget:
     """Tests for the SheetBuilderWidget."""
+
+    def test_toolbar_uses_standard_buttons_with_fitted_labels(self, sheet, qtbot):
+        """Toolbar actions use standard controls and allocate room for their text."""
+        sheet.show()
+        qtbot.waitExposed(sheet)
+
+        theme = sheet._theme_mgr.get_theme()
+        toolbar_style = sheet._toolbar.styleSheet()
+        assert f"background-color: {theme['surface']};" in toolbar_style
+        assert "min-height: 28px;" in toolbar_style
+
+        buttons = [
+            sheet._toolbar.widgetForAction(action)
+            for action in (
+                sheet._act_add_row,
+                sheet._act_add_spacer,
+                sheet._act_add_divider,
+                sheet._act_add_text,
+                sheet._act_add_header,
+            )
+        ]
+        assert all(isinstance(button, QToolButton) for button in buttons)
+        assert {button.text() for button in buttons} == {
+            "Add Attribute",
+            "Add Spacer",
+            "Add Divider",
+            "Add Text",
+            "Add Header",
+        }
+        for button in buttons:
+            assert button is not None
+            required_width = button.fontMetrics().horizontalAdvance(button.text()) + 20
+            assert button.sizeHint().width() >= required_width
 
     def test_initial_state_empty(self, sheet):
         """Test that the sheet starts empty."""
