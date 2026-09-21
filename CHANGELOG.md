@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-09-20
-**Commit:** 74f6b832debb70d1f9437e0f20678f8309fe2ae8
+**Last Updated:** 2026-09-21
+**Commit:** cc5947f7ffccf5288134cecc01f44a2807c16341
 ---
 
 # Changelog
@@ -13,6 +13,11 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-09-21)* **Timeline / Navigation and dates**: Made horizontal scrollbar
+  travel follow the active zoom while preserving unlimited rebased panning,
+  prevented high-zoom integer saturation, and added exact clock times plus
+  adaptive calendar context to timeline date displays. Kept dashed event
+  guides one screen pixel wide at deep zoom.
 - *(2026-09-20)* **Editors / Temporal state**: Made description and attribute
   edits update the baseline or event payload that supplies the visible value,
   with source labels, explicit dated changes and removals, conflict protection,

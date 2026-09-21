@@ -506,11 +506,14 @@ class TimelineRuler:
 
         return result
 
-    def get_parent_context(self, start_date: float) -> str:
+    def get_parent_context(
+        self, start_date: float, level: TickLevel = TickLevel.YEAR
+    ) -> str:
         """Gets the parent context label for sticky display.
 
         Args:
             start_date: Left edge date value.
+            level: Active major ruler level.
 
         Returns:
             Context string (e.g., "Year 2025").
@@ -519,11 +522,18 @@ class TimelineRuler:
         if self._calendar:
             try:
                 date = self._calendar.from_float(start_date)
+                if level >= TickLevel.HOUR:
+                    return self._calendar.format_date(float(math.floor(start_date)))
+                if level in (TickLevel.WEEK, TickLevel.DAY):
+                    month_name = date.month_name or f"Month {date.month}"
+                    return f"Year {date.year}, {month_name}"
                 return f"Year {date.year}"
             except (AttributeError, ValueError):
                 # Calendar conversion may fail for extreme dates
                 pass
         # Numeric fallback
+        if level >= TickLevel.WEEK:
+            return f"Day {math.floor(start_date) + 1}"
         if abs(start_date) >= _MILLION:
             return f"~{start_date / _MILLION:.0f}M"
         elif abs(start_date) >= _THOUSAND:

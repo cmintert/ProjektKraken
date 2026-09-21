@@ -15,6 +15,7 @@ Classes:
 
 import json
 import logging
+import math
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -817,3 +818,29 @@ class CalendarConverter:
             return f"Year {date.year}, {month_name} {date.day}, {day_name}{time_str}"
 
         return f"Year {date.year}, {month_name} {date.day}{time_str}"
+
+    def format_datetime(
+        self, absolute_day: float, *, include_midnight: bool = False
+    ) -> str:
+        """Format a lore date with minute-accurate 24-hour time.
+
+        The value is rounded to the nearest minute before resolving its calendar
+        date, so values close to midnight carry cleanly into the adjacent day.
+
+        Args:
+            absolute_day: Lore time where ``1.0`` represents one day.
+            include_midnight: Append ``00:00`` for exact midnight when true.
+
+        Returns:
+            Calendar-formatted date with an optional ``HH:MM`` suffix.
+        """
+        minutes_per_day = 24 * 60
+        total_minutes = math.floor(absolute_day * minutes_per_day + 0.5)
+        day_number, minute_of_day = divmod(total_minutes, minutes_per_day)
+        date_text = self.format_date(float(day_number))
+
+        if minute_of_day == 0 and not include_midnight:
+            return date_text
+
+        hour, minute = divmod(minute_of_day, 60)
+        return f"{date_text}, {hour:02d}:{minute:02d}"

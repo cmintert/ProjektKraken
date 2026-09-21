@@ -43,7 +43,7 @@ from src.gui.widgets.timeline.timeline_scene import (
     PlayheadItem,
     TimelineScene,
 )
-from src.gui.widgets.timeline_ruler import TimelineRuler
+from src.gui.widgets.timeline_ruler import TickLevel, TimelineRuler
 
 if TYPE_CHECKING:
     from src.gui.workers.layout_worker import LayoutWorker
@@ -80,6 +80,12 @@ class TimelineView(QGraphicsView):
     # Zoom limits
     MIN_ZOOM = 0.000001  # Maximum zoom out (0.0001% of normal)
     MAX_ZOOM = 100.0  # Maximum zoom in (100x normal)
+
+    # Horizontal navigation is intentionally local to the active zoom. The
+    # window is rebased as users approach an edge, preserving unlimited travel
+    # without mapping millennia onto a minimum-size scrollbar thumb.
+    HORIZONTAL_WINDOW_VIEWPORTS = 20.0
+    HORIZONTAL_REBASE_MARGIN = 0.1
 
     # Ruler & Playhead Constants
     PLAYHEAD_COLOR = QColor(255, 100, 100)
@@ -140,6 +146,11 @@ class TimelineView(QGraphicsView):
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+        self._horizontal_window_initialized = False
+        self._horizontal_rebase_in_progress = False
+        self.horizontalScrollBar().sliderReleased.connect(
+            self._on_horizontal_slider_released
+        )
 
         # Force full viewport updates to prevent ruler distortion during panning
         self.setViewportUpdateMode(QGraphicsView.ViewportUpdateMode.FullViewportUpdate)
@@ -320,11 +331,28 @@ class TimelineView(QGraphicsView):
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         """Handles resize events to ensure initial fit works correctly."""
+        center_date = None
+        if self._horizontal_window_initialized:
+            # Qt has already applied the new widget size when resizeEvent runs.
+            # Recover the former viewport center from the reported width delta
+            # so responsive resizing does not shift the visible lore date.
+            width_delta = event.oldSize().width() - event.size().width()
+            old_viewport_width = self.viewport().width() + width_delta
+            old_center_x = max(0, old_viewport_width // 2)
+            center_date = (
+                self.mapToScene(old_center_x, self.viewport().rect().center().y()).x()
+                / self.scale_factor
+            )
         super().resizeEvent(event)
+        fitted = False
         if self._initial_fit_pending and self.width() > 0 and self.height() > 0:
             self.fit_all()
             self._initial_fit_pending = False
             self._has_done_initial_fit = True
+            fitted = True
+
+        if center_date is not None and not fitted:
+            self._set_horizontal_window(center_date)
 
         # Ensure playhead zoom is updated if view size affects it
         if self._playhead and hasattr(self, "_current_zoom"):
@@ -473,7 +501,11 @@ class TimelineView(QGraphicsView):
                 )
 
         # 9. Draw sticky parent context label
-        if context_label := self._ruler.get_parent_context(start_date):
+        major_level = next(
+            (tick.level for tick in ticks if tick.is_major),
+            TickLevel.YEAR,
+        )
+        if context_label := self._ruler.get_parent_context(start_date, major_level):
             painter.setFont(minor_font)
             painter.setPen(QColor(theme["primary"]))
             painter.drawText(
@@ -633,14 +665,7 @@ class TimelineView(QGraphicsView):
                 line = drop_lines[event.id]
                 line.setLine(item.x(), drop_line_top, item.x(), 60)  # Temp Y
             else:
-                line = self.graphics_scene.addLine(
-                    item.x(),
-                    drop_line_top,
-                    item.x(),
-                    80,  # Temp Y
-                    QPen(QColor(80, 80, 80), 1, Qt.PenStyle.DashLine),
-                )
-                line.setZValue(-1)
+                line = self._create_drop_line(item.x(), drop_line_top, 80)
                 drop_lines[event.id] = line
 
         # Clean up removed items
@@ -738,14 +763,9 @@ class TimelineView(QGraphicsView):
                 item.on_drag_complete = self._on_event_drag_complete
                 self.graphics_scene.addItem(item)
                 self._event_items[event_id] = item
-                line = self.graphics_scene.addLine(
-                    item.x(),
-                    -self.RULER_HEIGHT,
-                    item.x(),
-                    80,
-                    QPen(QColor(80, 80, 80), 1, Qt.PenStyle.DashLine),
+                line = self._create_drop_line(
+                    item.x(), -self.RULER_HEIGHT, 80
                 )
-                line.setZValue(-1)
                 self._drop_lines[event_id] = line
                 layout_changed = True
             else:
@@ -764,6 +784,16 @@ class TimelineView(QGraphicsView):
                 self._incremental_layout_timer.start()
         else:
             self._update_scene_rect_default()
+
+    def _create_drop_line(
+        self, x: float, top: float, bottom: float
+    ) -> QGraphicsLineItem:
+        """Create a dashed event guide that remains one pixel wide on screen."""
+        pen = QPen(QColor(80, 80, 80), 1, Qt.PenStyle.DashLine)
+        pen.setCosmetic(True)
+        line = self.graphics_scene.addLine(x, top, x, bottom, pen)
+        line.setZValue(-1)
+        return line
 
     @staticmethod
     def _event_layout_signature(event: Event | None) -> tuple[object, ...] | None:
@@ -1356,6 +1386,7 @@ class TimelineView(QGraphicsView):
             vh = self.viewport().height()
             scene_top = self.graphics_scene.sceneRect().top()
 
+            self._set_horizontal_window(center_date)
             self.centerOn(center_x, scene_top + vh / 2)
 
             # Explicitly ensure we are at the top
@@ -1386,6 +1417,9 @@ class TimelineView(QGraphicsView):
 
         # Only zoom if within limits
         if factor != 1.0:
+            cursor_pos = event.position().toPoint()
+            scene_under_cursor = self.mapToScene(cursor_pos)
+
             # Set anchor to mouse position to zoom towards/away from it
             old_anchor = self.transformationAnchor()
             self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
@@ -1394,6 +1428,17 @@ class TimelineView(QGraphicsView):
                 # Apply zoom
                 self.scale(factor, 1.0)
                 self._current_zoom = new_zoom
+
+                # Preserve the event's scene coordinate explicitly. Qt's
+                # AnchorUnderMouse depends on the live system cursor and is not
+                # deterministic for synthetic wheel input.
+                shifted_scene_point = self.mapToScene(cursor_pos)
+                cursor_shift = scene_under_cursor.x() - shifted_scene_point.x()
+                target_center_date = (
+                    self._visible_center_date()
+                    + cursor_shift / self.scale_factor
+                )
+                self._set_horizontal_window(target_center_date)
 
                 # Update playhead zoom
                 self._playhead.set_zoom(new_zoom * self.scale_factor)
@@ -1604,7 +1649,8 @@ class TimelineView(QGraphicsView):
 
         for item in self.graphics_scene.items():
             if isinstance(item, EventItem) and item.event.id == event_id:
-                self.centerOn(item)
+                self._set_horizontal_window(float(item.event.lore_date))
+                self.centerOn(item.x(), item.sceneBoundingRect().center().y())
                 item.setSelected(True)
                 return
 
@@ -1615,8 +1661,10 @@ class TimelineView(QGraphicsView):
             zoom_level: The zoom level to apply.
 
         """
+        center_date = self._visible_center_date()
         self.setTransform(QTransform().scale(zoom_level, 1.0))
         self._current_zoom = zoom_level
+        self._set_horizontal_window(center_date)
         self._playhead.set_zoom(zoom_level * self.scale_factor)
         self.repack_events()
 
@@ -1924,6 +1972,67 @@ class TimelineView(QGraphicsView):
         # Update label positions when scrolling vertically
         if dy != 0:
             self._update_label_overlay()
+        if dx != 0:
+            self._maybe_rebase_horizontal_window()
+
+    def _visible_center_date(self) -> float:
+        """Return the lore date currently centered in the viewport."""
+        center = self.viewport().rect().center()
+        return self.mapToScene(center).x() / self.scale_factor
+
+    def _horizontal_window_width(self) -> float:
+        """Return the local navigation width in scene coordinates."""
+        zoom = max(abs(self.transform().m11()), self.MIN_ZOOM)
+        visible_scene_width = max(1, self.viewport().width()) / zoom
+        return visible_scene_width * self.HORIZONTAL_WINDOW_VIEWPORTS
+
+    def _set_horizontal_window(self, center_date: float) -> None:
+        """Center the zoom-relative navigation window without moving content."""
+        if self._horizontal_rebase_in_progress:
+            return
+
+        center_x = center_date * self.scale_factor
+        center_y = self.mapToScene(self.viewport().rect().center()).y()
+        width = self._horizontal_window_width()
+        current_rect = self.graphics_scene.sceneRect()
+        height = current_rect.height() if current_rect.height() > 0 else 200.0
+
+        self._horizontal_rebase_in_progress = True
+        try:
+            self.graphics_scene.setSceneRect(
+                center_x - width / 2,
+                current_rect.y(),
+                width,
+                height,
+            )
+            self.centerOn(center_x, center_y)
+            self._horizontal_window_initialized = True
+        finally:
+            self._horizontal_rebase_in_progress = False
+
+    def _maybe_rebase_horizontal_window(self) -> None:
+        """Rebase local navigation near an edge when no thumb drag is active."""
+        if (
+            self._horizontal_rebase_in_progress
+            or not self._horizontal_window_initialized
+            or self.horizontalScrollBar().isSliderDown()
+        ):
+            return
+
+        rect = self.graphics_scene.sceneRect()
+        if rect.width() <= 0:
+            return
+        center_x = self.mapToScene(self.viewport().rect().center()).x()
+        position = (center_x - rect.left()) / rect.width()
+        if (
+            position <= self.HORIZONTAL_REBASE_MARGIN
+            or position >= 1.0 - self.HORIZONTAL_REBASE_MARGIN
+        ):
+            self._set_horizontal_window(center_x / self.scale_factor)
+
+    def _on_horizontal_slider_released(self) -> None:
+        """Rebase a thumb-selected edge only after the user releases it."""
+        self._maybe_rebase_horizontal_window()
 
     def _on_tag_color_change_requested(self, tag_name: str) -> None:
         """Handle tag color change request.
@@ -1979,21 +2088,11 @@ class TimelineView(QGraphicsView):
             min_date = min(min_date, ct_time)
             max_date = max(max_date, ct_time)
 
-        # Determine center of content
-        center_date = (min_date + max_date) / 2
-        center_x = center_date * self.scale_factor
-
-        # "Infinite" horizontal range
-        # Use a large buffer (e.g. 50M pixels) to allow free panning
-        # Since rendering is now optimized, a larger buffer is safe.
-        HUGE_BUFFER = 50_000_000  # 50 million pixels
-
-        # Ensure buffer extends at least slightly beyond the content
-        content_width = (max_date - min_date) * self.scale_factor
-        buffer_padding = max(HUGE_BUFFER, content_width * 2)
-
-        start_x = center_x - buffer_padding
-        end_x = center_x + buffer_padding
+        center_date = (
+            self._visible_center_date()
+            if self._horizontal_window_initialized
+            else (min_date + max_date) / 2
+        )
 
         # Y bounds - inspect items to find max Y
         max_y_found = 60.0
@@ -2004,22 +2103,26 @@ class TimelineView(QGraphicsView):
         max_y = max_y_found + self.LANE_HEIGHT + 40
         min_y = 0
 
-        # Set Scene Rect explicitly
-        self.graphics_scene.setSceneRect(start_x, min_y, end_x - start_x, max_y - min_y)
+        current_rect = self.graphics_scene.sceneRect()
+        self.graphics_scene.setSceneRect(
+            current_rect.x(), min_y, current_rect.width(), max_y - min_y
+        )
+        self._set_horizontal_window(center_date)
 
     def _update_scene_rect_default(self) -> None:
-        """Sets a default infinite scene rect when no events are present."""
-        # Center near playhead if possible, else 0
-        center_date = self.get_playhead_time()
-        center_x = center_date * self.scale_factor
-
-        HUGE_BUFFER = 50_000_000  # 50 million pixels
-
-        start_x = center_x - HUGE_BUFFER
-        end_x = center_x + HUGE_BUFFER
+        """Set a local scene rectangle when no events are present."""
+        center_date = (
+            self._visible_center_date()
+            if self._horizontal_window_initialized
+            else self.get_playhead_time()
+        )
 
         # Default height
         max_y = 200
         min_y = 0
 
-        self.graphics_scene.setSceneRect(start_x, min_y, end_x - start_x, max_y - min_y)
+        current_rect = self.graphics_scene.sceneRect()
+        self.graphics_scene.setSceneRect(
+            current_rect.x(), min_y, current_rect.width(), max_y - min_y
+        )
+        self._set_horizontal_window(center_date)

@@ -617,3 +617,50 @@ class TestCalendarConverterFormatDate:
         # 1.0 = Day 2 = Index 1 = "Day2"
         result_next = converter.format_date(1.0)
         assert "Day2" in result_next
+
+    @pytest.mark.parametrize(
+        ("value", "expected_time"),
+        [(0.25, "06:00"), (0.5, "12:00"), (0.75, "18:00")],
+    )
+    def test_format_datetime_uses_exact_clock_time(
+        self,
+        simple_calendar: CalendarConfig,
+        value: float,
+        expected_time: str,
+    ) -> None:
+        """Sub-day values should use an exact 24-hour clock."""
+        converter = CalendarConverter(simple_calendar)
+
+        result = converter.format_datetime(value)
+
+        assert expected_time in result
+        assert not any(word in result for word in ("Morning", "Noon", "Evening"))
+
+    def test_format_datetime_omits_midnight_by_default(
+        self, simple_calendar: CalendarConfig
+    ) -> None:
+        """Exact midnight should remain a compact date-only label."""
+        converter = CalendarConverter(simple_calendar)
+
+        assert converter.format_datetime(0.0) == converter.format_date(0.0)
+        assert converter.format_datetime(0.0, include_midnight=True).endswith("00:00")
+
+    def test_format_datetime_rounds_across_day_boundary(
+        self, simple_calendar: CalendarConfig
+    ) -> None:
+        """Minute rounding should carry into the following calendar day."""
+        converter = CalendarConverter(simple_calendar)
+        almost_next_day = 29.0 + (23 * 60 + 59.6) / (24 * 60)
+
+        result = converter.format_datetime(almost_next_day)
+
+        assert "Month2 1" in result
+        assert "00:00" not in result
+
+    def test_format_datetime_handles_negative_fractional_days(
+        self, simple_calendar: CalendarConfig
+    ) -> None:
+        """Negative lore dates should retain the correct time of day."""
+        converter = CalendarConverter(simple_calendar)
+
+        assert converter.format_datetime(-0.25).endswith("18:00")

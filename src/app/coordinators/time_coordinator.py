@@ -115,7 +115,7 @@ class TimeCoordinator(BaseCoordinator):
         # Access calendar_converter from main_window if it exists
         converter = getattr(self.main_window, "calendar_converter", None)
         if converter:
-            return converter.format_date(time_val)
+            return converter.format_datetime(time_val)
         return f"{time_val:.2f}"
 
     @Slot(float)

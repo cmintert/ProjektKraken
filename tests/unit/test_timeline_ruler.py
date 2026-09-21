@@ -373,13 +373,37 @@ class TestStickyParentContext:
     def test_get_parent_context_returns_string(self, ruler, mock_calendar):
         """get_parent_context should return a string."""
         ruler.set_calendar_converter(mock_calendar)
-        context = ruler.get_parent_context(start_date=100)
+        context = ruler.get_parent_context(100, TickLevel.YEAR)
         assert isinstance(context, str)
 
     def test_parent_context_without_calendar(self, ruler):
         """Without calendar, parent context should be empty or numeric range."""
-        context = ruler.get_parent_context(start_date=1000)
+        context = ruler.get_parent_context(1000, TickLevel.YEAR)
         assert isinstance(context, str)
+
+    def test_hour_context_contains_full_calendar_date(self, ruler, mock_calendar):
+        """Hour ticks need day-level context so their clock labels are meaningful."""
+        ruler.set_calendar_converter(mock_calendar)
+        mock_calendar.format_date.return_value = (
+            "Year 2025, Month3 15, Saturday"
+        )
+
+        context = ruler.get_parent_context(100.5, TickLevel.HOUR)
+
+        assert context == "Year 2025, Month3 15, Saturday"
+        mock_calendar.format_date.assert_called_once_with(100)
+
+    def test_day_context_contains_year_and_month(self, ruler, mock_calendar):
+        """Day ticks should retain month context without repeating the date."""
+        ruler.set_calendar_converter(mock_calendar)
+
+        context = ruler.get_parent_context(100, TickLevel.DAY)
+
+        assert context == "Year 2025, March"
+
+    def test_hour_context_without_calendar_identifies_numeric_day(self, ruler):
+        """Numeric hour ticks should still identify their containing day."""
+        assert ruler.get_parent_context(100.5, TickLevel.HOUR) == "Day 101"
 
 
 # ============================================================================

@@ -55,11 +55,11 @@ def test_status_bar_updates(main_window):
 def test_status_bar_formatting_with_converter(main_window):
     """Test that labels use converter if available."""
     mock_converter = MagicMock()
-    mock_converter.format_date.return_value = "Year 10"
+    mock_converter.format_datetime.return_value = "Year 10, Month 1 1, 06:00"
 
     main_window.calendar_converter = mock_converter
 
     main_window.time_coordinator.update_world_time_label(100.0)
-    assert "Year 10" in main_window.lbl_world_time.text()
+    assert "Year 10, Month 1 1, 06:00" in main_window.lbl_world_time.text()
 
-    mock_converter.format_date.assert_called_with(100.0)
+    mock_converter.format_datetime.assert_called_with(100.0)

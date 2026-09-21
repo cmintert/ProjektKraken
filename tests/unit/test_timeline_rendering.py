@@ -246,8 +246,8 @@ def test_timeline_view_ruler_height_constant(timeline_view):
     assert timeline_view.RULER_HEIGHT == 50
 
 
-def test_timeline_scene_rect_is_unconstrained(timeline_view):
-    """Test that the scene rect is effectively infinite for unconstrained panning."""
+def test_timeline_scene_rect_is_zoom_relative(timeline_view):
+    """The navigation window should span a bounded number of viewports."""
     events = [
         Event(id="e1", name="E1", lore_date=100.0, type="generic"),
         Event(id="e2", name="E2", lore_date=200.0, type="generic"),
@@ -255,30 +255,27 @@ def test_timeline_scene_rect_is_unconstrained(timeline_view):
 
     timeline_view.set_events(events)
 
-    scene_rect = timeline_view.graphics_scene.sceneRect()
-
-    # Check width is massive (buffer is 100M on each side)
-    assert scene_rect.width() > 10_000_000, (
-        "Scene rect should be huge to allow unconstrained panning"
+    transformed_width = (
+        timeline_view.graphics_scene.sceneRect().width()
+        * timeline_view.transform().m11()
+    )
+    assert transformed_width == pytest.approx(
+        timeline_view.viewport().width()
+        * timeline_view.HORIZONTAL_WINDOW_VIEWPORTS,
+        rel=0.02,
     )
 
-    # Check that events are centered in this massive rect
-    # Center of events is 150.0 * 20 = 3000 x
-    # Scene rect x should be roughly 3000 - 50M (matching implementation's HUGE_BUFFER)
-    center_x = 150.0 * timeline_view.scale_factor
-    expected_start_x = center_x - 50_000_000
 
-    # Allow some floating point wiggle room
-    assert abs(scene_rect.x() - expected_start_x) < 2000
-
-
-def test_timeline_scene_rect_is_unconstrained_empty(timeline_view):
-    """Test that the scene rect is infinite even when no events are present."""
+def test_timeline_scene_rect_is_zoom_relative_empty(timeline_view):
+    """An empty timeline should retain the same local navigation window."""
     timeline_view.set_events([])
 
-    scene_rect = timeline_view.graphics_scene.sceneRect()
-
-    # Check width is massive
-    assert scene_rect.width() > 10_000_000, (
-        "Scene rect should be huge even with no events"
+    transformed_width = (
+        timeline_view.graphics_scene.sceneRect().width()
+        * timeline_view.transform().m11()
+    )
+    assert transformed_width == pytest.approx(
+        timeline_view.viewport().width()
+        * timeline_view.HORIZONTAL_WINDOW_VIEWPORTS,
+        rel=0.02,
     )
