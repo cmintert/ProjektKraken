@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-09-21
-**Commit:** cc5947f7ffccf5288134cecc01f44a2807c16341
+**Commit:** 008449372ac2b912de2d29a2de731752300fec12
 ---
 
 # Changelog
@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-09-21)* **Editors / Date input**: Widened hour and minute controls
+  so two-digit values and units remain legible beside themed spinner buttons.
+  Added a sizing regression test.
 - *(2026-09-21)* **Timeline / Navigation and dates**: Made horizontal scrollbar
   travel follow the active zoom while preserving unlimited rebased panning,
   prevented high-zoom integer saturation, and added exact clock times plus

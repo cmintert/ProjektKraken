@@ -313,7 +313,10 @@ class CompactDateWidget(QWidget):
         self.spin_hour.setValue(0)
         self.spin_hour.setSuffix("h")
         self.spin_hour.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.spin_hour.setFixedWidth(65)
+        # The shared spinbox theme reserves space for a 16px arrow column and
+        # 20px of right padding.  65px leaves too little room for a two-digit
+        # value plus its unit, particularly under Windows font metrics.
+        self.spin_hour.setFixedWidth(88)
         time_row.addWidget(self.spin_hour, stretch=0)
 
         self.spin_minute = QSpinBox()
@@ -323,7 +326,7 @@ class CompactDateWidget(QWidget):
         self.spin_minute.setSizePolicy(
             QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
-        self.spin_minute.setFixedWidth(65)
+        self.spin_minute.setFixedWidth(88)
         time_row.addWidget(self.spin_minute, stretch=0)
 
         self.txt_date = QLineEdit()

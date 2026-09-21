@@ -99,6 +99,16 @@ class TestCompactDateWidgetBasics:
         qtbot.addWidget(widget)
         assert widget is not None
 
+    def test_time_inputs_reserve_readable_value_space(self, qtbot):
+        """Time controls retain room for two digits, unit, and arrow buttons."""
+        from src.gui.widgets.compact_date_widget import CompactDateWidget
+
+        widget = CompactDateWidget(text_first=True)
+        qtbot.addWidget(widget)
+
+        assert widget.spin_hour.width() >= 88
+        assert widget.spin_minute.width() >= 88
+
     def test_set_get_value_roundtrip(self, qtbot, standard_calendar):
         """Setting a value should be retrievable."""
         from src.gui.widgets.compact_date_widget import CompactDateWidget
