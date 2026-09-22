@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-09-21
-**Commit:** 008449372ac2b912de2d29a2de731752300fec12
+**Last Updated:** 2026-09-22
+**Commit:** 4a4ac4219e022d502b03a4722228ff8c5f0181fc
 ---
 
 # Changelog
@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-09-22)* **Editors / Attributes**: Kept the Add Attribute action fully
+  readable at narrow widths and under DPI-scaled fonts, while overflowing the
+  secondary action first. Added styled toolbar regression coverage.
 - *(2026-09-21)* **Editors / Date input**: Widened hour and minute controls
   so two-digit values and units remain legible beside themed spinner buttons.
   Added a sizing regression test.

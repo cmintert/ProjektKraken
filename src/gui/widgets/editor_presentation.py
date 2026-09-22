@@ -179,7 +179,11 @@ class EditorPresentation(QObject):
 
     @staticmethod
     def _overflow_row(
-        owner: QWidget, buttons: list[QAbstractButton], row_index: int = 0
+        owner: QWidget,
+        buttons: list[QAbstractButton],
+        row_index: int = 0,
+        *,
+        pin_primary: bool = False,
     ) -> OverflowToolBar:
         """Replace a plain action row while retaining its button instances."""
         layout = owner.layout()
@@ -192,7 +196,11 @@ class EditorPresentation(QObject):
         for index, button in enumerate(buttons):
             old_layout.removeWidget(button)
             button.setMinimumHeight(32)
-            toolbar.add_button(button, priority=10 if index == 0 else 0)
+            toolbar.add_button(
+                button,
+                priority=10 if index == 0 else 0,
+                pinned=pin_primary and index == 0,
+            )
         while old_layout.count():
             item = old_layout.takeAt(0)
             widget = item.widget() if item is not None else None
@@ -229,6 +237,7 @@ class EditorPresentation(QObject):
         self._overflow_row(
             editor.attribute_editor,
             [editor.attribute_editor.btn_add, editor.attribute_editor.btn_remove],
+            pin_primary=True,
         )
         if not hasattr(editor, "grp_participants"):
             self._overflow_row(

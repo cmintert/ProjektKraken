@@ -53,6 +53,9 @@ class AttributeEditorWidget(QWidget):
         # Toolbar
         self.toolbar_layout = QHBoxLayout()
         self.btn_add = StandardButton("Add Attribute")
+        self.btn_add.setMinimumWidth(
+            self.btn_add.fontMetrics().horizontalAdvance(self.btn_add.text()) + 48
+        )
         self.btn_add.clicked.connect(self._on_add)
         self.btn_remove = DestructiveButton("Remove")
         self.btn_remove.clicked.connect(self._on_remove)

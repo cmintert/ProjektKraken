@@ -33,6 +33,8 @@ class _ToolbarItem:
 class OverflowToolBar(QWidget):
     """Keep important buttons intact and overflow secondary actions by priority."""
 
+    _TEXT_BUTTON_CHROME = 48
+
     def __init__(self, parent: QWidget | None = None) -> None:
         """Create an initially empty responsive action row."""
         super().__init__(parent)
@@ -86,7 +88,7 @@ class OverflowToolBar(QWidget):
             QSizePolicy.Policy.Fixed,
             QSizePolicy.Policy.Fixed,
         )
-        button.setMinimumWidth(button.sizeHint().width())
+        button.setMinimumWidth(self._required_button_width(button))
         button.installEventFilter(self)
 
         action = QAction(button.text(), self.overflow_menu)
@@ -185,7 +187,9 @@ class OverflowToolBar(QWidget):
 
         active_items = [item for item in self._items if item.available]
         for item in active_items:
-            item.button.setMinimumWidth(item.button.sizeHint().width())
+            item.button.setMinimumWidth(
+                self._required_button_width(item.button)
+            )
 
         spacing = self._layout.spacing()
         available = max(0, self.contentsRect().width())
@@ -226,6 +230,16 @@ class OverflowToolBar(QWidget):
         has_overflow = len(visible) != len(active_items)
         self.overflow_button.setVisible(has_overflow)
         self._sync_menu_actions()
+
+    def _required_button_width(self, button: QAbstractButton) -> int:
+        """Return a DPI-safe width that preserves styled button labels."""
+        text_width = (
+            0
+            if isinstance(button, QCheckBox) or not button.text()
+            else button.fontMetrics().horizontalAdvance(button.text())
+            + self._TEXT_BUTTON_CHROME
+        )
+        return max(button.minimumWidth(), button.sizeHint().width(), text_width)
 
     def _sync_menu_actions(self) -> None:
         for item in self._items:
