@@ -147,6 +147,17 @@ QLineEdit, QAbstractSpinBox, QTextEdit, QComboBox {{
     color: {text_main};
     selection-background-color: {primary};
 }}
+/* Editable combo boxes position their embedded QLineEdit from the combo's
+   padding rectangle. Keep the horizontal inset while removing the vertical
+   offset so the editor is centred within the control. */
+QComboBox:editable {{
+    padding: 0 8px;
+}}
+QComboBox QLineEdit {{
+    background: transparent;
+    border: none;
+    padding: 0;
+}}
 QLineEdit:focus, QAbstractSpinBox:focus, QTextEdit:focus, QComboBox:focus {{
     border: 1px solid {primary};
 }}

@@ -66,6 +66,15 @@ def test_invalid_date_draft_blocks_save_and_survives_reload(event_editor, qtbot)
     assert not editor.has_unsaved_changes()
 
 
+def test_editable_combo_inner_editor_uses_parent_styling(event_editor):
+    """Avoid restyling the private line edit and shifting its text baseline."""
+    inner_editor = event_editor.type_edit.lineEdit()
+
+    assert inner_editor is not None
+    assert inner_editor.styleSheet() == ""
+    assert inner_editor.minimumHeight() < event_editor.type_edit.minimumHeight()
+
+
 def test_cancel_date_preserves_other_edits(event_editor, qtbot):
     editor = event_editor
     field = editor.date_edit.txt_date

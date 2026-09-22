@@ -354,8 +354,8 @@ class StyleHelper:
         surface = theme.get("surface", "#1A1A1A")
         border = theme.get("border", "#333333")
         primary = theme.get("primary", "#5C82FF")
-        text = theme.get("text", "#E0E0E0")
-        surface_alt = theme.get("surface_alt", "#2A2A2A")
+        text = theme.get("text_main", "#E0E0E0")
+        surface_alt = theme.get("surface_alt", theme.get("app_bg", surface))
 
         return f"""
             QToolBar {{
@@ -377,6 +377,7 @@ class StyleHelper:
             QToolButton:hover {{
                 background-color: {surface_alt};
                 border: 1px solid {border};
+                color: {text};
             }}
             QToolButton:pressed {{
                 background-color: {primary};

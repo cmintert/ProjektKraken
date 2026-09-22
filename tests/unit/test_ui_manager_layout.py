@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import PySide6.QtCore
 import pytest
+from PySide6.QtWidgets import QMenuBar
 
 from src.app.constants import (
     SETTINGS_LAYOUTS_KEY,
@@ -109,3 +110,28 @@ def test_get_saved_layouts_returns_sorted_list(ui_manager, clean_settings):
 
     layouts = ui_manager.get_saved_layouts()
     assert layouts == ["A Layout", "B Layout"]
+
+
+def test_auto_relation_setting_has_explanatory_tooltip(ui_manager, qtbot):
+    """The WikiLink relation preference explains its effect before toggling."""
+    class RetainingMenuBar(QMenuBar):
+        def __init__(self):
+            super().__init__()
+            self.menus = []
+
+        def addMenu(self, title):
+            menu = super().addMenu(title)
+            self.menus.append(menu)
+            return menu
+
+    menu_bar = RetainingMenuBar()
+    qtbot.addWidget(menu_bar)
+    with patch("src.app.ui_manager.QSettings") as mock_settings:
+        mock_settings.return_value.value.return_value = False
+        ui_manager.create_settings_menu(menu_bar)
+
+    settings_menu = menu_bar.menus[0]
+    assert settings_menu.toolTipsVisible() is True
+    assert ui_manager.auto_relation_action.toolTip() == (
+        "When enabled, saving a wiki link creates a mentions relation to its target."
+    )

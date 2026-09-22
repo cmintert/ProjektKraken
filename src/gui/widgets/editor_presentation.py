@@ -139,6 +139,10 @@ class EditorPresentation(QObject):
             if not button.accessibleName():
                 button.setAccessibleName(button.text() or button.toolTip())
         for field in editor.findChildren(QWidget):
+            if isinstance(field, QLineEdit) and isinstance(
+                field.parentWidget(), QComboBox
+            ):
+                continue
             if isinstance(field, (QLineEdit, QComboBox, QAbstractSpinBox)):
                 if field.maximumHeight() >= EDITOR_CONTROL_HEIGHT:
                     field.setMinimumHeight(EDITOR_CONTROL_HEIGHT)
@@ -167,6 +171,10 @@ class EditorPresentation(QObject):
         """Keep inspector focus and control boundaries visible in both themes."""
         suffix = StyleHelper.get_inspector_focus_style()
         for widget in self.editor.findChildren(QWidget):
+            if isinstance(widget, QLineEdit) and isinstance(
+                widget.parentWidget(), QComboBox
+            ):
+                continue
             if isinstance(
                 widget, (QAbstractButton, QLineEdit, QComboBox, QAbstractSpinBox)
             ):

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-09-22
-**Commit:** 8564310a3538e33de2c5e312dae5325a32905acd
+**Commit:** 682272e5ecf91565e78c8c7431fded26608ba001
 ---
 
 # Changelog
@@ -13,6 +13,10 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-09-22)* **Editors / Theming**: Kept rich-text formatting labels and
+  hover backgrounds readable in light themes.
+- *(2026-09-22)* **Editors / Controls**: Kept editable combo-box text centred
+  without overriding its embedded editor styling.
 - *(2026-09-22)* **Editors / Attributes**: Kept the Add Attribute action fully
   readable at narrow widths and under DPI-scaled fonts, while overflowing the
   secondary action first. Added styled toolbar regression coverage.
@@ -77,6 +81,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-09-22)* **Settings**: Added an explanatory tooltip for automatic
+  wiki-link relation creation.
 - *(2026-09-22)* **Documentation**: Updated user guides and README coverage for
   focused writing, dated entity corrections, compact event-date controls,
   current-time navigation, and the current Windows package example.

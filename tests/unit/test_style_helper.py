@@ -248,6 +248,23 @@ def test_timeline_header_style_contains_theme_values(theme_manager):
     assert "background-color:" in style
 
 
+def test_editor_toolbar_style_uses_main_text_color_in_light_mode(theme_manager):
+    """Ensure rich-text toolbar labels remain readable in light themes."""
+    original_theme_name = theme_manager.current_theme_name
+    try:
+        theme_manager.set_theme("light_mode")
+        theme = theme_manager.get_theme()
+
+        style = StyleHelper.get_editor_toolbar_style()
+
+        assert f"color: {theme['text_main']};" in style
+        hover_style = style.split("QToolButton:hover", maxsplit=1)[1]
+        assert f"color: {theme['text_main']};" in hover_style
+        assert f"background-color: {theme['app_bg']};" in hover_style
+    finally:
+        theme_manager.set_theme(original_theme_name)
+
+
 def test_style_changes_with_theme_switch(theme_manager):
     """Test that StyleHelper outputs change when theme switches."""
     # Get style with current theme

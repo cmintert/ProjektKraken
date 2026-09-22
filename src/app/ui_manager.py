@@ -283,6 +283,7 @@ class UIManager:
     def create_settings_menu(self, menu_bar: QMenuBar) -> None:
         """Create AI and editing preference actions."""
         settings_menu = menu_bar.addMenu("Settings")
+        settings_menu.setToolTipsVisible(True)
         search_settings_action = settings_menu.addAction(
             "AI Search Index and Settings..."
         )
@@ -297,6 +298,9 @@ class UIManager:
             "Auto-Create Relations from Wikilinks"
         )
         self.auto_relation_action.setCheckable(True)
+        self.auto_relation_action.setToolTip(
+            "When enabled, saving a wiki link creates a mentions relation to its target."
+        )
         self.auto_relation_action.triggered.connect(
             self.main_window.toggle_auto_relation_setting
         )
