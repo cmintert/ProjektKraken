@@ -180,6 +180,21 @@ def test_tooltip_style_contains_theme_values(theme_manager):
     assert "QToolTip" in style
 
 
+def test_splitter_separators_are_rounded_and_theme_aware(theme_manager):
+    """The draggable separators keep rounded edges and themed hover feedback."""
+    qss_path = Path(__file__).parents[2] / "src" / "resources" / "main.qss"
+    style = theme_manager.format_stylesheet(qss_path.read_text(encoding="utf-8"))
+
+    assert "QMainWindow::separator {" in style
+    assert "QMainWindow::separator:hover {" in style
+    assert "QSplitter::handle:hover {" in style
+    assert "border-radius: 3px;" in style
+    assert "border-radius: 2px;" in style
+    assert theme_manager.get_theme()["border"] in style
+    assert theme_manager.get_theme()["accent_secondary"] in style
+    assert theme_manager.get_theme()["primary"] in style
+
+
 def test_tooltip_proxy_style_hint():
     """Test that TooltipProxyStyle returns the correct delay hint."""
     from PySide6.QtWidgets import QStyle

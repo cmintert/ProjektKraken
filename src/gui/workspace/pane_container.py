@@ -9,6 +9,7 @@ from PySide6.QtGui import (
     QDragMoveEvent,
     QDropEvent,
     QMouseEvent,
+    QResizeEvent,
 )
 from PySide6.QtWidgets import (
     QApplication,
@@ -22,8 +23,10 @@ from PySide6.QtWidgets import (
 )
 
 from src.gui.workspace.panel_registry import ZONE_NAMES, ZoneName
+from src.gui.workspace.rounded_frame import RoundedWorkspaceFrame
 
 PANEL_MIME_TYPE = "application/x-projektkraken-panel"
+_PANE_CORNER_RADIUS = 9
 
 
 class WorkspaceTabBar(QTabBar):
@@ -116,6 +119,7 @@ class PaneContainer(QWidget):
             raise ValueError(f"Unknown zone: {zone}")
         self.zone = zone
         self.setObjectName(f"WorkspacePane_{zone}")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
         self.setAcceptDrops(True)
         self.setMinimumSize(0, 0)
         self.setSizePolicy(
@@ -124,7 +128,8 @@ class PaneContainer(QWidget):
         )
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        # One pixel for the frame plus four pixels of air above the tab row.
+        layout.setContentsMargins(1, 5, 1, 1)
         layout.setSpacing(0)
 
         self.tabs = QTabWidget(self)
@@ -133,6 +138,15 @@ class PaneContainer(QWidget):
         tab_bar = WorkspaceTabBar(self.tabs)
         tab_bar.setMovable(True)
         self.tabs.setTabBar(tab_bar)
+        # Reserve space in Qt's tab-row layout, so tabs and scroll buttons
+        # cannot extend beneath the painted outer corners.
+        for corner in (Qt.Corner.TopLeftCorner, Qt.Corner.TopRightCorner):
+            spacer = QLabel(self.tabs)
+            # QLabel supplies the valid sizeHint needed by QTabWidget's style
+            # layout; a bare QWidget's invalid hint makes Qt ignore the inset.
+            spacer.setFixedSize(_PANE_CORNER_RADIUS + 1, _PANE_CORNER_RADIUS)
+            spacer.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+            self.tabs.setCornerWidget(spacer, corner)
         tab_bar.panel_drop_requested.connect(self._request_drop)
         tab_bar.panel_drag_started.connect(self.panel_drag_started)
         tab_bar.panel_drag_finished.connect(self.panel_drag_finished)
@@ -146,6 +160,15 @@ class PaneContainer(QWidget):
         self.empty_drop_hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.empty_drop_hint.hide()
         layout.addWidget(self.empty_drop_hint, 1)
+
+        self._corners = RoundedWorkspaceFrame(self, _PANE_CORNER_RADIUS)
+        self._corners.raise_()
+
+    def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
+        """Keep rounded outer corners aligned with the entire tabbed pane."""
+        super().resizeEvent(event)
+        self._corners.setGeometry(self.rect())
+        self._corners.raise_()
 
     def minimumSizeHint(self) -> QSize:  # noqa: N802
         """Allow the splitter to negotiate compact peripheral zones."""

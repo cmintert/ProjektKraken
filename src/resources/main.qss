@@ -6,7 +6,8 @@ QMainWindow, QDialog, QMessageBox {{
 
 /* Main Window Separator (Dock Resize Handle) */
 QMainWindow::separator {{
-    background-color: {app_bg};
+    background-color: {border};
+    border-radius: 3px;
     width: 6px;
     height: 6px;
 }}
@@ -302,11 +303,16 @@ QFrame#LoreFrame {{
 }}
 
 /* Splitters */
+QWidget#WorkspaceShell, QToolBar#ActivityBar {{
+    background-color: {app_bg};
+    border: none;
+}}
 QSplitter {{
     background-color: {app_bg};
 }}
 QSplitter::handle {{
     background-color: {border};
+    border-radius: 2px;
 }}
 QSplitter::handle:horizontal {{
     width: 4px;
@@ -316,6 +322,27 @@ QSplitter::handle:vertical {{
 }}
 QSplitter::handle:hover {{
     background-color: {primary};
+}}
+QSplitter#WorkspaceHorizontalSplitter::handle,
+QSplitter#WorkspaceVerticalSplitter::handle {{
+    background-color: transparent;
+    border-radius: 0;
+}}
+QSplitter#WorkspaceHorizontalSplitter,
+QSplitter#WorkspaceVerticalSplitter {{
+    background-color: {border};
+}}
+QWidget#WorkspacePane_left, QWidget#WorkspacePane_center,
+QWidget#WorkspacePane_right, QWidget#WorkspacePane_bottom {{
+    background-color: {app_bg};
+}}
+QTabWidget#WorkspaceTabs_left::pane, QTabWidget#WorkspaceTabs_center::pane,
+QTabWidget#WorkspaceTabs_right::pane, QTabWidget#WorkspaceTabs_bottom::pane {{
+    border: none;
+}}
+QSplitter#WorkspaceHorizontalSplitter::handle:hover,
+QSplitter#WorkspaceVerticalSplitter::handle:hover {{
+    background-color: transparent;
 }}
 
 /* Autocomplete Popup (QCompleter uses QListView) */

@@ -4,16 +4,18 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QAction
+from PySide6.QtCore import QEvent, QRectF, Qt, Signal
+from PySide6.QtGui import QAction, QEnterEvent, QPainter, QPaintEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QSizePolicy,
     QSplitter,
+    QSplitterHandle,
     QToolBar,
     QWidget,
 )
 
+from src.core.theme_manager import ThemeManager
 from src.gui.workspace.layout_state import normalize_layout
 from src.gui.workspace.pane_container import PaneContainer
 from src.gui.workspace.panel_registry import (
@@ -22,8 +24,53 @@ from src.gui.workspace.panel_registry import (
     PanelRegistry,
     ZoneName,
 )
+from src.gui.workspace.rounded_frame import RoundedWorkspaceFrame
 
 _HORIZONTAL_PANE_COUNT = 3
+
+
+class _WorkspaceSplitterHandle(QSplitterHandle):
+    """Paint the continuous gutter between rounded workspace panes."""
+
+    def __init__(self, orientation: Qt.Orientation, parent: QSplitter) -> None:
+        super().__init__(orientation, parent)
+        self._hovered = False
+        ThemeManager().theme_changed.connect(self.update)
+
+    def enterEvent(self, event: QEnterEvent) -> None:  # noqa: N802
+        """Repaint the sash with the theme hover color."""
+        self._hovered = True
+        self.update()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event: QEvent) -> None:  # noqa: N802
+        """Restore the sash's idle theme color."""
+        self._hovered = False
+        self.update()
+        super().leaveEvent(event)
+
+    def paintEvent(self, event: QPaintEvent) -> None:  # noqa: N802
+        """Fill the separator gutter with its idle or hover theme color."""
+        del event
+        bar = QRectF(self.rect())
+        if bar.isEmpty():
+            return
+
+        theme = ThemeManager().get_theme()
+        color = theme["primary"] if self._hovered else theme["border"]
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(color)
+        painter.drawRect(bar)
+
+
+class _WorkspaceSplitter(QSplitter):
+    """Workspace splitter with a consistently rendered theme-aware sash."""
+
+    def createHandle(self) -> QSplitterHandle:  # noqa: N802
+        """Create the custom rounded workspace handle."""
+        return _WorkspaceSplitterHandle(self.orientation(), self)
 
 
 class WorkspaceShell(QWidget):
@@ -37,6 +84,7 @@ class WorkspaceShell(QWidget):
         """Create the fixed activity bar and splitter topology."""
         super().__init__(parent)
         self.setObjectName("WorkspaceShell")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
         self.registry = PanelRegistry()
         self.panes: dict[ZoneName, PaneContainer] = {
             zone: PaneContainer(zone, self) for zone in ZONE_NAMES
@@ -52,7 +100,7 @@ class WorkspaceShell(QWidget):
         self._drag_revealed_zones: set[ZoneName] = set()
 
         root_layout = QHBoxLayout(self)
-        root_layout.setContentsMargins(0, 0, 0, 0)
+        root_layout.setContentsMargins(4, 4, 4, 4)
         root_layout.setSpacing(0)
 
         self.activity_bar = QToolBar("Activity Bar", self)
@@ -67,8 +115,11 @@ class WorkspaceShell(QWidget):
         )
         root_layout.addWidget(self.activity_bar)
 
-        self.horizontal_splitter = QSplitter(Qt.Orientation.Horizontal, self)
+        self.horizontal_splitter = _WorkspaceSplitter(
+            Qt.Orientation.Horizontal, self
+        )
         self.horizontal_splitter.setObjectName("WorkspaceHorizontalSplitter")
+        self.horizontal_splitter.setHandleWidth(4)
         self.horizontal_splitter.addWidget(self.panes["left"])
         self.horizontal_splitter.addWidget(self.panes["center"])
         self.horizontal_splitter.addWidget(self.panes["right"])
@@ -79,8 +130,9 @@ class WorkspaceShell(QWidget):
         self.horizontal_splitter.setCollapsible(1, False)
         self.horizontal_splitter.setCollapsible(2, True)
 
-        self.vertical_splitter = QSplitter(Qt.Orientation.Vertical, self)
+        self.vertical_splitter = _WorkspaceSplitter(Qt.Orientation.Vertical, self)
         self.vertical_splitter.setObjectName("WorkspaceVerticalSplitter")
+        self.vertical_splitter.setHandleWidth(4)
         self.vertical_splitter.addWidget(self.horizontal_splitter)
         self.vertical_splitter.addWidget(self.panes["bottom"])
         self.vertical_splitter.setStretchFactor(0, 1)
@@ -96,6 +148,16 @@ class WorkspaceShell(QWidget):
             pane.panel_activated.connect(self.panel_activated)
         self.horizontal_splitter.splitterMoved.connect(self._remember_horizontal_sizes)
         self.vertical_splitter.splitterMoved.connect(self._remember_vertical_sizes)
+        self._outer_frame = RoundedWorkspaceFrame(
+            self, 13.0, "app_bg", border_width=4.0
+        )
+        self._outer_frame.raise_()
+
+    def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
+        """Keep the outer frame enclosing the activity bar and all panes."""
+        super().resizeEvent(event)
+        self._outer_frame.setGeometry(self.rect())
+        self._outer_frame.raise_()
 
     def register_panel(
         self,

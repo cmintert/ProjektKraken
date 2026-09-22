@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import QMimeData, QPointF, Qt
-from PySide6.QtGui import QDropEvent
-from PySide6.QtWidgets import QLabel
+from pathlib import Path
 
+from PySide6.QtCore import QEvent, QMimeData, QPointF, Qt
+from PySide6.QtGui import QColor, QDropEvent
+from PySide6.QtWidgets import QApplication, QLabel
+
+from src.core.theme_manager import ThemeManager
 from src.gui.workspace import (
     DEFAULT_WORKSPACE_LAYOUT,
     PaneContainer,
@@ -62,6 +65,25 @@ def test_workspace_has_exactly_four_generic_panes(qtbot) -> None:
     assert shell.vertical_splitter.widget(1) is shell.panes["bottom"]
 
 
+def test_workspace_splitter_sash_renders_rounded_theme_colors(qtbot) -> None:
+    shell = _shell(qtbot)
+    shell.resize(1200, 800)
+    shell.show()
+    qtbot.wait(1)
+    handle = shell.horizontal_splitter.handle(1)
+    center = handle.rect().center()
+    theme = ThemeManager().get_theme()
+
+    assert handle.width() == 4
+    assert handle.grab().toImage().pixelColor(center) == QColor(theme["border"])
+
+    QApplication.sendEvent(handle, QEvent(QEvent.Type.Enter))
+    assert handle.grab().toImage().pixelColor(center) == QColor(theme["primary"])
+
+    QApplication.sendEvent(handle, QEvent(QEvent.Type.Leave))
+    assert handle.grab().toImage().pixelColor(center) == QColor(theme["border"])
+
+
 def test_move_panel_reuses_widget_and_updates_registry(qtbot) -> None:
     shell = _shell(qtbot)
     widget = shell.panel("map")
@@ -72,6 +94,112 @@ def test_move_panel_reuses_widget_and_updates_registry(qtbot) -> None:
         assert shell.panel_zone("map") == zone
         assert shell.panes[zone].contains_panel("map")
         assert shell.active_panel(zone) == "map"
+
+
+def test_pane_corners_are_mirrored_over_content_after_resize(qapp, qtbot):
+    """Opaque content and tab frames cannot change one corner's curvature."""
+    previous_style = qapp.styleSheet()
+    pane = PaneContainer("center")
+    qtbot.addWidget(pane)
+    content = QLabel("Content")
+    content.setStyleSheet("background: magenta; border: 1px solid blue;")
+    pane.add_panel("test", "Test", content)
+    try:
+        ThemeManager().apply_theme(
+            qapp, Path("src/resources/main.qss").read_text(encoding="utf-8")
+        )
+        pane.show()
+        for width, height in ((320, 180), (481, 243)):
+            pane.resize(width, height)
+            qapp.processEvents()
+            rendered = pane.grab().toImage()
+            w, h = rendered.width(), rendered.height()
+            radius = int(9 * rendered.devicePixelRatio())
+            for x in range(radius):
+                for y in range(radius):
+                    colors = [
+                        rendered.pixelColor(px, py)
+                        for px, py in (
+                            (x, y), (w - 1 - x, y),
+                            (x, h - 1 - y), (w - 1 - x, h - 1 - y),
+                        )
+                    ]
+                    for channel in ("red", "green", "blue"):
+                        values = [getattr(color, channel)() for color in colors]
+                        # Compare like backgrounds: top tabs and bottom content
+                        # deliberately differ and must not be painted over.
+                        # Qt's curve rasterizer has small coverage differences
+                        # between mirrored edges (under 2% per color channel).
+                        assert abs(values[0] - values[1]) <= 5
+                        assert abs(values[2] - values[3]) <= 5
+            border = QColor(ThemeManager().get_theme()["border"])
+            for x, y in ((w // 2, 0), (w // 2, h - 1),
+                         (0, h // 2), (w - 1, h // 2)):
+                assert rendered.pixelColor(x, y) == border
+            inset = int(8 * rendered.devicePixelRatio())
+            assert rendered.pixelColor(inset, h - 1 - inset) == QColor("magenta")
+    finally:
+        qapp.setStyleSheet(previous_style)
+
+
+def test_workspace_tabs_clear_corners_when_overflowing(qapp, qtbot):
+    """Qt reserves both corner areas even when many tabs need scroll buttons."""
+    previous_style = qapp.styleSheet()
+    pane = PaneContainer("center")
+    qtbot.addWidget(pane)
+    for index in range(8):
+        pane.add_panel(str(index), f"Workspace panel {index}", QLabel())
+    try:
+        ThemeManager().apply_theme(
+            qapp, Path("src/resources/main.qss").read_text(encoding="utf-8")
+        )
+        pane.show()
+        for width in (160, 320, 900):
+            pane.resize(width, 180)
+            for selected in (0, 7):
+                pane.tabs.setCurrentIndex(selected)
+                qapp.processEvents()
+                bar = pane.tabs.tabBar()
+                assert bar.geometry().left() >= 9
+                assert bar.mapTo(pane, bar.rect().topLeft()).y() >= 5
+                assert bar.geometry().right() < pane.width() - 9
+                assert pane.tabs.currentIndex() == selected
+    finally:
+        qapp.setStyleSheet(previous_style)
+
+
+def test_outer_frame_encloses_activity_bar_and_tracks_theme(qapp, qtbot):
+    """All four outer edges remain visible through theme changes and resize."""
+    manager = ThemeManager()
+    previous_theme = manager.current_theme_name
+    previous_style = qapp.styleSheet()
+    shell = _shell(qtbot)
+    try:
+        shell.show()
+        for theme in ("light_mode", "dark_mode", "fantasy_mode"):
+            manager.current_theme_name = theme
+            manager.apply_theme(
+                qapp, Path("src/resources/main.qss").read_text(encoding="utf-8")
+            )
+            manager.theme_changed.emit(manager.get_theme())
+            for width, height in ((900, 640), (1200, 800)):
+                shell.resize(width, height)
+                qapp.processEvents()
+                image = shell.grab().toImage()
+                w, h = image.width(), image.height()
+                border = QColor(manager.get_theme()["border"])
+                for x, y in ((0, h // 2), (w - 1, h // 2),
+                             (w // 2, 0), (w // 2, h - 1)):
+                    assert image.pixelColor(x, y) == border
+                assert shell.activity_bar.geometry().left() == 4
+                for offset in range(4):
+                    assert image.pixelColor(offset, h // 2) == border
+                assert shell.horizontal_splitter.handleWidth() == 4
+                assert shell.vertical_splitter.handleWidth() == 4
+    finally:
+        manager.current_theme_name = previous_theme
+        manager.theme_changed.emit(manager.get_theme())
+        qapp.setStyleSheet(previous_style)
 
 
 def test_drop_tab_on_another_pane_moves_the_same_panel(qtbot) -> None:

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-09-22
-**Commit:** 682272e5ecf91565e78c8c7431fded26608ba001
+**Commit:** 1b4b7f92
 ---
 
 # Changelog
@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-09-22)* **Workspace / Layout**: Added continuous theme-aware pane and
+  workspace frames, rounded corner clearance for tabs, and 4 px hoverable
+  separators. Added layout regression coverage across resizing and theme changes.
 - *(2026-09-22)* **Editors / Theming**: Kept rich-text formatting labels and
   hover backgrounds readable in light themes.
 - *(2026-09-22)* **Editors / Controls**: Kept editable combo-box text centred
