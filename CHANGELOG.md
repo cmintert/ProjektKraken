@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-09-22
-**Commit:** 4a4ac4219e022d502b03a4722228ff8c5f0181fc
+**Commit:** 8564310a3538e33de2c5e312dae5325a32905acd
 ---
 
 # Changelog
@@ -74,6 +74,12 @@ All notable changes to this project will be documented in this file.
 - *(2026-08-29)* **Testing / CI**: Removed redundant native WebEngine widget
   traversal from per-test teardown after it caused Linux full-regression
   segmentation faults despite the existing lightweight test stub.
+
+### Changed
+
+- *(2026-09-22)* **Documentation**: Updated user guides and README coverage for
+  focused writing, dated entity corrections, compact event-date controls,
+  current-time navigation, and the current Windows package example.
 
 ### Added
 

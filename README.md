@@ -1,7 +1,7 @@
 ---
 project: ProjektKraken
 document: Main Project README
-last_updated: 2026-07-27
+last_updated: 2026-09-22
 ---
 
 # Projekt Kraken
@@ -97,7 +97,7 @@ multiple users simultaneously.
 - **Timeline Context**: Lane-based world timeline plus related-event summaries
   inside entity inspectors
 - **Longform Documents**: Hierarchical document structure for narrative prose
-- **Return to Present**: Quick navigation to current timeline position
+- **Return to Current Time**: Quick navigation back to the current story time
 
 ### AI & Search
 - **Semantic Search**: Local embeddings with LM Studio for natural language queries
@@ -111,7 +111,11 @@ multiple users simultaneously.
 - **Unified Workspace**: Movable panels across four stable zones with explicit layout persistence
 - **Theme Support**: Dark mode and custom themes via `ThemeManager`
 - **Fast Inject**: Rapid entity/event creation with template support and variable resolution
-- **Advanced Import**: Two-pass JSON import strategy with deduplication and cycle resolution
+- **Focused Writing**: A centered writing surface for Event and Entity descriptions
+- **Temporal Entity Editing**: Correct visible historical descriptions and attributes
+  at their baseline or dated source
+- **Reviewed Import and Export**: JSON, CSV, TSV, Markdown, publishing formats,
+  backups, and portable-world transfer
 
 ## Installation
 
@@ -122,7 +126,7 @@ multiple users simultaneously.
 2. Verify the download in PowerShell:
 
    ```powershell
-   Get-FileHash .\ProjektKraken-0.19.5-beta1-windows-x64.zip -Algorithm SHA256
+   Get-FileHash .\ProjektKraken-0.19.6-beta1-windows-x64.zip -Algorithm SHA256
    ```
 
    The reported hash must match the value in the downloaded `.sha256` file.

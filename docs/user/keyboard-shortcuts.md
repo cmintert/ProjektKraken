@@ -17,6 +17,7 @@ The current shortcuts are also available from
 | Italic | Ctrl+I |
 | Heading 1, 2, or 3 | Ctrl+1, Ctrl+2, Ctrl+3 |
 | Body text | Ctrl+0 |
+| Focus writing / exit focus | F11 |
 | Promote Longform item | Ctrl+[ |
 | Demote Longform item | Ctrl+] |
 | Cancel or deselect | Escape |

@@ -12,6 +12,10 @@ the current lore time and also controls time-sensitive map content.
 - Select an event to open its inspector.
 - Move supported event items to update their date.
 - Use the playhead controls to inspect another point in history.
+- Choose **Set Current Time** to make the playhead position the world's current
+  story time.
+- Choose **Return to Current Time** to move the playhead back to the current
+  story time without changing it.
 - Enable **Snap to Events** to make manual playhead drags and ruler clicks land
   exactly on a nearby event date. Snapping uses a small on-screen distance, so
   it remains predictable at every zoom level. Playback and scripted jumps do
@@ -39,4 +43,7 @@ the interface.
   the active calendar.
 - Changing the playhead can change which map trajectory or dated raster state
   is visible.
+- With an entity selected, changing the playhead can also show the entity's
+  visible historical state. The inspector identifies the source of dated
+  descriptions and attributes, so corrections can be saved to the right place.
 - Timeline grouping organizes the view; it does not duplicate or delete events.

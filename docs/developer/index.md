@@ -8,10 +8,11 @@ architecture
 commands-and-history
 database-and-storage
 testing
+inspector-ui-verification
+performance-measurement
 contributing
 documentation
 ```
 
 Read `AGENTS.md` before modifying the application. It contains repository-wide
 invariants for dependencies, threading, commands, storage, style, and testing.
-
