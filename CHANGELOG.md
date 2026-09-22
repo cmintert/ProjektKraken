@@ -38,6 +38,43 @@ All notable changes to this project will be documented in this file.
   the active editor's pane after panel moves, and kept focus mode open for
   clicks within that pane. Added regression coverage for all four zones.
 
+- *(2026-09-17)* **Performance / Mutation Refreshes**: Replaced competing
+  command refreshes with one owner and incremental Event/Entity cache, Explorer,
+  timeline, map, completer, and secondary-view updates, while retaining a
+  deduplicated full-refresh fallback for undo, redo, and complex commands.
+  Unrelated updates and deletions no longer rehydrate the active detail editor.
+
+- *(2026-09-15)* **Performance / Detail Loading**: Batched relation endpoint
+  metadata lookups and deferred hidden Graph and Longform hydration, eliminating
+  interactive detail timeouts while preserving relation and editor behavior.
+
+- *(2026-09-15)* **Testing / Performance**: Added regression coverage for
+  demand-driven panel hydration, bounded metadata queries, payload equivalence,
+  missing endpoints, ordering, and entity-first endpoint precedence.
+
+- *(2026-09-14)* **Import / Integrity**: Made failed record batches atomic,
+  preserved supplied relation identities, and kept repeated skip-mode imports
+  from modifying existing relationships.
+
+- *(2026-09-14)* **Import / Export / Theming**: Applied the active theme to all
+  transfer text surfaces and replaced the truncated JSON placeholder with a
+  scrollable, editable example action.
+
+- *(2026-09-13)* **UI / Responsive Panels**: Kept action bars compact and
+  left-packed, moved secondary Project and Graph actions into overflow, anchored
+  checkboxes to the right, and unified inactive button styling.
+
+- *(2026-09-13)* **UI / Compact Layouts**: Prevented empty Project Explorer
+  context controls and Visual Lexicon entity and relation rows from consuming
+  excess vertical space.
+
+- *(2026-08-29)* **Packaging / CI**: Removed a stale nonexistent PyInstaller
+  data path and added source-existence validation before Windows packaging.
+
+- *(2026-08-29)* **Testing / CI**: Removed redundant native WebEngine widget
+  traversal from per-test teardown after it caused Linux full-regression
+  segmentation faults despite the existing lightweight test stub.
+
 ### Added
 
 - *(2026-09-18)* **Editors / Focus writing**: Added a live, centered writing
@@ -86,45 +123,6 @@ All notable changes to this project will be documented in this file.
 - *(2026-09-13)* **Testing / UI**: Added rendered layout coverage for compact
   context controls, responsive toolbars, right-aligned checkboxes, shared
   inactive styling, and Visual Lexicon rows.
-
-### Fixed
-
-- *(2026-09-17)* **Performance / Mutation Refreshes**: Replaced competing
-  command refreshes with one owner and incremental Event/Entity cache, Explorer,
-  timeline, map, completer, and secondary-view updates, while retaining a
-  deduplicated full-refresh fallback for undo, redo, and complex commands.
-  Unrelated updates and deletions no longer rehydrate the active detail editor.
-
-- *(2026-09-15)* **Performance / Detail Loading**: Batched relation endpoint
-  metadata lookups and deferred hidden Graph and Longform hydration, eliminating
-  interactive detail timeouts while preserving relation and editor behavior.
-
-- *(2026-09-15)* **Testing / Performance**: Added regression coverage for
-  demand-driven panel hydration, bounded metadata queries, payload equivalence,
-  missing endpoints, ordering, and entity-first endpoint precedence.
-
-- *(2026-09-14)* **Import / Integrity**: Made failed record batches atomic,
-  preserved supplied relation identities, and kept repeated skip-mode imports
-  from modifying existing relationships.
-
-- *(2026-09-14)* **Import / Export / Theming**: Applied the active theme to all
-  transfer text surfaces and replaced the truncated JSON placeholder with a
-  scrollable, editable example action.
-
-- *(2026-09-13)* **UI / Responsive Panels**: Kept action bars compact and
-  left-packed, moved secondary Project and Graph actions into overflow, anchored
-  checkboxes to the right, and unified inactive button styling.
-
-- *(2026-09-13)* **UI / Compact Layouts**: Prevented empty Project Explorer
-  context controls and Visual Lexicon entity and relation rows from consuming
-  excess vertical space.
-
-- *(2026-08-29)* **Packaging / CI**: Removed a stale nonexistent PyInstaller
-  data path and added source-existence validation before Windows packaging.
-
-- *(2026-08-29)* **Testing / CI**: Removed redundant native WebEngine widget
-  traversal from per-test teardown after it caused Linux full-regression
-  segmentation faults despite the existing lightweight test stub.
 
 ## [0.19.6]
 
