@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-09-26
-**Commit:** bf319f54
+**Commit:** 5af8131d
 ---
 
 # Changelog
@@ -24,6 +24,10 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-09-26)* **Timeline / Calendar ruler**: Aligned year, month, quarter,
+  and week ticks with real calendar boundaries, including leap years, custom
+  weeks, year variants, and pre-epoch dates; corrected clock labels near midnight,
+  added regression coverage, and updated the timeline guide.
 - *(2026-09-26)* **Wiki editor / P1-P2**: Preserved wiki-link targets through
   Body formatting, inserted links without HTML interpolation or nonbreaking
   spaces, and rejected stale LanguageTool results and suggestions without

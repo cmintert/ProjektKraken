@@ -37,6 +37,10 @@ Open **Timeline → Calendar Configuration…** to define the active calendar.
 Calendar configuration controls how stored lore days are formatted throughout
 the interface.
 
+The timeline ruler marks actual calendar boundaries. Year and month ticks line
+up with events dated to the first day of that year or month. Week ticks use the
+calendar's week length. Quarter ticks appear in years with twelve months.
+
 ## Tips and gotchas
 
 - Internally, `1.0` represents one lore day, but the interface formats it using

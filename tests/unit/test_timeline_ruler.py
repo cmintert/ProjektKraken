@@ -14,6 +14,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from src.core.calendar import CalendarConfig, CalendarConverter
 from src.gui.widgets.timeline_ruler import (
     TickInfo,
     TickLevel,
@@ -59,6 +60,7 @@ def mock_calendar():
     ]
     mock._config.get_year_length.return_value = 360
     mock._config.week = MagicMock()
+    mock._config.week.day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     mock._config.week.day_abbreviations = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
     return mock
 
@@ -203,7 +205,9 @@ class TestTickCalculation:
             scale_factor=20.0,
         )
         for tick in ticks:
-            assert tick.position >= 100 or tick.position <= 200 + 1
+            # The generator includes one preceding boundary for edge rendering.
+            step = ruler.NUMERIC_LEVEL_STEPS[tick.level]
+            assert 100 - step <= tick.position <= 200
 
     def test_ticks_have_required_properties(self, ruler):
         """Each tick should have all required properties."""
@@ -304,17 +308,16 @@ class TestCalendarAwareDivisions:
         ruler.set_calendar_converter(mock_calendar)
         assert ruler._calendar is mock_calendar
 
-    def test_with_calendar_uses_calendar_labels(self, ruler, mock_calendar):
+    def test_with_calendar_uses_calendar_labels(self, ruler):
         """With calendar configured, labels should be calendar-formatted."""
-        ruler.set_calendar_converter(mock_calendar)
+        ruler.set_calendar_converter(CalendarConverter(CalendarConfig.create_default()))
         ticks = ruler.calculate_ticks(
             start_date=0,
             end_date=365,
             viewport_width=1000,
             scale_factor=20.0,
         )
-        # Should have at least some ticks
-        assert len(ticks) > 0
+        assert {t.label for t in ticks if t.is_major} >= {"Jan", "Feb", "Mar"}
 
     def test_day_ticks_have_abbreviations(self, ruler, mock_calendar):
         """Day ticks should include day abbreviations."""
@@ -384,9 +387,7 @@ class TestStickyParentContext:
     def test_hour_context_contains_full_calendar_date(self, ruler, mock_calendar):
         """Hour ticks need day-level context so their clock labels are meaningful."""
         ruler.set_calendar_converter(mock_calendar)
-        mock_calendar.format_date.return_value = (
-            "Year 2025, Month3 15, Saturday"
-        )
+        mock_calendar.format_date.return_value = "Year 2025, Month3 15, Saturday"
 
         context = ruler.get_parent_context(100.5, TickLevel.HOUR)
 

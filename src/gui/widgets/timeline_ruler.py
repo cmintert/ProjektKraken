@@ -10,9 +10,12 @@ Provides semantic zoom ruler with Aeon Timeline-style behavior:
 
 import logging
 import math
+from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import TYPE_CHECKING, List, Optional, Tuple
+
+from src.core.calendar import CalendarDate
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +84,16 @@ class TimelineRuler:
 
     # Target spacing between major ticks (pixels)
     TARGET_MAJOR_SPACING = 100
+    MAX_TICKS = 500
+    MONTHS_PER_YEAR = 12
+    MONTHS_PER_QUARTER = 3
+    YEAR_SPANS = {
+        TickLevel.ERA: 1000,
+        TickLevel.CENTURY: 100,
+        TickLevel.DECADE: 10,
+        TickLevel.YEAR: 1,
+    }
+    TIME_UNITS = {TickLevel.HOUR: 24, TickLevel.MINUTE: 1440}
 
     # Level step sizes (in days) for numeric mode
     NUMERIC_LEVEL_STEPS = {
@@ -170,8 +183,17 @@ class TimelineRuler:
         # Minor level is one step finer
         minor_level = self.get_finer_level(best_level)
 
-        # Calculate minor tick spacing and opacity
-        minor_step = self.NUMERIC_LEVEL_STEPS[minor_level]
+        return (
+            best_level,
+            minor_level,
+            self._minor_opacity(date_range, viewport_width, minor_level),
+        )
+
+    def _minor_opacity(
+        self, date_range: float, viewport_width: float, level: TickLevel
+    ) -> float:
+        """Calculate the fade using the existing spacing thresholds."""
+        minor_step = self.NUMERIC_LEVEL_STEPS[level]
         minor_num_ticks = max(1, date_range / minor_step)
         minor_spacing = viewport_width / minor_num_ticks
 
@@ -184,7 +206,35 @@ class TimelineRuler:
                 self.THRESHOLD_FULL - self.THRESHOLD_SHOW
             )
 
-        return best_level, minor_level, minor_opacity
+        return minor_opacity
+
+    def _supports_quarters(self, start_date: float, end_date: float) -> bool:
+        """Return whether every visible year has exactly twelve months."""
+        if self._calendar is None:
+            return True
+        config = self._calendar._config
+        if len(config.months) == self.MONTHS_PER_YEAR and all(
+            len(variant.months) == self.MONTHS_PER_YEAR
+            for variant in config.year_variants
+        ):
+            return True
+        if len(config.months) != self.MONTHS_PER_YEAR and not config.year_variants:
+            return False
+        first_year = self._calendar.from_float(start_date).year
+        last_year = self._calendar.from_float(end_date).year
+        variant_years = {
+            variant.year
+            for variant in config.year_variants
+            if first_year <= variant.year <= last_year
+        }
+        if len(config.months) != self.MONTHS_PER_YEAR and len(variant_years) != (
+            last_year - first_year + 1
+        ):
+            return False
+        return all(
+            len(config.get_months_for_year(year)) == self.MONTHS_PER_YEAR
+            for year in variant_years
+        )
 
     def calculate_ticks(
         self,
@@ -206,12 +256,30 @@ class TimelineRuler:
 
         """
         date_range = end_date - start_date
-        if date_range <= 0:
+        if (
+            not all(math.isfinite(v) for v in (start_date, end_date, viewport_width))
+            or not math.isfinite(date_range)
+            or date_range <= 0
+            or viewport_width <= 0
+        ):
             return []
 
         major_level, minor_level, minor_opacity = self.calculate_active_levels(
             date_range, viewport_width
         )
+        if TickLevel.QUARTER in (
+            major_level,
+            minor_level,
+        ) and not self._supports_quarters(start_date, end_date):
+            major_level, minor_level = TickLevel.YEAR, TickLevel.MONTH
+            minor_opacity = self._minor_opacity(date_range, viewport_width, minor_level)
+        if (
+            self._calendar is not None
+            and TickLevel.WEEK in (major_level, minor_level)
+            and not self._calendar._config.week.day_names
+        ):
+            major_level, minor_level = TickLevel.MONTH, TickLevel.DAY
+            minor_opacity = self._minor_opacity(date_range, viewport_width, minor_level)
 
         # Calculate effective scale for screen_x (pixels per day in viewport)
         effective_scale = viewport_width / date_range
@@ -247,6 +315,10 @@ class TimelineRuler:
                 )
             )
 
+        # Calendar levels share exact boundaries. Keep the major tick at each one.
+        if self._calendar is not None:
+            ticks = list({tick.position: tick for tick in reversed(ticks)}.values())
+
         # Sort by position
         ticks.sort(key=lambda t: t.position)
 
@@ -277,38 +349,84 @@ class TimelineRuler:
             List of TickInfo objects.
 
         """
-        ticks: List[TickInfo] = []
-        if step <= 0:
-            return ticks
-
-        # Align start to step boundary
-        first_tick = math.floor(start_date / step) * step
-
-        current = first_tick
-        max_ticks = 500  # Safety limit
-        count = 0
-
-        while current <= end_date and count < max_ticks:
-            # Skip ticks outside the visible range (with buffer)
-            if current >= start_date - step:
-                screen_x = (current - start_date) * effective_scale
-                label = self._format_label(current, level)
-
-                ticks.append(
-                    TickInfo(
-                        position=current,
-                        screen_x=screen_x,
-                        level=level,
-                        label=label,
-                        opacity=opacity,
-                        is_major=is_major,
-                    )
+        if self._calendar is not None and level <= TickLevel.MONTH:
+            boundaries = self._calendar_boundaries(start_date, end_date, level)
+            return [
+                TickInfo(
+                    position=position,
+                    screen_x=(position - start_date) * effective_scale,
+                    level=level,
+                    label=self._format_calendar_label(position, level, date),
+                    opacity=opacity,
+                    is_major=is_major,
                 )
+                for position, date in boundaries
+            ]
 
-            current += step
-            count += 1
+        if self._calendar is not None and level == TickLevel.WEEK:
+            step = len(self._calendar._config.week.day_names)
+        if step <= 0:
+            return []
 
+        # Include one boundary preceding the viewport. Derive every position from
+        # its integer index so fractional-day rounding cannot accumulate.
+        units = self.TIME_UNITS.get(level)
+        first_index = math.floor(start_date * units if units else start_date / step)
+        ticks: List[TickInfo] = []
+        for index in range(first_index, first_index + self.MAX_TICKS):
+            position = index / units if units else index * step
+            if position > end_date:
+                break
+            ticks.append(
+                TickInfo(
+                    position=position,
+                    screen_x=(position - start_date) * effective_scale,
+                    level=level,
+                    label=self._format_label(position, level),
+                    opacity=opacity,
+                    is_major=is_major,
+                )
+            )
         return ticks
+
+    def _calendar_boundaries(
+        self, start_date: float, end_date: float, level: TickLevel
+    ) -> Iterator[tuple[float, CalendarDate]]:
+        """Yield at most 500 real boundaries, including the preceding boundary.
+
+        Year spans are anchored to year one. Month traversal uses each year's
+        actual month list, including variants and the transition through year zero.
+        """
+        calendar = self._calendar
+        if calendar is None:
+            return
+        if level == TickLevel.QUARTER and not self._supports_quarters(
+            start_date, end_date
+        ):
+            return
+        start = calendar.from_float(start_date)
+        year_span = self.YEAR_SPANS.get(level)
+        month_span = self.MONTHS_PER_QUARTER if level == TickLevel.QUARTER else 1
+        year = start.year
+        month = 1
+        if year_span is not None:
+            year = 1 + ((year - 1) // year_span) * year_span
+        else:
+            month = 1 + ((start.month - 1) // month_span) * month_span
+
+        for _ in range(self.MAX_TICKS):
+            date = CalendarDate(year, month, 1)
+            position = calendar.to_float(date)
+            if position > end_date:
+                return
+            yield position, date
+            if year_span is not None:
+                year += year_span
+            else:
+                month += month_span
+                if month > len(calendar._config.get_months_for_year(year)):
+                    year += 1
+                    month = 1
 
     def _format_label(self, position: float, level: TickLevel) -> str:
         """Formats a label for a tick position.
@@ -325,12 +443,15 @@ class TimelineRuler:
             return self._format_calendar_label(position, level)
         return self._format_numeric_label(position, level)
 
-    def _format_calendar_label(self, position: float, level: TickLevel) -> str:
+    def _format_calendar_label(
+        self, position: float, level: TickLevel, date: CalendarDate | None = None
+    ) -> str:
         """Formats a label using the calendar converter.
 
         Args:
             position: Date position.
             level: Tick level.
+            date: Exact boundary date when generated by calendar traversal.
 
         Returns:
             Calendar-formatted label.
@@ -340,7 +461,13 @@ class TimelineRuler:
             if not self._calendar:
                 return self._format_numeric_label(position, level)
 
-            date = self._calendar.from_float(position)
+            if level in self.TIME_UNITS:
+                # Tick positions can land a fraction of an ULP before a minute.
+                # Round to the known tick unit instead of truncating clock fields.
+                return self._format_clock_label(position, level)
+
+            if date is None:
+                date = self._calendar.from_float(position)
 
             if level <= TickLevel.DECADE:
                 # Show year (possibly with era)
@@ -362,25 +489,17 @@ class TimelineRuler:
                 day_str = str(date.day)
                 try:
                     week_config = self._calendar._config.week
-                    if week_config.day_abbreviations:
+                    if week_config.day_names:
                         # Use floor to handle negative positions correctly
-                        day_idx = math.floor(position) % len(
-                            week_config.day_abbreviations
-                        )
-                        abbrev = week_config.day_abbreviations[day_idx]
-                        return f"{day_str} {abbrev}"
+                        day_idx = math.floor(position) % len(week_config.day_names)
+                        if day_idx < len(week_config.day_abbreviations):
+                            abbrev = week_config.day_abbreviations[day_idx]
+                            return f"{day_str} {abbrev}"
                 except (AttributeError, ValueError, IndexError):
                     # Week config may be unavailable or misconfigured
                     pass
 
                 return day_str
-            elif level == TickLevel.HOUR:
-                hours = int(date.time_fraction * 24)
-                return f"{hours:02d}:00"
-            elif level == TickLevel.MINUTE:
-                hours = int(date.time_fraction * 24)
-                minutes = int((date.time_fraction * 24 - hours) * 60)
-                return f"{hours:02d}:{minutes:02d}"
             else:
                 return str(date.year)
         except Exception as e:
@@ -388,6 +507,13 @@ class TimelineRuler:
                 f"Calendar label formatting failed at position {position}: {e}"
             )
             return self._format_numeric_label(position, level)
+
+    def _format_clock_label(self, position: float, level: TickLevel) -> str:
+        """Format an hour/minute tick without truncation or negative-day drift."""
+        units = self.TIME_UNITS[level]
+        clock_unit = round(position * units) % units
+        minutes = clock_unit * (60 if level == TickLevel.HOUR else 1)
+        return f"{minutes // 60:02d}:{minutes % 60:02d}"
 
     def _format_numeric_label(self, position: float, level: TickLevel) -> str:
         """Formats a numeric (non-calendar) label.
@@ -401,18 +527,8 @@ class TimelineRuler:
 
         """
         # Handle sub-day levels with time formatting
-        if level == TickLevel.HOUR:
-            # Position is in days, so multiply by 24 to get hours
-            # The fractional part of (position * 24) gives us the hour
-            total_hours = position * 24
-            hours = int(total_hours) % 24
-            return f"{hours:02d}:00"
-        elif level == TickLevel.MINUTE:
-            # Position is in days, so multiply by 24*60 to get minutes
-            total_minutes = position * 24 * 60
-            hours = int(total_minutes / 60) % 24
-            minutes = int(total_minutes) % 60
-            return f"{hours:02d}:{minutes:02d}"
+        if level in self.TIME_UNITS:
+            return self._format_clock_label(position, level)
         elif level == TickLevel.DAY:
             # Show day number
             day_num = int(position) % 30 + 1
