@@ -25,6 +25,8 @@ class FakeMainWindow(QObject):
         self.entity_editor = MagicMock()
         self.entity_editor._current_entity_id = None
         self.event_editor._current_event_id = None
+        self.entity_editor.save_pending = False
+        self.event_editor.save_pending = False
         self.unified_list = MagicMock()
         self.timeline = MagicMock()
         self.map_widget = MagicMock()
@@ -70,6 +72,81 @@ def coordinator(fake_window):
     from src.app.coordinators.data_coordinator import DataCoordinator
 
     return DataCoordinator(fake_window)
+
+
+def test_event_detail_refresh_cannot_replace_pending_draft(
+    coordinator, fake_window
+):
+    """A save response may refresh metadata without hydrating live prose."""
+    from src.core.events import Event
+
+    event = Event(id="event-1", name="Event", lore_date=0.0)
+    editor = fake_window.event_editor
+    editor.current_event_id = event.id
+    editor.has_unsaved_changes.return_value = True
+    editor.save_pending = True
+
+    coordinator.on_event_details_ready(event, [], [])
+
+    editor.load_event.assert_not_called()
+
+
+def test_stale_event_detail_response_cannot_change_selected_item(
+    coordinator, fake_window
+):
+    from src.core.events import Event
+
+    fake_window.navigation_coordinator.selected_type = "event"
+    fake_window.navigation_coordinator.selected_id = "event-2"
+    coordinator.on_event_details_ready(
+        Event(id="event-1", name="Old", lore_date=0.0), [], []
+    )
+
+    fake_window.event_editor.load_event.assert_not_called()
+
+
+def test_save_started_refresh_preserves_event_document_after_ack(
+    coordinator, fake_window
+):
+    """A queued refresh keeps its preserve intent after the save completes."""
+    from src.core.events import Event
+
+    event = Event(id="event-1", name="Event", lore_date=0.0)
+    editor = fake_window.event_editor
+    editor.current_event_id = event.id
+    editor.save_pending = True
+    with patch("src.app.coordinators.data_coordinator.invoke_queued"):
+        coordinator.load_event_details(event.id)
+    editor.save_pending = False
+    editor.has_unsaved_changes.return_value = False
+
+    coordinator.on_event_details_ready(event, [], [])
+
+    editor.load_event.assert_not_called()
+    editor._load_event_relations.assert_called_once_with([], [])
+
+
+def test_save_started_refresh_preserves_temporal_entity_after_ack(
+    coordinator, fake_window
+):
+    """Temporal save refreshes relations without loading baseline prose."""
+    from src.core.entities import Entity
+
+    entity = Entity(id="entity-1", name="Entity", type="Character")
+    editor = fake_window.entity_editor
+    editor.current_entity_id = entity.id
+    editor.save_pending = True
+    fake_window.time_coordinator = MagicMock()
+    with patch("src.app.coordinators.data_coordinator.invoke_queued"):
+        coordinator.load_entity_details(entity.id)
+    editor.save_pending = False
+    editor.has_unsaved_changes.return_value = False
+
+    coordinator.on_entity_details_ready(entity, [], [])
+
+    editor.load_entity.assert_not_called()
+    editor._load_entity_relations.assert_called_once_with([], [])
+    fake_window.time_coordinator.resolve_selected_entity.assert_called_once()
 
 
 class TestDataLoading:

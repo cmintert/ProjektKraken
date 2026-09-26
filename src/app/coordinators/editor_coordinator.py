@@ -8,6 +8,7 @@ Manages all editor-related operations extracted from MainWindow:
 """
 
 import logging
+from copy import deepcopy
 from typing import TYPE_CHECKING, Dict, List, Optional
 
 from PySide6.QtCore import QSettings, Signal, Slot
@@ -61,6 +62,7 @@ class EditorCoordinator(BaseCoordinator):
     """
 
     command_requested = Signal(object)
+    editor_save_finished = Signal(str, str, int, bool)
 
     def __init__(self, main_window: "MainWindow") -> None:
         """Initialize the editor coordinator.
@@ -72,10 +74,18 @@ class EditorCoordinator(BaseCoordinator):
         super().__init__(main_window)
         self._last_drag_drop_command_id: Optional[int] = None
         self._pending_temporal_command_id: str | None = None
+        self._pending_temporal_revision: int | None = None
+        self._pending_temporal_generation: int | None = None
+        self._pending_temporal_entity_id: str | None = None
+        self._pending_editor_saves: dict[
+            str, tuple[str, str, int, int, dict]
+        ] = {}
 
     @Slot(dict)
     def update_temporal_entity(self, request: dict) -> None:
         """Turn an editor's field-level intent into one undoable command."""
+        revision = request.get("__editor_revision")
+        generation = request.get("__editor_generation")
         command = TemporalEntityEditCommand(
             request["entity_id"],
             request["lore_time"],
@@ -101,11 +111,46 @@ class EditorCoordinator(BaseCoordinator):
             else command
         )
         self._pending_temporal_command_id = outgoing.command_id
+        self._pending_temporal_revision = revision
+        self._pending_temporal_generation = generation
+        self._pending_temporal_entity_id = request["entity_id"]
         self.command_requested.emit(outgoing)
 
     @Slot(object)
     def on_temporal_command_result(self, result: CommandResult) -> None:
-        """Finish only the temporal draft whose command just completed."""
+        """Acknowledge editor saves by command ID and refresh temporal state."""
+        command_id = str(result.data.get("command_id", ""))
+        pending = self._pending_editor_saves.pop(command_id, None)
+        if pending is not None:
+            item_type, item_id, save_revision, generation, snapshot = pending
+            if item_type == "event":
+                event_editor = self.main_window.event_editor
+                if (
+                    event_editor.current_event_id == item_id
+                    and event_editor.draft_generation == generation
+                ):
+                    complete = event_editor.finish_save(
+                        save_revision, result.success
+                    )
+                    self.editor_save_finished.emit(
+                        item_type, item_id, save_revision,
+                        result.success and complete,
+                    )
+            else:
+                entity_editor = self.main_window.entity_editor
+                if (
+                    entity_editor.current_entity_id == item_id
+                    and entity_editor.draft_generation == generation
+                ):
+                    if result.success:
+                        entity_editor.acknowledge_saved_snapshot(snapshot)
+                    complete = entity_editor.finish_save(
+                        save_revision, result.success
+                    )
+                    self.editor_save_finished.emit(
+                        item_type, item_id, save_revision,
+                        result.success and complete,
+                    )
         state = result.data.get("command_state", {})
         serialized = state.get("data", {}) if isinstance(state, dict) else {}
         children = serialized.get("commands", []) if isinstance(serialized, dict) else []
@@ -118,16 +163,28 @@ class EditorCoordinator(BaseCoordinator):
             if entity_id:
                 self.main_window.data_coordinator.load_entity_details(entity_id)
             return
-        if result.data.get("command_id") != self._pending_temporal_command_id:
+        if command_id != self._pending_temporal_command_id:
             return
         self._pending_temporal_command_id = None
-        editor = self.main_window.entity_editor
-        editor.finish_temporal_save(result.success)
+        temporal_revision = self._pending_temporal_revision
+        temporal_generation = self._pending_temporal_generation
+        entity_id = self._pending_temporal_entity_id
+        self._pending_temporal_revision = None
+        self._pending_temporal_generation = None
+        self._pending_temporal_entity_id = None
+        temporal_editor = self.main_window.entity_editor
+        if (
+            temporal_editor.current_entity_id != entity_id
+            or temporal_editor.draft_generation != temporal_generation
+        ):
+            return
+        temporal_editor.finish_temporal_save(result.success)
+        if temporal_revision is not None and entity_id is not None:
+            self.editor_save_finished.emit(
+                "entity", entity_id, temporal_revision,
+                result.success and not temporal_editor.has_unsaved_changes(),
+            )
         if result.success:
-            if editor.current_entity_id:
-                self.main_window.data_coordinator.load_entity_details(
-                    editor.current_entity_id
-                )
             self.main_window.time_coordinator.on_temporal_save_completed()
 
     # ------------------------------------------------------------------
@@ -309,6 +366,9 @@ class EditorCoordinator(BaseCoordinator):
             event_data: Dictionary containing event data including 'id'.
 
         """
+        event_data = dict(event_data)
+        revision = event_data.pop("__editor_revision", None)
+        generation = event_data.pop("__editor_generation", None)
         event_id = event_data.get("id")
         logger.info(
             f"[EditorCoordinator] update_event: id={event_id}, "
@@ -332,6 +392,10 @@ class EditorCoordinator(BaseCoordinator):
             command = cmds[0]
             logger.debug(f"[EditorCoordinator] Emitting {command.__class__.__name__}")
 
+        if revision is not None and generation is not None:
+            self._pending_editor_saves[command.command_id] = (
+                "event", event_id, revision, generation, deepcopy(event_data)
+            )
         self.command_requested.emit(command)
 
     def update_entity(self, entity_data: dict) -> None:
@@ -344,6 +408,9 @@ class EditorCoordinator(BaseCoordinator):
             entity_data: Dictionary containing entity data including 'id'.
 
         """
+        entity_data = dict(entity_data)
+        revision = entity_data.pop("__editor_revision", None)
+        generation = entity_data.pop("__editor_generation", None)
         entity_id = entity_data.get("id")
         logger.info(
             f"[EditorCoordinator] update_entity: id={entity_id}, "
@@ -369,6 +436,10 @@ class EditorCoordinator(BaseCoordinator):
             command = cmds[0]
             logger.debug(f"[EditorCoordinator] Emitting {command.__class__.__name__}")
 
+        if revision is not None and generation is not None:
+            self._pending_editor_saves[command.command_id] = (
+                "entity", entity_id, revision, generation, deepcopy(entity_data)
+            )
         self.command_requested.emit(command)
 
     def _append_wiki_cmd_if_enabled(
@@ -454,8 +525,8 @@ class EditorCoordinator(BaseCoordinator):
             editor: The editor widget to check.
 
         Returns:
-            True if safe to proceed (Saved, Discarded, or Clean).
-            False if User Cancelled.
+            True if safe to proceed (Discarded or Clean). False if the
+            user cancelled or an asynchronous save has not been acknowledged.
 
         """
         if (
@@ -487,7 +558,7 @@ class EditorCoordinator(BaseCoordinator):
                 return False
             if hasattr(editor, "_on_save"):
                 editor._on_save()
-            return True
+            return False
         elif reply == QMessageBox.StandardButton.Discard:
             return True
         else:  # Cancel

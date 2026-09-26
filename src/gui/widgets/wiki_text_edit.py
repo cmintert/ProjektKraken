@@ -735,15 +735,8 @@ class WikiTextEditView(QTextEdit):
 
         # Check if text is identical to avoid unnecessary reload
         # This applies to BOTH Rich and Source modes.
-        if (
-            not force
-            and hasattr(self, "_current_wiki_text")
-            and self._current_wiki_text == text
-            and self.get_wiki_text() == text
-        ):
-            # The cached source can outlive direct document mutations such as
-            # clear() or user edits. Only skip when the rendered document still
-            # contains the same content.
+        if not force and self.get_wiki_text() == text:
+            self._current_wiki_text = text
             return
 
         # If in Source mode, just set the raw text and ignore HTML rendering

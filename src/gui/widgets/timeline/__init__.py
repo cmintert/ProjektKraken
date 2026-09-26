@@ -162,6 +162,10 @@ class TimelineWidget(QWidget):
         """Centers the timeline on the given event."""
         self.view.focus_event(event_id)
 
+    def clear_event_selection(self) -> None:
+        """Clear a timeline click rejected by guarded navigation."""
+        self.view.graphics_scene.clearSelection()
+
     def fit_view(self) -> None:
         """Fits all events within the view."""
         self.view.fit_all()

@@ -11,7 +11,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, cast
 
 from PySide6.QtCore import QPoint
-from PySide6.QtGui import QDragEnterEvent, QDragLeaveEvent, QDragMoveEvent
+from PySide6.QtGui import QDragEnterEvent, QDragLeaveEvent, QDragMoveEvent, QTextCursor
 from PySide6.QtWidgets import QAbstractButton, QWidget
 
 from src.gui.mixins.autosave_mixin import AutoSaveManager
@@ -109,6 +109,9 @@ class BaseEditorMixin:
             logger.debug(f"[{label}] set_dirty({dirty}) ignored - no item loaded")
             return
 
+        if dirty:
+            self._edit_revision = getattr(self, "_edit_revision", 0) + 1
+
         if self._is_dirty != dirty:
             self._is_dirty = dirty
             self.dirty_changed.emit(dirty)
@@ -124,6 +127,54 @@ class BaseEditorMixin:
             # A draft stays dirty across keystrokes; each edit extends the
             # debounce rather than saving midway through continuous typing.
             self.autosave_manager.start_timer()
+
+    def reset_draft_tracking(self) -> None:
+        """Start a new local revision sequence after deliberate hydration."""
+        self._draft_generation = getattr(self, "_draft_generation", 0) + 1
+        self._edit_revision = 0
+        self._persisted_revision = 0
+        self._pending_save_revision: int | None = None
+
+    @property
+    def edit_revision(self) -> int:
+        """Return the current local editor revision."""
+        return getattr(self, "_edit_revision", 0)
+
+    @property
+    def draft_generation(self) -> int:
+        """Identify this hydration session independently of its edit revision."""
+        return getattr(self, "_draft_generation", 0)
+
+    @property
+    def save_pending(self) -> bool:
+        """Return whether this editor has an unacknowledged save."""
+        return getattr(self, "_pending_save_revision", None) is not None
+
+    def begin_save(self) -> int | None:
+        """Capture the current revision once for an asynchronous save."""
+        if self.save_pending:
+            return None
+        revision = self.edit_revision
+        self._pending_save_revision = revision
+        self.autosave_manager.stop_timer()
+        return revision
+
+    def finish_save(self, revision: int, success: bool) -> bool:
+        """Acknowledge a save without declaring newer local edits persisted."""
+        if getattr(self, "_pending_save_revision", None) != revision:
+            return False
+        self._pending_save_revision = None
+        if success:
+            self._persisted_revision = max(
+                getattr(self, "_persisted_revision", 0), revision
+            )
+            if self.edit_revision == revision:
+                self.set_dirty(False)
+                return True
+            self.autosave_manager.start_timer()
+        else:
+            self.autosave_manager.stop_timer()
+        return False
 
     def has_unsaved_changes(self) -> bool:
         """Returns True if the editor has unsaved changes."""
@@ -158,21 +209,23 @@ class BaseEditorMixin:
                 if k not in base_attrs:
                     base_attrs[k] = v
 
-    def _save_desc_cursor_state(self) -> Tuple[int, bool]:
-        """Save the description editor's cursor position and focus state.
+    def _save_desc_cursor_state(self) -> Tuple[int, int, bool]:
+        """Save the description editor's selection and focus state.
 
         Returns:
-            Tuple of (cursor_position, had_focus).
+            Tuple of (selection_anchor, cursor_position, had_focus).
 
         """
         if hasattr(self, "desc_edit") and hasattr(self.desc_edit, "editor"):
-            cursor_pos = self.desc_edit.editor.textCursor().position()
+            cursor = self.desc_edit.editor.textCursor()
             had_focus = self.desc_edit.editor.hasFocus()
-            return cursor_pos, had_focus
-        return 0, False
+            return cursor.anchor(), cursor.position(), had_focus
+        return 0, 0, False
 
-    def _restore_desc_cursor_state(self, cursor_pos: int, had_focus: bool) -> None:
-        """Restore the description editor's cursor position and focus.
+    def _restore_desc_cursor_state(
+        self, anchor: int, cursor_pos: int, had_focus: bool
+    ) -> None:
+        """Restore the description editor's selection and focus.
 
         The cursor position is always restored so that a setHtml call inside
         the reload path (which resets the cursor to 0) never silently discards
@@ -180,6 +233,7 @@ class BaseEditorMixin:
         the editor actually had keyboard focus before the reload.
 
         Args:
+            anchor: Selection anchor to restore.
             cursor_pos: Cursor position to restore.
             had_focus: Whether the description editor had focus before reload.
 
@@ -187,7 +241,10 @@ class BaseEditorMixin:
         if hasattr(self, "desc_edit") and hasattr(self.desc_edit, "editor"):
             text_len = len(self.desc_edit.editor.toPlainText())
             cursor = self.desc_edit.editor.textCursor()
-            cursor.setPosition(min(cursor_pos, text_len))
+            cursor.setPosition(min(anchor, text_len))
+            cursor.setPosition(
+                min(cursor_pos, text_len), QTextCursor.MoveMode.KeepAnchor
+            )
             self.desc_edit.editor.setTextCursor(cursor)
             if had_focus:
                 self.desc_edit.editor.setFocus()

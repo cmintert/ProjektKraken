@@ -170,6 +170,25 @@ def test_event_desc_cursor_preserved_without_focus_on_reload(qtbot, event_editor
     assert inner.textCursor().position() == 6
 
 
+def test_entity_reload_preserves_selection_anchor(qtbot, entity_editor):
+    """A detail refresh must not collapse the author's selected passage."""
+    from PySide6.QtGui import QTextCursor
+
+    from src.core.entities import Entity
+
+    entity = Entity(id="e1", name="Ent", type="Character", description="Hello world")
+    entity_editor.load_entity(entity)
+    inner = entity_editor.desc_edit.editor
+    cursor = inner.textCursor()
+    cursor.setPosition(2)
+    cursor.setPosition(7, QTextCursor.MoveMode.KeepAnchor)
+    inner.setTextCursor(cursor)
+
+    entity_editor.load_entity(entity)
+
+    assert inner.textCursor().anchor() == 2
+    assert inner.textCursor().position() == 7
+
 def test_event_desc_cursor_preserved_with_focus_on_reload(qtbot, event_editor):
     """Cursor is restored for EventEditorWidget (had_focus=True path).
 

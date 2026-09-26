@@ -155,6 +155,82 @@ def test_temporal_save_emits_field_patch_instead_of_returning_to_current(editor,
     assert blocker.args[0]["lore_time"] == 12.0
 
 
+def test_temporal_save_refresh_keeps_newer_prose_and_cursor(editor, qtbot):
+    """A completed save advances temporal state without replacing newer prose."""
+    from PySide6.QtGui import QTextCursor
+
+    entity = Entity(id="entity-1", name="Harbor", type="Location")
+    editor.load_entity(entity)
+    state = {
+        "entity_id": entity.id,
+        "description": "Old harbor",
+        "attributes": {},
+        "description_source": {"kind": "baseline"},
+        "attribute_sources": {},
+    }
+    editor.display_temporal_state(entity.id, state, playhead_time=12.0)
+    inner = editor.desc_edit.editor
+    inner.moveCursor(QTextCursor.MoveOperation.End)
+    inner.insertPlainText(" rebuilt")
+    with qtbot.waitSignal(editor.temporal_save_requested) as request:
+        editor._on_autosave()
+    revision = request.args[0]["__editor_revision"]
+    inner.insertPlainText(" again")
+    position = inner.textCursor().position()
+
+    editor.finish_temporal_save(True)
+    editor.display_temporal_state(
+        entity.id, {**state, "description": "Old harbor rebuilt"},
+        playhead_time=12.0,
+    )
+
+    assert editor.edit_revision > revision
+    assert editor.has_unsaved_changes()
+    assert inner.toPlainText() == "Old harbor rebuilt again"
+    assert inner.textCursor().position() == position
+    assert editor._temporal_state["description"] == "Old harbor rebuilt"
+
+
+def test_temporal_save_refresh_does_not_rebuild_acknowledged_document(
+    editor, qtbot
+):
+    """The save response must preserve selection and the live undo stack."""
+    from PySide6.QtGui import QTextCursor
+
+    entity = Entity(id="entity-1", name="Harbor", type="Location")
+    editor.load_entity(entity)
+    state = {
+        "entity_id": entity.id,
+        "description": "Old harbor",
+        "attributes": {},
+        "description_source": {"kind": "baseline"},
+        "attribute_sources": {},
+    }
+    editor.display_temporal_state(entity.id, state, playhead_time=12.0)
+    inner = editor.desc_edit.editor
+    inner.moveCursor(QTextCursor.MoveOperation.End)
+    inner.insertPlainText(" rebuilt")
+    with qtbot.waitSignal(editor.temporal_save_requested):
+        editor._on_autosave()
+    editor.finish_temporal_save(True)
+    cursor = inner.textCursor()
+    cursor.setPosition(4)
+    cursor.setPosition(9, QTextCursor.MoveMode.KeepAnchor)
+    inner.setTextCursor(cursor)
+    before = (cursor.anchor(), cursor.position())
+    assert inner.document().isUndoAvailable()
+
+    editor.display_temporal_state(
+        entity.id, {**state, "description": "Old harbor rebuilt"},
+        playhead_time=12.0,
+    )
+
+    after = inner.textCursor()
+    assert (after.anchor(), after.position()) == before
+    assert inner.toPlainText() == "Old harbor rebuilt"
+    assert inner.document().isUndoAvailable()
+
+
 def test_temporal_sheet_edit_autosaves_only_the_sourced_attribute(editor, qtbot):
     entity = Entity(
         id="entity-1",

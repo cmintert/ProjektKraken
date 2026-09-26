@@ -16,6 +16,10 @@
 - The full suite, including coverage, runs nightly, on beta tags, and when
   manually dispatched. Run it before approving a release.
 
+For public beta approval, verify the
+[Wiki Editor Beta Release Gate](wiki-editor-beta-release-gate.md) against the
+release candidate and record the lifecycle test and manual-check evidence.
+
 Do not use `not slow` as a CI suite selector. It means every test that has not
 been explicitly marked slow, not a bounded fast suite.
 

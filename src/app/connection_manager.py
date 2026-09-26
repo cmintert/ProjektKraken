@@ -582,7 +582,7 @@ class ConnectionManager:
             (
                 timeline,
                 "event_selected",
-                self.window.data_coordinator.load_event_details,
+                self.window.navigation_coordinator.on_timeline_event_selected,
                 "Timeline",
             ),
             (

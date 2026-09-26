@@ -85,11 +85,11 @@ class TimeCoordinator(BaseCoordinator):
         if old_time == current_time:
             self.on_playhead_changed(current_time)
 
-    def resolve_selected_entity(self) -> None:
+    def resolve_selected_entity(self, *, after_save: bool = False) -> None:
         """Resolve the selected entity at the actual playhead, including today."""
         editor = self.main_window.entity_editor
         entity_id = editor.current_entity_id
-        if entity_id is None or editor.has_unsaved_changes():
+        if entity_id is None or (editor.has_unsaved_changes() and not after_save):
             return
         time = float(self.main_window.timeline.get_playhead_time())
         self._current_playhead_time = time
@@ -106,9 +106,15 @@ class TimeCoordinator(BaseCoordinator):
         """Follow a deferred scrub or refresh the saved state."""
         target = self._follow_after_save
         self._follow_after_save = None
+        editor = self.main_window.entity_editor
+        if editor.has_unsaved_changes() and editor._temporal_time is not None:
+            self.main_window.timeline.set_playhead_time(editor._temporal_time)
+            self._current_playhead_time = editor._temporal_time
+            self.resolve_selected_entity(after_save=True)
+            return
         if target is not None:
             self._current_playhead_time = target
-        self.resolve_selected_entity()
+        self.resolve_selected_entity(after_save=True)
 
     def _format_time_string(self, time_val: float) -> str:
         """Formats time using calendar converter if available."""

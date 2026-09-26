@@ -39,6 +39,10 @@ Pull requests run the smoke and `ci_fast` suites. The full, coverage-enabled
 regression suite runs nightly, on beta tags, and on manual dispatch; run that
 workflow before approving a release.
 
+Before approving a public beta, also complete the
+[Wiki Editor Beta Release Gate](wiki-editor-beta-release-gate.md). A known
+authoring-continuity or link-identity failure blocks release even if CI passes.
+
 On Windows, set `QT_QPA_PLATFORM=offscreen` for GUI tests.
 
 ## Project layout

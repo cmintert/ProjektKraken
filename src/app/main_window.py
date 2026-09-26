@@ -834,11 +834,6 @@ class MainWindow(QMainWindow):
         # Restore Selection (delegated)
         self.navigation_coordinator.restore_last_selection()
 
-        # Connect Timeline Selection (Sync to Global)
-        self.timeline.event_selected.connect(
-            lambda eid: self.navigation_coordinator.on_item_selected("event", eid)
-        )
-
         logger.debug("Initialization complete")
 
     def _restore_window_state(self) -> None:

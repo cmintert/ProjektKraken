@@ -1,4 +1,5 @@
 import pytest
+from PySide6.QtGui import QTextCursor
 
 from src.core.events import Event
 from src.gui.widgets.event_editor import EventEditorWidget
@@ -30,6 +31,44 @@ def test_load_event(editor):
     assert editor.name_edit.text() == "Test Event"
     assert editor.temporal_widget.get_start() == 500.0
     assert editor.isEnabled() is True
+
+
+def test_save_acknowledgement_does_not_clear_newer_event_draft(editor, qtbot):
+    """An older successful save must leave later typing in the live document."""
+    ev = Event(id="event-1", name="Event", lore_date=0.0, description="Start")
+    editor.load_event(ev)
+    inner = editor.desc_edit.editor
+    inner.moveCursor(QTextCursor.MoveOperation.End)
+    inner.insertPlainText(" one")
+    with qtbot.waitSignal(editor.save_requested) as request:
+        editor._on_save()
+    revision = request.args[0]["__editor_revision"]
+    assert editor.has_unsaved_changes()
+    inner.insertPlainText(" two")
+    newer_revision = editor.edit_revision
+
+    assert newer_revision > revision
+    assert not editor.finish_save(revision, True)
+    assert editor.has_unsaved_changes()
+    assert inner.toPlainText() == "Start one two"
+
+    with qtbot.waitSignal(editor.save_requested) as next_request:
+        editor._on_save()
+    assert next_request.args[0]["__editor_revision"] == newer_revision
+    assert editor.finish_save(newer_revision, True)
+    assert not editor.has_unsaved_changes()
+
+
+def test_failed_event_save_keeps_draft_dirty(editor, qtbot):
+    ev = Event(id="event-1", name="Event", lore_date=0.0, description="Start")
+    editor.load_event(ev)
+    editor.desc_edit.editor.insertPlainText(" more")
+    with qtbot.waitSignal(editor.save_requested) as request:
+        editor._on_save()
+    revision = request.args[0]["__editor_revision"]
+
+    assert not editor.finish_save(revision, False)
+    assert editor.has_unsaved_changes()
 
 
 def test_save_clicked(editor, qtbot):

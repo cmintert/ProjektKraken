@@ -56,6 +56,32 @@ def coordinator(fake_window):
     return coord
 
 
+def test_old_editor_generation_cannot_acknowledge_reopened_item(
+    coordinator, fake_window
+):
+    """A result from an earlier visit to an item cannot clear its new draft."""
+    from src.core.command import CommandResult
+
+    commands = []
+    fake_window.command_requested.connect(commands.append)
+    coordinator.update_event(
+        {"id": "event-1", "__editor_revision": 1, "__editor_generation": 3}
+    )
+    command = commands[-1]
+    fake_window.event_editor.current_event_id = "event-1"
+    fake_window.event_editor.draft_generation = 4
+
+    coordinator.on_temporal_command_result(
+        CommandResult(
+            success=True,
+            command_name="UpdateEventCommand",
+            data={"command_id": command.command_id},
+        )
+    )
+
+    fake_window.event_editor.finish_save.assert_not_called()
+
+
 class TestCreateOperations:
     """Tests for create event/entity operations."""
 
@@ -337,7 +363,7 @@ class TestEditorState:
 
     @patch("src.app.coordinators.editor_coordinator.QMessageBox")
     def test_check_unsaved_save(self, mock_msgbox, coordinator, fake_window):
-        """User clicking Save returns True and triggers save."""
+        """An async save starts but the context switch remains blocked."""
         from PySide6.QtWidgets import QMessageBox
 
         fake_window.event_editor.has_unsaved_changes.return_value = True
@@ -346,7 +372,7 @@ class TestEditorState:
 
         result = coordinator.check_unsaved_changes(fake_window.event_editor)
 
-        assert result is True
+        assert result is False
         fake_window.event_editor._on_save.assert_called_once()
 
     @patch("src.app.coordinators.editor_coordinator.QMessageBox")

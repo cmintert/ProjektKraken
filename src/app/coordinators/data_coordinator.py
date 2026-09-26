@@ -72,6 +72,8 @@ class DataCoordinator(BaseCoordinator):
         self._entity_detail_id: str | None = None
         self._event_relation_ids: set[str] = set()
         self._entity_relation_ids: set[str] = set()
+        self._event_detail_requests: list[tuple[str, bool]] = []
+        self._entity_detail_requests: list[tuple[str, bool]] = []
 
         # Semantic completion debounce
         self._pending_semantic_prefix: str = ""
@@ -161,6 +163,10 @@ class DataCoordinator(BaseCoordinator):
             event_id: The ID of the event to load.
 
         """
+        editor = self.main_window.event_editor
+        self._event_detail_requests.append(
+            (event_id, editor.current_event_id == event_id and editor.save_pending)
+        )
         invoke_queued(
             self.main_window.worker,
             "load_event_details",
@@ -174,6 +180,10 @@ class DataCoordinator(BaseCoordinator):
             entity_id: The ID of the entity to load.
 
         """
+        editor = self.main_window.entity_editor
+        self._entity_detail_requests.append(
+            (entity_id, editor.current_entity_id == entity_id and editor.save_pending)
+        )
         invoke_queued(
             self.main_window.worker,
             "load_entity_details",
@@ -338,10 +348,32 @@ class DataCoordinator(BaseCoordinator):
 
         """
         self._event_detail_id = event.id if isinstance(event, Event) else None
+        preserve_document = bool(
+            self._event_detail_requests
+            and self._event_detail_requests.pop(0)
+            == (self._event_detail_id, True)
+        )
+        navigation = getattr(self.main_window, "navigation_coordinator", None)
+        if (
+            navigation is not None
+            and navigation.selected_type == "event"
+            and self._event_detail_id is not None
+            and navigation.selected_id != self._event_detail_id
+        ):
+            return
+        editor = self.main_window.event_editor
+        if (
+            editor.current_event_id == self._event_detail_id
+            and (editor.has_unsaved_changes() or editor.save_pending)
+        ):
+            return
         self._event_relation_ids = self._relation_endpoint_ids(relations, incoming)
+        if preserve_document and editor.current_event_id == self._event_detail_id:
+            editor._load_event_relations(relations, incoming)
+            return
         map_widget = getattr(self.main_window, "map_widget", None)
         maps_data = map_widget.maps_data if map_widget is not None else []
-        self.main_window.event_editor.load_event(
+        editor.load_event(
             cast("Event | None", event), relations, incoming, maps_data=maps_data
         )
 
@@ -358,11 +390,32 @@ class DataCoordinator(BaseCoordinator):
 
         """
         self._entity_detail_id = entity.id if isinstance(entity, Entity) else None
+        preserve_document = bool(
+            self._entity_detail_requests
+            and self._entity_detail_requests.pop(0)
+            == (self._entity_detail_id, True)
+        )
+        navigation = getattr(self.main_window, "navigation_coordinator", None)
+        if (
+            navigation is not None
+            and navigation.selected_type == "entity"
+            and self._entity_detail_id is not None
+            and navigation.selected_id != self._entity_detail_id
+        ):
+            return
         self._entity_relation_ids = self._relation_endpoint_ids(relations, incoming)
         map_widget = getattr(self.main_window, "map_widget", None)
         maps_data = map_widget.maps_data if map_widget is not None else []
         editor = self.main_window.entity_editor
-        if editor.current_entity_id == self._entity_detail_id and editor.has_unsaved_changes():
+        if editor.current_entity_id == self._entity_detail_id and (
+            editor.has_unsaved_changes() or editor.save_pending
+        ):
+            return
+        if preserve_document and editor.current_entity_id == self._entity_detail_id:
+            editor._load_entity_relations(relations, incoming)
+            time_coordinator = getattr(self.main_window, "time_coordinator", None)
+            if time_coordinator is not None:
+                time_coordinator.resolve_selected_entity()
             return
         editor.load_entity(
             cast("Entity | None", entity), relations, incoming, maps_data=maps_data

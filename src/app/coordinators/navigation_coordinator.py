@@ -40,6 +40,8 @@ class NavigationCoordinator(BaseCoordinator):
         # State
         self._last_selected_id: Optional[str] = None
         self._last_selected_type: Optional[str] = None
+        self._pending_navigation: tuple[str, str, str, str, int] | None = None
+        self._save_signal_connected = False
 
         # Delayed Selection State
         self._pending_selection: Optional[tuple[str, str]] = None
@@ -71,23 +73,18 @@ class NavigationCoordinator(BaseCoordinator):
         if item_id == self._last_selected_id and item_type == self._last_selected_type:
             return
 
-        # 3. Check for unsaved changes before switching context
-        # Determine target editor to check
-        target_editor = (
-            self.main_window.event_editor
-            if item_type == "event"
-            else self.main_window.entity_editor
-        )
-        if not self.main_window.check_unsaved_changes(target_editor):
+        if self._pending_navigation is not None:
+            self._restore_selection()
             return
 
-        # 4. Perform Selection & UI Updates
+        if not self._guard_navigation(item_type, item_id):
+            return
+
         logger.debug(f"[NavigationCoordinator] Global selection: {item_type}/{item_id}")
 
         self._last_selected_id = item_id
         self._last_selected_type = item_type
 
-        # Update Settings
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         settings.setValue(SETTINGS_LAST_ITEM_ID_KEY, item_id)
         settings.setValue(SETTINGS_LAST_ITEM_TYPE_KEY, item_type)
@@ -95,19 +92,108 @@ class NavigationCoordinator(BaseCoordinator):
         if item_type == "event":
             self.main_window.workspace.show_panel("event")
             self.main_window.data_coordinator.load_event_details(item_id)
-            # Sync Timeline (Focus and Select)
             self.main_window.timeline.focus_event(item_id)
-
         elif item_type == "entity":
             self.main_window.workspace.show_panel("entity")
             self.main_window.data_coordinator.load_entity_details(item_id)
 
-        # 5. Sync Project Explorer (Unified List)
-        # This ensures the list highlights the item even if selected via Graph/Link
         self.main_window.unified_list.select_item(item_type, item_id)
 
-        # 6. Sync Graph (Focus Node)
-        # self.main_window.graph_widget.focus_node(item_id)
+    def _guard_navigation(self, item_type: str, item_id: str) -> bool:
+        """Protect every draft that a destination selection would abandon."""
+        candidates: list[tuple[str, Any]] = []
+        if self._last_selected_type in {"event", "entity"}:
+            source = self._editor_for(self._last_selected_type)
+            candidates.append((self._last_selected_type, source))
+        if item_type in {"event", "entity"}:
+            target = self._editor_for(item_type)
+            current_id = (
+                target.current_event_id if item_type == "event"
+                else target.current_entity_id
+            )
+            if current_id != item_id and all(target is not e for _, e in candidates):
+                candidates.append((item_type, target))
+        for editor_type, editor in candidates:
+            if not editor.has_unsaved_changes():
+                continue
+            reply = QMessageBox.warning(
+                self.main_window,
+                "Unsaved Changes",
+                f"You have unsaved changes in the {editor_type.title()} Editor.\n"
+                "Do you want to save them before proceeding?",
+                QMessageBox.StandardButton.Save
+                | QMessageBox.StandardButton.Discard
+                | QMessageBox.StandardButton.Cancel,
+            )
+            if reply == QMessageBox.StandardButton.Cancel:
+                self._restore_selection()
+                return False
+            if reply == QMessageBox.StandardButton.Discard:
+                editor.set_dirty(False)
+                if editor_type != item_type:
+                    editor._on_discard()
+                continue
+            if reply != QMessageBox.StandardButton.Save:
+                self._restore_selection()
+                return False
+            if not self._save_signal_connected:
+                self.main_window.editor_coordinator.editor_save_finished.connect(
+                    self._on_navigation_save_finished
+                )
+                self._save_signal_connected = True
+            editor._on_save()
+            revision = getattr(editor, "_pending_save_revision", None)
+            current_id = (
+                editor.current_event_id if editor_type == "event"
+                else editor.current_entity_id
+            )
+            if revision is None or current_id is None:
+                self._restore_selection()
+                return False
+            self._pending_navigation = (
+                item_type, item_id, editor_type, current_id, revision
+            )
+            self._restore_selection()
+            return False
+        return True
+
+    def _editor_for(self, item_type: str) -> Any:
+        """Return the editor that owns one authoring context."""
+        return (
+            self.main_window.event_editor
+            if item_type == "event"
+            else self.main_window.entity_editor
+        )
+
+    def _restore_selection(self) -> None:
+        """Undo a visual selection made before navigation was approved."""
+        if self._last_selected_type and self._last_selected_id:
+            self.main_window.unified_list.select_item(
+                self._last_selected_type, self._last_selected_id
+            )
+            if self._last_selected_type == "event":
+                self.main_window.timeline.focus_event(self._last_selected_id)
+            else:
+                self.main_window.timeline.clear_event_selection()
+
+    @Slot(str)
+    def on_timeline_event_selected(self, event_id: str) -> None:
+        """Route timeline clicks through guarded global selection."""
+        self.set_global_selection("event", event_id)
+
+    @Slot(str, str, int, bool)
+    def _on_navigation_save_finished(
+        self, item_type: str, item_id: str, revision: int, complete: bool
+    ) -> None:
+        """Continue only after the exact source draft was persisted."""
+        pending = self._pending_navigation
+        if pending is None or pending[2:] != (item_type, item_id, revision):
+            return
+        self._pending_navigation = None
+        if complete:
+            self.set_global_selection(pending[0], pending[1])
+        else:
+            self._restore_selection()
 
     @Slot(str)
     def navigate_to_entity(self, target: str) -> None:

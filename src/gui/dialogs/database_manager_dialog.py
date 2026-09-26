@@ -107,6 +107,27 @@ class DatabaseManagerDialog(QDialog):
         self.btn_select = QPushButton("Select && Restart")  # && escapes to &
         self.btn_close = QPushButton("Cancel")
 
+        self.btn_create.setToolTip("Create a new world in the default worlds folder.")
+        self.btn_add_folder.setToolTip(
+            "Register an existing complete world folder without moving it."
+        )
+        self.btn_open_folder.setToolTip(
+            "Open the selected world's folder, or the default worlds folder."
+        )
+        self.btn_link_external.setToolTip(
+            "Use a selected external .kraken database for the selected world."
+        )
+        self.btn_revoke_external.setToolTip(
+            "Remove approval for the selected world's external database."
+        )
+        self.btn_delete.setToolTip(
+            "Permanently delete the selected inactive world and its assets."
+        )
+        self.btn_select.setToolTip(
+            "Make the selected world active, then restart to open it."
+        )
+        self.btn_close.setToolTip("Close World Manager without changing worlds.")
+
         btn_layout.addWidget(self.btn_create)
         btn_layout.addWidget(self.btn_add_folder)
         btn_layout.addWidget(self.btn_open_folder)

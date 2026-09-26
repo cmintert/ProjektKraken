@@ -1,7 +1,7 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from PySide6.QtWidgets import QMainWindow
+from PySide6.QtWidgets import QMainWindow, QMessageBox
 
 from src.app.coordinators.navigation_coordinator import NavigationCoordinator
 from src.commands.event_commands import CreateEventCommand
@@ -13,6 +13,11 @@ class MockMainWindow(QMainWindow):
         self.workspace = Mock()
         self.event_editor = Mock()
         self.entity_editor = Mock()
+        self.event_editor.has_unsaved_changes.return_value = False
+        self.entity_editor.has_unsaved_changes.return_value = False
+        self.event_editor.current_event_id = None
+        self.entity_editor.current_entity_id = None
+        self.editor_coordinator = Mock()
         self.unified_list = Mock()
 
         # Mock methods
@@ -49,6 +54,47 @@ def test_delayed_selection(qtbot, mock_main_window):
     # Should be selected now
     assert coordinator._pending_selection is None
     assert coordinator.selected_id == "id_1"
+
+
+def test_cross_type_navigation_guards_dirty_source(mock_main_window):
+    coordinator = NavigationCoordinator(mock_main_window)
+    coordinator._last_selected_type = "event"
+    coordinator._last_selected_id = "event-1"
+    mock_main_window.event_editor.current_event_id = "event-1"
+    mock_main_window.event_editor.has_unsaved_changes.return_value = True
+
+    with patch(
+        "src.app.coordinators.navigation_coordinator.QMessageBox.warning",
+        return_value=QMessageBox.StandardButton.Cancel,
+    ):
+        coordinator.set_global_selection("entity", "entity-2")
+
+    mock_main_window.check_unsaved_changes.assert_not_called()
+    mock_main_window.load_entity_details.assert_not_called()
+    assert coordinator.selected_id == "event-1"
+
+
+def test_navigation_waits_for_exact_save_acknowledgement(mock_main_window):
+    coordinator = NavigationCoordinator(mock_main_window)
+    coordinator._last_selected_type = "event"
+    coordinator._last_selected_id = "event-1"
+    source = mock_main_window.event_editor
+    source.current_event_id = "event-1"
+    source.has_unsaved_changes.return_value = True
+    source._on_save.side_effect = lambda: setattr(source, "_pending_save_revision", 7)
+
+    with patch(
+        "src.app.coordinators.navigation_coordinator.QMessageBox.warning",
+        return_value=QMessageBox.StandardButton.Save,
+    ):
+        coordinator.set_global_selection("entity", "entity-2")
+
+    mock_main_window.load_entity_details.assert_not_called()
+    coordinator._on_navigation_save_finished("event", "event-1", 6, True)
+    mock_main_window.load_entity_details.assert_not_called()
+    source.has_unsaved_changes.return_value = False
+    coordinator._on_navigation_save_finished("event", "event-1", 7, True)
+    mock_main_window.load_entity_details.assert_called_once_with("entity-2")
 
 
 def test_selection_cancelled_by_drag(qtbot, mock_main_window):

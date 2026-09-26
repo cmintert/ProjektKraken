@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-09-22
-**Commit:** 1b4b7f92
+**Last Updated:** 2026-09-26
+**Commit:** 7a1433fb
 ---
 
 # Changelog
@@ -11,7 +11,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- *(2026-09-26)* **Documentation / Release**: Added a wiki editor beta gate
+  covering authoring continuity, link identity, Markdown, and documented gaps.
+
 ### Fixed
+
+- *(2026-09-26)* **World Manager / Usability**: Added explanatory tooltips to
+  world actions and regression coverage for their wording.
+- *(2026-09-24)* **Wiki editor / P0 reliability**: Kept live Event and Entity
+  drafts authoritative through asynchronous saves and temporal refreshes, guarded
+  timeline and cross-type navigation before replacing dirty editors, and added
+  revision-aware save acknowledgements, selection-preserving detail refreshes,
+  and lifecycle regressions.
 
 - *(2026-09-22)* **Workspace / Layout**: Added continuous theme-aware pane and
   workspace frames, rounded corner clearance for tabs, and 4 px hoverable

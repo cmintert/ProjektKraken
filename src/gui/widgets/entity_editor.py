@@ -11,7 +11,7 @@ from contextlib import suppress
 from typing import Any, Dict, Optional, cast
 
 from PySide6.QtCore import QObject, QPoint, QSize, Qt, Signal, Slot
-from PySide6.QtGui import QDropEvent
+from PySide6.QtGui import QDropEvent, QTextCursor
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
@@ -870,6 +870,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self._content_widget.hide()
             self.set_dirty(False)
             self.gallery.set_owner("", "")
+            self.reset_draft_tracking()
             self.clear_authoring_context()
             return
 
@@ -901,7 +902,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
             # Preserve scroll position and description cursor across reload
             scroll_pos = self.scroll_area.verticalScrollBar().value()
-            desc_cursor, desc_had_focus = self._save_desc_cursor_state()
+            desc_anchor, desc_cursor, desc_had_focus = self._save_desc_cursor_state()
 
             # Block signals
             self._set_input_signals_blocked(True)
@@ -933,8 +934,11 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self.set_dirty(False)
 
             # Restore scroll position and description cursor
+            self.reset_draft_tracking()
             self.scroll_area.verticalScrollBar().setValue(scroll_pos)
-            self._restore_desc_cursor_state(desc_cursor, desc_had_focus)
+            self._restore_desc_cursor_state(
+                desc_anchor, desc_cursor, desc_had_focus
+            )
         finally:
             self._is_loading = False
 
@@ -948,6 +952,21 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
     def current_entity_id(self) -> str | None:
         """Return the Entity currently shown by the editor."""
         return self._current_entity_id
+
+    def acknowledge_saved_snapshot(self, snapshot: dict) -> None:
+        """Advance comparison metadata without touching the live form."""
+        attributes = snapshot.get("attributes", {})
+        self._baseline_name = snapshot["name"]
+        self._baseline_type = snapshot["type"]
+        self._baseline_tags = list(snapshot.get("tags", []))
+        self._baseline_sheet_layout = attributes.get("_sheet_layout")
+        self._baseline_metadata_snapshot = {
+            "name": snapshot["name"],
+            "type": snapshot["type"],
+            "_tags": attributes.get("_tags"),
+            "_sheet_layout": attributes.get("_sheet_layout"),
+            "_summary_data": attributes.get("_summary_data"),
+        }
 
     def set_authoring_context_loading(self) -> None:
         """Show the Context tab's loading state."""
@@ -1180,11 +1199,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         before emitting, and a pending AI-generated summary (if any) is
         overlaid under ``"_summary_data"``.
 
-        Note:
-            The dirty flag is **not** cleared here.  It is cleared when the
-            saved entity is reloaded via :meth:`load_entity`, which avoids
-            race conditions between the signal-processing pipeline and the
-            reload cycle.
+        The dirty flag remains set until the matching command succeeds. Newer
+        edits made while that command runs remain dirty.
 
         """
         logger.info(
@@ -1197,6 +1213,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         if not self._current_entity_id:
             logger.warning("[EntityEditor] _on_save aborted - no current entity ID")
+            return
+        if self.save_pending:
             return
 
         try:
@@ -1232,16 +1250,15 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
                 f"'{entity_data['name']}' "
                 f"(id={entity_data['id']}, desc_len={len(entity_data['description'])})"
             )
+            revision = self.begin_save()
+            if revision is None:
+                return
+            entity_data["__editor_revision"] = revision
+            entity_data["__editor_generation"] = self.draft_generation
             self.save_requested.emit(entity_data)
 
-            # NOTE: We do NOT call set_dirty(False) here.
-            # The Save command triggers a reload of the entity data.
-            # load_entity() will be called, and THAT is where set_dirty(False) happens.
-            # This prevents race conditions where we clear dirty, but signals from
-            # widgets (processing the current data) fire before the reload completes.
             logger.debug(
-                "[EntityEditor] _on_save emitted signal. "
-                "Waiting for reload to clear dirty state."
+                "[EntityEditor] Awaiting save acknowledgement"
             )
 
         except Exception as e:
@@ -1525,15 +1542,31 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         """
         if entity_id != self._current_entity_id:
             return
-        if self._is_dirty or self._temporal_save_pending:
+        if self._temporal_save_pending or self.save_pending:
             return
+        if self._is_dirty:
+            # A post-save resolve advances the comparison snapshot while the
+            # author keeps typing in the live document.
+            if self._temporal_time == playhead_time:
+                self._temporal_state = state
+            return
+
+        same_temporal_context = (
+            self._is_temporal_view and self._temporal_time == playhead_time
+        )
+        description_changed = self.desc_edit.get_wiki_text() != state["description"]
+        cursor = self.desc_edit.editor.textCursor()
+        anchor, position = cursor.anchor(), cursor.position()
+        scroll = self.desc_edit.editor.verticalScrollBar().value()
+        had_focus = self.desc_edit.editor.hasFocus()
 
         self._is_loading = True
         self.desc_edit.blockSignals(True)
         self.attribute_editor.blockSignals(True)
         self.sheet_builder.blockSignals(True)
         try:
-            self.desc_edit.set_wiki_text(state["description"])
+            if not same_temporal_context or description_changed:
+                self.desc_edit.set_wiki_text(state["description"])
             self.attribute_editor.load_attributes(state["attributes"])
             display_attrs = {
                 key: value
@@ -1548,6 +1581,18 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self.attribute_editor.blockSignals(False)
             self.sheet_builder.blockSignals(False)
             self._is_loading = False
+        if not same_temporal_context or description_changed:
+            editor = self.desc_edit.editor
+            restored = editor.textCursor()
+            maximum = editor.document().characterCount() - 1
+            restored.setPosition(min(anchor, maximum))
+            restored.setPosition(
+                min(position, maximum), QTextCursor.MoveMode.KeepAnchor
+            )
+            editor.setTextCursor(restored)
+            editor.verticalScrollBar().setValue(scroll)
+            if had_focus:
+                editor.setFocus()
         self._temporal_state = state
         self._temporal_time = playhead_time
         self._displayed_sheet_layout = self.sheet_builder.get_layout()
@@ -1745,7 +1790,11 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         if not patches and not metadata:
             self.set_dirty(False)
             return
+        revision = self.begin_save()
+        if revision is None:
+            return
         self._temporal_save_pending = True
+        self._pending_temporal_metadata = metadata
         self.autosave_manager.stop_timer()
         self.temporal_save_requested.emit(
             {
@@ -1755,15 +1804,33 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
                 "patches": patches,
                 "metadata": metadata,
                 "expected_metadata": self._baseline_metadata_snapshot,
+                "__editor_revision": revision,
+                "__editor_generation": self.draft_generation,
             }
         )
 
     def finish_temporal_save(self, success: bool) -> None:
         """Keep failed drafts; allow successful ones to reload."""
         self._temporal_save_pending = False
+        revision = self._pending_save_revision
         if success:
             self._pending_new_description_event = None
-            self.set_dirty(False)
+            metadata = getattr(self, "_pending_temporal_metadata", {})
+            self._baseline_metadata_snapshot.update(
+                {key: metadata[key] for key in ("name", "type") if key in metadata}
+            )
+            self._baseline_metadata_snapshot.update(
+                metadata.get("hidden_attributes", {})
+            )
+            self._baseline_name = str(self._baseline_metadata_snapshot["name"])
+            self._baseline_type = str(self._baseline_metadata_snapshot["type"])
+            if "_tags" in self._baseline_metadata_snapshot:
+                self._baseline_tags = list(
+                    self._baseline_metadata_snapshot["_tags"] or []
+                )
+        self._pending_temporal_metadata = {}
+        if revision is not None:
+            self.finish_save(revision, success)
 
     def _populate_inject_menu(self) -> None:
         """Populate the Fast Inject menu with available actions.

@@ -1032,6 +1032,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             self._content_widget.hide()
             self.set_dirty(False)
             self.gallery.set_owner("", "")
+            self.reset_draft_tracking()
             self.authoring_context.clear_context()
             self.authoring_context_refresh_requested.emit()
             return
@@ -1046,7 +1047,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         try:
             # Preserve scroll position and description cursor across reload
             scroll_pos = self.scroll_area.verticalScrollBar().value()
-            desc_cursor, desc_had_focus = self._save_desc_cursor_state()
+            desc_anchor, desc_cursor, desc_had_focus = self._save_desc_cursor_state()
 
             # Block signals to prevent dirty trigger during load
             self.name_edit.blockSignals(True)
@@ -1068,12 +1069,15 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
             self.set_dirty(False)
             self._empty_state.hide()
+            self.reset_draft_tracking()
             self._content_widget.show()
             self.setEnabled(True)
 
             # Restore scroll position and description cursor
             self.scroll_area.verticalScrollBar().setValue(scroll_pos)
-            self._restore_desc_cursor_state(desc_cursor, desc_had_focus)
+            self._restore_desc_cursor_state(
+                desc_anchor, desc_cursor, desc_had_focus
+            )
         finally:
             self._is_loading = False
 
@@ -1328,6 +1332,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         if not self._current_event_id:
             logger.warning("[EventEditor] _on_save aborted - no current event ID")
             return
+        if self.save_pending:
+            return
         if not self.temporal_widget.commit_drafts():
             self._on_date_draft_changed(True)
             return
@@ -1364,11 +1370,13 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
                 f"[EventEditor] Emitting save_requested for event "
                 f"'{event_data['name']}' (id={event_data['id']})"
             )
+            revision = self.begin_save()
+            if revision is None:
+                return
+            event_data["__editor_revision"] = revision
+            event_data["__editor_generation"] = self.draft_generation
             self.save_requested.emit(event_data)
-
-            logger.debug("[EventEditor] About to call set_dirty(False) after emit")
-            self.set_dirty(False)
-            logger.debug("[EventEditor] _on_save completed successfully")
+            logger.debug("[EventEditor] Awaiting save acknowledgement")
 
         except Exception as e:
             logger.error(

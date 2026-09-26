@@ -19,6 +19,37 @@ def _select_world(dialog, world_path: Path) -> None:
     raise AssertionError(f"World row not found for {world_path}")
 
 
+def test_world_manager_actions_have_explanatory_tooltips(qtbot, tmp_path):
+    """Every crowded World Manager action explains its effect on hover."""
+    with patch(
+        "src.gui.dialogs.database_manager_dialog.ensure_worlds_directory",
+        return_value=tmp_path,
+    ):
+        dialog = DatabaseManagerDialog()
+        qtbot.addWidget(dialog)
+
+    assert dialog.btn_create.toolTip() == "Create a new world in the default worlds folder."
+    assert dialog.btn_add_folder.toolTip() == (
+        "Register an existing complete world folder without moving it."
+    )
+    assert dialog.btn_open_folder.toolTip() == (
+        "Open the selected world's folder, or the default worlds folder."
+    )
+    assert dialog.btn_link_external.toolTip() == (
+        "Use a selected external .kraken database for the selected world."
+    )
+    assert dialog.btn_revoke_external.toolTip() == (
+        "Remove approval for the selected world's external database."
+    )
+    assert dialog.btn_delete.toolTip() == (
+        "Permanently delete the selected inactive world and its assets."
+    )
+    assert dialog.btn_select.toolTip() == (
+        "Make the selected world active, then restart to open it."
+    )
+    assert dialog.btn_close.toolTip() == "Close World Manager without changing worlds."
+
+
 def test_add_complete_world_folder_from_registered_location(qtbot, tmp_path):
     """A complete world folder can be registered without moving its contents."""
     default_root = tmp_path / "default"
