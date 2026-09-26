@@ -19,8 +19,10 @@ candidate:
   semantics.
 - [ ] Unresolved wiki links can be saved and reopened without blocking the
   writer, even if full materialization is deferred.
-- [ ] Deliberate deferrals, including Peek, richer Markdown, and media, are
-  documented as product gaps with clear user-visible behavior.
+- [ ] Peek reads references without changing the active editor or selection and
+  follows the active theme.
+- [ ] Deliberate deferrals, including richer Markdown editing and media previews,
+  are documented as product gaps with clear user-visible behavior.
 
 Record the passing tests, manual checks, supported Markdown documentation, and
 known deferrals in the release review. A passing test suite alone does not

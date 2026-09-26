@@ -69,3 +69,29 @@ def test_clear_formatting_rich_mode(editor):
     view._clear_formatting()
     assert view.textCursor().charFormat().fontWeight() == QFont.Weight.Normal
     assert view.textCursor().charFormat().fontItalic() is False
+
+
+def test_body_action_preserves_wiki_link_identity(editor):
+    view = editor.editor
+    view.set_wiki_text("Before [[id:entity-1|**Alpha**]] after")
+    cursor = view.textCursor()
+    cursor.select(QTextCursor.SelectionType.Document)
+    view.setTextCursor(cursor)
+
+    view._clear_rich_formatting()
+
+    assert "[[id:entity-1|" in view.get_wiki_text()
+    assert "Alpha" in view.get_wiki_text()
+
+
+def test_manual_link_special_characters_round_trip(editor):
+    view = editor.editor
+    source = '[[A & <B> "C" \'D\' Ω]]'
+    view.setPlainText(source)
+    cursor = view.textCursor()
+    cursor.movePosition(QTextCursor.MoveOperation.End)
+    view.setTextCursor(cursor)
+
+    view._check_for_link_closure()
+
+    assert view.get_wiki_text() == source

@@ -102,6 +102,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
     remove_relation_requested = Signal(str)
     update_relation_requested = Signal(str, str, str, dict)
     link_clicked = Signal(str)
+    peek_requested = Signal(str)
     navigate_to_relation = Signal(str)
     navigate_to_map = Signal(str)
     dirty_changed = Signal(bool)
@@ -187,6 +188,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self.form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
         self.desc_edit = WikiTextEdit()
         self.desc_edit.link_clicked.connect(self.link_clicked.emit)
+        self.desc_edit.peek_requested.connect(self.peek_requested.emit)
         self.desc_edit.completion_prefix_changed.connect(
             self.completion_prefix_changed.emit
         )

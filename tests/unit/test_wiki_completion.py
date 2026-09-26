@@ -1,6 +1,7 @@
 from unittest.mock import Mock
 
 import pytest
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QTextCursor
 from PySide6.QtWidgets import QApplication, QCompleter
 
@@ -24,7 +25,8 @@ def test_completer_initialization(qapp):
 
     assert editor._completer is not None
     assert isinstance(editor._completer, QCompleter)
-    assert editor._completer.model().stringList() == names
+    model = editor._completer.model()
+    assert [model.item(row).text() for row in range(model.rowCount())] == names
 
 
 def test_completer_update(qapp):
@@ -36,10 +38,11 @@ def test_completer_update(qapp):
     names_v2 = ["Gandalf", "Bilbo"]
     editor.set_completer(names_v2)
 
-    assert editor._completer.model().stringList() == names_v2
+    model = editor._completer.model()
+    assert [model.item(row).text() for row in range(model.rowCount())] == names_v2
 
 
-def test_incremental_completion_preserves_model_and_duplicate_precedence(qapp):
+def test_incremental_completion_preserves_model_and_duplicate_identity(qapp):
     editor = WikiTextEdit()
     editor.set_completer(
         items=[
@@ -65,8 +68,16 @@ def test_incremental_completion_preserves_model_and_duplicate_precedence(qapp):
         ]
     )
     assert editor._completer.model() is model
-    assert model.stringList() == ["Alpha", "Alpha", "Beta"]
-    assert editor.editor._completion_map["Alpha"] == ("event-1", "event")
+    assert [model.item(row).text() for row in range(model.rowCount())] == [
+        "Alpha — Entity · entity-1",
+        "Alpha — Event · event-1",
+        "Beta",
+    ]
+    assert [model.item(row).data(Qt.ItemDataRole.UserRole) for row in range(2)] == [
+        ["entity-1", "Alpha", "entity"],
+        ["event-1", "Alpha", "event"],
+    ]
+    assert "Alpha" not in editor.editor._completion_map
 
     editor.apply_completion_effects(
         [
@@ -79,7 +90,10 @@ def test_incremental_completion_preserves_model_and_duplicate_precedence(qapp):
             }
         ]
     )
-    assert model.stringList() == ["Alpha", "Beta"]
+    assert [model.item(row).text() for row in range(model.rowCount())] == [
+        "Alpha",
+        "Beta",
+    ]
     assert editor.editor._completion_map["Alpha"] == ("entity-1", "entity")
 
 
@@ -128,17 +142,25 @@ def test_insert_completion_mid_sentence(qapp):
     editor.insert_completion("Mordor")
 
     result = editor.get_wiki_text()
-    # "Go to [[Mordor]] and fight." (plus nbsp maybe)
+    assert result == "Go to [[Mordor]] and fight."
+    assert "\u00a0" not in result
 
-    # insert_completion adds &nbsp; after link.
-    # So "Go to [[Mordor]] \xa0and fight." if cursor was in middle.
-    # But wait, we didn't insert text AFTER the link. The text " and fight." was already there.
-    # insert_completion inserts at cursor.
-    # Original: "Go to [[Gan| and fight." (cursor at |)
-    # We deleted "[[Gan". Inserted Anchor+Space.
-    # Result: "Go to Anchor Space and fight."
-    # get_wiki_text: "Go to [[Mordor]]  and fight." (Normal space + nbsp?)
 
-    # Let's simple check content
-    assert "[[Mordor]]" in result
-    assert "and fight" in result
+def test_duplicate_popup_rows_insert_their_own_ids(qapp):
+    editor = WikiTextEdit()
+    editor.set_completer(
+        items=[
+            ("entity-1", "Alpha", "entity"),
+            ("entity-2", "Alpha", "entity"),
+            ("event-1", "Alpha", "event"),
+        ]
+    )
+    model = editor._completer.model()
+    for row, item_id in enumerate(("entity-1", "entity-2", "event-1")):
+        editor.setPlainText("See [[Alp")
+        cursor = editor.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+        editor.setTextCursor(cursor)
+        editor._completer.setCompletionPrefix("Alp")
+        editor.editor.insert_completion_index(model.index(row, 0))
+        assert editor.get_wiki_text() == f"See [[id:{item_id}|Alpha]]"

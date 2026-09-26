@@ -254,7 +254,10 @@ class DataHandler(QObject):
                 )
 
         selection = result.data.get("select_after_apply")
-        if result.command_name in {"CreateEventCommand", "CreateEntityCommand"}:
+        if (
+            result.command_name in {"CreateEventCommand", "CreateEntityCommand"}
+            and selection is not False
+        ):
             selection = {
                 "object_type": effects[0]["object_type"],
                 "object_id": effects[0]["object_id"],

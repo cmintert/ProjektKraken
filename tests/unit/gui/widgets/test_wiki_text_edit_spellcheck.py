@@ -55,7 +55,7 @@ def _start_worker_without_network(view: WikiTextEditView) -> None:
     view._ensure_spell_check_worker()
     worker = view._lt_worker
     assert worker is not None
-    view._lt_check_requested.disconnect(worker.check)
+    view._lt_check_requested.disconnect(worker.check_revision)
 
 
 def _make_match(offset: int, length: int, **kw) -> LTMatch:
@@ -93,7 +93,9 @@ class TestTriggerGating:
         editor.editor._trigger_lt_check()
 
         assert len(emissions) == 1
-        text, language, username, api_key = emissions[0]
+        request_id, revision, text, language, username, api_key = emissions[0]
+        assert request_id > 0
+        assert revision == editor.editor.document().revision()
         assert "long enough" in text
         assert language == "en-US"
         assert username == ""
@@ -138,11 +140,29 @@ class TestTriggerGating:
         view._trigger_lt_check()
 
         assert len(emissions) == 1
-        sent_text = emissions[0][0]
-        # Raw WikiLink bracket syntax must not reach the service because the
-        # offsets it would return could not be mapped back onto the document.
+        sent_text = emissions[0][2]
+        # Markdown source offsets cannot be applied to the rendered document.
         assert "[[Gandalf" not in sent_text
         assert sent_text == view.toPlainText()
+
+
+def test_stale_spellcheck_result_and_suggestion_cannot_touch_new_text(
+    editor: WikiTextEdit,
+) -> None:
+    """Late offsets are ignored after an edit, including replacement actions."""
+    view = editor.editor
+    view.setPlainText("Hello wrld in this sentence")
+    view._lt_request_id = 7
+    view._lt_pending_text = view.toPlainText()
+    old_revision = view.document().revision()
+    match = _make_match(6, 4, replacements=["world"])
+    view.setPlainText("New Hello wrld in this sentence")
+
+    view._on_lt_results(7, old_revision, [match])
+    view._apply_lt_suggestion("world", match)
+
+    assert view.extraSelections() == []
+    assert view.toPlainText() == "New Hello wrld in this sentence"
 
 
 class TestApplyResults:
@@ -200,7 +220,7 @@ class TestIgnoreAndApply:
         view = editor.editor
         view.setPlainText("Hello wrld!")
         match = _make_match(6, 4, replacements=["world"])
-        view._lt_matches = [match]
+        view._apply_lt_results([match])
 
         view._apply_lt_suggestion("world", match)
 

@@ -1,5 +1,8 @@
 # Events, Entities, and Relations
 
+For the exact Markdown vocabulary, provisional links, and read-only Peek, see
+[Wiki editor Markdown and links](wiki-editor-markdown.md).
+
 ## What this does
 
 Events record what happens and when. Entities represent people, places,

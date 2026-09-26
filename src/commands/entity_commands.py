@@ -13,7 +13,9 @@ logger = logging.getLogger(__name__)
 class CreateEntityCommand(BaseCommand):
     """Command to create a new entity."""
 
-    def __init__(self, entity_data: Optional[dict] = None) -> None:
+    def __init__(
+        self, entity_data: Optional[dict] = None, *, select_after_create: bool = True
+    ) -> None:
         """Initializes the CreateEntityCommand.
 
         Args:
@@ -27,6 +29,7 @@ class CreateEntityCommand(BaseCommand):
         else:
             self._entity = Entity(name="New Entity", type="Concept")
         self.entity_id = self._entity.id
+        self.select_after_create = select_after_create
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Executes the command to create the entity.
@@ -55,6 +58,7 @@ class CreateEntityCommand(BaseCommand):
                 command_name="CreateEntityCommand",
                 data={
                     "id": self._entity.id,
+                    "select_after_apply": self.select_after_create,
                     "lore_effects": [
                         {
                             "object_type": "entity",
@@ -92,7 +96,11 @@ class CreateEntityCommand(BaseCommand):
         Returns:
             dict: Command data for persistence
         """
-        return {"entity": self._entity.to_dict(), "is_executed": self._is_executed}
+        return {
+            "entity": self._entity.to_dict(),
+            "is_executed": self._is_executed,
+            "select_after_create": self.select_after_create,
+        }
 
     @classmethod
     def from_dict(cls, data: dict) -> "CreateEntityCommand":
@@ -105,7 +113,10 @@ class CreateEntityCommand(BaseCommand):
             CreateEntityCommand: Reconstructed command
         """
         entity_data = data["entity"]
-        cmd = cls(entity_data)
+        cmd = cls(
+            entity_data,
+            select_after_create=data.get("select_after_create", True),
+        )
         cmd._is_executed = data.get("is_executed", False)
         return cmd
 

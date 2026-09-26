@@ -111,6 +111,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
     # ... (omitted)
 
     link_clicked = Signal(str)
+    peek_requested = Signal(str)
     navigate_to_relation = Signal(str)
     dirty_changed = Signal(bool)
     focus_writing_requested = Signal()
@@ -253,6 +254,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         """Build the temporal range and event description fields."""
         self.desc_edit = WikiTextEdit()
         self.desc_edit.link_clicked.connect(self.link_clicked.emit)
+        self.desc_edit.peek_requested.connect(self.peek_requested.emit)
         self.desc_edit.completion_prefix_changed.connect(
             self.completion_prefix_changed.emit
         )

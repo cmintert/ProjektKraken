@@ -5,12 +5,14 @@ A specialized QTextEdit that supports WikiLink navigation via Ctrl+Click.
 
 import logging
 import re
+from collections import Counter
+from html import escape
 from typing import Any, List, Optional, Tuple, cast
 
 import shiboken6
 from PySide6.QtCore import (
+    QModelIndex,
     QObject,
-    QStringListModel,
     Qt,
     QThread,
     QTimer,
@@ -26,6 +28,8 @@ from PySide6.QtGui import (
     QKeyEvent,
     QMouseEvent,
     QPaintEvent,
+    QStandardItem,
+    QStandardItemModel,
     QTextBlock,
     QTextBlockUserData,
     QTextCharFormat,
@@ -40,6 +44,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QFrame,
     QHBoxLayout,
+    QLabel,
     QMenu,
     QSizePolicy,
     QSplitter,
@@ -52,6 +57,7 @@ from PySide6.QtWidgets import (
 from src.core.command import LoreMutationEffect
 from src.core.theme_manager import ThemeManager
 from src.core.wiki_ast import CursorMapper, WikiASTParser, WikiASTSerializer
+from src.core.wiki_markdown_grammar import requires_source_mode
 from src.gui.constants import SEMANTIC_COMPLETION_MIN_PREFIX_LEN
 from src.gui.editor_typography import EditorTypography
 from src.gui.utils.suggestion_effects import apply_suggestion_effects
@@ -64,6 +70,7 @@ _HEADING_LEVEL_TWO = 2
 _HEADING_LEVEL_THREE = 3
 _WIKI_LINK_CLOSING_TOKEN_LENGTH = 2
 _MINIMUM_SPELLCHECK_TEXT_LENGTH = 15
+_COMPLETION_ROW_FIELDS = 3
 
 
 class SectionData(QTextBlockUserData):
@@ -144,10 +151,12 @@ class WikiTextEditView(QTextEdit):
     """
 
     link_clicked = Signal(str)  # Emits the target name (e.g. "Gandalf")
+    peek_requested = Signal(str)
     completion_prefix_changed = Signal(str)  # Emits prefix when >= 3 chars inside [[
+    view_mode_changed = Signal(str)
     _lt_check_requested = Signal(
-        str, str, str, str
-    )  # (text, language, username, api_key)
+        int, int, str, str, str, str
+    )  # (request ID, document revision, text, language, username, api key)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the WikiTextEdit.
@@ -160,6 +169,7 @@ class WikiTextEditView(QTextEdit):
         self._hovered_link = None
         self._completer: Optional[QCompleter] = None
         self._completion_map: dict[str, tuple[str, str]] = {}
+        self._completion_rows: list[tuple[str, str, str]] = []
         self._last_completion_prefix: str = ""
         self._link_resolver = None  # Will be set later
         self._section_manager = SectionManager(self.document())
@@ -300,6 +310,8 @@ class WikiTextEditView(QTextEdit):
             self.verticalScrollBar().setValue(old_scroll)
         else:
             # Source -> Rich: Set view mode and force re-render via set_wiki_text
+            if requires_source_mode(self.toPlainText()):
+                return
             self._view_mode = "rich"
 
             # Reset to standard theme font
@@ -331,6 +343,8 @@ class WikiTextEditView(QTextEdit):
 
             # Restore scroll position
             self.verticalScrollBar().setValue(old_scroll)
+
+        self.view_mode_changed.emit(self._view_mode)
 
     def set_link_resolver(self, link_resolver: Any) -> None:
         """Sets the link resolver for checking broken links.
@@ -377,36 +391,38 @@ class WikiTextEditView(QTextEdit):
 
         if items is not None:
             self._completion_items = list(items)
-            # Build completion map: name -> (id, type)
-            self._completion_map = {
-                name: (item_id, item_type) for item_id, name, item_type in items
-            }
-            display_names = [name for _, name, _ in items]
+            self._completion_rows = list(items)
+            self._completion_map = self._unique_completion_map(items)
 
             # Create set of lower-case names and IDs for validation
-            self._valid_targets_lower = {name.lower() for name in self._completion_map}
+            self._valid_targets_lower = {name.lower() for _, name, _ in items}
             self._valid_ids = {item_id for item_id, _, _ in items}
 
         elif names is not None:
             self._completion_items = []
+            self._completion_rows = [("", name, "") for name in names]
             # Legacy mode - no ID mapping
             self._completion_map = {}
-            display_names = names
             self._valid_targets_lower = {name.lower() for name in names}
             self._valid_ids = set()
         else:
             return
 
         if self._completer is None:
-            completer = QCompleter(display_names, self)
+            completer = QCompleter(self)
             completer.setWidget(self)
             completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
             completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-            completer.activated.connect(self.insert_completion)
+            # PySide exposes overload selection at runtime; its stub omits it.
+            completer.activated[QModelIndex].connect(  # type: ignore[index]
+                self.insert_completion_index
+            )
             self._completer = completer
-        else:
-            model = QStringListModel(display_names, self._completer)
+        model = self._completer.model()
+        if not isinstance(model, QStandardItemModel):
+            model = QStandardItemModel(self._completer)
             self._completer.setModel(model)
+        self._populate_completion_model(model)
 
         # Update link colors in-place to reflect new valid-target set.
         # Using _update_link_colors() avoids a full setHtml() re-render which
@@ -418,32 +434,16 @@ class WikiTextEditView(QTextEdit):
         """Update only changed completer rows and ID/name lookup state."""
         if self._completer is None or not hasattr(self, "_completion_items"):
             return
-        model = cast(QStringListModel, self._completer.model())
+        model = cast(QStandardItemModel, self._completer.model())
         items = self._completion_items
         for effect in effects:
-            old_row = next(
-                (i for i, item in enumerate(items) if item[0] == effect["object_id"]),
-                None,
-            )
-            if old_row is not None:
-                model.removeRows(old_row, 1)
-                items.pop(old_row)
-            updated = apply_suggestion_effects(items, [effect])
-            if len(updated) != len(items):
-                new_row = next(
-                    i
-                    for i, item in enumerate(updated)
-                    if item[0] == effect["object_id"]
-                )
-                model.insertRows(new_row, 1)
-                model.setData(model.index(new_row, 0), updated[new_row][1])
-            items = updated
+            items = apply_suggestion_effects(items, [effect])
         self._completion_items = items
-        self._completion_map = {
-            name: (item_id, item_type) for item_id, name, item_type in items
-        }
-        self._valid_targets_lower = {name.lower() for name in self._completion_map}
+        self._completion_rows = list(items)
+        self._completion_map = self._unique_completion_map(items)
+        self._valid_targets_lower = {name.lower() for _, name, _ in items}
         self._valid_ids = {item_id for item_id, _, _ in items}
+        self._populate_completion_model(model)
         if hasattr(self, "_view_mode") and self._view_mode == "rich":
             self._update_link_colors()
 
@@ -459,13 +459,38 @@ class WikiTextEditView(QTextEdit):
         """
         if not self._completer or not names:
             return
-        model = cast(QStringListModel, self._completer.model())
-        current = model.stringList()
+        model = cast(QStandardItemModel, self._completer.model())
+        current = [name for _, name, _ in self._completion_rows]
         existing = set(current)
         new_names = [n for n in names if n not in existing]
         if not new_names:
             return
-        self._completer.setModel(QStringListModel(current + new_names, self._completer))
+        self._completion_rows.extend(("", name, "") for name in new_names)
+        self._populate_completion_model(model)
+
+    @staticmethod
+    def _unique_completion_map(
+        items: list[tuple[str, str, str]],
+    ) -> dict[str, tuple[str, str]]:
+        """Expose a name lookup only when it has one stable identity."""
+        counts = Counter(name for _, name, _ in items)
+        return {
+            name: (item_id, item_type)
+            for item_id, name, item_type in items
+            if counts[name] == 1
+        }
+
+    def _populate_completion_model(self, model: QStandardItemModel) -> None:
+        """Keep the popup's visible rows and identity roles in sync."""
+        counts = Counter(name for _, name, _ in self._completion_rows)
+        model.clear()
+        for item_id, name, item_type in self._completion_rows:
+            label = name
+            if item_id and counts[name] > 1:
+                label = f"{name} — {item_type.title()} · {item_id[:8]}"
+            item = QStandardItem(label)
+            item.setData((item_id, name, item_type), Qt.ItemDataRole.UserRole)
+            model.appendRow(item)
 
     def _update_link_colors(self) -> None:
         """Update anchor link colors in-place without replacing the document.
@@ -516,6 +541,41 @@ class WikiTextEditView(QTextEdit):
                             )
                     it += 1
                 block = block.next()
+            self._apply_fragment_formats(updates)
+        finally:
+            self.blockSignals(was_blocked)
+
+    def _update_theme_colors(self) -> None:
+        """Recolor existing fragments without replacing text or link metadata."""
+        updates: list[tuple[int, int, QTextCharFormat]] = []
+        block = self.document().begin()
+        while block.isValid():
+            iterator = block.begin()
+            while not iterator.atEnd():
+                fragment = iterator.fragment()
+                if fragment.isValid():
+                    fmt = QTextCharFormat(fragment.charFormat())
+                    if fmt.isAnchor():
+                        target = fmt.anchorHref()
+                        check = target[3:] if target.startswith("id:") else target
+                        valid = (
+                            not hasattr(self, "_valid_targets_lower")
+                            or check.lower() in self._valid_targets_lower
+                            or check in self._valid_ids
+                        )
+                        color = (
+                            self._typography.link_color
+                            if valid
+                            else self._typography.broken_link_color
+                        )
+                    else:
+                        color = self._typography.text_color
+                    fmt.setForeground(QColor(color))
+                    updates.append((fragment.position(), fragment.length(), fmt))
+                iterator += 1
+            block = block.next()
+        was_blocked = self.blockSignals(True)
+        try:
             self._apply_fragment_formats(updates)
         finally:
             self.blockSignals(was_blocked)
@@ -733,9 +793,15 @@ class WikiTextEditView(QTextEdit):
         if text is None:
             text = ""
 
+        switched_to_source = requires_source_mode(text) and self._view_mode != "source"
+        if switched_to_source:
+            self._view_mode = "source"
+            self.setFont(QFont("Consolas", 10))
+            self.view_mode_changed.emit("source")
+
         # Check if text is identical to avoid unnecessary reload
         # This applies to BOTH Rich and Source modes.
-        if not force and self.get_wiki_text() == text:
+        if not force and not switched_to_source and self.get_wiki_text() == text:
             self._current_wiki_text = text
             return
 
@@ -796,13 +862,14 @@ class WikiTextEditView(QTextEdit):
             if not is_valid:
                 pass
 
+            href = escape(target, quote=True)
+            visible_label = escape(label)
             if is_valid:
-                return f"[{label}]({target})"
-            else:
-                return (
-                    f'<a href="{target}" style="color: '
-                    f'{self._typography.broken_link_color};">{label}</a>'
-                )
+                return f'<a href="{href}">{visible_label}</a>'
+            return (
+                f'<a href="{href}" style="color: '
+                f'{self._typography.broken_link_color};">{visible_label}</a>'
+            )
 
         md_text = pattern.sub(replace_link_md, text)
 
@@ -1017,7 +1084,24 @@ class WikiTextEditView(QTextEdit):
 
     @Slot(str)
     def insert_completion(self, completion: str) -> None:
-        """Inserts the selected completion as an HTML anchor."""
+        """Insert an unambiguous legacy completion by name."""
+        matches = [row for row in self._completion_rows if row[1] == completion]
+        if len(matches) != 1:
+            return
+        item_id, label, _ = matches[0]
+        self._insert_completion_target(label, item_id)
+
+    @Slot(QModelIndex)
+    def insert_completion_index(self, index: QModelIndex) -> None:
+        """Resolve the activated popup row's ID rather than its display text."""
+        row = index.data(Qt.ItemDataRole.UserRole)
+        if not isinstance(row, (tuple, list)) or len(row) != _COMPLETION_ROW_FIELDS:
+            return
+        item_id, label, _ = row
+        self._insert_completion_target(label, item_id)
+
+    def _insert_completion_target(self, label: str, item_id: str) -> None:
+        """Replace the typed token with a semantic anchor and clean spacing."""
         tc = self.textCursor()
         if not self._completer:
             return
@@ -1049,16 +1133,18 @@ class WikiTextEditView(QTextEdit):
                 2,
             )
 
-        # Resolve ID
-        item_id = None
-        if completion in self._completion_map:
-            item_id, item_type = self._completion_map[completion]
-
-        target = f"id:{item_id}" if item_id else completion
-        label = completion
-
-        # Insert Anchor
-        tc.insertHtml(f'<a href="{target}">{label}</a>&nbsp;')
+        target = f"id:{item_id}" if item_id else label
+        continuation = QTextCharFormat(tc.charFormat())
+        continuation.setAnchor(False)
+        continuation.setAnchorHref("")
+        link_format = QTextCharFormat(continuation)
+        link_format.setAnchor(True)
+        link_format.setAnchorHref(target)
+        tc.insertText(label, link_format)
+        next_char = str(self.document().characterAt(tc.position()))
+        if next_char.isalnum():
+            tc.insertText(" ", continuation)
+        tc.setCharFormat(continuation)
         self.setTextCursor(tc)
         self._refresh_document_layout()
 
@@ -1203,10 +1289,10 @@ class WikiTextEditView(QTextEdit):
         fmt.setFontPointSize(self._typography.body_size)
 
         if cursor.hasSelection():
-            cursor.setCharFormat(fmt)
+            cursor.mergeCharFormat(fmt)
         else:
             # If no selection, set for future typing
-            self.setCurrentCharFormat(fmt)
+            self.mergeCurrentCharFormat(fmt)
 
         self.setTextCursor(cursor)
 
@@ -1491,16 +1577,12 @@ class WikiTextEditView(QTextEdit):
         cursor.setPosition(abs_start)
         cursor.setPosition(abs_end, QTextCursor.MoveMode.KeepAnchor)
 
-        # Build the anchor HTML
-        if is_valid:
-            html = f'<a href="{target}">{label}</a>'
-        else:
-            html = (
-                f'<a href="{target}" style="color: '
-                f'{self._typography.broken_link_color};">{label}</a>'
-            )
-
-        cursor.insertHtml(html)
+        link_format = QTextCharFormat(continuation_format)
+        link_format.setAnchor(True)
+        link_format.setAnchorHref(target)
+        if not is_valid:
+            link_format.setForeground(QColor(self._typography.broken_link_color))
+        cursor.insertText(label, link_format)
         cursor.setCharFormat(continuation_format)
         self.setTextCursor(cursor)
         self._refresh_document_layout()
@@ -1665,14 +1747,18 @@ class WikiTextEditView(QTextEdit):
         """
         if (
             event.button() == Qt.MouseButton.LeftButton
-            and (event.modifiers() & Qt.KeyboardModifier.ControlModifier)
+            and event.modifiers()
+            & (Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.AltModifier)
             and (anchor := self.anchorAt(event.position().toPoint()))
         ):
             # Handle ID checking
             target = anchor.split("|")[0]
-            if target.startswith("id:"):
-                target = target[3:]
-            self.link_clicked.emit(target)
+            if event.modifiers() & Qt.KeyboardModifier.AltModifier:
+                self.peek_requested.emit(target)
+            else:
+                if target.startswith("id:"):
+                    target = target[3:]
+                self.link_clicked.emit(target)
             return
         super().mouseReleaseEvent(event)
 
@@ -1685,8 +1771,13 @@ class WikiTextEditView(QTextEdit):
         from PySide6.QtWidgets import QApplication
 
         self._lt_matches: list = []
+        self._lt_matches_revision: int | None = None
+        self._lt_checked_text = ""
+        self._lt_request_id = 0
+        self._lt_pending_text = ""
         self._lt_thread: Optional[QThread] = None
         self._lt_worker: Optional[QObject] = None
+        self.document().contentsChanged.connect(self.clear_spell_check)
 
         self._lt_timer = QTimer(self)
         self._lt_timer.setSingleShot(True)
@@ -1711,9 +1802,9 @@ class WikiTextEditView(QTextEdit):
         thread = QThread(self)
         worker = LanguageToolWorker()
         worker.moveToThread(thread)
-        worker.results_ready.connect(self._apply_lt_results)
+        worker.revision_results_ready.connect(self._on_lt_results)
         self._lt_check_requested.connect(
-            worker.check,
+            worker.check_revision,
             Qt.ConnectionType.QueuedConnection,
         )
         thread.finished.connect(worker.deleteLater)
@@ -1778,14 +1869,31 @@ class WikiTextEditView(QTextEdit):
             self.setExtraSelections([])
             return
         self._ensure_spell_check_worker()
+        self._lt_request_id += 1
+        revision = self.document().revision()
+        self._lt_pending_text = text
         self._lt_check_requested.emit(
+            self._lt_request_id,
+            revision,
             text,
             settings["language"],
             settings.get("username", ""),
             settings.get("api_key", ""),
         )
 
-    @Slot(list)
+    @Slot(int, int, list)
+    def _on_lt_results(
+        self, request_id: int, document_revision: int, matches: list
+    ) -> None:
+        """Discard delayed or reordered matches for a different document."""
+        if (
+            request_id != self._lt_request_id
+            or document_revision != self.document().revision()
+            or self._lt_pending_text != self.toPlainText()
+        ):
+            return
+        self._apply_lt_results(matches)
+
     def _apply_lt_results(self, matches: list) -> None:
         """Apply LanguageTool matches as wavy underline ExtraSelections.
 
@@ -1794,6 +1902,8 @@ class WikiTextEditView(QTextEdit):
 
         """
         self._lt_matches = matches
+        self._lt_matches_revision = self.document().revision()
+        self._lt_checked_text = self.toPlainText()
         tm = ThemeManager()
         theme = tm.get_theme()
         error_color = theme.get("error", "#e05252")
@@ -1816,6 +1926,8 @@ class WikiTextEditView(QTextEdit):
     def clear_spell_check(self) -> None:
         """Remove all spell check underlines and cached matches."""
         self._lt_matches = []
+        self._lt_matches_revision = None
+        self._lt_checked_text = ""
         self.setExtraSelections([])
 
     def contextMenuEvent(self, event: Any) -> None:
@@ -1826,6 +1938,7 @@ class WikiTextEditView(QTextEdit):
 
         """
         cursor_pos = self.cursorForPosition(event.pos()).position()
+        anchor = self.anchorAt(event.pos())
         hit = next(
             (
                 m
@@ -1836,10 +1949,14 @@ class WikiTextEditView(QTextEdit):
         )
 
         if not hit:
-            self._show_context_menu(
-                self.createStandardContextMenu(),
-                event.globalPos(),
-            )
+            menu = self.createStandardContextMenu()
+            if anchor:
+                menu.addSeparator()
+                menu.addAction(
+                    "Peek link (Alt+Click)",
+                    lambda: self.peek_requested.emit(anchor),
+                )
+            self._show_context_menu(menu, event.globalPos())
             return
 
         # Build a new menu: spell suggestions first, then standard items.
@@ -1856,6 +1973,13 @@ class WikiTextEditView(QTextEdit):
                 action.triggered.connect(
                     lambda _, s=suggestion, m=hit: self._apply_lt_suggestion(s, m)
                 )
+            menu.addSeparator()
+
+        if anchor:
+            menu.addAction(
+                "Peek link (Alt+Click)",
+                lambda: self.peek_requested.emit(anchor),
+            )
             menu.addSeparator()
 
         ignore_action = menu.addAction(f"Ignore ({hit.rule_id})")
@@ -1884,6 +2008,12 @@ class WikiTextEditView(QTextEdit):
             match: The LTMatch whose span should be replaced.
 
         """
+        if (
+            match not in self._lt_matches
+            or self._lt_matches_revision != self.document().revision()
+            or self._lt_checked_text != self.toPlainText()
+        ):
+            return
         cursor = QTextCursor(self.document())
         cursor.setPosition(match.offset)
         cursor.setPosition(match.offset + match.length, QTextCursor.MoveMode.KeepAnchor)
@@ -1902,9 +2032,7 @@ class WikiTextEditView(QTextEdit):
 
     @Slot(dict)
     def _on_theme_changed(self, theme_data: dict) -> None:
-        """Updates link color and text style when theme changes.
-
-        Re-renders the current content to apply new font sizes and colors.
+        """Apply theme colors without rebuilding the authoring document.
 
         Args:
             theme_data: Dictionary containing theme settings (unused,
@@ -1918,33 +2046,10 @@ class WikiTextEditView(QTextEdit):
         self._typography = EditorTypography.from_theme(theme_data)
         self._apply_widget_style()
 
-        # Rebuild from the live document. The source cache intentionally is not
-        # updated on every keystroke, so using it here can miss unsaved edits.
-        cursor = self.textCursor()
-        cursor_position = cursor.position()
-        cursor_anchor = cursor.anchor()
-        scroll_position = self.verticalScrollBar().value()
-
-        # Block signals to prevent textChanged from triggering dirty state
-        was_blocked = self.blockSignals(True)
-        try:
-            if self._view_mode == "rich" and not self.document().isEmpty():
-                self.set_wiki_text(self.get_wiki_text(), force=True)
-                restored_cursor = self.textCursor()
-                maximum_position = self.document().characterCount() - 1
-                restored_cursor.setPosition(min(cursor_anchor, maximum_position))
-                restored_cursor.setPosition(
-                    min(cursor_position, maximum_position),
-                    QTextCursor.MoveMode.KeepAnchor,
-                )
-                self.setTextCursor(restored_cursor)
-                self.verticalScrollBar().setValue(scroll_position)
-            else:
-                self._apply_theme_stylesheet()
-                self._refresh_document_layout()
-        finally:
-            if shiboken6.isValid(self):
-                self.blockSignals(was_blocked)
+        self._apply_theme_stylesheet()
+        if self._view_mode == "rich":
+            self._update_theme_colors()
+        self._refresh_document_layout()
 
 
 class SpellCheckSettingsDialog(QDialog):
@@ -2087,6 +2192,7 @@ class WikiTextEdit(QFrame):
     """
 
     link_clicked = Signal(str)
+    peek_requested = Signal(str)
     completion_prefix_changed = Signal(str)
     minimum_width_changed = Signal(int)
 
@@ -2118,6 +2224,12 @@ class WikiTextEdit(QFrame):
         self.toolbar.setFloatable(False)
         self._setup_toolbar()
         main_layout.addWidget(self.toolbar)
+        self.source_notice = QLabel(
+            "Exact Markdown source. Rich view requires the supported syntax only."
+        )
+        self.source_notice.setWordWrap(True)
+        self.source_notice.hide()
+        main_layout.addWidget(self.source_notice)
 
         # Content Container (TOC + Editor)
         content_container = QWidget(self)
@@ -2146,9 +2258,11 @@ class WikiTextEdit(QFrame):
 
         # Forward signals
         self.editor.link_clicked.connect(self.link_clicked.emit)
+        self.editor.peek_requested.connect(self.peek_requested.emit)
         self.editor.completion_prefix_changed.connect(
             self.completion_prefix_changed.emit
         )
+        self.editor.view_mode_changed.connect(self._sync_mode_action)
 
         # Expose textChanged signal directly from editor
         self.textChanged = self.editor.textChanged
@@ -2295,13 +2409,21 @@ class WikiTextEdit(QFrame):
     def _toggle_view_mode(self) -> None:
         """Proxy to toggle view mode and update toolbar button text."""
         self.editor.toggle_view_mode()
-        if self.editor._view_mode == "rich":
+        self._sync_mode_action(self.editor._view_mode)
+        self._apply_editor_width_limit()
+
+    def _sync_mode_action(self, mode: str) -> None:
+        """Explain when source mode protects richer Markdown from conversion."""
+        if mode == "rich":
             self.action_toggle_mode.setText("MD")
             self.action_toggle_mode.setToolTip("Switch to Markdown Source View")
         else:
             self.action_toggle_mode.setText("HTML")
-            self.action_toggle_mode.setToolTip("Switch to Rendered HTML View")
-        self._apply_editor_width_limit()
+            self.action_toggle_mode.setToolTip(
+                "Exact Markdown source. Rich view is available after removing "
+                "unsupported syntax."
+            )
+        self.source_notice.setVisible(mode == "source")
 
     def _apply_style(self) -> None:
         """Apply the current theme styling to the widget."""

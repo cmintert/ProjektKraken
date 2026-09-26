@@ -3,11 +3,9 @@
 import logging
 from typing import TYPE_CHECKING, Any, Optional
 
-if TYPE_CHECKING:
-    from src.app.main_window import MainWindow
-
+import shiboken6
 from PySide6.QtCore import QSettings, Slot
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QApplication, QMessageBox, QWidget
 
 from src.app.constants import (
     NAVIGATION_SELECTION_DELAY_MS,
@@ -19,6 +17,9 @@ from src.app.constants import (
 from src.app.coordinators.base_coordinator import BaseCoordinator
 from src.commands.entity_commands import CreateEntityCommand
 from src.commands.event_commands import CreateEventCommand
+
+if TYPE_CHECKING:
+    from src.app.main_window import MainWindow
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,10 @@ class NavigationCoordinator(BaseCoordinator):
         self._last_selected_type: Optional[str] = None
         self._pending_navigation: tuple[str, str, str, str, int] | None = None
         self._save_signal_connected = False
+        self._peek_origin: QWidget | None = None
+        self._peek_current_target: str | None = None
+        self._peek_previous_right_panel: str | None = None
+        self._peek_right_was_visible = False
 
         # Delayed Selection State
         self._pending_selection: Optional[tuple[str, str]] = None
@@ -51,6 +56,107 @@ class NavigationCoordinator(BaseCoordinator):
         self._selection_timer.setSingleShot(True)
         self._selection_timer.setInterval(NAVIGATION_SELECTION_DELAY_MS)
         self._selection_timer.timeout.connect(self._perform_delayed_selection)
+
+    def bind_peek_panel(self, panel: Any) -> None:
+        """Wire reference lookup without changing global selection."""
+        self.main_window.event_editor.peek_requested.connect(self.peek_target)
+        self.main_window.entity_editor.peek_requested.connect(self.peek_target)
+        panel.open_requested.connect(self._open_peek_target)
+        panel.create_requested.connect(self._materialize_provisional)
+        panel.close_requested.connect(self.close_peek)
+        self.main_window.data_coordinator.lore_mutation_applied.connect(
+            self._refresh_peek_after_lore_mutation
+        )
+
+    @Slot(str)
+    def peek_target(self, target: str) -> None:
+        """Show a read-only reference beside the current draft."""
+        workspace = self.main_window.workspace
+        panel = self.main_window.wiki_peek_panel
+        if self._peek_current_target is None:
+            self._peek_origin = QApplication.focusWidget()
+            self._peek_previous_right_panel = workspace.active_panel("right")
+            self._peek_right_was_visible = workspace.zone_visible("right")
+        self._peek_current_target = target
+
+        normalized = target[3:] if target.lower().startswith("id:") else target
+        entities = self.main_window.data_coordinator.cached_entities
+        events = self.main_window.data_coordinator.cached_events
+        matches: list[tuple[str, Any]] = []
+        for item_type, collection in (("entity", entities), ("event", events)):
+            for item in collection:
+                if item.id == normalized or (
+                    item.name.casefold() == normalized.casefold()
+                    and not target.lower().startswith("id:")
+                ):
+                    matches.append((item_type, item))
+
+        if len(matches) == 1:
+            item_type, item = matches[0]
+            panel.show_object(item_type, item.id, item.name, item.description)
+        elif matches:
+            panel.show_ambiguous(
+                target,
+                [(kind, item.id, item.name) for kind, item in matches],
+            )
+        elif target.lower().startswith("id:"):
+            panel.show_broken_id(normalized)
+        else:
+            panel.show_provisional(target)
+        workspace.show_panel("wiki_peek")
+
+    @Slot(str, str, str)
+    def _refresh_peek_after_lore_mutation(
+        self, _item_type: str, _item_id: str, _operation: str
+    ) -> None:
+        """Resolve a provisional or changed target after cache reconciliation."""
+        target = self._peek_current_target
+        if (
+            target is not None
+            and self.main_window.workspace.active_panel("right") == "wiki_peek"
+        ):
+            self.peek_target(target)
+
+    @Slot()
+    def close_peek(self) -> None:
+        """Return to the prior side pane and source editor focus."""
+        workspace = self.main_window.workspace
+        if (
+            self._peek_previous_right_panel
+            and self._peek_previous_right_panel != "wiki_peek"
+        ):
+            workspace.show_panel(self._peek_previous_right_panel)
+        if not self._peek_right_was_visible or not self._peek_previous_right_panel:
+            workspace.hide_zone("right")
+        origin = self._peek_origin
+        self._peek_origin = None
+        self._peek_current_target = None
+        self._peek_previous_right_panel = None
+        if origin is not None and shiboken6.isValid(origin):
+            origin.setFocus()
+
+    @Slot(str, str)
+    def _open_peek_target(self, item_type: str, item_id: str) -> None:
+        """Escalate deliberately from read-only lookup to guarded editing."""
+        self.set_global_selection(item_type, item_id)
+
+    @Slot(str, str)
+    def _materialize_provisional(self, item_type: str, name: str) -> None:
+        """Create a referenced object as one undoable command in place."""
+        command: CreateEntityCommand | CreateEventCommand
+        if item_type == "entity":
+            command = self.main_window.editor_coordinator._create_entity_command(
+                {"name": name, "type": "Concept"}
+            )
+        else:
+            command = self.main_window.editor_coordinator._create_event_command(
+                {
+                    "name": name,
+                    "lore_date": float(self.main_window.timeline.get_playhead_time()),
+                }
+            )
+        command.select_after_create = False
+        self.main_window.command_requested.emit(command)
 
     @Slot(str, str)
     def set_global_selection(self, item_type: str, item_id: str) -> None:
@@ -241,47 +347,22 @@ class NavigationCoordinator(BaseCoordinator):
                 self.set_global_selection("event", event.id)
                 return
 
-            # ID not found - broken link
-            QMessageBox.warning(
-                self.main_window,
-                "Broken Link",
-                f"The linked item (ID: {target[:8]}...) no longer exists.\n\n"
-                "This link may have been broken because:\n"
-                "• The item was deleted\n"
-                "• The link was created in a different world/database\n"
-                "• Data corruption occurred\n\n"
-                "To fix:\n"
-                "1. Remove or update the broken link\n"
-                "2. Search for the item by name in the Unified List\n"
-                "3. Create a new link to the correct item",
-            )
+            self.peek_target(f"id:{target}")
         else:
-            # Name-based navigation (legacy) - case-insensitive match
-            if entity := next(
-                (
-                    e
-                    for e in self.main_window.data_coordinator.cached_entities
-                    if e.name.lower() == target.lower()
-                ),
-                None,
-            ):
-                self.set_global_selection("entity", entity.id)
-                return
-
-            # Also check events for name-based links
-            if event := next(
-                (
-                    e
-                    for e in self.main_window.data_coordinator.cached_events
-                    if e.name.lower() == target.lower()
-                ),
-                None,
-            ):
-                self.set_global_selection("event", event.id)
-                return
-
-            # Name not found - Prompt for Creation
-            self._prompt_create_missing_target(target)
+            matches = [
+                (kind, item)
+                for kind, collection in (
+                    ("entity", self.main_window.data_coordinator.cached_entities),
+                    ("event", self.main_window.data_coordinator.cached_events),
+                )
+                for item in collection
+                if item.name.casefold() == target.casefold()
+            ]
+            if len(matches) == 1:
+                kind, item = matches[0]
+                self.set_global_selection(kind, item.id)
+            else:
+                self.peek_target(target)
 
     @property
     def selected_id(self) -> Optional[str]:
@@ -359,61 +440,3 @@ class NavigationCoordinator(BaseCoordinator):
         if last_id and last_type:
             logger.debug(f"Restoring last selection: {last_type}/{last_id}")
             self.set_global_selection(last_type, last_id)
-
-    def _prompt_create_missing_target(self, target_name: str) -> None:
-        """Prompts the user to create a missing entity or event from a broken link."""
-        msg = QMessageBox(self.main_window)
-        msg.setWindowTitle("Target Not Found")
-        msg.setText(f"Item '{target_name}' does not exist.")
-        msg.setInformativeText("Would you like to create it?")
-
-        btn_entity = msg.addButton("Create Entity", QMessageBox.ButtonRole.AcceptRole)
-        btn_event = msg.addButton("Create Event", QMessageBox.ButtonRole.AcceptRole)
-        msg.addButton(QMessageBox.StandardButton.Cancel)
-
-        msg.exec()
-
-        clicked = msg.clickedButton()
-
-        if clicked == btn_entity:
-            # Create Entity
-            if not self.main_window.check_unsaved_changes(
-                self.main_window.entity_editor
-            ):
-                return
-
-            # Use target name as default
-            app_coordinator = getattr(self.main_window, "app_coordinator", None)
-            context = getattr(app_coordinator, "context_tags", None)
-            entity_data: dict[str, Any] = {
-                "name": target_name,
-                "type": "Concept",
-            }
-            entity_command = (
-                context.create_entity_command(entity_data)
-                if context
-                else CreateEntityCommand(entity_data)
-            )
-            self.main_window.command_requested.emit(entity_command)
-
-        elif clicked == btn_event:
-            # Create Event
-            if not self.main_window.check_unsaved_changes(
-                self.main_window.event_editor
-            ):
-                return
-
-            app_coordinator = getattr(self.main_window, "app_coordinator", None)
-            context = getattr(app_coordinator, "context_tags", None)
-            event_data: dict[str, Any] = {
-                "name": target_name,
-                "lore_date": float(
-                    self.main_window.timeline.get_playhead_time()
-                ),
-            }
-            event_command = (
-                context.create_event_command(event_data)
-                if context
-                else CreateEventCommand(event_data)
-            )
-            self.main_window.command_requested.emit(event_command)

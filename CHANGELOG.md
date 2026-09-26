@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-09-26
-**Commit:** 7a1433fb
+**Commit:** bf319f54
 ---
 
 # Changelog
@@ -13,11 +13,21 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-09-26)* **Wiki editor / P1**: Added identity-safe completion for
+  duplicate names, exact Markdown Source fallback with round-trip coverage,
+  unresolved-link creation actions, and a read-only, theme-aware Peek pane.
 - *(2026-09-26)* **Documentation / Release**: Added a wiki editor beta gate
   covering authoring continuity, link identity, Markdown, and documented gaps.
+- *(2026-09-26)* **Testing / Wiki editor**: Added regression coverage for link
+  identity, Markdown persistence and export, Peek theming and navigation, and
+  stale spell-check responses.
 
 ### Fixed
 
+- *(2026-09-26)* **Wiki editor / P1-P2**: Preserved wiki-link targets through
+  Body formatting, inserted links without HTML interpolation or nonbreaking
+  spaces, and rejected stale LanguageTool results and suggestions without
+  replacing live prose during theme or completion refreshes.
 - *(2026-09-26)* **World Manager / Usability**: Added explanatory tooltips to
   world actions and regression coverage for their wording.
 - *(2026-09-24)* **Wiki editor / P0 reliability**: Kept live Event and Entity

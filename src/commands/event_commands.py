@@ -21,7 +21,9 @@ logger = logging.getLogger(__name__)
 class CreateEventCommand(BaseCommand):
     """Command to create a new event."""
 
-    def __init__(self, event_data: Optional[dict] = None) -> None:
+    def __init__(
+        self, event_data: Optional[dict] = None, *, select_after_create: bool = True
+    ) -> None:
         """Initializes the CreateEventCommand.
 
         Args:
@@ -40,6 +42,7 @@ class CreateEventCommand(BaseCommand):
             self.event = Event(name="New Event", lore_date=0.0)
 
         self.event_id = self.event.id
+        self.select_after_create = select_after_create
         self._previous_state = None
 
     def get_description(self) -> str:
@@ -76,6 +79,7 @@ class CreateEventCommand(BaseCommand):
                 command_name="CreateEventCommand",
                 data={
                     "id": self.event.id,
+                    "select_after_apply": self.select_after_create,
                     "lore_effects": [
                         {
                             "object_type": "event",
@@ -115,7 +119,11 @@ class CreateEventCommand(BaseCommand):
         Returns:
             dict: Command data for persistence
         """
-        return {"event": self.event.to_dict(), "is_executed": self._is_executed}
+        return {
+            "event": self.event.to_dict(),
+            "is_executed": self._is_executed,
+            "select_after_create": self.select_after_create,
+        }
 
     @classmethod
     def from_dict(cls, data: dict) -> "CreateEventCommand":
@@ -128,7 +136,10 @@ class CreateEventCommand(BaseCommand):
             CreateEventCommand: Reconstructed command
         """
         event_data = data["event"]
-        cmd = cls(event_data)
+        cmd = cls(
+            event_data,
+            select_after_create=data.get("select_after_create", True),
+        )
         cmd._is_executed = data.get("is_executed", False)
         return cmd
 

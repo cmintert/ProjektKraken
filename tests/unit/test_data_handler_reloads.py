@@ -39,6 +39,24 @@ def test_on_command_finished_rename_layer_emits_reloads(data_handler):
     data_handler.reload_markers_for_current_map.emit.assert_called_once()
 
 
+def test_provisional_create_refreshes_without_selecting(data_handler, db_service):
+    """Inline materialization must leave the author's selection untouched."""
+    command = CreateEntityCommand(
+        {"id": "provisional-1", "name": "Grey Ford", "type": "Concept"},
+        select_after_create=False,
+    )
+    result = command.execute(db_service)
+    selected = []
+    data_handler.selection_requested.connect(lambda *args: selected.append(args))
+
+    data_handler.on_command_finished(result)
+
+    assert selected == []
+    assert command.to_dict()["select_after_create"] is False
+    command.undo(db_service)
+    assert db_service.get_entity("provisional-1") is None
+
+
 def test_create_marker_reloads_exact_affected_map(data_handler):
     """Point-marker creation refreshes its map without current-map inference."""
     data_handler.reload_markers = MagicMock()

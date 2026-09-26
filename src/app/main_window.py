@@ -73,6 +73,7 @@ from src.gui.widgets.longform import LongformEditorWidget
 from src.gui.widgets.map_widget import MapWidget
 from src.gui.widgets.timeline import TimelineWidget
 from src.gui.widgets.unified_list import UnifiedListWidget
+from src.gui.widgets.wiki_peek_panel import WikiPeekPanel
 from src.gui.workspace import WorkspaceShell
 
 if TYPE_CHECKING:
@@ -577,6 +578,7 @@ class MainWindow(QMainWindow):
 
         # Install one real central workspace around the existing feature widgets.
         self.workspace = WorkspaceShell(self)
+        self.wiki_peek_panel = WikiPeekPanel(self)
         self.workspace_shell = self.workspace
         self.setCentralWidget(self.workspace)
         self.workspace.register_panel(
@@ -640,12 +642,19 @@ class MainWindow(QMainWindow):
             "right",
         )
         self.workspace.register_panel(
+            "wiki_peek",
+            "Wiki Peek",
+            self.wiki_peek_panel,
+            "right",
+        )
+        self.workspace.register_panel(
             "history",
             "History",
             self.history_panel,
             "bottom",
         )
         self.workspace.reset_layout()
+        self.navigation_coordinator.bind_peek_panel(self.wiki_peek_panel)
 
         self.ui_manager = UIManager(self)
 

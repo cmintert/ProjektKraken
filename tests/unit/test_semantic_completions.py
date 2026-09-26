@@ -64,12 +64,16 @@ def worker(monkeypatch):
 class TestMergeCompletions:
     """Tests for WikiTextEditView.merge_completions."""
 
+    @staticmethod
+    def _names(editor_view):
+        model = editor_view._completer.model()
+        return [model.item(row).text() for row in range(model.rowCount())]
+
     def test_appends_new_names(self, editor_view):
         """Semantic names are appended to the existing completer model."""
         editor_view.merge_completions(["Aragorn", "Legolas"])
 
-        model = editor_view._completer.model()
-        names = model.stringList()
+        names = self._names(editor_view)
         assert "Gandalf" in names
         assert "Frodo" in names
         assert "Sauron" in names
@@ -80,8 +84,7 @@ class TestMergeCompletions:
         """Names already in the completer are not added again."""
         editor_view.merge_completions(["Gandalf", "Aragorn"])
 
-        model = editor_view._completer.model()
-        names = model.stringList()
+        names = self._names(editor_view)
         assert names.count("Gandalf") == 1
         assert "Aragorn" in names
 
@@ -94,18 +97,18 @@ class TestMergeCompletions:
 
     def test_noop_with_empty_list(self, editor_view):
         """Empty list doesn't change the model."""
-        model_before = editor_view._completer.model().stringList()
+        model_before = self._names(editor_view)
         editor_view.merge_completions([])
-        model_after = editor_view._completer.model().stringList()
+        model_after = self._names(editor_view)
         assert model_before == model_after
 
     def test_set_completer_resets_merged(self, editor_view):
         """Calling set_completer after merge replaces everything (no stale data)."""
         editor_view.merge_completions(["Aragorn"])
-        assert "Aragorn" in editor_view._completer.model().stringList()
+        assert "Aragorn" in self._names(editor_view)
 
         editor_view.set_completer(names=["Bilbo"])
-        names = editor_view._completer.model().stringList()
+        names = self._names(editor_view)
         assert names == ["Bilbo"]
         assert "Aragorn" not in names
 
@@ -122,7 +125,7 @@ class TestWikiTextEditWrapperProxy:
         """merge_completions on wrapper delegates to inner editor."""
         editor.merge_completions(["Aragorn"])
         model = editor.editor._completer.model()
-        assert "Aragorn" in model.stringList()
+        assert "Aragorn" in [model.item(row).text() for row in range(model.rowCount())]
 
     def test_completion_prefix_changed_signal_exists(self, editor):
         """WikiTextEdit wrapper exposes completion_prefix_changed signal."""

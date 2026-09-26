@@ -76,6 +76,7 @@ class LanguageToolWorker(QObject):
     """
 
     results_ready = Signal(list)
+    revision_results_ready = Signal(int, int, list)
 
     def __init__(self) -> None:
         """Initialize the worker."""
@@ -84,7 +85,13 @@ class LanguageToolWorker(QObject):
 
     @Slot(str, str, str, str)
     def check(
-        self, text: str, language: str, username: str = "", api_key: str = ""
+        self,
+        text: str,
+        language: str,
+        username: str = "",
+        api_key: str = "",
+        request_id: int = -1,
+        document_revision: int = -1,
     ) -> None:
         """Check text for spelling and grammar errors.
 
@@ -99,7 +106,7 @@ class LanguageToolWorker(QObject):
 
         """
         if not text.strip():
-            self.results_ready.emit([])
+            self._emit_results([], request_id, document_revision)
             return
 
         # Enforce the public-API 20 KB-per-request size limit.
@@ -121,17 +128,41 @@ class LanguageToolWorker(QObject):
 
             data = response.json()
             matches = [self._parse_match(m) for m in data.get("matches", [])]
-            self.results_ready.emit(matches)
+            self._emit_results(matches, request_id, document_revision)
 
         except requests.exceptions.RequestException as e:
             logger.debug(f"LanguageTool check failed (connection): {e}")
-            self.results_ready.emit([])
+            self._emit_results([], request_id, document_revision)
         except json.JSONDecodeError as e:
             logger.debug(f"LanguageTool check failed (JSON parse): {e}")
-            self.results_ready.emit([])
+            self._emit_results([], request_id, document_revision)
         except Exception as e:
             logger.debug(f"LanguageTool check failed (unexpected): {e}")
-            self.results_ready.emit([])
+            self._emit_results([], request_id, document_revision)
+
+    @Slot(int, int, str, str, str, str)
+    def check_revision(
+        self,
+        request_id: int,
+        document_revision: int,
+        text: str,
+        language: str,
+        username: str,
+        api_key: str,
+    ) -> None:
+        """Carry the editor request identity through the worker response."""
+        self.check(
+            text, language, username, api_key,
+            request_id=request_id, document_revision=document_revision,
+        )
+
+    def _emit_results(
+        self, matches: list[LTMatch], request_id: int, document_revision: int
+    ) -> None:
+        """Emit legacy and revision-aware results from one completed request."""
+        self.results_ready.emit(matches)
+        if request_id >= 0:
+            self.revision_results_ready.emit(request_id, document_revision, matches)
 
     @staticmethod
     def _parse_match(raw: dict) -> LTMatch:
