@@ -786,6 +786,59 @@ class ImportService:
         existing.modified_at = time.time()
         return existing
 
+    def _preserve_temporal_input(
+        self, data: Dict[str, Any], *, dry_run: bool = False
+    ) -> Dict[str, Any]:
+        """Keep text assertions and require explicit meaning for imported ranges."""
+        value = data.get("lore_date")
+        attributes = data.get("attributes") or {}
+        if not isinstance(value, str) or "_temporal_v2" in attributes:
+            return data
+        config = self._db.get_active_calendar_config()
+        needs_calendar = not isinstance(config, CalendarConfig)
+        if needs_calendar:
+            config = CalendarConfig.create_default()
+            config.is_active = True
+        assert isinstance(config, CalendarConfig)
+        parser = DateParser(config)
+        end_expression = None
+        try:
+            expression = parser.parse_expression(value)
+        except ValueError:
+            try:
+                start, end = parser.parse_range_expressions(value)
+            except ValueError:
+                return data
+            meaning = data.get("range_meaning")
+            if meaning == "duration":
+                expression, end_expression = start, end
+            elif meaning == "occurrence":
+                expression = parser.parse_expression(
+                    f"between {start.display_text(parser.converter)} and {end.display_text(parser.converter)}"
+                )
+            else:
+                raise ValueError(
+                    "Ambiguous date range: supply range_meaning as 'occurrence' or 'duration'."
+                )
+        metadata = {"schema": 1, "expression": expression.to_dict()}
+        duration = data.get("lore_duration", 0.0)
+        if end_expression:
+            metadata["end_expression"] = end_expression.to_dict()
+            duration = end_expression.representative_time(
+                parser.converter
+            ) - expression.representative_time(parser.converter)
+            if duration < 0:
+                raise ValueError("Event end must not precede its start")
+        projected_start = expression.representative_time(parser.converter)
+        if needs_calendar and not dry_run:
+            self._db.insert_calendar_config(config)
+        return {
+            **data,
+            "lore_date": projected_start,
+            "lore_duration": duration,
+            "attributes": {**attributes, "_temporal_v2": metadata},
+        }
+
     def _import_single_event_internal(  # noqa: C901
         self,
         data: Dict[str, Any],
@@ -806,6 +859,9 @@ class ImportService:
 
         """
         options = options or {}
+        data = self._preserve_temporal_input(
+            data, dry_run=bool(options.get("dry_run", False))
+        )
         mode = options.get("mode", "update").lower()
         dry_run = options.get("dry_run", False)
         source_name = options.get("source_name", "import")

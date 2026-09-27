@@ -542,6 +542,68 @@ class CalendarConverter:
         # Cache for year start positions (year -> absolute_day)
         self._year_cache: Dict[int, float] = {}
 
+    def start_of_year(self, year: int) -> float:
+        """Return the first coordinate of a calendar year."""
+        return self.to_float(CalendarDate(year, 1, 1))
+
+    def start_of_next_year(self, year: int) -> float:
+        """Advance by this calendar's actual year length, including variants."""
+        return self.start_of_year(year) + self._config.get_year_length(year)
+
+    def start_of_month(self, year: int, month: int) -> float:
+        """Return the first coordinate of a validated calendar month."""
+        return self.start_of_day(year, month, 1)
+
+    def start_of_next_month(self, year: int, month: int) -> float:
+        """Advance by the active year's actual month length."""
+        start = self.start_of_month(year, month)
+        return start + self._config.get_months_for_year(year)[month - 1].days
+
+    def start_of_day(self, year: int, month: int, day: int) -> float:
+        """Validate components instead of silently normalizing impossible dates."""
+        months = self._config.get_months_for_year(year)
+        if not 1 <= month <= len(months):
+            raise ValueError("Month is not present in this calendar year")
+        if not 1 <= day <= months[month - 1].days:
+            raise ValueError("Day is not present in this calendar month")
+        return self.to_float(CalendarDate(year, month, day))
+
+    def start_of_next_day(self, year: int, month: int, day: int) -> float:
+        """Return the exclusive end of a validated day."""
+        return self.start_of_day(year, month, day) + 1.0
+
+    def resolve_precision_bounds(self, expression: Any) -> tuple[float, float]:
+        """Expand supplied components using custom-calendar period lengths."""
+        components = ("year", "month", "day", "hour", "minute", "second")
+        precision = expression.precision.value
+        index = components.index(precision)
+        for component in components[: index + 1]:
+            if getattr(expression, component) is None:
+                raise ValueError(f"Missing {component} for {precision} precision")
+        for component in components[index + 1 :]:
+            if getattr(expression, component) is not None:
+                raise ValueError(f"Unexpected {component} for {precision} precision")
+        year = expression.year
+        if precision == "year":
+            return self.start_of_year(year), self.start_of_next_year(year)
+        month = expression.month
+        if precision == "month":
+            return self.start_of_month(year, month), self.start_of_next_month(
+                year, month
+            )
+        start = self.start_of_day(year, month, expression.day)
+        for component, limit in (("hour", 24), ("minute", 60), ("second", 60)):
+            value = getattr(expression, component)
+            if value is not None and not 0 <= value < limit:
+                raise ValueError(f"Invalid {component}")
+        start += (
+            (expression.hour or 0) * 3600
+            + (expression.minute or 0) * 60
+            + (expression.second or 0)
+        ) / 86400
+        width = {"day": 1.0, "hour": 1 / 24, "minute": 1 / 1440, "second": 1 / 86400}
+        return start, start + width[precision]
+
     def to_float(self, date: CalendarDate) -> float:
         """Converts a structured date to an absolute day float.
 

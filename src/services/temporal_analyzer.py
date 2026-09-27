@@ -125,11 +125,20 @@ class TemporalAnalyzer:
 
         gaps, dated = self._detect_timeline_gaps(events)
         conflicts = self._detect_temporal_conflicts(relations, events)
+        conflicts.extend(self._detect_constraint_conflicts(events))
+        from src.services.temporal_conflict_service import exclusive_role_conflicts
+
+        conflicts.extend(
+            exclusive_role_conflicts(relations, events, self._date_parser.converter)
+        )
 
         # Pre-build event date map once; reused by lifespan check to avoid
         # calling _coerce_date O(entities × events) times.
         event_dates: dict[str, float | None] = {
-            e.id: self._coerce_date(e.lore_date) for e in events
+            e.id: self._coerce_date(e.lore_date)
+            if "_temporal_v2" not in e.attributes
+            else None
+            for e in events
         }
         lifespans, lifespan_conflicts = self._analyze_character_lifespans(
             entities,
@@ -192,7 +201,18 @@ class TemporalAnalyzer:
         gaps: list[TimelineGap] = []
 
         for (date_a, ev_a), (date_b, ev_b) in zip(dated, dated[1:]):
-            duration = date_b - date_a
+            from src.core.temporal_anchors import resolve_event_anchors
+
+            bounds = resolve_event_anchors(
+                [ev_a, ev_b], self._date_parser.converter if self._date_parser else None
+            )
+            end_a, start_b = (
+                bounds[f"event:{ev_a.id}"].hard_end,
+                bounds[f"event:{ev_b.id}"].hard_start,
+            )
+            if end_a is None or start_b is None:
+                continue
+            duration = start_b - end_a
             if duration > self.gap_threshold:
                 duration_years = duration / self._year_length
                 gaps.append(
@@ -208,6 +228,42 @@ class TemporalAnalyzer:
                 )
 
         return gaps, dated
+
+    def _detect_constraint_conflicts(
+        self, events: list[Event]
+    ) -> list[TemporalConflict]:
+        """Report impossible chronology independently of reduced date precision."""
+        from src.core.temporal_anchors import resolve_event_anchors
+        from src.core.temporal_constraints import (
+            TemporalConstraint,
+            validate_constraints,
+        )
+
+        constraints: list[TemporalConstraint] = []
+        for event in events:
+            constraints.extend(
+                TemporalConstraint.from_dict(item)
+                for item in event.attributes.get("_temporal_v2", {}).get(
+                    "constraints", []
+                )
+            )
+        anchors = resolve_event_anchors(
+            events, self._date_parser.converter if self._date_parser else None
+        )
+        return [
+            TemporalConflict(
+                conflict_type="chronological_constraint",
+                entity_id="",
+                entity_name="Chronology",
+                problem_date=None,
+                message=message,
+                suggestion="Review the event ordering assertions.",
+                severity=SeverityLevel.CRITICAL,
+                related_ids=[],
+                fingerprint=f"chronology:{message}",
+            )
+            for message in validate_constraints(constraints, anchors)
+        ]
 
     def _detect_temporal_conflicts(
         self,
@@ -227,7 +283,12 @@ class TemporalAnalyzer:
         """
         conflicts: list[TemporalConflict] = []
 
+        from src.core.temporal_anchors import resolve_event_anchors
+
         event_map = {event.id: event for event in events or []}
+        anchors = resolve_event_anchors(
+            events or [], self._date_parser.converter if self._date_parser else None
+        )
         for rel in relations:
             attrs = rel.get("attributes", {})
             if not any(
@@ -238,6 +299,7 @@ class TemporalAnalyzer:
                     "valid_from_event",
                     "valid_to_event",
                     "valid_at_event",
+                    "temporal",
                 )
             ):
                 continue
@@ -247,7 +309,16 @@ class TemporalAnalyzer:
                 if source_event is not None
                 else None
             )
-            window = resolve_temporal_window(attrs, source_date)
+            window = resolve_temporal_window(
+                attrs,
+                source_date,
+                source_event_attributes=source_event.attributes
+                if source_event
+                else None,
+                source_event_id=source_event.id if source_event else None,
+                converter=self._date_parser.converter if self._date_parser else None,
+                anchors=anchors,
+            )
             if not window.is_valid:
                 rel_id = str(rel.get("id", ""))
                 conflicts.append(
@@ -402,6 +473,27 @@ class TemporalAnalyzer:
                     ),
                     None,
                 )
+                dated_event = event_map.get(event_endpoint or attrs.get("event_id", ""))
+                if (
+                    dated_event
+                    and "_temporal_v2" in dated_event.attributes
+                    and attrs.get("date") is None
+                ):
+                    has_lifespan_relation = True
+                    conflicts.append(
+                        TemporalConflict(
+                            conflict_type="imprecise_lifespan",
+                            entity_id=entity.id,
+                            entity_name=entity.name,
+                            problem_date=None,
+                            message=f"{dated_event.name} has a partial or qualified date; an exact lifespan is not established.",
+                            suggestion="Retain the stated precision unless more evidence is available.",
+                            severity=SeverityLevel.INFO,
+                            related_ids=[entity.id, dated_event.id],
+                            fingerprint=f"imprecise-lifespan:{entity.id}:{dated_event.id}",
+                        )
+                    )
+                    continue
                 date = self._resolve_date(attrs, event_map, event_endpoint)
                 if date is None:
                     rel_id = str(rel.get("id", ""))

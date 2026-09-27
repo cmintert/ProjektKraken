@@ -806,6 +806,7 @@ class TimelineView(QGraphicsView):
             event.name,
             event.type,
             tuple(event.tags),
+            repr(event.attributes.get("_temporal_v2")),
         )
 
     def repack_events(self) -> None:
@@ -1789,8 +1790,11 @@ class TimelineView(QGraphicsView):
         for item in self.graphics_scene.items():
             if isinstance(item, EventItem):
                 # Determine temporal state
-                is_future = item.event.lore_date > playhead_time
-                is_past = item.event.lore_date < playhead_time
+                from src.core.temporal_anchors import event_position_at
+
+                is_future, is_past = event_position_at(
+                    item.event, playhead_time, item._calendar_converter
+                )
 
                 # Update the item's temporal state
                 item.set_temporal_state(is_future=is_future, is_past=is_past)

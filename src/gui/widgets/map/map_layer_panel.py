@@ -1295,6 +1295,7 @@ class MapLayerPanel(QWidget):
         model.temporal_state_changed.connect(self._on_temporal_state_changed)
         if self._calendar_converter is not None:
             model.set_date_formatter(self._calendar_converter.format_date)
+            model.calendar_converter = self._calendar_converter
         model.set_current_time(self._playhead_time)
         if had_model:
             self._restore_expanded_nodes(expanded_node_ids)
@@ -1384,6 +1385,7 @@ class MapLayerPanel(QWidget):
         self._calendar_converter = converter
         if self._model is not None:
             self._model.set_date_formatter(converter.format_date)
+            self._model.calendar_converter = converter
         if self._selected_node_id and self._model is not None:
             node = self._model.find_node_by_id(self._selected_node_id)
             if node is not None:

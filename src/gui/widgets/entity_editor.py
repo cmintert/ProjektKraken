@@ -1608,6 +1608,18 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self.temporal_snapshot_label.setText(
             "Editing the visible state; corrections update the source shown below."
         )
+        effects = state.get("possible_effects", [])
+        if effects:
+            fields = ", ".join(state.get("ambiguous_attributes", {}))
+            self.temporal_snapshot_label.setText(
+                f"{len(effects)} dated changes may affect this state. "
+                f"Exact timing is unknown. Fields: {fields or 'see details'}."
+            )
+            self.temporal_snapshot_label.setToolTip(
+                self._possible_effects_text(effects)
+            )
+        else:
+            self.temporal_snapshot_label.setToolTip("")
         self.temporal_snapshot_banner.show()
         self.attribute_editor.set_source_labels(state.get("attribute_sources", {}))
         for key, pair in self.sheet_builder._pairs.items():
@@ -1618,6 +1630,21 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         # Update timeline display with playhead time for highlighting
         if playhead_time is not None:
             self.timeline_display.set_playhead_time(playhead_time)
+
+    @staticmethod
+    def _possible_effects_text(effects: list[dict[str, Any]]) -> str:
+        """Explain alternatives without exposing internal resolver vocabulary."""
+        lines = ["Possible dated changes; their timing is not yet known:"]
+        for effect in effects:
+            name = effect.get("provenance", {}).get("event_name") or "Dated change"
+            payload = effect.get("payload", {})
+            for key, value in payload.get("attributes", {}).items():
+                lines.append(f"{name}: {key} may become {value}.")
+            for key in payload.get("unset_attributes", []):
+                lines.append(f"{name}: {key} may no longer apply.")
+            if "description" in payload:
+                lines.append(f"{name}, possible description:\n{payload['description']}")
+        return "\n".join(lines)
 
     @staticmethod
     def _source_caption(source: dict[str, Any] | None) -> str:

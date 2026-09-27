@@ -15,7 +15,7 @@ Handles:
 import logging
 from typing import TYPE_CHECKING, Optional, cast
 
-from PySide6.QtCore import Q_ARG, QTimer, Signal, Slot
+from PySide6.QtCore import Q_ARG, Qt, QTimer, Signal, Slot
 from PySide6.QtWidgets import QMessageBox
 
 from src.app.constants import (
@@ -44,6 +44,7 @@ class DataCoordinator(BaseCoordinator):
     """
 
     lore_mutation_applied = Signal(str, str, str)
+    graph_temporal_requested = Signal(object, object, object)
 
     def __init__(self, main_window: "MainWindow") -> None:
         """Initialize the data coordinator.
@@ -65,6 +66,7 @@ class DataCoordinator(BaseCoordinator):
         self._graph_snapshot: tuple[list, list] | None = None
         self._graph_load_in_flight = False
         self._graph_dirty = True
+        self._graph_worker: object | None = None
         self._render_graph_when_hidden_once = False
         self._startup_datasets_pending = {"events", "entities"}
         self._startup_completion_emitted = False
@@ -785,7 +787,26 @@ class DataCoordinator(BaseCoordinator):
         rel_types = filter_config.get("rel_types") if filter_config else None
         self._graph_load_in_flight = True
         self._graph_request_revision = self._graph_revision
-        self.main_window.load_graph_data_requested.emit(tags, rel_types)
+        graph = self.main_window.graph_widget
+        context = {
+            "lore_time": float(self.main_window.timeline.get_playhead_time()),
+            "mode": graph.temporal_mode.currentData() if graph else "at_playhead",
+        }
+        worker = self.main_window.worker
+        if self._graph_worker is not worker:
+            if self._graph_worker is not None:
+                self.graph_temporal_requested.disconnect()
+            self.graph_temporal_requested.connect(
+                worker.load_graph_data, Qt.ConnectionType.QueuedConnection
+            )
+            self._graph_worker = worker
+        self.graph_temporal_requested.emit(tags, rel_types, context)
+
+    def on_graph_playhead_changed(self) -> None:
+        """Invalidate the temporal graph snapshot and debounce worker evaluation."""
+        self._graph_revision += 1
+        self._graph_dirty = True
+        self._schedule_graph_refresh()
 
     def _render_cached_graph(self, *, allow_hidden: bool = False) -> None:
         """Render only the current Graph snapshot while its panel is visible."""

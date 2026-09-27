@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-09-26
-**Commit:** 5af8131d
+**Last Updated:** 2026-09-27
+**Commit:** 830b3bed
 ---
 
 # Changelog
@@ -12,6 +12,25 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-09-27)* **Temporal authoring completion**: Added separate source claims
+  with preferred assertions, chronology controls, explicit occurrence limits,
+  relative event boundaries and offsets, and dependency warnings before deleting
+  an event anchor. Trajectories expose owner uncertainty. Added an acceptance
+  checklist and regression coverage for these authoring paths.
+
+- *(2026-09-27)* **Temporal assertions**: Preserve partial dates, qualification,
+  explicit occurrence windows, duration endpoints, and shared event anchors in
+  semantic JSON; retain exact legacy dates and precision through save/export/undo
+  and timeline moves. Bare ranges require an occurrence-or-duration choice.
+- *(2026-09-27)* **Historical state / Graph**: Added shared four-state validity,
+  possible effects and field ambiguity, chronological constraints and exclusive
+  role analysis, three graph time modes, uncertainty counts/reveal, and stable
+  graph layout across playhead-driven edge updates.
+- *(2026-09-27)* **Temporal presentation**: Added semantic relation boundary
+  choices, map uncertainty cues, separate timeline date-uncertainty outlines,
+  and precision-aware import and authoring-context behavior; documented the
+  storage contracts and user workflow.
 
 - *(2026-09-26)* **Wiki editor / P1**: Added identity-safe completion for
   duplicate names, exact Markdown Source fallback with round-trip coverage,
@@ -23,6 +42,17 @@ All notable changes to this project will be documented in this file.
   stale spell-check responses.
 
 ### Fixed
+
+- *(2026-09-27)* **Timeline uncertainty grammar**: Render possible dates and
+  durations on one event track instead of drawing a solid duration from an
+  uncertain midpoint. Show a solid interior only for certainly occupied time;
+  preserve exact legacy markers. Make duration intent explicit and hide
+  fabricated exact end dates derived from uncertain starts.
+
+- *(2026-09-27)* **Temporal authoring / Startup**: Persist the default world
+  calendar before sending it to editors. Worlds without an active calendar can
+  now save year-only dates without referencing an unavailable temporary ID;
+  added worker-to-editor-to-save regression coverage and failed-write checks.
 
 - *(2026-09-26)* **Timeline / Calendar ruler**: Aligned year, month, quarter,
   and week ticks with real calendar boundaries, including leap years, custom

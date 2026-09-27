@@ -96,6 +96,39 @@ also edit relations from the selected item's inspector.
 Relations are directional. Read the preview in the relation dialog to confirm
 which item is the subject and which is the target.
 
+## Historical validity and uncertainty
+
+In a relation's **Temporal Settings**, choose a manual date, a named event,
+**Date not known**, or **Unbounded** for its start and end. Unknown means the
+boundary is unresolved; unbounded means that side has no limit. An end is
+exclusive: the relation no longer holds at its end transition.
+
+Bind an outgoing officeholder's end and a successor's start to the same event
+when they share a handover. If the event is known only as `961`, both roles may
+be possible during that year, but the shared transition establishes that they
+do not overlap. Do not copy the event's displayed timeline coordinate into
+two independent manual dates.
+
+**Meaning** distinguishes an active state, an enduring historical fact, an
+occurrence, and a timeless association. The Graph offers:
+
+- **At playhead**: current states and established historical facts. Occurrence
+  edges are reserved for history views.
+- **History to playhead**: includes ended states and occurrences, excluding
+  relations known to begin in the future.
+- **All relations**: retains the full relationship history with timing labels.
+
+The uncertainty count remains visible when possible relations are hidden.
+Use **Show possible relations**, or select a node to reveal its possible
+connections. Dashes and `(?)` identify uncertain edges without relying on
+color. Moving the playhead preserves graph positions, zoom, and selection
+when the node set stays the same.
+
+Entity state applies only changes established at the playhead. The inspector
+lists possible changes separately instead of choosing an arbitrary winner.
+Map layers similarly mark uncertain presence with `(?)` and reduced opacity;
+their associated routes follow the layer's visibility.
+
 ## Wiki links
 
 Type `[[` in a description to search for an event or entity. Select a

@@ -9,6 +9,8 @@ commands-and-history
 database-and-storage
 testing
 inspector-ui-verification
+temporal-acceptance
+wiki-editor-beta-release-gate
 performance-measurement
 contributing
 documentation

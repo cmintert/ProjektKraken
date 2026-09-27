@@ -113,6 +113,74 @@ instant, dynamic, open, and invalid interval semantics cannot drift.
 - `ImportCoordinator`, `BackupCoordinator`, and `FastInjectCoordinator` own
   their respective workflows.
 
+## Temporal assertions and projections
+
+`src/core/temporal_expression.py` defines schema version 1. An event's
+`attributes._temporal_v2` contains `schema`, `expression`, and optionally
+`end_expression` for a true duration. Expressions retain calendar identity,
+supplied components, precision, qualification, original text, and explicit
+outer bounds. Additional `claims` and `constraints` records survive edits and
+exports; competing claims are not merged into an occurrence range. The
+canonical `expression` drives state; claims remain separate evidence.
+
+`lore_date` and `lore_duration` are compatibility/layout projections when this
+metadata is present. `EventRepository` regenerates them on writes, while
+`event_temporal_service` and `move_expression` preserve precision during moves.
+The worker's calendar load calls `calendar_context_service.ensure_active_calendar`
+before publishing a converter configuration. Worlds without an active calendar
+get a persisted Gregorian default; UI code must never mint a temporary calendar
+ID for authoring. A storage failure leaves calendar initialization unavailable
+and emits an error instead of publishing an unsavable identity.
+Absence of metadata alone selects legacy exact semantics. Invalid metadata
+must produce a diagnostic or a rejected write, never silent exact fallback.
+
+Relations and map layers use `attributes.temporal`, with `schema: 1`,
+`behavior`, and `start`/`end` or occurrence `at` boundaries. Each boundary is
+one of `{"expression": ...}`, `{"exact": ...}`, `{"status": "open"}`,
+`{"status": "unknown"}`, `{"binding": "source_event"}`, or
+`{"anchor": {"anchor_id": "event:<uuid>", "offset_days": 0}}`.
+The compatibility reader still supports legacy `valid_*` fields and flags.
+
+`resolve_temporal_window().status_at()` is the shared truth evaluator. Its
+four statuses are definite, possible, inactive, and indeterminate. Consumers
+must choose an explicit policy: the state resolver applies only definite
+payloads and retains possible effects; graph snapshots carry their status;
+map rendering keeps uncertain layers visible with a cue. Unknown boundaries
+must not be converted to open boundaries or falsehood. Intervals are
+half-open, while legacy equal-bound occurrences retain instant semantics.
+
+`resolve_event_anchors` preserves identity across queries. `overlap_status`
+recognizes shared handovers and explicit chronological order.
+`TemporalConstraint` supports `before`, `after`, and `same_as`, with optional
+nonnegative `min_offset_days`; validation contracts equality before detecting
+ordering cycles. Constraints live in event metadata and can be edited in
+the event editor's **Date sources and chronology** dialog or supplied in JSON. This is a
+bounded validation/ordering system, not a probabilistic world solver.
+
+Analysis checks role exclusivity only when a relation explicitly has
+`attributes.exclusive: true`; it groups competing sources by target and role.
+Certain overlap is critical, possible overlap is a warning, and a shared
+handover is not a conflict. Partial lifespan dates are informational rather
+than fabricated exact ages.
+
+`GraphDataService` applies `GraphTemporalMode` before deriving connected nodes.
+The data coordinator sends playhead/mode snapshots over a queued signal to
+the worker. Widgets consume evaluated snapshots; they only control the reveal
+policy. Incremental edge updates freeze layout when node identities are
+unchanged, retaining pan, zoom, and selection. Timeline future/past cues use
+evidence bounds; representative coordinates remain valid for drawing/snapping.
+
+No existing numeric date is automatically reinterpreted. The optional legacy
+precision review assistant, EDTF export, and derived database indexes are not
+included. Ordinary JSON export retains the complete semantic attributes.
+
+Before deleting an event, the command checks persisted temporal dependencies
+on the worker thread. A failed preflight returns a serializable dependency
+snapshot; the main-thread coordinator presents it and can submit a confirmed
+retry. The retry checks the dependencies again before deleting. References
+outside attached relations remain unresolved rather than becoming unbounded;
+undo restores the event anchor. See [temporal acceptance](temporal-acceptance.md).
+
 ## UI rules
 
 - Use `StyleHelper` and `ThemeManager`; do not hardcode widget colours.

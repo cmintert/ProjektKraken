@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 
 from src.core.calendar import CalendarConfig, CalendarConverter, CalendarDate
 from src.core.parsed_date import DatePrecision, ParsedDate
+from src.core.temporal_expression import TemporalExpression
 
 _MIN_ABBREVIATION_CONSONANTS = 2
 _CONSONANT_ABBREVIATION_ATTEMPT = 2
@@ -97,9 +98,7 @@ class DateParser:
     def _compile_all_patterns(self) -> None:
         """Compile all regex patterns for the various date formats."""
         # Month tokens (names + abbreviations) sorted longest-first for greedy match
-        all_month_tokens = sorted(
-            list(self.month_lookup.keys()), key=len, reverse=True
-        )
+        all_month_tokens = sorted(list(self.month_lookup.keys()), key=len, reverse=True)
         month_tokens = "|".join(re.escape(token) for token in all_month_tokens)
         month_pattern_with_abbrev = f"({month_tokens})"
 
@@ -319,6 +318,141 @@ class DateParser:
         except Exception as e:
             raise ValueError(f"Failed to parse '{date_str}': {str(e)}")
 
+    def parse_expression(self, text: str) -> "TemporalExpression":
+        """Parse persistent precision and qualification without completing a date."""
+        from src.core.temporal_expression import (
+            TemporalExpression,
+            TemporalPrecision,
+            TemporalQualifier,
+        )
+
+        original = text.strip()
+        text = original
+        qualification = re.match(r"^(estimated|calculated)\s+", text, re.I)
+        if qualification:
+            text = text[qualification.end() :]
+        bounded = re.fullmatch(r"(before|after|by)\s+(.+)", text, re.I)
+        between = re.fullmatch(r"between\s+(.+?)\s+and\s+(.+)", text, re.I)
+        if bounded or between:
+            from dataclasses import replace
+
+            if between:
+                first = self.parse_expression(between[1])
+                last = self.parse_expression(between[2])
+                start = first.resolve_bounds(self.converter).hard_start
+                end = last.resolve_bounds(self.converter).hard_end
+                if start is None or end is None or start >= end:
+                    raise ValueError("Occurrence bounds must be ordered asserted dates")
+                return replace(
+                    first,
+                    explicit_outer_start=start,
+                    explicit_outer_end=end,
+                    original_text=original,
+                )
+            assert bounded is not None
+            expression = self.parse_expression(bounded[2])
+            bounds = expression.resolve_bounds(self.converter)
+            if not bounds.has_hard_bounds:
+                raise ValueError("Use an asserted date for a before/after/by boundary")
+            relation = bounded[1].lower()
+            return replace(
+                expression,
+                original_text=original,
+                explicit_outer_start=bounds.hard_end if relation == "after" else None,
+                explicit_outer_end=(
+                    bounds.hard_start
+                    if relation == "before"
+                    else bounds.hard_end
+                    if relation == "by"
+                    else None
+                ),
+            )
+        uncertain = text.endswith("?")
+        if uncertain:
+            text = text[:-1].strip()
+        approximate = bool(re.match(r"^(?:c\.|ca\.|circa|around|about)\s*", text, re.I))
+        text = re.sub(r"^(?:c\.|ca\.|circa|around|about)\s*", "", text, flags=re.I)
+        text = re.sub(r"^sometime\s+in\s+", "", text, flags=re.I)
+        parsed = self.parse_date(text)
+        if parsed.precision in {
+            DatePrecision.RELATIVE,
+            DatePrecision.SEASON,
+            DatePrecision.RANGE,
+            DatePrecision.TIME,
+        }:
+            raise ValueError(
+                "Choose an occurrence date; ranges and relative dates need details"
+            )
+        precision = TemporalPrecision.YEAR
+        for component in ("month", "day", "hour", "minute", "second"):
+            if getattr(parsed, component) is not None:
+                precision = TemporalPrecision(component)
+        qualifier = TemporalQualifier.ASSERTED
+        if approximate and uncertain:
+            qualifier = TemporalQualifier.APPROXIMATE_UNCERTAIN
+        elif approximate or parsed.precision == DatePrecision.FUZZY:
+            qualifier = TemporalQualifier.APPROXIMATE
+        elif uncertain:
+            qualifier = TemporalQualifier.UNCERTAIN
+        elif qualification:
+            qualifier = TemporalQualifier(qualification[1].lower())
+        expression = TemporalExpression(
+            calendar_id=self.calendar_config.id,
+            year=parsed.year,
+            month=parsed.month,
+            day=parsed.day,
+            hour=parsed.hour,
+            minute=parsed.minute,
+            second=parsed.second,
+            precision=precision,
+            qualifier=qualifier,
+            original_text=original,
+        )
+        bounds = expression.resolve_bounds(self.converter)
+        if bounds.error:
+            raise ValueError(bounds.error)
+        return expression
+
+    def parse_range_expressions(
+        self, text: str
+    ) -> tuple["TemporalExpression", "TemporalExpression"]:
+        """Parse range endpoints without deciding whether they describe duration."""
+        match = re.fullmatch(r"\s*(-?\d+)\s*[-\u2013\u2014]\s*(-?\d+)\s*", text)
+        if match:
+            return self.parse_expression(match[1]), self.parse_expression(match[2])
+        parsed = self.parse_date(text)
+        if (
+            parsed.precision != DatePrecision.RANGE
+            or not parsed.range_start
+            or not parsed.range_end
+        ):
+            raise ValueError("Not a date range")
+        return self.expression_from_parsed(
+            parsed.range_start
+        ), self.expression_from_parsed(parsed.range_end)
+
+    def expression_from_parsed(self, parsed: ParsedDate) -> TemporalExpression:
+        """Convert parser components into an assertion without completing them."""
+        from src.core.temporal_expression import TemporalPrecision, TemporalQualifier
+
+        precision = TemporalPrecision.YEAR
+        for name in ("month", "day", "hour", "minute", "second"):
+            if getattr(parsed, name) is not None:
+                precision = TemporalPrecision(name)
+        return TemporalExpression(
+            calendar_id=self.calendar_config.id,
+            year=parsed.year,
+            month=parsed.month,
+            day=parsed.day,
+            hour=parsed.hour,
+            minute=parsed.minute,
+            second=parsed.second,
+            precision=precision,
+            qualifier=TemporalQualifier.APPROXIMATE
+            if parsed.precision == DatePrecision.FUZZY
+            else TemporalQualifier.ASSERTED,
+        )
+
     def calculate_timestamp(self, parsed_date: ParsedDate) -> float:
         """Convert a ParsedDate to an absolute float timestamp.
 
@@ -471,7 +605,9 @@ class DateParser:
         elif groupdict.get("day_num_us"):
             day = int(groupdict["day_num_us"])
         else:
-            day_str = next(g for g in groups if re.match(r"^\d{1,2}(?:st|nd|rd|th)?$", g))
+            day_str = next(
+                g for g in groups if re.match(r"^\d{1,2}(?:st|nd|rd|th)?$", g)
+            )
             day_match = re.match(r"\d+", day_str)
             if day_match is None:
                 raise ValueError(f"Invalid day: {day_str}")
@@ -493,7 +629,9 @@ class DateParser:
             elif m == "AM" and hour == _HOURS_PER_HALF_DAY:
                 hour = 0
 
-        return ParsedDate(year=year, month=month, day=day, hour=hour, minute=minute, second=second)
+        return ParsedDate(
+            year=year, month=month, day=day, hour=hour, minute=minute, second=second
+        )
 
     def _parse_time(self, match: re.Match) -> ParsedDate:
         """Parse a time-only expression, returning a TIME-precision date."""
@@ -532,9 +670,7 @@ class DateParser:
 
     def _parse_year_only(self, match: re.Match) -> ParsedDate:
         """Parse a year-only date (YEAR precision)."""
-        year = int(
-            next(g for g in match.groups() if g and (g.lstrip("-").isdigit()))
-        )
+        year = int(next(g for g in match.groups() if g and (g.lstrip("-").isdigit())))
         return ParsedDate(year=year, precision=DatePrecision.YEAR)
 
     def _parse_season_date(self, match: re.Match) -> ParsedDate:
@@ -542,10 +678,13 @@ class DateParser:
         groups = [g for g in match.groups() if g is not None]
         year = int(next(g for g in reversed(groups) if re.match(r"^-?\d+$", g)))
         season = next(
-            g for g in reversed(groups)
+            g
+            for g in reversed(groups)
             if re.match(r"^(spring|summer|autumn|winter|harvest)$", g, re.IGNORECASE)
         )
-        return ParsedDate(year=year, precision=DatePrecision.SEASON, season=season.lower())
+        return ParsedDate(
+            year=year, precision=DatePrecision.SEASON, season=season.lower()
+        )
 
     def _parse_relative_date(self, match: re.Match) -> ParsedDate:
         """Parse a relative date (RELATIVE precision)."""
@@ -587,6 +726,19 @@ class DateParser:
                 break
 
         confidence = 0.5 if "sometime" in match.re.pattern.lower() else 0.8
+        if "sometime" in match.group().lower():
+            return ParsedDate(
+                year=year,
+                month=month,
+                day=day,
+                precision=(
+                    DatePrecision.EXACT
+                    if day is not None
+                    else DatePrecision.MONTH
+                    if month is not None
+                    else DatePrecision.YEAR
+                ),
+            )
         return ParsedDate(
             year=year,
             month=month,
@@ -620,9 +772,7 @@ class DateParser:
             year = start_date.year
         else:
             groups = [g for g in match.groups() if g is not None]
-            year = int(
-                next(g for g in reversed(groups) if re.match(r"^-?\d+$", g))
-            )
+            year = int(next(g for g in reversed(groups) if re.match(r"^-?\d+$", g)))
             months = [
                 self.month_lookup[g.lower()]
                 for g in groups

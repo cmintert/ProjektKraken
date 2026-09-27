@@ -219,6 +219,20 @@ class UpdateEventCommand(BaseCommand):
             }
 
             self._new_event = dataclasses.replace(current, **clean_data)
+            if "lore_date" in clean_data and "attributes" not in clean_data:
+                from src.core.calendar import CalendarConverter
+                from src.core.temporal_expression import expression_from_attributes
+                from src.services.event_temporal_service import move_temporal_event
+
+                if expression_from_attributes(current.attributes) is not None:
+                    config = db_service.get_active_calendar_config()
+                    if config is None:
+                        raise ValueError("The event's calendar is unavailable")
+                    self._new_event = move_temporal_event(
+                        self._new_event,
+                        clean_data["lore_date"],
+                        CalendarConverter(config),
+                    )
             self._new_event.modified_at = __import__("time").time()
 
             logger.info(f"Executing UpdateEvent: {self._new_event.name}")
@@ -312,7 +326,9 @@ class UpdateEventCommand(BaseCommand):
 class DeleteEventCommand(BaseCommand):
     """Command to delete an event, storing its state for undo."""
 
-    def __init__(self, event_id: str) -> None:
+    def __init__(
+        self, event_id: str, confirmed_dependencies: list[str] | None = None
+    ) -> None:
         """Initializes the DeleteEventCommand.
 
         Args:
@@ -323,6 +339,7 @@ class DeleteEventCommand(BaseCommand):
         self.event_id = event_id
         self._backup_event: Optional[Event] = None
         self._backup_relations: list[dict] = []
+        self.confirmed_dependencies = confirmed_dependencies
 
     def get_description(self) -> str:
         """Get a human-readable description of this command.
@@ -355,6 +372,20 @@ class DeleteEventCommand(BaseCommand):
                 command_name="DeleteEventCommand",
             )
 
+        from src.services.temporal_dependency_service import event_temporal_dependencies
+
+        dependencies = event_temporal_dependencies(db_service, self.event_id)
+        if dependencies and dependencies != self.confirmed_dependencies:
+            return CommandResult(
+                success=False,
+                command_name="DeleteEventCommand",
+                message="Confirm deletion of this temporal anchor.",
+                data={
+                    "temporal_dependencies": dependencies,
+                    "event_id": self.event_id,
+                    "event_name": self._backup_event.name,
+                },
+            )
         self._backup_relations = db_service.get_relations_for_item(self.event_id)
 
         try:
@@ -428,6 +459,7 @@ class DeleteEventCommand(BaseCommand):
                 self._backup_event.to_dict() if self._backup_event else None
             ),
             "backup_relations": self._backup_relations,
+            "confirmed_dependencies": self.confirmed_dependencies,
             "is_executed": self._is_executed,
         }
 
@@ -441,7 +473,7 @@ class DeleteEventCommand(BaseCommand):
         Returns:
             DeleteEventCommand: Reconstructed command
         """
-        cmd = cls(data["event_id"])
+        cmd = cls(data["event_id"], data.get("confirmed_dependencies"))
         if data.get("backup_event"):
             cmd._backup_event = Event.from_dict(data["backup_event"])
         cmd._backup_relations = data.get("backup_relations", [])

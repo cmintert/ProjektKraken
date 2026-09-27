@@ -142,8 +142,8 @@ def test_coverage_distinguishes_skipped_failed_and_partial() -> None:
 def test_instant_and_manual_equal_bound_semantics() -> None:
     instant = resolve_temporal_window({"valid_at_event": True}, 100.0)
     assert instant.kind == TemporalWindowKind.INSTANT
-    assert instant.is_active(100.0 + 1e-10)
-    assert not instant.is_active(100.0 + 1e-7)
+    assert instant.is_definitely_active(100.0 + 1e-10)
+    assert not instant.is_definitely_active(100.0 + 1e-7)
     manual = resolve_temporal_window({"valid_from": 100.0, "valid_to": 100.0})
     assert not manual.is_valid
 

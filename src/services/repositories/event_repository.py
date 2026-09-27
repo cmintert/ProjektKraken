@@ -6,8 +6,11 @@ Handles CRUD operations for Event entities in the database.
 import logging
 from typing import List, Optional
 
+from src.core.calendar import CalendarConverter
 from src.core.events import Event
+from src.core.temporal_expression import TemporalExpression, expression_from_attributes
 from src.services.repositories.base_repository import BaseRepository
+from src.services.repositories.calendar_repository import CalendarRepository
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +32,7 @@ class EventRepository(BaseRepository):
             sqlite3.Error: If the database operation fails.
 
         """
+        self._sync_temporal_projection(event)
         sql = """
             INSERT INTO events (id, type, name, lore_date, lore_duration,
                                 description, attributes, created_at, modified_at)
@@ -57,6 +61,23 @@ class EventRepository(BaseRepository):
                     event.modified_at,
                 ),
             )
+
+    def _sync_temporal_projection(self, event: Event) -> None:
+        """Generate compatibility floats from assertions at the persistence boundary."""
+        expression = expression_from_attributes(event.attributes)
+        if expression is None:
+            return
+        config = CalendarRepository(self._connection).get(expression.calendar_id)
+        if config is None:
+            raise ValueError("The event's calendar is unavailable")
+        converter = CalendarConverter(config)
+        event.lore_date = expression.representative_time(converter)
+        end_data = event.attributes["_temporal_v2"].get("end_expression")
+        if end_data:
+            end = TemporalExpression.from_dict(end_data).representative_time(converter)
+            if end < event.lore_date:
+                raise ValueError("Event end must not precede its start")
+            event.lore_duration = end - event.lore_date
 
     def get(self, event_id: str) -> Optional[Event]:
         """Retrieve a single event by its UUID.
@@ -127,6 +148,8 @@ class EventRepository(BaseRepository):
             sqlite3.Error: If the database operation fails.
 
         """
+        for event in events:
+            self._sync_temporal_projection(event)
         sql = """
             INSERT INTO events (id, type, name, lore_date, lore_duration,
                                 description, attributes, created_at, modified_at)

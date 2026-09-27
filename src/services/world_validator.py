@@ -22,6 +22,7 @@ from src.core.analysis import (
 )
 from src.core.entities import Entity
 from src.core.events import Event
+from src.core.temporal_anchors import resolve_event_anchors
 from src.core.temporal_window import resolve_temporal_window
 from src.services.text_parser import WikiLinkParser
 
@@ -424,12 +425,30 @@ class WorldValidator:
             if isinstance(event.lore_date, (int, float))
             and math.isfinite(float(event.lore_date))
         }
+        from src.core.calendar import CalendarConfig, CalendarConverter
+
+        config = self.db_service.get_active_calendar_config()
+        converter = (
+            CalendarConverter(config) if isinstance(config, CalendarConfig) else None
+        )
+        event_map = {event.id: event for event in events}
+        anchors = resolve_event_anchors(events, converter)
         for relation in relations:
             attrs = relation.get("attributes", {})
-            if not any(key.startswith("valid_") for key in attrs):
+            if "temporal" not in attrs and not any(
+                key.startswith("valid_") for key in attrs
+            ):
                 continue
             source_date = event_dates.get(str(relation.get("source_id", "")))
-            window = resolve_temporal_window(attrs, source_date)
+            source = event_map.get(str(relation.get("source_id", "")))
+            window = resolve_temporal_window(
+                attrs,
+                source_date,
+                source_event_attributes=source.attributes if source else None,
+                source_event_id=source.id if source else None,
+                converter=converter,
+                anchors=anchors,
+            )
             if window.is_valid:
                 continue
             relation_id = str(relation.get("id", ""))

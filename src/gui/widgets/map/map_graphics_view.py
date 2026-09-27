@@ -1252,6 +1252,11 @@ class MapGraphicsView(QGraphicsView):
             keyframes: List of Keyframe objects.
         """
         self._trajectory.show_trajectory(marker_id, keyframes, segment_modes)
+        if self._layer_model is not None:
+            node = self._layer_model.find_node_by_id(marker_id)
+            if node is not None:
+                status = self._layer_model.temporal_validity(node).status.value
+                self._trajectory.set_temporal_uncertainty(status in {"possible", "indeterminate"})
 
     def clear_trajectory(self) -> None:
         """Clears the rendered trajectory path, keyframes, and labels."""

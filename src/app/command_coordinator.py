@@ -353,17 +353,27 @@ class CommandCoordinator(QObject):
                 self.log_stack_state()
 
         else:
+            if not is_undo_redo and "temporal_dependencies" in result.data:
+                from PySide6.QtWidgets import QWidget
+
+                from src.app.coordinators.temporal_deletion import (
+                    confirm_temporal_deletion,
+                )
+
+                retry = confirm_temporal_deletion(
+                    result.data,
+                    self.window if isinstance(self.window, QWidget) else None,
+                )
+                if retry is not None:
+                    self.execute_command(retry)
+                return
             logger.error(f"Command failed: {result.message}")
             self._show_error(result.message)
 
     def log_stack_state(self) -> None:
         """Log a compact summary of the undo/redo stacks."""
-        next_undo = (
-            self.undo_stack[-1].get_description() if self.undo_stack else "none"
-        )
-        next_redo = (
-            self.redo_stack[-1].get_description() if self.redo_stack else "none"
-        )
+        next_undo = self.undo_stack[-1].get_description() if self.undo_stack else "none"
+        next_redo = self.redo_stack[-1].get_description() if self.redo_stack else "none"
         logger.debug(
             "Command stacks: undo=%d (next=%s), redo=%d (next=%s)",
             len(self.undo_stack),

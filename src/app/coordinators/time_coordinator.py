@@ -162,6 +162,7 @@ class TimeCoordinator(BaseCoordinator):
                 return
         self._current_playhead_time = time
         self.resolve_selected_entity()
+        self.main_window.data_coordinator.on_graph_playhead_changed()
 
     @Slot(str, dict)
     def on_entity_state_resolved(self, entity_id: str, state: dict) -> None:
@@ -205,11 +206,11 @@ class TimeCoordinator(BaseCoordinator):
 
         """
         try:
-            if config:
-                converter = CalendarConverter(config)
-            else:
-                default_config = CalendarConfig.create_default()
-                converter = CalendarConverter(default_config)
+            if config is None:
+                logger.warning("World calendar unavailable; no temporary calendar created")
+                self.main_window.ui_manager.show_calendar_dialog(None)
+                return
+            converter = CalendarConverter(config)
 
             self.main_window.event_editor.set_calendar_converter(converter)
             self.main_window.timeline.set_calendar_converter(converter)

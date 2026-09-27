@@ -79,6 +79,7 @@ class ContextRelation:
     temporal_kind: TemporalKind
     valid_from: float | None = None
     valid_to: float | None = None
+    temporal_status: str = "definite"
 
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-safe representation."""
@@ -91,6 +92,7 @@ class ContextRelation:
             "temporal_kind": self.temporal_kind,
             "valid_from": self.valid_from,
             "valid_to": self.valid_to,
+            "temporal_status": self.temporal_status,
         }
 
     @classmethod
@@ -110,15 +112,14 @@ class ContextRelation:
             rel_type=str(data["rel_type"]),
             hop=int(data.get("hop", 0)),
             temporal_kind=kind,
+            temporal_status=str(data.get("temporal_status", "definite")),
             valid_from=(
                 float(data["valid_from"])
                 if data.get("valid_from") is not None
                 else None
             ),
             valid_to=(
-                float(data["valid_to"])
-                if data.get("valid_to") is not None
-                else None
+                float(data["valid_to"]) if data.get("valid_to") is not None else None
             ),
         )
 

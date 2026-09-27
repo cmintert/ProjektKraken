@@ -43,9 +43,7 @@ def setup_map_with_pixmap(map_view, width=100, height=100):
     return map_view
 
 
-def test_temporal_status_visibility_does_not_resize_viewport(
-    map_widget, qtbot
-) -> None:
+def test_temporal_status_visibility_does_not_resize_viewport(map_widget, qtbot) -> None:
     """Showing the outside-date control must not shift map content."""
     map_widget.resize(1000, 700)
     map_widget.show()
@@ -251,7 +249,10 @@ def test_guided_second_location_shows_persistent_instruction_and_target(
     session.place_second_location()
     map_widget.show_trajectory_edit(session.to_snapshot(playhead_time=0.0))
     assert "Cannot accept yet" in map_widget.trajectory_validation_label.text()
-    assert "Move the playhead" in map_widget.btn_accept_second_trajectory_location.toolTip()
+    assert (
+        "Move the playhead"
+        in map_widget.btn_accept_second_trajectory_location.toolTip()
+    )
     map_widget.show_trajectory_guidance_error(
         "Move the playhead to a date later than the first location."
     )
@@ -294,9 +295,7 @@ def test_guided_destination_follows_cursor_until_map_click(map_widget, qtbot):
     )
     map_widget.view.mouseMoveEvent(move)
     assert overlay.is_second_location_following_cursor is True
-    assert (
-        map_widget.view.viewport().cursor().shape() == Qt.CursorShape.CrossCursor
-    )
+    assert map_widget.view.viewport().cursor().shape() == Qt.CursorShape.CrossCursor
     assert map_widget.view.dragMode() == QGraphicsView.DragMode.NoDrag
     assert target_moves
     assert map_widget.view.markers["marker1"].pos() == original_marker_position
@@ -313,12 +312,8 @@ def test_guided_destination_follows_cursor_until_map_click(map_widget, qtbot):
     map_widget.view.mousePressEvent(click)
     locked_position = QPointF(overlay._second_location_handle.pos())  # type: ignore[union-attr]
     assert overlay.is_second_location_following_cursor is False
-    assert (
-        map_widget.view.dragMode() == QGraphicsView.DragMode.ScrollHandDrag
-    )
-    assert (
-        map_widget.view.viewport().cursor().shape() != Qt.CursorShape.CrossCursor
-    )
+    assert map_widget.view.dragMode() == QGraphicsView.DragMode.ScrollHandDrag
+    assert map_widget.view.viewport().cursor().shape() != Qt.CursorShape.CrossCursor
     assert placements == [True]
 
     map_widget.view.mouseMoveEvent(
@@ -692,6 +687,56 @@ def test_selected_trajectory_tracks_owner_temporal_validity(map_widget, qtbot):
     assert map_widget.view.trajectory_path_item is not None
 
 
+def test_uncertain_owner_trajectory_has_non_color_cue(map_widget, qtbot):
+    from src.core.calendar import CalendarConfig, CalendarConverter
+    from src.core.date_parser import DateParser
+
+    marker = _show_map_with_marker(map_widget, qtbot)
+    model = map_widget.get_layer_model()
+    config = CalendarConfig.create_default()
+    converter = CalendarConverter(config)
+    model.calendar_converter = converter
+    node = model.find_node_by_id("marker1")
+    node.attributes["temporal"] = {
+        "start": {"status": "open"},
+        "end": {"expression": DateParser(config).parse_expression("961").to_dict()},
+    }
+    model.invalidate_cache()
+    map_widget.set_trajectories(
+        [
+            {
+                "marker_id": "marker1",
+                "trajectory_id": "route",
+                "keyframes": [
+                    {
+                        "t": converter.start_of_year(960),
+                        "x": 0.1,
+                        "y": 0.2,
+                        "point_kind": "timed",
+                    },
+                    {
+                        "t": converter.start_of_year(962),
+                        "x": 0.9,
+                        "y": 0.8,
+                        "point_kind": "timed",
+                    },
+                ],
+                "row_snapshot": {},
+            }
+        ]
+    )
+    map_widget._on_marker_clicked_internal("marker1", "entity")
+    map_widget.on_time_changed(converter.start_of_year(961) + 100)
+    assert marker.isVisible()
+    path = map_widget.view.trajectory_path_item
+    assert path is not None
+    assert path.opacity() == 0.55
+    assert "Possible trajectory" in path.toolTip()
+    map_widget.on_time_changed(converter.start_of_year(962))
+    assert not marker.isVisible()
+    assert map_widget.view.trajectory_path_item is None
+
+
 def _show_map_with_marker(map_widget, qtbot, object_type="entity"):
     """Show a laid-out map widget containing one clickable marker."""
     map_widget.resize(1200, 700)
@@ -800,9 +845,7 @@ def test_escape_cancels_marker_placement(map_widget, qtbot):
     assert not map_widget.btn_add_marker.isChecked()
 
 
-def test_marker_preview_enables_confirm_and_enter_opens_picker(
-    map_widget, qtbot
-):
+def test_marker_preview_enables_confirm_and_enter_opens_picker(map_widget, qtbot):
     """Marker placement remains a draft until the shared Confirm action."""
     setup_map_with_pixmap(map_widget.view)
     map_widget.get_selected_map_id = MagicMock(return_value="map-1")
@@ -1325,9 +1368,7 @@ def test_map_status_zoom_tracks_wheel_and_fit(map_widget):
     map_widget.view.wheelEvent(event)
 
     assert map_widget.view.zoom_factor > 1.0
-    assert map_widget.zoom_label.text() == (
-        f"Zoom: {map_widget.view.zoom_factor:.2f}×"
-    )
+    assert map_widget.zoom_label.text() == (f"Zoom: {map_widget.view.zoom_factor:.2f}×")
 
     map_widget.view.fit_to_view()
 

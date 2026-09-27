@@ -769,6 +769,7 @@ class UpdateLayerPropertiesCommand(BaseCommand):
             "min_zoom": node.min_zoom,
             "max_zoom": node.max_zoom,
             "zoom_basis": node.attributes.get("zoom_basis"),
+            "temporal": node.attributes.get("temporal"),
         }
 
     @staticmethod
@@ -776,7 +777,8 @@ class UpdateLayerPropertiesCommand(BaseCommand):
         start_date = properties.get("start_date", node.start_date)
         end_date = properties.get("end_date", node.end_date)
         if (
-            start_date is not None
+            not properties.get("temporal", node.attributes.get("temporal"))
+            and start_date is not None
             and end_date is not None
             and float(end_date) <= float(start_date)
         ):
@@ -799,6 +801,11 @@ class UpdateLayerPropertiesCommand(BaseCommand):
         node.min_zoom = min_zoom
         node.max_zoom = max_zoom
         attributes = dict(node.attributes)
+        if "temporal" in properties:
+            if properties["temporal"] is None:
+                attributes.pop("temporal", None)
+            else:
+                attributes["temporal"] = properties["temporal"]
         if "notes" in properties:
             attributes["notes"] = str(properties["notes"])
         if "zoom_basis" in properties:
@@ -821,6 +828,16 @@ class UpdateLayerPropertiesCommand(BaseCommand):
         if node is None:
             raise ValueError("Layer not found")
         self._apply(node, properties)
+        if "temporal" in node.attributes:
+            from src.core.calendar import CalendarConverter
+            from src.core.temporal_window import resolve_temporal_window
+
+            config = db_service.get_active_calendar_config()
+            window = resolve_temporal_window(
+                node.attributes, converter=CalendarConverter(config) if config else None
+            )
+            if not window.is_valid:
+                raise ValueError(window.error or "Invalid layer validity interval")
         attrs = dict(map_obj.attributes or {})
         attrs["layers"] = map_obj.layers.to_dict()
         map_obj.attributes = attrs

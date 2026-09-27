@@ -26,6 +26,8 @@ from PySide6.QtWidgets import (
 
 from src.core.calendar import CalendarConverter
 from src.core.events import Event
+from src.core.temporal_display import TemporalDisplay, event_temporal_display
+from src.core.temporal_expression import TemporalExpression, expression_from_attributes
 from src.core.theme_manager import ThemeManager
 from src.gui.constants import (
     TEMPORAL_FUTURE_LIGHTNESS_BOOST,
@@ -65,7 +67,9 @@ class EventItem(QGraphicsItem):
             int: Height in pixels.
 
         """
-        if event.lore_duration > 0:
+        if event.lore_duration > 0 or event.attributes.get("_temporal_v2", {}).get(
+            "expression"
+        ):
             return cls.DURATION_EVENT_HEIGHT
         return cls.POINT_EVENT_HEIGHT
 
@@ -126,6 +130,7 @@ class EventItem(QGraphicsItem):
         # Temporal State
         self.is_future = False
         self.is_past = False
+        self._update_temporal_tooltip()
 
     def refresh_theme(self, theme: dict[str, str]) -> None:
         """Refresh cached rendering colors after a theme change.
@@ -215,6 +220,72 @@ class EventItem(QGraphicsItem):
         self.event = event
         self.refresh_theme(ThemeManager().get_theme())
         self.setPos(event.lore_date * self.scale_factor, self.y())
+        self._update_temporal_tooltip()
+
+    def _update_temporal_tooltip(self) -> None:
+        display = event_temporal_display(self.event, self._calendar_converter)
+        self.setToolTip(
+            f"{self.event.name}\n{display.caption}\n"
+            "Dotted outline: possible dates, not duration. Hatched area: possible presence. "
+            "Solid interior: certainly present. ?: no finite evidence bounds."
+            if display
+            else self.event.name
+        )
+
+    def _evidence_rect(self, start: float, end: float) -> QRectF:
+        scale = self.scale_factor * self._zoom_level
+        return QRectF(
+            (start - self.event.lore_date) * scale,
+            -6,
+            max(1, (end - start) * scale),
+            12,
+        )
+
+    def _display_rect(self, display: TemporalDisplay) -> QRectF:
+        if display.possible_start is None or display.possible_end is None:
+            return QRectF(-7, -7, 14, 14)
+        return self._evidence_rect(display.possible_start, display.possible_end)
+
+    def _uncertainty_rect(self) -> QRectF:
+        """Return positional uncertainty separately from actual duration."""
+        expression = expression_from_attributes(self.event.attributes)
+        if expression is None or self._calendar_converter is None:
+            return QRectF()
+        bounds = expression.resolve_bounds(self._calendar_converter)
+        if not bounds.has_hard_bounds:
+            return QRectF(-10, -9, 20, 18)
+        assert bounds.hard_start is not None and bounds.hard_end is not None
+        scale = self.scale_factor * self._zoom_level
+        return QRectF(
+            (bounds.hard_start - self.event.lore_date) * scale,
+            -22,
+            max(1.0, (bounds.hard_end - bounds.hard_start) * scale),
+            6,
+        )
+
+    def _end_uncertainty_rect(self) -> QRectF:
+        """Draw the duration endpoint's uncertainty separately from its start."""
+        data = self.event.attributes.get("_temporal_v2", {}).get("end_expression")
+        if not data or self._calendar_converter is None:
+            return QRectF()
+        bounds = TemporalExpression.from_dict(data).resolve_bounds(
+            self._calendar_converter
+        )
+        if not bounds.has_hard_bounds:
+            return QRectF(
+                self.event.lore_duration * self.scale_factor * self._zoom_level - 10,
+                -9,
+                20,
+                18,
+            )
+        assert bounds.hard_start is not None and bounds.hard_end is not None
+        scale = self.scale_factor * self._zoom_level
+        return QRectF(
+            (bounds.hard_start - self.event.lore_date) * scale,
+            -22,
+            max(1.0, (bounds.hard_end - bounds.hard_start) * scale),
+            6,
+        )
 
     def boundingRect(self) -> QRectF:
         """Defines the redrawable area of the item.
@@ -222,17 +293,33 @@ class EventItem(QGraphicsItem):
         Includes the diamond icon and the text label. Refreshed when selection changes
         (border width).
         """
+        display = event_temporal_display(self.event, self._calendar_converter)
+        if display is not None:
+            rect = self._display_rect(display)
+            return rect.united(
+                QRectF(
+                    rect.left(), 7, max(self.MAX_WIDTH, len(display.caption) * 7), 32
+                )
+            ).adjusted(-2, -2, 2, 2)
         if self.event.lore_duration > 0:
             # Width scales with zoom to match the timeline grid
             width = self.event.lore_duration * self.scale_factor * self._zoom_level
             # Ensure minimum width for visibility and clicking
             width = max(width, 10)
             # Extra height below for label + date
-            return QRectF(0, -10, max(width, self.MAX_WIDTH), 50)
+            return (
+                QRectF(0, -10, max(width, self.MAX_WIDTH), 50)
+                .united(self._uncertainty_rect())
+                .united(self._end_uncertainty_rect())
+            )
 
         # Bounding box includes Diamond + Text (extra height for date line)
-        return QRectF(
-            -self.ICON_SIZE, -self.ICON_SIZE, self.MAX_WIDTH, self.ICON_SIZE * 2 + 8
+        return (
+            QRectF(
+                -self.ICON_SIZE, -self.ICON_SIZE, self.MAX_WIDTH, self.ICON_SIZE * 2 + 8
+            )
+            .united(self._uncertainty_rect())
+            .united(self._end_uncertainty_rect())
         )
 
     def shape(self) -> QPainterPath:
@@ -244,6 +331,11 @@ class EventItem(QGraphicsItem):
 
         """
         path = QPainterPath()
+
+        display = event_temporal_display(self.event, self._calendar_converter)
+        if display is not None:
+            path.addRect(self._display_rect(display).adjusted(-2, -2, 2, 2))
+            return path
 
         if self.event.lore_duration > 0:
             # For duration events, the bar is clickable
@@ -337,11 +429,65 @@ class EventItem(QGraphicsItem):
         Draws a diamond shape and a text label.
         """
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        display = event_temporal_display(self.event, self._calendar_converter)
+        if display is not None:
+            self._paint_temporal_display(painter, display)
+            return
+        for uncertainty in (self._uncertainty_rect(), self._end_uncertainty_rect()):
+            if not uncertainty.isEmpty():
+                painter.save()
+                pen = QPen(self._secondary_text_color)
+                pen.setStyle(Qt.PenStyle.DotLine)
+                painter.setPen(pen)
+                painter.setBrush(Qt.BrushStyle.NoBrush)
+                painter.drawRect(uncertainty)
+                painter.restore()
 
         if self.event.lore_duration > 0:
             self._paint_duration_bar(painter)
         else:
             self._paint_point_event(painter)
+
+    def _paint_temporal_display(
+        self, painter: QPainter, display: TemporalDisplay
+    ) -> None:
+        """Paint possible extent and certain interior, never a midpoint duration bar."""
+        painter.save()
+        rect = self._display_rect(display)
+        pen = QPen(self._get_effective_color())
+        pen.setCosmetic(True)
+        pen.setWidth(2 if self.isSelected() else 1)
+        pen.setStyle(Qt.PenStyle.DotLine)
+        painter.setPen(pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        bounded = (
+            display.possible_start is not None and display.possible_end is not None
+        )
+        if bounded:
+            if self.event.lore_duration > 0:
+                painter.setBrush(
+                    QBrush(self._get_effective_color(), Qt.BrushStyle.BDiagPattern)
+                )
+            painter.drawRect(rect)
+            if display.certain_start is not None and display.certain_end is not None:
+                painter.fillRect(
+                    self._evidence_rect(display.certain_start, display.certain_end),
+                    self._get_effective_color(),
+                )
+        else:
+            painter.drawEllipse(rect)
+            painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, "?")
+        painter.setPen(self._text_color)
+        font = painter.font()
+        font.setBold(True)
+        painter.setFont(font)
+        painter.drawText(QPointF(rect.left(), 20), self.event.name)
+        font.setBold(False)
+        font.setPointSize(8)
+        painter.setFont(font)
+        painter.setPen(self._secondary_text_color)
+        painter.drawText(QPointF(rect.left(), 32), display.caption)
+        painter.restore()
 
     def _paint_duration_bar(self, painter: QPainter) -> None:
         """Draws the event as a horizontal bar spanning its duration."""
@@ -383,8 +529,11 @@ class EventItem(QGraphicsItem):
 
         if EventItem._calendar_converter:
             try:
-                date_str = EventItem._calendar_converter.format_date(
-                    self.event.lore_date
+                expression = expression_from_attributes(self.event.attributes)
+                date_str = (
+                    expression.display_text(EventItem._calendar_converter)
+                    if expression
+                    else EventItem._calendar_converter.format_date(self.event.lore_date)
                 )
             except Exception as e:
                 logger.warning(
@@ -440,8 +589,11 @@ class EventItem(QGraphicsItem):
         painter.setFont(font)
         if EventItem._calendar_converter:
             try:
-                date_str = EventItem._calendar_converter.format_date(
-                    self.event.lore_date
+                expression = expression_from_attributes(self.event.attributes)
+                date_str = (
+                    expression.display_text(EventItem._calendar_converter)
+                    if expression
+                    else EventItem._calendar_converter.format_date(self.event.lore_date)
                 )
             except Exception as e:
                 logger.warning(

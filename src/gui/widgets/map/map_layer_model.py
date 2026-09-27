@@ -24,6 +24,7 @@ from PySide6.QtCore import (
     Slot,
 )
 
+from src.core.calendar import CalendarConverter
 from src.core.map import (
     VECTOR_LAYER_TYPES,
     MapLayerNode,
@@ -88,6 +89,8 @@ class MapLayerModel(QAbstractItemModel):
     TemporalValidityRole = Qt.ItemDataRole.UserRole + 4
     ManualHiddenRole = Qt.ItemDataRole.UserRole + 5
     LockedRole = Qt.ItemDataRole.UserRole + 6
+
+    calendar_converter: CalendarConverter | None = None
 
     def __init__(
         self,
@@ -269,7 +272,12 @@ class MapLayerModel(QAbstractItemModel):
                 return node.id
             return None
         if role == Qt.ItemDataRole.DisplayRole:
-            return node.name
+            state = self.temporal_validity(node)
+            uncertain = state.status in {
+                TemporalValidityStatus.POSSIBLE,
+                TemporalValidityStatus.INDETERMINATE,
+            }
+            return f"{node.name} (?)" if uncertain else node.name
         if role == Qt.ItemDataRole.DecorationRole:
             return self._get_icon(node.layer_type)
         if role == Qt.ItemDataRole.CheckStateRole:
@@ -763,6 +771,8 @@ class MapLayerModel(QAbstractItemModel):
         self._current_time = current_time
         self.invalidate_cache()
         self._emit_all_data_changed()
+        if any("temporal" in node.attributes for node in self._iter_nodes(self._root)):
+            self._emit_subtree_opacity(self._root)
 
     def set_date_formatter(
         self, formatter: Optional[Callable[[float], str]]
@@ -771,62 +781,17 @@ class MapLayerModel(QAbstractItemModel):
         self._date_formatter = formatter
         self._emit_all_data_changed()
 
-    def temporal_validity(
-        self, node: MapLayerNode
-    ) -> ResolvedLayerTemporalValidity:
-        """Return temporal authoring state for a vector feature or group."""
+    def temporal_validity(self, node: MapLayerNode) -> ResolvedLayerTemporalValidity:
+        """Use the shared evaluator for vector features and their group ancestors."""
         if self._current_time is None:
             return ResolvedLayerTemporalValidity(
-                applicable=node.layer_type in VECTOR_LAYER_TYPES
-                or node.layer_type == MAP_LAYER_TYPE_GROUP,
+                applicable=node.layer_type
+                in VECTOR_LAYER_TYPES | {MAP_LAYER_TYPE_GROUP},
                 valid=True,
                 status=TemporalValidityStatus.VALID,
             )
-        if node.layer_type in VECTOR_LAYER_TYPES:
-            return resolve_layer_temporal_validity(
-                self._root, node.id, self._current_time
-            )
-        if node.layer_type != MAP_LAYER_TYPE_GROUP:
-            return ResolvedLayerTemporalValidity(
-                applicable=False,
-                valid=True,
-                status=TemporalValidityStatus.VALID,
-            )
-
-        path: List[MapLayerNode] = []
-        current: Optional[MapLayerNode] = node
-        while current is not None and current is not self._root:
-            path.append(current)
-            current = self._find_parent(current)
-        for candidate in reversed(path):
-            if (
-                candidate.start_date is not None
-                and self._current_time < candidate.start_date
-            ):
-                return ResolvedLayerTemporalValidity(
-                    applicable=True,
-                    valid=False,
-                    status=TemporalValidityStatus.BEFORE_START,
-                    source_node_id=candidate.id,
-                    source_node_name=candidate.name,
-                    boundary=candidate.start_date,
-                )
-            if (
-                candidate.end_date is not None
-                and self._current_time >= candidate.end_date
-            ):
-                return ResolvedLayerTemporalValidity(
-                    applicable=True,
-                    valid=False,
-                    status=TemporalValidityStatus.AT_OR_AFTER_END,
-                    source_node_id=candidate.id,
-                    source_node_name=candidate.name,
-                    boundary=candidate.end_date,
-                )
-        return ResolvedLayerTemporalValidity(
-            applicable=True,
-            valid=True,
-            status=TemporalValidityStatus.VALID,
+        return resolve_layer_temporal_validity(
+            self._root, node.id, self._current_time, self.calendar_converter
         )
 
     def visible_at_time(self, node: MapLayerNode, current_time: float) -> bool:
@@ -918,6 +883,11 @@ class MapLayerModel(QAbstractItemModel):
         """Build an authoring tooltip that distinguishes visibility causes."""
         lines: List[str] = []
         state = self.temporal_validity(node)
+        if state.status in {
+            TemporalValidityStatus.POSSIBLE,
+            TemporalValidityStatus.INDETERMINATE,
+        }:
+            lines.append("May be visible at the playhead; exact timing is unknown.")
         if state.applicable and not state.valid and state.boundary is not None:
             boundary = self._format_date(state.boundary)
             source = state.source_node_name or node.name
@@ -1120,6 +1090,13 @@ class MapLayerModel(QAbstractItemModel):
         parent = self._find_parent(node)
         if parent is not None and parent is not self._root:
             opacity *= self._effective_opacity(parent)
+        if node.layer_type in VECTOR_LAYER_TYPES and self.temporal_validity(
+            node
+        ).status in {
+            TemporalValidityStatus.POSSIBLE,
+            TemporalValidityStatus.INDETERMINATE,
+        }:
+            opacity *= 0.55
         return opacity
 
     _z_counter: float = 0.0
@@ -1231,7 +1208,7 @@ class MapLayerModel(QAbstractItemModel):
                 and node.layer_type in VECTOR_LAYER_TYPES
             ):
                 vis = resolve_layer_temporal_validity(
-                    self._root, node.id, current_time
+                    self._root, node.id, current_time, self.calendar_converter
                 ).valid
             result[node.id] = vis
             # Group temporal bounds affect vector descendants through the

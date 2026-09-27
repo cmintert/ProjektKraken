@@ -34,7 +34,13 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple
 
-from src.core.map import Map, MapLayerNode, resolve_layer_temporal_validity
+from src.core.calendar import CalendarConverter
+from src.core.map import (
+    Map,
+    MapLayerNode,
+    TemporalValidityStatus,
+    resolve_layer_temporal_validity,
+)
 from src.core.map_constants import MAP_DEFAULT_WIDTH_METERS, MAP_ROLE_MASTER
 from src.core.map_state import RasterLayerState
 from src.core.marker import Marker
@@ -111,6 +117,7 @@ class SpatialContextBuilder:
         nesting_service: Optional[MapNestingService] = None,
         feature_geometry_repo: Optional[FeatureGeometryRepository] = None,
         trajectory_repo: Optional[TrajectoryRepository] = None,
+        calendar_converter: CalendarConverter | None = None,
     ) -> None:
         """Initialise the builder.
 
@@ -134,6 +141,7 @@ class SpatialContextBuilder:
         self._nesting_service = nesting_service
         self._feature_geometry_repo = feature_geometry_repo
         self._trajectory_repo = trajectory_repo
+        self._calendar_converter = calendar_converter
 
     def build(
         self,
@@ -168,6 +176,15 @@ class SpatialContextBuilder:
         map_obj = self._map_repo.get_map(active_map_id)
         if map_obj is None:
             return None
+        if lore_date is not None and map_obj.layers is not None:
+            validity = resolve_layer_temporal_validity(
+                map_obj.layers, marker.id, lore_date, self._calendar_converter
+            )
+            if validity.status in {
+                TemporalValidityStatus.POSSIBLE,
+                TemporalValidityStatus.INDETERMINATE,
+            }:
+                return "[Spatial Context]\nMap presence is uncertain at this date; location and nearby features are not established."
         if not self._is_temporally_valid(map_obj, marker, lore_date):
             return None
         marker = self._resolve_marker_geometry(map_obj, marker, lore_date)
@@ -437,16 +454,18 @@ class SpatialContextBuilder:
             return None
         return None
 
-    @staticmethod
     def _is_temporally_valid(
-        map_obj: Map, marker: Marker, lore_date: Optional[float]
+        self, map_obj: Map, marker: Marker, lore_date: Optional[float]
     ) -> bool:
         """Return historical map existence without applying presentation state."""
         if lore_date is None or map_obj.layers is None:
             return True
-        return resolve_layer_temporal_validity(
-            map_obj.layers, marker.id, lore_date
-        ).valid
+        return (
+            resolve_layer_temporal_validity(
+                map_obj.layers, marker.id, lore_date, self._calendar_converter
+            ).status
+            == TemporalValidityStatus.VALID
+        )
 
     def _resolve_marker_geometry(
         self, map_obj: Map, marker: Marker, lore_date: Optional[float]

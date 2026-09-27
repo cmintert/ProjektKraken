@@ -242,7 +242,7 @@ class RelationEditDialog(QDialog):
 
         # Valid From
         self.check_from = QCheckBox("Valid From:")
-        self.valid_from = CompactDateWidget()
+        self.valid_from = CompactDateWidget(text_first=True)
         self.valid_from.setEnabled(False)  # Default disabled (infinite)
 
         if self.calendar_converter:
@@ -260,7 +260,7 @@ class RelationEditDialog(QDialog):
 
         # Valid To
         self.check_to = QCheckBox("Valid To:")
-        self.valid_to = CompactDateWidget()
+        self.valid_to = CompactDateWidget(text_first=True)
         self.valid_to.setEnabled(False)  # Default disabled (infinite)
 
         if self.calendar_converter:
@@ -276,6 +276,22 @@ class RelationEditDialog(QDialog):
         self.check_to.toggled.connect(self.valid_to.setEnabled)
         temp_layout.addRow(self.check_to, self.valid_to)
 
+        from src.core.temporal_expression import TemporalExpression
+
+        spec = self.attributes.get("temporal", {})
+        for side, widget, checkbox in (
+            ("start", self.valid_from, self.check_from),
+            ("end", self.valid_to, self.check_to),
+        ):
+            boundary = spec.get(side, {})
+            if "expression" in boundary:
+                checkbox.setChecked(True)
+                widget.setEnabled(True)
+                widget.set_expression(
+                    TemporalExpression.from_dict(boundary["expression"])
+                )
+
+        self._setup_boundary_choices(temp_layout, suggestion_items or [])
         self.temporal_group.setLayout(temp_layout)
         self.form_layout.addRow(self.temporal_group)
 
@@ -354,9 +370,7 @@ class RelationEditDialog(QDialog):
             "while the relation is active."
         )
         self.state_changes_guidance.setWordWrap(True)
-        self.state_changes_guidance.setStyleSheet(
-            StyleHelper.get_preview_label_style()
-        )
+        self.state_changes_guidance.setStyleSheet(StyleHelper.get_preview_label_style())
         self.form_layout.addRow(self.state_changes_guidance)
 
         self.state_changes_unavailable_label = QLabel()
@@ -569,13 +583,133 @@ class RelationEditDialog(QDialog):
         """Refresh the live direction preview label."""
         target_text = self.target_edit.text().strip() or "Target"
         rel = self.type_edit.currentText().strip() or "relation"
-        self.preview_label.setText(
-            f"{self._source_name} --{rel}--> {target_text}"
-        )
+        self.preview_label.setText(f"{self._source_name} --{rel}--> {target_text}")
 
-    def _on_logic_changed(
-        self, button: QAbstractButton | None, checked: bool
+    def _setup_boundary_choices(
+        self,
+        layout: QFormLayout,
+        suggestions: list[tuple[str, str, str]],
     ) -> None:
+        """Expose unknown/open intent and named event anchors without numeric bounds."""
+        self.temporal_behavior = QComboBox()
+        for label, value in (
+            ("Active state", "stateful"),
+            ("Historical fact", "historical"),
+            ("Occurrence", "occurrence"),
+            ("Timeless association", "atemporal"),
+        ):
+            self.temporal_behavior.addItem(label, value)
+        self.temporal_behavior.setCurrentIndex(
+            max(
+                0,
+                self.temporal_behavior.findData(
+                    self.attributes.get("temporal", {}).get("behavior", "stateful")
+                ),
+            )
+        )
+        self.temporal_behavior.setToolTip(
+            "Active states follow their validity dates. Historical facts remain available after they happen. Occurrences appear in history views. Timeless associations do not depend on the playhead."
+        )
+        layout.addRow("Meaning", self.temporal_behavior)
+        self._boundary_choices: dict[str, QComboBox] = {}
+        self._boundary_offsets: dict[str, QDoubleSpinBox] = {}
+        self._anchor_relations: dict[str, QComboBox] = {}
+        temporal = self.attributes.get("temporal", {})
+        for side, widget, checked in (
+            ("start", self.valid_from, self.check_from),
+            ("end", self.valid_to, self.check_to),
+        ):
+            choice = QComboBox()
+            choice.addItem("Manual date", "manual")
+            choice.addItem("Date not known", "unknown")
+            choice.addItem("Unbounded", "open")
+            for event_id, name, kind in suggestions:
+                if kind.casefold() == "event":
+                    choice.addItem(f"At event: {name}", f"event:{event_id}")
+            boundary = temporal.get(side, {})
+            selected = boundary.get("anchor", {}).get("anchor_id")
+            if selected is None:
+                selected = boundary.get(
+                    "status", "manual" if checked.isChecked() else "open"
+                )
+            if selected == "known":
+                selected = "manual"
+            index = choice.findData(selected)
+            if index < 0:
+                choice.addItem("Referenced event (unavailable)", selected)
+                index = choice.count() - 1
+            choice.setCurrentIndex(index)
+            choice.setAccessibleName(f"Relation {side} boundary")
+            layout.insertRow(
+                0 if side == "start" else 1,
+                "Starts" if side == "start" else "Ends",
+                choice,
+            )
+            self._boundary_choices[side] = choice
+            relative = QComboBox()
+            for title, value in (
+                ("At event", "at"),
+                ("Before event", "before"),
+                ("After event", "after"),
+            ):
+                relative.addItem(title, value)
+            relative.setCurrentIndex(
+                max(
+                    0,
+                    relative.findData(boundary.get("anchor", {}).get("relation", "at")),
+                )
+            )
+            relative.setAccessibleName(f"{side.title()} relative to event")
+            relative.setEnabled(str(choice.currentData()).startswith("event:"))
+            choice.currentIndexChanged.connect(
+                lambda _index, c=choice, r=relative: r.setEnabled(
+                    str(c.currentData()).startswith("event:")
+                )
+            )
+            layout.addRow(f"{side.title()} relative to event", relative)
+            self._anchor_relations[side] = relative
+            offset = QDoubleSpinBox()
+            offset.setRange(-1e12, 1e12)
+            offset.setDecimals(6)
+            offset.setSuffix(" days")
+            offset.setValue(float(boundary.get("anchor", {}).get("offset_days", 0)))
+            offset.setAccessibleName(f"{side.title()} event offset")
+            offset.setToolTip(
+                "Zero shares the event's exact transition. A signed offset shifts both evidence bounds by this many lore days."
+            )
+            self._boundary_offsets[side] = offset
+            layout.addRow(f"{side.title()} event offset", offset)
+            offset.setEnabled(str(choice.currentData()).startswith("event:"))
+            choice.currentIndexChanged.connect(
+                lambda _index, c=choice, o=offset: o.setEnabled(
+                    str(c.currentData()).startswith("event:")
+                )
+            )
+            choice.currentIndexChanged.connect(
+                lambda _index, c=choice, w=widget, check=checked: self._select_boundary(
+                    c, w, check
+                )
+            )
+            # Checking the existing manual-date affordance also selects manual mode.
+            checked.clicked.connect(
+                lambda enabled, c=choice: c.setCurrentIndex(
+                    c.findData("manual" if enabled else "open")
+                )
+            )
+            self._select_boundary(choice, widget, checked)
+
+    @staticmethod
+    def _select_boundary(
+        choice: QComboBox, widget: CompactDateWidget, check: QCheckBox
+    ) -> None:
+        """Update presentation for the chosen boundary intent."""
+        manual = choice.currentData() == "manual"
+        check.setChecked(manual)
+        widget.setEnabled(manual)
+        widget.setVisible(manual)
+        check.setVisible(manual)
+
+    def _on_logic_changed(self, button: QAbstractButton | None, checked: bool) -> None:
         """Handle logic radio button changes."""
         if not checked:
             return
@@ -649,9 +783,11 @@ class RelationEditDialog(QDialog):
         if notes:
             attrs["notes"] = notes
 
-        payload = self._collect_state_payload() if hasattr(
-            self, "state_changes_group"
-        ) else {}
+        payload = (
+            self._collect_state_payload()
+            if hasattr(self, "state_changes_group")
+            else {}
+        )
         if payload:
             attrs["payload"] = payload
 
@@ -690,6 +826,65 @@ class RelationEditDialog(QDialog):
                 attrs["valid_to_event"] = True
                 attrs["valid_to"] = self.source_event_date
 
+        return self._with_temporal_attributes(attrs)
+
+    def _with_temporal_attributes(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        """Collect precision-aware boundaries separately from relation evidence."""
+        from src.core.temporal_expression import TemporalExpression
+
+        temporal = self.attributes.get("temporal", {})
+        choices = {
+            side: choice.currentData()
+            for side, choice in self._boundary_choices.items()
+        }
+        dynamic = any(
+            attrs.get(key)
+            for key in ("valid_from_event", "valid_to_event", "valid_at_event")
+        )
+        if (
+            temporal
+            or dynamic
+            or self.temporal_behavior.currentData() != "stateful"
+            or any(value != "open" for value in choices.values())
+        ):
+            spec = {
+                **temporal,
+                "schema": 1,
+                "behavior": self.temporal_behavior.currentData(),
+            }
+            for side, widget, checked, legacy in (
+                ("start", self.valid_from, self.check_from.isChecked(), "from"),
+                ("end", self.valid_to, self.check_to.isChecked(), "to"),
+            ):
+                expression = widget.get_expression()
+                if attrs.get(f"valid_{legacy}_event"):
+                    spec[side] = {"binding": "source_event"}
+                elif choices[side] == "unknown":
+                    spec[side] = {"status": "unknown"}
+                    attrs.pop(f"valid_{legacy}", None)
+                elif str(choices[side]).startswith("event:"):
+                    spec[side] = {
+                        "anchor": {
+                            "anchor_id": choices[side],
+                            "relation": self._anchor_relations[side].currentData(),
+                            "offset_days": self._boundary_offsets[side].value(),
+                        }
+                    }
+                    attrs.pop(f"valid_{legacy}", None)
+                elif checked and isinstance(expression, TemporalExpression):
+                    spec[side] = {"expression": expression.to_dict()}
+                elif checked:
+                    spec[side] = {"exact": widget.get_value()}
+                else:
+                    spec[side] = {"status": "open"}
+            if attrs.get("valid_at_event"):
+                spec["at"] = {"binding": "source_event"}
+                spec["behavior"] = "occurrence"
+            elif spec["behavior"] == "occurrence":
+                spec["at"] = spec["start"]
+            else:
+                spec.pop("at", None)
+            attrs["temporal"] = spec
         return attrs
 
     def get_data(self) -> tuple[str, str, bool, Dict[str, Any]]:
@@ -726,6 +921,9 @@ class RelationEditDialog(QDialog):
         """Accept only canonical targets and manually supported relation types."""
         from src.core.temporal_state import validate_payload
 
+        if not self.valid_from.commit_draft() or not self.valid_to.commit_draft():
+            return
+
         target_id, rel_type, _, _ = self.get_data()
         if not target_id:
             QMessageBox.warning(
@@ -741,9 +939,11 @@ class RelationEditDialog(QDialog):
                 "Mentions are managed from description wikilinks.",
             )
             return
-        payload = self._collect_state_payload() if hasattr(
-            self, "state_changes_group"
-        ) else {}
+        payload = (
+            self._collect_state_payload()
+            if hasattr(self, "state_changes_group")
+            else {}
+        )
         if payload:
             try:
                 validate_payload(payload)

@@ -19,6 +19,7 @@ from PySide6.QtGui import (
     QTransform,
 )
 from PySide6.QtWidgets import (
+    QGraphicsItem,
     QGraphicsObject,
     QGraphicsPathItem,
     QStyleOptionGraphicsItem,
@@ -193,11 +194,7 @@ class TrajectoryRenderer:
             dot.setPos(pos)
             _theme = ThemeManager().get_theme()
             dot.setBrush(
-                QBrush(
-                    QColor(
-                        _theme.get("accent_secondary", KEYFRAME_COLOR_DEFAULT)
-                    )
-                )
+                QBrush(QColor(_theme.get("accent_secondary", KEYFRAME_COLOR_DEFAULT)))
             )
             dot.setPen(QPen(Qt.PenStyle.NoPen))
             dot.setZValue(base_z - 0.2)
@@ -237,6 +234,25 @@ class TrajectoryRenderer:
                 self._pulse_item(dot)
 
         self._view._schedule_label_layout()
+
+    def set_temporal_uncertainty(self, uncertain: bool) -> None:
+        """Render the owner's evaluated uncertainty without asserting a route exists."""
+        items: list[QGraphicsItem] = [
+            *self.keyframe_items,
+            *self.keyframe_label_items,
+            *self.relocation_path_items,
+        ]
+        if self.trajectory_path_item is not None:
+            items.append(self.trajectory_path_item)
+        for item in items:
+            item.setOpacity(0.55 if uncertain else 1.0)
+            if uncertain:
+                item.setToolTip(
+                    "Possible trajectory: the owning feature may not exist at this date."
+                )
+        if uncertain:
+            for label in self.keyframe_label_items:
+                label.setText(label._text + " (?)")
 
     def update_z_values(self) -> None:
         """Updates Z-values for active trajectory components to match marker."""
@@ -355,10 +371,7 @@ class TrajectoryRenderer:
             sorted_pairs, sorted_pairs[1:]
         ):
             pair = (start_keyframe.keyframe_id, end_keyframe.keyframe_id)
-            if (
-                None not in pair
-                and self._segment_modes.get(pair) == SEGMENT_MODE_STEP
-            ):
+            if None not in pair and self._segment_modes.get(pair) == SEGMENT_MODE_STEP:
                 path.moveTo(end_item.scenePos())
                 self._add_relocation_connector(
                     start_item.scenePos(), end_item.scenePos(), base_z

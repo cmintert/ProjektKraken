@@ -826,9 +826,7 @@ class UnifiedListWidget(QWidget):
                     if event is not None:
                         name = event.name
                 elif item_type == "entity":
-                    entity = next(
-                        (e for e in self._entities if e.id == item_id), None
-                    )
+                    entity = next((e for e in self._entities if e.id == item_id), None)
                     if entity is not None:
                         name = entity.name
                 else:
@@ -866,15 +864,15 @@ class UnifiedListWidget(QWidget):
         # Show self-closing short delete confirmation modal (Unblocking UX)
         count = len(items_to_delete)
         if count == 1:
-            msg = f"Deleted '{items_to_delete[0][2]}'.\n\n(Ctrl+Z to Undo)"
+            msg = f"Deletion requested for '{items_to_delete[0][2]}'.\n\nCompleted deletions can be undone with Ctrl+Z."
         else:
-            msg = f"Deleted {count} items.\n\n(Ctrl+Z to Undo)"
+            msg = f"Deletion requested for {count} items.\n\nCompleted deletions can be undone with Ctrl+Z."
 
         # Emit status bar message as secondary feedback
         self.status_message_requested.emit(msg.replace("\n\n", " "), 3000)
 
         # Show the auto-closing modal (1 second)
-        popup = AutoClosingMessageBox("Deletion Success", msg, 1000, parent=self)
+        popup = AutoClosingMessageBox("Deletion Requested", msg, 1000, parent=self)
         popup.exec()
 
         # Optional: Clear check state after deletion to avoid stale references

@@ -7,6 +7,7 @@ overlaps using a greedy "First Fit" approach.
 from PySide6.QtGui import QFont, QFontMetrics
 
 from src.core.events import Event
+from src.core.temporal_display import event_temporal_display
 from src.gui.widgets.timeline.event_item import EventItem
 
 
@@ -63,6 +64,13 @@ class TimelineLanePacker:
 
         for event in events:
             start_time = event.lore_date
+            display = event_temporal_display(event, EventItem._calendar_converter)
+            if (
+                display is not None
+                and display.possible_start is not None
+                and display.possible_end is not None
+            ):
+                start_time = display.possible_start
             event_height = EventItem.get_event_height(event)
 
             # Calculate visual duration (in time units)
@@ -101,6 +109,16 @@ class TimelineLanePacker:
             return 0.0
 
         text_width = self.fm.horizontalAdvance(event.name)
+
+        display = event_temporal_display(event, EventItem._calendar_converter)
+        if display is not None:
+            width: float = max(text_width, self.fm.horizontalAdvance(display.caption)) + 10
+            if display.possible_start is not None and display.possible_end is not None:
+                width = max(
+                    width,
+                    (display.possible_end - display.possible_start) * self.scale_factor,
+                )
+            return width / self.scale_factor
 
         if event.lore_duration > 0:
             # Duration Event - bar with label BELOW

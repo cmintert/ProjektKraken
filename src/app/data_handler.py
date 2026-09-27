@@ -468,6 +468,10 @@ class DataHandler(QObject):
 
         # Determine what to reload based on command
         if not success:
+            if "temporal_dependencies" in result.data:
+                # CommandCoordinator handles the confirmation snapshot on the UI
+                # thread; preflight has made no mutation and is not a save error.
+                return
             logger.warning(f"[DataHandler] Command failed: {message}")
             if message:
                 # Emit failure signal for MainWindow to show dialog

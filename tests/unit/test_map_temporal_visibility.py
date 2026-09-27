@@ -30,6 +30,28 @@ def _tree(*children: MapLayerNode) -> MapLayerNode:
     return MapLayerNode(name="Root", layer_type="group", id="root", children=[group])
 
 
+def test_validity_dialog_preserves_unknown_and_partial_dates(qtbot):
+    from src.core.calendar import CalendarConfig, CalendarConverter
+    from src.core.date_parser import DateParser
+
+    config = CalendarConfig.create_default()
+    converter = CalendarConverter(config)
+    expression = DateParser(config).parse_expression("961")
+    node = MapLayerNode(name="Uncertain city", layer_type="marker", attributes={
+        "temporal": {"schema": 1, "start": {"status": "unknown"},
+                     "end": {"expression": expression.to_dict()}}
+    })
+    dialog = TemporalValidityDialog(node, calendar_converter=converter)
+    qtbot.addWidget(dialog)
+    assert dialog._boundary_modes["start"].currentData() == "unknown"
+    assert dialog._end.txt_date.text() == "961"
+    data = dialog.properties()
+    assert data["temporal"]["start"] == {"status": "unknown"}
+    assert data["temporal"]["end"]["expression"]["precision"] == "year"
+    dialog._boundary_modes["start"].setCurrentIndex(0)
+    assert dialog.properties()["temporal"]["start"] == {"status": "open"}
+
+
 def test_core_resolver_uses_half_open_interval_and_ancestor_bounds() -> None:
     feature = MapLayerNode(
         name="Ardent",

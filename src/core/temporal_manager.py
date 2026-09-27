@@ -9,6 +9,9 @@ from typing import Any
 
 from PySide6.QtCore import QObject, Slot
 
+from src.core.calendar import CalendarConfig, CalendarConverter
+from src.core.temporal_anchors import resolve_event_anchors
+from src.core.temporal_constraints import TemporalConstraint
 from src.core.temporal_resolver import TemporalResolver
 from src.core.temporal_state import ResolvedEntityState
 
@@ -57,7 +60,21 @@ class TemporalManager(QObject):
         relations = self._db.get_incoming_relations(entity_id)
 
         # 3. Resolve
-        state = self._resolver.resolve_entity_state(entity, relations, time)
+        config = self._db.get_active_calendar_config()
+        converter = (
+            CalendarConverter(config) if isinstance(config, CalendarConfig) else None
+        )
+        events = self._db.get_all_events()
+        events = events if isinstance(events, list) else []
+        anchors = resolve_event_anchors(events, converter)
+        constraints = [
+            TemporalConstraint.from_dict(item)
+            for event in events
+            for item in event.attributes.get("_temporal_v2", {}).get("constraints", [])
+        ]
+        state = self._resolver.resolve_entity_state(
+            entity, relations, time, converter, anchors, constraints
+        )
 
         # 4. Cache and Return
         self._cache[cache_key] = state
@@ -89,6 +106,15 @@ class TemporalManager(QObject):
 
             # Extract unique target entities
             affected_entities = {rel["target_id"] for rel in relations}
+            # An anchor may be referenced by an entity-to-entity relation too.
+            all_relations = self._db.get_all_relations()
+            if isinstance(all_relations, list):
+                for relation in all_relations:
+                    temporal = relation.get("attributes", {}).get("temporal", {})
+                    for side in ("start", "end", "at"):
+                        anchor = temporal.get(side, {}).get("anchor", {})
+                        if anchor.get("anchor_id") == f"event:{event_id}":
+                            affected_entities.add(relation["target_id"])
 
             # Invalidate cache for each affected entity
             for entity_id in affected_entities:

@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
+from src.core.calendar import CalendarConverter
 from src.core.map_constants import (
     MAP_LAYER_DEFAULT_MAX_ZOOM,
     MAP_LAYER_DEFAULT_MIN_ZOOM,
@@ -19,6 +20,7 @@ from src.core.map_constants import (
     MAP_LAYER_TYPE_PATH,
     MAP_LAYER_TYPE_REGION,
 )
+from src.core.temporal_window import TemporalValidity, resolve_temporal_window
 
 VECTOR_LAYER_TYPES = frozenset(
     {MAP_LAYER_TYPE_MARKER, MAP_LAYER_TYPE_PATH, MAP_LAYER_TYPE_REGION}
@@ -31,6 +33,8 @@ class TemporalValidityStatus(str, Enum):
     VALID = "valid"
     BEFORE_START = "before_start"
     AT_OR_AFTER_END = "at_or_after_end"
+    POSSIBLE = "possible"
+    INDETERMINATE = "indeterminate"
 
 
 @dataclass(frozen=True)
@@ -178,6 +182,7 @@ def resolve_layer_temporal_validity(
     root: MapLayerNode,
     node_id: str,
     lore_date: float,
+    converter: CalendarConverter | None = None,
 ) -> ResolvedLayerTemporalValidity:
     """Resolve half-open temporal validity for a vector feature.
 
@@ -196,7 +201,9 @@ def resolve_layer_temporal_validity(
 
     """
     path = _find_layer_path(root, node_id)
-    if not path or path[-1].layer_type not in VECTOR_LAYER_TYPES:
+    if not path or path[-1].layer_type not in VECTOR_LAYER_TYPES | {
+        MAP_LAYER_TYPE_GROUP
+    }:
         return ResolvedLayerTemporalValidity(
             applicable=False,
             valid=True,
@@ -204,8 +211,31 @@ def resolve_layer_temporal_validity(
         )
 
     # The root is an invisible container rather than an authored layer.
+    uncertain: ResolvedLayerTemporalValidity | None = None
     for node in path[1:]:
-        if node.start_date is not None and lore_date < node.start_date:
+        window = resolve_temporal_window(
+            {
+                **node.attributes,
+                "valid_from": node.start_date,
+                "valid_to": node.end_date,
+            },
+            converter=converter,
+        )
+        status = window.status_at(lore_date)
+        if status in {TemporalValidity.POSSIBLE, TemporalValidity.INDETERMINATE}:
+            if uncertain and uncertain.status == TemporalValidityStatus.INDETERMINATE:
+                continue
+            uncertain = ResolvedLayerTemporalValidity(
+                applicable=True,
+                valid=True,
+                status=TemporalValidityStatus(status.value),
+                source_node_id=node.id,
+                source_node_name=node.name,
+            )
+            continue
+        if status == TemporalValidity.DEFINITE:
+            continue
+        if window.start is not None and lore_date < window.start:
             return ResolvedLayerTemporalValidity(
                 applicable=True,
                 valid=False,
@@ -214,7 +244,7 @@ def resolve_layer_temporal_validity(
                 source_node_name=node.name,
                 boundary=node.start_date,
             )
-        if node.end_date is not None and lore_date >= node.end_date:
+        if window.end is not None and lore_date >= window.end:
             return ResolvedLayerTemporalValidity(
                 applicable=True,
                 valid=False,
@@ -224,7 +254,7 @@ def resolve_layer_temporal_validity(
                 boundary=node.end_date,
             )
 
-    return ResolvedLayerTemporalValidity(
+    return uncertain or ResolvedLayerTemporalValidity(
         applicable=True,
         valid=True,
         status=TemporalValidityStatus.VALID,

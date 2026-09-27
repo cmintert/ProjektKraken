@@ -28,6 +28,9 @@ class ResolvedEntityState:
     absent_attribute_sources: dict[str, dict[str, Any]] | None = field(
         default=None, compare=False
     )
+    possible_effects: list[dict[str, Any]] = field(default_factory=list)
+    ambiguous_attributes: dict[str, list[Any]] = field(default_factory=dict)
+    temporal_warnings: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         """Return a serializable snapshot suitable for queued Qt delivery."""
@@ -35,11 +38,12 @@ class ResolvedEntityState:
             "entity_id": self.entity_id,
             "description": self.description,
             "attributes": deepcopy(self.attributes),
+            "possible_effects": deepcopy(self.possible_effects),
+            "ambiguous_attributes": deepcopy(self.ambiguous_attributes),
+            "temporal_warnings": list(self.temporal_warnings),
             "description_source": deepcopy(self.description_source),
             "attribute_sources": deepcopy(self.attribute_sources or {}),
-            "absent_attribute_sources": deepcopy(
-                self.absent_attribute_sources or {}
-            ),
+            "absent_attribute_sources": deepcopy(self.absent_attribute_sources or {}),
         }
 
 
@@ -113,4 +117,7 @@ def apply_payload(
         description_source=state.description_source,
         attribute_sources=state.attribute_sources,
         absent_attribute_sources=state.absent_attribute_sources,
+        possible_effects=state.possible_effects,
+        ambiguous_attributes=state.ambiguous_attributes,
+        temporal_warnings=state.temporal_warnings,
     )

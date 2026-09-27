@@ -15,6 +15,7 @@ from typing import Any, Optional
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import (
     QButtonGroup,
+    QCheckBox,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -24,6 +25,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.temporal_expression import move_expression
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.compact_date_widget import CompactDateWidget
@@ -97,10 +99,17 @@ class TemporalRangeWidget(QWidget):
         lbl_start.setFixedWidth(36)
         start_row.addWidget(lbl_start)
         self.date_start = CompactDateWidget(text_first=True)
+        self.date_start.allow_duration_range = True
         start_row.addWidget(self.date_start)
         card_layout.addLayout(start_row)
+        self.has_duration = QCheckBox("Event has duration")
+        self.has_duration.setToolTip(
+            "Leave unchecked for a single occurrence, even when its date is only known to a year."
+        )
+        card_layout.addWidget(self.has_duration)
         self.range_button = DisclosureButton("End date / duration…")
         card_layout.addWidget(self.range_button)
+        self.range_button.hide()
         self.range_summary = QLabel()
         self.range_summary.setWordWrap(True)
         card_layout.addWidget(self.range_summary)
@@ -196,6 +205,10 @@ class TemporalRangeWidget(QWidget):
         self.date_end = CompactDateWidget(text_first=True)
         self.date_end.txt_date.setAccessibleName("End date")
         end_row.addWidget(self.date_end)
+        self.enter_end_button = QPushButton("Specify an end date instead…")
+        self.enter_end_button.clicked.connect(self._enter_end_date)
+        end_row.addWidget(self.enter_end_button)
+        self.enter_end_button.hide()
         range_layout.addLayout(end_row)
         self.date_start.draft_changed.connect(self._on_draft_changed)
         self.date_end.draft_changed.connect(self._on_draft_changed)
@@ -239,8 +252,10 @@ class TemporalRangeWidget(QWidget):
     def _connect_signals(self) -> None:
         """Wires up internal signals."""
         self.date_start.value_changed.connect(self._on_start_changed)
+        self.date_start.range_end_selected.connect(self._on_range_end_selected)
         self.duration_widget.value_changed.connect(self._on_duration_changed)
         self.date_end.value_changed.connect(self._on_end_changed)
+        self.has_duration.toggled.connect(self._on_duration_mode_changed)
         self.btn_lock_end.toggled.connect(self._on_lock_toggled)
         ThemeManager().theme_changed.connect(self._on_theme_changed)
         self.start_changed.connect(self._update_range_summary)
@@ -267,15 +282,63 @@ class TemporalRangeWidget(QWidget):
 
     def _update_range_summary(self, _value: float = 0.0) -> None:
         duration = self.get_duration()
-        self.range_summary.setText(
-            f"Duration: {duration:g} days · Ends: "
-            f"{self.date_end.txt_date.text() or self.get_end()}"
-            if duration
-            else ""
+        projected = self.date_end.get_expression() is not None
+        caption = "Span between date estimates" if projected else "Duration"
+        end = self.date_end.get_expression()
+        end_text = end.display_text(self.date_end._converter) if end else ""
+        derived_uncertain = (
+            self.date_start.get_expression() is not None
+            and end is None
+            and duration > 0
         )
-        self.range_summary.setVisible(bool(duration))
+        self.date_end.setVisible(not derived_uncertain)
+        self.enter_end_button.setVisible(derived_uncertain)
+        self.range_summary.setText(
+            f"{caption}: {duration:g} days"
+            + (f" · Ends: {end_text}" if end_text else "")
+            if duration
+            else "Single occurrence; date precision does not imply duration."
+        )
+        self.range_summary.setVisible(True)
+
+    def _enter_end_date(self) -> None:
+        """Request an authored endpoint instead of showing a fabricated exact end."""
+        self.enter_end_button.hide()
+        self.date_end.show()
+        self.date_end.txt_date.clear()
+        self.date_end.txt_date.setPlaceholderText("Enter the known end date")
+        self.date_end.txt_date.setFocus()
+
+    def _on_duration_mode_changed(self, enabled: bool) -> None:
+        """Let authors explicitly remove duration without changing date precision."""
+        self.range_button.setVisible(enabled)
+        self.range_button.setChecked(enabled)
+        if not enabled and not self._updating:
+            self.duration_widget.set_value(0)
+            self._on_duration_changed(0)
+
+    def _show_duration_mode(self, enabled: bool) -> None:
+        """Synchronize presentation during hydration without editing the event."""
+        self.has_duration.blockSignals(True)
+        self.has_duration.setChecked(enabled)
+        self.has_duration.blockSignals(False)
+        self.range_button.setVisible(enabled)
+        if not enabled:
+            self.range_button.setChecked(False)
 
     # ── Internal slot handlers ─────────────────────────────────────────────
+
+    @Slot(object)
+    def _on_range_end_selected(self, expression: object) -> None:
+        """Display an explicitly chosen duration endpoint in its authored precision."""
+        from src.core.temporal_expression import TemporalExpression
+
+        if not isinstance(expression, TemporalExpression):
+            return
+        self._show_duration_mode(True)
+        self.date_end.set_expression(expression)
+        self._on_end_changed(self.date_end.get_value())
+        self.range_button.setChecked(True)
 
     @Slot(float)
     def _on_start_changed(self, new_start: float) -> None:
@@ -296,7 +359,19 @@ class TemporalRangeWidget(QWidget):
             if self._lock_mode == self.LOCK_DURATION:
                 current_duration = self.duration_widget.get_value()
                 self.date_end.blockSignals(True)
-                self.date_end.set_value(new_start + current_duration)
+                expression = self.date_end.get_expression()
+                converter = self.date_end._converter
+                if expression is not None and converter is not None:
+                    self.date_end.set_expression(
+                        move_expression(
+                            expression, new_start + current_duration, converter
+                        )
+                    )
+                    self.duration_widget.set_value(
+                        max(0.0, self.date_end.get_value() - new_start)
+                    )
+                else:
+                    self.date_end.set_value(new_start + current_duration)
                 self.date_end.blockSignals(False)
             else:
                 end_date = self.date_end.get_value()
@@ -323,6 +398,7 @@ class TemporalRangeWidget(QWidget):
             start = self.date_start.get_value()
             self.date_end.blockSignals(True)
             self.date_end.set_value(start + duration)
+            self._show_duration_mode(duration > 0)
             self.range_button.setChecked(duration != 0)
             self._update_range_summary()
             self.date_end.blockSignals(False)
@@ -346,6 +422,7 @@ class TemporalRangeWidget(QWidget):
             duration = max(0.0, end_date - start)
             self.duration_widget.blockSignals(True)
             self.duration_widget.set_value(duration)
+            self._show_duration_mode(duration > 0)
             self.duration_widget.blockSignals(False)
             self.end_changed.emit(end_date)
         finally:
@@ -400,6 +477,8 @@ class TemporalRangeWidget(QWidget):
             self.duration_widget.set_start_date(start)
             self.duration_widget.set_value(duration)
             self.date_end.set_value(start + duration)
+            self._show_duration_mode(duration > 0)
+            self._update_range_summary()
         finally:
             self._updating = old_updating
 

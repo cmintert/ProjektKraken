@@ -10,6 +10,7 @@ implementation.
 getting-started
 workspace
 events-entities-relations
+wiki-editor-markdown
 timeline-and-calendars
 maps
 longform
@@ -22,4 +23,3 @@ troubleshooting
 ProjektKraken saves world content as you work. Undo and redo remain available
 for supported content changes; opening worlds, changing the window layout, and
 restoring backups are not ordinary undoable edits.
-

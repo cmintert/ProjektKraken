@@ -7,6 +7,10 @@ concerns from the widget layer.
 import logging
 from typing import TYPE_CHECKING, Any, Dict
 
+from src.core.calendar import CalendarConfig, CalendarConverter
+from src.core.graph_temporal import GraphTemporalMode, evaluate_graph_relation
+from src.core.temporal_anchors import resolve_event_anchors
+
 if TYPE_CHECKING:
     from src.services.db_service import DatabaseService
 
@@ -26,6 +30,8 @@ class GraphDataService:
         db_service: "DatabaseService",
         include_tags: list[str] | None = None,
         include_rel_types: list[str] | None = None,
+        lore_time: float | None = None,
+        temporal_mode: GraphTemporalMode = GraphTemporalMode.ALL_RELATIONS,
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """Fetches nodes (entities/events) and edges (relations) for graph display.
 
@@ -43,6 +49,30 @@ class GraphDataService:
         """
         # Collect all relations by iterating over all entities and events
         all_relations = self._collect_all_relations(db_service)
+        if lore_time is not None:
+            events = {event.id: event for event in db_service.get_all_events()}
+            config = db_service.get_active_calendar_config()
+            converter = (
+                CalendarConverter(config)
+                if isinstance(config, CalendarConfig)
+                else None
+            )
+            anchors = resolve_event_anchors(list(events.values()), converter)
+            evaluated = []
+            for relation in all_relations:
+                relation = dict(relation)
+                source = events.get(relation["source_id"])
+                if source is not None:
+                    relation.update(
+                        source_event_date=source.lore_date,
+                        source_event_attributes=source.attributes,
+                    )
+                snapshot = evaluate_graph_relation(
+                    relation, lore_time, converter, temporal_mode, anchors
+                )
+                if snapshot is not None:
+                    evaluated.append(snapshot)
+            all_relations = evaluated
 
         # Filter relations by type if specified
         if include_rel_types:
@@ -75,6 +105,16 @@ class GraphDataService:
                 "target_id": strip_id_prefix(r["target_id"]),
                 "rel_type": r["rel_type"],
                 "attributes": r.get("attributes", {}),
+                **{
+                    key: r[key]
+                    for key in (
+                        "validity_status",
+                        "temporal_behavior",
+                        "temporal_summary",
+                        "temporal_diagnostics",
+                    )
+                    if key in r
+                },
             }
             for r in relations
         ]

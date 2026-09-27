@@ -423,8 +423,8 @@ class TestGraphData:
     ):
         """Hidden Graph invalidation should remain demand-driven."""
         emitted = []
-        fake_window.load_graph_data_requested.connect(
-            lambda tags, relations: emitted.append((tags, relations))
+        coordinator.graph_temporal_requested.connect(
+            lambda tags, relations, context: emitted.append((tags, relations))
         )
 
         coordinator.on_events_ready([])
@@ -441,8 +441,8 @@ class TestGraphData:
         """Closely spaced dataset changes should submit one Graph request."""
         fake_window.workspace.active_panel.return_value = "graph"
         emitted = []
-        fake_window.load_graph_data_requested.connect(
-            lambda tags, relations: emitted.append((tags, relations))
+        coordinator.graph_temporal_requested.connect(
+            lambda tags, relations, context: emitted.append((tags, relations))
         )
 
         coordinator.on_events_ready([])
@@ -494,8 +494,8 @@ class TestGraphData:
             "rel_types": ["type1"],
         }
         signals = []
-        fake_window.load_graph_data_requested.connect(
-            lambda t, r: signals.append((t, r))
+        coordinator.graph_temporal_requested.connect(
+            lambda t, r, context: signals.append((t, r))
         )
         coordinator.load_graph_data()
         assert len(signals) == 1

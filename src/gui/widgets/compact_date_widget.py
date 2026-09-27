@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QFrame,
     QGridLayout,
     QHBoxLayout,
+    QInputDialog,
     QLabel,
     QLineEdit,
     QPushButton,
@@ -32,6 +33,11 @@ from PySide6.QtWidgets import (
 
 from src.core.calendar import CalendarConverter, CalendarDate
 from src.core.date_parser import DateParser
+from src.core.temporal_expression import (
+    TemporalExpression,
+    TemporalPrecision,
+    TemporalQualifier,
+)
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
@@ -57,6 +63,7 @@ class CompactDateWidget(QWidget):
 
     value_changed = Signal(float)
     draft_changed = Signal(bool)
+    range_end_selected = Signal(object)
 
     def __init__(
         self, parent: Optional[QWidget] = None, *, text_first: bool = False
@@ -72,6 +79,8 @@ class CompactDateWidget(QWidget):
         self._text_first = text_first
         self._draft_pending = False
         self._accepted_value = 0.0
+        self._expression: TemporalExpression | None = None
+        self.allow_duration_range = False
         # Set size policy to prevent vertical squashing
         from PySide6.QtWidgets import QSizePolicy
 
@@ -132,6 +141,31 @@ class CompactDateWidget(QWidget):
         )
         chip_layout.setSpacing(4)
         self.date_fields_button.toggled.connect(self._date_chip.setVisible)
+        self._qualification_row = QWidget(self)
+        qualification_layout = QHBoxLayout(self._qualification_row)
+        qualification_layout.setContentsMargins(0, 0, 0, 0)
+        qualification_layout.addWidget(QLabel("Date qualification"))
+        self.qualifier_combo = QComboBox()
+        for label, qualifier in (
+            ("Asserted", TemporalQualifier.ASSERTED),
+            ("Approximate", TemporalQualifier.APPROXIMATE),
+            ("Uncertain", TemporalQualifier.UNCERTAIN),
+            ("Approximate and uncertain", TemporalQualifier.APPROXIMATE_UNCERTAIN),
+            ("Estimated", TemporalQualifier.ESTIMATED),
+            ("Calculated", TemporalQualifier.CALCULATED),
+        ):
+            self.qualifier_combo.addItem(label, qualifier.value)
+        self.qualifier_combo.setAccessibleName("Date qualification")
+        qualification_layout.addWidget(self.qualifier_combo, 1)
+        layout.insertWidget(3, self._qualification_row)
+        self._qualification_row.hide()
+        self.limits_button = QPushButton("Possible date limits…")
+        layout.insertWidget(4, self.limits_button)
+        self.limits_button.hide()
+        self.date_fields_button.toggled.connect(self.limits_button.setVisible)
+        self.limits_button.clicked.connect(self._edit_limits)
+        self.date_fields_button.toggled.connect(self._qualification_row.setVisible)
+        self.qualifier_combo.currentIndexChanged.connect(self._on_qualifier_changed)
         self.btn_time_toggle.setText("Time…")
         self.btn_time_toggle.setIcon(QIcon())
         self.btn_time_toggle.setMinimumSize(0, 32)
@@ -142,6 +176,9 @@ class CompactDateWidget(QWidget):
         layout.addWidget(self.feedback)
         self.txt_date.textEdited.connect(self._on_draft_edited)
         self.txt_date.installEventFilter(self)
+        for field in (self.combo_month, self.combo_day):
+            field.installEventFilter(self)
+            field.setToolTip("Choose a component, or press Delete to leave it unknown.")
         self._sync_entry_availability()
 
     def _sync_entry_availability(self) -> None:
@@ -162,6 +199,120 @@ class CompactDateWidget(QWidget):
             self._accepted_value = self.get_value()
             self._show_accepted_date()
 
+    def _edit_limits(self) -> None:
+        """Collect explicit occurrence limits without changing the event duration."""
+        from dataclasses import replace
+
+        from PySide6.QtWidgets import QCheckBox, QDialogButtonBox, QFormLayout
+
+        from src.core.temporal_authoring import (
+            explicit_limit_text,
+            with_explicit_limits,
+        )
+
+        if self._parser is None or not self.commit_draft():
+            return
+        parser = self._parser
+        expression = self._expression or parser.parse_expression(self._entry_text())
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Possible date limits")
+        dialog.setStyleSheet(StyleHelper.get_dialog_base_style())
+        layout = QVBoxLayout(dialog)
+        hint = QLabel(
+            "Limits bound when the occurrence can happen. The until limit includes the whole entered period. These are not duration endpoints."
+        )
+        hint.setWordWrap(True)
+        layout.addWidget(hint)
+        form = QFormLayout()
+        editors = []
+        for label, value in (
+            ("Possible from", expression.explicit_outer_start),
+            ("Possible until", expression.explicit_outer_end),
+        ):
+            enabled = QCheckBox(label)
+            enabled.setChecked(value is not None)
+            field = QLineEdit()
+            field.setAccessibleName(label)
+            # Stored upper limits are exclusive; show the last included period.
+            text = (
+                explicit_limit_text(
+                    value, parser.converter, upper=label == "Possible until"
+                )
+                if value is not None
+                else ""
+            )
+            field.setText(text)
+            field.setEnabled(enabled.isChecked())
+            enabled.toggled.connect(field.setEnabled)
+            form.addRow(enabled, field)
+            editors.append((enabled, field, text, value))
+        layout.addLayout(form)
+        error = QLabel()
+        error.setWordWrap(True)
+        error.setStyleSheet(StyleHelper.get_error_label_style())
+        layout.addWidget(error)
+        actions = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        layout.addWidget(actions)
+
+        def apply() -> None:
+            try:
+                values: list[float | None] = []
+                for index, (enabled, field, original, old_value) in enumerate(editors):
+                    if not enabled.isChecked():
+                        values.append(None)
+                    elif field.text() == original and old_value is not None:
+                        values.append(old_value)
+                    else:
+                        if not field.text().strip():
+                            raise ValueError("Enter a date for each enabled limit.")
+                        bound = with_explicit_limits(
+                            expression,
+                            parser,
+                            field.text().strip() if index == 0 else "",
+                            field.text().strip() if index == 1 else "",
+                        )
+                        values.append(
+                            bound.explicit_outer_start
+                            if index == 0
+                            else bound.explicit_outer_end
+                        )
+                updated = replace(
+                    expression,
+                    explicit_outer_start=values[0],
+                    explicit_outer_end=values[1],
+                )
+                problem = updated.resolve_bounds(parser.converter).error
+                if problem:
+                    raise ValueError(problem)
+                self.set_expression(updated)
+                self.value_changed.emit(self.get_value())
+                dialog.accept()
+            except ValueError as exc:
+                error.setText(str(exc))
+
+        actions.accepted.connect(apply)
+        actions.rejected.connect(dialog.reject)
+        dialog.exec()
+
+    def _on_qualifier_changed(self, _index: int) -> None:
+        """Publish an intentional qualification edit without changing precision."""
+        if self._updating or self._parser is None:
+            return
+        from dataclasses import replace
+
+        expression = self._expression or self._parser.parse_expression(
+            self._entry_text()
+        )
+        expression = replace(
+            expression,
+            original_text=None,
+            qualifier=TemporalQualifier(self.qualifier_combo.currentData()),
+        )
+        self.set_expression(expression)
+        self.value_changed.emit(self.get_value())
+
     def _on_draft_edited(self, _text: str) -> None:
         self._draft_pending = True
         self.feedback.setText("Date not applied yet. Enter to apply; Esc to restore.")
@@ -178,8 +329,8 @@ class CompactDateWidget(QWidget):
         try:
             if self._parser is None:
                 raise ValueError("No calendar is available")
-            parsed = self._parser.parse_date(self.txt_date.text().strip())
-            timestamp = self._parser.calculate_timestamp(parsed)
+            expression, range_end = self._parse_draft_expression()
+            timestamp = expression.representative_time(self._parser.converter)
         except (ValueError, TypeError, OverflowError):
             self.feedback.setText(
                 "Date not recognized. Use this calendar's date format, "
@@ -189,26 +340,68 @@ class CompactDateWidget(QWidget):
             return False
         self._draft_pending = False
         self.set_value(timestamp)
+        self.set_expression(expression)
         self.value_changed.emit(timestamp)
+        if range_end is not None:
+            self.range_end_selected.emit(range_end)
         self.draft_changed.emit(False)
         return True
+
+    def _parse_draft_expression(
+        self,
+    ) -> tuple[TemporalExpression, TemporalExpression | None]:
+        """Require an explicit meaning for a bare date range."""
+        assert self._parser is not None
+        text = self.txt_date.text().strip()
+        try:
+            return self._parser.parse_expression(text), None
+        except ValueError:
+            start, end = self._parser.parse_range_expressions(text)
+        options = ["Occurred sometime within this range"]
+        if self.allow_duration_range:
+            options.append("Lasted from the first date to the second")
+        selected, accepted = QInputDialog.getItem(
+            self,
+            "What does this date range mean?",
+            "Range meaning",
+            options,
+            0,
+            False,
+        )
+        if not accepted:
+            raise ValueError("Choose the range meaning or restore the previous date")
+        if selected == options[0]:
+            expression = self._parser.parse_expression(
+                f"between {start.display_text(self._converter)} and {end.display_text(self._converter)}"
+            )
+            return expression, None
+        return start, end
 
     def cancel_draft(self) -> None:
         """Restore the last accepted value without publishing an edit."""
         if self._draft_pending:
             self._draft_pending = False
+            expression = self._expression
             self.set_value(self._accepted_value)
+            if expression is not None:
+                self.set_expression(expression)
             self.draft_changed.emit(False)
 
     def _show_accepted_date(self) -> None:
         if self._converter is not None and not self._draft_pending:
-            text = self._converter.format_date(self.get_value())
+            text = (
+                self._expression.display_text(self._converter)
+                if self._expression
+                else self._converter.format_date(self.get_value())
+            )
             self.txt_date.setText(self._entry_text())
             self.feedback.setText(f"Date: {text}")
             self.txt_date.setAccessibleDescription("")
 
     def _entry_text(self) -> str:
         """Use existing parser syntax for the editable date representation."""
+        if self._expression is not None:
+            return self._expression.display_text(self._converter)
         day = self.combo_day.currentIndex() + 1
         year = self.spin_year.value()
         month = self.combo_month.currentText()
@@ -223,6 +416,16 @@ class CompactDateWidget(QWidget):
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:  # noqa: N802
         """Let Escape cancel only this field's unaccepted date draft."""
+        if (
+            watched in (self.combo_month, self.combo_day)
+            and isinstance(event, QKeyEvent)
+            and event.type() == QEvent.Type.KeyPress
+            and event.key() in {Qt.Key.Key_Delete, Qt.Key.Key_Backspace}
+        ):
+            assert isinstance(watched, QComboBox)
+            watched.setCurrentIndex(-1)
+            self._on_input_changed()
+            return True
         if (
             watched is self.txt_date
             and isinstance(event, QKeyEvent)
@@ -450,7 +653,9 @@ class CompactDateWidget(QWidget):
                     self.combo_month.addItem(f"Month {i + 1}")
 
             # Restore selection
-            if current_index >= 0 and current_index < self.combo_month.count():
+            if self._expression is not None and self._expression.month is None:
+                self.combo_month.setCurrentIndex(-1)
+            elif current_index >= 0 and current_index < self.combo_month.count():
                 self.combo_month.setCurrentIndex(current_index)
             elif self.combo_month.count() > 0:
                 self.combo_month.setCurrentIndex(0)
@@ -478,7 +683,9 @@ class CompactDateWidget(QWidget):
                 self.combo_day.addItem(f"Day {d}")
 
             # Restore or clamp day selection
-            if current_day >= 0 and current_day < days_in_month:
+            if self._expression is not None and self._expression.day is None:
+                self.combo_day.setCurrentIndex(-1)
+            elif current_day >= 0 and current_day < days_in_month:
                 self.combo_day.setCurrentIndex(current_day)
             elif days_in_month > 0:
                 self.combo_day.setCurrentIndex(min(current_day, days_in_month - 1))
@@ -498,6 +705,42 @@ class CompactDateWidget(QWidget):
         """Handles any input change."""
         if self._updating:
             return
+
+        if self._text_first and self._converter is not None:
+            month_index = self.combo_month.currentIndex()
+            day_index = self.combo_day.currentIndex()
+            month = month_index + 1 if month_index >= 0 else None
+            day = day_index + 1 if day_index >= 0 and month is not None else None
+            has_time = self.btn_time_toggle.isChecked() and day is not None
+            precision = (
+                TemporalPrecision.MINUTE
+                if has_time
+                else TemporalPrecision.DAY
+                if day is not None
+                else TemporalPrecision.MONTH
+                if month is not None
+                else TemporalPrecision.YEAR
+            )
+            self._expression = TemporalExpression(
+                calendar_id=self._converter._config.id,
+                year=self.spin_year.value(),
+                month=month,
+                day=day,
+                hour=self.spin_hour.value() if has_time else None,
+                minute=self.spin_minute.value() if has_time else None,
+                precision=precision,
+                qualifier=(
+                    self._expression.qualifier
+                    if self._expression
+                    else TemporalQualifier.ASSERTED
+                ),
+                explicit_outer_start=self._expression.explicit_outer_start
+                if self._expression
+                else None,
+                explicit_outer_end=self._expression.explicit_outer_end
+                if self._expression
+                else None,
+            )
 
         self._update_preview()
         value = self.get_value()
@@ -564,6 +807,8 @@ class CompactDateWidget(QWidget):
             float: Absolute day value.
 
         """
+        if self._expression is not None and self._converter is not None:
+            return self._expression.representative_time(self._converter)
         if not self._converter:
             # Fallback: simple calculation
             year = self.spin_year.value()
@@ -603,6 +848,12 @@ class CompactDateWidget(QWidget):
         """
         if self._updating:
             return
+
+        self._expression = None
+        if self._text_first:
+            self.qualifier_combo.blockSignals(True)
+            self.qualifier_combo.setCurrentIndex(0)
+            self.qualifier_combo.blockSignals(False)
 
         prev_updating = self._updating
         self._updating = True
@@ -651,6 +902,42 @@ class CompactDateWidget(QWidget):
                 self._show_accepted_date()
         finally:
             self._updating = prev_updating
+
+    def get_expression(self) -> TemporalExpression | None:
+        """Return the semantic assertion, or None for an unchanged legacy date."""
+        return self._expression
+
+    def set_expression(self, expression: TemporalExpression) -> None:
+        """Load an assertion without completing unspecified components."""
+        self._expression = expression
+        self._updating = True
+        try:
+            self.spin_year.setValue(expression.year or 0)
+            self._populate_months()
+            self.combo_month.setPlaceholderText("Month unknown")
+            self.combo_month.setCurrentIndex(
+                expression.month - 1 if expression.month is not None else -1
+            )
+            self._populate_days()
+            self.combo_day.setPlaceholderText("Day unknown")
+            self.combo_day.setCurrentIndex(
+                expression.day - 1 if expression.day is not None else -1
+            )
+            self.spin_hour.setValue(expression.hour or 0)
+            self.spin_minute.setValue(expression.minute or 0)
+            self.btn_time_toggle.setChecked(expression.hour is not None)
+            if self._text_first:
+                self.qualifier_combo.setCurrentIndex(
+                    self.qualifier_combo.findData(expression.qualifier.value)
+                )
+            self._draft_pending = False
+            self._accepted_value = self.get_value()
+            if self._text_first:
+                self._show_accepted_date()
+            else:
+                self.txt_date.setText(expression.display_text(self._converter))
+        finally:
+            self._updating = False
 
     @Slot()
     def _open_calendar_popup(self) -> None:

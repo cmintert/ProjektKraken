@@ -501,10 +501,13 @@ class TestFuzzy:
 
     def test_sometime_in(self, gregorian_like):
         r = DateParser(gregorian_like).parse_date("sometime in 2023")
-        assert (r.precision, r.confidence) == (DatePrecision.FUZZY, 0.5)
+        assert (r.precision, r.confidence) == (DatePrecision.YEAR, 1.0)
 
     def test_sometime_during(self, gregorian_like):
-        assert DateParser(gregorian_like).parse_date("sometime during 2020").confidence == 0.5
+        assert (
+            DateParser(gregorian_like).parse_date("sometime during 2020").precision
+            == DatePrecision.YEAR
+        )
 
     def test_around_day_month(self, gregorian_like):
         r = DateParser(gregorian_like).parse_date("around 15 March 2023")

@@ -79,16 +79,18 @@ class TestCalendarConfigLoading:
         fake_window.longform_editor.content.set_calendar_converter.assert_called_once()
 
     def test_on_calendar_config_loaded_without_config(self, coordinator, fake_window):
-        """Should create default converter when no config provided."""
+        """A failed load must not publish an unpersisted calendar identity."""
         coordinator.on_calendar_config_loaded(None)
 
-        # Should still set converters using default
-        fake_window.event_editor.set_calendar_converter.assert_called_once()
-        fake_window.timeline.set_calendar_converter.assert_called_once()
+        fake_window.event_editor.set_calendar_converter.assert_not_called()
+        fake_window.timeline.set_calendar_converter.assert_not_called()
+        assert fake_window.calendar_converter is None
 
     def test_on_calendar_config_loaded_stores_converter(self, coordinator, fake_window):
         """Should store calendar converter on main window."""
-        coordinator.on_calendar_config_loaded(None)
+        from src.core.calendar import CalendarConfig
+
+        coordinator.on_calendar_config_loaded(CalendarConfig.create_default())
         assert fake_window.calendar_converter is not None
 
 

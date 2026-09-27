@@ -21,6 +21,40 @@ the current lore time and also controls time-sensitive map content.
   it remains predictable at every zoom level. Playback and scripted jumps do
   not snap.
 
+## Dates with incomplete information
+
+Type `961`, `May 961`, or a complete calendar date. Saving and reopening keeps
+the precision you entered. **Date fields…** allows month and day to remain
+unspecified; Delete clears the selected component. Choosing a month or day
+intentionally adds that detail.
+
+Use `c. 961`, `961?`, `before 961`, `after 961`, or `between 959 and 963` when
+appropriate. Date qualification is also available under **Date fields…**.
+An approximate or uncertain date does not establish hard limits by itself.
+The explicit `between`, `before`, `after`, and `by` forms supply bounds.
+
+A bare range such as `961–964` asks whether the event occurred sometime within
+that range or lasted from one endpoint to the other. An occurrence window
+does not become a duration. A duration retains the precision of both dates.
+
+The timeline uses a representative position for dragging partial dates, but
+does not draw an asserted start there. Dotted outlines show possible dates on
+the event's track. For durations, hatching shows possible presence and a solid
+interior marks only the period when the event is certainly ongoing. A question
+mark indicates timing without finite evidence bounds. Dragging keeps the date's
+precision. Snapping to a representative position does not make that position
+the event's exact historical date. A displayed span between partial endpoints
+is a layout value, not an assertion of an exact number of elapsed days.
+
+Existing numeric dates remain exact. Kraken does not reinterpret an old
+January 1 date as a year-only assertion.
+
+Leave **Event has duration** unchecked for a single occurrence sometime within
+a year. Check it only when the event actually lasted over time. Clearing it
+removes the duration without changing the date precision. An uncertain start
+and known duration can coexist; the editor does not present their derived
+midpoint end as an exact historical date.
+
 ## Group events
 
 1. Open **Timeline → Configure Grouping…**.
@@ -40,6 +74,30 @@ the interface.
 The timeline ruler marks actual calendar boundaries. Year and month ticks line
 up with events dated to the first day of that year or month. Week ticks use the
 calendar's week length. Quarter ticks appear in years with twelve months.
+
+## Record sources and ordering
+
+In an event, open **Date sources and chronology…** to add each source and its
+date as a separate claim. Choose a preferred assertion to use that source's
+date for the event. Removing or editing a claim preserves the other claims;
+conflicting dates are never combined into one broad date range. A conflict
+message distinguishes disjoint source dates from an ordinary year-only date.
+
+The same dialog records **Before**, **After**, or **At the same transition**
+relative to another event, with an optional minimum gap in lore days. Cyclic
+ordering is rejected. These statements express known chronology without
+inventing calendar precision.
+
+Expand a date's fields and choose **Possible date limits…** to set explicit
+occurrence limits. An entered until date includes that entire calendar period.
+These limits constrain when the event happened; they are separate from its
+duration. Approximate dates do not acquire hard limits automatically.
+
+Relations can bind a start or end to a named event, before or after that event,
+with a signed day offset. **At event** with zero offset shares the exact same
+transition, even when its calendar date is uncertain. Deleting an event used
+by chronology shows its dependencies first. Remaining references become
+unresolved; undo restores the anchor.
 
 ## Tips and gotchas
 

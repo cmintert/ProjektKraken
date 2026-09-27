@@ -313,7 +313,8 @@ class RelationRepository(BaseRepository):
         # We rename e.lore_date to source_event_date to avoid collision/ambiguity
         sql = """
             SELECT r.*, e.lore_date as source_event_date, e.name as source_event_name,
-                   e.description as source_event_description
+                   e.description as source_event_description,
+                   e.attributes as source_event_attributes
             FROM relations r
             LEFT JOIN events e ON r.source_id = e.id
             WHERE r.target_id = ?
@@ -328,6 +329,10 @@ class RelationRepository(BaseRepository):
             data = dict(row)
             if data.get("attributes"):
                 data["attributes"] = self._deserialize_json(data["attributes"])
+            if data.get("source_event_attributes"):
+                data["source_event_attributes"] = self._deserialize_json(
+                    data["source_event_attributes"]
+                )
             relations.append(data)
         return relations
 

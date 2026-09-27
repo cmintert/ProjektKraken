@@ -8,7 +8,15 @@ from typing import Any, Optional
 
 from PySide6.QtCore import QEvent, QSize, QTimer, Signal
 from PySide6.QtGui import QCloseEvent
-from PySide6.QtWidgets import QSizePolicy, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
 
 from src.core.logging_config import get_logger
 from src.gui.widgets.graph_view.graph_builder import GraphBuilder
@@ -115,6 +123,28 @@ class GraphWidget(QWidget):
 
         # Filter bar at top
         layout.addWidget(self._filter_bar)
+        temporal_row = QHBoxLayout()
+        self.temporal_mode = QComboBox()
+        self.temporal_mode.setAccessibleName("Graph temporal view")
+        for label, mode in (
+            ("At playhead", "at_playhead"),
+            ("History to playhead", "history_to_playhead"),
+            ("All relations", "all_relations"),
+        ):
+            self.temporal_mode.addItem(label, mode)
+        self.temporal_mode.currentIndexChanged.connect(
+            lambda _index: self.refresh_requested.emit()
+        )
+        self.show_possible = QCheckBox("Show possible relations")
+        self.show_possible.toggled.connect(
+            lambda: self._refresh_display_locally(self._last_focus_node_id)
+        )
+        self.temporal_count = QLabel()
+        self.temporal_count.setAccessibleName("Relations with uncertain timing")
+        temporal_row.addWidget(self.temporal_mode)
+        temporal_row.addWidget(self.show_possible)
+        temporal_row.addWidget(self.temporal_count)
+        layout.addLayout(temporal_row)
 
         # Web view fills remaining space
         layout.addWidget(self._web_view, 1)
@@ -151,7 +181,7 @@ class GraphWidget(QWidget):
         signals or internal handlers.
         """
         # Forward web view node clicks
-        self._web_view.node_clicked.connect(self.node_clicked.emit)
+        self._web_view.node_clicked.connect(self._on_graph_node_clicked)
         # Handle view state updates
         self._web_view.view_state_changed.connect(self._on_view_state_changed)
 
@@ -338,6 +368,11 @@ class GraphWidget(QWidget):
         self._is_renderer_ready = False
         self._refresh_display_locally()
 
+    def _on_graph_node_clicked(self, object_type: str, node_id: str) -> None:
+        """Reveal possible edges adjacent to the selected node."""
+        self._refresh_display_locally(node_id)
+        self.node_clicked.emit(object_type, node_id)
+
     def _refresh_display_locally(self, focus_node_id: str | None = None) -> None:
         """Refreshes the graph display using cached data and local filters.
 
@@ -375,6 +410,8 @@ class GraphWidget(QWidget):
 
         # -- Step 2: Filter Edges (Rel Types & node existence) --
         filtered_edges = []
+        uncertain_count = 0
+        hidden_count = 0
 
         for edge in self._all_edges:
             # Check if source and target are in filtered nodes
@@ -388,7 +425,22 @@ class GraphWidget(QWidget):
             if not self._passes_rel_type_filter(edge, rel_config):
                 continue
 
+            if edge.get("validity_status") in {"possible", "indeterminate"}:
+                uncertain_count += 1
+                if not self.show_possible.isChecked() and focus_node_id not in {
+                    edge["source_id"],
+                    edge["target_id"],
+                }:
+                    hidden_count += 1
+                    continue
+
             filtered_edges.append(edge)
+
+        self.temporal_count.setText(
+            f"{uncertain_count} uncertain ({hidden_count} hidden)"
+            if uncertain_count
+            else ""
+        )
 
         # -- Step 3: Project edges for GraphView presentation --
         projected_edges = GraphProjection.project_edges(

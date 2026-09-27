@@ -91,7 +91,10 @@ Point markers, paths, and regions can exist only during part of the timeline.
 Right-click a feature or its layer and choose **Temporal Validity…**, then set
 optional **Exists from** and **Exists until** dates. Temporal validity has its
 own focused editor; ordinary layer properties remain separate. Group dates
-apply to the vector features beneath them.
+apply to the vector features beneath them. Choose **Manual date**, **Date not
+known**, or **Unbounded** independently for each side. Partial dates such as
+`961` retain their precision. An uncertain layer remains visible with reduced
+opacity and `(?)`; its tooltip explains that presence is not yet established.
 
 Validity uses an inclusive start and exclusive end. A feature is present when
 the playhead is on or after **Exists from**, but it is absent on the exact

@@ -155,3 +155,21 @@ world package when maps and other assets need to travel with the world.
 - Existing output is only replaced after the new export finishes successfully.
 - The result page stays open so you can inspect warnings, open the output, or
   save a report.
+
+
+## Historical dates in JSON imports
+
+Text dates retain their precision and qualification, including year-only and
+month-only input. Numeric lore dates keep their legacy exact meaning. If no
+calendar exists, a successful text-date import installs the default calendar;
+a dry run does not persist it.
+
+For a bare date range, supply `range_meaning: "occurrence"` or
+`range_meaning: "duration"` on the event. Imports reject ambiguous ranges
+without this choice. Alternatively, write an explicit occurrence expression
+such as `between 961 and 964`.
+
+Semantic dates, optional duration endpoints, event anchors, chronology
+constraints, and separate source claims are stored in JSON attributes and
+travel with ordinary world/event exports. Keep that metadata when exchanging
+records; the numeric timeline position alone cannot preserve uncertainty.

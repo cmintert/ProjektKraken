@@ -196,6 +196,13 @@ class GraphBuilder:
             result["width"] = width
         if dashes is not None:
             result["dashes"] = dashes
+        if "validity_status" in edge:
+            status = edge["validity_status"]
+            result["title"] = f"{rel_type}: {edge.get('temporal_summary', '')}"
+            result["dashes"] = status in {"possible", "indeterminate", "inactive"}
+            if status in {"possible", "indeterminate"}:
+                result["label"] = f"{rel_type} (?)"
+                result["width"] = 1
 
         has_projection_metadata = (
             "parallel_count" in edge or "parallel_index" in edge
@@ -757,6 +764,24 @@ class GraphBuilder:
                             var nodes = network.body.data.nodes;
                             var edges = network.body.data.edges;
 
+                            var beforeIds = nodes.getIds();
+                            var sameNodes = beforeIds.length === newNodes.length &&
+                                newNodes.every(function(n) {
+                                    return beforeIds.indexOf(n.id) !== -1;
+                                });
+                            var selection = network.getSelection();
+                            if (sameNodes) {
+                                // A playhead-only edge update must not restart layout.
+                                network.stopSimulation();
+                                network.setOptions({physics: {enabled: false}});
+                                var positions = network.getPositions(beforeIds);
+                                newNodes = newNodes.map(function(n) {
+                                    return Object.assign({}, n, positions[n.id]);
+                                });
+                            } else {
+                                network.setOptions({physics: {enabled: true}});
+                            }
+
                             nodes.update(newNodes);
                             var newNodeIds = newNodes.map(function(n) {
                                 return n.id;
@@ -777,7 +802,11 @@ class GraphBuilder:
                             });
                             edges.remove(edgesToRemove);
 
-                            if (newFocusId) {
+                            if (sameNodes && (!newFocusId || newFocusId === focusId)) {
+                                network.selectNodes(selection.nodes.filter(function(id) {
+                                    return newNodeIds.indexOf(id) !== -1;
+                                }));
+                            } else if (newFocusId) {
                                 focusId = newFocusId;
                                 network.selectNodes([newFocusId]);
                             }

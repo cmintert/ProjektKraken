@@ -11,7 +11,10 @@ The Event class is the fundamental unit of the timeline, supporting:
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Dict
+from typing import TYPE_CHECKING, Any, Dict
+
+if TYPE_CHECKING:
+    from src.core.temporal_expression import TemporalExpression
 
 
 @dataclass
@@ -69,6 +72,18 @@ class Event:
         # Extract fields that might be in 'attributes' if using a flat structure,
         # but here we expect the DB Service to provide them structured.
         return cls(**d)
+
+    @property
+    def temporal_anchor_id(self) -> str:
+        """Stable identity for shared transition boundaries."""
+        return f"event:{self.id}"
+
+    @property
+    def temporal_expression(self) -> "TemporalExpression | None":
+        """Semantic assertion; absent metadata explicitly denotes a legacy instant."""
+        from src.core.temporal_expression import expression_from_attributes
+
+        return expression_from_attributes(self.attributes)
 
     @property
     def tags(self) -> list[str]:

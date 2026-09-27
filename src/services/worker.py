@@ -26,6 +26,7 @@ from src.core.summary_data import SummaryData
 from src.services import longform_builder
 from src.services.asset_store import AssetStore
 from src.services.attachment_service import AttachmentService
+from src.services.calendar_context_service import ensure_active_calendar
 from src.services.db_service import DatabaseService
 from src.services.detail_snapshot_service import DetailSnapshotService
 from src.services.import_service import ImportResult
@@ -637,19 +638,20 @@ class DatabaseWorker(QObject):
 
     @Slot()
     def load_calendar_config(self) -> None:
-        """Loads the active calendar configuration.
+        """Load a persisted active calendar, creating the default when absent.
 
-        Emits calendar_config_loaded with the CalendarConfig or None.
+        Emit None only when storage is unavailable or initialization fails.
         """
         if not self.db_service:
             self.calendar_config_loaded.emit(None)
             return
 
         try:
-            config = self.db_service.get_active_calendar_config()
+            config = ensure_active_calendar(self.db_service)
             self.calendar_config_loaded.emit(config)
         except Exception as e:
             logger.error(f"Failed to load calendar config: {e}")
+            self.error_occurred.emit(f"Could not initialize the world calendar: {e}")
             self.calendar_config_loaded.emit(None)
 
     def _command_from_request(self, request: object) -> CommandProtocol:
@@ -1318,8 +1320,12 @@ class DatabaseWorker(QObject):
             # For now, just log.
 
     @Slot(object, object)
+    @Slot(object, object, object)
     def load_graph_data(
-        self, tags: list[str] | None = None, rel_types: list[str] | None = None
+        self,
+        tags: list[str] | None = None,
+        rel_types: list[str] | None = None,
+        temporal_context: dict | None = None,
     ) -> None:
         """Loads graph data filtered by tags and relation types.
 
@@ -1342,8 +1348,17 @@ class DatabaseWorker(QObject):
 
             self.operation_started.emit("Loading Graph Data...")
             graph_service = GraphDataService()
+            from src.core.graph_temporal import GraphTemporalMode
+
+            if temporal_context is not None:
+                self._graph_temporal_context = dict(temporal_context)
+            context = getattr(self, "_graph_temporal_context", {})
             nodes, edges = graph_service.get_graph_data(
-                self.db_service, tags, rel_types
+                self.db_service,
+                tags,
+                rel_types,
+                lore_time=context.get("lore_time"),
+                temporal_mode=GraphTemporalMode(context.get("mode", "all_relations")),
             )
 
             # Fetch metadata

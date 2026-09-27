@@ -73,8 +73,37 @@ def test_import_parses_date_string(memory_db, simple_calendar):
     event = memory_db.get_event(event_id)
 
     assert event is not None
-    # 29 full years * 360 days = 10440.0
-    assert event.lore_date == 10440.0
+    # A year-only assertion projects to its midpoint and retains its precision.
+    assert event.lore_date == 10620.0
+    assert event.attributes["_temporal_v2"]["expression"]["precision"] == "year"
+
+
+def test_import_range_requires_explicit_meaning(memory_db):
+    result = ImportService(memory_db).import_batch(
+        {"events": [{"name": "Unclassified range", "lore_date": "961-964"}]}
+    )
+    assert not result.created_events
+    assert any("range_meaning" in error for error in result.errors)
+
+
+def test_import_occurrence_window_is_not_duration(memory_db):
+    result = ImportService(memory_db).import_batch(
+        {
+            "events": [
+                {
+                    "name": "Execution",
+                    "lore_date": "961-964",
+                    "range_meaning": "occurrence",
+                }
+            ]
+        }
+    )
+    assert result.success
+    event = memory_db.get_event(result.created_events[0])
+    assert event.lore_duration == 0
+    assert (
+        event.attributes["_temporal_v2"]["expression"]["explicit_outer_end"] is not None
+    )
 
 
 def test_import_fallback_on_missing_calendar(memory_db):
@@ -105,6 +134,7 @@ def test_import_range_date_sets_duration(memory_db):
         "events": [
             {
                 "name": "Audience Fainting Incidents",
+                "range_meaning": "duration",
                 "lore_date": "23\u201330 AUG 1895",
                 "type": "outbreak",
             }

@@ -138,7 +138,10 @@ def test_temporal_relations_use_shared_active_window_semantics(db_service) -> No
         "active",
         "instant",
         "persistent",
+        "invalid",
     }
+    unresolved = next(r for r in result.direct_relations if r.rel_type == "invalid")
+    assert unresolved.temporal_status == "indeterminate"
 
 
 def test_neighborhood_stops_at_two_hops_and_excludes_root_and_mentions(

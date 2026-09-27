@@ -24,10 +24,17 @@ from src.core.authoring_context import (
     SpatialAuthoringContext,
     TemporalKind,
 )
+from src.core.calendar import CalendarConfig, CalendarConverter
 from src.core.entities import Entity
 from src.core.events import Event
 from src.core.map import Map
-from src.core.temporal_window import TemporalWindowKind, resolve_temporal_window
+from src.core.temporal_anchors import resolve_event_anchors
+from src.core.temporal_expression import ResolvedTemporalBounds
+from src.core.temporal_window import (
+    TemporalValidity,
+    TemporalWindowKind,
+    resolve_temporal_window,
+)
 from src.services.db_service import DatabaseService
 from src.services.map_nesting_service import MapNestingService
 from src.services.spatial_context_builder import SpatialContextBuilder
@@ -400,6 +407,28 @@ class AuthoringContextBuilder:
             omitted_counts=tuple(sorted(omitted.items())),
         )
 
+    def _relation_anchors(
+        self,
+        relation: dict[str, Any],
+        event_cache: dict[str, Event | None],
+        converter: CalendarConverter | None,
+    ) -> dict[str, ResolvedTemporalBounds]:
+        """Fetch only event anchors referenced by this relation snapshot."""
+        spec = (relation.get("attributes") or {}).get("temporal", {})
+        events = []
+        if isinstance(spec, dict):
+            for key in ("start", "end", "at"):
+                boundary = spec.get(key, {})
+                anchor = (
+                    boundary.get("anchor", {}) if isinstance(boundary, dict) else {}
+                )
+                anchor_id = str(anchor.get("anchor_id", ""))
+                if anchor_id.startswith("event:"):
+                    event = self._cached_event(anchor_id[6:], event_cache)
+                    if event is not None:
+                        events.append(event)
+        return resolve_event_anchors(events, converter)
+
     def _resolve_relation_history(
         self,
         relation: dict[str, Any],
@@ -415,12 +444,22 @@ class AuthoringContextBuilder:
         if source is None or target is None:
             return None
         source_date: float | None = None
+        source_event: Event | None = None
         if source.object_type == "event":
             source_event = self._cached_event(source_id, event_cache)
             if source_event is not None:
                 source_date = source_event.lore_date
+        config = self._db.get_active_calendar_config()
+        converter = (
+            CalendarConverter(config) if isinstance(config, CalendarConfig) else None
+        )
         window = resolve_temporal_window(
-            dict(relation.get("attributes") or {}), source_date
+            dict(relation.get("attributes") or {}),
+            source_date,
+            source_event_attributes=source_event.attributes if source_event else None,
+            source_event_id=source_id,
+            converter=converter,
+            anchors=self._relation_anchors(relation, event_cache, converter),
         )
         if not window.is_valid:
             logger.warning(
@@ -832,8 +871,10 @@ class AuthoringContextBuilder:
             return None
 
         source_event_date: float | None = None
+        source_event: Event | None = None
         if source_id == root_event.id:
             source_event_date = context_date
+            source_event = root_event
         elif source.object_type == "event":
             source_event = event_cache.get(source_id)
             if source_id not in event_cache:
@@ -842,13 +883,23 @@ class AuthoringContextBuilder:
             if source_event is not None:
                 source_event_date = source_event.lore_date
 
-        window = resolve_temporal_window(
-            dict(relation.get("attributes") or {}), source_event_date
+        config = self._db.get_active_calendar_config()
+        converter = (
+            CalendarConverter(config) if isinstance(config, CalendarConfig) else None
         )
+        window = resolve_temporal_window(
+            dict(relation.get("attributes") or {}),
+            source_event_date,
+            source_event_attributes=source_event.attributes if source_event else None,
+            source_event_id=source_id,
+            converter=converter,
+            anchors=self._relation_anchors(relation, event_cache, converter),
+        )
+        status = window.status_at(context_date)
         if window.kind == TemporalWindowKind.UNBOUNDED:
             kind: TemporalKind = "persistent"
         else:
-            if not window.is_valid or not window.is_active(context_date):
+            if status == TemporalValidity.INACTIVE:
                 if window.error:
                     logger.warning(
                         "Skipping invalid temporal relation %s: %s",
@@ -869,6 +920,7 @@ class AuthoringContextBuilder:
             rel_type=str(relation.get("rel_type", "related")),
             hop=hop,
             temporal_kind=kind,
+            temporal_status=status.value,
             valid_from=window.start,
             valid_to=window.end,
         )
@@ -976,6 +1028,11 @@ class AuthoringContextBuilder:
             nesting_service=MapNestingService(),
             feature_geometry_repo=self._db.feature_geometry_repo,
             trajectory_repo=self._db.trajectory_repo,
+            calendar_converter=(
+                CalendarConverter(config)
+                if (config := self._db.get_active_calendar_config())
+                else None
+            ),
         )
         event_item = ContextItem(event.id, "event", event.name)
         direct_text = builder.build(
@@ -1182,6 +1239,11 @@ def _format_relation(relation: ContextRelation) -> str:
     return (
         f"- {relation.source.name} --{relation.rel_type}--> "
         f"{relation.target.name}"
+        + (
+            " (timing uncertain; do not treat as an established fact)"
+            if relation.temporal_status in {"possible", "indeterminate"}
+            else ""
+        )
     )
 
 

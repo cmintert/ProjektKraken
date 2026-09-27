@@ -9,6 +9,7 @@ import os
 import time
 import traceback
 from contextlib import suppress
+from copy import deepcopy
 from typing import Any, Dict, cast
 
 from PySide6.QtCore import QObject, QPoint, QSize, Qt, Signal, Slot
@@ -129,6 +130,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         """
         QWidget.__init__(self, parent)
         self._current_event_id: str | None = None
+        self._temporal_metadata: dict[str, Any] = {}
         self.autosave_manager = AutoSaveManager(self)
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
@@ -263,6 +265,10 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         if self._calendar_converter:
             self.temporal_widget.set_calendar_converter(self._calendar_converter)
         self.form_layout.addRow(self.temporal_widget)
+        self.temporal_evidence_button = QToolButton()
+        self.temporal_evidence_button.setText("Date sources and chronology…")
+        self.temporal_evidence_button.clicked.connect(self._edit_temporal_evidence)
+        self.form_layout.addRow(self.temporal_evidence_button)
         self.date_edit = self.temporal_widget.date_start
         self.end_date_edit = self.temporal_widget.date_end
         self.duration_widget = self.temporal_widget.duration_widget
@@ -939,6 +945,61 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self._calendar_converter = converter
         self.temporal_widget.set_calendar_converter(converter)
 
+    def _edit_temporal_evidence(self) -> None:
+        """Edit a local evidence snapshot; the ordinary save command persists it."""
+        from PySide6.QtWidgets import QDialog
+
+        from src.core.date_parser import DateParser
+        from src.core.temporal_expression import TemporalExpression
+        from src.gui.dialogs.temporal_evidence_dialog import TemporalEvidenceDialog
+
+        if not self._current_event_id or self._calendar_converter is None:
+            return
+        if not self.temporal_widget.commit_drafts():
+            return
+        metadata = deepcopy(self._temporal_metadata)
+        expression = self.temporal_widget.date_start.get_expression()
+        if expression is not None:
+            metadata.update(schema=1, expression=expression.to_dict())
+        dialog = TemporalEvidenceDialog(
+            self._current_event_id,
+            metadata,
+            DateParser(self._calendar_converter._config),
+            getattr(self, "_suggestion_items", []),
+            self,
+        )
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self._temporal_metadata = dialog.result_metadata
+            if "expression" in self._temporal_metadata:
+                self.temporal_widget.date_start.set_expression(
+                    TemporalExpression.from_dict(self._temporal_metadata["expression"])
+                )
+                self.temporal_widget._on_start_changed(
+                    self.temporal_widget.date_start.get_value()
+                )
+            self._show_temporal_evidence_summary()
+            self._on_field_changed()
+
+    def _show_temporal_evidence_summary(self) -> None:
+        """Keep separate source claims discoverable after editing or reloading."""
+        claims = self._temporal_metadata.get("claims", [])
+        count = len(claims)
+        self.temporal_evidence_button.setText(
+            f"Date sources and chronology… ({count} claims)"
+        )
+        if count > 1:
+            from src.core.temporal_authoring import conflicting_claims
+
+            converter = self.temporal_widget.date_start._converter
+            conflicting = converter is not None and conflicting_claims(
+                self._temporal_metadata, converter
+            )
+            self.temporal_widget.date_start.feedback.setText(
+                "Conflicting source dates: the sources place this event in different periods. Review Date sources and chronology."
+                if conflicting
+                else "Multiple source dates are preserved separately. Open Date sources and chronology to review the preferred assertion."
+            )
+
     def update_suggestions(
         self,
         items: list[tuple[str, str, str]] | None = None,
@@ -1077,9 +1138,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
             # Restore scroll position and description cursor
             self.scroll_area.verticalScrollBar().setValue(scroll_pos)
-            self._restore_desc_cursor_state(
-                desc_anchor, desc_cursor, desc_had_focus
-            )
+            self._restore_desc_cursor_state(desc_anchor, desc_cursor, desc_had_focus)
         finally:
             self._is_loading = False
 
@@ -1176,6 +1235,22 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         # Load temporal fields in one call; TemporalRangeWidget handles
         # internal signal suppression and end-date recalculation.
         self.temporal_widget.set_values(event.lore_date, event.lore_duration)
+        from src.core.temporal_expression import (
+            TemporalExpression,
+            expression_from_attributes,
+        )
+
+        self._temporal_metadata = deepcopy(event.attributes.get("_temporal_v2", {}))
+        expression = expression_from_attributes(event.attributes)
+        if expression is not None:
+            self.temporal_widget.date_start.set_expression(expression)
+            end_data = event.attributes["_temporal_v2"].get("end_expression")
+            if end_data:
+                self.temporal_widget.date_end.set_expression(
+                    TemporalExpression.from_dict(end_data)
+                )
+            self.temporal_widget._update_range_summary()
+        self._show_temporal_evidence_summary()
 
         if self.type_edit.currentText() != event.type:
             self.type_edit.setCurrentText(event.type)
@@ -1346,6 +1421,33 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             base_attrs["_tags"] = self.tag_editor.get_tags()
 
             self._merge_hidden_attributes(base_attrs)
+            if self._temporal_metadata:
+                base_attrs["_temporal_v2"] = deepcopy(self._temporal_metadata)
+            expression = self.temporal_widget.date_start.get_expression()
+            if expression is not None:
+                base_attrs["_temporal_v2"] = {
+                    **base_attrs.get("_temporal_v2", {}),
+                    "schema": 1,
+                    "expression": expression.to_dict(),
+                }
+            end_expression = self.temporal_widget.date_end.get_expression()
+            metadata = base_attrs.get("_temporal_v2", {})
+            preferred = next(
+                (
+                    claim
+                    for claim in metadata.get("claims", [])
+                    if claim.get("id") == metadata.get("preferred_claim_id")
+                ),
+                None,
+            )
+            if preferred is not None and preferred.get("expression") != metadata.get(
+                "expression"
+            ):
+                metadata.pop("preferred_claim_id", None)
+            if expression is not None and end_expression is not None:
+                base_attrs["_temporal_v2"]["end_expression"] = end_expression.to_dict()
+            elif "_temporal_v2" in base_attrs:
+                base_attrs["_temporal_v2"].pop("end_expression", None)
             if self._pending_summary_changed:
                 if self._pending_summary_data is None:
                     base_attrs.pop("_summary_data", None)
