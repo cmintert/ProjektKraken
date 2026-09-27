@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-09-27
-**Commit:** 830b3bed
+**Commit:** ee91df46
 ---
 
 # Changelog
@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-09-27)* **Documentation / Temporal**: Aligned event duration, map
+  uncertainty, timeline visual grammar, and acceptance guidance with the
+  shipped authoring controls and evidence-based rendering.
 
 - *(2026-09-27)* **Temporal authoring completion**: Added separate source claims
   with preferred assertions, chronology controls, explicit occurrence limits,

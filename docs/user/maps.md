@@ -128,6 +128,9 @@ route disappears with an invalid owner, while an already-open trajectory or
 geometry editing session remains visible as an authoring aid. Playhead-aware
 spatial generation also excludes features that do not exist at the requested
 date.
+When the owner's presence is possible or unknown at the playhead, a normal
+selected route stays visible with reduced opacity and a tooltip explaining the
+uncertainty; `(?)` marks its keyframe labels.
 
 ## Create or edit a trajectory
 

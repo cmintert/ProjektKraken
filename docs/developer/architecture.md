@@ -117,14 +117,18 @@ instant, dynamic, open, and invalid interval semantics cannot drift.
 
 `src/core/temporal_expression.py` defines schema version 1. An event's
 `attributes._temporal_v2` contains `schema`, `expression`, and optionally
-`end_expression` for a true duration. Expressions retain calendar identity,
+`end_expression` for a separately asserted duration endpoint. An event can
+also have a positive `lore_duration` with no asserted end date. Expressions
+retain calendar identity,
 supplied components, precision, qualification, original text, and explicit
 outer bounds. Additional `claims` and `constraints` records survive edits and
 exports; competing claims are not merged into an occurrence range. The
 canonical `expression` drives state; claims remain separate evidence.
 
-`lore_date` and `lore_duration` are compatibility/layout projections when this
-metadata is present. `EventRepository` regenerates them on writes, while
+`lore_date` is a compatibility/layout projection when this metadata is present.
+With `end_expression`, `EventRepository` projects `lore_duration` from the two
+representative positions; otherwise a positive `lore_duration` is the authored
+duration. The repository regenerates temporal coordinates on writes, while
 `event_temporal_service` and `move_expression` preserve precision during moves.
 The worker's calendar load calls `calendar_context_service.ensure_active_calendar`
 before publishing a converter configuration. Worlds without an active calendar
@@ -168,7 +172,10 @@ The data coordinator sends playhead/mode snapshots over a queued signal to
 the worker. Widgets consume evaluated snapshots; they only control the reveal
 policy. Incremental edge updates freeze layout when node identities are
 unchanged, retaining pan, zoom, and selection. Timeline future/past cues use
-evidence bounds; representative coordinates remain valid for drawing/snapping.
+evidence bounds. `event_temporal_display` derives the possible envelope and
+any certainly occupied interior from hard bounds. The Timeline paints these
+on one track and its lane packer reserves the full envelope; a representative
+coordinate is used for layout and snapping, never as an asserted start.
 
 No existing numeric date is automatically reinterpreted. The optional legacy
 precision review assistant, EDTF export, and derived database indexes are not

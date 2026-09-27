@@ -30,7 +30,7 @@ camera scale/position, and selection.
 | 18. Coarse precision is informational | Default date feedback accepts partial dates; `test_conflicting_sources_are_distinct_from_coarse_precision`. |
 | 19. Conflict differs from imprecision | Disjoint source evidence displays “Conflicting source dates”; ordinary precision does not. Same conflict test and preferred-source editor test. |
 | 20. No automatic legacy reinterpretation | Compatibility reader retains numeric exactness; no automatic migration is run. |
-| 21. Non-color uncertainty cues | Graph dashed edges/count/tooltips, map `(?)` labels, trajectory tooltip, timeline dotted outline; `test_map_widget.py::test_uncertain_owner_trajectory_has_non_color_cue`. |
+| 21. Non-color uncertainty cues | Graph dashed edges/count/tooltips, map `(?)` labels, trajectory tooltip, and timeline dotted/hatched bounds; `test_map_widget.py::test_uncertain_owner_trajectory_has_non_color_cue` and `test_temporal_display.py`. |
 | 22. Inactive current edges hidden | `test_graph_filters_time_before_deriving_connected_nodes` and graph mode matrix. |
 | 23. Year-bound edge remains possible | `test_graph_modes_share_evaluator`, graph presentation consumes its status unchanged. |
 | 24. Hidden uncertainty counted/revealable | Reveal test covers both explicit reveal and selected-node adjacency. |
@@ -49,6 +49,8 @@ camera scale/position, and selection.
 - `test_limits_do_not_invent_duration_or_nominal_containment`: explicit hard
   limits remain separate from nominal approximation and event duration.
 - Precision drag and explicit range-meaning tests cover editor/command/undo.
+- `test_temporal_display.py` covers year-only occurrence, uncertain starts with
+  known durations, separate end assertions, open soft dates, and lane spacing.
 
 ## Deliberately optional scope
 

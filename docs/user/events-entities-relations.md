@@ -45,10 +45,18 @@ controls. Choose **Time…** to add a time of day.
 
 For an event that lasts over time:
 
-1. Choose **End date / duration…**.
+1. Check **Event has duration**, then open **End date / duration…**.
 2. Choose whether changing the start should keep the **Duration** or the
    **End Date** fixed.
-3. Enter a duration or an end date. The summary shows the resulting span.
+3. Enter a duration or an end date. If the start is only known to a year,
+   **Specify an end date instead…** lets you enter a separately known end;
+   the calculated midpoint end is not shown as an exact date.
+
+Leave **Event has duration** unchecked for a single occurrence sometime within
+a year. Unchecking it on an existing event clears its duration while keeping
+the date's precision. On the Timeline, a dotted outline shows the possible
+occurrence dates. A lasting event has a hatched possible extent; only a period
+when it is certainly ongoing appears solid.
 
 If a typed date is not recognized, it remains unchanged until you correct it,
 choose a date from the calendar, or press **Escape**.
