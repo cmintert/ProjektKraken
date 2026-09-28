@@ -219,6 +219,24 @@ class UpdateEventCommand(BaseCommand):
             }
 
             self._new_event = dataclasses.replace(current, **clean_data)
+            if "attributes" in clean_data:
+                # Chronology is edited by its own multi-event command. An editor
+                # snapshot may predate that command, so keep the worker's rules.
+                from copy import deepcopy
+
+                attributes = deepcopy(self._new_event.attributes)
+                stored = current.attributes.get("_temporal_v2", {}).get(
+                    "constraints", []
+                )
+                if stored:
+                    metadata = deepcopy(attributes.get("_temporal_v2", {}))
+                    metadata.update(schema=1, constraints=deepcopy(stored))
+                    attributes["_temporal_v2"] = metadata
+                elif "_temporal_v2" in attributes:
+                    attributes["_temporal_v2"].pop("constraints", None)
+                self._new_event = dataclasses.replace(
+                    self._new_event, attributes=attributes
+                )
             if "lore_date" in clean_data and "attributes" not in clean_data:
                 from src.core.calendar import CalendarConverter
                 from src.core.temporal_expression import expression_from_attributes
@@ -232,6 +250,32 @@ class UpdateEventCommand(BaseCommand):
                         self._new_event,
                         clean_data["lore_date"],
                         CalendarConverter(config),
+                    )
+            from src.core.calendar import CalendarConverter
+            from src.services.chronology_service import new_issues, world_issues
+
+            previous_metadata = current.attributes.get("_temporal_v2", {})
+            updated_metadata = self._new_event.attributes.get("_temporal_v2", {})
+            if (
+                current.lore_date != self._new_event.lore_date
+                or current.lore_duration != self._new_event.lore_duration
+                or previous_metadata.get("expression")
+                != updated_metadata.get("expression")
+            ):
+                config = db_service.get_active_calendar_config()
+                converter = CalendarConverter(config) if config else None
+                events = db_service.get_all_events()
+                before = world_issues(events, converter)
+                candidate = [
+                    self._new_event if event.id == self.event_id else event
+                    for event in events
+                ]
+                introduced = new_issues(before, world_issues(candidate, converter))
+                if introduced:
+                    return CommandResult(
+                        success=False,
+                        message=f"Date conflicts with known chronology: {introduced[0].message}",
+                        command_name="UpdateEventCommand",
                     )
             self._new_event.modified_at = __import__("time").time()
 

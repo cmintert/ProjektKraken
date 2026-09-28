@@ -77,16 +77,20 @@ calendar's week length. Quarter ticks appear in years with twelve months.
 
 ## Record sources and ordering
 
-In an event, open **Date sources and chronology…** to add each source and its
-date as a separate claim. Choose a preferred assertion to use that source's
-date for the event. Removing or editing a claim preserves the other claims;
-conflicting dates are never combined into one broad date range. A conflict
-message distinguishes disjoint source dates from an ordinary year-only date.
+In an event, open **Date evidence...** to add each source and its date
+separately. Choose a source to use its date for the event. Removing or editing
+a source preserves the others; conflicting dates are never combined into one
+broad range. A conflict message distinguishes disjoint source dates from an
+ordinary year-only date.
 
-The same dialog records **Before**, **After**, or **At the same transition**
-relative to another event, with an optional minimum gap in lore days. Cyclic
-ordering is rejected. These statements express known chronology without
-inventing calendar precision.
+Open **Chronology...** to record **Before**, **After**, or **Same transition as**
+relative to another event, with an optional minimum gap in lore days. The
+dialog includes orderings recorded from either event. Same transition treats
+both events as one chronological point, rather than dates that merely overlap.
+Ordering compares event starts, so events with durations can still overlap.
+These statements do not change either event's date precision. Save an edited
+date or duration before opening Chronology. Kraken rejects new cycles and
+orderings that cannot fit within the recorded dates, including later date edits.
 
 Expand a date's fields and choose **Possible date limits…** to set explicit
 occurrence limits. An entered until date includes that entire calendar period.

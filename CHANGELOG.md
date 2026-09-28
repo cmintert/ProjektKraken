@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-09-27
-**Commit:** ee91df46
+**Last Updated:** 2026-09-28
+**Commit:** 4c0fd8e29f2f28353da537163d9d9576e2e9748f
 ---
 
 # Changelog
@@ -12,6 +12,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-09-28)* **Chronology**: Added a separate event-centered order editor,
+  world-wide rule validation, stable rule identities, and one atomic undoable
+  command. Added repair and edge-case coverage for incoming rules, cycles,
+  shared transitions, date precision, and impossible order chains.
+- *(2026-09-28)* **Documentation / Temporal**: Updated the architecture,
+  acceptance checklist, and timeline guide for the separate chronology and
+  date-evidence workflows.
 
 - *(2026-09-27)* **Documentation / Temporal**: Aligned event duration, map
   uncertainty, timeline visual grammar, and acceptance guidance with the
@@ -46,6 +54,11 @@ All notable changes to this project will be documented in this file.
   stale spell-check responses.
 
 ### Fixed
+
+- *(2026-09-28)* **Editors / Chronology**: Stopped calendar reprojection from
+  triggering a false unsaved-date warning, preserved exact legacy dates during
+  calendar loading, and made chronology and date-evidence buttons follow the
+  active theme.
 
 - *(2026-09-27)* **Timeline uncertainty grammar**: Render possible dates and
   durations on one event track instead of drawing a solid duration from an

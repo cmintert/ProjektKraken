@@ -555,6 +555,9 @@ class MainWindow(QMainWindow):
         self.navigation_coordinator = self.app_coordinator.navigation
         self.backup_coordinator = self.app_coordinator.backup
         self.editor_coordinator = self.app_coordinator.editor
+        self.event_editor.chronology_requested.connect(
+            self.editor_coordinator.apply_chronology
+        )
 
         # Initialize MapHandler with injected dependencies (no self reference)
         self.map_handler = MapHandler(

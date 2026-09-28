@@ -27,6 +27,7 @@ class TemporalConstraint:
     relation: TemporalConstraintKind
     anchor_b: str
     min_offset_days: float = 0.0
+    id: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Return a serializable chronology claim."""
@@ -42,7 +43,42 @@ def validate_constraints(
     constraints: list[TemporalConstraint],
     anchors: dict[str, ResolvedTemporalBounds] | None = None,
 ) -> list[str]:
-    """Detect strict ordering cycles after contracting equal anchors."""
+    """Compatibility interface for structured world chronology validation."""
+    return [issue.message for issue in chronology_issues(constraints, anchors)]
+
+
+@dataclass(frozen=True)
+class ChronologyIssue:
+    """A stable, actionable chronology problem."""
+
+    code: str
+    anchor_ids: tuple[str, ...]
+    constraint_ids: tuple[str, ...]
+    message: str
+
+
+def chronology_key(constraint: TemporalConstraint) -> tuple[str, str, str]:
+    """Return the same key for inverse descriptions of one relationship."""
+    a, b = constraint.anchor_a, constraint.anchor_b
+    if constraint.relation == TemporalConstraintKind.AFTER:
+        a, b = b, a
+    if constraint.relation == TemporalConstraintKind.SAME_AS:
+        a, b = sorted((a, b))
+    return (
+        a,
+        "same_as"
+        if constraint.relation == TemporalConstraintKind.SAME_AS
+        else "before",
+        b,
+    )
+
+
+def chronology_issues(  # noqa: C901
+    constraints: list[TemporalConstraint],
+    anchors: dict[str, ResolvedTemporalBounds] | None = None,
+) -> list[ChronologyIssue]:
+    """Check the whole graph using hard bounds and exact open endpoints."""
+    issues: list[ChronologyIssue] = []
     parents: dict[str, str] = {}
 
     def root(anchor: str) -> str:
@@ -51,83 +87,163 @@ def validate_constraints(
             anchor = parents[anchor]
         return anchor
 
+    def issue(code: str, message: str, items: list[TemporalConstraint]) -> None:
+        issues.append(
+            ChronologyIssue(
+                code,
+                tuple(
+                    sorted(
+                        {
+                            anchor
+                            for item in items
+                            for anchor in (item.anchor_a, item.anchor_b)
+                        }
+                    )
+                ),
+                tuple(item.id for item in items if item.id),
+                message,
+            )
+        )
+
+    seen: dict[tuple[str, str, str], TemporalConstraint] = {}
+    for item in constraints:
+        if item.anchor_a == item.anchor_b:
+            issue(
+                "self_reference",
+                "An event cannot be ordered relative to itself.",
+                [item],
+            )
+        if not math.isfinite(item.min_offset_days) or item.min_offset_days < 0:
+            issue(
+                "invalid_offset",
+                "A minimum gap must be finite and nonnegative.",
+                [item],
+            )
+        if item.relation == TemporalConstraintKind.SAME_AS and item.min_offset_days:
+            issue(
+                "invalid_offset",
+                "The same transition cannot have a minimum gap.",
+                [item],
+            )
+        key = chronology_key(item)
+        if key in seen:
+            issue("duplicate", "This ordering is already recorded.", [seen[key], item])
+        else:
+            seen[key] = item
+        if anchors is not None and (
+            item.anchor_a not in anchors or item.anchor_b not in anchors
+        ):
+            issue(
+                "missing_anchor",
+                "A chronological ordering references an unavailable event.",
+                [item],
+            )
+
     for constraint in constraints:
         if constraint.relation == TemporalConstraintKind.SAME_AS:
             parents[root(constraint.anchor_b)] = root(constraint.anchor_a)
-    graph: dict[str, set[str]] = {}
+    groups: dict[str, list[str]] = {}
+    for anchor in parents:
+        groups.setdefault(root(anchor), []).append(anchor)
+    if anchors is not None:
+        for anchor in anchors:
+            group = root(anchor)
+            if anchor not in groups.get(group, []):
+                groups.setdefault(group, []).append(anchor)
+
+    # A lower bound is (coordinate, strict); an upper bound is
+    # (coordinate, exclusive). Year/day periods have exclusive upper limits,
+    # while equal legacy bounds represent one included instant.
+    lower: dict[str, tuple[float, bool]] = {}
+    upper: dict[str, tuple[float, bool]] = {}
+    for group, members in groups.items():
+        for anchor in set(members):
+            bounds = anchors.get(anchor) if anchors is not None else None
+            if bounds is None or bounds.error:
+                continue
+            if bounds.hard_start is not None:
+                candidate = (bounds.hard_start, False)
+                if group not in lower or candidate > lower[group]:
+                    lower[group] = candidate
+            if bounds.hard_end is not None:
+                exclusive = bounds.hard_start != bounds.hard_end
+                candidate_upper = (bounds.hard_end, exclusive)
+                if (
+                    group not in upper
+                    or candidate_upper[0] < upper[group][0]
+                    or (candidate_upper[0] == upper[group][0] and exclusive)
+                ):
+                    upper[group] = candidate_upper
+
+    def impossible(group: str) -> bool:
+        if group not in lower or group not in upper:
+            return False
+        lo, strict = lower[group]
+        hi, exclusive = upper[group]
+        return lo > hi or (lo == hi and (strict or exclusive))
+
+    for group, members in groups.items():
+        if impossible(group):
+            related = [
+                item
+                for item in constraints
+                if item.relation == TemporalConstraintKind.SAME_AS
+                and item.anchor_a in members
+                and item.anchor_b in members
+            ]
+            issue(
+                "shared_transition_conflict",
+                "Shared transitions have no common possible date.",
+                related,
+            )
+
+    graph: dict[str, list[tuple[str, TemporalConstraint]]] = {}
+    indegree: dict[str, int] = {group: 0 for group in groups}
     for constraint in constraints:
         if constraint.relation == TemporalConstraintKind.SAME_AS:
             continue
         a, b = root(constraint.anchor_a), root(constraint.anchor_b)
         if constraint.relation == TemporalConstraintKind.AFTER:
             a, b = b, a
-        graph.setdefault(a, set()).add(b)
-        graph.setdefault(b, set())
-    indegree = {anchor: 0 for anchor in graph}
-    for targets in graph.values():
-        for target in targets:
-            indegree[target] += 1
+        if a == b:
+            issue(
+                "cycle", "An ordering conflicts with a shared transition.", [constraint]
+            )
+            continue
+        graph.setdefault(a, []).append((b, constraint))
+        indegree.setdefault(a, 0)
+        indegree[b] = indegree.get(b, 0) + 1
     ready = [anchor for anchor, count in indegree.items() if count == 0]
+    path_items: dict[str, list[TemporalConstraint]] = {}
     visited = 0
     while ready:
         anchor = ready.pop()
         visited += 1
-        for target in graph[anchor]:
+        for target, constraint in graph.get(anchor, []):
+            if anchor in lower and math.isfinite(constraint.min_offset_days):
+                position, strict = lower[anchor]
+                gap = constraint.min_offset_days
+                candidate = (position + gap, strict or gap == 0)
+                if target not in lower or candidate > lower[target]:
+                    lower[target] = candidate
+                    path_items[target] = [*path_items.get(anchor, []), constraint]
+                    if impossible(target):
+                        issue(
+                            "impossible_chain",
+                            "The recorded order cannot fit within the asserted dates.",
+                            path_items[target],
+                        )
             indegree[target] -= 1
             if indegree[target] == 0:
                 ready.append(target)
-    errors = (
-        ["Chronological ordering contains a cycle."] if visited < len(graph) else []
-    )
-    errors.extend(_validate_constraint_bounds(constraints, anchors))
-    return errors
-
-
-def _validate_constraint_bounds(
-    constraints: list[TemporalConstraint],
-    anchors: dict[str, ResolvedTemporalBounds] | None,
-) -> list[str]:
-    errors = []
-    for constraint in constraints:
-        offset = constraint.min_offset_days
-        if not math.isfinite(offset) or offset < 0:
-            errors.append(
-                "A minimum chronological offset must be finite and nonnegative."
-            )
-            continue
-        if anchors is None:
-            continue
-        a, b = anchors.get(constraint.anchor_a), anchors.get(constraint.anchor_b)
-        if a is None or b is None:
-            errors.append("A chronological constraint references an unavailable event.")
-            continue
-        if constraint.relation == TemporalConstraintKind.AFTER:
-            a, b = b, a
-        if constraint.relation == TemporalConstraintKind.SAME_AS:
-            if offset:
-                errors.append("The same transition cannot have a nonzero offset.")
-            if _disjoint_anchor_bounds(a, b):
-                errors.append("Dates disagree with the shared-transition constraint.")
-        elif a.hard_start is not None and b.hard_end is not None:
-            if a.hard_start + offset > b.hard_end or (
-                (offset == 0 or b.hard_start != b.hard_end)
-                and a.hard_start + offset >= b.hard_end
-            ):
-                errors.append("Dates contradict the asserted event order.")
-    return errors
-
-
-def _disjoint_anchor_bounds(
-    a: ResolvedTemporalBounds, b: ResolvedTemporalBounds
-) -> bool:
-    """Compare half-open periods while retaining closed legacy instants."""
-    for left, right in ((a, b), (b, a)):
-        if left.hard_end is not None and right.hard_start is not None:
-            if left.hard_end < right.hard_start:
-                return True
-            if left.hard_end == right.hard_start and left.hard_start != left.hard_end:
-                return True
-    return False
+    if visited < len(indegree):
+        cyclic = [
+            item
+            for item in constraints
+            if root(item.anchor_a) in indegree and indegree[root(item.anchor_a)] > 0
+        ]
+        issue("cycle", "Chronological ordering contains a cycle.", cyclic)
+    return issues
 
 
 def overlap_status(
@@ -159,6 +275,7 @@ def overlap_status(
             )
         ):
             return TemporalValidity.INACTIVE
+
     def limits(window: TemporalWindow) -> tuple[float | None, ...]:
         if not window.semantic:
             return (

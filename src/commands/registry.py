@@ -40,6 +40,7 @@ def _init_registry() -> None:
         SetActiveCalendarCommand,
         UpdateCalendarConfigCommand,
     )
+    from src.commands.chronology_commands import ApplyChronologyCommand
     from src.commands.composite_command import CompositeCommand
     from src.commands.entity_commands import (
         CreateEntityCommand,
@@ -118,6 +119,7 @@ def _init_registry() -> None:
 
     _COMMAND_TYPES.update(
         {
+            "ApplyChronologyCommand": ApplyChronologyCommand,
             "CreateEventCommand": CreateEventCommand,
             "UpdateEventCommand": UpdateEventCommand,
             "DeleteEventCommand": DeleteEventCommand,

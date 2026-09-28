@@ -5,6 +5,7 @@ attributes, and relations.
 """
 
 import logging
+import math
 import os
 import time
 import traceback
@@ -100,6 +101,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
     """
 
     save_requested = Signal(dict)
+    chronology_requested = Signal(list)
     discard_requested = Signal(str)
     add_relation_requested = Signal(str, str, str, dict, bool)
     remove_relation_requested = Signal(str)
@@ -131,6 +133,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         QWidget.__init__(self, parent)
         self._current_event_id: str | None = None
         self._temporal_metadata: dict[str, Any] = {}
+        self._chronology_events: list[Event] = []
+        self._loaded_temporal_state: tuple[Any, float, float] | None = None
         self.autosave_manager = AutoSaveManager(self)
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
@@ -265,10 +269,22 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         if self._calendar_converter:
             self.temporal_widget.set_calendar_converter(self._calendar_converter)
         self.form_layout.addRow(self.temporal_widget)
+        temporal_actions = QWidget()
+        temporal_actions_layout = QHBoxLayout(temporal_actions)
+        temporal_actions_layout.setContentsMargins(0, 0, 0, 0)
+        self.chronology_button = QToolButton()
+        self.chronology_button.setText("Chronology…")
+        self.chronology_button.setStyleSheet(StyleHelper.get_tool_button_style())
+        self.chronology_button.clicked.connect(self._edit_chronology)
+        temporal_actions_layout.addWidget(self.chronology_button)
         self.temporal_evidence_button = QToolButton()
-        self.temporal_evidence_button.setText("Date sources and chronology…")
+        self.temporal_evidence_button.setText("Date evidence…")
+        self.temporal_evidence_button.setStyleSheet(
+            StyleHelper.get_tool_button_style()
+        )
         self.temporal_evidence_button.clicked.connect(self._edit_temporal_evidence)
-        self.form_layout.addRow(self.temporal_evidence_button)
+        temporal_actions_layout.addWidget(self.temporal_evidence_button)
+        self.form_layout.addRow(temporal_actions)
         self.date_edit = self.temporal_widget.date_start
         self.end_date_edit = self.temporal_widget.date_end
         self.duration_widget = self.temporal_widget.duration_widget
@@ -942,8 +958,17 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             converter: CalendarConverter instance or None.
 
         """
+        timing_was_clean = not self.has_unsaved_temporal_changes()
         self._calendar_converter = converter
         self.temporal_widget.set_calendar_converter(converter)
+        if (
+            timing_was_clean
+            and self._current_event_id is not None
+            and self._loaded_temporal_state is not None
+            and self._loaded_temporal_state[0] is None
+        ):
+            _, start, duration = self._loaded_temporal_state
+            self.temporal_widget.set_values(start, duration)
 
     def _edit_temporal_evidence(self) -> None:
         """Edit a local evidence snapshot; the ordinary save command persists it."""
@@ -985,7 +1010,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         claims = self._temporal_metadata.get("claims", [])
         count = len(claims)
         self.temporal_evidence_button.setText(
-            f"Date sources and chronology… ({count} claims)"
+            f"Date evidence… ({count} sources)" if count else "Date evidence…"
         )
         if count > 1:
             from src.core.temporal_authoring import conflicting_claims
@@ -995,10 +1020,94 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
                 self._temporal_metadata, converter
             )
             self.temporal_widget.date_start.feedback.setText(
-                "Conflicting source dates: the sources place this event in different periods. Review Date sources and chronology."
+                "Conflicting source dates: the sources place this event in different periods. Review Date evidence."
                 if conflicting
-                else "Multiple source dates are preserved separately. Open Date sources and chronology to review the preferred assertion."
+                else "Multiple source dates are preserved separately. Open Date evidence to choose the event date."
             )
+
+    def update_chronology_events(self, events: list[Event]) -> None:
+        """Receive worker-confirmed event snapshots for chronology editing."""
+        self._chronology_events = deepcopy(events)
+        current = next(
+            (event for event in events if event.id == self._current_event_id), None
+        )
+        if current is not None:
+            constraints = current.attributes.get("_temporal_v2", {}).get(
+                "constraints", []
+            )
+            if constraints:
+                self._temporal_metadata["constraints"] = deepcopy(constraints)
+            else:
+                self._temporal_metadata.pop("constraints", None)
+        from src.services.chronology_service import (
+            collect_chronology,
+            direct_chronology,
+        )
+
+        count = (
+            len(direct_chronology(self._current_event_id, collect_chronology(events)))
+            if self._current_event_id
+            else 0
+        )
+        self.chronology_button.setText(
+            f"Chronology… ({count} orderings)" if count else "Chronology…"
+        )
+
+    def has_unsaved_temporal_changes(self) -> bool:
+        """Compare authored timing, ignoring a semantic date's layout coordinate."""
+        if self.temporal_widget.has_pending_draft():
+            return True
+        if self._loaded_temporal_state is None:
+            return False
+        expression = self.temporal_widget.date_start.get_expression()
+        loaded_expression, loaded_start, loaded_duration = (
+            self._loaded_temporal_state
+        )
+        current_expression = expression.to_dict() if expression else None
+        if (
+            current_expression != loaded_expression
+            or self.temporal_widget.get_duration() != loaded_duration
+        ):
+            return True
+        return current_expression is None and not math.isclose(
+            self.temporal_widget.get_start(),
+            loaded_start,
+            rel_tol=0,
+            abs_tol=1e-9,
+        )
+
+    def mark_temporal_saved(self) -> None:
+        """Advance the date baseline after an acknowledged editor save."""
+        expression = self.temporal_widget.date_start.get_expression()
+        self._loaded_temporal_state = (
+            expression.to_dict() if expression else None,
+            self.temporal_widget.get_start(),
+            self.temporal_widget.get_duration(),
+        )
+
+    def _edit_chronology(self) -> None:
+        """Open the event-centered order editor from a persisted date state."""
+        from PySide6.QtWidgets import QDialog
+
+        from src.gui.dialogs.event_chronology_dialog import EventChronologyDialog
+
+        if not self._current_event_id or not self._chronology_events:
+            return
+        if self.has_unsaved_temporal_changes():
+            QMessageBox.information(
+                self,
+                "Save the date first",
+                "The date or duration has unsaved changes. Save Changes, then open Chronology again.",
+            )
+            return
+        dialog = EventChronologyDialog(
+            self._current_event_id,
+            self._chronology_events,
+            self._calendar_converter,
+            self,
+        )
+        if dialog.exec() == QDialog.DialogCode.Accepted and dialog.operations:
+            self.chronology_requested.emit(dialog.operations)
 
     def update_suggestions(
         self,
@@ -1250,6 +1359,13 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
                     TemporalExpression.from_dict(end_data)
                 )
             self.temporal_widget._update_range_summary()
+        self._loaded_temporal_state = (
+            expression.to_dict() if expression else None,
+            event.lore_date,
+            event.lore_duration,
+        )
+        if self._chronology_events:
+            self.update_chronology_events(self._chronology_events)
         self._show_temporal_evidence_summary()
 
         if self.type_edit.currentText() != event.type:
@@ -1380,6 +1496,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             StyleHelper.get_tool_button_style()
             + " QToolButton::menu-indicator { image: none; }"
         )
+        action_style = StyleHelper.get_tool_button_style()
+        self.chronology_button.setStyleSheet(action_style)
+        self.temporal_evidence_button.setStyleSheet(action_style)
 
         # Update Checkboxes
         # StandardCheckbox handles its own styling on theme change

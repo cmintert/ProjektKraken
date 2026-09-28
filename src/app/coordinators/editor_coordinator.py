@@ -21,6 +21,7 @@ from src.app.constants import (
 )
 from src.app.coordinators.base_coordinator import BaseCoordinator
 from src.commands.base_command import BaseCommand, CommandResult
+from src.commands.chronology_commands import ApplyChronologyCommand
 from src.commands.composite_command import CompositeCommand
 from src.commands.entity_commands import (
     CreateEntityCommand,
@@ -77,9 +78,12 @@ class EditorCoordinator(BaseCoordinator):
         self._pending_temporal_revision: int | None = None
         self._pending_temporal_generation: int | None = None
         self._pending_temporal_entity_id: str | None = None
-        self._pending_editor_saves: dict[
-            str, tuple[str, str, int, int, dict]
-        ] = {}
+        self._pending_editor_saves: dict[str, tuple[str, str, int, int, dict]] = {}
+
+    @Slot(list)
+    def apply_chronology(self, operations: list[dict]) -> None:
+        """Send an atomic chronology edit through the command pipeline."""
+        self.command_requested.emit(ApplyChronologyCommand(operations))
 
     @Slot(dict)
     def update_temporal_entity(self, request: dict) -> None:
@@ -129,11 +133,13 @@ class EditorCoordinator(BaseCoordinator):
                     event_editor.current_event_id == item_id
                     and event_editor.draft_generation == generation
                 ):
-                    complete = event_editor.finish_save(
-                        save_revision, result.success
-                    )
+                    complete = event_editor.finish_save(save_revision, result.success)
+                    if result.success and complete:
+                        event_editor.mark_temporal_saved()
                     self.editor_save_finished.emit(
-                        item_type, item_id, save_revision,
+                        item_type,
+                        item_id,
+                        save_revision,
                         result.success and complete,
                     )
             else:
@@ -144,19 +150,23 @@ class EditorCoordinator(BaseCoordinator):
                 ):
                     if result.success:
                         entity_editor.acknowledge_saved_snapshot(snapshot)
-                    complete = entity_editor.finish_save(
-                        save_revision, result.success
-                    )
+                    complete = entity_editor.finish_save(save_revision, result.success)
                     self.editor_save_finished.emit(
-                        item_type, item_id, save_revision,
+                        item_type,
+                        item_id,
+                        save_revision,
                         result.success and complete,
                     )
         state = result.data.get("command_state", {})
         serialized = state.get("data", {}) if isinstance(state, dict) else {}
-        children = serialized.get("commands", []) if isinstance(serialized, dict) else []
+        children = (
+            serialized.get("commands", []) if isinstance(serialized, dict) else []
+        )
         is_temporal_undo_redo = result.command_name.startswith(("Undo_", "Redo_")) and (
             result.command_name.endswith("TemporalEntityEditCommand")
-            or any(child.get("type") == "TemporalEntityEditCommand" for child in children)
+            or any(
+                child.get("type") == "TemporalEntityEditCommand" for child in children
+            )
         )
         if is_temporal_undo_redo and result.success:
             entity_id = self.main_window.entity_editor.current_entity_id
@@ -181,7 +191,9 @@ class EditorCoordinator(BaseCoordinator):
         temporal_editor.finish_temporal_save(result.success)
         if temporal_revision is not None and entity_id is not None:
             self.editor_save_finished.emit(
-                "entity", entity_id, temporal_revision,
+                "entity",
+                entity_id,
+                temporal_revision,
                 result.success and not temporal_editor.has_unsaved_changes(),
             )
         if result.success:
@@ -394,7 +406,11 @@ class EditorCoordinator(BaseCoordinator):
 
         if revision is not None and generation is not None:
             self._pending_editor_saves[command.command_id] = (
-                "event", event_id, revision, generation, deepcopy(event_data)
+                "event",
+                event_id,
+                revision,
+                generation,
+                deepcopy(event_data),
             )
         self.command_requested.emit(command)
 
@@ -438,7 +454,11 @@ class EditorCoordinator(BaseCoordinator):
 
         if revision is not None and generation is not None:
             self._pending_editor_saves[command.command_id] = (
-                "entity", entity_id, revision, generation, deepcopy(entity_data)
+                "entity",
+                entity_id,
+                revision,
+                generation,
+                deepcopy(entity_data),
             )
         self.command_requested.emit(command)
 

@@ -40,7 +40,11 @@ camera scale/position, and selection.
 
 ## Additional plan safeguards
 
-- `test_evidence_dialog_rejects_ordering_cycle`: chronology cycle validation.
+- `test_chronology_validation.py`: global cycles, shared transitions, strict
+  order in coarse periods, and multi-edge date feasibility.
+- `test_chronology_service.py`: incoming projection, undo, date-save guard,
+  and legacy rule editing.
+- `test_event_chronology_dialog.py`: incoming order and unavailable target UI.
 - `test_relative_anchor_bounds_keep_only_evidence_and_no_false_identity`:
   before/after/offset references retain only known bounds, without inventing
   a shared transition between independently constrained dates.

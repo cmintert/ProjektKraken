@@ -224,6 +224,7 @@ class DataCoordinator(BaseCoordinator):
 
         """
         self._cached_events = events
+        self.main_window.event_editor.update_chronology_events(events)
         self.main_window.entity_editor.set_dated_events(
             [(event.id, event.name, event.lore_date) for event in events]
         )
@@ -270,6 +271,8 @@ class DataCoordinator(BaseCoordinator):
 
         for effect in effects:
             self._patch_lore_cache(effect)
+        if any(effect["object_type"] == "event" for effect in effects):
+            self.main_window.event_editor.update_chronology_events(self._cached_events)
 
         self.main_window.unified_list.apply_lore_effects(effects)
         event_effects = [
@@ -352,8 +355,7 @@ class DataCoordinator(BaseCoordinator):
         self._event_detail_id = event.id if isinstance(event, Event) else None
         preserve_document = bool(
             self._event_detail_requests
-            and self._event_detail_requests.pop(0)
-            == (self._event_detail_id, True)
+            and self._event_detail_requests.pop(0) == (self._event_detail_id, True)
         )
         navigation = getattr(self.main_window, "navigation_coordinator", None)
         if (
@@ -364,9 +366,8 @@ class DataCoordinator(BaseCoordinator):
         ):
             return
         editor = self.main_window.event_editor
-        if (
-            editor.current_event_id == self._event_detail_id
-            and (editor.has_unsaved_changes() or editor.save_pending)
+        if editor.current_event_id == self._event_detail_id and (
+            editor.has_unsaved_changes() or editor.save_pending
         ):
             return
         self._event_relation_ids = self._relation_endpoint_ids(relations, incoming)
@@ -394,8 +395,7 @@ class DataCoordinator(BaseCoordinator):
         self._entity_detail_id = entity.id if isinstance(entity, Entity) else None
         preserve_document = bool(
             self._entity_detail_requests
-            and self._entity_detail_requests.pop(0)
-            == (self._entity_detail_id, True)
+            and self._entity_detail_requests.pop(0) == (self._entity_detail_id, True)
         )
         navigation = getattr(self.main_window, "navigation_coordinator", None)
         if (

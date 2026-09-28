@@ -99,8 +99,12 @@ def author_temporal_evidence(
                 "expression": expression.to_dict(),
             }
         )
-    errors = validate_constraints(
-        [TemporalConstraint.from_dict(item) for item in constraints]
+    errors = (
+        validate_constraints(
+            [TemporalConstraint.from_dict(item) for item in constraints]
+        )
+        if constraints != metadata.get("constraints", [])
+        else []
     )
     if errors:
         raise ValueError(" ".join(errors))

@@ -12,7 +12,6 @@ from src.core.events import Event
 from src.core.temporal_authoring import author_temporal_evidence, with_explicit_limits
 from src.core.temporal_expression import expression_from_attributes
 from src.gui.dialogs.temporal_evidence_dialog import TemporalEvidenceDialog
-from src.gui.widgets.event_editor import EventEditorWidget
 
 pytestmark = pytest.mark.ci_fast
 
@@ -57,24 +56,24 @@ def test_ordering_only_metadata_does_not_reinterpret_a_legacy_date():
     assert expression_from_attributes({"_temporal_v2": metadata}) is None
 
 
-def test_evidence_dialog_rejects_ordering_cycle(qtbot):
+def test_evidence_dialog_preserves_chronology_without_displaying_it(qtbot):
     parser = DateParser(CalendarConfig.create_default())
-    dialog = TemporalEvidenceDialog("a", {}, parser, [("b", "Succession", "event")])
+    constraints = [{"anchor_a": "event:a", "relation": "before", "anchor_b": "event:b"}]
+    dialog = TemporalEvidenceDialog(
+        "a", {"constraints": constraints}, parser, [("b", "Succession", "event")]
+    )
     qtbot.addWidget(dialog)
-    dialog._add_order(
-        {"anchor_a": "event:a", "relation": "before", "anchor_b": "event:b"}
-    )
-    dialog._add_order(
-        {"anchor_a": "event:b", "relation": "before", "anchor_b": "event:a"}
-    )
     dialog._accept_valid()
-    assert dialog.result() != QDialog.DialogCode.Accepted
-    assert "cycle" in dialog.error.text()
+    assert dialog.result() == QDialog.DialogCode.Accepted
+    assert dialog.result_metadata["constraints"] == constraints
+    assert not hasattr(dialog, "orders")
 
 
 def test_preferred_source_survives_editor_save_reload_export_and_undo(
     qtbot, db_service, monkeypatch
 ):
+    from src.gui.widgets.event_editor import EventEditorWidget
+
     config = CalendarConfig.create_default()
     config.is_active = True
     db_service.insert_calendar_config(config)
@@ -117,12 +116,89 @@ def test_preferred_source_survives_editor_save_reload_export_and_undo(
     reopened.set_calendar_converter(CalendarConverter(config))
     reopened.load_event(saved)
     assert reopened.temporal_widget.date_start.txt_date.text() == "964"
-    assert "2 claims" in reopened.temporal_evidence_button.text()
+    assert "2 sources" in reopened.temporal_evidence_button.text()
     command.undo(db_service)
     assert (
         expression_from_attributes(db_service.get_event(event.id).attributes).year
         == 961
     )
+
+
+def test_chronology_guard_ignores_calendar_reprojection_and_other_fields(
+    qtbot, monkeypatch
+):
+    from src.gui.dialogs.event_chronology_dialog import EventChronologyDialog
+    from src.gui.widgets.event_editor import EventEditorWidget
+
+    config = CalendarConfig.create_default()
+    expression = DateParser(config).parse_expression("961")
+    event = Event(
+        name="Kalliste",
+        lore_date=expression.representative_time(CalendarConverter(config)),
+        attributes={"_temporal_v2": {"schema": 1, "expression": expression.to_dict()}},
+    )
+    parent = QWidget()
+    parent.worker = MagicMock()
+    qtbot.addWidget(parent)
+    editor = EventEditorWidget(parent)
+    editor.load_event(event)
+    editor.set_calendar_converter(CalendarConverter(config))
+    editor.update_chronology_events([event])
+    assert not editor.has_unsaved_temporal_changes()
+    editor.set_dirty(True)
+    assert not editor.has_unsaved_temporal_changes()
+    opened = []
+    monkeypatch.setattr(
+        EventChronologyDialog,
+        "exec",
+        lambda self: opened.append(True) or QDialog.DialogCode.Rejected,
+    )
+    editor._edit_chronology()
+    assert opened == [True]
+    editor.temporal_widget.date_start.set_expression(
+        DateParser(config).parse_expression("962")
+    )
+    assert editor.has_unsaved_temporal_changes()
+
+
+def test_chronology_guard_keeps_legacy_exact_date_when_calendar_arrives(qtbot):
+    from src.gui.widgets.event_editor import EventEditorWidget
+
+    parent = QWidget()
+    parent.worker = MagicMock()
+    qtbot.addWidget(parent)
+    editor = EventEditorWidget(parent)
+    editor.load_event(Event(name="Legacy", lore_date=42))
+    editor.set_calendar_converter(CalendarConverter(CalendarConfig.create_default()))
+    assert editor.temporal_widget.get_start() == 42
+    assert not editor.has_unsaved_temporal_changes()
+    editor.temporal_widget.date_start.set_value(43)
+    assert editor.has_unsaved_temporal_changes()
+
+
+def test_chronology_actions_follow_theme_changes(qtbot):
+    from src.core.theme_manager import ThemeManager
+    from src.gui.widgets.event_editor import EventEditorWidget
+
+    parent = QWidget()
+    parent.worker = MagicMock()
+    qtbot.addWidget(parent)
+    editor = EventEditorWidget(parent)
+    manager = ThemeManager()
+    original_theme = manager.current_theme_name
+    try:
+        for name in ("dark_mode", "light_mode"):
+            manager.current_theme_name = name
+            theme = manager.get_theme()
+            editor._on_theme_changed(theme)
+            for button in (
+                editor.chronology_button,
+                editor.temporal_evidence_button,
+            ):
+                assert theme["surface"] in button.styleSheet()
+                assert theme["text_main"] in button.styleSheet()
+    finally:
+        manager.current_theme_name = original_theme
 
 
 def test_claim_removal_preserves_identity_and_explicit_bounds(qtbot):

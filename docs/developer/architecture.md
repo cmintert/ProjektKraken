@@ -156,10 +156,15 @@ half-open, while legacy equal-bound occurrences retain instant semantics.
 `resolve_event_anchors` preserves identity across queries. `overlap_status`
 recognizes shared handovers and explicit chronological order.
 `TemporalConstraint` supports `before`, `after`, and `same_as`, with optional
-nonnegative `min_offset_days`; validation contracts equality before detecting
-ordering cycles. Constraints live in event metadata and can be edited in
-the event editor's **Date sources and chronology** dialog or supplied in JSON. This is a
-bounded validation/ordering system, not a probabilistic world solver.
+nonnegative `min_offset_days` and stable IDs for newly written rules.
+`chronology_service` gathers rules from all event metadata, projects direct
+incoming and outgoing orderings, and validates the whole graph. Validation
+contracts shared transitions, detects cycles, and propagates hard date bounds
+with explicit open endpoints. `ApplyChronologyCommand` revalidates and updates
+all touched events atomically; `UpdateEventCommand` validates changed dates.
+Existing invalid rules remain visible without blocking unrelated saves.
+The event editor offers separate **Chronology...** and **Date evidence...** actions.
+This is a bounded validation system, not a probabilistic world solver.
 
 Analysis checks role exclusivity only when a relation explicitly has
 `attributes.exclusive: true`; it groups competing sources by target and role.
