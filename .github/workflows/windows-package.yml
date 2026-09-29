@@ -139,6 +139,11 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout release notes from exact tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.build-and-smoke.outputs.release_tag }}
+
       - name: Validate beta tag
         shell: bash
         env:
@@ -168,11 +173,12 @@ jobs:
         run: |
           tag="${PK_RELEASE_TAG}"
           title="ProjektKraken ${RELEASE_VERSION} beta ${BETA_NUMBER}"
-          notes="Unsigned Windows x64 beta package. Verify the supplied SHA-256 before extraction. Clean-VM validation is required before approving this protected environment."
+          notes_file="docs/releases/${PK_RELEASE_TAG}.md"
+          test -s "${notes_file}"
           if gh release view "${tag}" >/dev/null 2>&1; then
-            gh release edit "${tag}" --prerelease --title "${title}" --notes "${notes}"
+            gh release edit "${tag}" --prerelease --title "${title}" --notes-file "${notes_file}"
           else
-            gh release create "${tag}" --prerelease --title "${title}" --notes "${notes}"
+            gh release create "${tag}" --prerelease --title "${title}" --notes-file "${notes_file}"
           fi
           gh release upload "${tag}" \
             "release-assets/${PK_PACKAGE_NAME}.zip" \

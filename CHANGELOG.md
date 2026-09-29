@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-09-29
-**Commit:** 618f46b47304f8b5e7cec13f2d6ab78dda1d4dd5
+**Commit:** 2374d549c6a5cde0104e788b5ef99d93375ac6f1
 ---
 
 # Changelog
@@ -10,6 +10,13 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Changed
+
+- *(2026-09-29)* **Release**: Bumped project and application metadata to
+  version 0.19.7 and prepared the beta 1 package guidance and release notes.
+
+## [0.19.7]
 
 ### Added
 

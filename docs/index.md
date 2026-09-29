@@ -24,6 +24,13 @@ developer/index
 reference/index
 ```
 
+```{toctree}
+:maxdepth: 1
+:caption: Releases
+
+releases/0.19.7-beta1
+```
+
 ## Start here
 
 - New users: [Getting started](user/getting-started.md)
