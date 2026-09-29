@@ -104,7 +104,9 @@ Omit if the change is truly cross-cutting.
 Use for:
 
 - **Breaking changes**: add `!` after the type/scope AND add `BREAKING CHANGE: <explanation>` in the footer
-- **Issue references**: `Closes #123`, `Refs #456`
+- **Issue references**: add `Refs KRT-29` when the commit belongs to a tracked
+  Linear issue. Omit it for work without an issue. Use `Closes #123` or
+  `Refs #456` only when referring to a GitHub issue.
 
 Example with breaking change:
 
@@ -138,7 +140,10 @@ git commit -F C:\tmp\projektkraken-commit-message.txt
 
 3. Run `git status` and `git log -1 --oneline` after the commit to confirm it
    succeeded.
-4. Do **not** push unless the user explicitly asks.
+4. For a tracked Linear issue, record the result and commit hash there. Mark it
+   Done when the intended work is verified and the commit succeeded; otherwise
+   leave it open. Do not mark uncommitted work Done.
+5. Do **not** push unless the user explicitly asks.
 
 ## Safety Rules
 

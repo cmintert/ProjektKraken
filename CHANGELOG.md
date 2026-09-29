@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-09-29
-**Commit:** 022bc0823bdf9c515bc84b0bde3403d9cf3be6a7
+**Commit:** 8b13b8f9f80585eec2ad07cc22efc85ba668fa2d
 ---
 
 # Changelog
@@ -168,6 +168,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-09-29)* **Documentation / Workflow**: Aligned solo development
+  guidance and the commit skill with lightweight Linear issue tracking.
 - *(2026-09-22)* **Settings**: Added an explanatory tooltip for automatic
   wiki-link relation creation.
 - *(2026-09-22)* **Documentation**: Updated user guides and README coverage for

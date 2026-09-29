@@ -47,6 +47,19 @@
 - Reuse `tests/conftest.py` fixtures (`qapp`, `db_service`, `init_theme_manager`); avoid ad-hoc Qt/DB fixture copies.
 - Watch for test pitfalls: shared `MockQSettings._storage`, teardown validity checks (`shiboken6.isValid(...)`), and debounce/timer-driven UI behavior.
 
+## Development Tracking
+- Use the connected ProjektKraken Linear workspace as the shared task list.
+  Search for an existing `KRT` issue before creating one for a substantial
+  feature, bug, or planned investigation. Small fixes and housekeeping need no
+  issue. In plan-only conversations, create an issue only for a durable follow-up.
+- Put actionable work in a fitting Linear project, or leave it in the Kraken
+  Team backlog if none fits. Move its issue to In Progress when work begins.
+  Keep uncommitted implementation work open. Mark it Done only after the
+  intended work is verified and committed; for research, mark it Done when
+  findings are recorded and delivered.
+- Keep code, commits, CI, tags, and releases in GitHub. Reference the `KRT`
+  issue in a related commit as described in `.agents/skills/commit/SKILL.md`.
+
 ## Read First
 - `README.md`, `.github/copilot-instructions.md`,
   `docs/developer/architecture.md`
