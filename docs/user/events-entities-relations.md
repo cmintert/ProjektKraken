@@ -54,9 +54,11 @@ For an event that lasts over time:
 
 Leave **Event has duration** unchecked for a single occurrence sometime within
 a year. Unchecking it on an existing event clears its duration while keeping
-the date's precision. On the Timeline, a dotted outline shows the possible
-occurrence dates. A lasting event has a hatched possible extent; only a period
-when it is certainly ongoing appears solid.
+the date's precision. On the Timeline, a hollow diamond marks a layout anchor
+inside a dotted possible-date window; it does not assert the exact day. A
+lasting event has a hatched possible extent; only a period when it is certainly
+ongoing appears as a solid bar. Narrow windows use compact symbols when zoomed
+out and regain their calendar width when zoomed in.
 
 If a typed date is not recognized, it remains unchanged until you correct it,
 choose a date from the calendar, or press **Escape**.

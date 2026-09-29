@@ -7,8 +7,12 @@ overlaps using a greedy "First Fit" approach.
 from PySide6.QtGui import QFont, QFontMetrics
 
 from src.core.events import Event
-from src.core.temporal_display import event_temporal_display
+from src.core.temporal_display import TemporalDisplay, event_temporal_display
 from src.gui.widgets.timeline.event_item import EventItem
+from src.gui.widgets.timeline.temporal_geometry import (
+    TemporalGeometry,
+    project_temporal_geometry,
+)
 
 
 class TimelineLanePacker:
@@ -21,7 +25,6 @@ class TimelineLanePacker:
 
     # Constants for spacing
     GAP_PIXELS = 15  # Gap between events in pixels
-    MIN_BAR_WIDTH = 10.0  # Minimum width for duration bars
     LANE_PADDING = 10  # Vertical padding between lanes
 
     def __init__(self, scale_factor: float = 20.0) -> None:
@@ -62,19 +65,25 @@ class TimelineLanePacker:
         lanes_heights: list[int] = []
         event_lane_assignments: dict[str, int] = {}
 
+        projected: list[tuple[float, Event, TemporalDisplay, TemporalGeometry]] = []
         for event in events:
-            start_time = event.lore_date
             display = event_temporal_display(event, EventItem._calendar_converter)
-            if (
-                display is not None
-                and display.possible_start is not None
-                and display.possible_end is not None
-            ):
-                start_time = display.possible_start
+            geometry = project_temporal_geometry(display, self.scale_factor)
+            projected.append(
+                (
+                    event.lore_date + geometry.left / self.scale_factor,
+                    event,
+                    display,
+                    geometry,
+                )
+            )
+        projected.sort(key=lambda entry: entry[0])
+        for start_time, event, display, geometry in projected:
             event_height = EventItem.get_event_height(event)
 
-            # Calculate visual duration (in time units)
-            visual_duration = self._calculate_visual_duration(event)
+            visual_duration = self._calculate_visual_duration(
+                event, display=display, geometry=geometry
+            )
             gap_duration = self.GAP_PIXELS / self.scale_factor
 
             end_time = start_time + visual_duration + gap_duration
@@ -88,7 +97,13 @@ class TimelineLanePacker:
 
         return event_lane_assignments, lanes_heights
 
-    def _calculate_visual_duration(self, event: Event) -> float:
+    def _calculate_visual_duration(
+        self,
+        event: Event,
+        *,
+        display: TemporalDisplay | None = None,
+        geometry: TemporalGeometry | None = None,
+    ) -> float:
         """Calculates the visual duration of an event in time units.
 
         Takes into account the event's actual duration and text label width
@@ -108,32 +123,16 @@ class TimelineLanePacker:
             # Should practically never happen if QApplication exists
             return 0.0
 
-        text_width = self.fm.horizontalAdvance(event.name)
-
-        display = event_temporal_display(event, EventItem._calendar_converter)
-        if display is not None:
-            width: float = max(text_width, self.fm.horizontalAdvance(display.caption)) + 10
-            if display.possible_start is not None and display.possible_end is not None:
-                width = max(
-                    width,
-                    (display.possible_end - display.possible_start) * self.scale_factor,
-                )
-            return width / self.scale_factor
-
-        if event.lore_duration > 0:
-            # Duration Event - bar with label BELOW
-            bar_width_px = max(
-                event.lore_duration * self.scale_factor, self.MIN_BAR_WIDTH
-            )
-            # Text is below the bar, so horizontal extent is max of bar or text
-            total_width_px = max(bar_width_px, text_width + 5)
-        else:
-            # Point Event - diamond icon + text to the right
-            # Diamond (half width 7) + Padding (5) + Text + Safety margin
-            total_width_px = 7 + 5 + text_width + 5
-
-        # Convert pixels to time duration
-        return total_width_px / self.scale_factor
+        if display is None:
+            display = event_temporal_display(event, EventItem._calendar_converter)
+        if geometry is None:
+            geometry = project_temporal_geometry(display, self.scale_factor)
+        label_width = max(
+            self.fm.horizontalAdvance(event.name),
+            self.fm.horizontalAdvance(display.caption),
+        )
+        right = max(geometry.right, geometry.label_left + label_width + 10)
+        return (right - geometry.left) / self.scale_factor
 
     def _find_available_lane(
         self,

@@ -42,8 +42,9 @@ def test_event_item_bounding_rect(qtbot):
 
     rect = item.boundingRect()
     assert isinstance(rect, QRectF)
-    assert rect.width() == EventItem.MAX_WIDTH
-    assert rect.height() == EventItem.ICON_SIZE * 2 + 8
+    assert rect.contains(item.shape().boundingRect())
+    assert rect.width() >= EventItem.MAX_WIDTH
+    assert rect.height() >= EventItem.ICON_SIZE
 
 
 def test_event_item_paint(qtbot):
@@ -135,7 +136,9 @@ def test_timeline_view_set_events_with_data(timeline_view, sample_events):
     """Test setting events creates all items."""
     timeline_view.set_events(sample_events)
 
-    event_items = [i for i in timeline_view.graphics_scene.items() if isinstance(i, EventItem)]
+    event_items = [
+        i for i in timeline_view.graphics_scene.items() if isinstance(i, EventItem)
+    ]
     assert len(event_items) == 3
 
     # Check all events are in scene
@@ -170,7 +173,9 @@ def test_timeline_view_focus_event_found(timeline_view):
     timeline_view.focus_event("target")
 
     # Find the EventItem
-    items = [i for i in timeline_view.graphics_scene.items() if isinstance(i, EventItem)]
+    items = [
+        i for i in timeline_view.graphics_scene.items() if isinstance(i, EventItem)
+    ]
     assert len(items) == 1
     assert items[0].isSelected()
 
@@ -183,7 +188,9 @@ def test_timeline_view_focus_event_not_found(timeline_view, sample_events):
     timeline_view.focus_event("nonexistent-id")
 
     # No item should be selected
-    items = [i for i in timeline_view.graphics_scene.items() if isinstance(i, EventItem)]
+    items = [
+        i for i in timeline_view.graphics_scene.items() if isinstance(i, EventItem)
+    ]
     assert not any(item.isSelected() for item in items)
 
 
@@ -260,8 +267,7 @@ def test_timeline_scene_rect_is_zoom_relative(timeline_view):
         * timeline_view.transform().m11()
     )
     assert transformed_width == pytest.approx(
-        timeline_view.viewport().width()
-        * timeline_view.HORIZONTAL_WINDOW_VIEWPORTS,
+        timeline_view.viewport().width() * timeline_view.HORIZONTAL_WINDOW_VIEWPORTS,
         rel=0.02,
     )
 
@@ -275,7 +281,6 @@ def test_timeline_scene_rect_is_zoom_relative_empty(timeline_view):
         * timeline_view.transform().m11()
     )
     assert transformed_width == pytest.approx(
-        timeline_view.viewport().width()
-        * timeline_view.HORIZONTAL_WINDOW_VIEWPORTS,
+        timeline_view.viewport().width() * timeline_view.HORIZONTAL_WINDOW_VIEWPORTS,
         rel=0.02,
     )

@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-09-28
-**Commit:** 4c0fd8e29f2f28353da537163d9d9576e2e9748f
+**Last Updated:** 2026-09-29
+**Commit:** 022bc0823bdf9c515bc84b0bde3403d9cf3be6a7
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-09-29)* **Timeline / Temporal**: Unified numeric and authored event
+  rendering with zoom-aware precision windows, soft halos, bounded occurrence
+  cues, and separate possible and certain duration spans.
+- *(2026-09-29)* **Testing / Documentation**: Added visual-grammar and drag
+  regressions, the Rhine Tribunal benchmark world, and updated timeline guides.
 
 - *(2026-09-28)* **Chronology**: Added a separate event-centered order editor,
   world-wide rule validation, stable rule identities, and one atomic undoable
@@ -54,6 +60,10 @@ All notable changes to this project will be documented in this file.
   stale spell-check responses.
 
 ### Fixed
+
+- *(2026-09-29)* **Timeline / Dates**: Removed redundant occurrence prefixes
+  and false unknown-date captions for exact days; kept semantic evidence aligned
+  with the event marker while dragging.
 
 - *(2026-09-28)* **Editors / Chronology**: Stopped calendar reprojection from
   triggering a false unsaved-date warning, preserved exact legacy dates during

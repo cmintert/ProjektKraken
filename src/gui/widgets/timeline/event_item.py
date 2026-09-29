@@ -12,6 +12,7 @@ from PySide6.QtGui import (
     QBrush,
     QColor,
     QCursor,
+    QLinearGradient,
     QPainter,
     QPainterPath,
     QPen,
@@ -27,7 +28,6 @@ from PySide6.QtWidgets import (
 from src.core.calendar import CalendarConverter
 from src.core.events import Event
 from src.core.temporal_display import TemporalDisplay, event_temporal_display
-from src.core.temporal_expression import TemporalExpression, expression_from_attributes
 from src.core.theme_manager import ThemeManager
 from src.gui.constants import (
     TEMPORAL_FUTURE_LIGHTNESS_BOOST,
@@ -35,12 +35,16 @@ from src.gui.constants import (
     TEMPORAL_FUTURE_SATURATION_FACTOR,
 )
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.timeline.temporal_geometry import (
+    TemporalGeometry,
+    project_temporal_geometry,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class EventItem(QGraphicsItem):
-    """Diamond-shaped event marker with text label.
+    """Unified evidence-aware event marker with text label.
 
     Theme-aware coloring.
     """
@@ -68,7 +72,7 @@ class EventItem(QGraphicsItem):
 
         """
         if event.lore_duration > 0 or event.attributes.get("_temporal_v2", {}).get(
-            "expression"
+            "end_expression"
         ):
             return cls.DURATION_EVENT_HEIGHT
         return cls.POINT_EVENT_HEIGHT
@@ -226,66 +230,19 @@ class EventItem(QGraphicsItem):
         display = event_temporal_display(self.event, self._calendar_converter)
         self.setToolTip(
             f"{self.event.name}\n{display.caption}\n"
-            "Dotted outline: possible dates, not duration. Hatched area: possible presence. "
-            "Solid interior: certainly present. ?: no finite evidence bounds."
-            if display
-            else self.event.name
+            "Solid diamond: precise point. Hollow diamond: layout anchor, "
+            "not an exact date. Dotted caps: possible occurrence dates. "
+            "Soft halo: no hard date limits. Hatching: possible duration. "
+            "Solid bar: certainly ongoing. ?: timing unresolved."
         )
 
-    def _evidence_rect(self, start: float, end: float) -> QRectF:
-        scale = self.scale_factor * self._zoom_level
-        return QRectF(
-            (start - self.event.lore_date) * scale,
-            -6,
-            max(1, (end - start) * scale),
-            12,
-        )
+    def _geometry(self, display: TemporalDisplay) -> TemporalGeometry:
+        return project_temporal_geometry(display, self.scale_factor * self._zoom_level)
 
     def _display_rect(self, display: TemporalDisplay) -> QRectF:
-        if display.possible_start is None or display.possible_end is None:
-            return QRectF(-7, -7, 14, 14)
-        return self._evidence_rect(display.possible_start, display.possible_end)
-
-    def _uncertainty_rect(self) -> QRectF:
-        """Return positional uncertainty separately from actual duration."""
-        expression = expression_from_attributes(self.event.attributes)
-        if expression is None or self._calendar_converter is None:
-            return QRectF()
-        bounds = expression.resolve_bounds(self._calendar_converter)
-        if not bounds.has_hard_bounds:
-            return QRectF(-10, -9, 20, 18)
-        assert bounds.hard_start is not None and bounds.hard_end is not None
-        scale = self.scale_factor * self._zoom_level
-        return QRectF(
-            (bounds.hard_start - self.event.lore_date) * scale,
-            -22,
-            max(1.0, (bounds.hard_end - bounds.hard_start) * scale),
-            6,
-        )
-
-    def _end_uncertainty_rect(self) -> QRectF:
-        """Draw the duration endpoint's uncertainty separately from its start."""
-        data = self.event.attributes.get("_temporal_v2", {}).get("end_expression")
-        if not data or self._calendar_converter is None:
-            return QRectF()
-        bounds = TemporalExpression.from_dict(data).resolve_bounds(
-            self._calendar_converter
-        )
-        if not bounds.has_hard_bounds:
-            return QRectF(
-                self.event.lore_duration * self.scale_factor * self._zoom_level - 10,
-                -9,
-                20,
-                18,
-            )
-        assert bounds.hard_start is not None and bounds.hard_end is not None
-        scale = self.scale_factor * self._zoom_level
-        return QRectF(
-            (bounds.hard_start - self.event.lore_date) * scale,
-            -22,
-            max(1.0, (bounds.hard_end - bounds.hard_start) * scale),
-            6,
-        )
+        """Return the same screen geometry used by painting and hit testing."""
+        geometry = self._geometry(display)
+        return QRectF(geometry.left, -8, geometry.right - geometry.left, 16)
 
     def boundingRect(self) -> QRectF:
         """Defines the redrawable area of the item.
@@ -294,33 +251,16 @@ class EventItem(QGraphicsItem):
         (border width).
         """
         display = event_temporal_display(self.event, self._calendar_converter)
-        if display is not None:
-            rect = self._display_rect(display)
-            return rect.united(
-                QRectF(
-                    rect.left(), 7, max(self.MAX_WIDTH, len(display.caption) * 7), 32
-                )
-            ).adjusted(-2, -2, 2, 2)
-        if self.event.lore_duration > 0:
-            # Width scales with zoom to match the timeline grid
-            width = self.event.lore_duration * self.scale_factor * self._zoom_level
-            # Ensure minimum width for visibility and clicking
-            width = max(width, 10)
-            # Extra height below for label + date
-            return (
-                QRectF(0, -10, max(width, self.MAX_WIDTH), 50)
-                .united(self._uncertainty_rect())
-                .united(self._end_uncertainty_rect())
-            )
-
-        # Bounding box includes Diamond + Text (extra height for date line)
-        return (
-            QRectF(
-                -self.ICON_SIZE, -self.ICON_SIZE, self.MAX_WIDTH, self.ICON_SIZE * 2 + 8
-            )
-            .united(self._uncertainty_rect())
-            .united(self._end_uncertainty_rect())
+        geometry = self._geometry(display)
+        symbol = self._display_rect(display)
+        label_y = -10 if geometry.mode == "exact" else 8
+        label = QRectF(
+            geometry.label_left,
+            label_y,
+            max(self.MAX_WIDTH, len(display.caption) * 7),
+            30 if geometry.mode == "exact" else 32,
         )
+        return symbol.united(label).adjusted(-2, -2, 2, 2)
 
     def shape(self) -> QPainterPath:
         """Defines the clickable area of the item. Only includes the diamond icon (or
@@ -333,29 +273,7 @@ class EventItem(QGraphicsItem):
         path = QPainterPath()
 
         display = event_temporal_display(self.event, self._calendar_converter)
-        if display is not None:
-            path.addRect(self._display_rect(display).adjusted(-2, -2, 2, 2))
-            return path
-
-        if self.event.lore_duration > 0:
-            # For duration events, the bar is clickable
-            # Width scales with zoom to match the timeline grid
-            width = self.event.lore_duration * self.scale_factor * self._zoom_level
-            width = max(width, 10)
-            path.addRoundedRect(QRectF(0, -6, width, 12), 4, 4)
-        else:
-            # For point events, only the diamond is clickable
-            half = self.ICON_SIZE / 2
-            diamond = QPolygonF(
-                [
-                    QPointF(0, -half),
-                    QPointF(half, 0),
-                    QPointF(0, half),
-                    QPointF(-half, 0),
-                ]
-            )
-            path.addPolygon(diamond)
-
+        path.addRect(self._display_rect(display).adjusted(-2, -2, 2, 2))
         return path
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
@@ -424,183 +342,144 @@ class EventItem(QGraphicsItem):
         option: QStyleOptionGraphicsItem,
         widget: Optional[QWidget] = None,
     ) -> None:
-        """Custom painting for the Event Marker.
-
-        Draws a diamond shape and a text label.
-        """
+        """Draw one visual grammar for legacy and semantic event dates."""
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         display = event_temporal_display(self.event, self._calendar_converter)
-        if display is not None:
-            self._paint_temporal_display(painter, display)
-            return
-        for uncertainty in (self._uncertainty_rect(), self._end_uncertainty_rect()):
-            if not uncertainty.isEmpty():
-                painter.save()
-                pen = QPen(self._secondary_text_color)
-                pen.setStyle(Qt.PenStyle.DotLine)
-                painter.setPen(pen)
-                painter.setBrush(Qt.BrushStyle.NoBrush)
-                painter.drawRect(uncertainty)
-                painter.restore()
-
-        if self.event.lore_duration > 0:
-            self._paint_duration_bar(painter)
-        else:
-            self._paint_point_event(painter)
-
-    def _paint_temporal_display(
-        self, painter: QPainter, display: TemporalDisplay
-    ) -> None:
-        """Paint possible extent and certain interior, never a midpoint duration bar."""
+        geometry = self._geometry(display)
         painter.save()
-        rect = self._display_rect(display)
-        pen = QPen(self._get_effective_color())
+        color = self._get_effective_color()
+        pen = QPen(self._text_color if self.isSelected() else color)
         pen.setCosmetic(True)
         pen.setWidth(2 if self.isSelected() else 1)
-        pen.setStyle(Qt.PenStyle.DotLine)
         painter.setPen(pen)
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-        bounded = (
-            display.possible_start is not None and display.possible_end is not None
-        )
-        if bounded:
-            if self.event.lore_duration > 0:
-                painter.setBrush(
-                    QBrush(self._get_effective_color(), Qt.BrushStyle.BDiagPattern)
-                )
-            painter.drawRect(rect)
-            if display.certain_start is not None and display.certain_end is not None:
-                painter.fillRect(
-                    self._evidence_rect(display.certain_start, display.certain_end),
-                    self._get_effective_color(),
-                )
+        if geometry.mode == "duration":
+            self._paint_duration(painter, geometry, color)
+        elif geometry.mode == "unresolved":
+            painter.setBrush(
+                QBrush(color, Qt.BrushStyle.BDiagPattern)
+                if display.kind == "duration"
+                else QBrush(Qt.BrushStyle.NoBrush)
+            )
+            if display.kind == "duration":
+                painter.drawRect(self._display_rect(display))
+            else:
+                painter.drawEllipse(self._display_rect(display))
+            painter.drawText(
+                self._display_rect(display), Qt.AlignmentFlag.AlignCenter, "?"
+            )
         else:
-            painter.drawEllipse(rect)
-            painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, "?")
-        painter.setPen(self._text_color)
+            self._paint_occurrence(painter, geometry, color)
+        self._paint_labels(painter, display, geometry)
+        painter.restore()
+
+    def _paint_occurrence(
+        self, painter: QPainter, geometry: TemporalGeometry, color: QColor
+    ) -> None:
+        """Draw a point with a precision window, bounded window, or soft halo."""
+        if geometry.mode in {"window", "one_sided", "soft"}:
+            line_brush = QBrush(color)
+            if geometry.mode in {"soft", "one_sided"}:
+                gradient = QLinearGradient(geometry.left, 0, geometry.right, 0)
+                transparent = QColor(color)
+                transparent.setAlpha(0)
+                faint = QColor(color)
+                faint.setAlpha(65)
+                if geometry.mode == "one_sided" and geometry.cap_left:
+                    gradient.setColorAt(0, faint)
+                    gradient.setColorAt(1, transparent)
+                elif geometry.mode == "one_sided":
+                    gradient.setColorAt(0, transparent)
+                    gradient.setColorAt(1, faint)
+                else:
+                    gradient.setColorAt(0, transparent)
+                    gradient.setColorAt(0.5, faint)
+                    gradient.setColorAt(1, transparent)
+                painter.fillRect(
+                    QRectF(geometry.left, -6, geometry.right - geometry.left, 12),
+                    QBrush(gradient),
+                )
+                line_brush = QBrush(gradient)
+            else:
+                faint = QColor(color)
+                faint.setAlpha(35)
+                painter.fillRect(
+                    QRectF(geometry.left, -6, geometry.right - geometry.left, 12),
+                    faint,
+                )
+            dotted = QPen(line_brush, 2 if self.isSelected() else 1)
+            dotted.setCosmetic(True)
+            dotted.setStyle(Qt.PenStyle.DotLine)
+            painter.setPen(dotted)
+            if geometry.left < geometry.marker_x - 5:
+                painter.drawLine(
+                    QPointF(geometry.left, 0),
+                    QPointF(geometry.marker_x - 5, 0),
+                )
+            if geometry.marker_x + 5 < geometry.right:
+                painter.drawLine(
+                    QPointF(geometry.marker_x + 5, 0),
+                    QPointF(geometry.right, 0),
+                )
+            painter.setPen(QPen(color, 2 if self.isSelected() else 1))
+            if geometry.cap_left:
+                painter.drawLine(QPointF(geometry.left, -6), QPointF(geometry.left, 6))
+            if geometry.cap_right:
+                painter.drawLine(
+                    QPointF(geometry.right, -6), QPointF(geometry.right, 6)
+                )
+
+        half = self.ICON_SIZE / 2 if geometry.mode == "exact" else 5
+        x = geometry.marker_x
+        diamond = QPolygonF(
+            [
+                QPointF(x, -half),
+                QPointF(x + half, 0),
+                QPointF(x, half),
+                QPointF(x - half, 0),
+            ]
+        )
+        painter.setPen(
+            QPen(
+                self._text_color if self.isSelected() else color,
+                2 if self.isSelected() else 1,
+            )
+        )
+        painter.setBrush(
+            QBrush(color) if geometry.mode == "exact" else QBrush(Qt.BrushStyle.NoBrush)
+        )
+        painter.drawPolygon(diamond)
+
+    def _paint_duration(
+        self, painter: QPainter, geometry: TemporalGeometry, color: QColor
+    ) -> None:
+        """Keep possible presence distinct from certainly occupied duration."""
+        rect = QRectF(geometry.left, -6, geometry.right - geometry.left, 12)
+        possible = QColor(color)
+        possible.setAlpha(110)
+        painter.setBrush(QBrush(possible, Qt.BrushStyle.BDiagPattern))
+        painter.drawRect(rect)
+        if geometry.certain_left is not None and geometry.certain_right is not None:
+            certain = QRectF(
+                geometry.certain_left,
+                -6,
+                geometry.certain_right - geometry.certain_left,
+                12,
+            )
+            painter.fillRect(certain, color)
+
+    def _paint_labels(
+        self, painter: QPainter, display: TemporalDisplay, geometry: TemporalGeometry
+    ) -> None:
+        """Use the same authored caption for both saved date formats."""
+        exact = geometry.mode == "exact"
+        x = geometry.label_left
         font = painter.font()
         font.setBold(True)
         painter.setFont(font)
-        painter.drawText(QPointF(rect.left(), 20), self.event.name)
+        painter.setPen(self._text_color)
+        painter.drawText(QPointF(x, -2 if exact else 20), self.event.name)
         font.setBold(False)
         font.setPointSize(8)
         painter.setFont(font)
         painter.setPen(self._secondary_text_color)
-        painter.drawText(QPointF(rect.left(), 32), display.caption)
-        painter.restore()
-
-    def _paint_duration_bar(self, painter: QPainter) -> None:
-        """Draws the event as a horizontal bar spanning its duration."""
-        # Width scales with zoom to match the timeline grid
-        width = self.event.lore_duration * self.scale_factor * self._zoom_level
-        width = max(width, 10)  # Minimum width visual
-
-        rect = QRectF(0, -6, width, 12)
-
-        brush = QBrush(self._get_effective_color())
-        if self.isSelected():
-            brush.setColor(self.base_color.lighter(130))
-
-        painter.setBrush(brush)
-
-        pen = QPen(self._text_color if self.isSelected() else self._border_color)
-        pen.setCosmetic(True)
-        pen.setWidth(2 if self.isSelected() else 1)
-        painter.setPen(pen)
-
-        # Draw rounded rect for the bar
-        painter.drawRoundedRect(rect, 4, 4)
-
-        # Draw Text Label BELOW the bar
-        painter.setPen(QPen(self._text_color))
-
-        font = painter.font()
-        font.setBold(True)
-        painter.setFont(font)
-
-        # Event name below the bar
-        label_y = rect.bottom() + 14
-        painter.drawText(QPointF(0, label_y), self.event.name)
-
-        # Date below the name
-        font.setBold(False)
-        font.setPointSize(8)
-        painter.setFont(font)
-
-        if EventItem._calendar_converter:
-            try:
-                expression = expression_from_attributes(self.event.attributes)
-                date_str = (
-                    expression.display_text(EventItem._calendar_converter)
-                    if expression
-                    else EventItem._calendar_converter.format_date(self.event.lore_date)
-                )
-            except Exception as e:
-                logger.warning(
-                    f"Calendar conversion failed for date {self.event.lore_date}: {e}"
-                )
-                date_str = f"{self.event.lore_date:,.1f}"
-        else:
-            date_str = f"{self.event.lore_date:,.1f}"
-
-        painter.setPen(QPen(self._secondary_text_color))
-        painter.drawText(QPointF(0, label_y + 12), date_str)
-
-    def _paint_point_event(self, painter: QPainter) -> None:
-        """Draws the standard diamond marker for point events."""
-        # 1. Draw Diamond Icon
-        half = self.ICON_SIZE / 2
-        diamond = QPolygonF(
-            [
-                QPointF(0, -half),
-                QPointF(half, 0),
-                QPointF(0, half),
-                QPointF(-half, 0),
-            ]
-        )
-
-        brush = QBrush(self._get_effective_color())
-        if self.isSelected():
-            brush.setColor(self.base_color.lighter(130))
-
-        painter.setBrush(brush)
-
-        # Border
-        pen = QPen(self._text_color if self.isSelected() else self._border_color)
-        pen.setCosmetic(True)  # Keep border crisp
-        pen.setWidth(2 if self.isSelected() else 1)
-        painter.setPen(pen)
-
-        painter.drawPolygon(diamond)
-
-        # 2. Draw Text Label (to the right)
-        text_x = self.ICON_SIZE / 2 + self.PADDING
-
-        # Title
-        painter.setPen(QPen(self._text_color))
-        font = painter.font()
-        font.setBold(True)
-        painter.setFont(font)
-        painter.drawText(QPointF(text_x, -2), self.event.name)
-
-        # Date - use calendar converter if available
-        font.setBold(False)
-        font.setPointSize(8)
-        painter.setFont(font)
-        if EventItem._calendar_converter:
-            try:
-                expression = expression_from_attributes(self.event.attributes)
-                date_str = (
-                    expression.display_text(EventItem._calendar_converter)
-                    if expression
-                    else EventItem._calendar_converter.format_date(self.event.lore_date)
-                )
-            except Exception as e:
-                logger.warning(
-                    f"Calendar conversion failed for date {self.event.lore_date}: {e}"
-                )
-                date_str = f"{self.event.lore_date:,.1f}"
-        else:
-            date_str = f"{self.event.lore_date:,.1f}"
-        painter.setPen(QPen(self._secondary_text_color))
-        painter.drawText(QPointF(text_x, 10), date_str)
+        painter.drawText(QPointF(x, 10 if exact else 32), display.caption)

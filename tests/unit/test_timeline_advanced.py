@@ -45,6 +45,8 @@ class TestSmartLanePacking:
             Event(name="E3", lore_date=30, lore_duration=5),  # 30-35
         ]
         timeline_widget.set_events(events)
+        # At this zoom the duration bars and captions fit between events.
+        timeline_widget.view._apply_zoom(5)
 
         items = [
             i
@@ -127,6 +129,7 @@ class TestSmartLanePacking:
             Event(name="E4", lore_date=16, lore_duration=10),  # 16-26 -> Lane 1 (reuse)
         ]
         timeline_widget.set_events(events)
+        timeline_widget.view._apply_zoom(5)
 
         items = [
             i
