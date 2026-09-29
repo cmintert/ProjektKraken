@@ -8,7 +8,7 @@ from typing import Any
 
 from src.commands.base_command import BaseCommand, CommandResult
 from src.core.events import Event
-from src.core.temporal_resolver import TemporalResolver
+from src.core.temporal_manager import resolve_entity_state_uncached
 from src.core.temporal_state import validate_payload
 from src.core.temporal_window import resolve_temporal_window
 from src.services.db_service import DatabaseService
@@ -40,13 +40,12 @@ class TemporalEntityEditCommand(BaseCommand):
         self._created_relation_ids: list[str] = []
 
     def _current_state(self, db_service: DatabaseService) -> dict[str, Any]:
-        entity = db_service.get_entity(self.entity_id)
-        if entity is None:
-            raise ValueError("Entity no longer exists")
-        relations = db_service.get_incoming_relations(self.entity_id)
-        return TemporalResolver().resolve_entity_state(
-            entity, relations, self.lore_time
-        ).to_dict()
+        try:
+            return resolve_entity_state_uncached(
+                db_service, self.entity_id, self.lore_time
+            ).to_dict()
+        except LookupError as exc:
+            raise ValueError("Entity no longer exists") from exc
 
     def _verify(self, state: dict[str, Any]) -> None:
         for patch in self.patches:

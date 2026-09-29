@@ -18,6 +18,13 @@ developer/index
 ```
 
 ```{toctree}
+:maxdepth: 1
+:caption: UX measurement
+
+ux/authoring-benchmark
+```
+
+```{toctree}
 :maxdepth: 2
 :caption: Reference
 

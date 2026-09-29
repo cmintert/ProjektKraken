@@ -18,6 +18,32 @@ from src.core.temporal_state import ResolvedEntityState
 logger = logging.getLogger(__name__)
 
 
+def resolve_entity_state_uncached(
+    db_service: Any, entity_id: str, time: float
+) -> ResolvedEntityState:
+    """Resolve current worker-owned world data without using a cached snapshot."""
+    entity = db_service.get_entity(entity_id)
+    if not entity:
+        logger.warning("TemporalManager: Entity %s not found.", entity_id)
+        raise LookupError(f"Entity {entity_id} not found")
+
+    # All incoming relations are needed to identify the winning field source.
+    relations = db_service.get_incoming_relations(entity_id)
+    config = db_service.get_active_calendar_config()
+    converter = CalendarConverter(config) if isinstance(config, CalendarConfig) else None
+    events = db_service.get_all_events()
+    events = events if isinstance(events, list) else []
+    anchors = resolve_event_anchors(events, converter)
+    constraints = [
+        TemporalConstraint.from_dict(item)
+        for event in events
+        for item in event.attributes.get("_temporal_v2", {}).get("constraints", [])
+    ]
+    return TemporalResolver().resolve_entity_state(
+        entity, relations, time, converter, anchors, constraints
+    )
+
+
 class TemporalManager(QObject):
     """Manages temporal state resolution, caching, and invalidation."""
 
@@ -28,8 +54,6 @@ class TemporalManager(QObject):
         """
         super().__init__()
         self._db = db_service
-        self._resolver = TemporalResolver()
-
         # Cache structure: { (entity_id, time): state_dict }
         # This is a naive cache. In reality, state is valid for a RANGE.
         # But for MVP playhead scrubbing, exact match or simple LRU is
@@ -48,35 +72,7 @@ class TemporalManager(QObject):
         if cache_key in self._cache:
             return self._cache[cache_key]
 
-        # 2. Fetch Data
-        entity = self._db.get_entity(entity_id)
-        if not entity:
-            logger.warning(f"TemporalManager: Entity {entity_id} not found.")
-            raise LookupError(f"Entity {entity_id} not found")
-
-        # Fetch ALL incoming relations for this entity
-        # Optimization Todo: Fetch only relations relevant to time window?
-        # For now, fetching all is safer for correctness.
-        relations = self._db.get_incoming_relations(entity_id)
-
-        # 3. Resolve
-        config = self._db.get_active_calendar_config()
-        converter = (
-            CalendarConverter(config) if isinstance(config, CalendarConfig) else None
-        )
-        events = self._db.get_all_events()
-        events = events if isinstance(events, list) else []
-        anchors = resolve_event_anchors(events, converter)
-        constraints = [
-            TemporalConstraint.from_dict(item)
-            for event in events
-            for item in event.attributes.get("_temporal_v2", {}).get("constraints", [])
-        ]
-        state = self._resolver.resolve_entity_state(
-            entity, relations, time, converter, anchors, constraints
-        )
-
-        # 4. Cache and Return
+        state = resolve_entity_state_uncached(self._db, entity_id, time)
         self._cache[cache_key] = state
         return state
 

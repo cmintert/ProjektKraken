@@ -1,5 +1,8 @@
 import pytest
 
+from src.commands.temporal_entity_edit_command import TemporalEntityEditCommand
+from src.core.calendar import CalendarConfig, CalendarConverter
+from src.core.date_parser import DateParser
 from src.core.entities import Entity
 from src.core.events import Event
 from src.core.temporal_manager import TemporalManager
@@ -16,6 +19,130 @@ def db_service():
 @pytest.fixture
 def temporal_manager(db_service):
     return TemporalManager(db_service)
+
+
+def _ordered_year_only_changes(db_service):
+    config = CalendarConfig.create_default()
+    config.is_active = True
+    db_service.insert_calendar_config(config)
+    converter = CalendarConverter(config)
+    expression = DateParser(config).parse_expression("961")
+    temporal = {"schema": 1, "expression": expression.to_dict()}
+    entity = Entity(name="Tasgillia", type="Character", attributes={"office": "None"})
+    first = Event(
+        name="Appointment",
+        lore_date=expression.representative_time(converter),
+        attributes={"_temporal_v2": dict(temporal)},
+    )
+    second = Event(
+        name="Succession",
+        lore_date=expression.representative_time(converter),
+        attributes={"_temporal_v2": dict(temporal)},
+    )
+    first.attributes["_temporal_v2"]["constraints"] = [
+        {
+            "anchor_a": first.temporal_anchor_id,
+            "relation": "before",
+            "anchor_b": second.temporal_anchor_id,
+            "min_offset_days": 0.0,
+        }
+    ]
+    db_service.insert_entity(entity)
+    db_service.insert_event(first)
+    db_service.insert_event(second)
+    first_relation = db_service.insert_relation(
+        first.id,
+        entity.id,
+        "involved",
+        {"valid_from_event": True, "payload": {"attributes": {"office": "Praetor"}}},
+    )
+    second_relation = db_service.insert_relation(
+        second.id,
+        entity.id,
+        "involved",
+        {"valid_from_event": True, "payload": {"attributes": {"office": "Consul"}}},
+    )
+    return entity, first, second_relation, converter.start_of_next_year(961), (
+        first_relation,
+        second_relation,
+    )
+
+
+def test_chronology_view_and_historical_edit_agree(db_service, temporal_manager):
+    entity, first, winning_relation, time, relation_ids = _ordered_year_only_changes(
+        db_service
+    )
+    viewed = temporal_manager.get_entity_state_at(entity.id, time).to_dict()
+    assert viewed["attributes"]["office"] == "Consul"
+    assert viewed["attribute_sources"]["office"]["relation_id"] == winning_relation
+    assert viewed["ambiguous_attributes"] == {}
+
+    command = TemporalEntityEditCommand(
+        entity.id,
+        time,
+        viewed,
+        [{"field": "attribute", "key": "office", "action": "set", "value": "Archon"}],
+    )
+    assert command._current_state(db_service) == viewed
+    assert command.execute(db_service).success
+    temporal_manager.clear_all_cache()
+    assert temporal_manager.get_entity_state_at(entity.id, time).attributes["office"] == (
+        "Archon"
+    )
+    command.undo(db_service)
+    temporal_manager.clear_all_cache()
+    assert temporal_manager.get_entity_state_at(entity.id, time).to_dict() == viewed
+    assert set(relation_ids) == {
+        relation["id"] for relation in db_service.get_incoming_relations(entity.id)
+    }
+
+    first.attributes["_temporal_v2"].pop("constraints")
+    db_service.insert_event(first)
+    temporal_manager.clear_all_cache()
+    unordered = temporal_manager.get_entity_state_at(entity.id, time)
+    assert unordered.attributes["office"] == "None"
+    assert len(unordered.possible_effects) == 2
+    assert set(unordered.ambiguous_attributes["office"]) == {
+        "None",
+        "Praetor",
+        "Consul",
+    }
+
+
+@pytest.mark.parametrize("change", ["chronology", "source"])
+def test_historical_edit_rejects_stale_temporal_state(
+    db_service, temporal_manager, change
+):
+    entity, first, winning_relation, time, relation_ids = _ordered_year_only_changes(
+        db_service
+    )
+    viewed = temporal_manager.get_entity_state_at(entity.id, time).to_dict()
+    command = TemporalEntityEditCommand(
+        entity.id,
+        time,
+        viewed,
+        [{"field": "attribute", "key": "office", "action": "set", "value": "Archon"}],
+    )
+    if change == "chronology":
+        first.attributes["_temporal_v2"].pop("constraints")
+        db_service.insert_event(first)
+    else:
+        relation = db_service.get_relation(winning_relation)
+        relation["attributes"]["payload"]["attributes"]["office"] = "Regent"
+        db_service.update_relation(
+            winning_relation, entity.id, "involved", relation["attributes"]
+        )
+    before = {
+        relation_id: db_service.get_relation(relation_id) for relation_id in relation_ids
+    }
+    result = command.execute(db_service)
+    assert not result.success
+    assert "Reload before saving" in result.message
+    assert not command.is_executed
+    assert db_service.get_entity(entity.id).attributes["office"] == "None"
+    assert {
+        relation_id: db_service.get_relation(relation_id) for relation_id in relation_ids
+    } == before
 
 
 def test_temporal_resolution_flow(db_service, temporal_manager):
