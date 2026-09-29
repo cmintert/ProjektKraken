@@ -879,13 +879,19 @@ class UnifiedListWidget(QWidget):
         self._model._checked_ids.clear()
         self._update_delete_button_state()
 
-    def select_item(self, item_type: str, item_id: str) -> None:
+    def select_item(
+        self, item_type: str, item_id: str, *, reveal_hidden: bool = False
+    ) -> bool:
         """Programmatically selects an item in the list. Auto-switches filter if item
         not visible.
 
         Args:
             item_type (str): "event" or "entity".
             item_id (str): The ID of the item to select.
+            reveal_hidden: Clear search and advanced filters if they hide the item.
+
+        Returns:
+            Whether the item was selected.
 
         """
 
@@ -911,7 +917,7 @@ class UnifiedListWidget(QWidget):
             return True
 
         if find_and_select():
-            return
+            return True
 
         # If not found, check if filter is blocking it
         current_filter = self.filter_combo.currentText()
@@ -927,10 +933,22 @@ class UnifiedListWidget(QWidget):
             # Switch to All Items is safest
             self.filter_combo.setCurrentText("All Items")
             # Signal should trigger _render_list synchronously
-            find_and_select()
-        else:
-            # Clear selection if item truly not found
-            self.list_widget.clearSelection()
+            if find_and_select():
+                return True
+
+        if reveal_hidden and (
+            self._search_term or self._advanced_filter_config
+        ):
+            self.search_bar.clear()
+            if self._advanced_filter_config:
+                self.set_advanced_filter({})
+                self.clear_filter_requested.emit()
+            if find_and_select():
+                return True
+
+        # Clear selection if item truly not found.
+        self.list_widget.clearSelection()
+        return False
 
     def minimumSizeHint(self) -> QSize:
         """Override to prevent dock collapse.

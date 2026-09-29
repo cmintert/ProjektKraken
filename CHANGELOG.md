@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-09-29
-**Commit:** b5018066c7ce4cbe321fb917a122b06ad8538979
+**Commit:** 618f46b47304f8b5e7cec13f2d6ab78dda1d4dd5
 ---
 
 # Changelog
@@ -68,6 +68,11 @@ All notable changes to this project will be documented in this file.
   stale spell-check responses.
 
 ### Fixed
+
+- *(2026-09-29)* **Entity creation**: Opened newly created Explorer entities in
+  the editor, revealed selections hidden by filters, and guarded unsaved drafts
+  before creation. Kept Quick Capture in its source context and added focused
+  creation and navigation regressions.
 
 - *(2026-09-29)* **LAN / Authentication**: Allowed valid access codes through
   saturated failed-attempt limits while retaining rate limits for invalid codes;

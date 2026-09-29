@@ -46,6 +46,8 @@ from src.services.marker_icon_catalog import MarkerIconCatalog
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
+    from src.gui.widgets.entity_editor import EntityEditorWidget
+    from src.gui.widgets.event_editor import EventEditorWidget
 
 logger = logging.getLogger(__name__)
 
@@ -242,12 +244,25 @@ class EditorCoordinator(BaseCoordinator):
 
     def create_entity(self) -> None:
         """Creates a new entity by prompting for a name and emitting a command."""
-        if not self.check_unsaved_changes(self.main_window.entity_editor):
-            return
-
         name, ok = QInputDialog.getText(self.main_window, "New Entity", "Entity Name:")
         if not ok or not name.strip():
             return
+
+        navigation = self.main_window.navigation_coordinator
+        editors: list[EventEditorWidget | EntityEditorWidget] = []
+        if navigation.selected_type == "event":
+            editors.append(self.main_window.event_editor)
+        editors.append(self.main_window.entity_editor)
+        editors_to_discard: list[EventEditorWidget | EntityEditorWidget] = []
+        for editor in editors:
+            was_dirty = editor.has_unsaved_changes()
+            if not self.check_unsaved_changes(editor):
+                return
+            if was_dirty:
+                editors_to_discard.append(editor)
+        for editor in editors_to_discard:
+            editor.set_dirty(False)
+            editor._on_discard()
 
         cmd = self._create_entity_command({"name": name.strip(), "type": "Concept"})
         self.command_requested.emit(cmd)

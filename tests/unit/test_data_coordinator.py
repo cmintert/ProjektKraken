@@ -385,9 +385,15 @@ class TestSignalHandlers:
         fake_window.workspace.show_panel.assert_not_called()
 
     def test_on_selection_requested(self, coordinator, fake_window):
-        """on_selection_requested should select item in unified list."""
+        """Creation selection opens the item through global navigation."""
+        navigation = fake_window.navigation_coordinator
+        navigation.selected_type = "event"
+        navigation.selected_id = "evt-123"
         coordinator.on_selection_requested("event", "evt-123")
-        fake_window.unified_list.select_item.assert_called_once_with("event", "evt-123")
+        navigation.set_global_selection.assert_called_once_with("event", "evt-123")
+        fake_window.unified_list.select_item.assert_called_once_with(
+            "event", "evt-123", reveal_hidden=True
+        )
 
     def test_on_command_failed_shows_warning(self, coordinator, fake_window):
         """on_command_failed should show a warning message box."""

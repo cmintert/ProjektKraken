@@ -536,14 +536,19 @@ class DataCoordinator(BaseCoordinator):
 
     @Slot(str, str)
     def on_selection_requested(self, item_type: str, item_id: str) -> None:
-        """Handle selection request from DataHandler.
+        """Open a newly created item after its model update is applied.
 
         Args:
             item_type: Type of item ("event" or "entity").
             item_id: ID of the item to select.
 
         """
-        self.main_window.unified_list.select_item(item_type, item_id)
+        navigation = self.main_window.navigation_coordinator
+        navigation.set_global_selection(item_type, item_id)
+        if navigation.selected_type == item_type and navigation.selected_id == item_id:
+            self.main_window.unified_list.select_item(
+                item_type, item_id, reveal_hidden=True
+            )
 
     @Slot(str)
     def on_command_failed(self, message: str) -> None:
