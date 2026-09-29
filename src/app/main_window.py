@@ -36,6 +36,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.app.ai_search_manager import AISearchManager
+from src.app.build_identity import window_title
 from src.app.command_coordinator import CommandCoordinator
 from src.app.connection_manager import ConnectionManager
 from src.app.constants import (
@@ -354,7 +355,7 @@ class MainWindow(QMainWindow):
             settings.value(SETTINGS_ACTIVE_DB_KEY, DEFAULT_WORLD_NAME)
         )
 
-        self.setWindowTitle(f"{WINDOW_TITLE} - {active_world_name}")
+        self.setWindowTitle(window_title(WINDOW_TITLE, active_world_name))
         self.resize(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
 
         # Current world reference (will be set by worker_manager)

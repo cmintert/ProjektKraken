@@ -27,6 +27,7 @@ def main_window(qtbot):
     from PySide6.QtWidgets import QMessageBox
 
     with (
+        patch("src.app.build_identity.get_commit_id", return_value="12345678"),
         patch("src.app.worker_manager.DatabaseWorker") as MockWorker,
         patch("src.app.main_window.QTimer"),
         patch("src.app.worker_manager.QThread"),
@@ -73,7 +74,9 @@ def main_window(qtbot):
 def test_init_window(main_window):
     from src.app.constants import WINDOW_TITLE
 
-    assert main_window.windowTitle() == f"{WINDOW_TITLE} - world.kraken"
+    assert main_window.windowTitle() == (
+        f"{WINDOW_TITLE} - 12345678 - world.kraken"
+    )
     assert main_window.timeline is not None
 
 

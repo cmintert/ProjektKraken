@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-09-29
-**Commit:** c339a1e56bbc23d55a4e2117020a448f82def0af
+**Commit:** b5018066c7ce4cbe321fb917a122b06ad8538979
 ---
 
 # Changelog
@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-09-29)* **Window title**: Displayed the eight-character Git commit
+  between the beta version and active world name in development and packaged
+  builds, with focused title and build-metadata coverage.
 
 - *(2026-09-29)* **Timeline / Navigation**: Added calendar-aware Go to date
   navigation with exact playhead placement, timeline centering, and unsaved-draft
