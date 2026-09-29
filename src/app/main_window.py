@@ -506,6 +506,9 @@ class MainWindow(QMainWindow):
         self.event_editor = EventEditorWidget(self)
         self.entity_editor = EntityEditorWidget(self)
         self.timeline = TimelineWidget()
+        self.timeline.go_to_date_requested.connect(
+            self.time_coordinator.open_go_to_date
+        )
         self.map_widget = MapWidget()
         # Propagate theme changes to the layer panel.
         try:

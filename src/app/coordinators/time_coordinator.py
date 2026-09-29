@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING, Optional
 
 from PySide6.QtCore import Q_ARG, Slot
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QDialog, QMessageBox
 
 from src.app.coordinators.base_coordinator import BaseCoordinator
 from src.app.qt_invocation import invoke_queued
@@ -31,6 +31,7 @@ class TimeCoordinator(BaseCoordinator):
         super().__init__(main_window)
         self._current_playhead_time: Optional[float] = None
         self._follow_after_save: float | None = None
+        self._pending_go_to_date: float | None = None
         self._resolve_request_id = 0
 
     @property
@@ -85,6 +86,41 @@ class TimeCoordinator(BaseCoordinator):
         if old_time == current_time:
             self.on_playhead_changed(current_time)
 
+    @Slot()
+    def open_go_to_date(self) -> None:
+        """Collect an exact calendar date and navigate through normal fanout."""
+        converter = self.main_window.calendar_converter
+        if converter is None:
+            return
+        from src.gui.dialogs.go_to_date_dialog import GoToDateDialog
+
+        dialog = GoToDateDialog(
+            converter,
+            self.main_window.timeline.get_playhead_time(),
+            self.main_window,
+        )
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            if dialog.target_time is not None:
+                self.go_to_date(dialog.target_time)
+
+    def go_to_date(self, target: float) -> None:
+        """Move the playhead and center after its dirty-draft guard accepts."""
+        self._pending_go_to_date = target
+        self.main_window.timeline.set_playhead_time(target)
+        self._center_accepted_go_to_date()
+
+    def _center_accepted_go_to_date(self) -> None:
+        target = self._pending_go_to_date
+        if target is None:
+            return
+        if self._follow_after_save == target:
+            return
+        if self._current_playhead_time == target:
+            self.main_window.timeline.center_on_date(target)
+            self._pending_go_to_date = None
+        else:
+            self._pending_go_to_date = None
+
     def resolve_selected_entity(self, *, after_save: bool = False) -> None:
         """Resolve the selected entity at the actual playhead, including today."""
         editor = self.main_window.entity_editor
@@ -111,10 +147,22 @@ class TimeCoordinator(BaseCoordinator):
             self.main_window.timeline.set_playhead_time(editor._temporal_time)
             self._current_playhead_time = editor._temporal_time
             self.resolve_selected_entity(after_save=True)
+            self._center_accepted_go_to_date()
             return
         if target is not None:
             self._current_playhead_time = target
         self.resolve_selected_entity(after_save=True)
+        self._center_accepted_go_to_date()
+
+    def on_temporal_save_failed(self) -> None:
+        """Restore a pending exact-date jump when its draft save fails."""
+        if self._pending_go_to_date is None:
+            return
+        self._pending_go_to_date = None
+        self._follow_after_save = None
+        previous_time = self.main_window.entity_editor._temporal_time
+        if previous_time is not None:
+            self.main_window.timeline.set_playhead_time(previous_time)
 
     def _format_time_string(self, time_val: float) -> str:
         """Formats time using calendar converter if available."""
@@ -127,6 +175,8 @@ class TimeCoordinator(BaseCoordinator):
     @Slot(float)
     def on_playhead_changed(self, time: float) -> None:
         """Refreshes entity inspector based on playhead time."""
+        if self._pending_go_to_date is not None and time != self._pending_go_to_date:
+            self._pending_go_to_date = None
         entity_editor = self.main_window.entity_editor
         old_time = entity_editor._temporal_time
         if (

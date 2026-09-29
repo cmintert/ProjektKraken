@@ -41,6 +41,7 @@ class TimelineWidget(QWidget):
     current_time_changed = Signal(float)  # Expose current time signal from view
     event_date_changed = Signal(str, float)  # (event_id, new_lore_date)
     create_event_requested = Signal()  # Expose empty state action from view
+    go_to_date_requested = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the TimelineWidget.
@@ -107,6 +108,14 @@ class TimelineWidget(QWidget):
         self.btn_return_present.clicked.connect(self.return_to_present)
         self.action_toolbar.add_button(self.btn_return_present, priority=70)
 
+        self.btn_go_to_date = QPushButton("Go to date...")
+        self.btn_go_to_date.setToolTip(
+            "Move the playhead to an exact date in the active calendar"
+        )
+        self.btn_go_to_date.setEnabled(False)
+        self.btn_go_to_date.clicked.connect(self.go_to_date_requested.emit)
+        self.action_toolbar.add_button(self.btn_go_to_date, priority=65)
+
         settings = QSettings()
         snap_to_events = cast(
             bool,
@@ -161,6 +170,10 @@ class TimelineWidget(QWidget):
     def focus_event(self, event_id: str) -> None:
         """Centers the timeline on the given event."""
         self.view.focus_event(event_id)
+
+    def center_on_date(self, date: float) -> None:
+        """Reveal a lore date without changing zoom or event selection."""
+        self.view.center_on_date(date)
 
     def clear_event_selection(self) -> None:
         """Clear a timeline click rejected by guarded navigation."""
@@ -253,6 +266,7 @@ class TimelineWidget(QWidget):
         EventItem.set_calendar_converter(converter)
         # Also configure the ruler for calendar-aware date divisions
         self.view.set_ruler_calendar(converter)
+        self.btn_go_to_date.setEnabled(converter is not None)
         # Trigger repaint to update existing items
         self.view.viewport().update()
 

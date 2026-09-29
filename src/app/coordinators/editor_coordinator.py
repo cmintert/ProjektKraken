@@ -198,6 +198,8 @@ class EditorCoordinator(BaseCoordinator):
             )
         if result.success:
             self.main_window.time_coordinator.on_temporal_save_completed()
+        else:
+            self.main_window.time_coordinator.on_temporal_save_failed()
 
     # ------------------------------------------------------------------
     # Create Operations

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-09-29
-**Commit:** b324faa3257a074288258abb6e85bf22a5966433
+**Commit:** c339a1e56bbc23d55a4e2117020a448f82def0af
 ---
 
 # Changelog
@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-09-29)* **Timeline / Navigation**: Added calendar-aware Go to date
+  navigation with exact playhead placement, timeline centering, and unsaved-draft
+  handling; documented the action and added dialog and navigation regressions.
 
 - *(2026-09-29)* **Timeline / Temporal**: Unified numeric and authored event
   rendering with zoom-aware precision windows, soft halos, bounded occurrence

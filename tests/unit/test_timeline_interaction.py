@@ -23,6 +23,17 @@ def timeline(qtbot):
 def test_timeline_init(timeline):
     assert timeline.view.graphics_scene is not None
     assert timeline.view.LANE_HEIGHT == 60
+    assert not timeline.btn_go_to_date.isEnabled()
+
+
+def test_go_to_date_action_enables_with_calendar(timeline, qtbot):
+    from src.core.calendar import CalendarConfig, CalendarConverter
+
+    timeline.set_calendar_converter(CalendarConverter(CalendarConfig.create_default()))
+
+    assert timeline.btn_go_to_date.isEnabled()
+    with qtbot.waitSignal(timeline.go_to_date_requested):
+        timeline.btn_go_to_date.click()
 
 
 def test_set_events_creates_items(timeline):

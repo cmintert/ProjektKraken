@@ -142,6 +142,25 @@ def test_focus_event_recenters_window_for_distant_item(
     )
 
 
+def test_go_to_distant_empty_date_preserves_zoom_and_selection(
+    timeline_view, qtbot
+) -> None:
+    timeline_view.set_events([Event(id="origin", name="Origin", lore_date=0.0)])
+    timeline_view._apply_zoom(100.0)
+    timeline_view.set_playhead_event_snapping(True)
+    zoom = timeline_view.transform().m11()
+
+    target = 1_000_000.25
+    timeline_view.set_playhead_time(target)
+    timeline_view.center_on_date(target)
+    qtbot.wait(0)
+
+    assert timeline_view.get_playhead_time() == pytest.approx(target)
+    assert _visible_center_date(timeline_view) == pytest.approx(target, abs=0.01)
+    assert timeline_view.transform().m11() == zoom
+    assert not timeline_view.graphics_scene.selectedItems()
+
+
 def test_resize_preserves_center_and_twenty_viewport_window(
     timeline_view, qtbot
 ) -> None:

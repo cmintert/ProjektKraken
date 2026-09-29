@@ -1655,6 +1655,10 @@ class TimelineView(QGraphicsView):
                 item.setSelected(True)
                 return
 
+    def center_on_date(self, date: float) -> None:
+        """Rebase the local navigation window around an arbitrary lore date."""
+        self._set_horizontal_window(date)
+
     def _apply_zoom(self, zoom_level: float) -> None:
         """Applies a zoom level and updates related state.
 

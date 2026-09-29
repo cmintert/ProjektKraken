@@ -77,6 +77,23 @@ def test_init_window(main_window):
     assert main_window.timeline is not None
 
 
+def test_go_to_date_toolbar_routes_to_time_coordinator(main_window):
+    from PySide6.QtWidgets import QDialog
+
+    from src.core.calendar import CalendarConfig, CalendarConverter
+
+    main_window.calendar_converter = CalendarConverter(CalendarConfig.create_default())
+    with (
+        patch("src.gui.dialogs.go_to_date_dialog.GoToDateDialog") as dialog,
+        patch.object(main_window.time_coordinator, "go_to_date") as navigate,
+    ):
+        dialog.return_value.exec.return_value = QDialog.DialogCode.Accepted
+        dialog.return_value.target_time = 15.0
+        main_window.timeline.go_to_date_requested.emit()
+
+    navigate.assert_called_once_with(15.0)
+
+
 def test_create_event_flow(main_window, qtbot):
     # Simulate save from editor — route through editor_coordinator
     ev_data = {"id": "1", "name": "New", "lore_date": 10.0}

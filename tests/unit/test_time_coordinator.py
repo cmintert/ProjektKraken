@@ -22,8 +22,10 @@ class FakeMainWindow(QObject):
         self.event_editor = MagicMock()
         self.entity_editor = MagicMock()
         self.entity_editor._current_entity_id = None
+        self.entity_editor.current_entity_id = None
         self.entity_editor.isVisible.return_value = False
         self.timeline = MagicMock()
+        self.data_coordinator = MagicMock()
         self.map_widget = MagicMock()
         self.unified_list = MagicMock()
         self.longform_editor = MagicMock()
@@ -166,3 +168,83 @@ def test_dirty_scrub_keeps_draft_pinned_until_save(coordinator, fake_window):
     assert coordinator._follow_after_save is None
     assert coordinator.current_playhead_time == 20.0
     invoke.assert_called_once()
+
+
+def test_go_to_date_uses_playhead_fanout_and_centers(coordinator, fake_window):
+    """Exact navigation does not change the world's current time."""
+    fake_window.entity_editor.has_unsaved_changes.return_value = False
+    fake_window.timeline.set_playhead_time.side_effect = coordinator.on_playhead_changed
+
+    coordinator.go_to_date(42.25)
+
+    fake_window.timeline.set_playhead_time.assert_called_once_with(42.25)
+    fake_window.timeline.center_on_date.assert_called_once_with(42.25)
+    fake_window.timeline.set_current_time.assert_not_called()
+    fake_window.data_coordinator.on_graph_playhead_changed.assert_called_once()
+
+
+def test_go_to_date_cancelled_by_dirty_guard_does_not_center(
+    coordinator, fake_window
+):
+    editor = fake_window.entity_editor
+    editor._temporal_time = 10.0
+    editor.has_unsaved_changes.return_value = True
+    fake_window.timeline.set_playhead_time.side_effect = coordinator.on_playhead_changed
+    with patch("src.app.coordinators.time_coordinator.QMessageBox") as dialog:
+        dialog.return_value.addButton.side_effect = ["save", "discard", "cancel"]
+        dialog.return_value.clickedButton.return_value = "cancel"
+        coordinator.go_to_date(20.0)
+
+    assert fake_window.timeline.set_playhead_time.call_args_list[-1].args == (10.0,)
+    fake_window.timeline.center_on_date.assert_not_called()
+
+
+def test_go_to_date_discarded_draft_centers_target(coordinator, fake_window):
+    editor = fake_window.entity_editor
+    editor._temporal_time = 10.0
+    editor.has_unsaved_changes.return_value = True
+    fake_window.timeline.set_playhead_time.side_effect = coordinator.on_playhead_changed
+    with patch("src.app.coordinators.time_coordinator.QMessageBox") as dialog:
+        dialog.return_value.addButton.side_effect = ["save", "discard", "cancel"]
+        dialog.return_value.clickedButton.return_value = "discard"
+        coordinator.go_to_date(20.0)
+
+    editor.set_dirty.assert_called_once_with(False)
+    fake_window.timeline.center_on_date.assert_called_once_with(20.0)
+
+
+def test_go_to_date_centers_after_deferred_entity_save(coordinator, fake_window):
+    editor = fake_window.entity_editor
+    editor._temporal_time = 10.0
+    editor._temporal_save_pending = True
+    editor.has_unsaved_changes.return_value = True
+    fake_window.timeline.set_playhead_time.side_effect = coordinator.on_playhead_changed
+    with patch("src.app.coordinators.time_coordinator.QMessageBox") as dialog:
+        dialog.return_value.addButton.side_effect = ["save", "discard", "cancel"]
+        dialog.return_value.clickedButton.return_value = "save"
+        coordinator.go_to_date(20.0)
+
+    fake_window.timeline.center_on_date.assert_not_called()
+    editor.has_unsaved_changes.return_value = False
+    with patch("src.app.coordinators.time_coordinator.invoke_queued"):
+        coordinator.on_temporal_save_completed()
+    fake_window.timeline.center_on_date.assert_called_once_with(20.0)
+
+
+def test_failed_deferred_save_restores_previous_playhead(coordinator, fake_window):
+    editor = fake_window.entity_editor
+    editor._temporal_time = 10.0
+    editor._temporal_save_pending = True
+    editor.has_unsaved_changes.return_value = True
+    fake_window.timeline.set_playhead_time.side_effect = coordinator.on_playhead_changed
+    with patch("src.app.coordinators.time_coordinator.QMessageBox") as dialog:
+        dialog.return_value.addButton.side_effect = ["save", "discard", "cancel"]
+        dialog.return_value.clickedButton.return_value = "save"
+        coordinator.go_to_date(20.0)
+
+    editor._temporal_save_pending = False
+    coordinator.on_temporal_save_failed()
+
+    assert fake_window.timeline.set_playhead_time.call_args_list[-1].args == (10.0,)
+    fake_window.timeline.center_on_date.assert_not_called()
+    assert coordinator._pending_go_to_date is None
