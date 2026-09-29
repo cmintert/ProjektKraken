@@ -209,15 +209,19 @@ def test_failed_access_codes_are_rate_limited(published_db_path: str) -> None:
         )
         assert response.status_code == 401
 
+    limited = client.get(
+        "/api/theme", headers={"Authorization": "Bearer 99999999"}
+    )
     successful = client.get(
         "/api/theme", headers={"Authorization": "Bearer 01234567"}
     )
-    limited = client.get(
+    still_limited = client.get(
         "/api/theme", headers={"Authorization": "Bearer 99999999"}
     )
 
     assert successful.status_code == 200
     assert limited.status_code == 429
+    assert still_limited.status_code == 429
     assert int(limited.headers["Retry-After"]) > 0
     assert limited.headers["Content-Security-Policy"] == _CONTENT_SECURITY_POLICY
 
@@ -229,6 +233,30 @@ def test_rate_limiter_has_a_global_failure_bound() -> None:
         assert limiter.record_failure(f"client-{index}") is None
 
     assert limiter.record_failure("client-29") is not None
+
+
+def test_valid_access_code_survives_global_failure_bound() -> None:
+    config = ServerConfig(lan_access=True, access_code="01234567")
+    app = create_app(config)
+
+    for index in range(30):
+        client = TestClient(
+            app, base_url="http://127.0.0.1", client=(f"client-{index}", 50000)
+        )
+        response = client.get(
+            "/api/theme", headers={"Authorization": "Bearer 99999999"}
+        )
+        assert response.status_code == (429 if index == 29 else 401)
+
+    other_client = TestClient(
+        app, base_url="http://127.0.0.1", client=("other-client", 50000)
+    )
+    assert other_client.get(
+        "/api/theme", headers={"Authorization": "Bearer 99999999"}
+    ).status_code == 429
+    assert other_client.get(
+        "/api/theme", headers={"Authorization": "Bearer 01234567"}
+    ).status_code == 200
 
 
 def test_http_get_does_not_index_missing_items(published_db_path: str) -> None:

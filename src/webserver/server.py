@@ -209,14 +209,6 @@ def _install_lan_authentication(app: FastAPI, config: ServerConfig) -> None:
             return await call_next(request)
 
         client = request.client.host if request.client else "unknown"
-        retry_after = rate_limiter.retry_after(client)
-        if retry_after is not None:
-            return JSONResponse(
-                status_code=429,
-                content={"detail": "Too many access-code attempts"},
-                headers={"Retry-After": str(retry_after)},
-            )
-
         authorization = request.headers.get("Authorization", "")
         scheme, _, supplied_code = authorization.partition(" ")
         expected_code = config.access_code or ""
@@ -225,6 +217,14 @@ def _install_lan_authentication(app: FastAPI, config: ServerConfig) -> None:
         )
         if authenticated:
             return await call_next(request)
+
+        retry_after = rate_limiter.retry_after(client)
+        if retry_after is not None:
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Too many access-code attempts"},
+                headers={"Retry-After": str(retry_after)},
+            )
 
         retry_after = rate_limiter.record_failure(client)
         if retry_after is not None:

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-09-29
-**Commit:** 8b13b8f9f80585eec2ad07cc22efc85ba668fa2d
+**Commit:** b324faa3257a074288258abb6e85bf22a5966433
 ---
 
 # Changelog
@@ -60,6 +60,10 @@ All notable changes to this project will be documented in this file.
   stale spell-check responses.
 
 ### Fixed
+
+- *(2026-09-29)* **LAN / Authentication**: Allowed valid access codes through
+  saturated failed-attempt limits while retaining rate limits for invalid codes;
+  added client and global limit regression coverage.
 
 - *(2026-09-29)* **Timeline / Dates**: Removed redundant occurrence prefixes
   and false unknown-date captions for exact days; kept semantic evidence aligned
