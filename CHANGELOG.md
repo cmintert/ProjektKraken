@@ -16,7 +16,7 @@ All notable changes to this project will be documented in this file.
 - *(2026-09-30)* **Release blockers**: Stopped Longform hydration during window
   shutdown and tied its timer lifetime to the window, with regression coverage
   for pending callbacks and late results. Updated the Windows packaging lock to
-  urllib3 2.8.0 to resolve the dependency audit findings.
+  urllib3 2.8.0 to resolve the dependency audit findings..
 
 ## [0.19.7]
 
