@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QPlainTextEdit,
     QPushButton,
+    QSizePolicy,
     QToolButton,
     QVBoxLayout,
     QWidget,
@@ -50,7 +51,10 @@ class PromptEditorWidget(QWidget):
         # Variable insertion
         self.var_combo = QComboBox()
         self.var_combo.setPlaceholderText("Insert Variable...")
-        self.var_combo.setMinimumWidth(150)
+        self.var_combo.setMinimumWidth(110)
+        self.var_combo.setSizePolicy(
+            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed
+        )
         self.var_combo.activated.connect(self._on_variable_selected)
         toolbar_layout.addWidget(self.var_combo)
 

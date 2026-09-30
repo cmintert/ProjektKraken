@@ -108,27 +108,23 @@ def test_history_keeps_undo_and_overflows_clear_at_narrow_width(qtbot) -> None:
     assert panel.clear_btn in panel.action_toolbar.overflowed_buttons()
 
 
-def test_analysis_tab_scrollers_are_themed_and_aligned(qapp, qtbot) -> None:
+def test_analysis_tab_scrollers_are_themed_and_aligned(qtbot) -> None:
     template = Path("src/resources/main.qss").read_text(encoding="utf-8")
-    previous_style = qapp.styleSheet()
-    qapp.setStyleSheet(template.format(**ThemeManager().get_theme()))
-    try:
-        panel = MainAnalysisPanel()
-        _show_narrow(qtbot, panel, width=220)
-        tab_bar = panel.tab_widget.tabBar()
-        scroll_buttons = {
-            button.objectName(): button
-            for button in tab_bar.findChildren(QToolButton)
-        }
-        left = scroll_buttons["ScrollLeftButton"]
-        right = scroll_buttons["ScrollRightButton"]
+    panel = MainAnalysisPanel()
+    panel.setStyleSheet(ThemeManager().format_stylesheet(template))
+    _show_narrow(qtbot, panel, width=220)
+    tab_bar = panel.tab_widget.tabBar()
+    scroll_buttons = {
+        button.objectName(): button
+        for button in tab_bar.findChildren(QToolButton)
+    }
+    left = scroll_buttons["ScrollLeftButton"]
+    right = scroll_buttons["ScrollRightButton"]
 
-        assert tab_bar.usesScrollButtons()
-        assert left.isVisible()
-        assert right.isVisible()
-        assert left.geometry().right() < right.geometry().left()
-        assert right.geometry().right() <= tab_bar.rect().right()
-        assert left.geometry().top() == right.geometry().top()
-        assert abs(left.height() - tab_bar.height()) <= 2
-    finally:
-        qapp.setStyleSheet(previous_style)
+    assert tab_bar.usesScrollButtons()
+    assert left.isVisible()
+    assert right.isVisible()
+    assert left.geometry().right() < right.geometry().left()
+    assert right.geometry().right() <= tab_bar.rect().right()
+    assert left.geometry().top() == right.geometry().top()
+    assert abs(left.height() - tab_bar.height()) <= 2

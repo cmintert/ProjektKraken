@@ -98,15 +98,16 @@ def test_move_panel_reuses_widget_and_updates_registry(qtbot) -> None:
 
 def test_pane_corners_are_mirrored_over_content_after_resize(qapp, qtbot):
     """Opaque content and tab frames cannot change one corner's curvature."""
-    previous_style = qapp.styleSheet()
     pane = PaneContainer("center")
     qtbot.addWidget(pane)
     content = QLabel("Content")
     content.setStyleSheet("background: magenta; border: 1px solid blue;")
     pane.add_panel("test", "Test", content)
     try:
-        ThemeManager().apply_theme(
-            qapp, Path("src/resources/main.qss").read_text(encoding="utf-8")
+        pane.setStyleSheet(
+            ThemeManager().format_stylesheet(
+                Path("src/resources/main.qss").read_text(encoding="utf-8")
+            )
         )
         pane.show()
         for width, height in ((320, 180), (481, 243)):
@@ -139,19 +140,20 @@ def test_pane_corners_are_mirrored_over_content_after_resize(qapp, qtbot):
             inset = int(8 * rendered.devicePixelRatio())
             assert rendered.pixelColor(inset, h - 1 - inset) == QColor("magenta")
     finally:
-        qapp.setStyleSheet(previous_style)
+        pane.close()
 
 
 def test_workspace_tabs_clear_corners_when_overflowing(qapp, qtbot):
     """Qt reserves both corner areas even when many tabs need scroll buttons."""
-    previous_style = qapp.styleSheet()
     pane = PaneContainer("center")
     qtbot.addWidget(pane)
     for index in range(8):
         pane.add_panel(str(index), f"Workspace panel {index}", QLabel())
     try:
-        ThemeManager().apply_theme(
-            qapp, Path("src/resources/main.qss").read_text(encoding="utf-8")
+        pane.setStyleSheet(
+            ThemeManager().format_stylesheet(
+                Path("src/resources/main.qss").read_text(encoding="utf-8")
+            )
         )
         pane.show()
         for width in (160, 320, 900):
@@ -165,23 +167,21 @@ def test_workspace_tabs_clear_corners_when_overflowing(qapp, qtbot):
                 assert bar.geometry().right() < pane.width() - 9
                 assert pane.tabs.currentIndex() == selected
     finally:
-        qapp.setStyleSheet(previous_style)
+        pane.close()
 
 
 def test_outer_frame_encloses_activity_bar_and_tracks_theme(qapp, qtbot):
     """All four outer edges remain visible through theme changes and resize."""
     manager = ThemeManager()
     previous_theme = manager.current_theme_name
-    previous_style = qapp.styleSheet()
     shell = _shell(qtbot)
+    template = Path("src/resources/main.qss").read_text(encoding="utf-8")
     try:
         shell.show()
         for theme in ("light_mode", "dark_mode", "fantasy_mode"):
             manager.current_theme_name = theme
-            manager.apply_theme(
-                qapp, Path("src/resources/main.qss").read_text(encoding="utf-8")
-            )
-            manager.theme_changed.emit(manager.get_theme())
+            shell.setStyleSheet(manager.format_stylesheet(template))
+            shell.update()
             for width, height in ((900, 640), (1200, 800)):
                 shell.resize(width, height)
                 qapp.processEvents()
@@ -198,8 +198,7 @@ def test_outer_frame_encloses_activity_bar_and_tracks_theme(qapp, qtbot):
                 assert shell.vertical_splitter.handleWidth() == 4
     finally:
         manager.current_theme_name = previous_theme
-        manager.theme_changed.emit(manager.get_theme())
-        qapp.setStyleSheet(previous_style)
+        shell.close()
 
 
 def test_drop_tab_on_another_pane_moves_the_same_panel(qtbot) -> None:

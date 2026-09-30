@@ -37,40 +37,34 @@ def test_narrow_toolbar_overflows_low_priority_without_clipping(qtbot) -> None:
     assert primary.text() == "Primary Action"
 
 
-def test_attribute_toolbar_keeps_add_action_visible_without_clipping(
-    qapp, qtbot
-) -> None:
+def test_attribute_toolbar_keeps_add_action_visible_without_clipping(qtbot) -> None:
     template = Path("src/resources/main.qss").read_text(encoding="utf-8")
-    previous_style = qapp.styleSheet()
-    qapp.setStyleSheet(template.format(**ThemeManager().get_theme()))
-    try:
-        editor = AttributeEditorWidget()
-        toolbar = EditorPresentation._overflow_row(
-            editor,
-            [editor.btn_add, editor.btn_remove],
-            pin_primary=True,
-        )
-        qtbot.addWidget(toolbar)
-        toolbar.resize(150, toolbar.sizeHint().height())
-        toolbar.show()
-        qtbot.wait(1)
+    editor = AttributeEditorWidget()
+    toolbar = EditorPresentation._overflow_row(
+        editor,
+        [editor.btn_add, editor.btn_remove],
+        pin_primary=True,
+    )
+    toolbar.setStyleSheet(ThemeManager().format_stylesheet(template))
+    qtbot.addWidget(toolbar)
+    toolbar.resize(150, toolbar.sizeHint().height())
+    toolbar.show()
+    qtbot.wait(1)
 
-        text_width = editor.btn_add.fontMetrics().horizontalAdvance(
-            editor.btn_add.text()
-        )
-        option = QStyleOptionButton()
-        option.initFrom(editor.btn_add)
-        content_rect = editor.btn_add.style().subElementRect(
-            QStyle.SubElement.SE_PushButtonContents,
-            option,
-            editor.btn_add,
-        )
-        assert not editor.btn_add.isHidden()
-        assert content_rect.width() >= text_width
-        assert editor.btn_add.width() >= text_width + 48
-        assert editor.btn_remove in toolbar.overflowed_buttons()
-    finally:
-        qapp.setStyleSheet(previous_style)
+    text_width = editor.btn_add.fontMetrics().horizontalAdvance(
+        editor.btn_add.text()
+    )
+    option = QStyleOptionButton()
+    option.initFrom(editor.btn_add)
+    content_rect = editor.btn_add.style().subElementRect(
+        QStyle.SubElement.SE_PushButtonContents,
+        option,
+        editor.btn_add,
+    )
+    assert not editor.btn_add.isHidden()
+    assert content_rect.width() >= text_width
+    assert editor.btn_add.width() >= text_width + 48
+    assert editor.btn_remove in toolbar.overflowed_buttons()
 
 
 def test_wide_toolbar_keeps_actions_packed_left(qtbot) -> None:

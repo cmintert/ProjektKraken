@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-09-30
-**Commit:** 9e5a601e761389b075e0d04bebe25e38dc439e40
+**Commit:** e98f8a0697a2295c6b56c6d68a841f83f6f3d122
 ---
 
 # Changelog
@@ -24,12 +24,16 @@ All notable changes to this project will be documented in this file.
   asynchronous saves, workspace panels, temporal snapshots, and rendered bounds.
 - *(2026-09-30)* **Event dates**: Reduced the expanded date field widths so
   narrow inspectors fit with Linux font metrics.
+- *(2026-09-30)* **Prompt editor**: Allowed the variable picker to shrink in
+  narrow AI sections without widening the event inspector.
 
 ### Changed
 
 - *(2026-09-29)* **Testing / CI**: Stop the full regression job at its first
   failure so beta release checks report blockers promptly. Scoped theme tests
   to their widget to avoid repeated application-wide stylesheet refreshes.
+- *(2026-09-30)* **Testing / CI**: Scoped responsive toolbar and workspace
+  visual styles to their widgets so full regression avoids global Qt restyles.
 
 - *(2026-09-29)* **Release**: Bumped project and application metadata to
   version 0.19.7 and prepared the beta 1 package guidance and release notes.
