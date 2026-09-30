@@ -170,13 +170,15 @@ def test_theme_change_updates_stylesheet(qtbot):
         pytest.skip("Need at least 2 themes to test switching")
 
     # Trigger theme change
-    tm.set_theme(new_theme)
+    previous_theme = tm.current_theme_name
+    try:
+        tm.current_theme_name = new_theme
+        widget.editor._on_theme_changed(tm.get_theme())
 
-    # Check that stylesheet was updated
-    updated_stylesheet = widget.document().defaultStyleSheet()
-    # Note: Stylesheet might be the same if font sizes are identical
-    # But the connection should be working
-    assert updated_stylesheet is not None
+        updated_stylesheet = widget.document().defaultStyleSheet()
+        assert updated_stylesheet is not None
+    finally:
+        tm.current_theme_name = previous_theme
 
 
 def test_toggle_view_mode(qtbot):

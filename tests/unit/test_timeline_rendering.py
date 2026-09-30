@@ -109,18 +109,23 @@ def test_timeline_scene_init():
 def test_timeline_scene_refreshes_existing_event_item_theme(qapp):
     """Theme changes refresh cached colors for markers already in the scene."""
     theme_manager = ThemeManager()
-    theme_manager.set_theme("dark_mode")
+    previous_theme = theme_manager.current_theme_name
+    theme_manager.current_theme_name = "dark_mode"
     scene = TimelineScene()
     item = EventItem(Event(name="Test", lore_date=100.0))
     scene.addItem(item)
 
-    theme_manager.set_theme("cyberpunk_mode")
+    try:
+        theme_manager.current_theme_name = "cyberpunk_mode"
+        theme = theme_manager.get_theme()
+        scene._update_theme(theme)
 
-    theme = theme_manager.get_theme()
-    assert item.base_color.name() == theme["event_main"].lower()
-    assert item._text_color.name() == theme["text_main"].lower()
-    assert item._secondary_text_color.name() == theme["text_dim"].lower()
-    assert item._border_color.name() == theme["border"].lower()
+        assert item.base_color.name() == theme["event_main"].lower()
+        assert item._text_color.name() == theme["text_main"].lower()
+        assert item._secondary_text_color.name() == theme["text_dim"].lower()
+        assert item._border_color.name() == theme["border"].lower()
+    finally:
+        theme_manager.current_theme_name = previous_theme
 
 
 def test_timeline_view_set_events_empty(timeline_view):

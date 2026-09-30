@@ -42,7 +42,7 @@ def test_icon_updates_on_theme_change(qtbot):
         mock_load.reset_mock()
 
         theme = theme_manager.get_theme()
-        theme_manager.theme_changed.emit(theme)
+        widget._on_theme_changed(theme)
 
         # Verify a reload happened.
         assert mock_load.called

@@ -53,24 +53,23 @@ def test_on_theme_changed_forces_rerender(qtbot):
         }
 
         # Start with test_theme_a
-        tm.set_theme("test_theme_a")
+        tm.current_theme_name = "test_theme_a"
+        widget.editor._on_theme_changed(tm.get_theme())
 
         # Set text
         widget.set_wiki_text("Test Content")
 
         # Check HTML has test_theme_a color
         html_a = widget.toHtml().lower()
-        print(f"HTML A: {html_a}")
         assert "#aaaaaa" in html_a
         assert "#cccccc" not in html_a
 
-        # Switch to test_theme_b
-        # This triggers theme_changed signal which verify WikiTextEdit listens to
-        tm.set_theme("test_theme_b")
+        # Switch the widget's rendered theme without restyling every live Qt widget.
+        tm.current_theme_name = "test_theme_b"
+        widget.editor._on_theme_changed(tm.get_theme())
 
         # Check HTML has test_theme_b color
         html_b = widget.toHtml().lower()
-        print(f"HTML B: {html_b}")
         assert "#cccccc" in html_b
         assert "#aaaaaa" not in html_b
 

@@ -267,7 +267,7 @@ def test_editor_toolbar_style_uses_main_text_color_in_light_mode(theme_manager):
     """Ensure rich-text toolbar labels remain readable in light themes."""
     original_theme_name = theme_manager.current_theme_name
     try:
-        theme_manager.set_theme("light_mode")
+        theme_manager.current_theme_name = "light_mode"
         theme = theme_manager.get_theme()
 
         style = StyleHelper.get_editor_toolbar_style()
@@ -277,7 +277,7 @@ def test_editor_toolbar_style_uses_main_text_color_in_light_mode(theme_manager):
         assert f"color: {theme['text_main']};" in hover_style
         assert f"background-color: {theme['app_bg']};" in hover_style
     finally:
-        theme_manager.set_theme(original_theme_name)
+        theme_manager.current_theme_name = original_theme_name
 
 
 def test_style_changes_with_theme_switch(theme_manager):
@@ -303,7 +303,7 @@ def test_style_changes_with_theme_switch(theme_manager):
         pytest.skip("Could not find alternate theme")
 
     # Switch theme
-    theme_manager.set_theme(new_theme_name)
+    theme_manager.current_theme_name = new_theme_name
     new_style = StyleHelper.get_empty_state_style()
     new_theme = theme_manager.get_theme()
 
@@ -313,7 +313,7 @@ def test_style_changes_with_theme_switch(theme_manager):
         assert new_theme["text_dim"] in new_style
 
     # Restore original theme
-    theme_manager.set_theme(original_theme_name)
+    theme_manager.current_theme_name = original_theme_name
 
 
 def test_apply_standard_list_spacing():

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-09-30
-**Commit:** e98f8a0697a2295c6b56c6d68a841f83f6f3d122
+**Commit:** ea16848f6b4869d24a918c1840f04f890afae0d0
 ---
 
 # Changelog
@@ -32,8 +32,9 @@ All notable changes to this project will be documented in this file.
 - *(2026-09-29)* **Testing / CI**: Stop the full regression job at its first
   failure so beta release checks report blockers promptly. Scoped theme tests
   to their widget to avoid repeated application-wide stylesheet refreshes.
-- *(2026-09-30)* **Testing / CI**: Scoped responsive toolbar and workspace
-  visual styles to their widgets so full regression avoids global Qt restyles.
+- *(2026-09-30)* **Testing / CI**: Scoped responsive toolbar, workspace, and
+  theme visual checks to their widgets so full regression avoids global Qt
+  restyles.
 
 - *(2026-09-29)* **Release**: Bumped project and application metadata to
   version 0.19.7 and prepared the beta 1 package guidance and release notes.

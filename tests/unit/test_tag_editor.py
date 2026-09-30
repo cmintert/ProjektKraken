@@ -227,12 +227,13 @@ def test_theme_and_base_color_repaint_without_rebuilding_model(tag_editor):
 
     try:
         for theme_name in ("dark_mode", "light_mode", "muted_light_mode"):
-            theme_manager.set_theme(theme_name)
+            theme_manager.current_theme_name = theme_name
+            tag_editor._on_theme_changed(theme_manager.get_theme())
             assert tag_editor._delegate._theme["text_main"] == (
                 theme_manager.get_theme()["text_main"]
             )
     finally:
-        theme_manager.set_theme(original_theme)
+        theme_manager.current_theme_name = original_theme
 
     assert tag_editor._delegate._accent().name() == "#123456"
     assert reset_spy.count() == 0

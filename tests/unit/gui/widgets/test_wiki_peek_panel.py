@@ -24,7 +24,8 @@ def test_peek_rethemes_visible_controls_without_losing_content(qtbot):
 
     try:
         manager.themes["peek_test_theme"] = new_theme
-        manager.set_theme("peek_test_theme")
+        manager.current_theme_name = "peek_test_theme"
+        panel._apply_theme(new_theme)
 
         assert "#162431" in panel.styleSheet()
         assert "#E1D9C1" in panel.title.styleSheet()
@@ -42,4 +43,3 @@ def test_peek_rethemes_visible_controls_without_losing_content(qtbot):
     finally:
         manager.themes = old_themes
         manager.current_theme_name = old_name
-        manager.theme_changed.emit(base_theme)

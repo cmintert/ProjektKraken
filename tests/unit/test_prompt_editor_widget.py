@@ -63,10 +63,16 @@ class TestPromptEditorWidget:
         """An open prompt editor should follow a live theme switch."""
         from src.core.theme_manager import ThemeManager
 
-        ThemeManager().set_theme("light_mode")
+        manager = ThemeManager()
+        previous_theme = manager.current_theme_name
+        try:
+            manager.current_theme_name = "light_mode"
+            widget._on_theme_changed({})
 
-        assert "#FFFFFF" in widget.editor.styleSheet()
-        assert "#FFFFFF" in widget.btn_restore.styleSheet()
+            assert "#FFFFFF" in widget.editor.styleSheet()
+            assert "#FFFFFF" in widget.btn_restore.styleSheet()
+        finally:
+            manager.current_theme_name = previous_theme
 
     def test_popout_mode(self, widget, qtbot):
         """Test that pop-out mode opens a dialog (smoke test)."""

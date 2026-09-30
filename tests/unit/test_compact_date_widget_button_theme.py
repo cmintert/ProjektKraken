@@ -5,7 +5,6 @@ from src.gui.widgets.compact_date_widget import CompactDateWidget
 def test_calendar_button_styling_applied(qtbot):
     """Test that the calendar button has the icon button style applied."""
     tm = ThemeManager()
-    tm.set_theme("dark_mode")
 
     widget = CompactDateWidget()
     qtbot.addWidget(widget)
@@ -55,8 +54,8 @@ def test_calendar_button_styling_updates_on_theme_change(qtbot):
         widget = CompactDateWidget()
         qtbot.addWidget(widget)
 
-        # Switch theme properly
-        tm.set_theme("test_theme_styling")
+        tm.current_theme_name = "test_theme_styling"
+        widget._on_theme_changed(test_theme)
 
         # Verify stylesheet updated with new colors
         updated_style = widget.btn_calendar.styleSheet().lower()
@@ -67,4 +66,4 @@ def test_calendar_button_styling_updates_on_theme_change(qtbot):
     finally:
         # Restore
         tm.themes = original_themes
-        tm.set_theme(original_current)
+        tm.current_theme_name = original_current
