@@ -39,6 +39,7 @@ def test_production_window_registers_reused_feature_widgets(main_window) -> None
         "longform": main_window.longform_editor,
         "analysis": main_window.analysis_panel,
         "ai_search": main_window.ai_search_panel,
+        "wiki_peek": main_window.wiki_peek_panel,
         "history": main_window.history_panel,
     }
 
@@ -57,7 +58,7 @@ def test_factory_layout_matches_workspace_contract(main_window) -> None:
         "graph",
         "longform",
     ]
-    assert panes["right"].panel_ids() == ["analysis", "ai_search"]
+    assert panes["right"].panel_ids() == ["analysis", "ai_search", "wiki_peek"]
     assert panes["bottom"].panel_ids() == ["timeline", "history"]
 
 

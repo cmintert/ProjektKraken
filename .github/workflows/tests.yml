@@ -120,7 +120,7 @@ jobs:
 
       - name: Run full regression suite with coverage
         run: |
-          python -m pytest --durations=50 \
+          python -m pytest --maxfail=1 --durations=50 \
             --junitxml=test-results-full.xml \
             --cov=src --cov-report=xml --cov-report=term-missing
 

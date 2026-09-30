@@ -14,6 +14,8 @@ def mock_main_window():
         # Initialize attributes used in _on_item_selected
         window.event_editor = MagicMock()
         window.entity_editor = MagicMock()
+        window.event_editor.has_unsaved_changes.return_value = False
+        window.entity_editor.has_unsaved_changes.return_value = False
         window.workspace = MagicMock()
         window.ui_manager = MagicMock()
         window.unified_list = MagicMock()
@@ -78,9 +80,7 @@ def test_different_item_reloads(mock_main_window):
     mock_main_window.navigation_coordinator.set_global_selection("event", "2")
 
     # Assert: Reload happens
-    mock_main_window.check_unsaved_changes.assert_called_once_with(
-        mock_main_window.event_editor
-    )
+    mock_main_window.check_unsaved_changes.assert_not_called()
     mock_main_window.load_event_details.assert_called_once_with("2")
 
 
@@ -94,7 +94,5 @@ def test_switch_type_reloads(mock_main_window):
     mock_main_window.navigation_coordinator.set_global_selection("entity", "1")
 
     # Assert: Reload happens
-    mock_main_window.check_unsaved_changes.assert_called_once_with(
-        mock_main_window.entity_editor
-    )
+    mock_main_window.check_unsaved_changes.assert_not_called()
     mock_main_window.load_entity_details.assert_called_once_with("1")

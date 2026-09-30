@@ -145,23 +145,15 @@ def test_missing_link_event_uses_playhead_time(mock_main_window):
     coordinator = NavigationCoordinator(mock_main_window)
     mock_main_window.command_requested = Mock()
     mock_main_window.timeline.get_playhead_time.return_value = 87.125
+    mock_main_window.editor_coordinator._create_event_command.side_effect = (
+        lambda data: CreateEventCommand(data)
+    )
 
-    with patch(
-        "src.app.coordinators.navigation_coordinator.QMessageBox"
-    ) as message_box:
-        entity_button = Mock()
-        event_button = Mock()
-        message_box.return_value.addButton.side_effect = [
-            entity_button,
-            event_button,
-            Mock(),
-        ]
-        message_box.return_value.clickedButton.return_value = event_button
-
-        coordinator._prompt_create_missing_target("Arrival")
+    coordinator._materialize_provisional("event", "Arrival")
 
     command = mock_main_window.command_requested.emit.call_args.args[0]
     assert isinstance(command, CreateEventCommand)
     assert command.event.name == "Arrival"
     assert command.event.lore_date == 87.125
+    assert command.select_after_create is False
     mock_main_window.timeline.get_playhead_time.assert_called_once_with()

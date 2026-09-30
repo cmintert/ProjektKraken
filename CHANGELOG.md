@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-09-29
-**Commit:** 2374d549c6a5cde0104e788b5ef99d93375ac6f1
+**Last Updated:** 2026-09-30
+**Commit:** bd79c7118f3658f3a1ac970434b3d6c9a837a85b
 ---
 
 # Changelog
@@ -11,12 +11,26 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.19.7]
+
+### Fixed
+
+- *(2026-09-29)* **Release regression**: Kept disclosed date qualification
+  controls within narrow event inspectors, updated editor tests for
+  day-precision representative times, and stopped repeated application of the
+  full application stylesheet during layout cases.
+- *(2026-09-30)* **Release regression**: Prevented graph theme updates from
+  reaching a shut-down web view; aligned full-regression tests with current
+  asynchronous saves, workspace panels, temporal snapshots, and rendered bounds.
+
 ### Changed
+
+- *(2026-09-29)* **Testing / CI**: Stop the full regression job at its first
+  failure so beta release checks report blockers promptly. Scoped theme tests
+  to their widget to avoid repeated application-wide stylesheet refreshes.
 
 - *(2026-09-29)* **Release**: Bumped project and application metadata to
   version 0.19.7 and prepared the beta 1 package guidance and release notes.
-
-## [0.19.7]
 
 ### Added
 

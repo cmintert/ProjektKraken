@@ -17,8 +17,8 @@ class TestTimelineLanePacker:
 
         events = [
             Event(name="E1", lore_date=10, lore_duration=5),  # 10-15
-            Event(name="E2", lore_date=20, lore_duration=5),  # 20-25
-            Event(name="E3", lore_date=30, lore_duration=5),  # 30-35
+            Event(name="E2", lore_date=100, lore_duration=5),  # 100-105
+            Event(name="E3", lore_date=200, lore_duration=5),  # 200-205
         ]
 
         assignments, lane_heights = packer.pack_events(events)
@@ -49,7 +49,7 @@ class TestTimelineLanePacker:
         events = [
             Event(name="E1", lore_date=10, lore_duration=30),  # 10-40
             Event(name="E2", lore_date=20, lore_duration=30),  # 20-50 (overlaps E1)
-            Event(name="E3", lore_date=55, lore_duration=10),  # 55-65 (after both)
+            Event(name="E3", lore_date=200, lore_duration=10),  # 200-210
         ]
 
         assignments, lane_heights = packer.pack_events(events)

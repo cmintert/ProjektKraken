@@ -4,6 +4,7 @@ import json
 import logging
 from typing import Any, Optional
 
+import shiboken6
 from PySide6.QtCore import QObject, Qt, Signal, Slot
 from PySide6.QtGui import QColor
 from PySide6.QtWebChannel import QWebChannel
@@ -77,6 +78,7 @@ class GraphWebView(QWidget):
 
         self._apply_theme(ThemeManager().get_theme())
         ThemeManager().theme_changed.connect(self._apply_theme)
+        self._theme_connected = True
 
         # Disable default context menu
         self._web_view.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
@@ -86,6 +88,8 @@ class GraphWebView(QWidget):
     @Slot(dict)
     def _apply_theme(self, theme: dict) -> None:
         """Apply the active surface colour before graph content loads."""
+        if not shiboken6.isValid(self) or not shiboken6.isValid(self._web_view):
+            return
         surface = theme["surface"]
         self._web_view.setStyleSheet(f"background-color: {surface};")
         self._web_view.page().setBackgroundColor(QColor(surface))
@@ -106,6 +110,8 @@ class GraphWebView(QWidget):
             color: Hex color string (e.g. "#1e1e1e").
 
         """
+        if not shiboken6.isValid(self) or not shiboken6.isValid(self._web_view):
+            return
         self._web_view.setStyleSheet(f"background-color: {color};")
         self._web_view.page().setBackgroundColor(QColor(color))
 
@@ -119,6 +125,9 @@ class GraphWebView(QWidget):
         Must be called before the widget is destroyed to ensure the
         QWebEnginePage is released before the profile is deleted.
         """
+        if self._theme_connected:
+            ThemeManager().theme_changed.disconnect(self._apply_theme)
+            self._theme_connected = False
         try:
             page = self._web_view.page()
             if page:

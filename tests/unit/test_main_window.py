@@ -164,7 +164,7 @@ def test_check_unsaved_changes_save(mock_warning, main_window):
 
     result = main_window.check_unsaved_changes(main_window.event_editor)
 
-    assert result is True
+    assert result is False  # Navigation waits for asynchronous save acknowledgement.
     main_window.event_editor._on_save.assert_called_once()
 
 

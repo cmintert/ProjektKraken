@@ -6,6 +6,7 @@ public interface for the graph view functionality.
 
 from typing import Any, Optional
 
+import shiboken6
 from PySide6.QtCore import QEvent, QSize, QTimer, Signal
 from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
@@ -103,6 +104,7 @@ class GraphWidget(QWidget):
         self._theme_manager = ThemeManager()
         self._current_theme_config = self._get_current_theme_config()
         self._theme_manager.theme_changed.connect(self._on_theme_changed)
+        self._theme_connected = True
 
         self._setup_ui()
         self._connect_internal_signals()
@@ -171,6 +173,9 @@ class GraphWidget(QWidget):
         Args:
             event: The close event.
         """
+        if self._theme_connected:
+            self._theme_manager.theme_changed.disconnect(self._on_theme_changed)
+            self._theme_connected = False
         self._web_view.shutdown()
         super().closeEvent(event)
 
@@ -200,6 +205,10 @@ class GraphWidget(QWidget):
             theme_data: Dictionary containing the new theme colors.
 
         """
+        if not shiboken6.isValid(self) or not shiboken6.isValid(self._web_view):
+            return
+        if not shiboken6.isValid(self._web_view._web_view):
+            return
         self._current_theme_config = self._get_current_theme_config()
 
         # Update Web View background to match theme immediately

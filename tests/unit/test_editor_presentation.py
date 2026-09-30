@@ -15,6 +15,7 @@ from src.core.calendar import (
 )
 from src.core.entities import Entity
 from src.core.events import Event
+from src.core.temporal_expression import TemporalPrecision
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.event_editor import EventEditorWidget
@@ -91,7 +92,8 @@ def test_formatted_date_round_trips(event_editor):
     field = event_editor.date_edit
     field._on_draft_edited(field.txt_date.text())
     assert field.commit_draft()
-    assert field.get_value() == 0.0
+    assert field.get_value() == 0.5
+    assert field.get_expression().precision == TemporalPrecision.DAY
 
 
 def test_end_date_edit_is_saved(event_editor, qtbot):
@@ -100,7 +102,7 @@ def test_end_date_edit_is_saved(event_editor, qtbot):
     qtbot.keyClicks(field, "10 Spring 1")
     qtbot.keyClick(field, Qt.Key.Key_Return)
     assert event_editor.has_unsaved_changes()
-    assert event_editor.temporal_widget.get_duration() == 9.0
+    assert event_editor.temporal_widget.get_duration() == 9.5
 
 
 def test_range_disclosure_survives_same_event_reload(event_editor):
@@ -140,11 +142,11 @@ def test_valid_date_uses_existing_parser(event_editor, qtbot):
     qtbot.keyClicks(field, "5 Spring 1")
     qtbot.keyClick(field, Qt.Key.Key_Return)
     assert not editor.temporal_widget.has_pending_draft()
-    assert editor.temporal_widget.get_start() == 4.0
+    assert editor.temporal_widget.get_start() == 4.5
     saved = []
     editor.save_requested.connect(saved.append)
     editor._on_save()
-    assert saved[0]["lore_date"] == 4.0
+    assert saved[0]["lore_date"] == 4.5
 
 
 def test_presentation_changes_do_not_dirty_event(event_editor):
@@ -188,8 +190,8 @@ def test_typed_start_preserves_anchor_semantics(event_editor, qtbot, keep_end):
     field.selectAll()
     qtbot.keyClicks(field, "5 Spring 1")
     qtbot.keyClick(field, Qt.Key.Key_Return)
-    assert temporal.get_start() == 4.0
-    assert temporal.get_duration() == (6.0 if keep_end else 10.0)
+    assert temporal.get_start() == 4.5
+    assert temporal.get_duration() == (5.5 if keep_end else 10.0)
 
 
 def test_overflow_menu_reaches_every_section(event_editor):
@@ -208,15 +210,10 @@ def test_overflow_menu_reaches_every_section(event_editor):
 @pytest.mark.parametrize("height", [480, 900])
 def test_editor_tabs_fit_compact_width(qtbot, kind, width, height, calendar):
     from PySide6.QtGui import QFontDatabase
-    from PySide6.QtWidgets import QApplication
 
     font_file = Path("C:/Windows/Fonts/segoeui.ttf")
     if font_file.exists():
         QFontDatabase.addApplicationFont(str(font_file))
-    ThemeManager().apply_theme(
-        QApplication.instance(),
-        Path("src/resources/main.qss").read_text(encoding="utf-8"),
-    )
     parent = QWidget()
     parent.worker = MagicMock()
     qtbot.addWidget(parent)
@@ -224,6 +221,11 @@ def test_editor_tabs_fit_compact_width(qtbot, kind, width, height, calendar):
         EventEditorWidget(parent) if kind == "event" else EntityEditorWidget(parent)
     )
     qtbot.addWidget(editor)
+    editor.setStyleSheet(
+        ThemeManager().format_stylesheet(
+            Path("src/resources/main.qss").read_text(encoding="utf-8")
+        )
+    )
     if kind == "event":
         editor.temporal_widget.set_calendar_converter(calendar)
         editor.load_event(Event(id="event", name="Arrival", lore_date=0.0))

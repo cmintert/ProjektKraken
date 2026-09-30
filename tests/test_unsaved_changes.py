@@ -55,7 +55,10 @@ def test_event_editor_dirty_tracking(event_editor):
         event_editor._on_save()
         mock_save.emit.assert_called_once()
 
-    # After save, should be clean
+    # The worker acknowledges the save by reloading the persisted snapshot.
+    event_editor.load_event(
+        Event(id="e1", name="Modified Name", lore_date=100.0)
+    )
     assert not event_editor.has_unsaved_changes()
     assert not event_editor.btn_save.isEnabled()
 
@@ -86,14 +89,25 @@ def test_entity_editor_dirty_tracking(entity_editor):
 
 class MockEditor(QWidget):
     save_requested = Signal(dict)
+    temporal_save_requested = Signal(dict)
+    chronology_requested = Signal(list)
+    inject_requested = Signal(dict)
     discard_requested = Signal(str)  # Added to match interface
     add_relation_requested = Signal(str, str, str, bool)
     remove_relation_requested = Signal(str)
     update_relation_requested = Signal(str, str, str)
     link_clicked = Signal(str)
+    peek_requested = Signal(str)
     dirty_changed = Signal(bool)
+    focus_writing_requested = Signal()
+    inject_ui_requested = Signal(str)
+    summary_generation_requested = Signal(object)
+    completion_prefix_changed = Signal(str)
+    create_new_requested = Signal()
+    authoring_context_refresh_requested = Signal()
     current_data_changed = Signal(dict)  # Added for live preview support
     navigate_to_relation = Signal(str)
+    navigate_to_map = Signal(str)
     return_to_present_requested = Signal()  # Added for timeline support
 
     def __init__(self):
@@ -175,7 +189,7 @@ def test_mainwindow_check_unsaved_changes(qtbot):
         ):
             # We mock _on_save on the instance
             with patch.object(mock_event_editor, "_on_save") as mock_on_save:
-                assert window.check_unsaved_changes(window.event_editor)
+                assert not window.check_unsaved_changes(window.event_editor)
                 mock_on_save.assert_called_once()
 
         # 3. Dirty Editor, User selects Discard

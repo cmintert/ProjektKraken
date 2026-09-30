@@ -168,10 +168,13 @@ def test_toolbar_changes_rendered_size_of_existing_heading(qtbot):
     assert widget.get_wiki_text() == "### Existing heading"
 
 
-def test_theme_change_reapplies_editor_tokens_to_existing_text(qtbot):
+def test_theme_change_updates_tokens_without_rebuilding_existing_text(qtbot):
     widget = WikiTextEdit()
     qtbot.addWidget(widget)
     widget.set_wiki_text("# Heading\n\nBody")
+    original_heading_size = _first_character_format(
+        widget.document().firstBlock()
+    ).fontPointSize()
     theme = dict(ThemeManager().get_theme())
     theme.update(
         {
@@ -186,14 +189,16 @@ def test_theme_change_reapplies_editor_tokens_to_existing_text(qtbot):
 
     heading = widget.document().firstBlock()
     body = heading.next()
-    assert _first_character_format(heading).fontPointSize() == 18.0
-    assert _first_character_format(body).fontPointSize() == 12.0
-    assert body.blockFormat().lineHeight() == 145
-    assert body.blockFormat().bottomMargin() == pytest.approx(8.0)
+    assert _first_character_format(heading).fontPointSize() == original_heading_size
+    assert widget.editor._typography.h1_size == 18.0
+    assert widget.editor._typography.body_size == 12.0
+    assert widget.document().defaultFont().pointSizeF() == 12.0
+    assert "font-size: 18.0pt" in widget.document().defaultStyleSheet()
+    assert body.text() == "Body"
     assert widget.document().documentMargin() == 34
 
 
-def test_theme_change_rerenders_live_text_when_source_cache_is_empty(qtbot):
+def test_theme_change_preserves_live_text_when_source_cache_is_empty(qtbot):
     widget = WikiTextEdit()
     qtbot.addWidget(widget)
     widget.set_wiki_text("")
@@ -209,8 +214,8 @@ def test_theme_change_rerenders_live_text_when_source_cache_is_empty(qtbot):
     assert widget.toPlainText() == "Unsaved live text"
     assert widget.textCursor().position() == 6
     assert widget.editor._typography.body_size == 13.0
-    assert _first_character_format(widget.document().firstBlock()).fontPointSize() == 13
-    assert "font-size:13pt" in widget.toHtml().replace(" ", "")
+    assert widget.document().defaultFont().pointSizeF() == 13
+    assert _first_character_format(widget.document().firstBlock()).fontPointSize() == 0
 
 
 def test_section_gutter_is_disabled_by_default(qtbot):

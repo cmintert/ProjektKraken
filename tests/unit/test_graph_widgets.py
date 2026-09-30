@@ -114,6 +114,19 @@ class TestGraphFilterBar:
 class TestGraphWebView:
     """Tests for GraphWebView class."""
 
+    def test_theme_change_after_shutdown_ignores_deleted_web_view(self, qapp):
+        """A late theme signal must not touch the torn-down WebEngine widget."""
+        from src.core.theme_manager import ThemeManager
+        from src.gui.widgets.graph_view.graph_web_view import GraphWebView
+
+        widget = GraphWebView()
+        widget.shutdown()
+        qapp.processEvents()
+
+        widget._apply_theme(ThemeManager().get_theme())
+        widget.set_background_color("#123456")
+        assert not widget._theme_connected
+
     def test_init_creates_widget(self, qapp):
         """GraphWebView can be instantiated."""
         from src.gui.widgets.graph_view.graph_web_view import GraphWebView

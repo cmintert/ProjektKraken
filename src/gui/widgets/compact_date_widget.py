@@ -142,7 +142,9 @@ class CompactDateWidget(QWidget):
         chip_layout.setSpacing(4)
         self.date_fields_button.toggled.connect(self._date_chip.setVisible)
         self._qualification_row = QWidget(self)
-        qualification_layout = QHBoxLayout(self._qualification_row)
+        # Stack the label above the choice so its longest option does not
+        # force a horizontal scrollbar in a compact inspector.
+        qualification_layout = QVBoxLayout(self._qualification_row)
         qualification_layout.setContentsMargins(0, 0, 0, 0)
         qualification_layout.addWidget(QLabel("Date qualification"))
         self.qualifier_combo = QComboBox()
@@ -156,7 +158,7 @@ class CompactDateWidget(QWidget):
         ):
             self.qualifier_combo.addItem(label, qualifier.value)
         self.qualifier_combo.setAccessibleName("Date qualification")
-        qualification_layout.addWidget(self.qualifier_combo, 1)
+        qualification_layout.addWidget(self.qualifier_combo)
         layout.insertWidget(3, self._qualification_row)
         self._qualification_row.hide()
         self.limits_button = QPushButton("Possible date limits…")
