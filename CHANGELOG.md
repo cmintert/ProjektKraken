@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-09-30
-**Commit:** ea16848f6b4869d24a918c1840f04f890afae0d0
+**Commit:** 5eee16cc6dd72d9beeb95790d010e35c53866b5a
 ---
 
 # Changelog
@@ -10,6 +10,13 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Fixed
+
+- *(2026-09-30)* **Release blockers**: Stopped Longform hydration during window
+  shutdown and tied its timer lifetime to the window, with regression coverage
+  for pending callbacks and late results. Updated the Windows packaging lock to
+  urllib3 2.8.0 to resolve the dependency audit findings.
 
 ## [0.19.7]
 

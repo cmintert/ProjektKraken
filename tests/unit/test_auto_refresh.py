@@ -21,6 +21,9 @@ class MockLongformManager:
     def load_longform_sequence(self):
         self.load_count += 1
 
+    def shutdown(self) -> None:
+        """Implement the manager lifecycle expected by MainWindow."""
+
     def on_longform_sequence_loaded(self, sequence: list) -> None:
         """Mock handler for when longform sequence is loaded."""
         pass

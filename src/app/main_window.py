@@ -1089,6 +1089,7 @@ class MainWindow(QMainWindow):
             self.timeline.save_state()
 
         # Stop debounce timers to prevent callbacks during shutdown
+        self.longform_manager.shutdown()
         if hasattr(self, "data_coordinator"):
             self.data_coordinator.stop_graph_reload_timer()
             self.data_coordinator.stop_semantic_debounce_timer()

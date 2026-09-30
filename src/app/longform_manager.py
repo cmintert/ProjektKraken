@@ -47,8 +47,9 @@ class LongformManager(QObject):
             main_window: Reference to the MainWindow instance.
 
         """
-        super().__init__()
+        super().__init__(main_window)
         self.window = main_window
+        self._closed = False
         self._revision = 0
         self._request_revision: int | None = None
         self._snapshot_revision: int | None = None
@@ -60,6 +61,12 @@ class LongformManager(QObject):
         self._reload_timer.setInterval(100)
         self._reload_timer.timeout.connect(self._request_if_needed)
 
+    def shutdown(self) -> None:
+        """Cancel pending hydration and ignore results after window shutdown."""
+        self._closed = True
+        self._reload_timer.stop()
+        self._pending_sequence = None
+
     def load_longform_sequence(self) -> None:
         """Explicitly refresh the active Longform sequence."""
         self._revision += 1
@@ -68,6 +75,8 @@ class LongformManager(QObject):
 
     def mark_dirty(self) -> None:
         """Invalidate Longform data and refresh only when its panel is active."""
+        if self._closed:
+            return
         self._revision += 1
         self._dirty = True
         if self._is_active():
@@ -76,7 +85,7 @@ class LongformManager(QObject):
     @Slot(str)
     def on_panel_activated(self, panel_id: str) -> None:
         """Render or load Longform content when its panel becomes active."""
-        if panel_id != "longform":
+        if self._closed or panel_id != "longform":
             return
         if (
             not self._dirty
@@ -110,6 +119,8 @@ class LongformManager(QObject):
     @Slot(list)
     def on_longform_sequence_loaded(self, sequence: list) -> None:
         """Handler for when longform sequence is loaded."""
+        if self._closed:
+            return
         request_revision = self._request_revision
         self._load_in_flight = False
         self._request_revision = None
@@ -132,6 +143,8 @@ class LongformManager(QObject):
 
     def _is_active(self) -> bool:
         """Return whether Longform is the visible tab in its workspace zone."""
+        if self._closed:
+            return False
         workspace = self.window.workspace
         if "longform" not in workspace.panel_ids():
             return False

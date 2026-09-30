@@ -4,11 +4,18 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
+from PySide6.QtCore import QCoreApplication, QEvent, QObject
+from shiboken6 import isValid
+
 from src.app.longform_manager import LongformManager
 
 
-def _window(active_panel: str = "entity") -> MagicMock:
-    window = MagicMock()
+def _window(active_panel: str = "entity") -> QObject:
+    window = QObject()
+    window.workspace = MagicMock()
+    window.worker = QObject(window)
+    window.longform_editor = MagicMock()
+    window.data_coordinator = MagicMock()
     window.workspace.panel_ids.return_value = ["entity", "longform"]
     window.workspace.panel_zone.return_value = "center"
     window.workspace.zone_visible.return_value = True
@@ -56,3 +63,36 @@ def test_hidden_longform_result_renders_from_cache_on_activation(qapp) -> None:
     window.workspace.active_panel.return_value = "longform"
     manager.on_panel_activated("longform")
     window.longform_editor.load_sequence.assert_called_once_with(sequence)
+
+
+def test_shutdown_cancels_reload_and_ignores_late_results(qtbot) -> None:
+    window = _window("longform")
+    manager = LongformManager(window)
+    manager.mark_dirty()
+    manager.shutdown()
+    window.workspace.reset_mock()
+
+    with patch("src.app.longform_manager.invoke_queued") as invoke:
+        manager.on_panel_activated("longform")
+        manager.mark_dirty()
+        manager.load_longform_sequence()
+        manager.on_longform_sequence_loaded([{"id": "late-result"}])
+        qtbot.wait(120)
+
+    invoke.assert_not_called()
+    window.workspace.panel_ids.assert_not_called()
+    window.longform_editor.load_sequence.assert_not_called()
+    assert not manager._reload_timer.isActive()
+
+
+def test_window_destruction_deletes_pending_reload(qapp) -> None:
+    window = _window("longform")
+    manager = LongformManager(window)
+    timer = manager._reload_timer
+    manager.mark_dirty()
+
+    window.deleteLater()
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+
+    assert not isValid(manager)
+    assert not isValid(timer)
