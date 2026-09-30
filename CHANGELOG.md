@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-09-30
-**Commit:** bd79c7118f3658f3a1ac970434b3d6c9a837a85b
+**Commit:** 9e5a601e761389b075e0d04bebe25e38dc439e40
 ---
 
 # Changelog
@@ -22,6 +22,8 @@ All notable changes to this project will be documented in this file.
 - *(2026-09-30)* **Release regression**: Prevented graph theme updates from
   reaching a shut-down web view; aligned full-regression tests with current
   asynchronous saves, workspace panels, temporal snapshots, and rendered bounds.
+- *(2026-09-30)* **Event dates**: Reduced the expanded date field widths so
+  narrow inspectors fit with Linux font metrics.
 
 ### Changed
 

@@ -131,9 +131,13 @@ class CompactDateWidget(QWidget):
         layout.insertWidget(2, self._date_chip)
         chip_layout = self._date_chip.layout()
         assert chip_layout is not None
-        for field in (self.spin_year, self.combo_month, self.combo_day):
+        for field, width in (
+            (self.spin_year, 110),
+            (self.combo_month, 90),
+            (self.combo_day, 64),
+        ):
             field.setMinimumWidth(0)
-            field.setMaximumWidth(16777215)
+            field.setMaximumWidth(width)
             field.setMinimumHeight(32)
             field.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self._date_chip.setSizePolicy(
