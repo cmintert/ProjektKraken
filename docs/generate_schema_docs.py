@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """
-Generate database schema documentation from the DatabaseService implementation.
+Generate database schema documentation from the migration subsystem.
 
-This script extracts the SQL schema directly from the _init_schema() method
-in src/services/db_service.py and generates:
+This script extracts canonical SQL from src/services/migrations/schema.py and generates:
 1. A Mermaid ER diagram for visual representation
 2. Markdown tables with detailed column information
 
@@ -22,46 +21,19 @@ _MIN_COLUMN_DEFINITION_PARTS = 2
 
 
 def extract_schema_sql() -> str:
-    """
-    Extract the schema SQL from DatabaseService._init_schema() method.
-
-    Returns:
-        str: The SQL schema string from the _init_schema method.
-    """
-    # Path to db_service.py
-    db_service_path = (
-        Path(__file__).parent.parent / "src" / "services" / "db_service.py"
+    """Extract canonical and ledger SQL without importing application services."""
+    schema_path = (
+        Path(__file__).parent.parent / "src" / "services" / "migrations" / "schema.py"
     )
-
-    if not db_service_path.exists():
-        raise FileNotFoundError(f"Could not find db_service.py at {db_service_path}")
-
-    # Read the source code
-    with open(db_service_path, "r", encoding="utf-8") as f:
-        source = f.read()
-
-    # Parse the AST
-    tree = ast.parse(source)
-
-    # Find the DatabaseService class
-    for node in ast.walk(tree):
-        if isinstance(node, ast.ClassDef) and node.name == "DatabaseService":
-            # Find the _init_schema method
-            for item in node.body:
-                if isinstance(item, ast.FunctionDef) and item.name == "_init_schema":
-                    # Look for the schema_sql variable assignment
-                    for stmt in item.body:
-                        if isinstance(stmt, ast.Assign):
-                            for target in stmt.targets:
-                                if (
-                                    isinstance(target, ast.Name)
-                                    and target.id == "schema_sql"
-                                ):
-                                    # Extract the string value
-                                    if isinstance(stmt.value, ast.Constant):
-                                        return stmt.value.value
-
-    raise ValueError("Could not find schema_sql in DatabaseService._init_schema()")
+    tree = ast.parse(schema_path.read_text(encoding="utf-8"))
+    constants: dict[str, str] = {}
+    for node in tree.body:
+        if not isinstance(node, ast.Assign) or not isinstance(node.value, ast.Constant):
+            continue
+        for target in node.targets:
+            if isinstance(target, ast.Name) and isinstance(node.value.value, str):
+                constants[target.id] = node.value.value
+    return constants["SCHEMA_SQL"] + "\n" + constants["LEDGER_SQL"]
 
 
 def parse_create_table(sql: str) -> Tuple[str, List[Tuple[str, str, str]]]:
@@ -75,9 +47,11 @@ def parse_create_table(sql: str) -> Tuple[str, List[Tuple[str, str, str]]]:
         Tuple of (table_name, list of (column_name, type, constraints))
     """
     # Extract table name
-    table_match = re.search(r"CREATE TABLE IF NOT EXISTS (\w+)", sql, re.IGNORECASE)
+    table_match = re.search(
+        r"CREATE TABLE (?:IF NOT EXISTS )?(\w+)", sql, re.IGNORECASE
+    )
     if not table_match:
-        return None, []
+        return "", []
 
     table_name = table_match.group(1)
 
@@ -107,9 +81,7 @@ def parse_create_table(sql: str) -> Tuple[str, List[Tuple[str, str, str]]]:
         if len(parts) >= _MIN_COLUMN_DEFINITION_PARTS:
             col_name = parts[0]
             col_type = parts[1]
-            constraints = (
-                parts[2] if len(parts) > _MIN_COLUMN_DEFINITION_PARTS else ""
-            )
+            constraints = parts[2] if len(parts) > _MIN_COLUMN_DEFINITION_PARTS else ""
             columns.append((col_name, col_type, constraints))
 
     return table_name, columns
@@ -134,9 +106,7 @@ def extract_indexes(schema_sql: str) -> List[Tuple[str, str]]:
     Returns:
         List of (index_name, table_name)
     """
-    index_pattern = (
-        r"CREATE (?:UNIQUE )?INDEX IF NOT EXISTS (\w+)\s+ON\s+(\w+)\s*\("
-    )
+    index_pattern = r"CREATE (?:UNIQUE )?INDEX IF NOT EXISTS (\w+)\s+ON\s+(\w+)\s*\("
     matches = re.findall(index_pattern, schema_sql, re.IGNORECASE)
     return matches
 
@@ -258,7 +228,7 @@ def build_document() -> str:
     """Build the complete generated schema reference."""
     schema_sql = extract_schema_sql()
 
-    create_table_pattern = r"CREATE TABLE IF NOT EXISTS[^;]+"
+    create_table_pattern = r"CREATE TABLE (?:IF NOT EXISTS )?[^;]+"
     table_sqls = re.findall(create_table_pattern, schema_sql, re.IGNORECASE | re.DOTALL)
 
     tables = {}
@@ -287,7 +257,7 @@ def build_document() -> str:
         [
             "# Database Schema Reference",
             "",
-            "This file is generated from `DatabaseService._init_schema()`.",
+            "This file is generated from `src/services/migrations/schema.py`.",
             "Do not edit it manually.",
             "",
             "## Entity Relationship Diagram",

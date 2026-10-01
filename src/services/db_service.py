@@ -5,12 +5,10 @@ This service now uses specialized repository classes for better separation of co
 and maintainability.
 """
 
-import json
 import logging
 import sqlite3
 import time
 import uuid
-from collections import defaultdict
 from collections.abc import Iterable
 from contextlib import contextmanager
 from pathlib import Path
@@ -21,7 +19,7 @@ from src.core.entities import Entity
 from src.core.events import Event
 from src.core.map import Map
 from src.core.marker import Marker
-from src.services.command_artifact_store import CommandArtifactStore
+from src.services.migrations import prepare_database
 
 # Import repositories for modular CRUD operations
 from src.services.repositories import (
@@ -37,7 +35,6 @@ from src.services.repositories import (
     TrajectoryRepository,
 )
 from src.services.repositories.meta_repository import ObjectDisplayMetadata
-from src.services.text_parser import WikiLinkParser
 
 if TYPE_CHECKING:
     from src.core.trajectory import Keyframe
@@ -63,6 +60,7 @@ class DatabaseService:
         db_path: str = ":memory:",
         *,
         read_only: bool = False,
+        world_root: Path | None = None,
         event_repo: Optional[EventRepository] = None,
         entity_repo: Optional[EntityRepository] = None,
         relation_repo: Optional[RelationRepository] = None,
@@ -81,6 +79,7 @@ class DatabaseService:
                      Defaults to :memory: for testing.
             read_only: Open an existing database without permitting writes or
                 running schema initialization and migrations.
+            world_root: Manifest and asset directory when the database is external.
             event_repo: Optional EventRepository instance (injected for testing).
             entity_repo: Optional EntityRepository instance.
             relation_repo: Optional RelationRepository instance.
@@ -94,6 +93,8 @@ class DatabaseService:
         """
         self.db_path = db_path
         self.read_only = read_only
+        self.world_root = world_root
+        self.migration_status: dict[str, Any] = {}
         self._connection: Optional[sqlite3.Connection] = None
         self._backup_service = None
 
@@ -125,16 +126,17 @@ class DatabaseService:
             else:
                 self._connection = sqlite3.connect(self.db_path)
             self._connection.execute("PRAGMA foreign_keys = ON;")
-            if not self.read_only and self.db_path != ":memory:":
-                # WAL enables concurrent reads during background writes
-                self._connection.execute("PRAGMA journal_mode=WAL;")
-                logger.debug("WAL mode enabled for database.")
             self._connection.row_factory = sqlite3.Row
             logger.debug("Database connection established.")
 
-            if not self.read_only:
-                self._init_schema()
-                self._run_migrations()
+            self.migration_status = prepare_database(
+                self._connection,
+                self.db_path,
+                read_only=self.read_only,
+                world_root=self.world_root,
+            )
+            if not self.read_only and self.db_path != ":memory:":
+                self._connection.execute("PRAGMA journal_mode=WAL;")
 
             # Connect repositories to the database connection
             self._event_repo.set_connection(self._connection)
@@ -148,8 +150,9 @@ class DatabaseService:
             self._tag_repo.set_connection(self._connection)
             self._meta_repo.set_connection(self._connection)
 
-        except sqlite3.Error as e:
-            logger.critical(f"Failed to connect to database: {e}")
+        except Exception:
+            self.close()
+            logger.exception("Failed to connect to database: %s", self.db_path)
             raise
 
     def close(self) -> None:
@@ -261,783 +264,6 @@ class DatabaseService:
             self._connection.execute("PRAGMA wal_checkpoint(PASSIVE);")
         except Exception:
             pass  # Ignore errors, this is best-effort
-
-    def _init_schema(self) -> None:
-        """Creates the core tables if they don't exist."""
-        schema_sql = """
-        CREATE TABLE IF NOT EXISTS system_meta (
-            key TEXT PRIMARY KEY,
-            value TEXT
-        );
-
-        CREATE TABLE IF NOT EXISTS entities (
-            id TEXT PRIMARY KEY,
-            type TEXT NOT NULL,
-            name TEXT NOT NULL,
-            description TEXT,
-            attributes JSON DEFAULT '{}',
-            created_at REAL,
-            modified_at REAL
-        );
-
-        CREATE TABLE IF NOT EXISTS events (
-            id TEXT PRIMARY KEY,
-            type TEXT NOT NULL,
-            name TEXT NOT NULL,
-            lore_date REAL NOT NULL,
-            lore_duration REAL DEFAULT 0.0,
-            description TEXT,
-            attributes JSON DEFAULT '{}',
-            created_at REAL,
-            modified_at REAL
-        );
-
-        -- Generic Relation Table
-        CREATE TABLE IF NOT EXISTS relations (
-            id TEXT PRIMARY KEY,
-            source_id TEXT NOT NULL,
-            target_id TEXT NOT NULL,
-            rel_type TEXT NOT NULL,
-            attributes JSON DEFAULT '{}',
-            created_at REAL
-        );
-        -- Indexes for performance
-        CREATE INDEX IF NOT EXISTS idx_events_date ON events(lore_date);
-        CREATE INDEX IF NOT EXISTS idx_relations_source ON relations(source_id);
-        CREATE INDEX IF NOT EXISTS idx_relations_target ON relations(target_id);
-
-        -- Calendar Configuration Table
-        CREATE TABLE IF NOT EXISTS calendar_config (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            config_json TEXT NOT NULL,
-            is_active INTEGER DEFAULT 0,
-            created_at REAL,
-            modified_at REAL
-        );
-
-        -- Map Table
-        CREATE TABLE IF NOT EXISTS maps (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            image_path TEXT NOT NULL,
-            description TEXT,
-            attributes JSON DEFAULT '{}',
-            created_at REAL,
-            modified_at REAL
-        );
-
-        -- Marker / MapFeature Table
-        CREATE TABLE IF NOT EXISTS markers (
-            id TEXT PRIMARY KEY,
-            map_id TEXT NOT NULL,
-            object_id TEXT NOT NULL,
-            object_type TEXT NOT NULL,
-            x REAL NOT NULL,
-            y REAL NOT NULL,
-            label TEXT,
-            attributes JSON DEFAULT '{}',
-            created_at REAL,
-            modified_at REAL,
-            feature_type TEXT DEFAULT 'point',
-            geometry TEXT,
-            style TEXT,
-            UNIQUE(map_id, object_id, object_type),
-            FOREIGN KEY(map_id) REFERENCES maps(id) ON DELETE CASCADE
-        );
-
-        -- Indexes for markers
-        CREATE INDEX IF NOT EXISTS idx_markers_map ON markers(map_id);
-        CREATE INDEX IF NOT EXISTS idx_markers_object
-            ON markers(object_id, object_type);
-
-        -- Dated replacement geometry for paths and regions
-        CREATE TABLE IF NOT EXISTS feature_geometry_states (
-            id TEXT PRIMARY KEY,
-            marker_id TEXT NOT NULL,
-            effective_date REAL NOT NULL,
-            geometry TEXT NOT NULL,
-            anchor_x REAL NOT NULL,
-            anchor_y REAL NOT NULL,
-            created_at REAL NOT NULL,
-            modified_at REAL NOT NULL,
-            FOREIGN KEY(marker_id) REFERENCES markers(id) ON DELETE CASCADE
-        );
-        CREATE UNIQUE INDEX IF NOT EXISTS uq_feature_geometry_state_date
-            ON feature_geometry_states(marker_id, effective_date);
-
-        -- Moving Features Table (Temporal Trajectories)
-        CREATE TABLE IF NOT EXISTS moving_features (
-            id TEXT PRIMARY KEY,
-            marker_id TEXT NOT NULL,
-            t_start REAL NOT NULL,
-            t_end REAL NOT NULL,
-            trajectory JSON NOT NULL, -- OGC MF-JSON MovingPoint
-            properties JSON DEFAULT '{}', -- Versioned editor metadata and extensions
-            created_at REAL,
-            FOREIGN KEY(marker_id) REFERENCES markers(id) ON DELETE CASCADE
-        );
-
-        -- Indexes for temporal queries
-        CREATE INDEX IF NOT EXISTS idx_moving_features_marker
-            ON moving_features(marker_id);
-        CREATE INDEX IF NOT EXISTS idx_moving_features_time
-            ON moving_features(t_start, t_end);
-
-        -- Image Attachments Table
-        CREATE TABLE IF NOT EXISTS image_attachments (
-            id TEXT PRIMARY KEY,
-            owner_type TEXT NOT NULL,
-            owner_id TEXT NOT NULL,
-            image_rel_path TEXT NOT NULL,
-            thumb_rel_path TEXT,
-            caption TEXT,
-            order_index INTEGER DEFAULT 0,
-            created_at REAL,
-            -- Stored as "widthxheight" or JSON [w, h]
-            resolution TEXT,
-            source TEXT
-        );
-
-        -- Indexes for image attachments
-        CREATE INDEX IF NOT EXISTS idx_attachments_owner
-            ON image_attachments(owner_type, owner_id);
-
-        -- Normalized Tags Tables
-        -- Tags table: stores unique tag names
-        CREATE TABLE IF NOT EXISTS tags (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL UNIQUE,
-            color TEXT,
-            created_at REAL NOT NULL
-        );
-
-        -- Create index on tag name for fast lookups
-        CREATE INDEX IF NOT EXISTS idx_tags_name ON tags(name);
-
-        -- Event-Tag association table
-        CREATE TABLE IF NOT EXISTS event_tags (
-            event_id TEXT NOT NULL,
-            tag_id TEXT NOT NULL,
-            created_at REAL NOT NULL,
-            PRIMARY KEY (event_id, tag_id),
-            FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
-            FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
-        );
-
-        -- Create indexes for fast lookups
-        CREATE INDEX IF NOT EXISTS idx_event_tags_event ON event_tags(event_id);
-        CREATE INDEX IF NOT EXISTS idx_event_tags_tag ON event_tags(tag_id);
-
-        -- Entity-Tag association table
-        CREATE TABLE IF NOT EXISTS entity_tags (
-            entity_id TEXT NOT NULL,
-            tag_id TEXT NOT NULL,
-            created_at REAL NOT NULL,
-            PRIMARY KEY (entity_id, tag_id),
-            FOREIGN KEY (entity_id) REFERENCES entities(id) ON DELETE CASCADE,
-            FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
-        );
-
-        -- Create indexes for fast lookups
-        CREATE INDEX IF NOT EXISTS idx_entity_tags_entity ON entity_tags(entity_id);
-        CREATE INDEX IF NOT EXISTS idx_entity_tags_tag ON entity_tags(tag_id);
-
-        -- Embeddings Table (for semantic search)
-        CREATE TABLE IF NOT EXISTS embeddings (
-            id TEXT PRIMARY KEY,
-            object_type TEXT NOT NULL,
-            object_id TEXT NOT NULL,
-            model TEXT NOT NULL,
-            vector BLOB NOT NULL,
-            vector_dim INTEGER NOT NULL,
-            text_snippet TEXT,
-            text_hash TEXT,
-            metadata JSON DEFAULT '{}',
-            created_at REAL NOT NULL
-        );
-
-        -- Upsert-friendly unique constraint to avoid duplicate rows per object/model
-        CREATE UNIQUE INDEX IF NOT EXISTS uq_embeddings_obj_model
-            ON embeddings(object_type, object_id, model);
-
-        -- Useful indexes for query filtering and status
-        CREATE INDEX IF NOT EXISTS idx_embeddings_model_dim
-            ON embeddings(model, vector_dim);
-
-        CREATE INDEX IF NOT EXISTS idx_embeddings_object
-            ON embeddings(object_type, object_id);
-
-        CREATE INDEX IF NOT EXISTS idx_embeddings_created_at
-            ON embeddings(created_at);
-
-        -- Command History for Persistent Undo/Redo (Phase 2)
-        CREATE TABLE IF NOT EXISTS command_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            world_id TEXT NOT NULL,
-            session_id TEXT NOT NULL,
-            command_type TEXT NOT NULL,
-            command_data TEXT NOT NULL,
-            description TEXT,
-            timestamp REAL NOT NULL,
-            is_executed BOOLEAN DEFAULT 1,
-            aggregate_id TEXT,
-            aggregate_type TEXT,
-            is_snapshot BOOLEAN DEFAULT 0
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_ch_world_time 
-            ON command_history(world_id, timestamp DESC);
-        
-        CREATE INDEX IF NOT EXISTS idx_ch_session 
-            ON command_history(session_id);
-        
-        CREATE INDEX IF NOT EXISTS idx_ch_aggregate 
-            ON command_history(aggregate_id, timestamp);
-
-        -- Edit Sessions for Session Tracking
-        CREATE TABLE IF NOT EXISTS edit_sessions (
-            session_id TEXT PRIMARY KEY,
-            world_id TEXT NOT NULL,
-            started_at REAL NOT NULL,
-            ended_at REAL,
-            app_version TEXT
-        );
-        """
-
-        try:
-            with self.transaction() as conn:
-                conn.executescript(schema_sql)
-            logger.debug("Database schema initialized.")
-        except sqlite3.Error as e:
-            logger.critical(f"Schema initialization failed: {e}")
-            raise
-
-    def _run_migrations(self) -> None:
-        """Run all incremental schema migrations against the connected database.
-
-        Applies the following migrations in order, skipping any that have
-        already been applied:
-
-        1. Add ``color`` column to the ``tags`` table (tag coloring feature).
-        2. Add ``timestamp`` column to the ``command_history`` table (undo/redo
-           history timestamps).
-        3. Convert legacy trajectory data from ``[[t, x, y], …]`` lists to the
-           MF-JSON ``MovingPoint`` format via
-           :meth:`_migrate_trajectories_to_mfjson`.
-        4. Add ``feature_type``, ``geometry``, and ``style`` columns to the
-           ``markers`` table (map-feature geometry/style support).
-
-        Each migration is guarded by a ``PRAGMA table_info`` check so it is
-        idempotent and safe to call on an already-migrated database.
-
-        Raises:
-            sqlite3.Error: If any migration step fails; the offending
-                transaction is rolled back before re-raising.
-
-        """
-        try:
-            # Check for 'color' column in 'tags' table
-            assert self._connection is not None
-            cursor = self._connection.execute("PRAGMA table_info(tags)")
-            # row_factory is set to sqlite3.Row in connect(), so we can access by name
-            columns = [row["name"] for row in cursor.fetchall()]
-
-            if "color" not in columns:
-                logger.info("Applying migration: Add color column to tags table")
-                # Use a separate transaction for the alteration
-                try:
-                    self._connection.execute("ALTER TABLE tags ADD COLUMN color TEXT")
-                    self._connection.commit()
-                    logger.info(
-                        "Migration successful: Added color column to tags table"
-                    )
-                except sqlite3.Error as e:
-                    self._connection.rollback()
-                    logger.error(f"Failed to add color column to tags table: {e}")
-                    raise
-
-            # Check for 'timestamp' column in 'command_history' table
-            cursor = self._connection.execute("PRAGMA table_info(command_history)")
-            columns = [row["name"] for row in cursor.fetchall()]
-
-            if "timestamp" not in columns:
-                logger.info(
-                    "Applying migration: Add timestamp column to command_history table"
-                )
-                try:
-                    # Add column with default 0.0 (old commands will have 0 timestamp)
-                    self._connection.execute(
-                        "ALTER TABLE command_history ADD COLUMN timestamp REAL NOT NULL DEFAULT 0.0"
-                    )
-                    self._connection.commit()
-                    logger.info(
-                        "Migration successful: Added timestamp column to command_history table"
-                    )
-                except sqlite3.Error as e:
-                    self._connection.rollback()
-                    logger.error(
-                        f"Failed to add timestamp column to command_history table: {e}"
-                    )
-                    raise
-
-            # Migrate trajectory data from old format to MF-JSON
-            self._migrate_trajectories_to_mfjson()
-
-            # --- MapFeature migration: add feature_type, geometry, style ---
-            cursor = self._connection.execute("PRAGMA table_info(markers)")
-            marker_cols = [row["name"] for row in cursor.fetchall()]
-
-            if "feature_type" not in marker_cols:
-                logger.info(
-                    "Applying migration: Add feature_type column to markers table"
-                )
-                try:
-                    self._connection.execute(
-                        "ALTER TABLE markers ADD COLUMN feature_type TEXT DEFAULT 'point'"
-                    )
-                    self._connection.commit()
-                    logger.info(
-                        "Migration successful: Added feature_type column to markers table"
-                    )
-                except sqlite3.Error as e:
-                    self._connection.rollback()
-                    logger.error(f"Failed to add feature_type column to markers: {e}")
-                    raise
-
-            if "geometry" not in marker_cols:
-                logger.info("Applying migration: Add geometry column to markers table")
-                try:
-                    self._connection.execute(
-                        "ALTER TABLE markers ADD COLUMN geometry TEXT"
-                    )
-                    self._connection.commit()
-                    logger.info(
-                        "Migration successful: Added geometry column to markers table"
-                    )
-                except sqlite3.Error as e:
-                    self._connection.rollback()
-                    logger.error(f"Failed to add geometry column to markers: {e}")
-                    raise
-
-            if "style" not in marker_cols:
-                logger.info("Applying migration: Add style column to markers table")
-                try:
-                    self._connection.execute(
-                        "ALTER TABLE markers ADD COLUMN style TEXT"
-                    )
-                    self._connection.commit()
-                    logger.info(
-                        "Migration successful: Added style column to markers table"
-                    )
-                except sqlite3.Error as e:
-                    self._connection.rollback()
-                    logger.error(f"Failed to add style column to markers: {e}")
-                    raise
-
-            self._migrate_wikilink_relations_v2()
-
-        except sqlite3.Error as e:
-            logger.critical(f"Migration check failed: {e}")
-            raise
-
-    @staticmethod
-    def _install_relation_integrity_schema(conn: sqlite3.Connection) -> None:
-        """Install indexes and triggers that protect relation invariants."""
-        conn.execute("DROP INDEX IF EXISTS uq_mentions_src_tgt_offset")
-        conn.execute(
-            """
-            CREATE UNIQUE INDEX IF NOT EXISTS uq_mentions_src_tgt
-            ON relations(source_id, target_id)
-            WHERE rel_type = 'mentions'
-            """
-        )
-
-        trigger_names = (
-            "validate_relation_endpoints_insert",
-            "validate_relation_endpoints_update",
-            "validate_mentions_attributes_insert",
-            "validate_mentions_attributes_update",
-            "cleanup_entity_relations",
-            "cleanup_event_relations",
-        )
-        for trigger_name in trigger_names:
-            conn.execute(f"DROP TRIGGER IF EXISTS {trigger_name}")
-
-        conn.execute(
-            """
-            CREATE TRIGGER validate_relation_endpoints_insert
-            BEFORE INSERT ON relations
-            WHEN (
-                NOT EXISTS (SELECT 1 FROM entities WHERE id = NEW.source_id)
-                AND NOT EXISTS (SELECT 1 FROM events WHERE id = NEW.source_id)
-            ) OR (
-                NOT EXISTS (SELECT 1 FROM entities WHERE id = NEW.target_id)
-                AND NOT EXISTS (SELECT 1 FROM events WHERE id = NEW.target_id)
-            )
-            BEGIN
-                SELECT RAISE(ABORT, 'relation endpoint does not exist');
-            END
-            """
-        )
-        conn.execute(
-            """
-            CREATE TRIGGER validate_relation_endpoints_update
-            BEFORE UPDATE OF source_id, target_id ON relations
-            WHEN (
-                NOT EXISTS (SELECT 1 FROM entities WHERE id = NEW.source_id)
-                AND NOT EXISTS (SELECT 1 FROM events WHERE id = NEW.source_id)
-            ) OR (
-                NOT EXISTS (SELECT 1 FROM entities WHERE id = NEW.target_id)
-                AND NOT EXISTS (SELECT 1 FROM events WHERE id = NEW.target_id)
-            )
-            BEGIN
-                SELECT RAISE(ABORT, 'relation endpoint does not exist');
-            END
-            """
-        )
-        mentions_validation = """
-            CASE
-                WHEN json_valid(NEW.attributes) = 0 THEN 1
-                WHEN json_extract(
-                    NEW.attributes, '$.is_auto_generated'
-                ) IS NOT 1 THEN 1
-                WHEN json_extract(
-                    NEW.attributes, '$.generator'
-                ) != 'wikilink' THEN 1
-                WHEN json_type(
-                    NEW.attributes, '$.occurrences'
-                ) != 'array' THEN 1
-                ELSE 0
-            END
-        """
-        conn.execute(
-            f"""
-            CREATE TRIGGER validate_mentions_attributes_insert
-            BEFORE INSERT ON relations
-            WHEN NEW.rel_type = 'mentions' AND ({mentions_validation}) = 1
-            BEGIN
-                SELECT RAISE(ABORT, 'invalid generated mentions attributes');
-            END
-            """
-        )
-        conn.execute(
-            f"""
-            CREATE TRIGGER validate_mentions_attributes_update
-            BEFORE UPDATE OF rel_type, attributes ON relations
-            WHEN NEW.rel_type = 'mentions' AND ({mentions_validation}) = 1
-            BEGIN
-                SELECT RAISE(ABORT, 'invalid generated mentions attributes');
-            END
-            """
-        )
-        conn.execute(
-            """
-            CREATE TRIGGER cleanup_entity_relations
-            AFTER DELETE ON entities
-            BEGIN
-                DELETE FROM relations
-                WHERE source_id = OLD.id OR target_id = OLD.id;
-            END
-            """
-        )
-        conn.execute(
-            """
-            CREATE TRIGGER cleanup_event_relations
-            AFTER DELETE ON events
-            BEGIN
-                DELETE FROM relations
-                WHERE source_id = OLD.id OR target_id = OLD.id;
-            END
-            """
-        )
-
-    def _migrate_wikilink_relations_v2(self) -> None:  # noqa: C901
-        """Normalize legacy relation endpoints and rebuild derived mentions."""
-        assert self._connection is not None
-        marker = self._connection.execute(
-            """
-            SELECT value FROM system_meta
-            WHERE key = 'wikilink_relations_schema_version'
-            """
-        ).fetchone()
-        if marker and marker["value"] == "2":
-            with self.transaction() as conn:
-                self._install_relation_integrity_schema(conn)
-            return
-
-        logger.info("Applying migration: canonical wikilink relations v2")
-        normalized_count = 0
-        deleted_count = 0
-        duplicate_count = 0
-        rebuilt_count = 0
-        history_count = 0
-
-        with self.transaction() as conn:
-            conn.execute("DROP INDEX IF EXISTS uq_mentions_src_tgt_offset")
-            conn.execute("DROP INDEX IF EXISTS uq_mentions_src_tgt")
-
-            entity_rows = conn.execute(
-                "SELECT id, name, description, attributes FROM entities"
-            ).fetchall()
-            event_rows = conn.execute(
-                "SELECT id, name, description FROM events"
-            ).fetchall()
-            valid_ids = {
-                str(row["id"]) for row in [*entity_rows, *event_rows]
-            }
-            name_to_ids: Dict[str, set[str]] = defaultdict(set)
-            for row in entity_rows:
-                item_id = str(row["id"])
-                name_to_ids[str(row["name"]).casefold()].add(item_id)
-                try:
-                    attributes = json.loads(row["attributes"] or "{}")
-                except (TypeError, json.JSONDecodeError):
-                    attributes = {}
-                aliases = attributes.get("aliases", [])
-                if isinstance(aliases, list):
-                    for alias in aliases:
-                        if isinstance(alias, str):
-                            name_to_ids[alias.casefold()].add(item_id)
-            for row in event_rows:
-                name_to_ids[str(row["name"]).casefold()].add(str(row["id"]))
-
-            def resolve_endpoint(raw_value: Any) -> Optional[str]:
-                if not isinstance(raw_value, str):
-                    return None
-                value = raw_value.strip()
-                if value in valid_ids:
-                    return value
-                if value.casefold().startswith("id:"):
-                    value = value[3:]
-                try:
-                    canonical = str(uuid.UUID(value))
-                except (ValueError, AttributeError):
-                    canonical = ""
-                if canonical in valid_ids:
-                    return canonical
-                matches = name_to_ids.get(raw_value.strip().casefold(), set())
-                if len(matches) == 1:
-                    return next(iter(matches))
-                return None
-
-            relation_rows = conn.execute(
-                "SELECT rowid, * FROM relations ORDER BY created_at, rowid"
-            ).fetchall()
-            affected_sources: set[str] = set()
-            for row in relation_rows:
-                source_id = resolve_endpoint(row["source_id"])
-                target_id = resolve_endpoint(row["target_id"])
-                if source_id is None or target_id is None:
-                    conn.execute("DELETE FROM relations WHERE id = ?", (row["id"],))
-                    deleted_count += 1
-                    continue
-                if row["rel_type"] == "mentions":
-                    affected_sources.add(source_id)
-                if (
-                    source_id != row["source_id"]
-                    or target_id != row["target_id"]
-                ):
-                    conn.execute(
-                        """
-                        UPDATE relations
-                        SET source_id = ?, target_id = ?
-                        WHERE id = ?
-                        """,
-                        (source_id, target_id, row["id"]),
-                    )
-                    normalized_count += 1
-
-            seen_exact: set[tuple[str, str, str, str]] = set()
-            relation_rows = conn.execute(
-                """
-                SELECT rowid, * FROM relations
-                WHERE rel_type != 'mentions'
-                ORDER BY created_at, rowid
-                """
-            ).fetchall()
-            for row in relation_rows:
-                raw_attributes = row["attributes"] or "{}"
-                try:
-                    canonical_attributes = json.dumps(
-                        json.loads(raw_attributes),
-                        sort_keys=True,
-                        separators=(",", ":"),
-                    )
-                except (TypeError, json.JSONDecodeError):
-                    canonical_attributes = str(raw_attributes)
-                key = (
-                    str(row["source_id"]),
-                    str(row["target_id"]),
-                    str(row["rel_type"]),
-                    canonical_attributes,
-                )
-                if key in seen_exact:
-                    conn.execute("DELETE FROM relations WHERE id = ?", (row["id"],))
-                    duplicate_count += 1
-                else:
-                    seen_exact.add(key)
-
-            descriptions = {
-                str(row["id"]): str(row["description"] or "")
-                for row in [*entity_rows, *event_rows]
-            }
-            for source_id in affected_sources:
-                existing_mentions = conn.execute(
-                    """
-                    SELECT rowid, * FROM relations
-                    WHERE source_id = ? AND rel_type = 'mentions'
-                    ORDER BY created_at, rowid
-                    """,
-                    (source_id,),
-                ).fetchall()
-                survivor_by_target = {
-                    str(row["target_id"]): row for row in existing_mentions
-                }
-                desired: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
-                text_content = descriptions.get(source_id, "")
-                for candidate in WikiLinkParser.extract_links(text_content):
-                    desired_target_id: Optional[str]
-                    if candidate.is_id_based:
-                        desired_target_id = resolve_endpoint(candidate.target_id)
-                    else:
-                        desired_target_id = resolve_endpoint(candidate.name)
-                    if (
-                        desired_target_id is None
-                        or desired_target_id == source_id
-                    ):
-                        continue
-                    desired[desired_target_id].append(
-                        {
-                            "field": "description",
-                            "start_offset": candidate.span[0],
-                            "end_offset": candidate.span[1],
-                            "snippet": WikiLinkParser.extract_snippet(
-                                text_content,
-                                candidate.span[0],
-                                candidate.span[1],
-                            ),
-                        }
-                    )
-
-                conn.execute(
-                    """
-                    DELETE FROM relations
-                    WHERE source_id = ? AND rel_type = 'mentions'
-                    """,
-                    (source_id,),
-                )
-                for target_id, occurrences in desired.items():
-                    survivor = survivor_by_target.get(target_id)
-                    relation_id = (
-                        str(survivor["id"])
-                        if survivor is not None
-                        else str(uuid.uuid4())
-                    )
-                    created_at = (
-                        float(survivor["created_at"])
-                        if survivor is not None
-                        else time.time()
-                    )
-                    attributes = {
-                        "is_auto_generated": True,
-                        "generator": "wikilink",
-                        "occurrences": occurrences,
-                    }
-                    conn.execute(
-                        """
-                        INSERT INTO relations (
-                            id, source_id, target_id, rel_type,
-                            attributes, created_at
-                        )
-                        VALUES (?, ?, ?, 'mentions', ?, ?)
-                        """,
-                        (
-                            relation_id,
-                            source_id,
-                            target_id,
-                            json.dumps(attributes),
-                            created_at,
-                        ),
-                    )
-                    rebuilt_count += 1
-
-            history_count = conn.execute(
-                "SELECT COUNT(*) FROM command_history"
-            ).fetchone()[0]
-            conn.execute("DELETE FROM command_history")
-            conn.execute("DELETE FROM edit_sessions")
-
-            self._install_relation_integrity_schema(conn)
-            conn.execute(
-                """
-                INSERT INTO system_meta (key, value)
-                VALUES ('wikilink_relations_schema_version', '2')
-                ON CONFLICT(key) DO UPDATE SET value = excluded.value
-                """
-            )
-
-        if self.db_path != ":memory:":
-            try:
-                world_root = Path(self.db_path).resolve().parent
-                CommandArtifactStore(world_root).discard_all()
-            except OSError:
-                logger.exception("Failed to clear obsolete persistent undo artifacts")
-
-        logger.info(
-            "Wikilink relation migration complete: normalized=%d, deleted=%d, "
-            "duplicates=%d, rebuilt=%d, history_cleared=%d",
-            normalized_count,
-            deleted_count,
-            duplicate_count,
-            rebuilt_count,
-            history_count,
-        )
-
-    def _migrate_trajectories_to_mfjson(self) -> None:
-        """Migrates old-format trajectories to MF-JSON format.
-
-        Old format: [[t, x, y], ...]
-        New format: {"type": "MovingPoint", "coordinates": [[x, y], ...], "datetimes": [...]}
-        """
-        assert self._connection is not None
-
-        cursor = self._connection.execute("SELECT id, trajectory FROM moving_features")
-        rows = cursor.fetchall()
-        migrated_count = 0
-
-        for row in rows:
-            traj_id = row["id"]
-            traj_json = row["trajectory"]
-            try:
-                data = json.loads(traj_json)
-                # Skip if already MF-JSON format
-                if isinstance(data, dict) and data.get("type") == "MovingPoint":
-                    continue
-
-                # Convert old format (list of [t, x, y])
-                if isinstance(data, list) and data:
-                    coordinates = [[item[1], item[2]] for item in data]
-                    datetimes = [item[0] for item in data]
-                    mfjson = {
-                        "type": "MovingPoint",
-                        "coordinates": coordinates,
-                        "datetimes": datetimes,
-                    }
-                    self._connection.execute(
-                        "UPDATE moving_features SET trajectory = ? WHERE id = ?",
-                        (json.dumps(mfjson), traj_id),
-                    )
-                    migrated_count += 1
-
-            except (json.JSONDecodeError, IndexError, TypeError) as e:
-                logger.warning(f"Skipping corrupt trajectory {traj_id}: {e}")
-
-        if migrated_count > 0:
-            self._connection.commit()
-            logger.info(
-                f"Migration: Converted {migrated_count} trajectories to MF-JSON format"
-            )
 
     # --------------------------------------------------------------------------
     # Event CRUD - Delegates to EventRepository
@@ -1198,9 +424,7 @@ class DatabaseService:
                 f"Relation {role} must be a canonical UUID: {endpoint_id!r}"
             )
         if self.get_entity(endpoint_id) is None and self.get_event(endpoint_id) is None:
-            raise ValueError(
-                f"Relation {role} endpoint does not exist: {endpoint_id}"
-            )
+            raise ValueError(f"Relation {role} endpoint does not exist: {endpoint_id}")
 
     def insert_relation(
         self,
@@ -1258,9 +482,7 @@ class DatabaseService:
             occurrences_by_target,
         )
 
-    def restore_mentions(
-        self, source_id: str, relations: List[Dict[str, Any]]
-    ) -> None:
+    def restore_mentions(self, source_id: str, relations: List[Dict[str, Any]]) -> None:
         """Restore an exact snapshot of a source's generated mentions."""
         self._relation_repo.restore_mentions(source_id, relations)
 
@@ -1852,9 +1074,7 @@ class DatabaseService:
             self.connect()
         return self._trajectory_repo.get_by_map_id(map_id)
 
-    def get_trajectory_snapshots_by_map(
-        self, map_id: str
-    ) -> list[dict[str, object]]:
+    def get_trajectory_snapshots_by_map(self, map_id: str) -> list[dict[str, object]]:
         """Return map-scoped serializable trajectory snapshots.
 
         Args:
@@ -1899,9 +1119,7 @@ class DatabaseService:
         """
         if not self._connection:
             self.connect()
-        return self._trajectory_repo.get_marker_trajectory_snapshot(
-            map_id, object_id
-        )
+        return self._trajectory_repo.get_marker_trajectory_snapshot(map_id, object_id)
 
     def set_marker_trajectory(
         self,

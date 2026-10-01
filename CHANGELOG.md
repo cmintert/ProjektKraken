@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-01
-**Commit:** 8e8e3cb70f1251d209b0ec4de81d7e4ac56a8a7f
+**Commit:** 063e42fc7d159748952ca37af612ef6ad9d9f7cc
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-10-01)* **World migrations (KRT-31)**: Added authoritative schema versions,
+  an ordered migration ledger, atomic upgrades, and verified WAL-aware recovery
+  bundles with undo artifacts. Failed upgrades block editing and report recovery
+  details; read-only access never upgrades. Preserved historical schema fixtures
+  and documented migration authoring and recovery.
 
 - *(2026-10-01)* **Test suite trust (KRT-32)**: Restored hidden graph/search
   coverage to the canonical test tree, preserved critical-suite membership with

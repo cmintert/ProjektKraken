@@ -1,6 +1,6 @@
 # Database Schema Reference
 
-This file is generated from `DatabaseService._init_schema()`.
+This file is generated from `src/services/migrations/schema.py`.
 Do not edit it manually.
 
 ## Entity Relationship Diagram
@@ -164,6 +164,14 @@ erDiagram
         REAL started_at
         REAL ended_at
         TEXT app_version
+    }
+
+    migration_history {
+        INTEGER version PK
+        TEXT migration_id
+        TEXT app_version
+        REAL completed_at
+        TEXT origin
     }
 
     markers }o--|| maps : "map_id"
@@ -401,4 +409,14 @@ MF-JSON remains the fully dated playback projection. Missing, unsupported, malfo
 | `started_at` | REAL | NOT NULL |
 | `ended_at` | REAL |  |
 | `app_version` | TEXT |  |
+
+### `migration_history`
+
+| Column | Type | Constraints |
+|--------|------|-------------|
+| `version` | INTEGER | PRIMARY KEY |
+| `migration_id` | TEXT | NOT NULL UNIQUE |
+| `app_version` | TEXT | NOT NULL |
+| `completed_at` | REAL | NOT NULL |
+| `origin` | TEXT | NOT NULL CHECK(origin IN ('created', 'upgraded')) |
 

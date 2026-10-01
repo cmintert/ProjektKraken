@@ -4,6 +4,7 @@ import json
 import sqlite3
 import time
 import uuid
+from pathlib import Path
 
 import pytest
 
@@ -65,14 +66,17 @@ def test_database_rejects_duplicate_mentions_rows(db_service):
         )
 
 
-def test_legacy_world_relations_are_normalized_and_rebuilt(tmp_path):
+def test_legacy_world_relations_are_normalized_and_rebuilt(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        "src.services.migrations.recovery.get_backup_directory",
+        lambda: tmp_path / "backups",
+    )
     db_path = tmp_path / "legacy.kraken"
     source = Entity(name="Landfall", type="Place")
     target = Entity(name="Foggenburg", type="Place")
     stale = Entity(name="Old Harbour", type="Place")
     source.description = (
-        f"[[id:{target.id}|Foggenburg]] borders "
-        f"[[id:{target.id}|the old city]]."
+        f"[[id:{target.id}|Foggenburg]] borders [[id:{target.id}|the old city]]."
     )
 
     initial = DatabaseService(str(db_path))
@@ -83,9 +87,11 @@ def test_legacy_world_relations_are_normalized_and_rebuilt(tmp_path):
 
     now = time.time()
     with sqlite3.connect(db_path) as connection:
+        # This fixture represents a pre-ledger world, not damaged current schema.
+        connection.execute("DELETE FROM system_meta WHERE key='schema_version'")
+        connection.execute("DROP TABLE migration_history")
         connection.execute(
-            "DELETE FROM system_meta "
-            "WHERE key = 'wikilink_relations_schema_version'"
+            "DELETE FROM system_meta WHERE key = 'wikilink_relations_schema_version'"
         )
         connection.execute("DROP INDEX IF EXISTS uq_mentions_src_tgt")
         for trigger_name in (
@@ -223,7 +229,11 @@ def test_legacy_world_relations_are_normalized_and_rebuilt(tmp_path):
     assert connection is not None
     assert connection.execute("SELECT COUNT(*) FROM command_history").fetchone()[0] == 0
     assert connection.execute("SELECT COUNT(*) FROM edit_sessions").fetchone()[0] == 0
-    assert not (db_path.parent / "assets" / ".history").exists()
+    assert artifact.read_text(encoding="utf-8") == "obsolete undo artifact"
+    archived = Path(migrated.migration_status["recovery_path"])
+    assert (
+        archived / "command_artifacts" / "legacy-command" / "file"
+    ).read_bytes() == artifact.read_bytes()
     assert (
         connection.execute(
             "SELECT value FROM system_meta "

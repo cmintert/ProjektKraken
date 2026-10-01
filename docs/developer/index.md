@@ -7,6 +7,7 @@ development
 architecture
 commands-and-history
 database-and-storage
+database-migrations
 testing
 inspector-ui-verification
 temporal-acceptance

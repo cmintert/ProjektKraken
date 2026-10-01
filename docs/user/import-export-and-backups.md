@@ -143,6 +143,25 @@ Restoring a `.kraken` backup replaces the active world's saved data and is not
 an ordinary undoable action. Backups do not contain asset files. Use a portable
 world package when maps and other assets need to travel with the world.
 
+## Opening an Older World
+
+When a newer Kraken version needs to upgrade a world, it first creates and checks
+a recovery copy. The upgrade runs automatically. If it cannot safely convert the
+saved data or create the recovery copy, the world stays unavailable for editing.
+The error dialog's **Show Details** button gives the failed step, affected records,
+and recovery location.
+
+Recovery copies are kept separately from ordinary automatic backups. They include
+the database, saved undo files, deleted images needed by undo, and the world
+manifest when available. Some older relation formats require a new undo history;
+Kraken tells you when the previous history has been archived.
+
+Keep the recovery directory. A completed copy contains `recovery.json` with
+restoration instructions; an incomplete directory without that file is not a
+verified backup. Close Kraken and other database clients before restoring files,
+and use the previous compatible Kraken version to open the restored world.
+Live images and map assets are unchanged by these upgrades.
+
 ## Tips & Gotchas
 
 - Use JSON for the safest lore exchange between ProjektKraken worlds.

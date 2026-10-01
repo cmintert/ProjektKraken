@@ -26,6 +26,7 @@ from src.app.constants import (
     WINDOW_SETTINGS_APP,
     WINDOW_SETTINGS_KEY,
 )
+from src.app.coordinators.migration_coordinator import MigrationCoordinator
 from src.core.logging_config import get_logger
 from src.core.paths import ensure_worlds_directory
 from src.core.world import World, WorldManager
@@ -211,7 +212,9 @@ class WorkerManager(QObject):
 
         from src.commands.registry import get_command_types
 
-        self.window.worker = DatabaseWorker(db_path, get_command_types())
+        self.window.worker = DatabaseWorker(
+            db_path, get_command_types(), world_root=world.path
+        )
         self.window.worker.moveToThread(self.window.worker_thread)
 
         # Connect Worker Signals (explicit QueuedConnection for cross-thread safety)
@@ -219,6 +222,10 @@ class WorkerManager(QObject):
         connection_type = Qt.ConnectionType.QueuedConnection
 
         self.window.worker.initialized.connect(self.on_db_initialized, connection_type)
+        self._migration_coordinator = MigrationCoordinator(self.window, db_path)
+        self.window.worker.migration_report.connect(
+            self._migration_coordinator.on_report, connection_type
+        )
         self.window.worker.events_loaded.connect(
             self.window.data_handler.on_events_loaded, connection_type
         )

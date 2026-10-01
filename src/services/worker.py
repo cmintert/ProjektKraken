@@ -30,6 +30,7 @@ from src.services.calendar_context_service import ensure_active_calendar
 from src.services.db_service import DatabaseService
 from src.services.detail_snapshot_service import DetailSnapshotService
 from src.services.import_service import ImportResult
+from src.services.migrations import MigrationError
 from src.services.obsidian_exporter import (
     ObsidianExportCompletion,
     ObsidianExporter,
@@ -56,6 +57,7 @@ class DatabaseWorker(QObject):
 
     # Signals
     initialized = Signal(bool)  # Success/Fail
+    migration_report = Signal(dict)
     events_loaded = Signal(list)  # List[Event]
     entities_loaded = Signal(list)  # List[Entity]
     maps_loaded = Signal(list)  # List[Map]
@@ -127,6 +129,8 @@ class DatabaseWorker(QObject):
         self,
         db_path: str,
         command_types: dict[str, type[Any]] | None = None,
+        *,
+        world_root: Path | None = None,
     ) -> None:
         """Initializes the worker.
 
@@ -134,10 +138,12 @@ class DatabaseWorker(QObject):
             db_path: Path to the database file.
             command_types: Command classes supplied by the application layer for
                 deserializing worker requests without reversing layer dependencies.
+            world_root: Manifest and assets root, including external database worlds.
 
         """
         super().__init__()
         self.db_path = db_path
+        self.world_root = world_root or Path(db_path).resolve().parent
         self._command_types = dict(command_types or {})
         self.db_service: Optional[DatabaseService] = None
         self.asset_store: Optional[AssetStore] = None
@@ -148,9 +154,9 @@ class DatabaseWorker(QObject):
         self._search_service: Optional["SearchService"] = None
         # Embedding queue to prevent concurrent embedding operations
         self._embedding_in_progress = False
-        self._pending_embeddings: Set[
-            Tuple[str, str, Optional[Tuple[str, ...]]]
-        ] = set()
+        self._pending_embeddings: Set[Tuple[str, str, Optional[Tuple[str, ...]]]] = (
+            set()
+        )
         self._semantic_probe_ran = False
         self._semantic_probe_ok = True
 
@@ -214,12 +220,18 @@ class DatabaseWorker(QObject):
         try:
             self._search_service = None  # Reset cached service on re-init
             self.operation_started.emit("Connecting to Database...")
-            self.db_service = DatabaseService(self.db_path)
+            self.db_service = DatabaseService(self.db_path, world_root=self.world_root)
             self.db_service.connect()
+            self.migration_report.emit(
+                {
+                    "success": True,
+                    "database_path": self.db_path,
+                    **self.db_service.migration_status,
+                }
+            )
 
             # Initialize AssetStore
-            # Assume db_path is in project root
-            project_root = Path(self.db_path).resolve().parent
+            project_root = self.world_root
             self.asset_store = AssetStore(str(project_root))
 
             # Initialize AttachmentService
@@ -245,20 +257,42 @@ class DatabaseWorker(QObject):
             logger.info("DatabaseWorker initialized successfully.")
             self.initialized.emit(True)
             self.operation_finished.emit("Database Connected.")
+        except MigrationError as e:
+            self._clear_failed_initialization()
+            logger.exception("World migration blocked")
+            self.migration_report.emit(e.snapshot())
+            self.error_occurred.emit(str(e))
+            self.initialized.emit(False)
         except sqlite3.Error as e:
+            self._clear_failed_initialization()
             logger.critical(f"DatabaseWorker database error: {type(e).__name__}: {e}")
             self.error_occurred.emit(f"Database error: {e}")
             self.initialized.emit(False)
         except (OSError, IOError) as e:
+            self._clear_failed_initialization()
             logger.critical(f"DatabaseWorker I/O error: {type(e).__name__}: {e}")
             self.error_occurred.emit(f"Failed to access database file: {e}")
             self.initialized.emit(False)
         except Exception as e:
+            self._clear_failed_initialization()
             logger.critical(
                 f"DatabaseWorker init failed ({type(e).__name__}): {e}\n{traceback.format_exc()}"
             )
             self.error_occurred.emit("Failed to connect to database.")
             self.initialized.emit(False)
+
+
+    def _clear_failed_initialization(self) -> None:
+        """Ensure queued operations cannot reuse a failed startup connection."""
+        if self.db_service is not None:
+            self.db_service.close()
+        self.db_service = None
+        self.asset_store = None
+        self.attachment_service = None
+        self.summary_service = None
+        self.temporal_manager = None
+        self.history_service = None
+        self._search_service = None
 
     @Slot()
     def cleanup(self) -> None:
@@ -731,6 +765,13 @@ class DatabaseWorker(QObject):
             cmd_name = command.__class__.__name__
             logger.error(f"Database not ready when executing {cmd_name}")
             self.error_occurred.emit(f"Database not ready for {cmd_name}.")
+            self.command_finished.emit(
+                CommandResult(
+                    success=False,
+                    message="Database is not ready for editing.",
+                    command_name=cmd_name,
+                )
+            )
             return
 
         command_name = command.__class__.__name__

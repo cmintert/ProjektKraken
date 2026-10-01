@@ -274,14 +274,10 @@ def test_read_only_database_skips_initialization_and_rejects_writes(
     published_db_path: str,
 ) -> None:
     service = DatabaseService(published_db_path, read_only=True)
-    with (
-        patch.object(service, "_init_schema") as init_schema,
-        patch.object(service, "_run_migrations") as run_migrations,
-    ):
+    with patch("src.services.migrations.runner._apply") as apply_migration:
         service.connect()
 
-    init_schema.assert_not_called()
-    run_migrations.assert_not_called()
+    apply_migration.assert_not_called()
     assert service._connection is not None
     with pytest.raises(sqlite3.OperationalError, match="readonly"):
         service._connection.execute(

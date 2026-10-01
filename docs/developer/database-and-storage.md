@@ -53,8 +53,15 @@ renders snapshots derived from it.
 ## Schema reference
 
 The generated [database schema](../reference/database-schema.md) is extracted
-from `DatabaseService._init_schema()`. Regenerate it after changing the schema:
+from `src/services/migrations/schema.py`. Regenerate it after changing the schema:
 
 ```text
 python docs/generate_schema_docs.py
 ```
+
+## Versioned migrations
+
+See [migration authoring and recovery](database-migrations.md). Writable opens
+inspect the schema before repositories are connected. Recognized older worlds
+receive a verified recovery bundle and one atomic upgrade; failed upgrades block
+editing. Read-only opens report pending steps without upgrading.
