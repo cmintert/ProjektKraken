@@ -1,5 +1,9 @@
+import pytest
+
 from src.core.entities import Entity
 from src.core.events import Event
+
+pytestmark = pytest.mark.ci_fast
 
 
 def test_ai_generation_preferences_round_trip(db_service):

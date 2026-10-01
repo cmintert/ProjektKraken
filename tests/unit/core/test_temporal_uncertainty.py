@@ -10,6 +10,8 @@ from src.core.temporal_expression import TemporalExpression
 from src.core.temporal_resolver import TemporalResolver
 from src.core.temporal_window import TemporalValidity, resolve_temporal_window
 
+pytestmark = pytest.mark.ci_fast
+
 
 def test_malformed_boundary_is_indeterminate():
     window = resolve_temporal_window({"temporal": {"schema": 1, "start": []}})

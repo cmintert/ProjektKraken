@@ -10,6 +10,8 @@ from PIL import Image
 
 from src.services.asset_store import AssetStore
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
 def temp_project_root():

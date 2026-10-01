@@ -4,6 +4,8 @@ import pytest
 
 from src.core.entities import Entity
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
 def repository(db_service):

@@ -6,6 +6,8 @@ from src.core.entities import Entity
 from src.core.temporal_resolver import TemporalResolver
 from src.core.temporal_state import ResolvedEntityState
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
 def resolver():

@@ -1,11 +1,15 @@
 from unittest.mock import MagicMock
 
+import pytest
+
 from src.commands.image_commands import (
     RemoveImageCommand,
     UpdateImageCaptionCommand,
 )
 from src.core.image_attachment import ImageAttachment
 from src.services.db_service import DatabaseService
+
+pytestmark = pytest.mark.ci_fast
 
 
 def test_update_image_caption_command():

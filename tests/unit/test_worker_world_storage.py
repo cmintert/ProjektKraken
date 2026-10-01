@@ -2,12 +2,15 @@
 
 from unittest.mock import MagicMock, patch
 
+import pytest
 from PySide6.QtCore import QSettings
 from PySide6.QtWidgets import QMessageBox
 
 from src.app.worker_manager import WorkerManager
 from src.core.world import EXTERNAL_DATABASE_STORAGE, World, WorldManager
 from src.services.world_storage_settings import WorldStorageSettings
+
+pytestmark = pytest.mark.ci_fast
 
 
 def _external_world(tmp_path, *, create_database=True):

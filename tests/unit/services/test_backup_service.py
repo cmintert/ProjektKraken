@@ -13,6 +13,8 @@ from src.core.backup_config import BackupConfig
 from src.services.backup_service import BackupMetadata, BackupService, BackupType
 from src.services.db_service import DatabaseService
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
 def temp_db(tmp_path):

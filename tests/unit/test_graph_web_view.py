@@ -1,9 +1,14 @@
 from unittest.mock import MagicMock
 
+import pytest
+from pytestqt.qtbot import QtBot
+
 from src.gui.widgets.graph_view.graph_web_view import GraphWebView
 
+pytestmark = pytest.mark.ci_fast
 
-def test_update_graph_data_maps_properties_correctly(qapp: object) -> None:
+
+def test_update_graph_data_maps_properties_correctly(qapp: object, qtbot: QtBot) -> None:
     """Test that update_graph_data correctly maps Python-side properties to Vis.js ones.
 
     Specifically verifies:
@@ -12,14 +17,13 @@ def test_update_graph_data_maps_properties_correctly(qapp: object) -> None:
     - target_id -> to (for edges)
     """
     web_view = GraphWebView()
+    qtbot.addWidget(web_view)
 
     # Mock the internal QWebEngineView and its page
     mock_engine_view = MagicMock()
     mock_page = MagicMock()
 
-    # We need to set the mock on the object, assuming GraphWebView stores it in self._web_view
-    # Based on previous code, GraphWebView initializes self._web_view in __init__
-    # We can replace it directly
+    # Replace the rendering collaborator while preserving the real wrapper.
     web_view._web_view = mock_engine_view
     mock_engine_view.page.return_value = mock_page
 

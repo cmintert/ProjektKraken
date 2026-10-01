@@ -9,11 +9,15 @@ Tests the markdown_parser module for:
 - Entity vs Event detection
 """
 
+import pytest
+
 from src.services.markdown_parser import (
     is_entity_data,
     markdown_to_import_data,
     parse_markdown,
 )
+
+pytestmark = pytest.mark.ci_fast
 
 OPTIMAL_TEMPLATE = """\
 ---

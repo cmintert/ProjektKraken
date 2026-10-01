@@ -23,6 +23,8 @@ from src.core.map_state import RasterPatch
 from src.core.raster_grid import load_rgba_grid
 from src.services.db_service import DatabaseService
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
 def world_dir() -> Generator[str, None, None]:

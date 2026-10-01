@@ -6,6 +6,8 @@ import pytest
 
 from src.cli.graph import export_graph
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
 def mock_db_service():

@@ -16,6 +16,56 @@
 - The full suite, including coverage, runs nightly, on beta tags, and when
   manually dispatched. Run it before approving a release.
 
+### Discovery and membership policy
+
+`tests/` is the single test root. PR and release CI run
+`python -m scripts.check_test_policy` before executing tests. This checks
+project-owned `test_*.py` files, including untracked files, for misplaced tests,
+then collects the entire canonical suite and compares it with the reviewed
+`tests/collection_baseline.json`. Dependencies, environments, caches, build
+outputs (including `artifacts/`), and `tmp/` are excluded from the source scan.
+
+Assign `pytest.mark.ci_fast` explicitly at module, class, or test level for
+deterministic core, persistence, command, CLI, security, and bounded graph/search
+regressions. Assign `smoke` explicitly for the smallest critical-path gate.
+Markers travel with a test when it moves; filenames never assign membership.
+New tests need a deliberate suite choice during review. Tests without either
+marker run in the full-only suite by default. `unit` and `integration` describe
+test level; they do not select a CI gate. `slow` describes expensive execution;
+`performance` describes measurement tests. Both are independent of CI membership,
+and bare/full pytest includes them. Category counts group tests by their first
+directory under `tests/` (or `root` for modules directly in it); suite counts
+overlap and must not be added together. Tests in `tests/performance/` validate
+the measurement tooling; they are full-only functional tests, not large-world
+measurements, so they do not carry the `performance` marker.
+
+The checker fails on removed node IDs or lost `smoke`/`ci_fast` membership.
+Additions are allowed and reported. Collection errors fail before comparison or
+baseline writing. Ordinary focused pytest commands remain unchanged; baseline
+collection ignores `PYTEST_ADDOPTS` and config `addopts` selectors.
+
+For an intentional rename, removal, or suite change, run
+`python -m scripts.check_test_policy --update` after verification. Review the
+baseline diff with the test change and explain any removal; never refresh it
+merely to silence a failure. Commit the baseline alongside the tests.
+
+The pre-migration snapshot contained 5,398 tests, 18 smoke tests, and 1,018
+ci_fast tests, plus 34 undiscovered graph/search cases. Migration preserves every
+original node ID and critical membership. The five hidden search cases were
+merged into existing coverage, retaining dictionary partial/case/missing-match
+checks and adding `None` search-term coverage without duplicate tests. Required
+prompt-template and alternate-theme tests now fail if bundled assets are missing
+instead of silently skipping.
+The resulting baseline contains 5,440 tests: 18 smoke, 1,078 ci_fast, 4,353
+full-only, one slow, and zero performance-marked tests. It includes 13 new
+policy regression cases and all 29 migrated graph cases.
+
+Skips must represent a real unavailable platform capability or an inapplicable
+parameter case, with a precise reason. Fix outdated expected behavior instead
+of skipping it. Missing required fixtures/assets must fail on a supported CI
+environment; environment-dependent symlink and optional-display skips may
+remain. There are no expected-failure markers at this baseline.
+
 For public beta approval, verify the
 [Wiki Editor Beta Release Gate](wiki-editor-beta-release-gate.md) against the
 release candidate and record the lifecycle test and manual-check evidence.

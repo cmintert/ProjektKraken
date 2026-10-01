@@ -19,6 +19,8 @@ from src.core.calendar import (
     WeekDefinition,
 )
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
 def sample_config() -> CalendarConfig:

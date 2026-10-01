@@ -2,34 +2,21 @@ from typing import Any, cast
 from unittest.mock import MagicMock
 
 import pytest
-from PySide6.QtCore import QObject, Signal
 
 from src.gui.widgets.graph_view.graph_widget import GraphWidget
 
-
-# Mock the bridge signal which doesn't exist yet on the real class
-class MockBridge(QObject):
-    node_clicked = Signal(str, str)
-    view_state_changed = Signal(dict)
+pytestmark = pytest.mark.ci_fast
 
 
 @pytest.fixture
-def graph_widget(qapp: Any) -> GraphWidget:
+def graph_widget(qapp: Any, qtbot: Any) -> GraphWidget:
     """Fixture for GraphWidget with mocked internal components."""
     widget = GraphWidget()
-
-    # Mock the internal web view and its bridge
-    widget._web_view = MagicMock()
-    # We need a real QObject for the bridge to emit signals
-    widget._web_view._bridge = MockBridge()
+    qtbot.addWidget(widget)
 
     # Mock the builder
     widget._builder = MagicMock()
     widget._builder.build_html.return_value = "<html>Graph</html>"
-
-    # Initialize _last_focus_node_id if it doesn't exist yet (simulating implementation)
-    if not hasattr(widget, "_last_focus_node_id"):
-        widget._last_focus_node_id = None
 
     return widget
 
@@ -43,14 +30,8 @@ def test_view_state_caching(graph_widget: GraphWidget) -> None:
     """Test that view state from the bridge is cached in the widget."""
     test_state = {"scale": 1.5, "position": {"x": 100, "y": 200}}
 
-    # Manually trigger connection simulation
-    if hasattr(graph_widget, "_on_view_state_changed"):
-        graph_widget._web_view._bridge.view_state_changed.connect(
-            graph_widget._on_view_state_changed
-        )
-
     graph_widget._web_view._bridge.view_state_changed.emit(test_state)
-    assert getattr(graph_widget, "_last_view_state", None) == test_state
+    assert graph_widget._last_view_state == test_state
 
 
 def test_display_graph_same_focus_id_preserves_state(graph_widget: GraphWidget) -> None:

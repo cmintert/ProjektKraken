@@ -2,10 +2,14 @@
 
 import json
 
+import pytest
+
 from src.commands.trajectory_commands import UpdateTrajectoryCommand
 from src.core.map import Map
 from src.core.marker import Marker
 from src.core.trajectory import Keyframe, mfjson_to_keyframes
+
+pytestmark = pytest.mark.ci_fast
 
 
 def _create_marker(db_service) -> tuple[str, Marker]:

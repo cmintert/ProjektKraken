@@ -2,9 +2,13 @@
 
 from unittest.mock import MagicMock
 
+import pytest
+
 from src.cli.info import gather_stats
 from src.core.image_attachment import ImageAttachment
 from src.services.db_service import DatabaseService
+
+pytestmark = pytest.mark.ci_fast
 
 
 def test_gather_stats_resolves_attachment_relative_to_world(tmp_path) -> None:

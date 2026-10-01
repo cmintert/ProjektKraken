@@ -337,64 +337,54 @@ def test_load_real_fantasy_worldbuilder_v1():
     loader = PromptLoader()
 
     # This test will only pass if the templates exist in the repo
-    try:
-        template = loader.load_template("fantasy_worldbuilder", version="1.0")
+    template = loader.load_template("fantasy_worldbuilder", version="1.0")
 
-        assert template.template_id == "fantasy_worldbuilder"
-        assert template.version == "1.0"
-        assert "fantasy world-builder" in template.content.lower()
-        assert "raw lore-date numbers" in template.content
-    except FileNotFoundError:
-        pytest.skip("Real templates not found (expected during isolated testing)")
+    assert template.template_id == "fantasy_worldbuilder"
+    assert template.version == "1.0"
+    assert "fantasy world-builder" in template.content.lower()
+    assert "raw lore-date numbers" in template.content
 
 
 def test_load_real_fantasy_worldbuilder_v2():
     """Test loading the real fantasy_worldbuilder v2 template."""
     loader = PromptLoader()
 
-    try:
-        template = loader.load_template("fantasy_worldbuilder", version="2.0")
+    template = loader.load_template("fantasy_worldbuilder", version="2.0")
 
-        assert template.template_id == "fantasy_worldbuilder"
-        assert template.version == "2.0"
-        assert (
-            "OUTPUT FORMAT" in template.content
-            or "output format" in template.content.lower()
-        )
-        assert "json" in template.content.lower()
-    except FileNotFoundError:
-        pytest.skip("Real templates not found (expected during isolated testing)")
+    assert template.template_id == "fantasy_worldbuilder"
+    assert template.version == "2.0"
+    assert (
+        "OUTPUT FORMAT" in template.content
+        or "output format" in template.content.lower()
+    )
+    assert "json" in template.content.lower()
 
 
 def test_load_real_description_templates():
     """Test loading the real description templates."""
     loader = PromptLoader()
 
-    try:
-        # Test default template
-        default = loader.load_template("description_default", version="1.0")
-        assert default.template_id == "description_default"
-        assert default.version == "1.0"
-        assert "200 words" in default.content.lower() or "200" in default.metadata.get(
-            "max_words", ""
-        )
+    default = loader.load_template("description_default", version="1.0")
+    assert default.template_id == "description_default"
+    assert default.version == "1.0"
+    assert "200 words" in default.content.lower() or "200" in default.metadata.get(
+        "max_words", ""
+    )
 
-        # Test concise template
-        concise = loader.load_template("description_concise", version="1.0")
-        assert concise.template_id == "description_concise"
-        assert concise.version == "1.0"
-        assert (
-            "50-100 words" in concise.content.lower()
-            or "concise" in concise.content.lower()
-        )
+    # Test concise template
+    concise = loader.load_template("description_concise", version="1.0")
+    assert concise.template_id == "description_concise"
+    assert concise.version == "1.0"
+    assert (
+        "50-100 words" in concise.content.lower()
+        or "concise" in concise.content.lower()
+    )
 
-        # Test detailed template
-        detailed = loader.load_template("description_detailed", version="1.0")
-        assert detailed.template_id == "description_detailed"
-        assert detailed.version == "1.0"
-        assert (
-            "300-500 words" in detailed.content.lower()
-            or "detailed" in detailed.content.lower()
-        )
-    except FileNotFoundError:
-        pytest.skip("Real templates not found (expected during isolated testing)")
+    # Test detailed template
+    detailed = loader.load_template("description_detailed", version="1.0")
+    assert detailed.template_id == "description_detailed"
+    assert detailed.version == "1.0"
+    assert (
+        "300-500 words" in detailed.content.lower()
+        or "detailed" in detailed.content.lower()
+    )

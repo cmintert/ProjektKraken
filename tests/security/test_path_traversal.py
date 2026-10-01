@@ -8,6 +8,8 @@ from src.services.backup_service import BackupConfig, BackupService
 from src.services.obsidian_exporter import ObsidianExporter
 from src.services.prompt_loader import PromptLoader
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
 def temp_backup_dir(tmp_path):

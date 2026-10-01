@@ -11,6 +11,8 @@ import pytest
 
 from src.services.repositories.relation_repository import RelationRepository
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
 def db_connection():

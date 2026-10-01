@@ -2,6 +2,8 @@
 Unit tests for map and marker commands.
 """
 
+import pytest
+
 from src.commands.map_commands import (
     CreateMapCommand,
     CreateMarkerCommand,
@@ -12,6 +14,8 @@ from src.commands.map_commands import (
 )
 from src.core.map import Map
 from src.core.marker import Marker
+
+pytestmark = pytest.mark.ci_fast
 
 
 def test_create_map_command(db_service):

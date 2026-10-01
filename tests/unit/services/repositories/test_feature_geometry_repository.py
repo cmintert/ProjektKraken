@@ -11,6 +11,8 @@ from src.services.repositories.feature_geometry_repository import (
     FeatureGeometryConflictError,
 )
 
+pytestmark = pytest.mark.ci_fast
+
 
 def _setup_feature(db_service, feature_type: str = "path") -> Marker:
     map_obj = Map(name="Map", image_path="map.png")

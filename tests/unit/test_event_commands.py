@@ -13,6 +13,8 @@ from src.commands.event_commands import (
 )
 from src.core.events import Event
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
 def mock_db():

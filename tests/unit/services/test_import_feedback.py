@@ -1,6 +1,10 @@
 from unittest.mock import MagicMock
 
+import pytest
+
 from src.services.import_service import ImportService
+
+pytestmark = pytest.mark.ci_fast
 
 
 def test_import_date_warning(db_service):

@@ -4,6 +4,8 @@ from src.core.calendar import CalendarConfig, MonthDefinition, WeekDefinition
 from src.services.db_service import DatabaseService
 from src.services.import_service import ImportService
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
 def memory_db():

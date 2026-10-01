@@ -5,6 +5,8 @@ import pytest
 from src.cli.attachment import main as attachment_main
 from src.core.image_attachment import ImageAttachment
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
 def mock_db():

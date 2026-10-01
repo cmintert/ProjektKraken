@@ -13,6 +13,8 @@ from src.commands.entity_commands import (
 )
 from src.core.entities import Entity
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
 def mock_db():

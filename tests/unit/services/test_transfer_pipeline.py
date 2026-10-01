@@ -19,6 +19,8 @@ from src.services.transfer_import import prepare_import
 from src.services.transfer_worker import TransferWorker
 from src.services.world_transfer import export_world, import_world, inspect_package
 
+pytestmark = pytest.mark.ci_fast
+
 
 def batch(**kwargs):
     return {"entities": [], "events": [], "relations": [], **kwargs}

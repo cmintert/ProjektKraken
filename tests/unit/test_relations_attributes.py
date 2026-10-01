@@ -15,6 +15,8 @@ from src.core.events import Event
 from src.core.relations import Relation
 from src.services.db_service import DatabaseService
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
 def db_service():

@@ -5,6 +5,8 @@ import pytest
 from src.cli.map import main as map_main
 from src.cli.wiki import main as wiki_main
 
+pytestmark = pytest.mark.ci_fast
+
 # --- Map CLI Tests ---
 
 

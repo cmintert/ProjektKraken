@@ -1,6 +1,10 @@
 from unittest.mock import MagicMock
 
+import pytest
+
 from src.commands.base_command import BaseCommand, CommandResult
+
+pytestmark = pytest.mark.ci_fast
 
 
 # Mock Command for testing

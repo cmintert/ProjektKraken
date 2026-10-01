@@ -1,6 +1,10 @@
 from unittest.mock import MagicMock
 
+import pytest
+
 from src.commands.wiki_commands import ProcessWikiLinksCommand
+
+pytestmark = pytest.mark.ci_fast
 
 
 def _make_mock_db(

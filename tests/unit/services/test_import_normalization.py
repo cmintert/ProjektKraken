@@ -4,6 +4,8 @@ import pytest
 
 from src.services.import_normalization import normalize_name
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.mark.unit
 class TestImportNormalization:

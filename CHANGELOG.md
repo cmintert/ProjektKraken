@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-01
-**Commit:** 46e5cdb3743e1fc7d5fe67f9d76f722b6ee83bc2
+**Commit:** 8e8e3cb70f1251d209b0ec4de81d7e4ac56a8a7f
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-10-01)* **Test suite trust (KRT-32)**: Restored hidden graph/search
+  coverage to the canonical test tree, preserved critical-suite membership with
+  explicit markers, and added CI guards for misplaced tests, removed test IDs,
+  and lost smoke/ci_fast membership with a reviewed collection baseline.
+  Documented suite maintenance and made required-asset tests fail instead of skip.
 
 - *(2026-10-01)* **Relation timing (KRT-23)**: Added Starts now and Ends now
   actions with a formatted playhead date preview. Fixed saved manual timing

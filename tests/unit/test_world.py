@@ -19,6 +19,8 @@ from src.core.world import (
     WorldManifest,
 )
 
+pytestmark = pytest.mark.ci_fast
+
 
 def test_world_manifest_creation():
     """Test creating a WorldManifest with required fields."""

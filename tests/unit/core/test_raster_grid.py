@@ -4,9 +4,12 @@ import warnings
 from io import BytesIO
 
 import numpy as np
+import pytest
 from PIL import Image as PilImage
 
 from src.core.raster_grid import encode_value_png
+
+pytestmark = pytest.mark.ci_fast
 
 
 def test_encode_value_png_preserves_uint16_without_pillow_warning() -> None:

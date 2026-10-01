@@ -1,4 +1,8 @@
+import pytest
+
 from src.services.import_service import ImportService
+
+pytestmark = pytest.mark.ci_fast
 
 
 def test_cyclic_dependency_import(db_service):

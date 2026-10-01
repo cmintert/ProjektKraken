@@ -5,6 +5,8 @@ import pytest
 from src.core.image_attachment import ImageAttachment
 from src.services.attachment_service import AttachmentService
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
 def mock_repo():

@@ -11,6 +11,8 @@ from src.core.calendar import (
     LeapYearRule,
 )
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
 def gregorian_config() -> CalendarConfig:

@@ -16,6 +16,8 @@ from src.services.language_tool_service import (
     _truncate_to_byte_limit,
 )
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
 def worker(qapp) -> LanguageToolWorker:

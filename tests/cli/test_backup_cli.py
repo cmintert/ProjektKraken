@@ -8,6 +8,8 @@ import pytest
 from src.cli.backup import create_backup, list_backups, restore_backup
 from src.services.backup_service import BackupMetadata, BackupType
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
 def mock_backup_service():

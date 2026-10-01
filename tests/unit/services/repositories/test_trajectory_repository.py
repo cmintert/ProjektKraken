@@ -19,6 +19,8 @@ from src.services.repositories.trajectory_repository import (
     TrajectoryRepository,
 )
 
+pytestmark = pytest.mark.ci_fast
+
 # Schema needed for testing (moving_features + markers + maps)
 TEST_SCHEMA = """
 CREATE TABLE IF NOT EXISTS maps (

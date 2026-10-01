@@ -1,9 +1,13 @@
 """Source-aware entity edits use the visible field owner, not world current time."""
 
+import pytest
+
 from src.commands.temporal_entity_edit_command import TemporalEntityEditCommand
 from src.core.entities import Entity
 from src.core.events import Event
 from src.core.temporal_resolver import TemporalResolver
+
+pytestmark = pytest.mark.ci_fast
 
 
 def _state(db_service, entity_id, lore_time):

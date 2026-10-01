@@ -5,11 +5,14 @@ import pytest
 
 from src.gui.widgets.graph_view.graph_widget import GraphWidget
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
-def graph_widget(qapp: Any) -> GraphWidget:
+def graph_widget(qapp: Any, qtbot: Any) -> GraphWidget:
     """Fixture for GraphWidget with mocked internal components."""
     widget = GraphWidget()
+    qtbot.addWidget(widget)
 
     # Mock the internal web view
     widget._web_view = MagicMock()
@@ -42,8 +45,7 @@ def test_initial_load_uses_full_reload(graph_widget: GraphWidget) -> None:
     # Should use load_html for the first time
     web_view.load_html.assert_called_once()
     # Should NOT use update_graph_data yet
-    if hasattr(web_view, "update_graph_data"):
-        web_view.update_graph_data.assert_not_called()
+    web_view.update_graph_data.assert_not_called()
 
 
 def test_subsequent_load_uses_incremental_update(graph_widget: GraphWidget) -> None:
@@ -70,8 +72,6 @@ def test_subsequent_load_uses_incremental_update(graph_widget: GraphWidget) -> N
     web_view.load_html.assert_not_called()
 
     # Should call update_graph_data (incremental update)
-    # This will fail initially because the method doesn't exist or isn't called
-    assert hasattr(web_view, "update_graph_data")
     web_view.update_graph_data.assert_called_once()
     call_args = web_view.update_graph_data.call_args
     assert call_args[0][0] == nodes_2
@@ -107,9 +107,7 @@ def test_full_and_incremental_paths_receive_projected_edges(
     graph_widget.display_graph(nodes, edges)
     full_edges = _builder_mock(graph_widget).build_html.call_args.args[1]
     graph_widget.display_graph(nodes, edges)
-    incremental_edges = _web_view_mock(
-        graph_widget
-    ).update_graph_data.call_args.args[1]
+    incremental_edges = _web_view_mock(graph_widget).update_graph_data.call_args.args[1]
 
     assert [edge["id"] for edge in full_edges] == ["semantic"]
     assert incremental_edges == full_edges
@@ -157,8 +155,7 @@ def test_theme_change_forces_full_reload(graph_widget: GraphWidget) -> None:
     graph_widget.display_graph(nodes, edges)
     web_view.load_html.reset_mock()
 
-    # 2. Simulate theme change (manual call for test)
-    # In real app, this clears _is_renderer_ready (if we implement it that way)
+    # 2. A theme change invalidates the incremental renderer.
     graph_widget._on_theme_changed({"app_bg": "#FFFFFF"})
 
     # Should call load_html to rebuild with new colors

@@ -8,6 +8,8 @@ from src.app.command_coordinator import CommandCoordinator
 from src.commands.base_command import BaseCommand, CommandResult
 from src.services.db_service import DatabaseService
 
+pytestmark = pytest.mark.ci_fast
+
 
 class MockCommand(BaseCommand):
     """Mock command for testing."""

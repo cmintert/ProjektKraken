@@ -1,8 +1,12 @@
 """Regression tests for command-level database atomicity."""
 
+import pytest
+
 from src.commands.base_command import BaseCommand, CommandResult
 from src.core.entities import Entity
 from src.services.db_service import DatabaseService
+
+pytestmark = pytest.mark.ci_fast
 
 
 class _PartiallyFailingCommand(BaseCommand):

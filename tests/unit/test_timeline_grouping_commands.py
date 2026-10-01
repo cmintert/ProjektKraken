@@ -13,6 +13,8 @@ from src.commands.timeline_grouping_commands import (
     UpdateTagColorCommand,
 )
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.mark.unit
 class TestTimelineGroupingCommands:

@@ -7,9 +7,13 @@ export capabilities added for bidirectional Obsidian integration.
 import tempfile
 from pathlib import Path
 
+import pytest
+
 from src.core.entities import Entity
 from src.core.events import Event
 from src.services.obsidian_exporter import ObsidianExporter
+
+pytestmark = pytest.mark.ci_fast
 
 
 class MockDbService:

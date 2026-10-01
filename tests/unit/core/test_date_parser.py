@@ -4,6 +4,8 @@ from src.core.calendar import CalendarConfig, MonthDefinition, WeekDefinition
 from src.core.date_parser import DateParser
 from src.core.parsed_date import DatePrecision
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
 def simple_calendar() -> CalendarConfig:

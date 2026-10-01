@@ -4,7 +4,11 @@ Tests for the BackupConfig dataclass.
 
 from pathlib import Path
 
+import pytest
+
 from src.core.backup_config import BackupConfig
+
+pytestmark = pytest.mark.ci_fast
 
 
 def test_backup_config_defaults():

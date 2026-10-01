@@ -33,6 +33,8 @@ from src.services.search_service import (
     top_k_streaming,
 )
 
+pytestmark = pytest.mark.ci_fast
+
 # =============================================================================
 # Mock Embedding Provider
 # =============================================================================

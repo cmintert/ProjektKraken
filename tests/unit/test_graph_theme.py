@@ -5,11 +5,14 @@ import pytest
 
 from src.gui.widgets.graph_view.graph_widget import GraphWidget
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
-def graph_widget(qapp: Any) -> GraphWidget:
+def graph_widget(qapp: Any, qtbot: Any) -> GraphWidget:
     """Fixture for GraphWidget."""
     widget = GraphWidget()
+    qtbot.addWidget(widget)
     return widget
 
 

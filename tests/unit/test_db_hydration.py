@@ -3,6 +3,8 @@ import pytest
 from src.core.entities import Entity
 from src.core.events import Event
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.mark.unit
 class TestDBHydration:

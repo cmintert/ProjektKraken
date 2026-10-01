@@ -2,9 +2,13 @@
 
 from unittest.mock import MagicMock
 
+import pytest
+
 from src.core.entities import Entity
 from src.core.events import Event
 from src.services.import_service import ImportService
+
+pytestmark = pytest.mark.ci_fast
 
 
 def test_parse_only_valid_batch():

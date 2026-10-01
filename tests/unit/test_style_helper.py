@@ -289,8 +289,7 @@ def test_style_changes_with_theme_switch(theme_manager):
 
     # Switch to a different theme
     available_themes = theme_manager.get_available_themes()
-    if len(available_themes) < 2:
-        pytest.skip("Need at least 2 themes for this test")
+    assert len(available_themes) >= 2, "Required bundled themes are missing"
 
     # Find a different theme
     new_theme_name = None
@@ -299,8 +298,7 @@ def test_style_changes_with_theme_switch(theme_manager):
             new_theme_name = theme_name
             break
 
-    if not new_theme_name:
-        pytest.skip("Could not find alternate theme")
+    assert new_theme_name is not None, "Required alternate theme is missing"
 
     # Switch theme
     theme_manager.current_theme_name = new_theme_name

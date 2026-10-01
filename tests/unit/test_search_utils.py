@@ -5,7 +5,11 @@ Tests for the SearchUtils class.
 from dataclasses import dataclass
 from typing import Any, Dict, List
 
+import pytest
+
 from src.core.search_utils import SearchUtils
+
+pytestmark = pytest.mark.ci_fast
 
 
 @dataclass
@@ -29,6 +33,7 @@ def test_matches_search_empty_search_term():
     """Test matches_search returns True for empty search term."""
     obj = MockEntity(name="Test Entity")
 
+    assert SearchUtils.matches_search(obj, None) is True
     assert SearchUtils.matches_search(obj, "") is True
     assert SearchUtils.matches_search(obj, "   ") is True
 
@@ -113,6 +118,9 @@ def test_matches_search_with_dict():
     assert SearchUtils.matches_search(obj, "mystical") is True
     assert SearchUtils.matches_search(obj, "magic") is True
     assert SearchUtils.matches_search(obj, "temperate") is True
+    assert SearchUtils.matches_search(obj, "test") is True
+    assert SearchUtils.matches_search(obj, "mag") is True
+    assert not SearchUtils.matches_search(obj, "missing")
 
 
 def test_matches_search_case_insensitive():

@@ -164,10 +164,9 @@ def test_theme_change_updates_stylesheet(qtbot):
 
     # Switch to a different theme
     current_theme = tm.current_theme_name
-    try:
-        new_theme = next(t for t in available_themes if t != current_theme)
-    except StopIteration:
-        pytest.skip("Need at least 2 themes to test switching")
+    alternatives = [t for t in available_themes if t != current_theme]
+    assert alternatives, "Required alternate bundled theme is missing"
+    new_theme = alternatives[0]
 
     # Trigger theme change
     previous_theme = tm.current_theme_name

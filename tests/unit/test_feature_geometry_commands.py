@@ -1,11 +1,15 @@
 """Persistent undo tests for atomic geometry-state commands."""
 
+import pytest
+
 from src.commands.feature_geometry_commands import (
     ReplaceFeatureGeometryStatesCommand,
 )
 from src.core.feature_geometry_state import FeatureGeometryState
 from src.core.map import Map
 from src.core.marker import Marker
+
+pytestmark = pytest.mark.ci_fast
 
 
 def test_create_undo_redo_and_serialization(db_service) -> None:

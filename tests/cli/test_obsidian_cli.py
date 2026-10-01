@@ -7,6 +7,8 @@ import pytest
 from src.cli.obsidian import export_obsidian
 from src.services.obsidian_exporter import ExportResult
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
 def mock_db_service():

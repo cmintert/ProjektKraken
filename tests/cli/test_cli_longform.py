@@ -4,6 +4,8 @@ import pytest
 
 from src.cli.longform import main as longform_main
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
 def mock_db():

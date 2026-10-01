@@ -38,6 +38,9 @@ jobs:
             libxcb-xinerama0 libxkbcommon-x11-0
           python -m pip install -r requirements.txt
 
+      - name: Check test discovery and suite membership
+        run: python -m scripts.check_test_policy
+
       - name: Run smoke suite
         run: |
           python -m pytest -m smoke -q --maxfail=1 \
@@ -76,6 +79,9 @@ jobs:
             libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
             libxcb-xinerama0 libxkbcommon-x11-0
           python -m pip install -r requirements.txt
+
+      - name: Check test discovery and suite membership
+        run: python -m scripts.check_test_policy
 
       - name: Run curated PR regression suite
         run: |
@@ -117,6 +123,9 @@ jobs:
             libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
             libxcb-xinerama0 libxkbcommon-x11-0
           python -m pip install -r requirements.txt
+
+      - name: Check test discovery and suite membership
+        run: python -m scripts.check_test_policy
 
       - name: Run full regression suite with coverage
         run: |

@@ -7,6 +7,8 @@ import pytest
 from src.core.entities import Entity
 from src.services.db_service import DatabaseService
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
 def db():

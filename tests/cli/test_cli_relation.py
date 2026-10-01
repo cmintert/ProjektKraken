@@ -4,6 +4,8 @@ import pytest
 
 from src.cli.relation import main as relation_main
 
+pytestmark = pytest.mark.ci_fast
+
 
 @pytest.fixture
 def mock_db():

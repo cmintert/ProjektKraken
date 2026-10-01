@@ -5,6 +5,8 @@ import pytest
 from src.core.image_attachment import ImageAttachment
 from src.services.repositories.attachment_repository import AttachmentRepository
 
+pytestmark = pytest.mark.ci_fast
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS image_attachments (
     id TEXT PRIMARY KEY,

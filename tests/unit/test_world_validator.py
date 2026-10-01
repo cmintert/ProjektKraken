@@ -10,6 +10,8 @@ from src.core.entities import Entity
 from src.core.events import Event
 from src.services.world_validator import WorldValidator
 
+pytestmark = pytest.mark.ci_fast
+
 
 def insert_corrupt_relation(db_service, source_id: str, target_id: str) -> None:
     """Insert a legacy-invalid row to exercise repair diagnostics."""
