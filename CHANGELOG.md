@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-09-30
-**Commit:** 5eee16cc6dd72d9beeb95790d010e35c53866b5a
+**Last Updated:** 2026-10-01
+**Commit:** 9cda2ae752b6ced6dc7b98e87976152a3e592119
 ---
 
 # Changelog
@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-10-01)* **Windows packaging**: Updated sentence-transformers to 5.6.0
+  with verified distribution hashes to resolve CVE-2026-68770 and unblock the
+  beta dependency audit.
 
 - *(2026-09-30)* **Release blockers**: Stopped Longform hydration during window
   shutdown and tied its timer lifetime to the window, with regression coverage
