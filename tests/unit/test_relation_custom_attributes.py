@@ -26,5 +26,5 @@ def test_ordinary_relation_attributes_are_not_promoted_to_payload(app):
 
     assert result_attributes.get("weight") == 2.5
     assert "payload" not in result_attributes
-    assert "magic_power" not in result_attributes
-    assert "hidden_value" not in result_attributes
+    assert result_attributes["magic_power"] == "high"
+    assert result_attributes["hidden_value"] == 42

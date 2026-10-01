@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-01
-**Commit:** 9cda2ae752b6ced6dc7b98e87976152a3e592119
+**Commit:** 46e5cdb3743e1fc7d5fe67f9d76f722b6ee83bc2
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-10-01)* **Relation timing (KRT-23)**: Added Starts now and Ends now
+  actions with a formatted playhead date preview. Fixed saved manual timing
+  reopening as event-bound timing, and preserved opposite boundaries and custom
+  relation attributes. Added regression coverage for calendar previews,
+  fixed-date round trips, playhead context, and command undo/redo.
 
 - *(2026-10-01)* **Windows packaging**: Updated sentence-transformers to 5.6.0
   with verified distribution hashes to resolve CVE-2026-68770 and unblock the

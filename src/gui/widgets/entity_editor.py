@@ -1301,6 +1301,11 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self._content_widget.hide()
         self._empty_state.show()
 
+    def set_relation_time_context(self, time: float, converter: Any) -> None:
+        """Receive timeline context independently of editor draft time."""
+        self._relation_playhead_time = time
+        self._relation_calendar = converter
+
     @Slot()
     def _on_add_relation(self) -> None:
         """Open the relation dialog to add a new outgoing relation.
@@ -1320,6 +1325,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         dlg = RelationEditDialog(
             parent=self,
+            calendar_converter=getattr(self, "_relation_calendar", None),
+            playhead_time=getattr(self, "_relation_playhead_time", None),
             suggestion_items=getattr(self, "_suggestion_items", []),
             known_types=getattr(self, "_suggestion_types", []),
         )
@@ -1396,6 +1403,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         dlg = RelationEditDialog(
             parent=self,
+            calendar_converter=getattr(self, "_relation_calendar", None),
+            playhead_time=getattr(self, "_relation_playhead_time", None),
             target_id=rel_data["target_id"],
             rel_type=rel_data["rel_type"],
             is_bidirectional=False,
@@ -1709,7 +1718,11 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
     def _save_temporal(self, *, interactive: bool) -> None:  # noqa: C901
         """Emit only changed visible fields and explicit ownership choices."""
         state = self._temporal_state
-        if state is None or self._temporal_time is None or self._current_entity_id is None:
+        if (
+            state is None
+            or self._temporal_time is None
+            or self._current_entity_id is None
+        ):
             return
         if self._temporal_save_pending:
             return

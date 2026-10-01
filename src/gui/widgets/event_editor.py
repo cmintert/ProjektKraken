@@ -1060,9 +1060,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         if self._loaded_temporal_state is None:
             return False
         expression = self.temporal_widget.date_start.get_expression()
-        loaded_expression, loaded_start, loaded_duration = (
-            self._loaded_temporal_state
-        )
+        loaded_expression, loaded_start, loaded_duration = self._loaded_temporal_state
         current_expression = expression.to_dict() if expression else None
         if (
             current_expression != loaded_expression
@@ -1689,6 +1687,11 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             # Emit signal to save this template
             self.create_template_requested.emit(dlg.result_data)
 
+    def set_relation_time_context(self, time: float, converter: Any) -> None:
+        """Receive timeline context independently of editor draft time."""
+        self._relation_playhead_time = time
+        self._relation_calendar = converter
+
     @Slot(object)  # Allow Any/object for checked signal
     def _on_add_relation(self, rel_type: Any = "involved") -> None:
         """Prompts user for relation details and emits signal.
@@ -1706,6 +1709,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
         dlg = RelationEditDialog(
             parent=self,
+            playhead_time=getattr(self, "_relation_playhead_time", None),
             rel_type=rel_type,
             suggestion_items=getattr(self, "_suggestion_items", []),
             calendar_converter=self._calendar_converter,
@@ -1782,6 +1786,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
         dlg = RelationEditDialog(
             parent=self,
+            playhead_time=getattr(self, "_relation_playhead_time", None),
             target_id=rel_data["target_id"],
             rel_type=rel_data["rel_type"],
             is_bidirectional=False,  # Editing existing

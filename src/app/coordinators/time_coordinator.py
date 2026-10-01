@@ -211,8 +211,16 @@ class TimeCoordinator(BaseCoordinator):
                 self.main_window.timeline.set_playhead_time(old_time)
                 return
         self._current_playhead_time = time
+        self._refresh_relation_time_context()
         self.resolve_selected_entity()
         self.main_window.data_coordinator.on_graph_playhead_changed()
+
+    def _refresh_relation_time_context(self) -> None:
+        """Publish timeline context to relation authoring surfaces."""
+        time = float(self.main_window.timeline.get_playhead_time())
+        converter = getattr(self.main_window, "calendar_converter", None)
+        for editor in (self.main_window.entity_editor, self.main_window.event_editor):
+            editor.set_relation_time_context(time, converter)
 
     @Slot(str, dict)
     def on_entity_state_resolved(self, entity_id: str, state: dict) -> None:
@@ -281,6 +289,7 @@ class TimeCoordinator(BaseCoordinator):
 
             # Save converter for status bar formatting
             setattr(self.main_window, "calendar_converter", converter)
+            self._refresh_relation_time_context()
 
             # Refresh status bar labels now that we have a converter
             if hasattr(self.main_window, "timeline") and hasattr(

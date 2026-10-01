@@ -5,6 +5,7 @@ for target entities/events.
 """
 
 from collections import Counter
+from math import isfinite
 from typing import Any, Dict, Optional
 
 from PySide6.QtCore import Qt
@@ -62,6 +63,7 @@ class RelationEditDialog(QDialog):
         known_types: Optional[list[str]] = None,
         source_name: Optional[str] = None,
         target_kind: Optional[str] = None,
+        playhead_time: float | None = None,
     ) -> None:
         """Initializes the dialog.
 
@@ -86,6 +88,8 @@ class RelationEditDialog(QDialog):
         self._limit_height_to_available_screen()
 
         self.attributes = attributes or {}
+        self._playhead_time = playhead_time
+        self._fixed_now: dict[str, float] = {}
         self.calendar_converter = calendar_converter
         self.source_event_date = source_event_date
         self.source_event_name = source_event_name
@@ -213,18 +217,27 @@ class RelationEditDialog(QDialog):
             logic_layout.addWidget(self.rb_absolute)
 
             # Initial State
-            is_start_event = self.attributes.get("valid_from_event", False)
-            is_end_event = self.attributes.get("valid_to_event", False)
+            temporal = self.attributes.get("temporal", {})
+            is_start_event = self.attributes.get("valid_from_event", False) or (
+                temporal.get("start", {}).get("binding") == "source_event"
+            )
+            is_end_event = self.attributes.get("valid_to_event", False) or (
+                temporal.get("end", {}).get("binding") == "source_event"
+            )
             is_at_event = self.attributes.get("valid_at_event", False) or (
                 is_start_event and is_end_event
             )
 
-            if is_at_event:
+            if temporal:
+                self.rb_absolute.setChecked(True)
+            elif is_at_event:
                 self.rb_at_event.setChecked(True)
             elif is_start_event:
                 self.rb_starts.setChecked(True)
             elif is_end_event:
                 self.rb_ends.setChecked(True)
+            elif attributes is not None:
+                self.rb_absolute.setChecked(True)
             else:
                 # State changes caused by an Event take effect at that Event.
                 # Users can still opt into fixed/manual timing explicitly.
@@ -284,6 +297,10 @@ class RelationEditDialog(QDialog):
             ("end", self.valid_to, self.check_to),
         ):
             boundary = spec.get(side, {})
+            if "exact" in boundary:
+                checkbox.setChecked(True)
+                widget.set_value(boundary["exact"])
+                self._fixed_now[side] = float(boundary["exact"])
             if "expression" in boundary:
                 checkbox.setChecked(True)
                 widget.setEnabled(True)
@@ -293,6 +310,7 @@ class RelationEditDialog(QDialog):
 
         self._setup_boundary_choices(temp_layout, suggestion_items or [])
         self.temporal_group.setLayout(temp_layout)
+        self._setup_now_actions()
         self.form_layout.addRow(self.temporal_group)
 
         # Trigger initial visibility/state update if we have event context
@@ -320,6 +338,58 @@ class RelationEditDialog(QDialog):
 
         # Initial focus
         self.target_edit.setFocus()
+
+    def _setup_now_actions(self) -> None:
+        """Offer fixed boundaries using the opening playhead snapshot."""
+        row = QHBoxLayout()
+        time = self._playhead_time
+        available = time is not None and isfinite(time) and self.calendar_converter
+        self.now_label = QLabel(
+            f"Now = {self.calendar_converter.format_datetime(time)}"
+            if available
+            else "Playhead date unavailable"
+        )
+        self.now_label.setWordWrap(True)
+        row.addWidget(self.now_label, 1)
+        self.starts_now_button = StandardButton("Starts now")
+        self.ends_now_button = StandardButton("Ends now")
+        for side, button, widget in (
+            ("start", self.starts_now_button, self.valid_from),
+            ("end", self.ends_now_button, self.valid_to),
+        ):
+            button.setEnabled(bool(available))
+            button.setToolTip(
+                "Use a fixed playhead date; event bindings remain dynamic."
+            )
+            button.clicked.connect(lambda _checked=False, s=side: self._use_now(s))
+            widget.value_changed.connect(
+                lambda _value, s=side: self._fixed_now.pop(s, None)
+            )
+            widget.draft_changed.connect(
+                lambda dirty, s=side: self._fixed_now.pop(s, None) if dirty else None
+            )
+            row.addWidget(button)
+        self.form_layout.addRow(row)
+
+    def _use_now(self, side: str) -> None:
+        """Replace one boundary while retaining the opposite source binding."""
+        if self._playhead_time is None or self.calendar_converter is None:
+            return
+        if hasattr(self, "rb_absolute") and not self.rb_absolute.isChecked():
+            for boundary, bound in (
+                ("start", self.rb_starts.isChecked() or self.rb_at_event.isChecked()),
+                ("end", self.rb_ends.isChecked() or self.rb_at_event.isChecked()),
+            ):
+                choice = self._boundary_choices[boundary]
+                choice.setCurrentIndex(
+                    choice.findData("source_event" if bound else "open")
+                )
+            self.rb_absolute.setChecked(True)
+        choice = self._boundary_choices[side]
+        choice.setCurrentIndex(choice.findData("manual"))
+        widget = self.valid_from if side == "start" else self.valid_to
+        widget.set_value(self._playhead_time)
+        self._fixed_now[side] = self._playhead_time
 
     def _limit_height_to_available_screen(self) -> None:
         """Keep the dialog within the usable vertical screen area."""
@@ -621,6 +691,8 @@ class RelationEditDialog(QDialog):
         ):
             choice = QComboBox()
             choice.addItem("Manual date", "manual")
+            if self.source_event_date is not None:
+                choice.addItem("At source event (dynamic)", "source_event")
             choice.addItem("Date not known", "unknown")
             choice.addItem("Unbounded", "open")
             for event_id, name, kind in suggestions:
@@ -628,6 +700,8 @@ class RelationEditDialog(QDialog):
                     choice.addItem(f"At event: {name}", f"event:{event_id}")
             boundary = temporal.get(side, {})
             selected = boundary.get("anchor", {}).get("anchor_id")
+            if boundary.get("binding") == "source_event":
+                selected = "source_event"
             if selected is None:
                 selected = boundary.get(
                     "status", "manual" if checked.isChecked() else "open"
@@ -765,7 +839,21 @@ class RelationEditDialog(QDialog):
 
     def _get_attributes(self) -> Dict[str, Any]:
         """Collects attributes from UI fields."""
-        attrs: Dict[str, Any] = {}
+        managed = {
+            "weight",
+            "confidence",
+            "notes",
+            "payload",
+            "temporal",
+            "valid_from",
+            "valid_to",
+            "valid_from_event",
+            "valid_to_event",
+            "valid_at_event",
+        }
+        attrs: Dict[str, Any] = {
+            key: value for key, value in self.attributes.items() if key not in managed
+        }
 
         # Standard Attributes
         # Only include non-default values to keep data clean
@@ -859,6 +947,13 @@ class RelationEditDialog(QDialog):
                 expression = widget.get_expression()
                 if attrs.get(f"valid_{legacy}_event"):
                     spec[side] = {"binding": "source_event"}
+                elif choices[side] == "source_event":
+                    spec[side] = {"binding": "source_event"}
+                    attrs[f"valid_{legacy}_event"] = True
+                    attrs[f"valid_{legacy}"] = self.source_event_date
+                elif side in self._fixed_now and choices[side] == "manual":
+                    spec[side] = {"exact": self._fixed_now[side]}
+                    attrs[f"valid_{legacy}"] = self._fixed_now[side]
                 elif choices[side] == "unknown":
                     spec[side] = {"status": "unknown"}
                     attrs.pop(f"valid_{legacy}", None)

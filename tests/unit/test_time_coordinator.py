@@ -63,6 +63,17 @@ def coordinator(fake_window):
     return coord
 
 
+def test_relation_context_uses_playhead_not_world_time(coordinator, fake_window):
+    fake_window.timeline.get_playhead_time.return_value = 125.5
+    fake_window.timeline.get_current_time.return_value = 300.0
+    fake_window.calendar_converter = object()
+    coordinator._refresh_relation_time_context()
+    for editor in (fake_window.entity_editor, fake_window.event_editor):
+        editor.set_relation_time_context.assert_called_once_with(
+            125.5, fake_window.calendar_converter
+        )
+
+
 class TestCalendarConfigLoading:
     """Tests for calendar config loaded handler."""
 
