@@ -2,10 +2,10 @@
   "schema": 1,
   "counts": {
     "smoke": 18,
-    "ci_fast": 1078,
+    "ci_fast": 1085,
     "slow": 1,
     "performance": 0,
-    "full": 5440,
+    "full": 5447,
     "full_only": 4353
   },
   "categories": {
@@ -18,7 +18,7 @@
     "repro": 2,
     "root": 15,
     "security": 5,
-    "unit": 5171
+    "unit": 5178
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -2723,6 +2723,27 @@
       "ci_fast"
     ],
     "tests/unit/test_deletion_integrity.py::test_relation_integrity_on_delete_event": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_contract.py::test_checked_in_dependency_contract": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_contract.py::test_incompatible_or_missing_release_pin_is_detected[absent-numpy==2.4.2]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_contract.py::test_incompatible_or_missing_release_pin_is_detected[numpy==1.0.0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_contract.py::test_new_runtime_requires_preflight_and_release_pin": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_contract.py::test_optional_embeddings_are_not_required_for_startup": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_contract.py::test_release_pin_requires_hash": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_contract.py::test_stale_projection_is_detected_and_regenerated": [
       "ci_fast"
     ],
     "tests/unit/test_dependency_direction.py::test_gui_and_app_do_not_import_database_service": [],

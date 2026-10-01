@@ -45,6 +45,50 @@ authoring-continuity or link-identity failure blocks release even if CI passes.
 
 On Windows, set `QT_QPA_PLATFORM=offscreen` for GUI tests.
 
+## Dependency authority
+
+`pyproject.toml` is the authority for direct dependencies and their version
+constraints. Runtime packages live in `project.dependencies`; optional groups
+separate `dev` (tests and quality tools), `docs`, `semantic-search` (local
+sentence-transformers embeddings), and `windows-build` (PyInstaller tools).
+Runtime pins preserve the tested Windows beta versions. Bleach is no longer
+required; the Markdown renderer uses `nh3`.
+
+`requirements.txt` is a generated convenience environment combining runtime,
+development, documentation and local embeddings. For a smaller environment, use
+`python -m pip install -r requirements/runtime.txt`, `requirements/dev.txt`, or
+`requirements/docs.txt`. Add `requirements/semantic-search.txt` for local
+embeddings; LM Studio embeddings do not require sentence-transformers. Install
+`requirements/windows-build.txt` plus `requirements/semantic-search.txt` when
+building the full Windows package outside its locked release workflow.
+
+After editing metadata, regenerate and check the secondary pip inputs:
+
+```text
+python -m pip install "packaging>=25"
+python -m scripts.check_dependencies --write
+python -m scripts.check_dependencies
+```
+
+Do not edit generated requirements files independently. The generator also writes
+`packaging/windows/requirements.in` from runtime, semantic-search and build groups.
+The hashed `requirements.lock` remains the Windows x64 / Python 3.13 release
+resolution, including transitive packages. When constraints change, regenerate
+it on that platform with pip-tools:
+
+```text
+python -m pip install pip-tools
+python -m piptools compile --allow-unsafe --generate-hashes --strip-extras --output-file packaging/windows/requirements.lock packaging/windows/requirements.in
+python -m scripts.check_dependencies
+```
+
+The dependency CI job rejects stale projections, startup-check coverage drift,
+and missing, incompatible or unhashed direct Windows pins. Startup's module-name
+mapping is validated against the runtime set rather than being an independent
+dependency declaration. Optional embeddings are checked when used. CI does not
+re-resolve the Windows lock on Linux; release installation still verifies hashes
+and the package workflow audits and smoke-tests the resolved environment.
+
 ## Project layout
 
 - `src/app`: startup, coordinators, worker lifecycle, cross-feature orchestration

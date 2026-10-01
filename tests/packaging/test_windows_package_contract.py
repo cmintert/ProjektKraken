@@ -113,6 +113,7 @@ class WindowsPackageContractTests(unittest.TestCase):
         )
         self.assertIn("inputs: packaging/windows/requirements.lock", workflow)
         self.assertIn("require-hashes: true", workflow)
+        self.assertIn("python -m scripts.check_dependencies", workflow)
 
     def test_workflow_keeps_publication_approval_gated(self) -> None:
         """Require the protected environment and validated beta tag gate."""

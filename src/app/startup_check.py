@@ -14,11 +14,12 @@ from src.core.paths import get_log_directory
 MINIMUM_PYTHON = (3, 13)
 
 # Distribution labels are user-facing; module names are used for lightweight checks.
+# scripts.check_dependencies validates this mapping against project.dependencies.
 REQUIRED_MODULES = (
     ("PySide6", "PySide6"),
     ("Pillow", "PIL"),
     ("python-dotenv", "dotenv"),
-    ("NumPy", "numpy"),
+    ("numpy", "numpy"),
     ("Requests", "requests"),
     ("Markdown", "markdown"),
     ("python-frontmatter", "frontmatter"),
@@ -29,6 +30,10 @@ REQUIRED_MODULES = (
     ("NetworkX", "networkx"),
     ("GeoJSON", "geojson"),
     ("python-multipart", "multipart"),
+    ("nh3", "nh3"),
+    ("keyring", "keyring"),
+    ("python-docx", "docx"),
+    ("starlette", "starlette"),
 )
 
 

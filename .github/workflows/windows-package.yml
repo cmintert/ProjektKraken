@@ -46,6 +46,10 @@ jobs:
           inputs: packaging/windows/requirements.lock
           require-hashes: true
 
+      - name: Check dependency authority before building
+        shell: pwsh
+        run: python -m scripts.check_dependencies
+
       - name: Verify isolated environment
         shell: pwsh
         run: |

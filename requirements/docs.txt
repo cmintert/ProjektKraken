@@ -1,0 +1,6 @@
+# Generated from pyproject.toml; run python -m scripts.check_dependencies --write.
+-r runtime.txt
+Sphinx==8.2.3
+myst-parser==4.0.1
+furo==2025.9.25
+sphinxcontrib-mermaid>=1.0.0

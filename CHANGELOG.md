@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-01
-**Commit:** 063e42fc7d159748952ca37af612ef6ad9d9f7cc
+**Commit:** d79f10504e23a78dce8a506bc851e9ced886e3cc
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-10-01)* **Dependency authority (KRT-34)**: Consolidated runtime and
+  optional dependency declarations in project metadata, generated secondary pip
+  inputs, and added CI checks for startup coverage and Windows lock drift.
+  Preserved Windows release pins and separated documentation/build tools from
+  runtime dependencies; local embeddings are an optional dependency group.
 
 - *(2026-10-01)* **World migrations (KRT-31)**: Added authoritative schema versions,
   an ordered migration ledger, atomic upgrades, and verified WAL-aware recovery
