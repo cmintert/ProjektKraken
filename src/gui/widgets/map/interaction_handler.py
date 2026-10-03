@@ -47,7 +47,6 @@ from src.gui.dialogs.icon_picker_dialog import IconPickerDialog
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.marker_item import MarkerItem
-from src.services.marker_icon_catalog import MarkerIconCatalog
 
 if TYPE_CHECKING:
     from PySide6.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent
@@ -461,10 +460,9 @@ class InteractionHandler:
             world_root=self._view._world_root,
             catalog=self._view.marker_icon_catalog,
         )
+        self._view.icon_picker_created.emit(dialog)
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            self._view.marker_icon_catalog = MarkerIconCatalog.load(
-                self._view._world_root
-            )
+            self._view.marker_icon_catalog = dialog._catalog
             definition = dialog.selected_definition
             if definition is None:
                 return

@@ -7,6 +7,7 @@ and accesses individual coordinators through it.
 
 import logging
 import uuid
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import Q_ARG, QObject
@@ -82,6 +83,47 @@ class AppCoordinator(QObject):
 
         self.main_window = main_window
         logger.debug("AppCoordinator initialized with 11 coordinators")
+
+    def show_icon_library(self) -> None:
+        """Open the active world's standalone icon manager."""
+        if hasattr(self, "icon_library"):
+            self.icon_library.show_manager(self.main_window)
+
+    def bind_icon_library(self) -> None:
+        """Compose the icon feature using narrow command and view dependencies."""
+        from PySide6.QtCore import Qt
+
+        from src.app.coordinators.icon_library_coordinator import IconLibraryCoordinator
+
+        window = self.main_window
+        view = window.map_widget.view
+        graph = window.graph_widget
+
+        def context() -> tuple[str, str]:
+            world = window.current_world
+            if world is None:
+                return ("", str(Path(window.db_path).resolve().parent))
+            return (world.id, str(world.path))
+
+        def refresh(payload: dict[str, Any]) -> None:
+            view.apply_icon_library_snapshot(payload)
+            graph.apply_icon_library_snapshot(payload)
+
+        self.icon_library = IconLibraryCoordinator(
+            window.command_coordinator.execute_command, context, refresh, self
+        )
+        view.icon_picker_created.connect(self.icon_library.attach_picker)
+        graph.icon_picker_created.connect(self.icon_library.attach_picker)
+        graph.lexicon_editor_created.connect(self.icon_library.attach_draft)
+        window.command_coordinator.command_preparing.connect(
+            self.icon_library.prepare_command
+        )
+        window.worker.command_finished.connect(
+            self.icon_library.on_command_finished, Qt.ConnectionType.QueuedConnection
+        )
+        window.worker.initialized.connect(
+            self.icon_library.on_initialized, Qt.ConnectionType.QueuedConnection
+        )
 
     def validate_world(self, editorial_checks: bool = False) -> str:
         """Request world validation on the DatabaseWorker thread.

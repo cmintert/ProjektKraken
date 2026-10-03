@@ -55,6 +55,7 @@ def _init_registry() -> None:
     from src.commands.feature_geometry_commands import (
         ReplaceFeatureGeometryStatesCommand,
     )
+    from src.commands.icon_library_commands import IconLibraryCommand
     from src.commands.image_commands import (
         AddImagesCommand,
         RemoveImageCommand,
@@ -119,6 +120,7 @@ def _init_registry() -> None:
 
     _COMMAND_TYPES.update(
         {
+            "IconLibraryCommand": IconLibraryCommand,
             "ApplyChronologyCommand": ApplyChronologyCommand,
             "CreateEventCommand": CreateEventCommand,
             "UpdateEventCommand": UpdateEventCommand,

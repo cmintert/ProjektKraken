@@ -489,7 +489,9 @@ class DataCoordinator(BaseCoordinator):
 
                 db_path = self.main_window.db_path
                 if db_path != ":memory:":
-                    assets_dir = str(Path(db_path).parent / "assets")
+                    world = getattr(self.main_window, "current_world", None)
+                    root = world.path if world is not None else Path(db_path).parent
+                    assets_dir = str(root / "assets")
                     self.main_window.graph_widget.set_world_assets_dir(assets_dir)
             except Exception:
                 logger.debug(

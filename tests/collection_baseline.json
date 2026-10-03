@@ -2,10 +2,10 @@
   "schema": 1,
   "counts": {
     "smoke": 18,
-    "ci_fast": 1225,
+    "ci_fast": 1270,
     "slow": 1,
     "performance": 0,
-    "full": 5598,
+    "full": 5643,
     "full_only": 4364
   },
   "categories": {
@@ -18,7 +18,7 @@
     "repro": 2,
     "root": 15,
     "security": 5,
-    "unit": 5265
+    "unit": 5310
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -3604,16 +3604,130 @@
     "tests/unit/test_history_thread_safety.py::test_panel_undo_redo_buttons_state": [],
     "tests/unit/test_history_thread_safety.py::test_snapshot_contains_timestamp": [],
     "tests/unit/test_history_thread_safety.py::test_snapshot_handles_missing_timestamp": [],
+    "tests/unit/test_icon_library_commands.py::test_batch_preserves_names_reuses_bytes_and_keeps_successes": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_bundled_icons_are_immutable": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_canonical_discovery_is_read_only_and_duplicate_order_is_stable": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_catalog_metadata_cannot_redirect_stable_identity": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_commit_failure_compensates_files": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_database_write_failure_compensates_import_and_delete": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_default_undo_restores_absent_and_null_fields_exactly[False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_default_undo_restores_absent_and_null_fields_exactly[True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_defaults_use_each_maps_image_width": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_delete_restores_artwork_and_metadata_after_database_reopen": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_duplicate_only_and_invalid_batches_have_no_history": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_external_database_uses_explicit_world_root": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_failed_compensation_retains_artifact_and_never_overwrites": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_import_undo_redo_does_not_need_original_files": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_interrupted_batch_stash_and_restore_are_atomic": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_invalid_edits_leave_metadata_unchanged[changes0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_invalid_edits_leave_metadata_unchanged[changes1]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_invalid_edits_leave_metadata_unchanged[changes2]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_invalid_edits_leave_metadata_unchanged[changes3]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_invalid_edits_leave_metadata_unchanged[changes4]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_invalid_edits_leave_metadata_unchanged[changes5]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_persisted_delete_history_and_pruning_use_external_world_root": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_rename_defaults_and_exact_undo_preserve_overrides": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_restore_failure_retains_metadata_and_recovery[collision]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_restore_failure_retains_metadata_and_recovery[missing]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_unreadable_map_blocks_default_size_change": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_commands.py::test_usage_blocks_delete_and_import_undo_across_consumers": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_coordinator.py::test_edit_dialog_anchor_preview_and_empty_name_validation": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_coordinator.py::test_file_menu_has_independent_icon_library_action": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_coordinator.py::test_graph_snapshot_preserves_draft_and_refreshes_image": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_coordinator.py::test_large_batch_report_stays_bounded": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_coordinator.py::test_late_current_world_result_refreshes_without_destroyed_owner": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_coordinator.py::test_late_results_after_destroy_and_stale_world_requests": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_coordinator.py::test_library_requests_and_undo_cannot_overlap": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_coordinator.py::test_open_lexicon_draft_blocks_import_undo": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_coordinator.py::test_picker_search_category_and_independent_manager": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_coordinator.py::test_queued_batch_remains_open_and_survives_parent_cancel": [
+      "ci_fast"
+    ],
+    "tests/unit/test_icon_library_coordinator.py::test_same_id_metadata_refresh_reaches_existing_markers": [
+      "ci_fast"
+    ],
     "tests/unit/test_icon_picker_dialog.py::TestIconPickerDialogCreation::test_creates_with_world_root": [],
     "tests/unit/test_icon_picker_dialog.py::TestIconPickerDialogCreation::test_creates_without_world_root": [],
     "tests/unit/test_icon_picker_dialog.py::TestIconPickerDialogCreation::test_definition_selection_exposes_only_definition": [],
     "tests/unit/test_icon_picker_dialog.py::TestIconPickerDialogCreation::test_dialog_has_theme_stylesheet": [],
-    "tests/unit/test_icon_picker_dialog.py::TestIconPickerDialogCreation::test_icon_buttons_have_neutral_background": [],
-    "tests/unit/test_icon_picker_dialog.py::TestIconPickerDialogCreation::test_import_returns_canonical_definition": [],
+    "tests/unit/test_icon_picker_dialog.py::TestIconPickerDialogCreation::test_icon_buttons_have_theme_style": [],
+    "tests/unit/test_icon_picker_dialog.py::TestIconPickerDialogCreation::test_import_emits_batch_and_keeps_picker_open": [],
     "tests/unit/test_icon_picker_dialog.py::TestIconPickerDialogCreation::test_picker_shows_human_readable_bundled_names": [],
+    "tests/unit/test_icon_picker_dialog.py::test_bundled_cards_do_not_offer_library_mutations": [],
     "tests/unit/test_icon_picker_dialog.py::test_catalog_discovers_only_canonical_project_icons": [],
-    "tests/unit/test_icon_picker_dialog.py::test_remove_project_icon_rejects_bundled_definition": [],
-    "tests/unit/test_icon_picker_dialog.py::test_remove_project_icon_uses_definition": [],
+    "tests/unit/test_icon_picker_dialog.py::test_remove_project_icon_requests_usage_before_confirmation": [],
     "tests/unit/test_id_based_links.py::test_adjacent_id_links": [],
     "tests/unit/test_id_based_links.py::test_format_id_link": [],
     "tests/unit/test_id_based_links.py::test_format_name_link": [],
@@ -4780,6 +4894,27 @@
     "tests/unit/test_map_layer_view_integration.py::TestViewLayerVisibility::test_hiding_parent_group_hides_marker": [],
     "tests/unit/test_map_layer_view_integration.py::TestViewLayerVisibility::test_showing_layer_shows_marker": [],
     "tests/unit/test_map_layer_view_integration.py::TestViewLayerZOrder::test_z_order_applied": [],
+    "tests/unit/test_map_layer_view_integration.py::test_panel_checkbox_hides_and_shows_layer[keyboard-group]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_layer_view_integration.py::test_panel_checkbox_hides_and_shows_layer[keyboard-marker]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_layer_view_integration.py::test_panel_checkbox_hides_and_shows_layer[keyboard-raster]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_layer_view_integration.py::test_panel_checkbox_hides_and_shows_layer[mouse-group]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_layer_view_integration.py::test_panel_checkbox_hides_and_shows_layer[mouse-marker]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_layer_view_integration.py::test_panel_checkbox_hides_and_shows_layer[mouse-raster]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_layer_view_integration.py::test_panel_inline_lock_preserves_visibility": [
+      "ci_fast"
+    ],
     "tests/unit/test_map_layer_visibility_cache.py::test_hidden_parent_hides_all_children": [],
     "tests/unit/test_map_layer_visibility_cache.py::test_hidden_subtree_avoids_redundant_ancestor_walks": [],
     "tests/unit/test_map_layer_visibility_cache.py::test_nested_hidden_group_hides_grandchildren": [],

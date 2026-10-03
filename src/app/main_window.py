@@ -7,6 +7,7 @@ signal/slot connections.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 # NOTE: Uses fully qualified PySide6 enum paths. See docs/PYSIDE6_ENUM_SOLUTION.md.
@@ -572,6 +573,9 @@ class MainWindow(QMainWindow):
             worker=self.worker,
             db_path_accessor=lambda: self.db_path,
             navigation_set_selection=(self.navigation_coordinator.set_global_selection),
+            world_root_accessor=lambda: str(
+                self.current_world.path if self.current_world else Path(self.db_path).parent
+            ),
         )
         # Forward MapHandler's command_requested to MainWindow's
         self.map_handler.command_requested.connect(self.command_requested.emit)
@@ -760,6 +764,7 @@ class MainWindow(QMainWindow):
             self.command_coordinator.on_command_result,
             Qt.ConnectionType.QueuedConnection,
         )
+        self.app_coordinator.bind_icon_library()
         self.worker.command_finished.connect(
             self.app_coordinator.context_tags.on_command_finished,
             Qt.ConnectionType.QueuedConnection,

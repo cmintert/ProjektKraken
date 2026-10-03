@@ -372,7 +372,9 @@ class HistoryService:
 
     def _discard_command_artifacts(self, payloads: list[str]) -> None:
         """Remove persistent file artifacts for history rows that were pruned."""
-        world_root = Path(self.db_service.get_db_file_path()).resolve().parent
+        world_root = self.db_service.world_root or Path(
+            self.db_service.get_db_file_path()
+        ).resolve().parent
         store = CommandArtifactStore(world_root)
         for payload in payloads:
             try:

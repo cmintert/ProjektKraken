@@ -32,6 +32,16 @@ class UIManager:
     def create_file_menu(self, menu_bar: QMenuBar) -> None:
         """Create the File menu."""
         file_menu = menu_bar.addMenu("File")
+        self._file_menu = file_menu
+        file_menu.setToolTipsVisible(True)
+        icon_library_action = file_menu.addAction("Icon Library...")
+        icon_library_action.setToolTip(
+            "Import and manage project icons without selecting a marker"
+        )
+        icon_library_action.triggered.connect(
+            self.main_window.app_coordinator.show_icon_library
+        )
+        file_menu.addSeparator()
         transfer_action = file_menu.addAction("Import / Export...")
         transfer_action.triggered.connect(
             self.main_window.import_coordinator.show_transfer

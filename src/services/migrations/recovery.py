@@ -61,7 +61,13 @@ def _verify_history_references(
         "SELECT 1 FROM sqlite_master WHERE name='command_history' AND type='table'"
     ).fetchone():
         return
-    for record_id, raw in conn.execute("SELECT id, command_data FROM command_history"):
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(command_history)")}
+    # Undo restores artwork to its live path. Only applied commands are loaded
+    # after restart; an undone command's old manifest is no longer required.
+    applied = " WHERE COALESCE(is_executed, 1) != 0" if "is_executed" in columns else ""
+    for record_id, raw in conn.execute(
+        "SELECT id, command_data FROM command_history" + applied
+    ):
         try:
             paths = _artifact_paths(json.loads(raw))
             for relative in paths:

@@ -41,6 +41,7 @@ class CommandCoordinator(QObject):
     redo_requested = Signal(object)  # Emits the command to redo
     clear_persistent_history_requested = Signal()
     history_changed = Signal(list, list)  # (undo_snapshots, redo_snapshots)
+    command_preparing = Signal(object)  # Main-thread intent enrichment only
 
     def __init__(self, main_window: "MainWindowProtocol") -> None:
         """Initialize the command coordinator.
@@ -189,6 +190,7 @@ class CommandCoordinator(QObject):
             logger.warning("Command rejected during database shutdown")
             return
         logger.debug(f"Executing command: {command.__class__.__name__}")
+        self.command_preparing.emit(command)
         self.track_command(command)
         self.command_requested.emit(self._serialize_command(command))
 
@@ -211,12 +213,13 @@ class CommandCoordinator(QObject):
             logger.warning("Undo called with empty undo stack")
             return
 
-        if self._undo_redo_in_progress:
+        if self._undo_redo_in_progress or self._pending_commands:
             logger.debug("Undo skipped — previous operation in progress")
             return
 
         self._undo_redo_in_progress = True
         command = self.undo_stack[-1]
+        self.command_preparing.emit(command)
         self._pending_history_action = ("undo", command)
         logger.debug(f"Undoing command: {command.__class__.__name__}")
         self.undo_requested.emit(self._serialize_command(command))
@@ -234,12 +237,13 @@ class CommandCoordinator(QObject):
             logger.warning("Redo called with empty redo stack")
             return
 
-        if self._undo_redo_in_progress:
+        if self._undo_redo_in_progress or self._pending_commands:
             logger.debug("Redo skipped — previous operation in progress")
             return
 
         self._undo_redo_in_progress = True
         command = self.redo_stack[-1]
+        self.command_preparing.emit(command)
         self._pending_history_action = ("redo", command)
         logger.debug(f"Redoing command: {command.__class__.__name__}")
         self.redo_requested.emit(self._serialize_command(command))

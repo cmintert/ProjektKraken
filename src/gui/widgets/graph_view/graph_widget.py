@@ -4,6 +4,7 @@ Public facade widget for graph visualization of item relationships. This is the 
 public interface for the graph view functionality.
 """
 
+from pathlib import Path
 from typing import Any, Optional
 
 import shiboken6
@@ -56,6 +57,8 @@ class GraphWidget(QWidget):
     refresh_requested = Signal()
     filter_changed = Signal()
     lexicon_save_requested = Signal(dict)  # raw lexicon config to persist
+    icon_picker_created = Signal(object)
+    lexicon_editor_created = Signal(object)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the GraphWidget.
@@ -97,6 +100,8 @@ class GraphWidget(QWidget):
         self._resolved_lexicon: dict[str, Any] = {"nodes": {}, "edges": {}}
         self._available_entity_types: list[str] = []
         self._world_assets_dir: str | None = None
+        self._icon_metadata: dict[str, Any] = {}
+        self._lexicon_editor: Any = None
 
         # Theme Handling
         from src.core.theme_manager import ThemeManager
@@ -325,7 +330,6 @@ class GraphWidget(QWidget):
 
         # Cache current state for revert
         original_raw = self._raw_lexicon
-        original_resolved = self._resolved_lexicon
 
         dialog = LexiconEditorDialog(
             parent=self,
@@ -334,11 +338,15 @@ class GraphWidget(QWidget):
             current_config=self._raw_lexicon,
             assets_dir=self._world_assets_dir,
         )
+        self._lexicon_editor = dialog
+        dialog.icon_picker_created.connect(self.icon_picker_created.emit)
+        self.lexicon_editor_created.emit(dialog)
 
         # Connect for immediate preview
         dialog.config_changed.connect(self._on_lexicon_preview_requested)
 
         result = dialog.exec()
+        self._lexicon_editor = None
 
         if result == QDialog.DialogCode.Accepted:
             new_config = dialog.get_lexicon_config()
@@ -349,7 +357,7 @@ class GraphWidget(QWidget):
             self._on_lexicon_preview_requested(new_config)
         else:
             # Revert to original state on Cancel
-            self.set_lexicon_config(original_raw, original_resolved)
+            self._on_lexicon_preview_requested(original_raw)
 
     def _on_lexicon_preview_requested(self, config: dict[str, Any]) -> None:
         """Updates the graph display immediately based on new lexicon config.
@@ -370,7 +378,13 @@ class GraphWidget(QWidget):
             if self._world_assets_dir
             else Path.cwd()
         )
-        resolved = GraphBuilder.resolve_lexicon_images(config, project_root)
+        from src.services.graph_lexicon_resolver import resolve_lexicon_images
+        from src.services.marker_icon_catalog import MarkerIconCatalog
+
+        resolved = resolve_lexicon_images(
+            config, project_root, image_encoder=GraphBuilder.image_to_base64,
+            catalog=MarkerIconCatalog.load(project_root, self._icon_metadata),
+        )
         self._resolved_lexicon = resolved
 
         # Force full rebuild so shape/icon changes take effect
@@ -636,6 +650,10 @@ class GraphWidget(QWidget):
             resolved: Resolved lexicon config with Base64 data URIs (for rendering).
 
         """
+        editor = self._lexicon_editor
+        if editor is not None and shiboken6.isValid(editor) and editor.isVisible():
+            self._on_lexicon_preview_requested(editor.get_lexicon_config())
+            return
         self._raw_lexicon = raw
         self._resolved_lexicon = resolved
         # Force full rebuild to apply new styles
@@ -650,6 +668,19 @@ class GraphWidget(QWidget):
 
         """
         self._available_entity_types = entity_types
+
+    def apply_icon_library_snapshot(self, payload: dict[str, Any]) -> None:
+        """Refresh icons while preserving the active Visual Lexicon draft."""
+        snapshot = payload.get("icon_library", {})
+        self._icon_metadata = snapshot.get("metadata", {})
+        self.set_world_assets_dir(str(Path(payload["world_root"]) / "assets"))
+        editor = self._lexicon_editor
+        config = (
+            editor.get_lexicon_config()
+            if editor is not None and shiboken6.isValid(editor)
+            else self._raw_lexicon
+        )
+        self._on_lexicon_preview_requested(config)
 
     def set_world_assets_dir(self, path: str | None) -> None:
         """Sets the world assets directory for icon imports.

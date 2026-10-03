@@ -2,21 +2,11 @@
 
 from unittest.mock import patch
 
-import pytest
-from PySide6.QtWidgets import QApplication, QLabel
+from PySide6.QtWidgets import QLabel
 
 from src.core.marker_icon import MarkerIconDefinition, MarkerIconSource
-from src.gui.dialogs.icon_picker_dialog import IconPickerDialog, remove_project_icon
+from src.gui.dialogs.icon_picker_dialog import IconPickerDialog, ProjectIconCard
 from src.services.marker_icon_catalog import MarkerIconCatalog
-
-
-@pytest.fixture
-def qapp():
-    """Provide a QApplication instance for widget testing."""
-    app = QApplication.instance()
-    if app is None:
-        app = QApplication([])
-    return app
 
 
 def _custom_definition(uuid_hex: str, extension: str = ".svg") -> MarkerIconDefinition:
@@ -42,26 +32,35 @@ def test_catalog_discovers_only_canonical_project_icons(tmp_path):
     assert [definition.id for definition in definitions] == [f"custom.{uuid_hex}"]
 
 
-def test_remove_project_icon_uses_definition(tmp_path):
+def test_remove_project_icon_requests_usage_before_confirmation(qapp, tmp_path):
     uuid_hex = "0123456789abcdef0123456789abcdef"
     definition = _custom_definition(uuid_hex)
     icon_file = tmp_path / definition.asset_path
     icon_file.parent.mkdir(parents=True)
     icon_file.write_text("<svg/>")
 
-    assert remove_project_icon(str(tmp_path), definition)
-    assert not icon_file.exists()
-
-
-def test_remove_project_icon_rejects_bundled_definition(tmp_path):
-    definition = MarkerIconDefinition(
-        id="map.pin",
-        name="Map Pin",
-        asset_path="map-pin.svg",
-        source=MarkerIconSource.DEFAULT,
+    dialog = IconPickerDialog(world_root=str(tmp_path))
+    requests = []
+    dialog.library_requested.connect(requests.append)
+    dialog._on_remove_project_icon(definition)
+    assert requests == [{"operation": "usage", "icon_id": definition.id}]
+    assert icon_file.exists()
+    dialog.finish_library_request(
+        True, "", {"operation": "usage", "report": {"usage": ["Visual Lexicon: Tower"]}}
     )
+    assert "Tower" in dialog._status.toPlainText()
+    assert len(requests) == 1
 
-    assert not remove_project_icon(str(tmp_path), definition)
+
+def test_bundled_cards_do_not_offer_library_mutations(qapp, tmp_path):
+    dialog = IconPickerDialog(world_root=str(tmp_path))
+    from PySide6.QtCore import Qt
+
+    for card in dialog._tabs.widget(0).findChildren(ProjectIconCard):
+        assert (
+            card._icon_btn.contextMenuPolicy()
+            == Qt.ContextMenuPolicy.DefaultContextMenu
+        )
 
 
 class TestIconPickerDialogCreation:
@@ -99,27 +98,46 @@ class TestIconPickerDialogCreation:
         dialog = IconPickerDialog()
         assert dialog.styleSheet() != ""
 
-    def test_icon_buttons_have_neutral_background(self, qapp):
-        from src.gui.dialogs.icon_picker_dialog import _ICON_PREVIEW_BG
+    def test_icon_buttons_have_theme_style(self, qapp):
+        from src.gui.utils.style_helper import StyleHelper
 
         dialog = IconPickerDialog()
         btn = dialog._make_icon_button("/fake/icon.svg", "test")
-        assert _ICON_PREVIEW_BG in btn.styleSheet()
+        assert btn.styleSheet() == StyleHelper.get_tool_button_style()
 
-    def test_import_returns_canonical_definition(self, qapp, tmp_path):
+    def test_import_emits_batch_and_keeps_picker_open(self, qapp, tmp_path):
         source = tmp_path / "source.svg"
         source.write_text("<svg/>")
         world_root = tmp_path / "world"
         dialog = IconPickerDialog(world_root=str(world_root))
+        requests = []
+        dialog.library_requested.connect(requests.append)
 
-        with patch.object(dialog, "accept") as accept, patch(
-            "src.gui.dialogs.icon_picker_dialog.QFileDialog.getOpenFileName",
-            return_value=(str(source), ""),
+        with (
+            patch.object(dialog, "accept") as accept,
+            patch(
+                "src.gui.dialogs.icon_picker_dialog.QFileDialog.getOpenFileNames",
+                return_value=([str(source), str(tmp_path / "second.svg")], ""),
+            ),
         ):
             dialog._on_import_clicked()
 
-        definition = dialog.selected_definition
-        assert definition is not None
-        assert definition.id.startswith("custom.")
-        assert definition.source is MarkerIconSource.CUSTOM
-        assert accept.called
+        assert requests[0]["source_paths"] == [
+            str(source),
+            str(tmp_path / "second.svg"),
+        ]
+        assert dialog.selected_definition is None
+        assert not accept.called
+        assert dialog._pending
+        dialog.finish_library_request(
+            True,
+            "",
+            {
+                "operation": "import",
+                "report": {"added": [{}, {}], "reused": [], "failed": []},
+            },
+        )
+        assert not dialog._pending
+        assert "Added 2" in dialog._status.toPlainText()
+        assert dialog._tabs.currentIndex() == 1
+        assert dialog.selected_definition is None

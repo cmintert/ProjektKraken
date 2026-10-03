@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-03
-**Commit:** 7a05fd93368f38c5a6d327c711efe49fbd221106
+**Commit:** eea5947c6c4beb7d1e26cd20a9a08dee10a82350
 ---
 
 # Changelog
@@ -12,6 +12,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-10-03)* **Icon library (KRT-28)**: Added independent management from
+  File → Icon Library, batch import with names and duplicate reuse, search and
+  category filters, editable native size and anchor previews, reference-aware
+  deletion, and persistent undo. Library edits survive editor cancellation;
+  inherited defaults and open map/graph previews refresh without losing drafts.
+  Added worker, recovery, failure, restart and rendered Qt verification; preserved
+  external world asset roots and refreshed test collection coverage.
 
 - *(2026-10-03)* **World at event (KRT-24)**: Added an Event Editor action
   to inspect the world at the event's saved date while preserving selection,

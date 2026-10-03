@@ -1388,7 +1388,6 @@ class DatabaseWorker(QObject):
             return
 
         try:
-            from pathlib import Path
 
             from src.services.graph_data_service import GraphDataService
             from src.services.graph_lexicon_resolver import resolve_lexicon_images
@@ -1420,7 +1419,7 @@ class DatabaseWorker(QObject):
                 "nodes": {},
                 "edges": {},
             }
-            project_root = Path(self.db_service.db_path).parent
+            project_root = self.world_root
             resolved = resolve_lexicon_images(raw_lexicon, project_root)
             self.graph_lexicon_loaded.emit(raw_lexicon, resolved)
 

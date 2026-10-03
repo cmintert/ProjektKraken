@@ -79,12 +79,23 @@ class BaseCommand(ABC):
                     result = method(self, db_service)
                     if isinstance(result, CommandResult) and not result.success:
                         raise _RollbackCommandResult(result)
-                    return result
+                self.on_transaction_committed()
+                return result
             except _RollbackCommandResult as rollback:
+                self.on_transaction_rolled_back()
                 return rollback.result
+            except Exception:
+                self.on_transaction_rolled_back()
+                raise
 
         atomic_method._kraken_atomic = True  # type: ignore[attr-defined]
         setattr(cls, method_name, atomic_method)
+
+    def on_transaction_committed(self) -> None:
+        """Release optional external-file compensation after a successful commit."""
+
+    def on_transaction_rolled_back(self) -> None:
+        """Compensate optional external-file changes after transaction failure."""
 
     def __init__(self) -> None:
         """Initializes the command."""

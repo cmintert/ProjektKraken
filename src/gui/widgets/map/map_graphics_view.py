@@ -242,6 +242,7 @@ class MapGraphicsView(QGraphicsView):
     # -- Visual styling signal (marker_id, style_overrides_dict) --
     marker_visual_style_changed = Signal(str, dict)
     marker_appearance_changed = Signal(str, dict)
+    icon_picker_created = Signal(object)
 
     # -- Raster editing signals --
     raster_stroke_completed = Signal(str, object)  # node_id, tile patches
@@ -476,8 +477,33 @@ class MapGraphicsView(QGraphicsView):
         Args:
             world_root: Absolute path to the world directory, or None.
         """
+        if self._world_root == world_root:
+            return
         self._world_root = world_root
         self.marker_icon_catalog = MarkerIconCatalog.load(world_root)
+
+    def apply_icon_library_snapshot(self, payload: dict[str, object]) -> None:
+        """Refresh artwork metadata and persisted icon-dependent marker fields."""
+        snapshot = payload.get("icon_library", {})
+        if not isinstance(snapshot, dict):
+            return
+        self.set_world_root(str(payload["world_root"]))
+        self.marker_icon_catalog = MarkerIconCatalog.load(
+            self._world_root, snapshot.get("metadata", {})
+        )
+        updates = payload.get("marker_attributes", [])
+        by_id = {
+            item["id"]: item["attributes"]
+            for item in updates if isinstance(item, dict)
+        } if isinstance(updates, list) else {}
+        for marker_id, marker in self._marker_manager.markers.items():
+            if marker_id in by_id:
+                marker.set_visual_attributes(by_id[marker_id])
+            definition = self.marker_icon_catalog.definition_or_default(
+                marker._visual_attributes.get("_v_marker_icon_id")
+            )
+            marker.set_icon_definition(definition)
+        self._schedule_label_layout()
 
     @property
     def _drawing_mode(self) -> Optional[str]:

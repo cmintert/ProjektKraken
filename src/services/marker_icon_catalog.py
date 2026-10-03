@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
+from typing import Any, Mapping
 
 from src.core.map_constants import DEFAULT_MARKER_ICONS_PATH
 from src.core.marker_appearance import MARKER_ICON_ID_ATTRIBUTE
@@ -45,7 +46,11 @@ class MarkerIconCatalog:
         self._world_root = world_root
 
     @classmethod
-    def load(cls, world_root: str | Path | None = None) -> "MarkerIconCatalog":
+    def load(
+        cls,
+        world_root: str | Path | None = None,
+        custom_metadata: Mapping[str, Any] | None = None,
+    ) -> "MarkerIconCatalog":
         """Load manifest definitions and canonical imported project icons."""
         definitions = _load_bundled_definitions()
         default_root = Path(get_resource_path(DEFAULT_MARKER_ICONS_PATH))
@@ -62,9 +67,19 @@ class MarkerIconCatalog:
                         relative_path = asset.relative_to(resolved_world_root).as_posix()
                         icon_id = custom_icon_id_from_asset_path(relative_path)
                         if icon_id is not None:
-                            definitions.append(
-                                _custom_definition(icon_id, relative_path)
-                            )
+                            definition = _custom_definition(icon_id, relative_path)
+                            raw = (custom_metadata or {}).get(icon_id)
+                            if isinstance(raw, dict):
+                                candidate = MarkerIconDefinition.from_dict(
+                                    raw, source=MarkerIconSource.CUSTOM
+                                )
+                                if (
+                                    candidate.id != icon_id
+                                    or candidate.asset_path != relative_path
+                                ):
+                                    raise ValueError("Icon metadata changes stable identity")
+                                definition = candidate
+                            definitions.append(definition)
         return cls(
             definitions,
             default_root=default_root,

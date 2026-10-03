@@ -644,12 +644,7 @@ class MarkerItem(QGraphicsObject):
                 definition = resolver(
                     self._visual_attributes.get(MARKER_ICON_ID_ATTRIBUTE)
                 )
-                current_id = (
-                    self._icon_definition.id
-                    if self._icon_definition is not None
-                    else None
-                )
-                if definition.id != current_id:
+                if definition != self._icon_definition:
                     self._load_icon(definition)
                 return
 

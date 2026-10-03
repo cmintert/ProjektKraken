@@ -78,6 +78,7 @@ class MapHandler(QObject):
         worker: QObject,
         db_path_accessor: Callable[[], str],
         navigation_set_selection: Callable[[str, str], None],
+        world_root_accessor: Callable[[], str] | None = None,
     ) -> None:
         """Initialize the MapHandler.
 
@@ -90,12 +91,17 @@ class MapHandler(QObject):
             db_path_accessor: Callable that returns the current DB path.
             navigation_set_selection: Callable(object_type, object_id) for
                 unified selection handling.
+            world_root_accessor: Actual world asset root, including worlds with
+                an externally linked database. Defaults to the database parent.
 
         """
         super().__init__()
         self._map_widget = map_widget
         self._worker = worker
         self._db_path_accessor = db_path_accessor
+        self._world_root_accessor = world_root_accessor or (
+            lambda: str(Path(self._db_path_accessor()).parent)
+        )
         self._navigation_set_selection = navigation_set_selection
         # Mapping from object_id to actual marker.id for position updates
         self._marker_object_to_id: dict[str, str] = {}
@@ -132,10 +138,10 @@ class MapHandler(QObject):
 
         image_path = selected_map.image_path
         if not Path(image_path).is_absolute():
-            project_dir = Path(self._db_path_accessor()).parent
+            project_dir = Path(self._world_root_accessor())
             image_path = str(project_dir / image_path)
 
-        world_root = str(Path(self._db_path_accessor()).parent)
+        world_root = self._world_root_accessor()
         self._map_widget.view.set_world_root(world_root)
         if self._map_widget.view.current_image_path != image_path:
             self._map_widget.load_map(image_path)

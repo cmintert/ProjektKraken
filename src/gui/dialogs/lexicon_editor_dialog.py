@@ -145,6 +145,7 @@ class LexiconEditorDialog(QDialog):
     """
 
     config_changed = Signal(dict)
+    icon_picker_created = Signal(object)
 
     def __init__(
         self,
@@ -409,6 +410,7 @@ class LexiconEditorDialog(QDialog):
         # _assets_dir points to the assets directory; world_root is its parent
         world_root = str(Path(self._assets_dir).parent) if self._assets_dir else None
         dialog = IconPickerDialog(self, world_root=world_root)
+        self.icon_picker_created.emit(dialog)
         if (
             dialog.exec() == QDialog.DialogCode.Accepted
             and dialog.selected_definition is not None
@@ -423,6 +425,17 @@ class LexiconEditorDialog(QDialog):
                 row_data["clear_btn"].setEnabled(True)
                 self._emit_config_changed()
             logger.info("Selected icon for '%s': %s", type_name, selected.id)
+
+    def icon_references(self) -> dict[str, list[str]]:
+        """Expose unsaved node icon selections for reference protection."""
+        references: dict[str, list[str]] = {}
+        for type_name, row in self._node_rows.items():
+            icon_id = row.get("icon_id")
+            if isinstance(icon_id, str) and icon_id:
+                references.setdefault(icon_id, []).append(
+                    f"Open Visual Lexicon draft: {type_name}"
+                )
+        return references
 
     def _clear_icon(self, type_name: str) -> None:
         """Clears the icon for a given entity type.

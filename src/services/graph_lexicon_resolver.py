@@ -37,6 +37,8 @@ def resolve_lexicon_images(
     lexicon: dict[str, Any],
     world_root: Path,
     image_encoder: Callable[[Path], str] = image_to_base64,
+    *,
+    catalog: MarkerIconCatalog | None = None,
 ) -> dict[str, Any]:
     """Resolve node icon IDs to Base64 data URIs.
 
@@ -49,7 +51,7 @@ def resolve_lexicon_images(
 
     """
     resolved_nodes: dict[str, Any] = {}
-    catalog = MarkerIconCatalog.load(world_root)
+    catalog = catalog or MarkerIconCatalog.load(world_root)
     for type_name, style in lexicon.get("nodes", {}).items():
         resolved_style = dict(style)
         resolved_style.pop("icon", None)
