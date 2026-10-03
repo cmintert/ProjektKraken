@@ -35,10 +35,10 @@ def export_longform(args: argparse.Namespace) -> int:
         db_service = DatabaseService(args.database)
         db_service.connect()
 
-        assert db_service._connection is not None, "Database not connected"
-        markdown = longform_builder.export_longform_to_markdown(
-            db_service._connection, args.doc_id
-        )
+        with db_service.transaction() as connection:
+            markdown = longform_builder.export_longform_to_markdown(
+                connection, args.doc_id
+            )
 
         if args.output:
             output_path = Path(args.output)
@@ -62,27 +62,9 @@ def _get_current_meta(
     db_service: DatabaseService, table: str, row_id: str, doc_id: str
 ) -> dict:
     """Helper to get current longform metadata."""
-    # This minimal helper is needed because meta isn't exposed in logic yet.
-    # longform_builder has no simple 'get item' returning meta dict.
-    # Direct SQL query via db_service connection for now.
-    connection = db_service._connection
-    if connection is None:
-        raise RuntimeError("Database is not connected")
-    cursor = connection.cursor()
-    cursor.execute(
-        "SELECT position, parent_id, depth, title_override FROM longform_structure "
-        "WHERE table_name = ? AND row_id = ? AND doc_id = ?",
-        (table, row_id, doc_id),
+    return longform_builder.get_longform_meta(
+        db_service.require_connection(), table, row_id, doc_id
     )
-    row = cursor.fetchone()
-    if row:
-        return {
-            "position": row[0],
-            "parent_id": row[1],
-            "depth": row[2],
-            "title_override": row[3],
-        }
-    return {}
 
 
 def move_entry(args: argparse.Namespace) -> int:
@@ -224,8 +206,8 @@ def reindex_longform(args: argparse.Namespace) -> int:
         db_service = DatabaseService(args.database)
         db_service.connect()
 
-        assert db_service._connection is not None, "Database not connected"
-        longform_builder.reindex_document_positions(db_service._connection, args.doc_id)
+        with db_service.transaction() as connection:
+            longform_builder.reindex_document_positions(connection, args.doc_id)
         print("✓ Reindexed longform document positions.")
         return 0
     except Exception as e:

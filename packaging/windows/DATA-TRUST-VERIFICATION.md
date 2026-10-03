@@ -1,8 +1,8 @@
 # KRT-17 data-trust verification
 
 Source verification: **2026-10-03**, Windows, Python 3.13.14, PySide6 6.10.1.
-These results cover the modified source working tree, not a packaged release.
-No package was rebuilt or exercised. KRT-17 remains In Progress.
+These results cover the source implementation; packaged Windows verification
+is tracked separately in KRT-44.
 
 ## Guided source-app walkthrough — 2026-10-03
 
@@ -206,8 +206,7 @@ complete the packaged checklist below.
   Live immediate-refresh retest PASSED by user confirmation after restarting
   the source app: deleting red displays blue immediately, and one Undo displays
   red immediately, without moving the playhead. The source walkthrough is
-  complete; packaged-candidate verification and the implementation commit
-  remain outstanding.
+  complete and the implementation is committed as `7ddce53e`.
 
 ## Reproduced defects and fixes
 
@@ -234,7 +233,7 @@ complete the packaged checklist below.
 | Obsidian notes | PASS | Same integration module: readable UTF-8 files, relation targets match actual filenames, images are copied, colliding names retain every record, failed export preserves the previous vault. |
 | Destructive operations | PASS | Same integration module: serialized coordinator/worker entity and map deletion with canonical undo; relations, image references/bytes, layers, markers, dated geometry and raster files restored. Real entity/map cancellation boundaries leave saved state unchanged. |
 | Dated raster restart | PASS | Same integration module: close a file-backed database, reopen with fresh service and raster controller; base and two distinct dated states resolve before/at/between/after their dates; snapshot deletion undo restores metadata and exact PNG bytes. |
-| Packaged Windows behavior | NOT VERIFIED | Requires the exact rebuilt candidate; source tests do not prove frozen resources, installation behavior or runtime packaging. |
+| Packaged Windows behavior | Deferred to KRT-44 | Requires the exact rebuilt candidate; source tests do not prove frozen resources, installation behavior or runtime packaging. |
 | External Markdown viewer and Obsidian | PASS for the source walkthrough | Markdown Preview screenshot and subsequent user confirmation cover links/images; user confirms Obsidian rendering/navigation and colliding names. Exported image bytes independently match the original. Exact packaged-candidate exports remain unverified. |
 
 Latest follow-up validation (entity reference deletion fix): 92 focused tests
@@ -253,7 +252,7 @@ Initial source validation completed:
   12 modules.
 - `scripts/check_test_policy.py`: passed; new tests retain `ci_fast` membership.
 
-## Remaining packaged checklist
+## Packaged Windows follow-up (KRT-44)
 
 Pre-commit verification on 2026-10-03: all 76 tests across the migration,
 world-data-trust, WAL backup and restore-coordinator modules passed. Repository
@@ -261,7 +260,7 @@ Ruff passed; full mypy passed for 420 source files. The complete source batch,
 walkthrough record and exported samples are included in the implementation
 commit; its hash is recorded in Linear. Packaged verification remains open.
 
-Use an exact identified candidate ZIP and a disposable world. Record candidate
+KRT-44 owns this checklist. Use an exact identified candidate ZIP and a disposable world. Record candidate
 tag/commit, checksum, Windows build, world path, logs and screenshots alongside
 the clean-VM checklist. Do not use a production world for destructive checks.
 
@@ -283,5 +282,4 @@ the clean-VM checklist. Do not use a production world for destructive checks.
 6. Close and restart the package. Inspect raster values before, at, between and
    after the two snapshot dates; record visible differences.
 7. Record discrepancies and retest their fixes against a rebuilt candidate.
-   Close KRT-17 only after the packaged and external-viewer checks pass and the
-   intended implementation is committed.
+   Record the outcome on KRT-44.

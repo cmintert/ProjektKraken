@@ -52,3 +52,57 @@ def test_gui_and_app_do_not_import_database_service() -> None:
     assert not violations, "Main-thread DatabaseService imports:\n" + "\n".join(
         violations
     )
+
+
+def _private_connection_lines(source: str) -> list[int]:
+    """Find private connection access regardless of receiver name."""
+    lines = []
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.Attribute) and node.attr == "_connection":
+            lines.append(node.lineno)
+        elif (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id in {"getattr", "hasattr", "setattr", "delattr"}
+            and len(node.args) >= 2
+            and isinstance(node.args[1], ast.Constant)
+            and node.args[1].value == "_connection"
+        ):
+            lines.append(node.lineno)
+    return sorted(set(lines))
+
+
+@pytest.mark.ci_fast
+def test_private_connections_stay_in_persistence_internals() -> None:
+    """Prevent a second persistence API outside approved connection owners."""
+    violations = []
+    for path in _SOURCE_ROOT.rglob("*.py"):
+        relative = path.relative_to(_SOURCE_ROOT).as_posix()
+        if relative == "services/db_service.py" or relative.startswith(
+            "services/repositories/"
+        ):
+            continue
+        for line in _private_connection_lines(path.read_text(encoding="utf-8")):
+            violations.append(f"src/{relative}:{line}")
+    assert not violations, "Private connection access:\n" + "\n".join(violations)
+
+
+@pytest.mark.ci_fast
+@pytest.mark.parametrize(
+    "source",
+    [
+        "db._connection.execute('SELECT 1')",
+        "alias = db\nalias._connection",
+        "getattr(db, '_connection')",
+        "hasattr(db, '_connection')",
+        "setattr(db, '_connection', None)",
+        "delattr(db, '_connection')",
+    ],
+)
+def test_connection_guard_detects_aliases_and_reflection(source: str) -> None:
+    assert _private_connection_lines(source)
+
+
+@pytest.mark.ci_fast
+def test_connection_guard_allows_public_access() -> None:
+    assert not _private_connection_lines("db.require_connection().execute('SELECT 1')")

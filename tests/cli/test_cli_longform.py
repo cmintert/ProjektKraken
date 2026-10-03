@@ -1,8 +1,13 @@
+import sqlite3
+from contextlib import closing
 from unittest.mock import patch
 
 import pytest
 
 from src.cli.longform import main as longform_main
+from src.core.entities import Entity
+from src.services.db_service import DatabaseService
+from src.services.longform_builder import get_longform_meta
 
 pytestmark = pytest.mark.ci_fast
 
@@ -94,6 +99,55 @@ def test_longform_promote(mock_db, mock_validate, capsys):
         out, _ = capsys.readouterr()
         assert "Promoted entry: ev1" in out
         MockCmd.assert_called_once()
+
+
+def test_real_world_cli_metadata_and_reopen(db_service, tmp_path):
+    """CLI mutations operate on canonical metadata and survive reopening."""
+    parent = Entity(name="Parent", type="test")
+    child = Entity(name="Child", type="test")
+    db_service.insert_entity(parent)
+    db_service.insert_entity(child)
+    path = tmp_path / "cli.kraken"
+    with closing(sqlite3.connect(path)) as destination:
+        db_service.require_connection().backup(destination)
+
+    def run(command, *options):
+        with patch("sys.argv", ["longform.py", command, "-d", str(path), *options]):
+            with pytest.raises(SystemExit) as result:
+                longform_main()
+        assert result.value.code == 0
+
+    def read_meta(record_id):
+        service = DatabaseService(str(path), read_only=True)
+        try:
+            service.connect()
+            return get_longform_meta(service.require_connection(), "entities", record_id)
+        finally:
+            service.close()
+
+    parent_args = ("--table", "entities", "--id", parent.id)
+    child_args = ("--table", "entities", "--id", child.id)
+    run("add", *parent_args, "--position", "250")
+    run("add", *child_args, "--position", "750")
+    assert read_meta(parent.id)["position"] == 250
+    run("demote", *child_args)
+    assert read_meta(child.id)["parent_id"] == parent.id
+    assert read_meta(child.id)["depth"] == 1
+    run("promote", *child_args)
+    assert read_meta(child.id)["parent_id"] is None
+    assert read_meta(child.id)["depth"] == 0
+    run("move", *child_args, "--position", "900")
+    assert read_meta(child.id)["position"] == 900
+    run("reindex")
+    assert read_meta(parent.id)["position"] == 100
+    assert read_meta(child.id)["position"] == 200
+    run("remove", *child_args)
+    assert read_meta(child.id) == {}
+    output = tmp_path / "outline.md"
+    run("export", "--output", str(output))
+    assert "Parent" in output.read_text(encoding="utf-8")
+    # Export's existing indexing step also persists under explicit ownership.
+    assert read_meta(child.id)
 
 
 def test_longform_reindex(mock_db, mock_validate, capsys):

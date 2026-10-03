@@ -12,10 +12,9 @@ import logging
 import sqlite3
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, List, Optional, Set, Tuple, Union
+from typing import List, Optional, Set, Tuple, Union
 
-if TYPE_CHECKING:
-    from src.services.db_service import DatabaseService
+from src.services.db_service import DatabaseService
 
 logger = logging.getLogger(__name__)
 
@@ -495,13 +494,12 @@ def _get_connection(
     if isinstance(conn_or_db_service, sqlite3.Connection):
         return conn_or_db_service
 
-    # Assume it's a DatabaseService
-    if not hasattr(conn_or_db_service, "_connection"):
+    if not isinstance(conn_or_db_service, DatabaseService):
         raise ValueError(
             "Invalid argument: must be sqlite3.Connection or DatabaseService"
         )
 
-    if conn_or_db_service._connection is None:
+    if not conn_or_db_service.is_connected():
         raise ValueError("DatabaseService is not connected")
 
-    return conn_or_db_service._connection
+    return conn_or_db_service.require_connection()

@@ -44,13 +44,10 @@ def published_db_path(tmp_path) -> str:
             attributes={"marker": "unchanged"},
         )
     )
-    assert service._connection is not None
-    insert_or_update_longform_meta(
-        service._connection,
-        "events",
-        "published",
-        position=100.0,
-    )
+    with service.transaction() as conn:
+        insert_or_update_longform_meta(
+            conn, "events", "published", position=100.0
+        )
     service.close()
     return path
 
@@ -346,13 +343,13 @@ type: note
     )
     assert markdown_result.success
     assert json_result.success
-    assert service._connection is not None
-    insert_or_update_longform_meta(
-        service._connection, "entities", "markdown-hostile", position=100.0
-    )
-    insert_or_update_longform_meta(
-        service._connection, "entities", "json-hostile", position=200.0
-    )
+    with service.transaction() as conn:
+        insert_or_update_longform_meta(
+            conn, "entities", "markdown-hostile", position=100.0
+        )
+        insert_or_update_longform_meta(
+            conn, "entities", "json-hostile", position=200.0
+        )
     service.close()
 
     response = _client(ServerConfig(db_path=path)).get("/api/longform")

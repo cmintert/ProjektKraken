@@ -60,9 +60,10 @@ def rebuild_index(args: argparse.Namespace) -> int:
             print(f"Model: {args.model}")
 
         # Create search service
-        assert db_service._connection is not None, "Database not connected"
         search_service = create_search_service(
-            db_service._connection, provider_name=args.provider, model=args.model
+            db_service.require_connection(),
+            provider_name=args.provider,
+            model=args.model,
         )
 
         # Rebuild index
@@ -109,9 +110,8 @@ def delete_object(args: argparse.Namespace) -> int:
             print(f"Model: {args.model}")
 
         # Create search service
-        assert db_service._connection is not None, "Database not connected"
         search_service = create_search_service(
-            db_service._connection, provider_name=None, model=args.model
+            db_service.require_connection(), provider_name=None, model=args.model
         )
 
         search_service.delete_index_for_object(
@@ -152,9 +152,10 @@ def index_object(args: argparse.Namespace) -> int:
             print(f"Model: {args.model}")
 
         # Create search service
-        assert db_service._connection is not None, "Database not connected"
         search_service = create_search_service(
-            db_service._connection, provider_name=args.provider, model=args.model
+            db_service.require_connection(),
+            provider_name=args.provider,
+            model=args.model,
         )
 
         excluded = None
@@ -210,9 +211,10 @@ def query_index(args: argparse.Namespace) -> int:
             print()
 
         # Create search service
-        assert db_service._connection is not None, "Database not connected"
         search_service = create_search_service(
-            db_service._connection, provider_name=args.provider, model=args.model
+            db_service.require_connection(),
+            provider_name=args.provider,
+            model=args.model,
         )
 
         # Query

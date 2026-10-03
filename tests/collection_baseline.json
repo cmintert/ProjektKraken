@@ -2,23 +2,23 @@
   "schema": 1,
   "counts": {
     "smoke": 18,
-    "ci_fast": 1085,
+    "ci_fast": 1225,
     "slow": 1,
     "performance": 0,
-    "full": 5447,
+    "full": 5587,
     "full_only": 4353
   },
   "categories": {
     "architecture": 11,
-    "cli": 47,
+    "cli": 48,
     "gui": 14,
-    "integration": 146,
+    "integration": 209,
     "packaging": 13,
     "performance": 16,
     "repro": 2,
     "root": 15,
     "security": 5,
-    "unit": 5178
+    "unit": 5254
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -105,6 +105,9 @@
       "ci_fast"
     ],
     "tests/cli/test_cli_longform.py::test_longform_reindex": [
+      "ci_fast"
+    ],
+    "tests/cli/test_cli_longform.py::test_real_world_cli_metadata_and_reopen": [
       "ci_fast"
     ],
     "tests/cli/test_cli_map.py::test_map_create_success": [
@@ -335,6 +338,195 @@
     "tests/integration/test_wikilinking_navigation.py::test_navigate_to_entity_success": [],
     "tests/integration/test_wikilinking_navigation.py::test_peek_keeps_dirty_entity_authoring_context": [],
     "tests/integration/test_wikilinking_navigation.py::test_provisional_materialization_is_undoable_without_navigation": [],
+    "tests/integration/test_world_data_trust.py::test_dated_raster_fresh_session_and_snapshot_undo": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_data_trust.py::test_entity_delete_keeps_or_restores_raster_mapping[cancel]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_data_trust.py::test_entity_delete_keeps_or_restores_raster_mapping[delete_anyway]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_data_trust.py::test_entity_delete_keeps_or_restores_raster_mapping[remove_and_delete]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_data_trust.py::test_entity_delete_undo_preserves_relations_and_image": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_data_trust.py::test_exported_images_and_unicode_survive_outside_world[markdown]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_data_trust.py::test_exported_images_and_unicode_survive_outside_world[notes]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_data_trust.py::test_failed_export_preserves_existing_output[markdown]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_data_trust.py::test_failed_export_preserves_existing_output[notes]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_data_trust.py::test_longform_preview_loads_world_relative_image[png]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_data_trust.py::test_longform_preview_loads_world_relative_image[webp]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_data_trust.py::test_map_delete_cancel_keeps_saved_state": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_data_trust.py::test_map_delete_undo_restores_complete_saved_state": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_data_trust.py::test_markdown_create_output_through_dialog_and_coordinator[False]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_data_trust.py::test_markdown_create_output_through_dialog_and_coordinator[True]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_data_trust.py::test_note_filename_collisions_never_overwrite_lore": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_data_trust.py::test_relation_links_use_actual_export_filenames": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_ambiguous_relation_endpoint_blocks_upgrade": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_archive_history_and_artifacts_with_external_database": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_attachment_undo_trash_is_verified_and_archived": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_backup_failure_never_changes_world[permissions]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_backup_failure_never_changes_world[space]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_caller_transaction_is_not_rolled_back": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_commit_failure_rolls_back_schema_and_ledger": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_constraint_rebuild_failure_rolls_back_and_restores_enforcement": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_current_schema_contract_damage_is_rejected": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_current_world_rejects_inconsistent_schema_without_repair[future]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_current_world_rejects_inconsistent_schema_without_repair[ledger]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_current_world_rejects_inconsistent_schema_without_repair[marker]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_current_world_rejects_inconsistent_schema_without_repair[trigger]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_fault_injection_restores_original_database[conversion]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_fault_injection_restores_original_database[ledger]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_fault_injection_restores_original_database[structure]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_fault_injection_restores_original_database[validation]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_flush_failure_leaves_bundle_incomplete": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_historical_schema_upgrade_preserves_world_and_is_idempotent[early]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_historical_schema_upgrade_preserves_world_and_is_idempotent[history]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_historical_schema_upgrade_preserves_world_and_is_idempotent[pre_ledger]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_historical_schema_upgrade_preserves_world_and_is_idempotent[pre_relations]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_historical_schema_upgrade_preserves_world_and_is_idempotent[trajectories]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_interrupted_upgrade_rolls_back_and_can_restart": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_malformed_trajectory_blocks_and_rolls_back_every_step[[[0,true,0]]]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_malformed_trajectory_blocks_and_rolls_back_every_step[[[1,2]]]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_malformed_trajectory_blocks_and_rolls_back_every_step[[[2,0,0],[1,0,0]]]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_malformed_trajectory_blocks_and_rolls_back_every_step[[]]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_malformed_trajectory_blocks_and_rolls_back_every_step[not-json]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_malformed_trajectory_blocks_and_rolls_back_every_step[{\"type\":\"MovingPoint\",\"coordinates\":[[0,0]],\"datetimes\":[]}]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_missing_foreign_keys_remain_strict_for_versioned_worlds": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_missing_legacy_foreign_keys_preserve_children_and_restore_cascades": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_missing_legacy_foreign_keys_read_only_open_does_not_rebuild": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_missing_legacy_foreign_keys_reject_orphans_without_changes[entity_tags]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_missing_legacy_foreign_keys_reject_orphans_without_changes[event_tags]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_missing_legacy_foreign_keys_reject_orphans_without_changes[markers]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_missing_undo_artifact_blocks_backup_and_keeps_history": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_new_world_stamps_current_without_replaying_migrations": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_read_only_legacy_open_is_byte_identical_and_does_not_backup": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_structural_columns_are_added_before_history_indexes": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_unrelated_or_partial_database_is_not_adopted": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_upgrade_preserves_map_temporal_attachment_and_calendar_state": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_versioned_upgrade_preserves_already_normalized_history[1]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_versioned_upgrade_preserves_already_normalized_history[2]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_wal_backup_includes_committed_wal_and_excludes_competing_writer": [
+      "ci_fast"
+    ],
+    "tests/integration/test_world_migrations.py::test_worker_failure_emits_recovery_and_clears_database": [
+      "ci_fast"
+    ],
     "tests/packaging/test_windows_package_contract.py::WindowsPackageContractTests::test_archive_paths_are_bounded_for_windows_extraction": [
       "ci_fast"
     ],
@@ -1355,6 +1547,21 @@
     "tests/unit/services/test_backup_service.py::test_set_database_path": [
       "ci_fast"
     ],
+    "tests/unit/services/test_backup_wal_trust.py::test_manual_backup_includes_committed_wal": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_backup_wal_trust.py::test_restore_failure_preserves_original[corrupt]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_backup_wal_trust.py::test_restore_failure_preserves_original[replace]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_backup_wal_trust.py::test_restore_safety_snapshot_includes_uncheckpointed_world": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_backup_wal_trust.py::test_staging_failure_leaves_world_unchanged": [
+      "ci_fast"
+    ],
     "tests/unit/services/test_import_date_parsing.py::test_import_exact_date_no_duration": [
       "ci_fast"
     ],
@@ -1986,6 +2193,30 @@
       "ci_fast"
     ],
     "tests/unit/test_backup_config.py::test_backup_config_unlimited_manual_retention": [
+      "ci_fast"
+    ],
+    "tests/unit/test_backup_restore_coordinator.py::test_invalid_backup_keeps_session_active[corrupt]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_backup_restore_coordinator.py::test_invalid_backup_keeps_session_active[unauthorized]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_backup_restore_coordinator.py::test_restore_waits_for_worker_shutdown": [
+      "ci_fast"
+    ],
+    "tests/unit/test_backup_restore_coordinator.py::test_shutdown_failure_never_replaces_world": [
+      "ci_fast"
+    ],
+    "tests/unit/test_backup_restore_coordinator.py::test_unfinished_work_does_not_shutdown[draft]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_backup_restore_coordinator.py::test_unfinished_work_does_not_shutdown[geometry]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_backup_restore_coordinator.py::test_unfinished_work_does_not_shutdown[raster]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_backup_restore_coordinator.py::test_unfinished_work_does_not_shutdown[trajectory]": [
       "ci_fast"
     ],
     "tests/unit/test_backup_settings_dialog.py::TestBackupSettingsDialogDefaults::test_default_auto_retention": [],
@@ -2746,7 +2977,31 @@
     "tests/unit/test_dependency_contract.py::test_stale_projection_is_detected_and_regenerated": [
       "ci_fast"
     ],
+    "tests/unit/test_dependency_direction.py::test_connection_guard_allows_public_access": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_connection_guard_detects_aliases_and_reflection[alias = db\\nalias._connection]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_connection_guard_detects_aliases_and_reflection[db._connection.execute('SELECT 1')]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_connection_guard_detects_aliases_and_reflection[delattr(db, '_connection')]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_connection_guard_detects_aliases_and_reflection[getattr(db, '_connection')]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_connection_guard_detects_aliases_and_reflection[hasattr(db, '_connection')]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_connection_guard_detects_aliases_and_reflection[setattr(db, '_connection', None)]": [
+      "ci_fast"
+    ],
     "tests/unit/test_dependency_direction.py::test_gui_and_app_do_not_import_database_service": [],
+    "tests/unit/test_dependency_direction.py::test_private_connections_stay_in_persistence_internals": [
+      "ci_fast"
+    ],
     "tests/unit/test_dependency_direction.py::test_source_layers_do_not_import_upward[commands]": [],
     "tests/unit/test_dependency_direction.py::test_source_layers_do_not_import_upward[core]": [],
     "tests/unit/test_dependency_direction.py::test_source_layers_do_not_import_upward[gui]": [],
@@ -3855,6 +4110,105 @@
     "tests/unit/test_longform_search.py::test_editor_search_bar_toggle": [],
     "tests/unit/test_longform_search.py::test_editor_search_performance": [],
     "tests/unit/test_longform_search.py::test_shortcut_manager_has_find": [],
+    "tests/unit/test_longform_undo_snapshots.py::test_exact_undo_survives_history_and_restart[absent-demote]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_exact_undo_survives_history_and_restart[absent-move]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_exact_undo_survives_history_and_restart[absent-promote]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_exact_undo_survives_history_and_restart[absent-remove]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_exact_undo_survives_history_and_restart[empty_container-demote]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_exact_undo_survives_history_and_restart[empty_container-move]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_exact_undo_survives_history_and_restart[empty_container-promote]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_exact_undo_survives_history_and_restart[empty_container-remove]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_exact_undo_survives_history_and_restart[empty_document-demote]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_exact_undo_survives_history_and_restart[empty_document-move]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_exact_undo_survives_history_and_restart[empty_document-promote]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_exact_undo_survives_history_and_restart[empty_document-remove]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_exact_undo_survives_history_and_restart[full-demote]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_exact_undo_survives_history_and_restart[full-move]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_exact_undo_survives_history_and_restart[full-promote]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_exact_undo_survives_history_and_restart[full-remove]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_exact_undo_survives_history_and_restart[other_document-demote]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_exact_undo_survives_history_and_restart[other_document-move]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_exact_undo_survives_history_and_restart[other_document-promote]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_exact_undo_survives_history_and_restart[other_document-remove]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_failed_execution_does_not_freeze_snapshot_for_retry": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_invalid_metadata_is_rejected_without_mutation[[]]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_invalid_metadata_is_rejected_without_mutation[{\"_longform\":[]}]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_invalid_metadata_is_rejected_without_mutation[{\"_longform\":{\"default\":null}}]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_invalid_metadata_is_rejected_without_mutation[{broken]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_legacy_history_undo_restores_supplied_metadata[demote]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_legacy_history_undo_restores_supplied_metadata[move]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_legacy_history_undo_restores_supplied_metadata[promote]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_legacy_history_undo_restores_supplied_metadata[remove]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_refresh_does_not_connect_or_use_a_foreign_thread": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_refresh_preserves_outer_write_rollback": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_refresh_retains_read_snapshot_until_owner_finishes": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_undo_snapshots.py::test_undo_preserves_other_documents_and_later_unrelated_attributes": [
+      "ci_fast"
+    ],
     "tests/unit/test_lore_date_widget.py::TestLoreDateWidgetBasic::test_month_combo_shows_month_names": [],
     "tests/unit/test_lore_date_widget.py::TestLoreDateWidgetBasic::test_set_calendar_enables_structured_mode": [],
     "tests/unit/test_lore_date_widget.py::TestLoreDateWidgetBasic::test_widget_initializes_without_calendar": [],
@@ -4830,6 +5184,15 @@
     "tests/unit/test_marker_sizing.py::test_view_exposes_minimum_pointer_target_for_tiny_marker": [],
     "tests/unit/test_marker_z_order.py::TestMarkerZOrder::test_trajectory_update_z_values": [],
     "tests/unit/test_marker_z_order.py::TestMarkerZOrder::test_trajectory_z_order_inherits_from_marker": [],
+    "tests/unit/test_migration_coordinator.py::test_failure_dialog_contains_step_records_and_recovery": [
+      "ci_fast"
+    ],
+    "tests/unit/test_migration_coordinator.py::test_queued_worker_reports_snapshot_on_main_thread": [
+      "ci_fast"
+    ],
+    "tests/unit/test_migration_coordinator.py::test_success_notice_only_for_reset_history": [
+      "ci_fast"
+    ],
     "tests/unit/test_obsidian_exporter.py::TestObsidianExporterExport::test_export_creates_files": [],
     "tests/unit/test_obsidian_exporter.py::TestObsidianExporterExport::test_export_handles_duplicate_names": [],
     "tests/unit/test_obsidian_exporter.py::TestObsidianExporterFilename::test_sanitize_filename_empty_returns_untitled": [],
@@ -4887,6 +5250,63 @@
     "tests/unit/test_paths.py::test_get_user_data_path_with_filename": [],
     "tests/unit/test_paths.py::test_get_worlds_dir": [],
     "tests/unit/test_paths.py::test_get_worlds_dir_relative_to_executable": [],
+    "tests/unit/test_persistence_boundary.py::test_connection_boundary_rejects_foreign_thread[connect]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_persistence_boundary.py::test_connection_boundary_rejects_foreign_thread[lazy]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_persistence_boundary.py::test_connection_boundary_rejects_foreign_thread[require]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_persistence_boundary.py::test_connection_boundary_rejects_foreign_thread[transaction]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_persistence_boundary.py::test_failed_connection_leaves_strict_access_disconnected": [
+      "ci_fast"
+    ],
+    "tests/unit/test_persistence_boundary.py::test_helpers_preserve_outer_rollback_and_unrelated_writes[remove]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_persistence_boundary.py::test_helpers_preserve_outer_rollback_and_unrelated_writes[update]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_persistence_boundary.py::test_history_reads_do_not_reopen_disconnected_service": [
+      "ci_fast"
+    ],
+    "tests/unit/test_persistence_boundary.py::test_index_cli_passes_owned_connection_and_closes_it[delete_object]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_persistence_boundary.py::test_index_cli_passes_owned_connection_and_closes_it[index_object]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_persistence_boundary.py::test_index_cli_passes_owned_connection_and_closes_it[query_index]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_persistence_boundary.py::test_index_cli_passes_owned_connection_and_closes_it[rebuild_index]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_persistence_boundary.py::test_longform_command_undo_redo_and_composite_failure": [
+      "ci_fast"
+    ],
+    "tests/unit/test_persistence_boundary.py::test_metadata_reader_is_detached_and_validates_inputs": [
+      "ci_fast"
+    ],
+    "tests/unit/test_persistence_boundary.py::test_reindex_partial_failure_rolls_back_all_records": [
+      "ci_fast"
+    ],
+    "tests/unit/test_persistence_boundary.py::test_strict_connection_lifecycle": [
+      "ci_fast"
+    ],
+    "tests/unit/test_persistence_boundary.py::test_tag_filter_accepts_connection_or_service_without_reopening": [
+      "ci_fast"
+    ],
+    "tests/unit/test_persistence_boundary.py::test_webserver_longform_reads_leave_world_unchanged": [
+      "ci_fast"
+    ],
+    "tests/unit/test_persistence_boundary.py::test_worker_indexing_commits_and_rolls_back": [
+      "ci_fast"
+    ],
     "tests/unit/test_production_workspace.py::test_activity_action_follows_moved_panel": [],
     "tests/unit/test_production_workspace.py::test_factory_layout_matches_workspace_contract": [],
     "tests/unit/test_production_workspace.py::test_production_window_registers_reused_feature_widgets": [],

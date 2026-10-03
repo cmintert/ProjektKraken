@@ -446,8 +446,8 @@ def test_insert_or_update_longform_meta_new(mock_connection):
     ]
     assert len(calls) > 0
 
-    # Verify commit was called
-    mock_connection.commit.assert_called()
+    # Transaction ownership remains with the caller
+    mock_connection.commit.assert_not_called()
 
 
 def test_insert_or_update_longform_meta_update_existing(mock_connection):
@@ -470,7 +470,7 @@ def test_insert_or_update_longform_meta_update_existing(mock_connection):
     ]
     assert len(calls) > 0
 
-    mock_connection.commit.assert_called()
+    mock_connection.commit.assert_not_called()
 
 
 def test_insert_or_update_longform_meta_invalid_table(mock_connection):
@@ -536,7 +536,7 @@ def test_place_between_siblings_middle(mock_connection):
     # Position should be average: (100 + 300) / 2 = 200
     # Can't easily verify the exact value without more complex mocking,
     # but we can verify the function completes without error
-    mock_connection.commit.assert_called()
+    mock_connection.commit.assert_not_called()
 
 
 def test_place_between_siblings_only_prev(mock_connection):
@@ -562,7 +562,7 @@ def test_place_between_siblings_only_prev(mock_connection):
     )
 
     # Position should be 100 + 100 = 200
-    mock_connection.commit.assert_called()
+    mock_connection.commit.assert_not_called()
 
 
 def test_place_between_siblings_no_siblings(mock_connection):
@@ -576,7 +576,7 @@ def test_place_between_siblings_no_siblings(mock_connection):
     )
 
     # Position should be default (100.0)
-    mock_connection.commit.assert_called()
+    mock_connection.commit.assert_not_called()
 
 
 # Test reindex_document_positions

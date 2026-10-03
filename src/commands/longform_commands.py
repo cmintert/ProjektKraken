@@ -10,6 +10,7 @@ All commands support undo/redo operations and return CommandResult objects.
 """
 
 import logging
+from copy import deepcopy
 from typing import Any, Dict
 
 from src.commands.base_command import BaseCommand, CommandResult
@@ -19,7 +20,82 @@ from src.services.db_service import DatabaseService
 logger = logging.getLogger(__name__)
 
 
-class MoveLongformEntryCommand(BaseCommand):
+class _LongformMetadataCommand(BaseCommand):
+    """Share exact, worker-captured metadata restoration across outline edits."""
+
+    table: str
+    row_id: str
+    doc_id: str
+    old_meta: dict[str, Any]
+
+    def __init__(self) -> None:
+        """Initialize snapshot state without retaining a database service."""
+        super().__init__()
+        self._metadata_before: longform_builder.LongformMetadataSnapshot | None = None
+
+    def _snapshot_before_execute(
+        self, db_service: DatabaseService
+    ) -> longform_builder.LongformMetadataSnapshot:
+        """Capture once on the worker; redo retains the original undo target."""
+        if self._metadata_before is not None:
+            return self._metadata_before
+        return longform_builder.capture_longform_metadata(
+            db_service.require_connection(), self.table, self.row_id, self.doc_id
+        )
+
+    def _snapshot_payload(self) -> dict[str, Any]:
+        """Include captured snapshots while leaving unexecuted requests unchanged."""
+        if self._metadata_before is None:
+            return {}
+        return {"metadata_before": deepcopy(self._metadata_before)}
+
+    def _load_metadata_snapshot(self, data: dict[str, Any]) -> None:
+        """Load a validated snapshot; old history retains its supplied metadata."""
+        if "metadata_before" not in data:
+            return
+        snapshot = data["metadata_before"]
+        if not isinstance(snapshot, dict):
+            raise ValueError("Invalid longform metadata snapshot")
+        metadata = snapshot.get("metadata")
+        present = snapshot.get("container_present")
+        if (
+            "metadata" not in snapshot
+            or (metadata is not None and not isinstance(metadata, dict))
+            or not isinstance(present, bool)
+            or (metadata is not None and not present)
+        ):
+            raise ValueError("Invalid longform metadata snapshot")
+        self._metadata_before = {
+            "metadata": deepcopy(metadata),
+            "container_present": present,
+        }
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """Restore the entire saved metadata, preserving absence and extra fields.
+
+        Args:
+            db_service: Worker-owned service inside the command transaction.
+        """
+        if not self._is_executed:
+            return
+        snapshot = self._metadata_before
+        if snapshot is None:
+            # Legacy history cannot reconstruct fields it never recorded.
+            snapshot = {
+                "metadata": deepcopy(self.old_meta),
+                "container_present": True,
+            }
+        longform_builder.restore_longform_metadata(
+            db_service.require_connection(),
+            self.table,
+            self.row_id,
+            snapshot,
+            self.doc_id,
+        )
+        self._is_executed = False
+
+
+class MoveLongformEntryCommand(_LongformMetadataCommand):
     """Command to move a longform entry to a new position.
 
     Stores old and new metadata for undo/redo support.
@@ -61,13 +137,10 @@ class MoveLongformEntryCommand(BaseCommand):
 
         """
         try:
-            if not db_service._connection:
-                db_service.connect()
-            assert db_service._connection is not None
-
+            metadata_before = self._snapshot_before_execute(db_service)
             logger.info(f"Executing MoveLongformEntry: {self.table}.{self.row_id}")
             longform_builder.insert_or_update_longform_meta(
-                db_service._connection,
+                db_service.require_connection(),
                 self.table,
                 self.row_id,
                 position=self.new_meta.get("position"),
@@ -76,6 +149,7 @@ class MoveLongformEntryCommand(BaseCommand):
                 title_override=self.new_meta.get("title_override"),
                 doc_id=self.doc_id,
             )
+            self._metadata_before = metadata_before
             self._is_executed = True
             return CommandResult(
                 success=True,
@@ -90,33 +164,6 @@ class MoveLongformEntryCommand(BaseCommand):
                 command_name="MoveLongformEntryCommand",
             )
 
-    def undo(self, db_service: DatabaseService) -> None:
-        """Undo the move by restoring old metadata.
-
-        Args:
-            db_service: The database service to operate on.
-
-        """
-        if not self._is_executed:
-            return
-
-        if not db_service._connection:
-            db_service.connect()
-        assert db_service._connection is not None
-
-        logger.info(f"Undoing MoveLongformEntry: {self.table}.{self.row_id}")
-        longform_builder.insert_or_update_longform_meta(
-            db_service._connection,
-            self.table,
-            self.row_id,
-            position=self.old_meta.get("position"),
-            parent_id=self.old_meta.get("parent_id"),
-            depth=self.old_meta.get("depth"),
-            title_override=self.old_meta.get("title_override"),
-            doc_id=self.doc_id,
-        )
-        self._is_executed = False
-
     def to_dict(self) -> dict:
         """Serialize command to dictionary."""
         return {
@@ -126,6 +173,7 @@ class MoveLongformEntryCommand(BaseCommand):
             "new_meta": self.new_meta,
             "doc_id": self.doc_id,
             "is_executed": self._is_executed,
+            **self._snapshot_payload(),
         }
 
     @classmethod
@@ -138,11 +186,12 @@ class MoveLongformEntryCommand(BaseCommand):
             new_meta=data["new_meta"],
             doc_id=data.get("doc_id", longform_builder.DOC_ID_DEFAULT),
         )
+        cmd._load_metadata_snapshot(data)
         cmd._is_executed = data.get("is_executed", False)
         return cmd
 
 
-class PromoteLongformEntryCommand(BaseCommand):
+class PromoteLongformEntryCommand(_LongformMetadataCommand):
     """Command to promote a longform entry (reduce depth).
 
     Stores old metadata for undo support.
@@ -181,17 +230,15 @@ class PromoteLongformEntryCommand(BaseCommand):
 
         """
         try:
-            if not db_service._connection:
-                db_service.connect()
-            assert db_service._connection is not None
-
+            metadata_before = self._snapshot_before_execute(db_service)
             logger.info(f"Executing PromoteLongformEntry: {self.table}.{self.row_id}")
             longform_builder.promote_item(
-                db_service._connection,
+                db_service.require_connection(),
                 self.table,
                 self.row_id,
                 self.doc_id,
             )
+            self._metadata_before = metadata_before
             self._is_executed = True
             return CommandResult(
                 success=True,
@@ -206,33 +253,6 @@ class PromoteLongformEntryCommand(BaseCommand):
                 command_name="PromoteLongformEntryCommand",
             )
 
-    def undo(self, db_service: DatabaseService) -> None:
-        """Undo the promote by restoring old metadata.
-
-        Args:
-            db_service: The database service to operate on.
-
-        """
-        if not self._is_executed:
-            return
-
-        if not db_service._connection:
-            db_service.connect()
-        assert db_service._connection is not None
-
-        logger.info(f"Undoing PromoteLongformEntry: {self.table}.{self.row_id}")
-        longform_builder.insert_or_update_longform_meta(
-            db_service._connection,
-            self.table,
-            self.row_id,
-            position=self.old_meta.get("position"),
-            parent_id=self.old_meta.get("parent_id"),
-            depth=self.old_meta.get("depth"),
-            title_override=self.old_meta.get("title_override"),
-            doc_id=self.doc_id,
-        )
-        self._is_executed = False
-
     def to_dict(self) -> dict:
         """Serialize command to dictionary."""
         return {
@@ -241,6 +261,7 @@ class PromoteLongformEntryCommand(BaseCommand):
             "old_meta": self.old_meta,
             "doc_id": self.doc_id,
             "is_executed": self._is_executed,
+            **self._snapshot_payload(),
         }
 
     @classmethod
@@ -252,11 +273,12 @@ class PromoteLongformEntryCommand(BaseCommand):
             old_meta=data["old_meta"],
             doc_id=data.get("doc_id", longform_builder.DOC_ID_DEFAULT),
         )
+        cmd._load_metadata_snapshot(data)
         cmd._is_executed = data.get("is_executed", False)
         return cmd
 
 
-class DemoteLongformEntryCommand(BaseCommand):
+class DemoteLongformEntryCommand(_LongformMetadataCommand):
     """Command to demote a longform entry (increase depth).
 
     Stores old metadata for undo support.
@@ -295,17 +317,15 @@ class DemoteLongformEntryCommand(BaseCommand):
 
         """
         try:
-            if not db_service._connection:
-                db_service.connect()
-            assert db_service._connection is not None
-
+            metadata_before = self._snapshot_before_execute(db_service)
             logger.info(f"Executing DemoteLongformEntry: {self.table}.{self.row_id}")
             longform_builder.demote_item(
-                db_service._connection,
+                db_service.require_connection(),
                 self.table,
                 self.row_id,
                 self.doc_id,
             )
+            self._metadata_before = metadata_before
             self._is_executed = True
             return CommandResult(
                 success=True,
@@ -320,33 +340,6 @@ class DemoteLongformEntryCommand(BaseCommand):
                 command_name="DemoteLongformEntryCommand",
             )
 
-    def undo(self, db_service: DatabaseService) -> None:
-        """Undo the demote by restoring old metadata.
-
-        Args:
-            db_service: The database service to operate on.
-
-        """
-        if not self._is_executed:
-            return
-
-        if not db_service._connection:
-            db_service.connect()
-        assert db_service._connection is not None
-
-        logger.info(f"Undoing DemoteLongformEntry: {self.table}.{self.row_id}")
-        longform_builder.insert_or_update_longform_meta(
-            db_service._connection,
-            self.table,
-            self.row_id,
-            position=self.old_meta.get("position"),
-            parent_id=self.old_meta.get("parent_id"),
-            depth=self.old_meta.get("depth"),
-            title_override=self.old_meta.get("title_override"),
-            doc_id=self.doc_id,
-        )
-        self._is_executed = False
-
     def to_dict(self) -> dict:
         """Serialize command to dictionary."""
         return {
@@ -355,6 +348,7 @@ class DemoteLongformEntryCommand(BaseCommand):
             "old_meta": self.old_meta,
             "doc_id": self.doc_id,
             "is_executed": self._is_executed,
+            **self._snapshot_payload(),
         }
 
     @classmethod
@@ -366,11 +360,12 @@ class DemoteLongformEntryCommand(BaseCommand):
             old_meta=data["old_meta"],
             doc_id=data.get("doc_id", longform_builder.DOC_ID_DEFAULT),
         )
+        cmd._load_metadata_snapshot(data)
         cmd._is_executed = data.get("is_executed", False)
         return cmd
 
 
-class RemoveLongformEntryCommand(BaseCommand):
+class RemoveLongformEntryCommand(_LongformMetadataCommand):
     """Command to remove an entry from the longform document.
 
     Stores old metadata for undo support.
@@ -409,17 +404,15 @@ class RemoveLongformEntryCommand(BaseCommand):
 
         """
         try:
-            if not db_service._connection:
-                db_service.connect()
-            assert db_service._connection is not None
-
+            metadata_before = self._snapshot_before_execute(db_service)
             logger.info(f"Executing RemoveLongformEntry: {self.table}.{self.row_id}")
             longform_builder.remove_from_longform(
-                db_service._connection,
+                db_service.require_connection(),
                 self.table,
                 self.row_id,
                 self.doc_id,
             )
+            self._metadata_before = metadata_before
             self._is_executed = True
             return CommandResult(
                 success=True,
@@ -434,33 +427,6 @@ class RemoveLongformEntryCommand(BaseCommand):
                 command_name="RemoveLongformEntryCommand",
             )
 
-    def undo(self, db_service: DatabaseService) -> None:
-        """Undo the removal by restoring old metadata.
-
-        Args:
-            db_service: The database service to operate on.
-
-        """
-        if not self._is_executed:
-            return
-
-        if not db_service._connection:
-            db_service.connect()
-        assert db_service._connection is not None
-
-        logger.info(f"Undoing RemoveLongformEntry: {self.table}.{self.row_id}")
-        longform_builder.insert_or_update_longform_meta(
-            db_service._connection,
-            self.table,
-            self.row_id,
-            position=self.old_meta.get("position"),
-            parent_id=self.old_meta.get("parent_id"),
-            depth=self.old_meta.get("depth"),
-            title_override=self.old_meta.get("title_override"),
-            doc_id=self.doc_id,
-        )
-        self._is_executed = False
-
     def to_dict(self) -> dict:
         """Serialize command to dictionary."""
         return {
@@ -469,6 +435,7 @@ class RemoveLongformEntryCommand(BaseCommand):
             "old_meta": self.old_meta,
             "doc_id": self.doc_id,
             "is_executed": self._is_executed,
+            **self._snapshot_payload(),
         }
 
     @classmethod
@@ -480,5 +447,6 @@ class RemoveLongformEntryCommand(BaseCommand):
             old_meta=data["old_meta"],
             doc_id=data.get("doc_id", longform_builder.DOC_ID_DEFAULT),
         )
+        cmd._load_metadata_snapshot(data)
         cmd._is_executed = data.get("is_executed", False)
         return cmd

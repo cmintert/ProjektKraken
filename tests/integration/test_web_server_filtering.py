@@ -66,8 +66,9 @@ def db_service(test_db_path):
     service._connection.commit()
 
     # Add to longform
-    insert_or_update_longform_meta(service._connection, "events", "e1", position=100.0)
-    insert_or_update_longform_meta(service._connection, "events", "e2", position=200.0)
+    with service.transaction() as conn:
+        insert_or_update_longform_meta(conn, "events", "e1", position=100.0)
+        insert_or_update_longform_meta(conn, "events", "e2", position=200.0)
 
     yield service
     service.close()

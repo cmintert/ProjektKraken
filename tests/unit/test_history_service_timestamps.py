@@ -36,7 +36,8 @@ def mock_db_service():
     # Mock transaction context manager
     db.transaction.return_value.__enter__.return_value = MagicMock()
     # Mock connection execute
-    db._connection = MagicMock()
+    db.is_connected.return_value = True
+    db.require_connection.return_value = MagicMock()
     return db
 
 
@@ -74,7 +75,7 @@ def test_save_command_timestamps(mock_db_service):
 
     mock_cursor = MagicMock()
     mock_cursor.fetchall.return_value = [mock_row]
-    mock_db_service._connection.execute.return_value = mock_cursor
+    mock_db_service.require_connection.return_value.execute.return_value = mock_cursor
 
     loaded_commands = service.load_recent_history()
 

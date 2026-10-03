@@ -333,9 +333,8 @@ def create_app(config: ServerConfig) -> FastAPI:
         try:
             allowed_ids = _resolve_filter(filter_json, db)
 
-            assert db._connection is not None, "Database not connected"
             sequence = build_longform_sequence(
-                db._connection, doc_id=doc_id, allowed_ids=allowed_ids
+                db.require_connection(), doc_id=doc_id, allowed_ids=allowed_ids
             )
 
             data = []
@@ -377,9 +376,8 @@ def create_app(config: ServerConfig) -> FastAPI:
         db = get_db_service(config)
         try:
             allowed_ids = _resolve_filter(filter_json, db)
-            assert db._connection is not None, "Database not connected"
             sequence = build_longform_sequence(
-                db._connection, doc_id=doc_id, allowed_ids=allowed_ids
+                db.require_connection(), doc_id=doc_id, allowed_ids=allowed_ids
             )
             toc = []
             for item in sequence:

@@ -164,11 +164,11 @@ class HistoryService:
             List of reconstructed command objects, ordered oldest to newest
         """
         try:
-            if not self.db_service._connection:
+            if not self.db_service.is_connected():
                 logger.warning("No database connection available")
                 return []
 
-            cursor = self.db_service._connection.execute(
+            cursor = self.db_service.require_connection().execute(
                 """
                 SELECT command_type, command_data, description, timestamp
                 FROM command_history
@@ -392,18 +392,18 @@ class HistoryService:
         try:
             stats: Dict[str, int] = {}
 
-            if not self.db_service._connection:
+            if not self.db_service.is_connected():
                 return stats
 
             # Count total commands
-            cursor = self.db_service._connection.execute(
+            cursor = self.db_service.require_connection().execute(
                 "SELECT COUNT(*) as count FROM command_history WHERE world_id = ?",
                 (self.world_id,),
             )
             stats["command_count"] = cursor.fetchone()["count"]
 
             # Count sessions
-            cursor = self.db_service._connection.execute(
+            cursor = self.db_service.require_connection().execute(
                 "SELECT COUNT(*) as count FROM edit_sessions WHERE world_id = ?",
                 (self.world_id,),
             )

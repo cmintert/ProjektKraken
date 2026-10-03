@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-03
-**Commit:** 2663554051d8217dba69fc32043275138b8afe91
+**Commit:** 7ddce53e917280589cebc113bb8e262ad10115af
 ---
 
 # Changelog
@@ -12,6 +12,22 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-10-03)* **Data-trust verification tracking (KRT-44)**: Recorded the
+  completed KRT-17 source commit and assigned the remaining packaged Windows
+  checklist to KRT-44, preserving the source/package verification distinction.
+
+- *(2026-10-03)* **Persistence boundaries (KRT-33)**: Added strict, thread-owned
+  connection access and removed private connection dependencies from production
+  callers. Fixed Longform CLI metadata lookup and preserved caller-owned
+  transactions across edits, undo and indexing. Added architecture guards,
+  rollback/reopen regressions, and documented persistence contracts.
+
+- *(2026-10-03)* **Longform undo and refresh (KRT-33)**: Capture complete metadata
+  in command history, restore absent/empty states and extra fields exactly, and
+  retain snapshots across restart and redo. Reject malformed metadata before
+  mutation. Keep refresh from committing caller-owned transactions; added
+  history/restart, legacy-history and two-connection WAL regressions.
 
 - *(2026-10-03)* **Dated raster refresh (KRT-17)**: Resolve reloaded raster
   layers at the existing playhead after snapshot deletion and undo, preventing

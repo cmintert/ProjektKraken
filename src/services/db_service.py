@@ -7,6 +7,7 @@ and maintainability.
 
 import logging
 import sqlite3
+import threading
 import time
 import uuid
 from collections.abc import Iterable
@@ -96,6 +97,7 @@ class DatabaseService:
         self.world_root = world_root
         self.migration_status: dict[str, Any] = {}
         self._connection: Optional[sqlite3.Connection] = None
+        self._connection_thread_id: int | None = None
         self._backup_service = None
 
         self._event_repo = event_repo or EventRepository()
@@ -116,6 +118,9 @@ class DatabaseService:
 
     def connect(self) -> None:
         """Establishes connection to the database."""
+        if self.is_connected():
+            self.require_connection()
+            return
         try:
             if self.read_only:
                 if self.db_path == ":memory:":
@@ -125,6 +130,7 @@ class DatabaseService:
                 self._connection.execute("PRAGMA query_only = ON;")
             else:
                 self._connection = sqlite3.connect(self.db_path)
+            self._connection_thread_id = threading.get_ident()
             self._connection.execute("PRAGMA foreign_keys = ON;")
             self._connection.row_factory = sqlite3.Row
             logger.debug("Database connection established.")
@@ -161,6 +167,7 @@ class DatabaseService:
             self._connection.close()
             self._connection = None
             logger.debug("Database connection closed.")
+        self._connection_thread_id = None
 
     def is_connected(self) -> bool:
         """Checks if the database connection is established.
@@ -171,17 +178,31 @@ class DatabaseService:
         """
         return self._connection is not None
 
-    def get_connection(self) -> Optional[sqlite3.Connection]:
+    def require_connection(self) -> sqlite3.Connection:
+        """Return the open connection on its owning thread without opening it.
+
+        Returns:
+            The active SQLite connection, whose transaction belongs to its caller.
+
+        Raises:
+            RuntimeError: If disconnected or called outside the owning thread.
+        """
+        if self._connection is None:
+            raise RuntimeError("Database is not connected")
+        if self._connection_thread_id != threading.get_ident():
+            raise RuntimeError("Database connection belongs to another thread")
+        return self._connection
+
+    def get_connection(self) -> sqlite3.Connection:
         """Gets the database connection, establishing it if necessary.
 
         Returns:
-            Optional[sqlite3.Connection]: The active connection, or None if
-                                          connection failed.
+            The active connection. Connection failures propagate to the caller.
 
         """
         if not self._connection:
             self.connect()
-        return self._connection
+        return self.require_connection()
 
     @property
     def map_repo(self) -> MapRepository:
@@ -227,43 +248,37 @@ class DatabaseService:
     @contextmanager
     def transaction(self) -> Iterator[sqlite3.Connection]:
         """Safe context manager for transactions."""
-        if not self._connection:
-            self.connect()
-        assert self._connection is not None
-        owns_transaction = not self._connection.in_transaction
+        connection = self.get_connection()
+        owns_transaction = not connection.in_transaction
         try:
             if owns_transaction:
-                self._connection.execute("BEGIN")
-            yield self._connection
+                connection.execute("BEGIN")
+            yield connection
             if owns_transaction:
-                self._connection.commit()
+                connection.commit()
         except Exception as e:
             if owns_transaction:
-                self._connection.rollback()
+                connection.rollback()
             if not getattr(e, "silent_transaction_rollback", False):
                 logger.error(f"Transaction rolled back due to error: {e}")
             raise
 
     def ensure_fresh_view(self) -> None:
-        """Ensures the connection sees the most recent data (refreshes snapshot).
+        """Checkpoint when idle without ending a caller-owned transaction.
 
-        This is critical in WAL mode if another connection has written data.
-        We use a two-pronged approach:
-        1. Commit any open transaction to release the snapshot.
-        2. Execute a WAL checkpoint to force visibility of changes.
+        Active transactions retain their snapshot until their owner ends them.
+        Later reads naturally see committed WAL changes. Disconnected services
+        remain disconnected; checkpoint failures are best-effort.
         """
-        if not self._connection:
+        if not self.is_connected():
             return
-
-        # First, close any open transaction
-        if self._connection.in_transaction:
-            self._connection.commit()
-
-        # Then force a WAL checkpoint to ensure visibility
+        connection = self.require_connection()
+        if connection.in_transaction:
+            return
         try:
-            self._connection.execute("PRAGMA wal_checkpoint(PASSIVE);")
-        except Exception:
-            pass  # Ignore errors, this is best-effort
+            connection.execute("PRAGMA wal_checkpoint(PASSIVE);")
+        except sqlite3.Error:
+            logger.debug("Idle WAL checkpoint unavailable", exc_info=True)
 
     # --------------------------------------------------------------------------
     # Event CRUD - Delegates to EventRepository

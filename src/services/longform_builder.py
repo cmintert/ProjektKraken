@@ -14,13 +14,17 @@ Key Features:
 
 All operations work with the attributes JSON column, loading and dumping
 in Python layer to maintain SQLite compatibility.
+
+Mutation helpers never commit or roll back. Callers must own a transaction,
+including when indexing missing records before building an export.
 """
 
 import json
 import logging
 import re
+from copy import deepcopy
 from sqlite3 import Connection
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple, TypedDict
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +36,13 @@ _DOC_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
 
 # Security: Whitelist of valid table names to prevent SQL injection
 VALID_TABLES = ("events", "entities")
+
+
+class LongformMetadataSnapshot(TypedDict):
+    """Exact document metadata and original container presence for undo."""
+
+    metadata: dict[str, Any] | None
+    container_present: bool
 
 
 def validate_doc_id(doc_id: str) -> str:
@@ -112,6 +123,118 @@ def _get_longform_meta(
     if not isinstance(lf_data, dict):
         return None
     return lf_data.get(doc_id)
+
+
+def get_longform_meta(
+    conn: Connection,
+    table: str,
+    row_id: str,
+    doc_id: str = DOC_ID_DEFAULT,
+) -> dict[str, Any]:
+    """Read detached metadata from a record's canonical attributes.
+
+    Args:
+        conn: An open SQLite connection owned by the caller.
+        table: The events or entities table.
+        row_id: Record identifier.
+        doc_id: Valid longform document identifier.
+
+    Returns:
+        Metadata for the document, or an empty dictionary if absent.
+
+    Raises:
+        ValueError: If the table or document identifier is invalid.
+    """
+    _validate_table_name(table)
+    validate_doc_id(doc_id)
+    row = conn.execute(
+        f"SELECT attributes FROM {table} WHERE id = ?", (row_id,)
+    ).fetchone()
+    if row is None:
+        return {}
+    meta = _get_longform_meta(_safe_json_loads(row["attributes"]), doc_id)
+    return meta if isinstance(meta, dict) else {}
+
+
+def _read_metadata_attributes(
+    conn: Connection, table: str, row_id: str, doc_id: str
+) -> dict[str, Any]:
+    """Read valid attributes without silently replacing malformed user data."""
+    _validate_table_name(table)
+    validate_doc_id(doc_id)
+    row = conn.execute(
+        f"SELECT attributes FROM {table} WHERE id = ?", (row_id,)
+    ).fetchone()
+    if row is None:
+        raise ValueError(f"Row {row_id} not found in {table}")
+    attrs = json.loads(row["attributes"])
+    if not isinstance(attrs, dict):
+        raise ValueError(f"Invalid attributes for {table}.{row_id}")
+    if "_longform" in attrs and not isinstance(attrs["_longform"], dict):
+        raise ValueError(f"Invalid longform container for {table}.{row_id}")
+    return attrs
+
+
+def capture_longform_metadata(
+    conn: Connection, table: str, row_id: str, doc_id: str = DOC_ID_DEFAULT
+) -> LongformMetadataSnapshot:
+    """Capture complete document metadata, preserving empty and absent states.
+
+    Args:
+        conn: Caller-owned connection, inside the command transaction.
+        table: The events or entities table.
+        row_id: Record identifier.
+        doc_id: Document whose metadata is captured.
+
+    Returns:
+        A detached snapshot suitable for command history serialization.
+
+    Raises:
+        ValueError: If identifiers, record attributes, or metadata are invalid.
+    """
+    attrs = _read_metadata_attributes(conn, table, row_id, doc_id)
+    container = attrs.get("_longform", {})
+    if doc_id in container and not isinstance(container[doc_id], dict):
+        raise ValueError(f"Invalid longform metadata for {table}.{row_id}")
+    return {
+        "metadata": container.get(doc_id),
+        "container_present": "_longform" in attrs,
+    }
+
+
+def restore_longform_metadata(
+    conn: Connection,
+    table: str,
+    row_id: str,
+    snapshot: LongformMetadataSnapshot,
+    doc_id: str = DOC_ID_DEFAULT,
+) -> None:
+    """Restore one document's exact metadata without ending the transaction.
+
+    Args:
+        conn: Caller-owned connection, inside the command transaction.
+        table: The events or entities table.
+        row_id: Record identifier.
+        snapshot: Previously captured document metadata and container presence.
+        doc_id: Document to restore; other document metadata is preserved.
+
+    Raises:
+        ValueError: If identifiers or current record attributes are invalid.
+    """
+    attrs = _read_metadata_attributes(conn, table, row_id, doc_id)
+    container = attrs.get("_longform", {})
+    if snapshot["metadata"] is None:
+        container.pop(doc_id, None)
+    else:
+        container[doc_id] = deepcopy(snapshot["metadata"])
+    if container or snapshot["container_present"]:
+        attrs["_longform"] = container
+    else:
+        attrs.pop("_longform", None)
+    conn.execute(
+        f"UPDATE {table} SET attributes = ? WHERE id = ?",
+        (json.dumps(attrs), row_id),
+    )
 
 
 def _set_longform_meta(
@@ -406,7 +529,6 @@ def insert_or_update_longform_meta(
         f"UPDATE {table} SET attributes = ? WHERE id = ?",
         (json.dumps(attrs), row_id),
     )
-    conn.commit()
     logger.debug(f"Updated longform metadata for {table}.{row_id}")
 
 
@@ -701,7 +823,6 @@ def remove_from_longform(
         f"UPDATE {table} SET attributes = ? WHERE id = ?",
         (json.dumps(attrs), row_id),
     )
-    conn.commit()
     logger.debug(f"Removed longform metadata from {table}.{row_id}")
 
 

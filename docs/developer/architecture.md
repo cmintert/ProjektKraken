@@ -82,6 +82,36 @@ Pass serializable snapshots such as dictionaries across thread boundaries. Do
 not pass live commands, database connections, widgets, or other thread-owned
 objects.
 
+### Persistence connection contracts
+
+`DatabaseService.require_connection()` returns an already-open SQLite connection
+only on the thread that opened it. Disconnected or foreign-thread access raises
+`RuntimeError`; it never opens a database. CLI and webserver operations open their
+own services before requesting a connection. `get_connection()` retains lazy
+opening for existing callers and checks ownership before returning the connection.
+
+Private `_connection` access belongs only in `DatabaseService` and repository
+internals. An AST regression guard covers all production layers, including aliases
+and reflective access. Raw connections remain deliberate inputs to persistence
+services such as search, tag filtering and Longform; they must not cross threads.
+
+Longform mutation helpers leave commit and rollback to their caller. Commands use
+the `BaseCommand` transaction; CLI indexing/export and worker indexing explicitly
+own service transactions. Nested operations join an existing transaction rather
+than committing it. Read metadata through `longform_builder.get_longform_meta()`;
+the canonical source is `attributes._longform`, not a separate structure table.
+
+Longform commands capture their complete document metadata on the worker immediately
+before their first successful execution. The serialized `metadata_before` snapshot
+distinguishes absent metadata, empty dictionaries, and original container presence.
+Undo restores that snapshot while preserving other documents and unrelated current
+attributes; redo retains the original undo target. Older history without a snapshot
+falls back to the recorded `old_meta` and cannot recover fields never recorded.
+
+`ensure_fresh_view()` never commits, rolls back, or checkpoints an active transaction.
+Its owner controls when the snapshot ends. Idle calls may perform a best-effort WAL
+checkpoint; subsequent reads naturally see newly committed data.
+
 ### Analysis Suite
 
 Deterministic validation and temporal analysis execute on the database worker.
