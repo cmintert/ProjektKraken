@@ -10,6 +10,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, cast
 
 from PySide6.QtCore import (
+    QAbstractItemModel,
     QEvent,
     QModelIndex,
     QPersistentModelIndex,
@@ -21,7 +22,7 @@ from PySide6.QtCore import (
     Signal,
     Slot,
 )
-from PySide6.QtGui import QColor, QPainter
+from PySide6.QtGui import QColor, QMouseEvent, QPainter
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QCheckBox,
@@ -198,18 +199,20 @@ class TemporalLayerDelegate(QStyledItemDelegate):
     def editorEvent(
         self,
         event: QEvent,
-        _model: object,
+        model: QAbstractItemModel,
         option: QStyleOptionViewItem,
         index: ModelIndex,
     ) -> bool:
-        """Toggle a vector-feature lock when its inline icon is clicked."""
-        if event.type() != QEvent.Type.MouseButtonRelease:
-            return False
-        position = getattr(event, "pos", lambda: QPoint())()
-        if self._lock_rect(option, index).contains(position):
+        """Handle inline lock clicks and retain Qt's checkbox interaction."""
+        if (
+            event.type() == QEvent.Type.MouseButtonRelease
+            and isinstance(event, QMouseEvent)
+            and event.button() == Qt.MouseButton.LeftButton
+            and self._lock_rect(option, index).contains(event.position().toPoint())
+        ):
             self._on_lock_toggled(index)
             return True
-        return False
+        return super().editorEvent(event, model, option, index)
 
 
 class MapLayerPanel(QWidget):

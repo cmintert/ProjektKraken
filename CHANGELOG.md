@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-03
-**Commit:** d78362c8bc420faa4413d0e1bcd6f93056f2c274
+**Commit:** 7a05fd93368f38c5a6d327c711efe49fbd221106
 ---
 
 # Changelog
@@ -19,6 +19,10 @@ All notable changes to this project will be documented in this file.
   date-anchor behavior, and added editor/navigation regression coverage.
 
 ### Fixed
+
+- *(2026-10-03)* **Map layer visibility controls**: Restore checkbox clicks and
+  Space-key toggling in the layer panel while preserving inline feature locks.
+  Added mouse, keyboard, and lock-click regression coverage.
 
 - *(2026-10-03)* **Data-trust verification tracking (KRT-44)**: Recorded the
   completed KRT-17 source commit and assigned the remaining packaged Windows

@@ -9,7 +9,13 @@ from unittest.mock import MagicMock
 import pytest
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QImage, QPixmap
-from PySide6.QtWidgets import QGraphicsPixmapItem, QMenu
+from PySide6.QtWidgets import (
+    QApplication,
+    QGraphicsPixmapItem,
+    QMenu,
+    QStyle,
+    QStyleOptionViewItem,
+)
 
 import src.gui.widgets.map.interaction_handler as interaction_handler_module
 from src.app.constants import (
@@ -20,6 +26,7 @@ from src.core.map import MapLayerNode
 from src.gui.widgets.map.interaction_handler import InteractionHandler
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 from src.gui.widgets.map.map_layer_model import MapLayerModel
+from src.gui.widgets.map.map_layer_panel import MapLayerPanel
 
 
 def _setup_view_with_marker(qtbot):
@@ -73,6 +80,78 @@ def _setup_view_with_marker(qtbot):
     view.set_layer_model(model)
 
     return view, model, marker_id
+
+
+@pytest.mark.ci_fast
+@pytest.mark.parametrize("layer_type", ["group", "marker", "raster"])
+@pytest.mark.parametrize("interaction", ["mouse", "keyboard"])
+def test_panel_checkbox_hides_and_shows_layer(qtbot, layer_type, interaction):
+    """Exercise real tree input through the proxy and custom delegate."""
+    node = MapLayerNode(name="Test layer", layer_type=layer_type)
+    root = MapLayerNode(name="Root", layer_type="group", children=[node])
+    model = MapLayerModel(root)
+    panel = MapLayerPanel()
+    qtbot.addWidget(panel)
+    panel.set_model(model)
+    panel.resize(650, 650)
+    panel.show()
+    tree = panel._tree
+    index = panel._proxy_model.index(0, 0)
+    tree.setCurrentIndex(index)
+    tree.setFocus()
+    changes = []
+    model.layer_visibility_changed.connect(
+        lambda node_id, visible: changes.append((node_id, visible))
+    )
+
+    for expected in (False, True):
+        # Visibility refreshes invalidate the filter proxy's previous indexes.
+        index = panel._proxy_model.index(0, 0)
+        tree.setCurrentIndex(index)
+        if interaction == "keyboard":
+            qtbot.keyClick(tree, Qt.Key.Key_Space)
+        else:
+            # Separate clicks so Qt does not interpret the second as a double click.
+            qtbot.wait(QApplication.doubleClickInterval() + 10)
+            option = QStyleOptionViewItem()
+            option.initFrom(tree)
+            option.rect = tree.visualRect(index)
+            option.widget = tree
+            tree.itemDelegate().initStyleOption(option, index)
+            checkbox = tree.style().subElementRect(
+                QStyle.SubElement.SE_ItemViewItemCheckIndicator, option, tree
+            )
+            assert not checkbox.isEmpty()
+            qtbot.mouseClick(
+                tree.viewport(), Qt.MouseButton.LeftButton, pos=checkbox.center()
+            )
+        assert node.visible is expected
+        assert changes[-1] == (node.id, expected)
+
+
+@pytest.mark.ci_fast
+def test_panel_inline_lock_preserves_visibility(qtbot):
+    """Only a left click on the lock icon changes the feature lock."""
+    node = MapLayerNode(name="Test marker", layer_type="marker")
+    root = MapLayerNode(name="Root", layer_type="group", children=[node])
+    model = MapLayerModel(root)
+    panel = MapLayerPanel()
+    qtbot.addWidget(panel)
+    panel.set_model(model)
+    panel.resize(650, 650)
+    panel.show()
+    qtbot.wait(10)
+    tree = panel._tree
+    index = panel._proxy_model.index(0, 0)
+    option = QStyleOptionViewItem()
+    option.rect = tree.visualRect(index)
+    lock = tree.itemDelegate()._lock_rect(option, index).center().toPoint()
+
+    qtbot.mouseClick(tree.viewport(), Qt.MouseButton.RightButton, pos=lock)
+    assert not node.locked
+    qtbot.mouseClick(tree.viewport(), Qt.MouseButton.LeftButton, pos=lock)
+    assert node.locked
+    assert node.visible
 
 
 class TestViewLayerVisibility:
