@@ -40,3 +40,37 @@ def staged_output(
             shutil.rmtree(previous)
         else:
             os.replace(stage, destination)
+
+
+@contextmanager
+def staged_markdown_output(
+    destination: Path, *, cancelled: Callable[[], bool] = lambda: False
+) -> Iterator[tuple[Path, Path]]:
+    """Publish Markdown and its image folder, rolling back on ordinary failures."""
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    assets = destination.with_name(destination.name + ".assets")
+    with tempfile.TemporaryDirectory(
+        prefix=".kraken-transfer-", dir=destination.parent
+    ) as temporary:
+        root = Path(temporary)
+        output = root / destination.name
+        images = root / assets.name
+        yield output, images
+        if cancelled():
+            raise InterruptedError("Transfer cancelled. Existing output is unchanged.")
+        previous = root / "previous-assets"
+        had_assets = assets.exists()
+        published_assets = False
+        try:
+            if images.exists():
+                if had_assets:
+                    assets.rename(previous)
+                images.rename(assets)
+                published_assets = True
+            os.replace(output, destination)
+        except BaseException:
+            if published_assets:
+                shutil.rmtree(assets)
+            if previous.exists():
+                previous.rename(assets)
+            raise

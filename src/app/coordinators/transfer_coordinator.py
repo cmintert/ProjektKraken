@@ -372,6 +372,7 @@ class TransferCoordinator(QObject):
                 "export",
                 destination=destination,
                 format=request["format"] if request["tab"] == 1 else "world",
+                options=request["options"] if request["tab"] == 1 else {},
                 prepared=self._prepared,
                 world=self._world,
             )

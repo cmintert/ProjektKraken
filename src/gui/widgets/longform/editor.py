@@ -8,6 +8,7 @@ Provides a split-view interface for editing longform documents:
 import html
 import logging
 import os
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from PySide6.QtCore import QSize, Qt, Signal, Slot
@@ -271,6 +272,9 @@ class LongformEditorWidget(QWidget):
         """
         self._sequence = sequence
         self.outline.load_sequence(sequence)
+        self.content.setSearchPaths(
+            [str(Path(self.db_path).resolve().parent)] if self.db_path else []
+        )
         self.content.load_content(sequence)
 
         # Toggle empty state

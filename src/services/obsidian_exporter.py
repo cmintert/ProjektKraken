@@ -106,17 +106,16 @@ class ObsidianExporter:
         entities = self._db.get_all_entities()
         events = self._db.get_all_events()
 
-        # Build ID-to-name map for wiki-link resolution
-        id_to_name: Dict[str, str] = {}
-        for entity in entities:
-            # entities are objects, not dicts
-            id_to_name[entity.id] = entity.name
-        for event in events:
-            # events are objects, not dicts
-            id_to_name[event.id] = event.name
-
-        # Track used filenames to handle duplicates
+        # Allocate every filename before resolving links so sanitized names and
+        # duplicate suffixes point to the notes actually written.
         used_filenames: Dict[str, int] = {}
+        filenames = {
+            item.id: self._get_unique_filename(item.name, used_filenames)
+            for item in [*entities, *events]
+        }
+        id_to_name = {
+            item_id: Path(filename).stem for item_id, filename in filenames.items()
+        }
 
         # Export entities
         for entity in entities:
@@ -128,7 +127,7 @@ class ObsidianExporter:
                     else []
                 )
                 content = self._build_entity_markdown(entity, relations)
-                filename = self._get_unique_filename(entity.name, used_filenames)
+                filename = filenames[entity.id]
                 filepath = (output_dir / filename).resolve()
 
                 # Security Check: Prevent traversal in filename
@@ -155,7 +154,7 @@ class ObsidianExporter:
                     else []
                 )
                 content = self._build_event_markdown(event, relations)
-                filename = self._get_unique_filename(event.name, used_filenames)
+                filename = filenames[event.id]
                 filepath = (output_dir / filename).resolve()
 
                 # Security Check: Prevent traversal in filename
@@ -192,14 +191,16 @@ class ObsidianExporter:
         sanitized = self._sanitize_filename(name)
         base_name = sanitized[: self.MAX_FILENAME_LENGTH]
 
-        if base_name not in used_filenames:
-            used_filenames[base_name] = 1
-            return f"{base_name}.md"
-
-        # Increment counter for duplicates
-        used_filenames[base_name] += 1
-        count = used_filenames[base_name]
-        return f"{base_name} ({count}).md"
+        # Windows names are case-insensitive, and an authored name may already
+        # contain a suffix allocated to another note. Reserve actual stems.
+        candidate = base_name
+        count = 1
+        reserved = {stem.casefold() for stem in used_filenames}
+        while candidate.casefold() in reserved:
+            count += 1
+            candidate = f"{base_name} ({count})"
+        used_filenames[candidate] = 1
+        return f"{candidate}.md"
 
     def _sanitize_filename(self, name: str) -> str:
         """Remove invalid characters from filename.

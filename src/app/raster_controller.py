@@ -318,7 +318,7 @@ class RasterController(QObject):
 
         for meta in raster_metas:
             node_id = meta.get("node_id", "")
-            file_path = meta.get("file_path", "")
+            file_path = self._find_best_snapshot_path(meta, self._current_lore_date)
             abs_path = str(Path(world_root) / file_path)
             logger.debug(
                 "load_raster_layers: loading node_id=%s file=%s abs=%s",
@@ -372,7 +372,7 @@ class RasterController(QObject):
             view._raster_items[node_id] = item
             view.graphics_scene.addItem(item)
 
-            # Record base file as the currently displayed snapshot
+            # Metadata reloads must display the state at the existing playhead.
             self._current_snapshot_by_node[node_id] = abs_path
 
             logger.info(

@@ -42,6 +42,11 @@ class FeatureGeometryCoordinator(QObject):
         self._session: dict[str, Any] | None = None
         self._pending_command_id: str | None = None
 
+    @property
+    def is_active(self) -> bool:
+        """Whether an unfinished geometry working copy needs resolution."""
+        return self._session is not None
+
     def bind_ui(self) -> None:
         """Connect main-thread snapshots, playhead changes, and command effects."""
         if self._bound:

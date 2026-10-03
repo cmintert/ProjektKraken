@@ -22,6 +22,7 @@ TRAJECTORY_VERSION = 2
 RELATION_VERSION = 3
 LEGACY_POINT_FIELDS = 3
 COORDINATE_FIELDS = 2
+LEGACY_FOREIGN_KEY_TABLES = ("markers", "event_tags", "entity_tags")
 LEGACY_ADDITIONS = {
     "tags": {"color": "TEXT"},
     "command_history": {"timestamp": "REAL NOT NULL DEFAULT 0.0"},
@@ -144,10 +145,73 @@ def validate_structure(conn: sqlite3.Connection, *, legacy: bool) -> None:
                 column not in names or details != reference["columns"][column]
                 for column, details in contract["columns"].items()
             )
-            or contract["foreign_keys"] != reference["foreign_keys"]
+            or (
+                contract["foreign_keys"] != reference["foreign_keys"]
+                and not (
+                    legacy
+                    and table in LEGACY_FOREIGN_KEY_TABLES
+                    and not contract["foreign_keys"]
+                )
+            )
             or contract["unique_keys"] != reference["unique_keys"]
         ):
             raise MigrationError(f"Unsupported column or constraint layout: {table}")
+
+
+def legacy_foreign_key_tables(conn: sqlite3.Connection) -> list[str]:
+    """Identify supported legacy tables requiring a constraint rebuild."""
+    return [
+        table
+        for table in LEGACY_FOREIGN_KEY_TABLES
+        if columns(conn, table) and not _table_contract(conn, table)["foreign_keys"]
+    ]
+
+
+def _restore_legacy_foreign_keys(conn: sqlite3.Connection) -> None:
+    """Rebuild known legacy tables inside the caller's backed-up transaction.
+
+    Foreign-key enforcement must be disabled before the transaction so dropping
+    markers cannot cascade into existing trajectories or dated geometry.
+    """
+    for table in legacy_foreign_key_tables(conn):
+        if conn.execute("PRAGMA foreign_keys").fetchone()[0]:
+            raise MigrationError("Constraint rebuild requires migration isolation")
+        for target, column, key, *_ in reference_contracts()[table]["foreign_keys"]:
+            if conn.execute(
+                f'SELECT 1 FROM "{table}" AS child WHERE NOT EXISTS '
+                f'(SELECT 1 FROM "{target}" WHERE "{key}"=child."{column}") '
+                "LIMIT 1"
+            ).fetchone():
+                raise MigrationError(
+                    f"Legacy {table} contains orphan {column} references"
+                )
+        objects = conn.execute(
+            "SELECT sql FROM sqlite_master WHERE tbl_name=? "
+            "AND type IN ('index','trigger') AND sql IS NOT NULL",
+            (table,),
+        ).fetchall()
+        statement = next(
+            sql
+            for sql in schema_statements()
+            if f"CREATE TABLE IF NOT EXISTS {table} (" in sql
+        )
+        temporary = f"_migration_{table}"
+        conn.execute(
+            statement.replace(
+                f"CREATE TABLE IF NOT EXISTS {table} (",
+                f'CREATE TABLE "{temporary}" (',
+            )
+        )
+        names = ", ".join(
+            f'"{name}"' for name in _table_contract(conn, table)["columns"]
+        )
+        conn.execute(
+            f'INSERT INTO "{temporary}" ({names}) SELECT {names} FROM "{table}"'
+        )
+        conn.execute(f'DROP TABLE "{table}"')
+        conn.execute(f'ALTER TABLE "{temporary}" RENAME TO "{table}"')
+        for row in objects:
+            conn.execute(row[0])
 
 
 def structural_compatibility(conn: sqlite3.Connection) -> None:
@@ -161,6 +225,7 @@ def structural_compatibility(conn: sqlite3.Connection) -> None:
         for name, definition in additions.items():
             if name not in existing:
                 conn.execute(f'ALTER TABLE "{table}" ADD COLUMN {name} {definition}')
+    _restore_legacy_foreign_keys(conn)
     for statement in statements:
         if "CREATE TABLE" not in statement:
             conn.execute(statement)

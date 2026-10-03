@@ -305,6 +305,7 @@ class EditorCoordinator(BaseCoordinator):
             pass
 
         refs = check_entity_raster_refs(entity_id, maps_data)
+        commands: list[BaseCommand] = []
 
         if refs:
             map_names: Dict[str, str] = {
@@ -362,10 +363,16 @@ class EditorCoordinator(BaseCoordinator):
                         new_mapping=new_vem,
                         old_mapping=old_vem if isinstance(old_vem, dict) else {},
                     )
-                    self.command_requested.emit(raster_cmd)
+                    commands.append(raster_cmd)
 
         delete_cmd = DeleteEntityCommand(entity_id)
-        self.command_requested.emit(delete_cmd)
+        if commands:
+            commands.append(delete_cmd)
+            self.command_requested.emit(
+                CompositeCommand(commands, "Delete entity and remove raster references")
+            )
+        else:
+            self.command_requested.emit(delete_cmd)
 
     @Slot(str, str)
     def on_item_delete_requested(self, item_type: str, item_id: str) -> None:

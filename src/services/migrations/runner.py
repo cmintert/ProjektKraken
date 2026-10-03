@@ -178,12 +178,20 @@ def prepare_database(
     recovery: Path | None = None
     owns_upgrade = False
     step = "inspection"
+    restore_foreign_keys = False
     try:
         status = inspect_database(conn)
         if read_only or status["detected_version"] == steps.CURRENT_VERSION:
             return status
         if conn.in_transaction:
             raise MigrationError("Cannot upgrade inside an existing transaction")
+        if (
+            status["detected_version"] == 0
+            and steps.legacy_foreign_key_tables(conn)
+            and conn.execute("PRAGMA foreign_keys").fetchone()[0]
+        ):
+            conn.execute("PRAGMA foreign_keys=OFF")
+            restore_foreign_keys = True
         step = "writer_lock"
         # BEGIN IMMEDIATE excludes competing writers but allows the read connection
         # needed by SQLite backup in both rollback-journal and WAL databases.
@@ -250,3 +258,6 @@ def prepare_database(
             recovery_path=recovery_path,
             record_ids=record_ids,
         ) from exc
+    finally:
+        if restore_foreign_keys:
+            conn.execute("PRAGMA foreign_keys=ON")

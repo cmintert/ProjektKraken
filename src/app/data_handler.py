@@ -544,7 +544,9 @@ class DataHandler(QObject):
                 "SetRasterNotesCommand",
             }
             if (
-                "Map" in command_name or "Layer" in command_name
+                "Map" in command_name
+                or "Layer" in command_name
+                or result.data.get("maps_changed")
             ) and command_name not in _NO_RELOAD_LAYER_CMDS:
                 logger.debug("[DataHandler] Emitting reload_maps")
                 self.reload_maps.emit()

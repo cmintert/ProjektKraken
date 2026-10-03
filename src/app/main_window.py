@@ -1057,6 +1057,13 @@ class MainWindow(QMainWindow):
         Saves window geometry/state and strictly cleans up worker thread. Also checks
         for unsaved changes.
         """
+        if self.backup_coordinator.restore_in_progress:
+            event.ignore()
+            return
+        if self.backup_coordinator.restore_shutdown_complete:
+            # The restore coordinator already resolved drafts and stopped resources.
+            event.accept()
+            return
         if (
             hasattr(self, "map_handler")
             and self.map_handler.has_pending_raster_strokes()

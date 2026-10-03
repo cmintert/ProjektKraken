@@ -25,6 +25,11 @@ except ImportError:
 
 from src.core.backup_config import BackupConfig
 from src.core.paths import get_backup_directory
+from src.services.database_restore_service import (
+    DatabaseRestoreService,
+    RestoreResult,
+    snapshot_database,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -154,12 +159,7 @@ if HAS_QT:
 
             try:
                 # Copy database file
-                shutil.copy2(self.db_path, temp_path)
-
-                # Verify the temp file is a valid SQLite database
-                conn = sqlite3.connect(str(temp_path))
-                conn.execute("PRAGMA integrity_check")
-                conn.close()
+                snapshot_database(self.db_path, temp_path)
 
                 # Atomically rename temp file to final backup
                 temp_path.replace(self.backup_path)
@@ -178,30 +178,10 @@ if HAS_QT:
             """Performs the restore operation."""
             self.backup_progress.emit("Restoring from backup...")
 
-            # Verify backup file is valid
-            conn = sqlite3.connect(str(self.backup_path))
-            conn.execute("PRAGMA integrity_check")
-            conn.close()
-
-            # Create temporary file
-            temp_path = self.db_path.parent / f".{self.db_path.name}.tmp"
-
-            try:
-                # Copy backup to temp location
-                shutil.copy2(self.backup_path, temp_path)
-
-                # Atomically replace current database
-                temp_path.replace(self.db_path)
-
-                self.backup_progress.emit("Restore completed successfully")
-                self.backup_completed.emit(True, "Database restored successfully")
-
-            except Exception:
-                # Intentionally bare: Clean up temp file on error, then re-raise
-                # for caller to handle (cleanup-only exception handler)
-                if temp_path.exists():
-                    temp_path.unlink()
-                raise
+            result = DatabaseRestoreService().restore(
+                self.backup_path, self.db_path, self.backup_path.parent
+            )
+            self.backup_completed.emit(result.success, result.error or "Restore completed")
 
     BackupWorker: Any = QtBackupWorker
 
@@ -234,6 +214,7 @@ class BackupService:
         self._auto_backup_timer: Optional[QTimer] = None
         self._metadata_cache: List[BackupMetadata] = []
         self._current_db_path: Optional[Path] = None
+        self.last_restore_result = RestoreResult()
 
         # Ensure backup directory exists at service startup
         self._ensure_backup_directory_exists()
@@ -337,7 +318,7 @@ class BackupService:
             temp_path = backup_path.parent / f".{backup_path.name}.tmp"
 
             # Copy database file
-            shutil.copy2(db_path, temp_path)
+            snapshot_database(db_path, temp_path)
 
             # Verify backup integrity
             if self.config.verify_after_backup:
@@ -391,7 +372,13 @@ class BackupService:
         Returns:
             bool: True if restore was successful, False otherwise.
 
+        Note:
+            All clients of the target database must be closed before calling.
+            The GUI coordinator handles shutdown and restart. The outcome's
+            verified safety snapshot is available in ``last_restore_result``.
+
         """
+        self.last_restore_result = RestoreResult(error="Restore has not completed")
         if target_path is None:
             target_path = self._current_db_path
 
@@ -403,66 +390,16 @@ class BackupService:
             logger.error(f"Backup file not found: {backup_path}")
             return False
 
-        temp_path = None  # Initialize to None for cleanup handling
-
-        try:
-            # Security Check: Ensure backup path is within authorized backup directory
-            # Resolve paths to handle symlinks and relative paths
-            resolved_backup = backup_path.resolve()
-
-            # Get authorized backup directory (dynamically resolved)
-            # Use the configured backup directory if available, otherwise default
-            backup_dir = (
-                self.config.backup_dir
-                if self.config.backup_dir
-                else get_backup_directory()
-            ).resolve()
-
-            # Check if backup file is within the backup directory
-            if not resolved_backup.is_relative_to(backup_dir):
-                msg = (
-                    f"Security Violation: Path '{resolved_backup}' is not allowed. "
-                    f"It must be inside '{backup_dir}'."
-                )
-                logger.error(msg)
-                raise ValueError(msg)
-
-            # Verify backup integrity
-            if not self._verify_backup_file(backup_path):
-                logger.error("Backup verification failed")
-                return False
-
-            # Create safety backup of current database
-            if target_path.exists():
-                from datetime import datetime
-
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                safety_backup = target_path.parent / f"pre_restore_{timestamp}.kraken"
-                shutil.copy2(target_path, safety_backup)
-                logger.info(f"Created safety backup: {safety_backup}")
-
-            # Create temporary file
-            temp_path = target_path.parent / f".{target_path.name}.tmp"
-
-            # Copy backup to temp location
-            shutil.copy2(backup_path, temp_path)
-
-            # Atomically replace current database
-            temp_path.replace(target_path)
-
-            logger.info(f"Database restored from: {backup_path}")
-            return True
-
-        except Exception as e:
-            # Re-raise security violations (ValueError) to be handled by caller/UI
-            if isinstance(e, ValueError):
-                raise
-
-            logger.error(f"Failed to restore backup: {e}", exc_info=True)
-            # Clean up temp file if exists
-            if temp_path and temp_path.exists():
-                temp_path.unlink()
-            return False
+        directory = self.config.backup_dir or get_backup_directory()
+        if not backup_path.resolve().is_relative_to(directory.resolve()):
+            raise ValueError(
+                "Security Violation: Backup must be inside the configured "
+                "backup directory"
+            )
+        self.last_restore_result = DatabaseRestoreService().restore(
+            backup_path, target_path, directory
+        )
+        return self.last_restore_result.success
 
     def list_backups(
         self, backup_type: Optional[BackupType] = None

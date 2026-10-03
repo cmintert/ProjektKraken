@@ -16,11 +16,12 @@ from src.core.events import Event
 from src.core.transfer import EXCHANGE_VERSION, LORE_KINDS
 from src.services.db_service import DatabaseService
 from src.services.longform_builder import build_longform_sequence
+from src.services.markdown_assets import copy_markdown_images, markdown_image_warnings
 from src.services.obsidian_exporter import ObsidianExporter
 from src.services.repositories.transfer_repository import lore_data, revision, snapshot
 from src.services.transfer_document import document_snapshot, write_docx, write_pdf
 from src.services.transfer_exchange import csv_text, fingerprint, load_sources
-from src.services.transfer_files import staged_output
+from src.services.transfer_files import staged_markdown_output, staged_output
 from src.services.transfer_import import prepare_import
 from src.services.world_transfer import export_world, import_world, inspect_package
 
@@ -143,6 +144,15 @@ class TransferWorker(QObject):
             "revision": revision(state),
             "warnings": warnings,
         }
+        if request["format"] == "notes":
+            world_path = request.get("world", {}).get("path", "")
+            for record in [*data["entities"], *data["events"]]:
+                warnings.extend(
+                    markdown_image_warnings(
+                        str(record.get("description", "")),
+                        Path(world_path) if world_path else None,
+                    )
+                )
         if request["format"] in {"markdown", "pdf", "docx"}:
             sequence = build_longform_sequence(connection)
             if not sequence:
@@ -160,6 +170,21 @@ class TransferWorker(QObject):
         destination = Path(request["destination"])
         key = request["format"]
         prepared = request["prepared"]
+        world_path = request.get("world", {}).get("path", "")
+        world_root = Path(world_path) if world_path else None
+        if key == "markdown":
+            with staged_markdown_output(
+                destination, cancelled=self.cancelled.is_set
+            ) as (output, images):
+                content = copy_markdown_images(
+                    prepared["document"]["markdown"],
+                    world_root,
+                    images,
+                    destination.name + ".assets",
+                    enabled=bool(request["options"].get("images", True)),
+                )
+                output.write_text(content, encoding="utf-8")
+            return {"path": str(destination), "message": "Export complete."}
         if key == "world":
             if revision(snapshot(connection)) != prepared["revision"]:
                 raise ValueError("World data changed. Review the export again.")
@@ -192,10 +217,14 @@ class TransferWorker(QObject):
                     ).export_to_folder(output)
                     if not note_result.success:
                         raise ValueError("\n".join(note_result.errors))
-                elif key == "markdown":
-                    output.write_text(
-                        prepared["document"]["markdown"], encoding="utf-8"
-                    )
+                    for note in output.glob("*.md"):
+                        content = copy_markdown_images(
+                            note.read_text(encoding="utf-8"),
+                            world_root,
+                            output / "assets",
+                            "assets",
+                        )
+                        note.write_text(content, encoding="utf-8")
                 elif key == "docx":
                     write_docx(prepared["document"], output)
                 elif key == "pdf":

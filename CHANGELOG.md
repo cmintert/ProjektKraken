@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-01
-**Commit:** d79f10504e23a78dce8a506bc851e9ced886e3cc
+**Last Updated:** 2026-10-03
+**Commit:** 2663554051d8217dba69fc32043275138b8afe91
 ---
 
 # Changelog
@@ -12,6 +12,48 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-10-03)* **Dated raster refresh (KRT-17)**: Resolve reloaded raster
+  layers at the existing playhead after snapshot deletion and undo, preventing
+  the base image from appearing until the playhead moves. Cover deletion,
+  undo and redo with file-backed snapshot data and an unmoved playhead.
+
+- *(2026-10-03)* **Backup and restore safety (KRT-17)**: Include committed WAL
+  data in verified backups and safety snapshots. Resolve pending edits, drain
+  queued work and stop database clients before offline restoration; preserve
+  original data on failure and report the actual recovery outcome.
+
+- *(2026-10-03)* **Portable Markdown exports (KRT-17)**: Copy local images
+  beside Longform documents and into note vaults, resolve relation links to
+  allocated filenames, prevent filename collisions and preserve previous
+  output when publication fails. Updated user guidance and recorded source
+  walkthrough evidence, regression coverage and exported verification samples.
+
+- *(2026-10-03)* **Raster snapshot refresh (KRT-17)**: Reload raster layers
+  at the current timeline playhead after snapshot deletion and undo/redo,
+  instead of showing the base state until the playhead moves.
+
+- *(2026-10-03)* **Entity deletion with raster references (KRT-17)**: Group
+  reference removal and entity deletion into one undoable operation, so one undo
+  restores the palette connection as well as the entity. Refresh affected map
+  metadata and cover cancellation, both deletion choices, undo and redo through
+  the queued command pipeline.
+
+- *(2026-10-03)* **Longform local image preview (KRT-17)**: Resolve relative
+  description images from the active world directory instead of the process
+  working directory. Cover PNG pixels and WebP resource bytes in worlds whose
+  paths contain spaces.
+
+- *(2026-10-03)* **Markdown export confirmation (KRT-17)**: Forward document
+  options when creating reviewed output, fixing the `'options'` error that
+  blocked Longform Markdown exports. Cover the dialog and coordinator path
+  with images enabled and disabled.
+
+- *(2026-10-03)* **Legacy world constraints (KRT-43)**: Safely rebuild known
+  unversioned marker and tag tables missing foreign keys, after a verified
+  recovery backup. Preserve dependent map state, restore deletion cascades,
+  reject orphan references, and roll back failed upgrades atomically. Versioned
+  worlds retain strict validation; read-only opens do not upgrade.
 
 - *(2026-10-01)* **Dependency authority (KRT-34)**: Consolidated runtime and
   optional dependency declarations in project metadata, generated secondary pip

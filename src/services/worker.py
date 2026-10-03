@@ -57,6 +57,7 @@ class DatabaseWorker(QObject):
 
     # Signals
     initialized = Signal(bool)  # Success/Fail
+    cleanup_finished = Signal(dict)
     migration_report = Signal(dict)
     events_loaded = Signal(list)  # List[Event]
     entities_loaded = Signal(list)  # List[Entity]
@@ -300,20 +301,24 @@ class DatabaseWorker(QObject):
 
         Should be called before the thread is terminated.
         """
+        errors: list[str] = []
         try:
             self._search_service = None
             if self.history_service:
                 self.history_service.end_session()
                 self.history_service = None
+        except Exception as exc:
+            logger.exception("History cleanup failed")
+            errors.append(str(exc))
+        try:
             if self.db_service:
                 self.db_service.close()
+                self.db_service = None
                 logger.info("Database connection closed in worker cleanup.")
-        except sqlite3.Error as e:
-            logger.error(f"Database error during cleanup ({type(e).__name__}): {e}")
-        except Exception as e:
-            logger.error(
-                f"Error during worker cleanup ({type(e).__name__}): {e}\n{traceback.format_exc()}"
-            )
+        except Exception as exc:
+            logger.exception("Database cleanup failed")
+            errors.append(str(exc))
+        self.cleanup_finished.emit({"success": not errors, "error": "; ".join(errors)})
 
     @Slot(str)
     def initialize_history(self, world_id: str) -> None:

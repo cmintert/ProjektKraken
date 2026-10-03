@@ -57,6 +57,7 @@ class CommandCoordinator(QObject):
         self._undo_redo_in_progress = False
         self._pending_history_action: Optional[tuple[str, "BaseCommand"]] = None
         self._pending_commands: Dict[str, "BaseCommand"] = {}
+        self.mutations_suspended = False
         logger.debug("CommandCoordinator initialized with undo/redo support")
 
     # ------------------------------------------------------------------
@@ -184,6 +185,9 @@ class CommandCoordinator(QObject):
             command: The command object to execute.
 
         """
+        if self.mutations_suspended:
+            logger.warning("Command rejected during database shutdown")
+            return
         logger.debug(f"Executing command: {command.__class__.__name__}")
         self.track_command(command)
         self.command_requested.emit(self._serialize_command(command))
@@ -203,7 +207,7 @@ class CommandCoordinator(QObject):
         Guarded: only one undo/redo can be in-flight at a time to
         prevent overlapping UI rebuilds that crash Qt.
         """
-        if not self.can_undo():
+        if self.mutations_suspended or not self.can_undo():
             logger.warning("Undo called with empty undo stack")
             return
 
@@ -226,7 +230,7 @@ class CommandCoordinator(QObject):
 
         Guarded: only one undo/redo can be in-flight at a time.
         """
-        if not self.can_redo():
+        if self.mutations_suspended or not self.can_redo():
             logger.warning("Redo called with empty redo stack")
             return
 

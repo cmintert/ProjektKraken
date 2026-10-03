@@ -1,6 +1,7 @@
 """Real historical world upgrades, WAL backups, and failure recovery."""
 
 import json
+import re
 import sqlite3
 import subprocess
 import sys
@@ -24,6 +25,141 @@ pytestmark = [pytest.mark.integration, pytest.mark.ci_fast]
 FIXTURES = Path(__file__).parents[1] / "fixtures" / "migrations"
 SOURCE_ID = "00000000-0000-0000-0000-000000000001"
 TARGET_ID = "00000000-0000-0000-0000-000000000002"
+
+
+def remove_legacy_foreign_keys(path):
+    """Reproduce the benchmark's canonical columns without declared references."""
+    with closing(sqlite3.connect(path)) as conn:
+        conn.execute("PRAGMA legacy_alter_table=ON")
+        for table in steps.LEGACY_FOREIGN_KEY_TABLES:
+            sql = conn.execute(
+                "SELECT sql FROM sqlite_master WHERE name=?", (table,)
+            ).fetchone()[0]
+            sql = re.sub(
+                r",\s*FOREIGN KEY\s*\([^)]*\) REFERENCES \w+\([^)]*\)"
+                r" ON DELETE CASCADE",
+                "",
+                sql,
+            )
+            conn.execute(f"ALTER TABLE {table} RENAME TO old_{table}")
+            conn.execute(sql)
+            conn.execute(f"INSERT INTO {table} SELECT * FROM old_{table}")
+            conn.execute(f"DROP TABLE old_{table}")
+        conn.commit()
+
+
+def test_missing_legacy_foreign_keys_preserve_children_and_restore_cascades(tmp_path):
+    path = legacy_world(tmp_path)
+    remove_legacy_foreign_keys(path)
+    add_trajectory(path)
+    with closing(sqlite3.connect(path)) as conn:
+        conn.execute(
+            "INSERT INTO feature_geometry_states VALUES "
+            "('geometry','marker',1,'{}',0.1,0.2,1,1)"
+        )
+        conn.execute("INSERT INTO tags VALUES ('tag','Test',NULL,1)")
+        conn.execute("INSERT INTO entity_tags VALUES (?, 'tag',1)", (SOURCE_ID,))
+        conn.execute("INSERT INTO event_tags VALUES (?, 'tag',1)", (TARGET_ID,))
+        conn.commit()
+        before = {
+            table: conn.execute(f"SELECT * FROM {table}").fetchall()
+            for table in (*steps.LEGACY_FOREIGN_KEY_TABLES, "feature_geometry_states")
+        }
+    original = database_dump(path)
+    service = DatabaseService(str(path))
+    service.connect()
+    conn = service._connection
+    assert conn.execute("PRAGMA foreign_keys").fetchone()[0] == 1
+    for table, rows in before.items():
+        assert [tuple(row) for row in conn.execute(f"SELECT * FROM {table}")] == rows
+        assert steps._table_contract(conn, table) == steps.reference_contracts()[table]
+    assert conn.execute("SELECT COUNT(*) FROM moving_features").fetchone()[0] == 1
+    bundle = Path(service.migration_status["recovery_path"])
+    assert database_dump(bundle / "database.kraken") == original
+    service.close()
+    migrated = database_dump(path)
+    service.connect()
+    assert "upgraded_from" not in service.migration_status
+    assert database_dump(path) == migrated
+    conn = service._connection
+    conn.execute("DELETE FROM maps WHERE id='map'")
+    conn.execute("DELETE FROM tags WHERE id='tag'")
+    for table in (
+        *steps.LEGACY_FOREIGN_KEY_TABLES,
+        "feature_geometry_states",
+        "moving_features",
+    ):
+        assert conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] == 0
+    conn.rollback()
+    service.close()
+
+
+@pytest.mark.parametrize("table", steps.LEGACY_FOREIGN_KEY_TABLES)
+def test_missing_legacy_foreign_keys_reject_orphans_without_changes(tmp_path, table):
+    path = legacy_world(tmp_path)
+    remove_legacy_foreign_keys(path)
+    with closing(sqlite3.connect(path)) as conn:
+        if table == "markers":
+            conn.execute(
+                "INSERT INTO markers (id,map_id,object_id,object_type,x,y) "
+                "VALUES ('orphan','missing',?,'entity',0,0)",
+                (SOURCE_ID,),
+            )
+        else:
+            conn.execute(
+                f"INSERT INTO {table} VALUES (?, 'missing',1)",
+                (SOURCE_ID if table == "entity_tags" else TARGET_ID,),
+            )
+        conn.commit()
+    before = database_dump(path)
+    with pytest.raises(MigrationError, match="orphan"):
+        DatabaseService(str(path)).connect()
+    assert database_dump(path) == before
+
+
+def test_constraint_rebuild_failure_rolls_back_and_restores_enforcement(
+    tmp_path,
+    monkeypatch,
+):
+    path = legacy_world(tmp_path)
+    remove_legacy_foreign_keys(path)
+    before = database_dump(path)
+    with closing(sqlite3.connect(path)) as conn:
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys=ON")
+        monkeypatch.setattr(
+            steps,
+            "validate_trajectories",
+            Mock(side_effect=MigrationError("injected failure")),
+        )
+        with pytest.raises(MigrationError, match="injected failure"):
+            prepare_database(conn, str(path))
+        assert conn.execute("PRAGMA foreign_keys").fetchone()[0] == 1
+        assert not conn.in_transaction
+    assert database_dump(path) == before
+
+
+def test_missing_foreign_keys_remain_strict_for_versioned_worlds(tmp_path):
+    path = legacy_world(tmp_path)
+    service = DatabaseService(str(path))
+    service.connect()
+    service.close()
+    remove_legacy_foreign_keys(path)
+    before = database_dump(path)
+    with pytest.raises(MigrationError, match="constraint layout"):
+        service.connect()
+    assert database_dump(path) == before
+
+
+def test_missing_legacy_foreign_keys_read_only_open_does_not_rebuild(tmp_path):
+    path = legacy_world(tmp_path)
+    remove_legacy_foreign_keys(path)
+    before = path.read_bytes()
+    service = DatabaseService(str(path), read_only=True)
+    service.connect()
+    assert service.migration_status["detected_version"] == 0
+    service.close()
+    assert path.read_bytes() == before
 
 
 @pytest.fixture(autouse=True)

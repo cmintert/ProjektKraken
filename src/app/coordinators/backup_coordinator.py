@@ -2,12 +2,13 @@
 
 import logging
 import os
+import sqlite3
 import subprocess
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
-from PySide6.QtCore import QSettings, QTimer, Slot
+from PySide6.QtCore import QSettings, Qt, QTimer, Signal, Slot
 from PySide6.QtWidgets import (
     QFileDialog,
     QInputDialog,
@@ -18,6 +19,8 @@ from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 from src.app.coordinators.base_coordinator import BaseCoordinator
 from src.core.paths import get_backup_directory
 from src.services.backup_service import BackupType
+from src.services.database_restore_service import DatabaseRestoreService
+from src.services.database_restore_task import DatabaseRestoreTask
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
@@ -35,9 +38,17 @@ class BackupCoordinator(BaseCoordinator):
     - Backup Location access
     """
 
+    cleanup_requested = Signal()
+
     def __init__(self, main_window: "MainWindow") -> None:
         """Initialize backup orchestration for the main window."""
         super().__init__(main_window)
+        self.restore_in_progress = False
+        self.restore_shutdown_complete = False
+        self.restart_required = False
+        self._restore_task: DatabaseRestoreTask | None = None
+        self._restore_file = ""
+        self._cleanup_error = ""
 
     @property
     def backup_service(self) -> Any:
@@ -163,38 +174,111 @@ class BackupCoordinator(BaseCoordinator):
             This method is called via QTimer.singleShot to avoid blocking
             the UI during status bar updates.
         """
-        success = self.backup_service.restore_backup(
-            Path(backup_file), Path(self.main_window.db_path)
+        if self.restore_in_progress or self.restart_required:
+            return
+        window = self.main_window
+        directory = self.backup_service.config.backup_dir or get_backup_directory()
+        try:
+            DatabaseRestoreService.validate(
+                Path(backup_file), Path(window.db_path), directory
+            )
+        except (OSError, ValueError, sqlite3.Error) as exc:
+            QMessageBox.critical(window, "Restore Failed", str(exc))
+            return
+        if window.map_handler.has_pending_raster_strokes():
+            QMessageBox.information(
+                window, "Restore Pending", "Wait for raster changes to finish saving."
+            )
+            return
+        for editor in (window.event_editor, window.entity_editor):
+            if not window.check_unsaved_changes(editor):
+                return
+        # A map working copy must be deliberately resolved in its own editor.
+        if (
+            window.app_coordinator.trajectory_edit.is_active
+            or window.app_coordinator.feature_geometry.is_active
+        ):
+            QMessageBox.information(
+                window,
+                "Unfinished Map Edit",
+                "Apply or cancel the map edit before restoring a backup.",
+            )
+            return
+        self.restore_in_progress = True
+        self._restore_file = backup_file
+        window.command_coordinator.mutations_suspended = True
+        window.setEnabled(False)
+        self.backup_service.stop_auto_backup()
+        window.longform_manager.shutdown()
+        window.data_coordinator.stop_graph_reload_timer()
+        window.data_coordinator.stop_semantic_debounce_timer()
+        window.ai_search_manager.shutdown()
+        window.intelligence_analysis_manager.shutdown()
+        window.worker.cleanup_finished.connect(
+            self._on_database_closed, Qt.ConnectionType.QueuedConnection
         )
+        # FIFO delivery drains commands already submitted to the worker.
+        self.cleanup_requested.connect(
+            window.worker.cleanup, Qt.ConnectionType.QueuedConnection
+        )
+        self.cleanup_requested.emit()
 
-        if success:
-            self.main_window.status_bar.showMessage("Restore completed", 5000)
+    @Slot(dict)
+    def _on_database_closed(self, result: dict) -> None:
+        """Wait for worker termination before touching database files."""
+        window = self.main_window
+        window.worker.cleanup_finished.disconnect(self._on_database_closed)
+        self._cleanup_error = str(result.get("error", ""))
+        if not result.get("success") and not self._cleanup_error:
+            self._cleanup_error = "Database shutdown could not be confirmed."
+        self.restart_required = True
+        window.worker_thread.finished.connect(
+            self._on_worker_stopped, Qt.ConnectionType.QueuedConnection
+        )
+        window.worker_thread.quit()
+
+    @Slot()
+    def _on_worker_stopped(self) -> None:
+        """Run offline restore after all database worker activity has stopped."""
+        self.restore_shutdown_complete = True
+        if self._cleanup_error:
+            self._finish_restore({"success": False, "error": self._cleanup_error})
+            return
+        directory = self.backup_service.config.backup_dir or get_backup_directory()
+        self._restore_task = DatabaseRestoreTask(
+            Path(self._restore_file), Path(self.main_window.db_path), directory, self
+        )
+        self._restore_task.finished.connect(
+            self._on_restore_task_finished, Qt.ConnectionType.QueuedConnection
+        )
+        self._restore_task.start()
+
+    @Slot()
+    def _on_restore_task_finished(self) -> None:
+        """Present the immutable result after the restore thread exits."""
+        if self._restore_task is not None:
+            self._finish_restore(self._restore_task.result)
+
+    def _finish_restore(self, result: dict) -> None:
+        """Keep a stopped session closed on both success and failure."""
+        self.restore_in_progress = False
+        self.main_window.setEnabled(True)
+        safety = str(result.get("safety_path", ""))
+        recovery = f"\n\nSafety snapshot: {safety}" if safety else ""
+        if result.get("success"):
             QMessageBox.information(
                 self.main_window,
                 "Restore Complete",
-                "Database restored successfully!\n\n"
-                "The application will now close. Please restart to use the "
-                "restored database.",
+                "Database restored. Restart Projekt Kraken to use it." + recovery,
             )
-            # Close application so user can restart
-            self.main_window.close()
         else:
-            self.main_window.status_bar.showMessage("Restore failed", 5000)
             QMessageBox.critical(
                 self.main_window,
                 "Restore Failed",
-                "Failed to restore backup. Your current database is unchanged "
-                "and a safety backup was created before the attempt.\n\n"
-                "Possible causes:\n"
-                "• Backup file is corrupted\n"
-                "• Backup file is from an incompatible version\n"
-                "• Insufficient permissions to modify database\n\n"
-                "Recovery steps:\n"
-                "1. Verify the backup file is not corrupted\n"
-                "2. Try a different backup file\n"
-                "3. Check application logs for detailed error information\n"
-                "4. If backup is from an older version, use migration tools",
+                "The database was not replaced. Restart Projekt Kraken before "
+                "continuing.\n\n" + str(result.get("error", "")) + recovery,
             )
+        self.main_window.close()
 
     @Slot()
     def show_backup_location(self) -> None:
@@ -289,9 +373,7 @@ class BackupCoordinator(BaseCoordinator):
 
             # Build config from QSettings
             custom_dir = cast(str, settings.value(BACKUP_CUSTOM_DIR_KEY, ""))
-            external_path = cast(
-                str, settings.value(BACKUP_EXTERNAL_PATH_KEY, "")
-            )
+            external_path = cast(str, settings.value(BACKUP_EXTERNAL_PATH_KEY, ""))
 
             config = BackupConfig(
                 enabled=cast(

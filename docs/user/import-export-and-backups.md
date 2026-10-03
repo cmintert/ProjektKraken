@@ -93,6 +93,10 @@ entity, event, and relation tables. Tags and custom fields are stored as JSON
 inside their cells so they can round-trip without flattening. Markdown creates
 readable linked notes but is not a complete-world backup.
 
+Note exports copy supported local images into the vault's `assets/` folder.
+Relation links use the exported note filenames, including suffixes for duplicate
+names. Missing or outside-world images appear in the export review warnings.
+
 ## Publish Longform
 
 1. Open the **Export** tab and choose **Longform Markdown**, **Longform Word
@@ -108,6 +112,10 @@ Publishing follows the authored Longform order. It preserves headings,
 paragraphs, emphasis, lists, tables, and contained local images. Wiki links use
 readable labels and become internal links when the target is part of the
 document. DOCX and PDF files cannot be imported as lore.
+
+Longform Markdown copies referenced local images into a neighboring folder named
+after the output file, such as `Chronicle.md.assets/`. Keep that folder beside the
+Markdown file when moving or sharing it. Disabling images exports their labels.
 
 ## Move a Complete World
 
@@ -142,6 +150,14 @@ Backups** to create, restore, locate, and configure backups.
 Restoring a `.kraken` backup replaces the active world's saved data and is not
 an ordinary undoable action. Backups do not contain asset files. Use a portable
 world package when maps and other assets need to travel with the world.
+
+Backups include committed database changes even when they are still in SQLite's
+write-ahead log. Restore validates the selected backup first, requires unfinished
+edits to be resolved, stops database work, and creates a checked safety snapshot
+before replacement. After database shutdown, both successful and failed restore
+attempts close the application and require a restart. A failure before shutdown
+leaves the current session available. The result shows a safety snapshot location
+only when that snapshot was created successfully.
 
 ## Opening an Older World
 

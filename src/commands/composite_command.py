@@ -104,6 +104,10 @@ class CompositeCommand(BaseCommand):
         data: dict[str, object] = {
             "index_requests": index_requests[:1],
             "marker_map_ids": marker_map_ids,
+            "maps_changed": any(
+                command.__class__.__name__ == "SetRasterMappingCommand"
+                for command in self.commands
+            ),
         }
         effects = self._aggregate_lore_effects(sub_results)
         if effects is not None:
