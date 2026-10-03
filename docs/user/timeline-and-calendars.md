@@ -15,6 +15,11 @@ the current lore time and also controls time-sensitive map content.
 - Choose **Go to date...** to enter an exact date in the active calendar. Add an
   hour and minute if needed; a date alone goes to the start of that day. The
   playhead moves there and the timeline centers on it, even without an event.
+- In the Event Editor, choose **Show world at this event** to move the playhead
+  to the event's saved date and center the timeline. Maps, entity state, and the
+  graph follow the playhead. The event stays selected, World Time stays unchanged,
+  and unsaved event edits remain in the editor. Partial or uncertain dates use
+  the saved numeric date anchor; duration events use their start date.
 - Choose **Set Current Time** to make the playhead position the world's current
   story time.
 - Choose **Return to Current Time** to move the playhead back to the current

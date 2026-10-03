@@ -122,6 +122,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
     completion_prefix_changed = Signal(str)
     create_new_requested = Signal()
     authoring_context_refresh_requested = Signal()
+    show_world_at_event_requested = Signal(str)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         """Initializes the editor widget with form fields.
@@ -285,6 +286,16 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.temporal_evidence_button.clicked.connect(self._edit_temporal_evidence)
         temporal_actions_layout.addWidget(self.temporal_evidence_button)
         self.form_layout.addRow(temporal_actions)
+        self.btn_show_world_at_event = QToolButton()
+        self.btn_show_world_at_event.setText("Show world at this event")
+        self.btn_show_world_at_event.setStyleSheet(StyleHelper.get_tool_button_style())
+        self.btn_show_world_at_event.setToolTip(
+            "Move the playhead to this event's saved date. "
+            "World Time and unsaved event edits stay unchanged."
+        )
+        self.btn_show_world_at_event.setEnabled(False)
+        self.btn_show_world_at_event.clicked.connect(self._show_world_at_event)
+        self.form_layout.addRow(self.btn_show_world_at_event)
         self.date_edit = self.temporal_widget.date_start
         self.end_date_edit = self.temporal_widget.date_end
         self.duration_widget = self.temporal_widget.duration_widget
@@ -1193,6 +1204,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         # Handle missing event (e.g., item was deleted)
         if event is None:
             self._current_event_id = None
+            self.btn_show_world_at_event.setEnabled(False)
             if focus is not None:
                 focus._update_action()
             self._current_created_at = 0.0
@@ -1209,6 +1221,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
         self._reset_pending_summary()
         self._current_event_id = event.id
+        self.btn_show_world_at_event.setEnabled(True)
         if focus is not None:
             focus._update_action()
         self._current_created_at = event.created_at  # Preserve validation data
@@ -1254,6 +1267,12 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             focus._update_status(self)
         self._update_raster_appearances(maps_data or [])
         self.authoring_context_refresh_requested.emit()
+
+    @Slot()
+    def _show_world_at_event(self) -> None:
+        """Request inspection at the saved date without accepting editor drafts."""
+        if self._current_event_id is not None:
+            self.show_world_at_event_requested.emit(self._current_event_id)
 
     @property
     def current_event_id(self) -> str | None:

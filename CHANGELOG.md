@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-03
-**Commit:** 7ddce53e917280589cebc113bb8e262ad10115af
+**Commit:** d78362c8bc420faa4413d0e1bcd6f93056f2c274
 ---
 
 # Changelog
@@ -10,6 +10,13 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Added
+
+- *(2026-10-03)* **World at event (KRT-24)**: Added an Event Editor action
+  to inspect the world at the event's saved date while preserving selection,
+  World Time, and event drafts. Reused guarded playhead navigation, documented
+  date-anchor behavior, and added editor/navigation regression coverage.
 
 ### Fixed
 

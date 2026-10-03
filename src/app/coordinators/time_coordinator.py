@@ -103,6 +103,22 @@ class TimeCoordinator(BaseCoordinator):
             if dialog.target_time is not None:
                 self.go_to_date(dialog.target_time)
 
+    @Slot(str)
+    def show_world_at_event(self, event_id: str) -> None:
+        """Inspect the open event's saved date through guarded time navigation."""
+        if self.main_window.event_editor.current_event_id != event_id:
+            return
+        event = next(
+            (
+                event
+                for event in self.main_window.data_coordinator.cached_events
+                if event.id == event_id
+            ),
+            None,
+        )
+        if event is not None:
+            self.go_to_date(event.lore_date)
+
     def go_to_date(self, target: float) -> None:
         """Move the playhead and center after its dirty-draft guard accepts."""
         self._pending_go_to_date = target

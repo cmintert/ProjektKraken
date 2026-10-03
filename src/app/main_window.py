@@ -510,6 +510,9 @@ class MainWindow(QMainWindow):
         self.timeline.go_to_date_requested.connect(
             self.time_coordinator.open_go_to_date
         )
+        self.event_editor.show_world_at_event_requested.connect(
+            self.time_coordinator.show_world_at_event
+        )
         self.map_widget = MapWidget()
         # Propagate theme changes to the layer panel.
         try:

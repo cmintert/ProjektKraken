@@ -24,6 +24,68 @@ def test_editor_init(editor):
     assert not editor._empty_state.isHidden()  # Empty state shown on init
 
 
+def test_show_world_action_tracks_open_event(editor, qtbot):
+    assert not editor.btn_show_world_at_event.isEnabled()
+    for event_id in ("first", "second"):
+        editor.load_event(Event(id=event_id, name=event_id, lore_date=42.25))
+        assert editor.btn_show_world_at_event.isEnabled()
+        with qtbot.waitSignal(editor.show_world_at_event_requested) as request:
+            editor.btn_show_world_at_event.click()
+        assert request.args == [event_id]
+    editor.load_event(None)
+    assert not editor.btn_show_world_at_event.isEnabled()
+
+
+def test_show_world_uses_saved_date_and_preserves_event_draft(editor, qtbot):
+    from unittest.mock import MagicMock
+
+    from PySide6.QtCore import Qt
+
+    from src.app.coordinators.time_coordinator import TimeCoordinator
+    from src.gui.widgets.timeline import TimelineWidget
+
+    event = Event(id="draft", name="Saved", lore_date=-42.25, lore_duration=3.0)
+    editor.load_event(event)
+    timeline = TimelineWidget()
+    qtbot.addWidget(timeline)
+    timeline.view.set_playhead_event_snapping(True)
+    timeline.set_current_time(100.0)
+    window = editor.parent()
+    window.event_editor = editor
+    window.timeline = timeline
+    window.entity_editor = MagicMock()
+    window.entity_editor.has_unsaved_changes.return_value = False
+    window.entity_editor.current_entity_id = None
+    window.data_coordinator = MagicMock()
+    window.data_coordinator.cached_events = [event]
+    coordinator = TimeCoordinator(window)
+    timeline.playhead_time_changed.connect(coordinator.on_playhead_changed)
+    map_fanout = MagicMock()
+    timeline.playhead_time_changed.connect(map_fanout)
+    editor.show_world_at_event_requested.connect(coordinator.show_world_at_event)
+    editor.name_edit.setText("Unsaved name")
+    date = editor.temporal_widget.date_start.txt_date
+    date.setText("unaccepted date")
+    date.textEdited.emit(date.text())
+    assert editor.temporal_widget.has_pending_draft()
+    revision = editor.edit_revision
+
+    qtbot.mouseClick(editor.btn_show_world_at_event, Qt.MouseButton.LeftButton)
+
+    assert timeline.get_playhead_time() == event.lore_date
+    assert timeline.get_current_time() == 100.0
+    assert editor.current_event_id == event.id
+    assert editor.name_edit.text() == "Unsaved name"
+    assert date.text() == "unaccepted date"
+    assert editor.temporal_widget.has_pending_draft()
+    assert editor.edit_revision == revision
+    assert editor.has_unsaved_changes()
+    assert map_fanout.call_args_list
+    assert all(call.args == (event.lore_date,) for call in map_fanout.call_args_list)
+    window.data_coordinator.on_graph_playhead_changed.assert_called()
+    window.worker.save_current_time.assert_not_called()
+
+
 def test_load_event(editor):
     ev = Event(id="1", name="Test Event", lore_date=500.0, type="cosmic")
     editor.load_event(ev)

@@ -63,6 +63,24 @@ def coordinator(fake_window):
     return coord
 
 
+@pytest.fixture(params=["date", "event"])
+def navigate(request, coordinator, fake_window):
+    """Exercise entity-draft guards through both navigation entry points."""
+    from src.core.events import Event
+
+    if request.param == "date":
+        return coordinator.go_to_date
+    event = Event(id="event", name="Event", lore_date=20.0)
+    fake_window.event_editor.current_event_id = event.id
+    fake_window.data_coordinator.cached_events = [event]
+
+    def show_event(target):
+        assert target == event.lore_date
+        coordinator.show_world_at_event(event.id)
+
+    return show_event
+
+
 def test_relation_context_uses_playhead_not_world_time(coordinator, fake_window):
     fake_window.timeline.get_playhead_time.return_value = 125.5
     fake_window.timeline.get_current_time.return_value = 300.0
@@ -194,8 +212,40 @@ def test_go_to_date_uses_playhead_fanout_and_centers(coordinator, fake_window):
     fake_window.data_coordinator.on_graph_playhead_changed.assert_called_once()
 
 
+@pytest.mark.parametrize("date", [0.0, -12.5, 42.25])
+def test_show_world_at_event_navigates_saved_start(coordinator, fake_window, date):
+    from src.core.events import Event
+
+    event = Event(id="event", name="Event", lore_date=date, lore_duration=5.0)
+    fake_window.event_editor.current_event_id = event.id
+    fake_window.data_coordinator.cached_events = [event]
+    fake_window.entity_editor.has_unsaved_changes.return_value = False
+    fake_window.timeline.set_playhead_time.side_effect = coordinator.on_playhead_changed
+    coordinator.show_world_at_event(event.id)
+    fake_window.timeline.set_playhead_time.assert_called_once_with(date)
+    fake_window.timeline.center_on_date.assert_called_once_with(date)
+    fake_window.timeline.set_current_time.assert_not_called()
+    fake_window.event_editor.load_event.assert_not_called()
+    fake_window.unified_list.select_item.assert_not_called()
+    fake_window.data_coordinator.on_graph_playhead_changed.assert_called_once()
+
+
+@pytest.mark.parametrize("current_id,cached", [("other", True), ("event", False)])
+def test_show_world_at_event_ignores_stale_id(
+    coordinator, fake_window, current_id, cached
+):
+    from src.core.events import Event
+
+    fake_window.event_editor.current_event_id = current_id
+    fake_window.data_coordinator.cached_events = (
+        [Event(id="event", name="Event", lore_date=20.0)] if cached else []
+    )
+    coordinator.show_world_at_event("event")
+    fake_window.timeline.set_playhead_time.assert_not_called()
+
+
 def test_go_to_date_cancelled_by_dirty_guard_does_not_center(
-    coordinator, fake_window
+    coordinator, fake_window, navigate
 ):
     editor = fake_window.entity_editor
     editor._temporal_time = 10.0
@@ -204,13 +254,13 @@ def test_go_to_date_cancelled_by_dirty_guard_does_not_center(
     with patch("src.app.coordinators.time_coordinator.QMessageBox") as dialog:
         dialog.return_value.addButton.side_effect = ["save", "discard", "cancel"]
         dialog.return_value.clickedButton.return_value = "cancel"
-        coordinator.go_to_date(20.0)
+        navigate(20.0)
 
     assert fake_window.timeline.set_playhead_time.call_args_list[-1].args == (10.0,)
     fake_window.timeline.center_on_date.assert_not_called()
 
 
-def test_go_to_date_discarded_draft_centers_target(coordinator, fake_window):
+def test_go_to_date_discarded_draft_centers_target(coordinator, fake_window, navigate):
     editor = fake_window.entity_editor
     editor._temporal_time = 10.0
     editor.has_unsaved_changes.return_value = True
@@ -218,13 +268,15 @@ def test_go_to_date_discarded_draft_centers_target(coordinator, fake_window):
     with patch("src.app.coordinators.time_coordinator.QMessageBox") as dialog:
         dialog.return_value.addButton.side_effect = ["save", "discard", "cancel"]
         dialog.return_value.clickedButton.return_value = "discard"
-        coordinator.go_to_date(20.0)
+        navigate(20.0)
 
     editor.set_dirty.assert_called_once_with(False)
     fake_window.timeline.center_on_date.assert_called_once_with(20.0)
 
 
-def test_go_to_date_centers_after_deferred_entity_save(coordinator, fake_window):
+def test_go_to_date_centers_after_deferred_entity_save(
+    coordinator, fake_window, navigate
+):
     editor = fake_window.entity_editor
     editor._temporal_time = 10.0
     editor._temporal_save_pending = True
@@ -233,7 +285,7 @@ def test_go_to_date_centers_after_deferred_entity_save(coordinator, fake_window)
     with patch("src.app.coordinators.time_coordinator.QMessageBox") as dialog:
         dialog.return_value.addButton.side_effect = ["save", "discard", "cancel"]
         dialog.return_value.clickedButton.return_value = "save"
-        coordinator.go_to_date(20.0)
+        navigate(20.0)
 
     fake_window.timeline.center_on_date.assert_not_called()
     editor.has_unsaved_changes.return_value = False
@@ -242,7 +294,9 @@ def test_go_to_date_centers_after_deferred_entity_save(coordinator, fake_window)
     fake_window.timeline.center_on_date.assert_called_once_with(20.0)
 
 
-def test_failed_deferred_save_restores_previous_playhead(coordinator, fake_window):
+def test_failed_deferred_save_restores_previous_playhead(
+    coordinator, fake_window, navigate
+):
     editor = fake_window.entity_editor
     editor._temporal_time = 10.0
     editor._temporal_save_pending = True
@@ -251,7 +305,7 @@ def test_failed_deferred_save_restores_previous_playhead(coordinator, fake_windo
     with patch("src.app.coordinators.time_coordinator.QMessageBox") as dialog:
         dialog.return_value.addButton.side_effect = ["save", "discard", "cancel"]
         dialog.return_value.clickedButton.return_value = "save"
-        coordinator.go_to_date(20.0)
+        navigate(20.0)
 
     editor._temporal_save_pending = False
     coordinator.on_temporal_save_failed()
