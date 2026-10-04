@@ -1,11 +1,13 @@
-# Authoring benchmark v1.1 — KRT-46
+# Authoring benchmark v1.2 — KRT-46
 
-Published 2026-10-04; revised to v1.1 for empty-world human sessions. This is a
+Published 2026-10-04; v1.1 introduced empty-world human sessions; v1.2 clarifies
+participant wording after the first KA-01–15 video review. This is a
 **new 20-task catalog**, not recovered historical
 benchmark code. [Contract v1](authoring-contract.md) is the design authority;
 the [surface audit](authoring-interaction-audit.md) records the baseline violations.
-The user will record human task videos later. Automated checks and the assisted
-baseline do not establish creator completion time, hesitation or improvement.
+The first [human video review](evidence/krt46/human-run-1.md) records KA-01–15
+under v1.1, with partial outcomes and evidence limits. Automated checks and the
+assisted baseline do not establish creator completion time, hesitation or improvement.
 
 ## Human video sessions: empty world and reset
 
@@ -20,7 +22,7 @@ prepopulate later task dependencies.
    and use Select & Restart to open it. Record setup separately from task times.
 2. Show the empty Explorer/authoring surfaces. Confirm no authored content exists;
    record any unexpected defaults rather than quietly deleting them off camera.
-3. Record catalog v1.1, application revision/version, Windows/Qt versions, theme,
+3. Record catalog v1.2, application revision/version, Windows/Qt versions, theme,
    viewport, active calendar and initial playhead. Use the normal workspace and
    repeat layout-sensitive checks with approximately 360 px inspectors. The date
    examples assume the default Gregorian calendar; record any calendar setup.
@@ -58,28 +60,46 @@ are for the observer. Common tasks prefer visible routes; record every shortcut,
 context menu or modifier used. Reaching a correct result through a hidden route
 does not demonstrate visible-route compliance.
 
+Give one task at a time in English, using the intention below verbatim. Describe
+the desired lore and outcome, not the buttons, syntax or gestures to use. Ask the
+participant to think aloud; give route guidance only as recorded assistance.
+Let the participant report completion before performing observer checks. Record
+check-driven corrections separately from the initial attempt.
+
+In KA-02/03, deselecting and reopening Tasgillia is sufficient navigation in the
+empty world; no extra lore object is required. In KA-13/15, Freiburg and Basel
+are places on the supplied image, not objects the participant must create.
+If the image lacks those landmarks, identify their positions before timing the
+map tasks and record that setup.
+
+Keep the first video's KA-01–15 results under v1.1. A continuation using revised
+KA-16–20 prompts is a mixed-version run: record v1.2 for those tasks and any
+dependency recovery. Do not relabel earlier attempts or pool their timings with
+fresh v1.2 runs. Observer success criteria remain unchanged; the wording makes
+the intended outcomes and verification steps explicit.
+
 | ID | Creator intention | Prerequisites and semantic success | Allowed recovery |
 | --- | --- | --- | --- |
-| KA-01 | Create Tasgillia as a character. | New empty world; new object has a UUID, name and deliberate Character type and opens as editing context. | Correct a silent Concept default; record the wrong initial type and correction. |
-| KA-02 | Find Tasgillia again and resume editing. | KA-01; search/select the same UUID, with no duplicate creation or unintended draft loss. | Clear filters and search again. |
-| KA-03 | Write that Tasgillia studies the Rhine's history. | KA-02; description saves and survives reopening. | Reopen the object; record any unsaved text loss. |
-| KA-04 | Create House Bjornaer as a group, mention it in Tasgillia's description and follow the reference. | KA-03; create the group on camera; link resolves that same UUID, never a duplicate; return preserves origin/caret where supported. | Choose the matching completion or use Peek; record help and any interrupted writing. |
-| KA-05 | Record that Tasgillia and House Bjornaer are connected, without deciding the details yet. | KA-04; one authored generic connection, separate from automatic WikiLink mentions. | Use the full Add Relation dialog; count its decisions and terminology. |
-| KA-06 | Refine that connection into membership with a note. | KA-05; existing connection becomes member_of, with correct direction and preserved note; no duplicate relation. | Open full relation editing. |
-| KA-07 | Record a tribunal session on 1 January 1187, view the world there, and make that membership begin at the date being viewed. | KA-06; create and save the session on camera; fixed membership start equals playhead, visible date preview, no World Time change. | Explicit date entry is allowed; record event setup separately from membership refinement. |
-| KA-08 | Record a winter council on 1 January 1201 and make Tasgillia's involvement end when that council happens. | Create/save the council on camera; source-event relation has a dynamic end binding, and follows a later date change of that same council. | Use event Relations and full timing controls; restore the council's original date after checking. |
-| KA-09 | Create an event named Benchmark Charter 1218, known only to the year. | KA-08; event precision is YEAR, no invented month/day certainty and no implied duration. | Use structured Date fields; record assistance. |
-| KA-10 | Mark that charter date as approximate. | KA-09; year precision plus approximate qualification survives save/reopen. | Use Date fields/qualification rather than memorized parser syntax. |
-| KA-11 | Record that the charter meeting lasted three days. | KA-10; duration is three days independently from the approximate occurrence date; no certainty fabricated for the endpoint. | Use disclosed duration controls; record ambiguity. |
-| KA-12 | View the world at the charter, then go to 1 January 1219. | KA-11; saved event date then exact active-calendar date become playhead; selection retained, World Time unchanged, normal temporal fanout. | Use Go to date; reject invalid input without leaving the dialog. |
-| KA-13 | Create a map from the supplied image and place Tasgillia near Freiburg. | KA-01 and external image only; create the map on camera; marker references the existing person and has normalized position; no duplicate object/placement. Freiburg/Basel are image landmarks, not precreated world objects. | Add Marker/object picker or Explorer drag; record map setup separately from placement. |
-| KA-14 | Create Upper Rhine as a region, draw its border, then revise one corner. | Create the region on camera; closed polygon linked to that UUID; revised geometry persists; Enter applies and Escape cancels local work. | Use right-click Edit Vertices if necessary; explicitly record the missing visible route (KRT-48). |
-| KA-15 | Give Tasgillia a journey from Freiburg toward Basel. | KA-13; two distinct timed positions, increasing dates, editable track; one Apply is one undoable change. | Use Edit Trajectory and guided Add Location; retain unsuccessful attempts in evidence. |
-| KA-16 | Create a second map, start changing that journey on the first, then open the second without losing the change. | KA-15; create the second map on camera using the same image; modify an unapplied working copy on the first. Require Apply/Keep editing/Discard or safe restoration. | If lost, reconstruct only after recording failure (KRT-26); do not silently apply beforehand. |
-| KA-17 | Inspect which connections are true at the date being viewed. | KA-07/08; graph At playhead excludes ended/not-yet-started edges; Show possible exposes uncertainty; selecting a node retains temporal context. | Refresh and select the appropriate relation filter; record empty-state guidance and help. |
-| KA-18 | Assemble Tasgillia and the charter into a document, with the charter as a section, then reorder them. | KA-01/09; hierarchy/order persist and undo restores the previous arrangement. Missing visible membership setup is a failure, not a presumed inspector feature. | Facilitator may seed membership offline as below, then test organization separately. Context menu or promote/demote shortcut is recorded recovery (KRT-47). |
-| KA-19 | Reopen the uncertain charter and the refined connection without changing their meaning. | KA-06/10/11; approximate year, three-day duration, relation notes/confidence and dynamic/fixed boundaries retained; opening/collapsing controls does not dirty data. | Reveal advanced controls; record which values were difficult to find. |
-| KA-20 | Revise the charter's linked text, switch Rich/Source views, save, navigate away and return. | KA-09; exact supported source and link identity round-trip; save does not move caret or overwrite a newer draft; navigation safeguards resolve unsaved work. | Keep editing/Save/Discard must be deliberate; record source-mode fallback for unsupported rich syntax. |
+| KA-01 | Create a character named Tasgillia. | New empty world; new object has a UUID, name and deliberate Character type and opens as editing context. | Correct a silent Concept default; record the wrong initial type and correction. |
+| KA-02 | Leave Tasgillia's editor, then find the same character again and resume editing her. | KA-01; search/select the same UUID, with no duplicate creation or unintended draft loss. | Clear filters and search again. |
+| KA-03 | Write in Tasgillia's description that she studies the history of the Rhine. Finish the edit, leave her editor and return to check that the text remains. | KA-02; description saves and survives reopening. | Reopen the object; record any unsaved text loss. |
+| KA-04 | Create a group named House Bjornaer. Write about it in Tasgillia's description and link the group's name to its existing entry. Follow that link to open House Bjornaer, then return to your writing. | KA-03; create the group on camera; link resolves that same UUID, never a duplicate; return preserves origin/caret where supported. | Choose the matching completion or use Peek; record help and any interrupted writing. |
+| KA-05 | Separately from the link in her description, record a connection between Tasgillia and House Bjornaer. You know they are connected, but have not yet decided what kind of connection it is. | KA-04; one authored generic connection, separate from automatic WikiLink mentions. | Use the full Add Relation dialog; count its decisions and terminology. |
+| KA-06 | You now know that Tasgillia is a member of House Bjornaer. Update the connection you just recorded to express that membership, and add a note explaining it. | KA-05; existing connection becomes member_of, with correct direction and preserved note; no duplicate relation. | Open full relation editing. |
+| KA-07 | Create an event named Tribunal Session on 1 January 1187 and view the world at that date. Set Tasgillia's membership in House Bjornaer to begin on the date you are viewing. That membership start should stay on this date even if the session is later rescheduled. | KA-06; create and save the session on camera; fixed membership start equals playhead, visible date preview, no World Time change. | Explicit date entry is allowed; record event setup separately from membership refinement. |
+| KA-08 | Create an event named Winter Council on 1 January 1201. Record Tasgillia as a participant in this council, with her participation ending when the council happens. If the council is rescheduled, her participation's end should move with it. Reschedule the council to 1 January 1202 to check this, then restore it to 1 January 1201. | Create/save the council on camera; source-event relation has a dynamic end binding, and follows a later date change of that same council. | Use event Relations and full timing controls; restore the council's original date after checking. |
+| KA-09 | Create an event named Benchmark Charter 1218. You know it happened sometime in 1218, but do not know the month or day. | KA-08; event precision is YEAR, no invented month/day certainty and no implied duration. | Use structured Date fields; record assistance. |
+| KA-10 | You now learn that even the charter's year is an estimate. Mark its date as approximately 1218, still without a known month or day. Finish the edit and reopen the event to check that meaning. | KA-09; year precision plus approximate qualification survives save/reopen. | Use Date fields/qualification rather than memorized parser syntax. |
+| KA-11 | Record that the charter meeting lasted three days. Its occurrence date should remain approximately 1218, with no known month or day. | KA-10; duration is three days independently from the approximate occurrence date; no certainty fabricated for the endpoint. | Use disclosed duration controls; record ambiguity. |
+| KA-12 | View the world at the charter's recorded date, then view it at exactly 1 January 1219. Keep the charter selected. You are exploring these dates, not changing the world's current date. | KA-11; saved event date then exact active-calendar date become playhead; selection retained, World Time unchanged, normal temporal fanout. | Use Go to date; reject invalid input without leaving the dialog. |
+| KA-13 | Create a map using the supplied image. Place the existing Tasgillia character near Freiburg on that map. | KA-01 and external image only; create the map on camera; marker references the existing person and has normalized position; no duplicate object/placement. Freiburg/Basel are image landmarks, not precreated world objects. | Add Marker/object picker or Explorer drag; record map setup separately from placement. |
+| KA-14 | Create an entry named Upper Rhine to represent a geographic region. Draw its closed border on the map, then change one corner. Finish the change, leave the map and return to check that the revised border remains. | Create the region on camera; closed polygon linked to that UUID; revised geometry persists; Enter applies and Escape cancels local work. | Use right-click Edit Vertices if necessary; explicitly record the missing visible route (KRT-48). |
+| KA-15 | Record a journey for Tasgillia from near Freiburg toward Basel. Give her a starting position on one date and a different position on a later date. Finish recording the journey, check that you can edit it again, then undo the recorded journey and redo it so it is available for the next task. | KA-13; two distinct timed positions, increasing dates, editable track; one Apply is one undoable change. | Use Edit Trajectory and guided Add Location; retain unsuccessful attempts in evidence. |
+| KA-16 | Create a second map using the same image. On the first map, begin changing Tasgillia's saved journey but leave the change unfinished. Open the second map, then return to the first. You want to retain the journey edit: describe any decision offered and check whether you can continue with your change. | KA-15; create the second map on camera using the same image; modify an unapplied working copy on the first. Require Apply/Keep editing/Discard or safe restoration. | If lost, reconstruct only after recording failure (KRT-26); do not silently apply beforehand. |
+| KA-17 | In the graph, inspect which recorded connections are true at the date you are viewing. Also inspect connections that might be true because their timing is uncertain. Select a connected object while keeping the same viewing date. | KA-07/08; graph At playhead excludes ended/not-yet-started edges; Show possible exposes uncertainty; selecting a node retains temporal context. | Refresh and select the appropriate relation filter; record empty-state guidance and help. |
+| KA-18 | Assemble Tasgillia and Benchmark Charter 1218 into a document, with the charter presented as a section. Change their order, leave the document and return to check the arrangement. Undo the reorder and check that the previous arrangement returns. | KA-01/09; hierarchy/order persist and undo restores the previous arrangement. Missing visible membership setup is a failure, not a presumed inspector feature. | Facilitator may seed membership offline as below, then test organization separately. Context menu or promote/demote shortcut is recorded recovery (KRT-47). |
+| KA-19 | Reopen the charter, Tasgillia's membership in House Bjornaer and her participation in Winter Council. Inspect their dates, duration and relation details without changing them. Check that the charter is still approximately 1218 and lasts three days, the membership retains its note and fixed start, and the council participation retains its event-linked end. | KA-06/10/11; approximate year, three-day duration, relation notes/confidence and dynamic/fixed boundaries retained; opening/collapsing controls does not dirty data. | Reveal advanced controls; record which values were difficult to find. |
+| KA-20 | In the charter's description, write a sentence mentioning Tasgillia and make the mention open her existing entry. Revise that sentence, inspect it in both Rich and Source views, and finish the edit. Leave the event and return to check that your text and the link still work. Also try leaving with another edit unfinished and deliberately decide what should happen to that edit. | KA-09; exact supported source and link identity round-trip; save does not move caret or overwrite a newer draft; navigation safeguards resolve unsaved work. | Keep editing/Save/Discard must be deliberate; record source-mode fallback for unsupported rich syntax. |
 
 ### KA-18 facilitator recovery
 
@@ -104,7 +124,7 @@ membership for Tasgillia and the charter.
 
 Record screens and spoken interpretation with participant consent. Do not coach
 the discovery path. If a participant requests help, mark the point and describe
-the intervention. For later comparison use catalog v1.1 and a new empty world,
+the intervention. For later comparison use catalog v1.2 and a new empty world,
 record changed revision, and include KA-08/10/15/19/20 as depth protections.
 
 Copy this record for **every** task, including failures:

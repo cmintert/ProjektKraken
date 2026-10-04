@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-04
-**Commit:** eea71a42f8e0ebb3a45209c4ead5a8c20143ae1a
+**Commit:** 3d40270923eddde5ee1c8353bed3097c2fb349aa
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-10-04)* **Human authoring evidence (KRT-46)**: Recorded the first
+  KA-01–15 video review with timecodes, evidence limits and Linear follow-ups,
+  including unintended numeric edits while scrolling (KRT-49) and timeline
+  readability research (KRT-50). Clarified all participant prompts in catalog
+  v1.2 while preserving observer checks and the original run's v1.1 context.
 
 - *(2026-10-04)* **Human benchmark setup (KRT-46)**: Revised the video protocol
   to start every run in a new empty world. Supporting groups, events, regions
