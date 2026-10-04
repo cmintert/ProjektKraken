@@ -16,15 +16,21 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QMenu,
     QScrollArea,
     QSizePolicy,
     QToolButton,
     QVBoxLayout,
     QWidget,
+    QWidgetAction,
 )
 
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.editor_inspector_composition import (
+    EditorInspectorComposition,
+    InspectorContent,
+)
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
 
 COMPACT_EDITOR_WIDTH = 560
@@ -38,7 +44,7 @@ class DisclosureButton(QToolButton):
     def __init__(self, title: str, parent: QWidget | None = None) -> None:
         """Create a disclosure using the standard editor control height."""
         super().__init__(parent)
-        self.setText(title)
+        self.setText(title.replace("&", "&&"))
         self.setAccessibleName(title)
         self.setCheckable(True)
         self.setMinimumHeight(32)
@@ -104,6 +110,11 @@ class EditorPresentation(QObject):
         editor.summary_widget.text_display.set_adaptive_width(True)
         editor.summary_widget.metadata_label.setWordWrap(True)
         editor.summary_widget.stale_label.setWordWrap(True)
+        editor.summary_widget.presence_changed.connect(
+            lambda present: editor.summary_checkbox.setText(
+                "Summary (available)" if present else "Summary"
+            )
+        )
         self._generation_grid = editor.llm_generator.layout().itemAt(1).layout()
         editor.llm_generator.layout().setContentsMargins(0, 0, 0, 0)
         assert isinstance(self._generation_grid, QGridLayout)
@@ -124,7 +135,29 @@ class EditorPresentation(QObject):
             combo.setMinimumContentsLength(8)
         for label in editor.llm_generator.findChildren(QLabel):
             label.setWordWrap(True)
+        self._toolbar_more_buttons: list[QToolButton] = []
+        self._install_toolbar_menus()
         self._install_action_rows()
+        self.context_disclosure = DisclosureButton("World context (read-only)")
+        self.composition = EditorInspectorComposition(
+            editor.inspector,
+            InspectorContent(
+                overview=editor.tab_details,
+                overview_form=editor.form_layout,
+                context=editor.tab_context,
+                context_renderer=editor.authoring_context,
+                context_disclosure=self.context_disclosure,
+                tags=editor.tab_tags,
+                connections=editor.tab_relations,
+                fields=editor.tab_attributes,
+                sheet=editor.tab_sheet,
+                media=editor.tab_gallery,
+            ),
+        )
+        if hasattr(editor, "temporal_snapshot_label"):
+            editor.temporal_snapshot_label.setWordWrap(True)
+            editor.description_source_label.setWordWrap(True)
+        editor.raster_appearances_checkbox.setText("Map appearances")
         if hasattr(editor, "timeline_display"):
             editor.desc_edit.minimum_width_changed.disconnect(
                 editor.timeline_display.setMinimumWidth
@@ -148,6 +181,8 @@ class EditorPresentation(QObject):
                     field.setMinimumHeight(EDITOR_CONTROL_HEIGHT)
         editor.name_edit.setAccessibleName("Name")
         editor.installEventFilter(self)
+        editor.details_container.installEventFilter(self)
+        editor.llm_generator.installEventFilter(self)
         self._focus_suffix = ""
         ThemeManager().theme_changed.connect(self._style_controls)
         self._style_controls()
@@ -184,6 +219,31 @@ class EditorPresentation(QObject):
                 if suffix not in style:
                     widget.setStyleSheet(style + suffix)
         self._focus_suffix = suffix
+        for button in self._toolbar_more_buttons:
+            button.setStyleSheet(StyleHelper.get_overflow_button_style() + suffix)
+
+    def _install_toolbar_menus(self) -> None:
+        """Expose existing toolbar actions when native extensions are cramped."""
+        for toolbar, title in (
+            (self.editor.desc_edit.toolbar, "More writing actions"),
+            (self.editor.sheet_builder._toolbar, "More Sheet actions"),
+        ):
+            actions = toolbar.actions()
+            button = QToolButton(toolbar)
+            button.setObjectName("OverflowToolBarMenuButton")
+            button.setText("...")
+            button.setAccessibleName(title)
+            button.setToolTip(title)
+            button.setFixedSize(40, 32)
+            button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+            menu = QMenu(button)
+            menu.setToolTipsVisible(True)
+            for action in actions:
+                if not isinstance(action, QWidgetAction):
+                    menu.addAction(action)
+            button.setMenu(menu)
+            toolbar.insertWidget(actions[1], button)
+            self._toolbar_more_buttons.append(button)
 
     @staticmethod
     def _overflow_row(
@@ -343,8 +403,11 @@ class EditorPresentation(QObject):
 
     def reflow(self) -> None:
         """Switch labels and header actions at the editor width breakpoint."""
-        compact = self.editor.width() < COMPACT_EDITOR_WIDTH
-        generation_compact = self.editor.width() < GENERATION_GRID_WIDTH
+        compact = (
+            min(self.editor.width(), self.editor.details_container.width())
+            < COMPACT_EDITOR_WIDTH
+        )
+        generation_compact = self.editor.llm_generator.width() < GENERATION_GRID_WIDTH
         if generation_compact != self._generation_compact:
             self._generation_compact = generation_compact
             for index, (widget, position) in enumerate(self._generation_items):

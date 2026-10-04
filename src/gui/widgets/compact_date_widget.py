@@ -14,7 +14,7 @@ import os
 from typing import Optional
 
 from PySide6.QtCore import QEvent, QObject, QSize, Qt, Signal, Slot
-from PySide6.QtGui import QIcon, QKeyEvent
+from PySide6.QtGui import QIcon, QKeyEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -122,28 +122,43 @@ class CompactDateWidget(QWidget):
         date_row.setStretch(0, 1)
         self.btn_calendar.setFixedSize(32, 32)
         self.btn_calendar.setAccessibleName("Choose date from calendar")
-        self.date_fields_button = DisclosureButton("Date fields…", self)
-        options_row = QHBoxLayout()
+        self.date_fields_button = DisclosureButton("Date details & uncertainty…", self)
+        options_row = QGridLayout()
         options_row.setContentsMargins(0, 0, 0, 0)
-        options_row.addWidget(self.date_fields_button)
-        options_row.addWidget(self.btn_time_toggle)
+        self._date_options_grid = options_row
+        options_row.addWidget(self.date_fields_button, 0, 0)
+        options_row.addWidget(self.btn_time_toggle, 0, 1)
         layout.insertLayout(1, options_row)
         layout.insertWidget(2, self._date_chip)
         chip_layout = self._date_chip.layout()
-        assert chip_layout is not None
-        for field, width in (
-            (self.spin_year, 110),
-            (self.combo_month, 90),
-            (self.combo_day, 64),
-        ):
+        assert isinstance(chip_layout, QHBoxLayout)
+        fields = (self.spin_year, self.combo_month, self.combo_day)
+        for field in fields:
+            chip_layout.removeWidget(field)
             field.setMinimumWidth(0)
-            field.setMaximumWidth(width)
+            field.setMaximumWidth(16777215)
             field.setMinimumHeight(32)
             field.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.spin_year.setPrefix("")
+        layout_holder = QWidget(self)
+        layout_holder.setLayout(chip_layout)
+        layout_holder.hide()
+        layout_holder.deleteLater()
+        self._structured_grid = QGridLayout(self._date_chip)
+        self._structured_grid.setContentsMargins(4, 4, 4, 4)
+        self._structured_grid.setSpacing(6)
+        self._structured_fields: list[tuple[QLabel, QWidget]] = [
+            (QLabel(title), field)
+            for title, field in zip(("Year", "Month", "Day"), fields, strict=True)
+        ]
+        self._structured_compact: bool | None = None
+        for component_label, component_widget in self._structured_fields:
+            component_label.setBuddy(component_widget)
+            component_widget.setAccessibleName(component_label.text())
+        self._reflow_structured_fields()
         self._date_chip.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
-        chip_layout.setSpacing(4)
         self.date_fields_button.toggled.connect(self._date_chip.setVisible)
         self._qualification_row = QWidget(self)
         # Stack the label above the choice so its longest option does not
@@ -186,6 +201,34 @@ class CompactDateWidget(QWidget):
             field.installEventFilter(self)
             field.setToolTip("Choose a component, or press Delete to leave it unknown.")
         self._sync_entry_availability()
+
+    def _reflow_structured_fields(self) -> None:
+        """Stack the live date components when their pane cannot fit labels."""
+        from src.gui.widgets.editor_presentation import COMPACT_EDITOR_WIDTH
+
+        compact = self.width() < COMPACT_EDITOR_WIDTH
+        if compact == self._structured_compact:
+            return
+        self._structured_compact = compact
+        self._date_options_grid.removeWidget(self.btn_time_toggle)
+        self._date_options_grid.addWidget(
+            self.btn_time_toggle, 1 if compact else 0, 0 if compact else 1
+        )
+        for index, (label, field) in enumerate(self._structured_fields):
+            self._structured_grid.removeWidget(label)
+            self._structured_grid.removeWidget(field)
+            if compact:
+                self._structured_grid.addWidget(label, index * 2, 0)
+                self._structured_grid.addWidget(field, index * 2 + 1, 0)
+            else:
+                self._structured_grid.addWidget(label, 0, index)
+                self._structured_grid.addWidget(field, 1, index)
+
+    def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
+        """Use the date widget's available width, including split panes."""
+        super().resizeEvent(event)
+        if self._text_first and hasattr(self, "_structured_grid"):
+            self._reflow_structured_fields()
 
     def _sync_entry_availability(self) -> None:
         if not self._text_first:

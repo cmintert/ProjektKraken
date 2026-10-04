@@ -91,7 +91,8 @@ def test_focus_action_precedes_bold_in_formatting_toolbar(focus_setup):
     actions = editor.desc_edit.toolbar.actions()
     focus_index = actions.index(editor._presentation._focus_toolbar_action)
     bold_index = actions.index(editor.desc_edit.editor.action_bold)
-    assert focus_index + 1 == bold_index
+    # The visible overflow route may follow Focus writing on narrow toolbars.
+    assert focus_index < bold_index
     assert editor._presentation.focus_button.toolTip() == "Focus writing (F11)"
 
 

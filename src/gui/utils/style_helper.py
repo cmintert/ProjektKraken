@@ -202,7 +202,7 @@ class StyleHelper:
             str: QSS stylesheet string.
         """
         theme = ThemeManager().get_theme()
-        surface_alt = theme.get("surface_alt", "#2A2A2A")
+        surface_alt = theme.get("surface_alt", theme["app_bg"])
         border = theme.get("border", "#333333")
         primary = theme.get("primary", "#5C82FF")
 

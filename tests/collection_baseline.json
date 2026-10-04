@@ -2,10 +2,10 @@
   "schema": 1,
   "counts": {
     "smoke": 18,
-    "ci_fast": 1326,
+    "ci_fast": 1366,
     "slow": 1,
     "performance": 0,
-    "full": 5699,
+    "full": 5739,
     "full_only": 4364
   },
   "categories": {
@@ -18,7 +18,7 @@
     "repro": 2,
     "root": 15,
     "security": 5,
-    "unit": 5366
+    "unit": 5406
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -3838,6 +3838,111 @@
     "tests/unit/test_inject_command.py::test_command_no_overwrite": [],
     "tests/unit/test_inject_command.py::test_command_undo_entity": [],
     "tests/unit/test_inject_command.py::test_command_undo_type": [],
+    "tests/unit/test_inspector_composition.py::test_auxiliary_reset_does_not_leave_deferred_deletion_with_content[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_auxiliary_reset_does_not_leave_deferred_deletion_with_content[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_auxiliary_split_return_and_reset_preserve_live_content[entity-sheet]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_auxiliary_split_return_and_reset_preserve_live_content[entity-world_context]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_auxiliary_split_return_and_reset_preserve_live_content[event-sheet]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_auxiliary_split_return_and_reset_preserve_live_content[event-world_context]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_canonical_destinations_and_details_are_live_views[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_canonical_destinations_and_details_are_live_views[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_collapsed_summary_indicates_retained_content[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_collapsed_summary_indicates_retained_content[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_context_navigation_retains_original_signals_and_renderer[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_context_navigation_retains_original_signals_and_renderer[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_failed_auxiliary_split_restores_original_home[entity-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_failed_auxiliary_split_restores_original_home[entity-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_failed_auxiliary_split_restores_original_home[event-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_failed_auxiliary_split_restores_original_home[event-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_invalid_date_and_newer_prose_survive_section_navigation[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_local_pane_width_reflows_date_without_changing_semantics[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_media_attachment_navigation_follows_dragged_destination[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_more_menu_has_visible_layout_and_support_routes[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_more_menu_has_visible_layout_and_support_routes[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_narrow_toolbar_menus_reuse_authored_actions[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_narrow_toolbar_menus_reuse_authored_actions[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_partial_content_relocation_returns_widget_home[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_partial_content_relocation_returns_widget_home[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_same_context_refresh_preserves_nested_disclosure[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_same_context_refresh_preserves_nested_disclosure[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_same_object_and_new_object_keep_destination_and_details_view[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_same_object_and_new_object_keep_destination_and_details_view[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_selection_scroll_and_undo_survive_navigation_and_resize[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_selection_scroll_and_undo_survive_navigation_and_resize[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_split_content_can_be_dragged_and_returned_to_its_home[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_split_content_can_be_dragged_and_returned_to_its_home[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_tags_and_sheet_edits_remain_dirty_through_view_changes[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_tags_and_sheet_edits_remain_dirty_through_view_changes[event]": [
+      "ci_fast"
+    ],
     "tests/unit/test_integration_decomposition.py::TestAppCoordinatorIntegration::test_app_coordinator_has_all_coordinators": [],
     "tests/unit/test_integration_decomposition.py::TestAppCoordinatorIntegration::test_app_coordinator_import": [],
     "tests/unit/test_integration_decomposition.py::TestDIIntegration::test_custom_meta_repo": [],
@@ -6515,6 +6620,21 @@
     "tests/unit/test_spatial_geometry.py::test_shape_pair_relations[source7-target7-contains]": [],
     "tests/unit/test_splitter_tab_inspector.py::test_body_drop_without_splitter_keeps_source_tab": [],
     "tests/unit/test_splitter_tab_inspector.py::test_decode_source_index_rejects_malformed_data": [],
+    "tests/unit/test_splitter_tab_inspector.py::test_duplicate_destination_id_rejected_before_insertion": [
+      "ci_fast"
+    ],
+    "tests/unit/test_splitter_tab_inspector.py::test_failed_move_restores_source_and_metadata[partial]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_splitter_tab_inspector.py::test_failed_move_restores_source_and_metadata[raise]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_splitter_tab_inspector.py::test_failed_move_restores_source_and_metadata[reject]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_splitter_tab_inspector.py::test_move_between_independent_inspectors_is_rejected": [
+      "ci_fast"
+    ],
     "tests/unit/test_splitter_tab_inspector.py::test_move_tab_preserves_widget_metadata": [],
     "tests/unit/test_splitter_tab_inspector.py::test_move_tab_rejects_stale_index_without_mutation": [],
     "tests/unit/test_standard_checkbox.py::test_standard_checkbox_init": [],

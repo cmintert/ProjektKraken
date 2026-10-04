@@ -2,12 +2,14 @@
 
 from unittest.mock import MagicMock
 
+import pytest
 from PySide6.QtCore import QMimeData, QPoint
 from PySide6.QtWidgets import QLabel
 
 from src.gui.widgets.splitter_tab_inspector import (
     INSPECTOR_TAB_MIME_TYPE,
     DraggableTabWidget,
+    SplitterTabInspector,
     _decode_source_index,
     _move_tab,
 )
@@ -80,3 +82,59 @@ def test_body_drop_without_splitter_keeps_source_tab(qtbot):
 def test_decode_source_index_rejects_malformed_data():
     """Malformed drag payloads are rejected without raising."""
     assert _decode_source_index(_tab_mime("not-an-index")) is None
+
+
+@pytest.mark.ci_fast
+@pytest.mark.parametrize("failure", ["reject", "raise", "partial"])
+def test_failed_move_restores_source_and_metadata(qtbot, monkeypatch, failure):
+    source = DraggableTabWidget()
+    target = DraggableTabWidget()
+    qtbot.addWidget(source)
+    qtbot.addWidget(target)
+    content = QLabel("Content")
+    source.addTab(content, "Lore")
+    source.setTabToolTip(0, "Retained tooltip")
+    source.setTabEnabled(0, False)
+    insert = target.insertTab
+
+    def fail(*args):
+        if failure == "reject":
+            return -1
+        if failure == "partial":
+            insert(*args)
+        raise RuntimeError("Rejected insertion")
+
+    monkeypatch.setattr(target, "insertTab", fail)
+    assert not _move_tab(source, target, 0, 0)
+    assert source.widget(0) is content
+    assert source.tabText(0) == "Lore"
+    assert source.tabToolTip(0) == "Retained tooltip"
+    assert not source.isTabEnabled(0)
+    assert not target.count()
+
+
+@pytest.mark.ci_fast
+def test_move_between_independent_inspectors_is_rejected(qtbot):
+    source = SplitterTabInspector()
+    target = SplitterTabInspector()
+    qtbot.addWidget(source)
+    qtbot.addWidget(target)
+    content = QLabel("Retained")
+    source.add_tab(content, "Overview", section_id="overview")
+    assert not _move_tab(source.main_tabs, target.main_tabs, 0, 0)
+    source.activate_section_id("overview")
+    assert source.main_tabs.currentWidget() is content
+    assert not target.main_tabs.count()
+
+
+@pytest.mark.ci_fast
+def test_duplicate_destination_id_rejected_before_insertion(qtbot):
+    inspector = SplitterTabInspector()
+    qtbot.addWidget(inspector)
+    content = QLabel("First")
+    inspector.add_tab(content, "Overview", section_id="overview")
+    with pytest.raises(ValueError, match="Duplicate"):
+        inspector.add_tab(QLabel("Second", inspector), "Other", section_id="overview")
+    assert inspector.main_tabs.count() == 1
+    inspector.activate_section(content)
+    assert inspector.main_tabs.currentWidget() is content

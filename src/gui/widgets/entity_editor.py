@@ -27,7 +27,6 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QScrollArea,
     QSizePolicy,
-    QTabWidget,
     QToolButton,
     QVBoxLayout,
     QWidget,
@@ -371,12 +370,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
     @Slot(str)
     def _show_context_attachment(self, attachment_id: str) -> None:
-        """Open the Gallery tab and select a captioned attachment."""
-        for tabs in self.inspector.findChildren(QTabWidget):
-            index = tabs.indexOf(self.tab_gallery)
-            if index >= 0:
-                tabs.setCurrentIndex(index)
-                break
+        """Open Media in its current pane and select a captioned attachment."""
+        self.inspector.activate_section_id("media")
         for index in range(self.gallery.list_widget.count()):
             item = self.gallery.list_widget.item(index)
             if item.data(Qt.ItemDataRole.UserRole) == attachment_id:

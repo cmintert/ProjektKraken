@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-04
-**Commit:** 718b54babfe8a128e20b97126c71c2dbf6597ee9
+**Last Updated:** 2026-10-05
+**Commit:** 5e7942f7cdca032fc1c3af3be563799a8c04f366
 ---
 
 # Changelog
@@ -12,6 +12,15 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-10-05)* **Canonical inspectors (KRT-45)**: Grouped Entity/Event editing
+  into Overview, Connections, Details and Media, with tags above Fields/Sheet.
+  Added labeled layout navigation and independent World context/Sheet panes
+  with live-widget return/reset, transactional relocation and draft retention.
+  Improved narrow date/source presentation, toolbar access and light-theme Sheet
+  contrast. Preserved temporal save checkpoints; added 40 regression cases,
+  production-theme render evidence and the complete capability mapping.
+  Preserved the pre-change baseline; full human v1.2 acceptance remains pending.
 
 - *(2026-10-04)* **Human authoring evidence (KRT-46)**: Recorded the first
   KA-01–15 video review with timecodes, evidence limits and Linear follow-ups,

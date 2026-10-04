@@ -4,8 +4,11 @@ Provides a custom QSplitter-based widget that supports vertical stacking of tabs
 drag-and-drop functionality.
 """
 
+from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Optional
 
+import shiboken6
 from PySide6.QtCore import QMimeData, QPoint, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QDrag, QDragEnterEvent, QDropEvent, QMouseEvent, QResizeEvent
 from PySide6.QtWidgets import (
@@ -19,11 +22,19 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.logging_config import get_logger
+from src.gui.widgets.inspector_section import AuxiliarySectionHome
 
 logger = get_logger(__name__)
 
 INSPECTOR_TAB_MIME_TYPE = "application/x-inspector-tab"
 _DRAG_START_DISTANCE_PX = 20
+
+
+@dataclass
+class _AuxiliarySection:
+    home: AuxiliarySectionHome
+    destination: str
+    reveal: Callable[[], None]
 
 
 def _decode_source_index(mime_data: QMimeData) -> int | None:
@@ -58,6 +69,13 @@ def _move_tab(
     if widget is None:
         return False
 
+    if (
+        isinstance(source, DraggableTabWidget)
+        and isinstance(target, DraggableTabWidget)
+        and source._inspector() is not target._inspector()
+    ):
+        return False
+
     target_index = max(0, min(target_index, target.count()))
     if source is target:
         if source.count() <= 1:
@@ -76,11 +94,16 @@ def _move_tab(
 
     try:
         inserted_index = target.insertTab(target_index, widget, icon, title)
+        if inserted_index < 0:
+            raise RuntimeError("Inspector pane rejected the moved section")
         target.setTabToolTip(inserted_index, tooltip)
         target.setTabEnabled(inserted_index, enabled)
         target.setCurrentIndex(inserted_index)
     except Exception:
         logger.exception("Failed to insert moved inspector tab; restoring source")
+        partial_index = target.indexOf(widget)
+        if partial_index >= 0:
+            target.removeTab(partial_index)
         restored_index = source.insertTab(source_index, widget, icon, title)
         source.setTabToolTip(restored_index, tooltip)
         source.setTabEnabled(restored_index, enabled)
@@ -188,6 +211,8 @@ class DraggableTabBar(QTabBar):
             tab_widget: The tab widget to check and potentially remove.
 
         """
+        if not shiboken6.isValid(tab_widget):
+            return
         logger.debug(
             f"DraggableTabBar._cleanup_empty_pane: checking tab_widget="
             f"{getattr(tab_widget, 'objectName', lambda: None)()}"
@@ -203,7 +228,9 @@ class DraggableTabBar(QTabBar):
                     """Check conditions and delete empty pane if appropriate."""
                     # Re-check conditions before deleting
                     if (
-                        tab_widget.count() == 0
+                        shiboken6.isValid(tab_widget)
+                        and shiboken6.isValid(splitter)
+                        and tab_widget.count() == 0
                         and tab_widget.parent() is splitter
                         and splitter.count() > 1
                     ):
@@ -228,6 +255,14 @@ class DraggableTabBar(QTabBar):
         return None
 
 
+class _InspectorMenuButton(QToolButton):
+    """Reserve the complete labeled corner action in the tab geometry."""
+
+    def sizeHint(self) -> QSize:
+        """Keep Qt's corner placement consistent with the fixed hit target."""
+        return QSize(76, 32)
+
+
 class DraggableTabWidget(QTabWidget):
     """A QTabWidget with a draggable tab bar."""
 
@@ -238,18 +273,18 @@ class DraggableTabWidget(QTabWidget):
         self.setAcceptDrops(True)
         self.setMovable(True)
         self.currentChanged.connect(self._remember_section)
-        self.overflow_button = QToolButton(self)
-        self.overflow_button.setText("…")
-        self.overflow_button.setToolTip("All inspector tabs")
-        self.overflow_button.setAccessibleName("All inspector tabs")
-        self.overflow_button.setFixedSize(32, 32)
+        self.overflow_button = _InspectorMenuButton(self)
+        self.overflow_button.setText("More")
+        self.overflow_button.setToolTip("Inspector sections and layout")
+        self.overflow_button.setAccessibleName("Inspector sections and layout")
+        self.overflow_button.setFixedSize(76, 32)
         self.overflow_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.overflow_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.overflow_menu = QMenu(self.overflow_button)
+        self.overflow_menu.setToolTipsVisible(True)
         self.overflow_button.setMenu(self.overflow_menu)
         self.overflow_menu.aboutToShow.connect(self._populate_overflow)
         self.setCornerWidget(self.overflow_button, Qt.Corner.TopRightCorner)
-        self.overflow_button.hide()
         self.tabBar().setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.tabBar().customContextMenuRequested.connect(self._show_layout_menu)
         from src.core.theme_manager import ThemeManager
@@ -277,6 +312,7 @@ class DraggableTabWidget(QTabWidget):
         self.overflow_menu.clear()
         inspector = self._inspector()
         if inspector is not None:
+            inspector._active_section = self.currentWidget()
             inspector.populate_sections(self.overflow_menu)
 
     def _show_layout_menu(self, position: QPoint) -> None:
@@ -313,9 +349,7 @@ class DraggableTabWidget(QTabWidget):
 
     def _update_overflow(self) -> None:
         if hasattr(self, "overflow_button"):
-            self.overflow_button.setVisible(
-                self.tabBar().sizeHint().width() > self.width()
-            )
+            self.overflow_button.show()
 
     def _remember_section(self, index: int) -> None:
         parent = self.parentWidget()
@@ -399,6 +433,8 @@ class DraggableTabWidget(QTabWidget):
             splitter: The parent splitter containing the tab widget.
 
         """
+        if not shiboken6.isValid(tab_widget) or not shiboken6.isValid(splitter):
+            return
         logger.debug(
             f"_cleanup_empty_pane: checking tab_widget="
             f"{getattr(tab_widget, 'objectName', lambda: None)()}"
@@ -412,7 +448,9 @@ class DraggableTabWidget(QTabWidget):
                 """Check conditions and delete empty pane if appropriate."""
                 # Re-check conditions before deleting
                 if (
-                    tab_widget.count() == 0
+                    shiboken6.isValid(tab_widget)
+                    and shiboken6.isValid(splitter)
+                    and tab_widget.count() == 0
                     and tab_widget.parent() is splitter
                     and splitter.count() > 1
                 ):
@@ -452,6 +490,8 @@ class SplitterTabInspector(QWidget):
         main_layout.setSpacing(0)
 
         self._sections: list[tuple[QWidget, str]] = []
+        self._section_ids: dict[str, QWidget] = {}
+        self._auxiliary: dict[str, _AuxiliarySection] = {}
         self._active_section: QWidget | None = None
         self.splitter = QSplitter(Qt.Orientation.Vertical)
 
@@ -469,7 +509,12 @@ class SplitterTabInspector(QWidget):
         self._tab_widgets = [self.main_tabs]
 
     def add_tab(
-        self, widget: QWidget, title: str, tooltip: Optional[str] = None
+        self,
+        widget: QWidget,
+        title: str,
+        tooltip: Optional[str] = None,
+        *,
+        section_id: str | None = None,
     ) -> None:
         """Add a tab to the main tab widget.
 
@@ -479,8 +524,14 @@ class SplitterTabInspector(QWidget):
             tooltip (str, optional): The tab tooltip.
 
         """
+        if section_id is not None and (
+            section_id in self._section_ids or section_id in self._auxiliary
+        ):
+            raise ValueError(f"Duplicate inspector section: {section_id}")
         index = self.main_tabs.addTab(widget, title)
         self._sections.append((widget, title))
+        if section_id is not None:
+            self._section_ids[section_id] = widget
         if tooltip:
             self.main_tabs.setTabToolTip(index, tooltip)
 
@@ -491,6 +542,132 @@ class SplitterTabInspector(QWidget):
             action.triggered.connect(
                 lambda _checked=False, section=widget: self.activate_section(section)
             )
+        menu.addSeparator()
+        split = menu.addAction("Split active section below")
+        pane = self._pane_for(self._active_section)
+        split.setEnabled(pane is not None and pane.count() > 1)
+        split.triggered.connect(self.split_active_section)
+        for section_id, auxiliary in self._auxiliary.items():
+            action = menu.addAction(f"Open {auxiliary.home.title} below")
+            action.triggered.connect(
+                lambda _checked=False, key=section_id: self.open_auxiliary_below(key)
+            )
+            if auxiliary.home.detached:
+                restore = menu.addAction(f"Return {auxiliary.home.title} here")
+                restore.triggered.connect(
+                    lambda _checked=False, key=section_id: self.return_auxiliary(key)
+                )
+        menu.addAction("Reset inspector layout").triggered.connect(self.reset_layout)
+
+    def remove_tab(self, widget: QWidget) -> None:
+        """Unregister a primary tab without destroying its live content."""
+        pane = self._pane_for(widget)
+        if pane is not None:
+            pane.removeTab(pane.indexOf(widget))
+        self._sections = [
+            (item, title) for item, title in self._sections if item is not widget
+        ]
+        self._section_ids = {
+            key: item for key, item in self._section_ids.items() if item is not widget
+        }
+        widget.setParent(self)
+        widget.hide()
+
+    def register_auxiliary(
+        self,
+        section_id: str,
+        home: AuxiliarySectionHome,
+        destination: str,
+        reveal: Callable[[], None],
+    ) -> None:
+        """Register an embedded section that can also occupy a split pane."""
+        if section_id in self._section_ids or section_id in self._auxiliary:
+            raise ValueError(f"Duplicate inspector section: {section_id}")
+        if destination not in self._section_ids:
+            raise ValueError(f"Unknown home destination: {destination}")
+        self._auxiliary[section_id] = _AuxiliarySection(home, destination, reveal)
+        home.show_requested.connect(lambda: self.activate_section_id(section_id))
+        home.return_requested.connect(lambda: self.return_auxiliary(section_id))
+
+    def activate_section_id(self, section_id: str) -> None:
+        """Reveal a stable destination wherever it currently lives."""
+        auxiliary = self._auxiliary.get(section_id)
+        if auxiliary is None:
+            section = self._section_ids.get(section_id)
+            if section is not None:
+                self.activate_section(section)
+            return
+        if auxiliary.home.detached:
+            self.activate_section(auxiliary.home.pane)
+        else:
+            self.activate_section_id(auxiliary.destination)
+            auxiliary.reveal()
+
+    def _pane_for(self, section: QWidget | None) -> DraggableTabWidget | None:
+        return next(
+            (
+                pane
+                for pane in self.findChildren(DraggableTabWidget)
+                if section is not None and pane.indexOf(section) >= 0
+            ),
+            None,
+        )
+
+    def open_auxiliary_below(self, section_id: str) -> None:
+        """Move a live embedded section below its home, restoring on failure."""
+        auxiliary = self._auxiliary.get(section_id)
+        if auxiliary is None:
+            return
+        home = auxiliary.home
+        if home.detached:
+            self.activate_section(home.pane)
+            return
+        source = self._pane_for(self._section_ids[auxiliary.destination])
+        if source is None:
+            return
+        target = DraggableTabWidget()
+        self.splitter.insertWidget(self.splitter.indexOf(source) + 1, target)
+        try:
+            index = target.addTab(home.pane, home.title)
+            if index < 0:
+                raise RuntimeError("Inspector pane rejected the auxiliary section")
+            home.detach()
+        except Exception:
+            logger.exception("Failed to split auxiliary inspector section")
+            index = target.indexOf(home.pane)
+            if index >= 0:
+                target.removeTab(index)
+            home.attach()
+            home.pane.setParent(home)
+            home.pane.hide()
+            target.setParent(None)
+            target.deleteLater()
+            return
+        self.splitter.setSizes([1] * self.splitter.count())
+        self.activate_section(home.pane)
+
+    def return_auxiliary(self, section_id: str, *, activate: bool = True) -> None:
+        """Restore the original home even after its split tab was dragged."""
+        auxiliary = self._auxiliary.get(section_id)
+        if auxiliary is None or not auxiliary.home.detached:
+            return
+        pane = self._pane_for(auxiliary.home.pane)
+        if pane is not None:
+            pane.removeTab(pane.indexOf(auxiliary.home.pane))
+        auxiliary.home.attach()
+        self._prune_empty_panes()
+        if activate:
+            self.activate_section_id(section_id)
+
+    def _prune_empty_panes(self) -> None:
+        """Remove empty panes, including earlier drag sources, after return."""
+        for pane in self.findChildren(DraggableTabWidget):
+            if not pane.count() and self.splitter.count() > 1:
+                pane.setParent(None)
+                pane.deleteLater()
+        first = self.splitter.widget(0)
+        if isinstance(first, DraggableTabWidget):
+            self.main_tabs = first
 
     def activate_section(self, section: QWidget) -> None:
         """Activate a section without moving it out of its split pane."""
@@ -524,11 +701,16 @@ class SplitterTabInspector(QWidget):
             return
         new_tabs = DraggableTabWidget()
         self.splitter.insertWidget(self.splitter.indexOf(tabs) + 1, new_tabs)
-        _move_tab(tabs, new_tabs, tabs.currentIndex(), 0)
+        if not _move_tab(tabs, new_tabs, tabs.currentIndex(), 0):
+            new_tabs.setParent(None)
+            new_tabs.deleteLater()
+            return
         self.splitter.setSizes([1] * self.splitter.count())
 
     def reset_layout(self) -> None:
         """Restore original section order without recreating any content."""
+        for section_id in self._auxiliary:
+            self.return_auxiliary(section_id, activate=False)
         panes = self.findChildren(DraggableTabWidget)
         target = panes[0]
         for widget, title in self._sections:
@@ -547,6 +729,7 @@ class SplitterTabInspector(QWidget):
         self.main_tabs = target
         self._tab_widgets = [target]
         target.setCurrentIndex(0)
+        self._active_section = target.currentWidget()
 
     def get_main_tabs(self) -> QTabWidget:
         """Return the main tab widget."""

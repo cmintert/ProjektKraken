@@ -41,6 +41,7 @@ class SummaryWidget(QWidget):
     generate_requested = Signal()
     edit_committed = Signal(str)
     delete_requested = Signal()
+    presence_changed = Signal(bool)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the summary widget.
@@ -152,6 +153,7 @@ class SummaryWidget(QWidget):
         self.set_stale(False)
         self.generate_btn.setText("Regenerate")
         self._update_action_visibility(True)
+        self.presence_changed.emit(True)
 
     def set_stale(self, stale: bool) -> None:
         """Displays or hides the stale warning."""
@@ -169,6 +171,7 @@ class SummaryWidget(QWidget):
         self.stale_banner.hide()
         self.generate_btn.setText("Generate")
         self._update_action_visibility(False)
+        self.presence_changed.emit(False)
 
     def set_controls_enabled(self, enabled: bool) -> None:
         """Enable or disable all summary mutation controls."""
@@ -254,17 +257,15 @@ class SummaryWidget(QWidget):
     def _apply_styles(self, _theme: dict | None = None) -> None:
         """Apply stale-state and metadata colours from the active theme."""
         theme = ThemeManager().get_theme()
-        self.stale_label.setStyleSheet(
-            f"color: {theme['error']}; font-weight: bold;"
-        )
+        self.stale_label.setStyleSheet(f"color: {theme['error']}; font-weight: bold;")
         self.metadata_label.setStyleSheet(
             f"color: {theme['text_dim']}; font-size: 10px;"
         )
         self.stale_banner.setStyleSheet(
             f"""
             QFrame#stale_banner {{
-                background-color: {theme['surface']};
-                border: 1px solid {theme['error']};
+                background-color: {theme["surface"]};
+                border: 1px solid {theme["error"]};
                 border-radius: 4px;
             }}
         """

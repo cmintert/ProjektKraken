@@ -10,6 +10,19 @@ remains a separate seeded audit run.
 
 ## Evidence and disposition rules
 
+KRT-45 implementation update (2026-10-05, based on `5e7942f7`): Entity/Event
+destinations are now Overview, Connections, Details and Media. Tags sit above
+Fields/Sheet; World context is a read-only Overview disclosure; both supporting
+views can independently split and return through the labeled inspector More
+menu. The earlier inventory below remains a historical audit of `eb8aff5c`.
+Current routes, every nested disclosure, contract 1–10 tracing, regressions and
+rendered evidence are in [the KRT-45 mapping](evidence/krt45/README.md).
+Date fields… is now Date details & uncertainty…; advanced semantics and existing
+dialog exceptions remain. The user authorized implementation with a preserved
+baseline. The [full human v1.2 comparison](evidence/krt45/benchmark-comparison.md)
+is pending; destination fragmentation is implemented but its human acceptance
+disposition remains open. No contract rule was revised.
+
 **C** = verified compliance for the explicitly described behavior.
 **V** = known violation linked to actionable work.
 **E** = justified exception with the domain reason and alternative route below.

@@ -1,0 +1,261 @@
+{
+  "baseline_revision": "5e7942f7cdca032fc1c3af3be563799a8c04f366",
+  "python": "3.13.14",
+  "qt_binding": "6.10.1",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "method": "isolated component rendering; no database or human metrics",
+  "captures": [
+    {
+      "image": "entity-dark_mode-331-overview.png",
+      "width": 376,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "entity-dark_mode-331-advanced.png",
+      "width": 376,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "entity-dark_mode-331-short.png",
+      "width": 376,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "entity-dark_mode-560-overview.png",
+      "width": 560,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "entity-dark_mode-560-advanced.png",
+      "width": 560,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "entity-dark_mode-560-short.png",
+      "width": 560,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "entity-dark_mode-871-overview.png",
+      "width": 871,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "entity-dark_mode-871-advanced.png",
+      "width": 871,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "entity-dark_mode-871-short.png",
+      "width": 871,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "event-dark_mode-331-overview.png",
+      "width": 331,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "event-dark_mode-331-advanced.png",
+      "width": 331,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 21
+    },
+    {
+      "image": "event-dark_mode-331-short.png",
+      "width": 331,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 21
+    },
+    {
+      "image": "event-dark_mode-560-overview.png",
+      "width": 560,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "event-dark_mode-560-advanced.png",
+      "width": 560,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "event-dark_mode-560-short.png",
+      "width": 560,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "event-dark_mode-871-overview.png",
+      "width": 871,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "event-dark_mode-871-advanced.png",
+      "width": 871,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "event-dark_mode-871-short.png",
+      "width": 871,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "entity-light_mode-331-overview.png",
+      "width": 376,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "entity-light_mode-331-advanced.png",
+      "width": 376,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "entity-light_mode-331-short.png",
+      "width": 376,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "entity-light_mode-560-overview.png",
+      "width": 560,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "entity-light_mode-560-advanced.png",
+      "width": 560,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "entity-light_mode-560-short.png",
+      "width": 560,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "entity-light_mode-871-overview.png",
+      "width": 871,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "entity-light_mode-871-advanced.png",
+      "width": 871,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "entity-light_mode-871-short.png",
+      "width": 871,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "event-light_mode-331-overview.png",
+      "width": 331,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "event-light_mode-331-advanced.png",
+      "width": 331,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 21
+    },
+    {
+      "image": "event-light_mode-331-short.png",
+      "width": 331,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 21
+    },
+    {
+      "image": "event-light_mode-560-overview.png",
+      "width": 560,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "event-light_mode-560-advanced.png",
+      "width": 560,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "event-light_mode-560-short.png",
+      "width": 560,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "event-light_mode-871-overview.png",
+      "width": 871,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "event-light_mode-871-advanced.png",
+      "width": 871,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 0
+    },
+    {
+      "image": "event-light_mode-871-short.png",
+      "width": 871,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 0
+    }
+  ]
+}

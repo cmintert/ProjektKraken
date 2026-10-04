@@ -163,7 +163,7 @@ class AttributePairWidget(QFrame):
         if not shiboken6.isValid(self):
             return
         theme = self._theme_mgr.get_theme()
-        text = theme.get("text", "#E0E0E0")
+        text = theme["text_main"]
 
         # Base input style handles border, radius, bg, text color
         input_style = StyleHelper.get_input_field_style()
@@ -172,10 +172,11 @@ class AttributePairWidget(QFrame):
         self.setStyleSheet(
             StyleHelper.get_sheet_attribute_style()
             + f"""
-            QLabel {{
+            AttributePairWidget QLabel {{
                 color: {text};
+                background-color: transparent;
             }}
-            QTextEdit, QComboBox {{
+            AttributePairWidget QTextEdit, AttributePairWidget QComboBox {{
                 {input_style}
             }}
             QTextEdit:focus, QComboBox:focus {{
@@ -248,9 +249,7 @@ class AttributePairWidget(QFrame):
         """Initiate a drag if the mouse moves far enough from the press point."""
         if (
             self._drag_start_pos is not None
-            and (
-                event.pos() - self._drag_start_pos
-            ).manhattanLength()
+            and (event.pos() - self._drag_start_pos).manhattanLength()
             > _DRAG_START_DISTANCE_PX
         ):
             drag = QDrag(self)
@@ -540,9 +539,7 @@ class SpacerWidget(QFrame):
         """Initiate a drag once the mouse has moved far enough."""
         if (
             self._drag_start_pos is not None
-            and (
-                event.pos() - self._drag_start_pos
-            ).manhattanLength()
+            and (event.pos() - self._drag_start_pos).manhattanLength()
             > _DRAG_START_DISTANCE_PX
         ):
             drag = QDrag(self)
@@ -996,7 +993,7 @@ class SheetBuilderWidget(QWidget):
             return
         theme = self._theme_mgr.get_theme()
         surface = theme.get("surface", "#1A1A1A")
-        surface_alt = theme.get("surface_alt", "#2A2A2A")
+        surface_alt = theme.get("surface_alt", theme["app_bg"])
         border = theme.get("border", "#333333")
 
         # Style the scroll area and container to match the app's surface
@@ -1266,9 +1263,7 @@ class SheetBuilderWidget(QWidget):
         """Accept drags carrying the sheet MIME type and show ghost preview."""
         if event.mimeData().hasFormat(_SHEET_DRAG_MIME):
             event.acceptProposedAction()
-            key = bytes(event.mimeData().data(_SHEET_DRAG_MIME).data()).decode(
-                "utf-8"
-            )
+            key = bytes(event.mimeData().data(_SHEET_DRAG_MIME).data()).decode("utf-8")
             # Show a friendly label for spacers instead of the raw spacer_id
             label = "⬜ Spacer" if key.startswith("__spacer_") else key
             self._ghost = _GhostWidget(label)
@@ -1663,7 +1658,9 @@ class SheetBuilderWidget(QWidget):
         for i in range(hlayout.count()):
             item = hlayout.itemAt(i)
             if item and item.widget():
-                if isinstance(item.widget(), (TextBlockWidget, DividerWidget, HeaderWidget)):
+                if isinstance(
+                    item.widget(), (TextBlockWidget, DividerWidget, HeaderWidget)
+                ):
                     return False
         return True
 

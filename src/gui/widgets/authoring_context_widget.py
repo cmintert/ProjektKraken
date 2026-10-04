@@ -46,6 +46,8 @@ class AuthoringContextWidget(QWidget):
     ) -> None:
         """Initialize the read-only context surface."""
         super().__init__(parent)
+        self._embedded = False
+        self._context_id: str | None = None
         self._object_label = object_label
         layout = QVBoxLayout(self)
         StyleHelper.apply_compact_spacing(layout)
@@ -88,6 +90,26 @@ class AuthoringContextWidget(QWidget):
         theme_manager.theme_changed.connect(self._apply_theme)
         self._apply_theme(theme_manager.get_theme())
 
+    def set_embedded(self, embedded: bool) -> None:
+        """Let Overview own scrolling while preserving the same renderer."""
+        if embedded == self._embedded:
+            return
+        layout = self.layout()
+        assert isinstance(layout, QVBoxLayout)
+        if embedded:
+            self.scroll_area.takeWidget()
+            layout.removeWidget(self.scroll_area)
+            self.scroll_area.hide()
+            layout.addWidget(self.scroll_content)
+            self.scroll_content.show()
+        else:
+            layout.removeWidget(self.scroll_content)
+            self.scroll_area.setWidget(self.scroll_content)
+            layout.addWidget(self.scroll_area)
+            self.scroll_area.show()
+        self._embedded = embedded
+        self._fit_visible_browsers()
+
     def _make_browser(self) -> QTextBrowser:
         browser = QTextBrowser(self)
         browser.setOpenLinks(False)
@@ -95,9 +117,7 @@ class AuthoringContextWidget(QWidget):
         browser.setFrameShape(QTextBrowser.Shape.NoFrame)
         browser.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         browser.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        browser.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
-        )
+        browser.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         browser.anchorClicked.connect(self._on_anchor_clicked)
         return browser
 
@@ -106,12 +126,9 @@ class AuthoringContextWidget(QWidget):
         """Apply the active palette to controls and rich-text links."""
         surface = theme["surface"]
         self.scroll_area.setStyleSheet(
-            "QScrollArea { border: none; "
-            f"background-color: {surface}; }}"
+            f"QScrollArea {{ border: none; background-color: {surface}; }}"
         )
-        self.scroll_area.viewport().setStyleSheet(
-            f"background-color: {surface};"
-        )
+        self.scroll_area.viewport().setStyleSheet(f"background-color: {surface};")
         self.scroll_content.setStyleSheet(f"background-color: {surface};")
         self.status_label.setStyleSheet(
             f"color: {theme['text_dim']}; background: transparent;"
@@ -143,6 +160,8 @@ class AuthoringContextWidget(QWidget):
 
     def clear_context(self) -> None:
         """Reset the surface when no Event is selected."""
+        self._context_id = None
+        self.more_button.setChecked(False)
         self.status_label.setText(self._empty_text())
         self.status_label.show()
         self.primary_view.clear()
@@ -166,19 +185,17 @@ class AuthoringContextWidget(QWidget):
     ) -> None:
         """Render one complete serialized Event context snapshot."""
         primary, more = self._render(context, date_label)
-        self.status_label.hide()
-        self.primary_view.setHtml(primary)
-        self._fit_browser_height(self.primary_view)
-        self.primary_view.show()
-        self.more_view.setHtml(more)
-        self._fit_browser_height(self.more_view)
-        self.more_button.setVisible(bool(more))
-        self.more_button.setChecked(False)
-        self.more_view.hide()
+        self._present_context(context.event_id, primary, more)
 
     def set_entity_context(self, context: EntityAuthoringContext) -> None:
         """Render one complete serialized Entity context snapshot."""
         primary, more = self._render_entity(context)
+        self._present_context(context.entity_id, primary, more)
+
+    def _present_context(self, item_id: str, primary: str, more: str) -> None:
+        """Keep the bounded-context disclosure during same-object refreshes."""
+        expanded = self._context_id == item_id and self.more_button.isChecked()
+        self._context_id = item_id
         self.status_label.hide()
         self.primary_view.setHtml(primary)
         self._fit_browser_height(self.primary_view)
@@ -186,8 +203,8 @@ class AuthoringContextWidget(QWidget):
         self.more_view.setHtml(more)
         self._fit_browser_height(self.more_view)
         self.more_button.setVisible(bool(more))
-        self.more_button.setChecked(False)
-        self.more_view.hide()
+        self.more_button.setChecked(expanded)
+        self.more_view.setVisible(expanded and bool(more))
 
     def _empty_text(self) -> str:
         return f"Select an {self._object_label} to view its context."
@@ -281,9 +298,7 @@ class AuthoringContextWidget(QWidget):
             self._append_section(more, "Limits", notices)
         return "".join(primary), "".join(more)
 
-    def _render_entity(
-        self, context: EntityAuthoringContext
-    ) -> tuple[str, str]:
+    def _render_entity(self, context: EntityAuthoringContext) -> tuple[str, str]:
         primary: list[str] = ["<h3>Known Entity context</h3>"]
         more: list[str] = []
         self._append_section(
@@ -310,18 +325,14 @@ class AuthoringContextWidget(QWidget):
             primary,
             "Event appearances",
             [
-                f"{self._event_link(item.event)} — "
-                + escape(", ".join(item.roles))
+                f"{self._event_link(item.event)} — " + escape(", ".join(item.roles))
                 for item in recent_events
             ],
         )
         self._append_section(
             primary,
             "Maps",
-            [
-                self._map_appearance_html(item)
-                for item in context.map_appearances
-            ],
+            [self._map_appearance_html(item) for item in context.map_appearances],
         )
         self._append_section(
             primary,
@@ -342,10 +353,7 @@ class AuthoringContextWidget(QWidget):
         self._append_section(
             more,
             "Additional relations",
-            [
-                self._relation_html(item)
-                for item in relations[_PRIMARY_RELATION_LIMIT:]
-            ],
+            [self._relation_html(item) for item in relations[_PRIMARY_RELATION_LIMIT:]],
         )
         prior_events = (
             context.event_appearances[: -len(recent_events)]
@@ -356,15 +364,17 @@ class AuthoringContextWidget(QWidget):
             more,
             "Earlier Event appearances",
             [
-                f"{self._event_link(item.event)} — "
-                + escape(", ".join(item.roles))
+                f"{self._event_link(item.event)} — " + escape(", ".join(item.roles))
                 for item in prior_events
             ],
         )
         self._append_section(
             more,
             "Temporal history",
-            [self._relation_html(item, include_window=True) for item in context.temporal_history],
+            [
+                self._relation_html(item, include_window=True)
+                for item in context.temporal_history
+            ],
         )
         self._append_section(
             more,
@@ -398,8 +408,7 @@ class AuthoringContextWidget(QWidget):
             more,
             "Shares tags",
             [
-                f"{self._item_link(item.item)} — "
-                + escape(", ".join(item.evidence))
+                f"{self._item_link(item.item)} — " + escape(", ".join(item.evidence))
                 for item in context.shared_tags
             ],
         )
@@ -407,8 +416,7 @@ class AuthoringContextWidget(QWidget):
             more,
             "Also placed on maps",
             [
-                f"{self._item_link(item.item)} — "
-                + escape(", ".join(item.evidence))
+                f"{self._item_link(item.item)} — " + escape(", ".join(item.evidence))
                 for item in context.shared_maps
             ],
         )
@@ -463,8 +471,14 @@ class AuthoringContextWidget(QWidget):
             f"{escape(relation.rel_type)} → {self._item_link(relation.target)}"
         )
         if include_window and relation.temporal_kind != "persistent":
-            start = "?" if relation.valid_from is None else format(relation.valid_from, ".12g")
-            end = "?" if relation.valid_to is None else format(relation.valid_to, ".12g")
+            start = (
+                "?"
+                if relation.valid_from is None
+                else format(relation.valid_from, ".12g")
+            )
+            end = (
+                "?" if relation.valid_to is None else format(relation.valid_to, ".12g")
+            )
             result += f" ({escape(relation.temporal_kind)}: {start}–{end})"
         return result
 
@@ -481,16 +495,12 @@ class AuthoringContextWidget(QWidget):
         if feature in {"", "point"}:
             result = f"Placed on {map_link}"
         else:
-            result = (
-                f"Placed on {map_link} as a "
-                f"{escape(appearance.feature_type)}"
-            )
+            result = f"Placed on {map_link} as a {escape(appearance.feature_type)}"
         if appearance.marker_label:
             result += f" — {escape(appearance.marker_label)}"
         if appearance.parent_maps:
             result += " within " + " › ".join(
-                f'<a href="kraken-map://{escape(parent.id)}">'
-                f"{escape(parent.name)}</a>"
+                f'<a href="kraken-map://{escape(parent.id)}">{escape(parent.name)}</a>'
                 for parent in appearance.parent_maps
             )
         return result

@@ -229,7 +229,7 @@ def test_presentation_changes_do_not_dirty_event(event_editor):
     editor.inspector.reset_layout()
     assert not editor.has_unsaved_changes()
     assert editor.temporal_widget.get_duration() == 0
-    assert editor.inspector.main_tabs.count() == 7
+    assert editor.inspector.main_tabs.count() == 4
 
 
 def test_no_calendar_uses_structured_entry(qtbot):
@@ -269,8 +269,13 @@ def test_overflow_menu_reaches_every_section(event_editor):
     inspector = event_editor.inspector
     tabs = inspector.main_tabs
     tabs._populate_overflow()
-    actions = tabs.overflow_menu.actions()
-    assert len(actions) == 7
+    actions = tabs.overflow_menu.actions()[:4]
+    assert [action.text() for action in actions] == [
+        "Overview",
+        "Connections",
+        "Details",
+        "Media",
+    ]
     for index, action in enumerate(actions):
         action.trigger()
         assert tabs.currentIndex() == index
@@ -306,7 +311,7 @@ def test_editor_tabs_fit_compact_width(qtbot, kind, width, height, calendar):
     editor.setWindowFlag(Qt.WindowType.Window, True)
     editor.show()
     assert not editor.has_unsaved_changes()
-    for index in range(7):
+    for index in range(4):
         editor.inspector.main_tabs.setCurrentIndex(index)
         qtbot.wait(20)
         assert editor.width() == width
