@@ -1,6 +1,11 @@
 # KRT-46 assisted baseline — 2026-10-04
 
-This records one assisted, component-backed walkthrough of the new
+This records one assisted, component-backed walkthrough of catalog v1, before
+the v1.1 empty-world human protocol. It is historical seeded audit evidence.
+Human video sessions start from a new empty world and create supporting objects
+on camera; this run is not their starting world or performance comparator.
+
+This records a walkthrough of the new
 [20-task catalog](../../authoring-benchmark.md), including failed and partial
 tasks. It is an audit baseline, not a participant performance session. The user
 will record human task videos later. No creator-performance improvement is

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-04
-**Commit:** eb8aff5ce8501c05a3fae81aa2e1238be789f6db
+**Commit:** eea71a42f8e0ebb3a45209c4ead5a8c20143ae1a
 ---
 
 # Changelog
@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-10-04)* **Human benchmark setup (KRT-46)**: Revised the video protocol
+  to start every run in a new empty world. Supporting groups, events, regions
+  and maps are created on camera; retained the seeded assisted audit as separate
+  historical evidence and made reset/comparison rules explicit.
 
 - *(2026-10-04)* **Authoring UX safeguards (KRT-46)**: Published the synchronized
   contract, surface audit, new 20-task protocol, and assisted baseline with

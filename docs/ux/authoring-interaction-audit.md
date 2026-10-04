@@ -4,7 +4,9 @@ Audited 2026-10-04 against source revision `eb8aff5c` and
 [Contract v1](authoring-contract.md). This inventories the major authoring
 capabilities, including their advanced entry points; it is not a claim that all
 current surfaces already comply. Known violations remain violations when assigned
-to follow-up issues. Human video measurements will be added later.
+to follow-up issues. Human video measurements will be added later, starting
+from new empty worlds under benchmark v1.1; the assisted fixture evidence below
+remains a separate seeded audit run.
 
 ## Evidence and disposition rules
 
