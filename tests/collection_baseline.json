@@ -2,10 +2,10 @@
   "schema": 1,
   "counts": {
     "smoke": 18,
-    "ci_fast": 1277,
+    "ci_fast": 1291,
     "slow": 1,
     "performance": 0,
-    "full": 5650,
+    "full": 5664,
     "full_only": 4364
   },
   "categories": {
@@ -18,7 +18,7 @@
     "repro": 2,
     "root": 15,
     "security": 5,
-    "unit": 5317
+    "unit": 5331
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -5337,6 +5337,48 @@
       "ci_fast"
     ],
     "tests/unit/test_migration_coordinator.py::test_success_notice_only_for_reset_history": [
+      "ci_fast"
+    ],
+    "tests/unit/test_numeric_wheel.py::test_numeric_focus_owns_wheel_and_keyboard[NumericScrubberSpinBox]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_numeric_wheel.py::test_numeric_focus_owns_wheel_and_keyboard[ScrollSafeDoubleSpinBox]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_numeric_wheel.py::test_numeric_focus_owns_wheel_and_keyboard[ScrollSafeSpinBox]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_numeric_wheel.py::test_numeric_visible_arrows_still_step[ScrollSafeDoubleSpinBox]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_numeric_wheel.py::test_numeric_visible_arrows_still_step[ScrollSafeSpinBox]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_numeric_wheel.py::test_relation_note_save_after_scrolling_preserves_metadata_and_undo": [
+      "ci_fast"
+    ],
+    "tests/unit/test_numeric_wheel.py::test_relation_wheel_preserves_draft_and_scrolls[False-False-400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_numeric_wheel.py::test_relation_wheel_preserves_draft_and_scrolls[False-False-800]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_numeric_wheel.py::test_relation_wheel_preserves_draft_and_scrolls[False-True-400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_numeric_wheel.py::test_relation_wheel_preserves_draft_and_scrolls[False-True-800]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_numeric_wheel.py::test_relation_wheel_preserves_draft_and_scrolls[True-False-400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_numeric_wheel.py::test_relation_wheel_preserves_draft_and_scrolls[True-False-800]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_numeric_wheel.py::test_relation_wheel_preserves_draft_and_scrolls[True-True-400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_numeric_wheel.py::test_relation_wheel_preserves_draft_and_scrolls[True-True-800]": [
       "ci_fast"
     ],
     "tests/unit/test_obsidian_exporter.py::TestObsidianExporterExport::test_export_creates_files": [],

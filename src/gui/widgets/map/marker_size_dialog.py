@@ -7,7 +7,6 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QDialogButtonBox,
-    QDoubleSpinBox,
     QFormLayout,
     QHBoxLayout,
     QLabel,
@@ -27,6 +26,7 @@ from src.core.marker_sizing import (
     MarkerSizingSettings,
 )
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
 
 _KM = 1000.0
 _PERCENT = "% map width"
@@ -78,7 +78,7 @@ class MarkerSizeDialog(QDialog):
         form.addRow("Behavior:", self.mode_selector)
 
         size_row = QHBoxLayout()
-        self.size_input = QDoubleSpinBox()
+        self.size_input = ScrollSafeDoubleSpinBox()
         self.size_input.valueChanged.connect(self._value_changed)
         self.unit_selector = QComboBox()
         self.unit_selector.currentTextChanged.connect(self._unit_changed)

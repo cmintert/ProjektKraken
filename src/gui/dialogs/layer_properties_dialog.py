@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
     QDialogButtonBox,
-    QDoubleSpinBox,
     QFormLayout,
     QLabel,
     QLineEdit,
@@ -21,6 +20,7 @@ from PySide6.QtWidgets import (
 from src.core.map import MapLayerNode
 from src.core.map_constants import MAP_LAYER_TYPE_GROUP
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
 
 
 class LayerPropertiesDialog(QDialog):
@@ -45,7 +45,7 @@ class LayerPropertiesDialog(QDialog):
         self._name = QLineEdit(node.name)
         self._visible = QCheckBox()
         self._visible.setChecked(node.visible)
-        self._opacity = QDoubleSpinBox()
+        self._opacity = ScrollSafeDoubleSpinBox()
         self._opacity.setRange(0.0, 1.0)
         self._opacity.setSingleStep(0.05)
         self._opacity.setValue(node.opacity)
@@ -63,12 +63,12 @@ class LayerPropertiesDialog(QDialog):
         self._exclusive.setVisible(node.layer_type == MAP_LAYER_TYPE_GROUP)
         form.addRow("Group:", self._exclusive)
 
-        self._min_zoom = QDoubleSpinBox()
+        self._min_zoom = ScrollSafeDoubleSpinBox()
         self._min_zoom.setRange(0.01, 100.0)
         self._min_zoom.setDecimals(2)
         self._min_zoom.setValue(max(0.01, float(node.min_zoom or 0.01)))
         self._max_zoom_enabled = QCheckBox("Maximum zoom")
-        self._max_zoom = QDoubleSpinBox()
+        self._max_zoom = ScrollSafeDoubleSpinBox()
         self._max_zoom.setRange(0.01, 100.0)
         self._max_zoom.setDecimals(2)
         finite_max = node.max_zoom != float("inf")

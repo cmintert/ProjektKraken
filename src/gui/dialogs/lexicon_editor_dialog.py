@@ -17,12 +17,10 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QDialogButtonBox,
-    QDoubleSpinBox,
     QGridLayout,
     QLabel,
     QPushButton,
     QScrollArea,
-    QSpinBox,
     QTabWidget,
     QVBoxLayout,
     QWidget,
@@ -30,6 +28,10 @@ from PySide6.QtWidgets import (
 
 from src.core import style_constants as SC
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.numeric_inputs import (
+    ScrollSafeDoubleSpinBox,
+    ScrollSafeSpinBox,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -330,7 +332,7 @@ class LexiconEditorDialog(QDialog):
         col += 1
 
         # Border width spinner
-        border_width_spin = QSpinBox()
+        border_width_spin = ScrollSafeSpinBox()
         border_width_spin.setRange(SC.MIN_BORDER_WIDTH, SC.MAX_BORDER_WIDTH)
         border_width_spin.setValue(style.get("border_width", SC.BASE_BORDER_WIDTH))
         border_width_spin.setStyleSheet(StyleHelper.get_input_field_style())
@@ -339,7 +341,7 @@ class LexiconEditorDialog(QDialog):
         col += 1
 
         # Size scale spinner
-        size_spin = QDoubleSpinBox()
+        size_spin = ScrollSafeDoubleSpinBox()
         size_spin.setRange(SC.MIN_SCALE, SC.MAX_SCALE)
         size_spin.setSingleStep(0.1)
         size_spin.setDecimals(1)
@@ -533,7 +535,7 @@ class LexiconEditorDialog(QDialog):
         grid.addWidget(color_btn, row, 1, Qt.AlignmentFlag.AlignCenter)
 
         # Width spinner
-        width_spin = QSpinBox()
+        width_spin = ScrollSafeSpinBox()
         width_spin.setRange(1, 10)
         width_spin.setValue(style.get("width", 1))
         width_spin.setStyleSheet(StyleHelper.get_input_field_style())

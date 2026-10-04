@@ -11,7 +11,6 @@ from PySide6.QtWidgets import (
     QCompleter,
     QDialog,
     QDialogButtonBox,
-    QDoubleSpinBox,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -27,6 +26,7 @@ from src.core.temporal_constraints import TemporalConstraintKind
 from src.core.temporal_expression import expression_from_attributes
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
 from src.services.chronology_service import (
     collect_chronology,
     direct_chronology,
@@ -175,7 +175,7 @@ class EventChronologyDialog(QDialog):
         row.addLayout(primary)
         secondary = QHBoxLayout()
         secondary.addStretch()
-        gap = QDoubleSpinBox()
+        gap = ScrollSafeDoubleSpinBox()
         gap.setRange(0, 1e12)
         gap.setDecimals(6)
         gap.setSuffix(" days")

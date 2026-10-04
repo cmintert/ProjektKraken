@@ -23,13 +23,13 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QPushButton,
-    QSpinBox,
     QVBoxLayout,
     QWidget,
 )
 
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 from src.services.raster_image_analysis import ImageAnalysisResult, analyse_image
 
 logger = logging.getLogger(__name__)
@@ -138,7 +138,7 @@ class RasterLayerDialog(QDialog):
         self._update_memory_estimate()
 
         # Default value
-        self._default_spin = QSpinBox()
+        self._default_spin = ScrollSafeSpinBox()
         self._default_spin.setRange(0, 65535)
         self._default_spin.setValue(0)
         self._default_spin.setToolTip("Initial value for all pixels (0–65535)")

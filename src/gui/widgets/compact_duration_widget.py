@@ -13,13 +13,13 @@ from PySide6.QtCore import QSize, Signal, Slot
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
-    QSpinBox,
     QVBoxLayout,
     QWidget,
 )
 
 from src.core.calendar import CalendarConverter
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 
 
 class CompactDurationWidget(QWidget):
@@ -71,7 +71,7 @@ class CompactDurationWidget(QWidget):
         # Years - allow expanding with suffix
         from PySide6.QtWidgets import QSizePolicy
 
-        self.spin_years = QSpinBox()
+        self.spin_years = ScrollSafeSpinBox()
         self.spin_years.setRange(0, 999999)
         self.spin_years.setValue(0)
         self.spin_years.setSuffix(" Y")
@@ -82,7 +82,7 @@ class CompactDurationWidget(QWidget):
         ymd_row.addWidget(self.spin_years, stretch=0)
 
         # Months - allow expanding with suffix
-        self.spin_months = QSpinBox()
+        self.spin_months = ScrollSafeSpinBox()
         self.spin_months.setRange(0, 99)
         self.spin_months.setValue(0)
         self.spin_months.setSuffix(" M")
@@ -93,7 +93,7 @@ class CompactDurationWidget(QWidget):
         ymd_row.addWidget(self.spin_months, stretch=0)
 
         # Days - allow expanding with suffix
-        self.spin_days = QSpinBox()
+        self.spin_days = ScrollSafeSpinBox()
         self.spin_days.setRange(0, 999)
         self.spin_days.setValue(0)
         self.spin_days.setSuffix(" D")
@@ -111,7 +111,7 @@ class CompactDurationWidget(QWidget):
         hm_row.setSpacing(12)
 
         # Hours - allow expanding with suffix
-        self.spin_hours = QSpinBox()
+        self.spin_hours = ScrollSafeSpinBox()
         self.spin_hours.setRange(0, 23)
         self.spin_hours.setValue(0)
         self.spin_hours.setSuffix(" h")
@@ -122,7 +122,7 @@ class CompactDurationWidget(QWidget):
         hm_row.addWidget(self.spin_hours, stretch=0)
 
         # Minutes - allow expanding with suffix
-        self.spin_minutes = QSpinBox()
+        self.spin_minutes = ScrollSafeSpinBox()
         self.spin_minutes.setRange(0, 59)
         self.spin_minutes.setValue(0)
         self.spin_minutes.setSuffix(" m")

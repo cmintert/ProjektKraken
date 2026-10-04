@@ -20,7 +20,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QPushButton,
-    QSpinBox,
     QVBoxLayout,
     QWidget,
 )
@@ -33,6 +32,7 @@ from src.gui.utils.settings_reader import (
     read_str_setting,
 )
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +108,7 @@ class BackupSettingsDialog(QDialog):
         layout.addRow(self.chk_enabled)
 
         # Auto-save interval
-        self.spin_interval = QSpinBox()
+        self.spin_interval = ScrollSafeSpinBox()
         self.spin_interval.setRange(1, 60)
         self.spin_interval.setValue(5)
         self.spin_interval.setSuffix(" minutes")
@@ -138,28 +138,28 @@ class BackupSettingsDialog(QDialog):
         StyleHelper.apply_standard_list_spacing(layout)
 
         # Auto-save retention
-        self.spin_auto_retention = QSpinBox()
+        self.spin_auto_retention = ScrollSafeSpinBox()
         self.spin_auto_retention.setRange(1, 100)
         self.spin_auto_retention.setValue(12)
         self.spin_auto_retention.setToolTip("Number of auto-save backups to keep")
         layout.addRow("Auto-save backups:", self.spin_auto_retention)
 
         # Daily retention
-        self.spin_daily_retention = QSpinBox()
+        self.spin_daily_retention = ScrollSafeSpinBox()
         self.spin_daily_retention.setRange(1, 365)
         self.spin_daily_retention.setValue(7)
         self.spin_daily_retention.setToolTip("Number of daily backups to keep")
         layout.addRow("Daily backups:", self.spin_daily_retention)
 
         # Weekly retention
-        self.spin_weekly_retention = QSpinBox()
+        self.spin_weekly_retention = ScrollSafeSpinBox()
         self.spin_weekly_retention.setRange(1, 52)
         self.spin_weekly_retention.setValue(4)
         self.spin_weekly_retention.setToolTip("Number of weekly backups to keep")
         layout.addRow("Weekly backups:", self.spin_weekly_retention)
 
         # Manual retention
-        self.spin_manual_retention = QSpinBox()
+        self.spin_manual_retention = ScrollSafeSpinBox()
         self.spin_manual_retention.setRange(-1, 1000)
         self.spin_manual_retention.setValue(-1)
         self.spin_manual_retention.setSpecialValueText("Unlimited")

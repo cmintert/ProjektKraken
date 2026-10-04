@@ -11,15 +11,17 @@ from PySide6.QtCore import QSize, Signal, Slot
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
-    QDoubleSpinBox,
     QHBoxLayout,
     QLabel,
-    QSpinBox,
     QWidget,
 )
 
 from src.core.calendar import CalendarConverter, CalendarDate
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.numeric_inputs import (
+    ScrollSafeDoubleSpinBox,
+    ScrollSafeSpinBox,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +65,7 @@ class LoreDateWidget(QWidget):
         layout.setSpacing(4)
 
         # Year spinbox (allows negative for pre-Epoch)
-        self._year_spin = QSpinBox()
+        self._year_spin = ScrollSafeSpinBox()
         self._year_spin.setRange(-10000, 10000)
         self._year_spin.setValue(1)
         self._year_spin.setPrefix("Year ")
@@ -97,7 +99,7 @@ class LoreDateWidget(QWidget):
         layout.addWidget(self._minute_combo)
 
         # Raw float spinbox (hidden by default)
-        self._raw_spin = QDoubleSpinBox()
+        self._raw_spin = ScrollSafeDoubleSpinBox()
         self._raw_spin.setRange(-1e12, 1e12)
         self._raw_spin.setDecimals(4)  # More precision for time fractions
         self._raw_spin.setPrefix("Float: ")

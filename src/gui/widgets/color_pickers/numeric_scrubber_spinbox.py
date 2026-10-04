@@ -9,7 +9,9 @@ from typing import Optional
 
 from PySide6.QtCore import QPoint, Qt
 from PySide6.QtGui import QCursor, QEnterEvent, QMouseEvent
-from PySide6.QtWidgets import QSpinBox, QWidget
+from PySide6.QtWidgets import QWidget
+
+from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 
 _SCRUB_THRESHOLD_PX = 3
 _DEFAULT_SENSITIVITY = 1.0
@@ -17,7 +19,7 @@ _SHIFT_MULTIPLIER = 10.0
 _CTRL_MULTIPLIER = 0.1
 
 
-class NumericScrubberSpinBox(QSpinBox):
+class NumericScrubberSpinBox(ScrollSafeSpinBox):
     """``QSpinBox`` with horizontal press-drag scrubbing.
 
     Scrubbing sensitivity scales with the spin box range so that a 0–65535
@@ -42,7 +44,7 @@ class NumericScrubberSpinBox(QSpinBox):
         self._drag_start_value: int = 0
         self._scrubbing: bool = False
         self.setCursor(Qt.CursorShape.SizeHorCursor)
-        self.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
+        self.setButtonSymbols(ScrollSafeSpinBox.ButtonSymbols.NoButtons)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:  # type: ignore[override]
         """Record the origin of a possible horizontal scrub."""

@@ -9,11 +9,12 @@ from typing import Any, Optional, cast
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
-    QDoubleSpinBox,
     QStyledItemDelegate,
     QStyleOptionViewItem,
     QWidget,
 )
+
+from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +86,7 @@ class AttributeDelegate(QStyledItemDelegate):
 
         elif value_type == "Number":
             # Use double spinbox for numbers
-            spinbox = QDoubleSpinBox(parent)
+            spinbox = ScrollSafeDoubleSpinBox(parent)
             spinbox.setRange(-999999999.0, 999999999.0)
             spinbox.setDecimals(6)
             return spinbox
@@ -107,7 +108,7 @@ class AttributeDelegate(QStyledItemDelegate):
             is_checked = str(value).lower() in {"true", "1", "yes", "on"}
             editor.setChecked(is_checked)
 
-        elif isinstance(editor, QDoubleSpinBox):
+        elif isinstance(editor, ScrollSafeDoubleSpinBox):
             # Parse numeric value
             try:
                 numeric_value = float(value) if value else 0.0
@@ -137,7 +138,7 @@ class AttributeDelegate(QStyledItemDelegate):
             value = "True" if editor.isChecked() else "False"
             model.setData(index, value, Qt.ItemDataRole.EditRole)
 
-        elif isinstance(editor, QDoubleSpinBox):
+        elif isinstance(editor, ScrollSafeDoubleSpinBox):
             # Store number as string
             value = str(editor.value())
             model.setData(index, value, Qt.ItemDataRole.EditRole)

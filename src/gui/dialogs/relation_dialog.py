@@ -18,7 +18,6 @@ from PySide6.QtWidgets import (
     QCompleter,
     QDialog,
     QDialogButtonBox,
-    QDoubleSpinBox,
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
@@ -37,6 +36,7 @@ from PySide6.QtWidgets import (
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.compact_date_widget import CompactDateWidget
+from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
 from src.gui.widgets.standard_buttons import DestructiveButton, StandardButton
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
@@ -158,14 +158,14 @@ class RelationEditDialog(QDialog):
         attr_layout = QFormLayout()
 
         # Weight
-        self.weight_spin = QDoubleSpinBox()
+        self.weight_spin = ScrollSafeDoubleSpinBox()
         self.weight_spin.setRange(0.0, 10.0)
         self.weight_spin.setSingleStep(0.1)
         self.weight_spin.setValue(self.attributes.get("weight", 1.0))
         attr_layout.addRow("Weight:", self.weight_spin)
 
         # Confidence
-        self.confidence_spin = QDoubleSpinBox()
+        self.confidence_spin = ScrollSafeDoubleSpinBox()
         self.confidence_spin.setRange(0.0, 1.0)
         self.confidence_spin.setSingleStep(0.1)
         self.confidence_spin.setValue(self.attributes.get("confidence", 1.0))
@@ -682,7 +682,7 @@ class RelationEditDialog(QDialog):
         )
         layout.addRow("Meaning", self.temporal_behavior)
         self._boundary_choices: dict[str, QComboBox] = {}
-        self._boundary_offsets: dict[str, QDoubleSpinBox] = {}
+        self._boundary_offsets: dict[str, ScrollSafeDoubleSpinBox] = {}
         self._anchor_relations: dict[str, QComboBox] = {}
         temporal = self.attributes.get("temporal", {})
         for side, widget, checked in (
@@ -742,7 +742,7 @@ class RelationEditDialog(QDialog):
             )
             layout.addRow(f"{side.title()} relative to event", relative)
             self._anchor_relations[side] = relative
-            offset = QDoubleSpinBox()
+            offset = ScrollSafeDoubleSpinBox()
             offset.setRange(-1e12, 1e12)
             offset.setDecimals(6)
             offset.setSuffix(" days")

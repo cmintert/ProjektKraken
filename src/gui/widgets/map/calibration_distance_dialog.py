@@ -3,7 +3,6 @@
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
-    QDoubleSpinBox,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -12,6 +11,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
 
 
 class CalibrationDistanceDialog(QDialog):
@@ -40,7 +40,7 @@ class CalibrationDistanceDialog(QDialog):
         # Input Row
         input_layout = QHBoxLayout()
 
-        self.dist_input = QDoubleSpinBox()
+        self.dist_input = ScrollSafeDoubleSpinBox()
         self.dist_input.setRange(0.1, 1_000_000_000.0)  # Free range
         self.dist_input.setDecimals(1)
         self.dist_input.setSingleStep(1.0)

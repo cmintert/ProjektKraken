@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-04
-**Commit:** 3d40270923eddde5ee1c8353bed3097c2fb349aa
+**Commit:** 78463814f0b6ce370943131ff2eca714511a2c86
 ---
 
 # Changelog
@@ -45,6 +45,15 @@ All notable changes to this project will be documented in this file.
   date-anchor behavior, and added editor/navigation regression coverage.
 
 ### Fixed
+
+- *(2026-10-04)* **Numeric wheel navigation (KRT-49)**: Unfocused integer and
+  decimal inputs pass wheel scrolling to surrounding content without changing
+  authored values. Shared controls cover relation metadata/timing, date/duration,
+  attributes, map and settings forms, including color scrubbers. Click/Tab focus
+  retains deliberate wheel editing; typing and visible arrows remain available.
+  Added narrow/normal relation scrolling, metadata save and undo/redo regressions.
+  Recorded the control inventory and verification evidence; updated fast-suite
+  membership and the test collection baseline.
 
 - *(2026-10-03)* **Map layer visibility controls**: Restore checkbox clicks and
   Space-key toggling in the layer panel while preserving inline feature locks.

@@ -7,7 +7,6 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QDialogButtonBox,
-    QDoubleSpinBox,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -16,6 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
 
 _METERS_PER_KILOMETER = 1000.0
 
@@ -52,7 +52,7 @@ class MapScaleDialog(QDialog):
 
         input_row = QHBoxLayout()
         input_row.addWidget(QLabel("Total width:"))
-        self.width_input = QDoubleSpinBox()
+        self.width_input = ScrollSafeDoubleSpinBox()
         self.width_input.setRange(0.0, 1_000_000_000.0)
         self.width_input.setDecimals(2)
         self.width_input.setSpecialValueText("Not calibrated")

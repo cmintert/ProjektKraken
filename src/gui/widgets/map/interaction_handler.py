@@ -14,7 +14,6 @@ from PySide6.QtWidgets import (
     QAbstractSpinBox,
     QColorDialog,
     QDialog,
-    QDoubleSpinBox,
     QHBoxLayout,
     QMenu,
     QPushButton,
@@ -47,6 +46,7 @@ from src.gui.dialogs.icon_picker_dialog import IconPickerDialog
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.marker_item import MarkerItem
+from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
 
 if TYPE_CHECKING:
     from PySide6.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent
@@ -68,9 +68,9 @@ PATH_LINE_STYLES: tuple[tuple[str, list[float]], ...] = (
 
 def _build_compact_stroke_width_control(
     initial_value: float,
-) -> tuple[QWidget, QDoubleSpinBox]:
+) -> tuple[QWidget, ScrollSafeDoubleSpinBox]:
     """Build a normal-height width field with full-size decrement buttons."""
-    width_spin = QDoubleSpinBox()
+    width_spin = ScrollSafeDoubleSpinBox()
     width_spin.setRange(0.5, 20.0)
     width_spin.setSingleStep(0.5)
     width_spin.setValue(initial_value)
@@ -566,7 +566,10 @@ class InteractionHandler:
         from PySide6.QtWidgets import (
             QDialogButtonBox,
             QFormLayout,
-            QSpinBox,
+        )
+
+        from src.gui.widgets.numeric_inputs import (
+            ScrollSafeSpinBox,
         )
 
         dialog = QDialog(self._view)
@@ -574,7 +577,7 @@ class InteractionHandler:
         dialog.setMinimumWidth(250)
         layout = QFormLayout(dialog)
 
-        spin = QSpinBox()
+        spin = ScrollSafeSpinBox()
         spin.setRange(MIN_BORDER_WIDTH, MAX_BORDER_WIDTH)
         current = marker_item._visual_attributes.get(V_BORDER_WIDTH, 2)
         spin.setValue(int(current))

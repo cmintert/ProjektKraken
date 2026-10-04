@@ -17,12 +17,12 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
-    QSpinBox,
     QVBoxLayout,
     QWidget,
 )
 
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ class _ConditionRow(QWidget):
         self._op_combo.currentIndexChanged.connect(self._on_op_changed)
         layout.addWidget(self._op_combo, 2)
 
-        self._value_spin = QSpinBox()
+        self._value_spin = ScrollSafeSpinBox()
         self._value_spin.setRange(0, 65535)
         self._value_spin.setValue(0)
         layout.addWidget(self._value_spin)
@@ -87,7 +87,7 @@ class _ConditionRow(QWidget):
         self._dash_label.setVisible(False)
         layout.addWidget(self._dash_label)
 
-        self._max_spin = QSpinBox()
+        self._max_spin = ScrollSafeSpinBox()
         self._max_spin.setRange(0, 65535)
         self._max_spin.setValue(65535)
         self._max_spin.setVisible(False)

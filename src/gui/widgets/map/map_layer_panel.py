@@ -28,7 +28,6 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QColorDialog,
     QComboBox,
-    QDoubleSpinBox,
     QFrame,
     QHBoxLayout,
     QInputDialog,
@@ -36,7 +35,6 @@ from PySide6.QtWidgets import (
     QMenu,
     QPushButton,
     QSlider,
-    QSpinBox,
     QStackedWidget,
     QStyledItemDelegate,
     QStyleOptionViewItem,
@@ -69,6 +67,10 @@ from src.gui.widgets.map.map_data_buffer import (
     format_display_value,
 )
 from src.gui.widgets.map.raster_layer_item import BLEND_MODE_NAMES
+from src.gui.widgets.numeric_inputs import (
+    ScrollSafeDoubleSpinBox,
+    ScrollSafeSpinBox,
+)
 
 if TYPE_CHECKING:
     from src.gui.dialogs.layer_properties_dialog import LayerPropertiesDialog
@@ -636,7 +638,7 @@ class MapLayerPanel(QWidget):
         display_layout = QHBoxLayout(self._display_value_row)
         display_layout.setContentsMargins(0, 0, 0, 0)
         display_layout.addWidget(QLabel("Target:"))
-        self._display_value_spin = QDoubleSpinBox()
+        self._display_value_spin = ScrollSafeDoubleSpinBox()
         self._display_value_spin.setDecimals(3)
         self._display_value_spin.setRange(0.0, 65535.0)
         self._display_value_spin.valueChanged.connect(
@@ -674,7 +676,7 @@ class MapLayerPanel(QWidget):
         self._rgba_color_button.clicked.connect(self._choose_rgba_color)
         color_layout.addWidget(self._rgba_color_button, 1)
         color_layout.addWidget(QLabel("Alpha:"))
-        self._rgba_alpha_spin = QSpinBox()
+        self._rgba_alpha_spin = ScrollSafeSpinBox()
         self._rgba_alpha_spin.setRange(0, 255)
         self._rgba_alpha_spin.setValue(255)
         self._rgba_alpha_spin.valueChanged.connect(self._on_rgba_alpha_changed)
@@ -685,14 +687,14 @@ class MapLayerPanel(QWidget):
         endpoint_layout = QHBoxLayout(self._gradient_endpoints_row)
         endpoint_layout.setContentsMargins(0, 0, 0, 0)
         endpoint_layout.addWidget(QLabel("From:"))
-        self._gradient_from_spin = QSpinBox()
+        self._gradient_from_spin = ScrollSafeSpinBox()
         self._gradient_from_spin.setRange(0, 65535)
         self._gradient_from_spin.valueChanged.connect(
             lambda _: self._on_raster_setting_changed()
         )
         endpoint_layout.addWidget(self._gradient_from_spin)
         endpoint_layout.addWidget(QLabel("To:"))
-        self._gradient_to_spin = QSpinBox()
+        self._gradient_to_spin = ScrollSafeSpinBox()
         self._gradient_to_spin.setRange(0, 65535)
         self._gradient_to_spin.setValue(1)
         self._gradient_to_spin.valueChanged.connect(
@@ -1099,7 +1101,7 @@ class MapLayerPanel(QWidget):
         max_val: int,
         default: int,
         on_changed: Any,
-    ) -> QSpinBox:
+    ) -> ScrollSafeSpinBox:
         """Create a labeled spin box row and append it to *parent_layout*.
 
         Args:
@@ -1120,10 +1122,10 @@ class MapLayerPanel(QWidget):
         lbl = QLabel(label)
         lbl.setFixedWidth(_LABEL_WIDTH)
         row.addWidget(lbl)
-        spin = QSpinBox()
+        spin = ScrollSafeSpinBox()
         spin.setRange(min_val, max_val)
         spin.setValue(default)
-        spin.setButtonSymbols(QSpinBox.ButtonSymbols.UpDownArrows)
+        spin.setButtonSymbols(ScrollSafeSpinBox.ButtonSymbols.UpDownArrows)
         spin.valueChanged.connect(on_changed)
         row.addWidget(spin, 1)
         parent_layout.addWidget(row_widget)

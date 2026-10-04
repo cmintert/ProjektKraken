@@ -25,7 +25,6 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QMessageBox,
     QPushButton,
-    QSpinBox,
     QSplitter,
     QStackedWidget,
     QVBoxLayout,
@@ -49,6 +48,7 @@ from src.gui.utils.settings_reader import (
     read_str_setting,
 )
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 from src.gui.widgets.prompt_editor import PromptEditorWidget
 from src.services.lmstudio_config import (
     DEFAULT_LMSTUDIO_BASE_URL,
@@ -404,14 +404,14 @@ class AISettingsDialog(QDialog):
         params_layout = QFormLayout(params_group)
         StyleHelper.apply_standard_list_spacing(params_layout)
 
-        self.max_tokens_input = QSpinBox()
+        self.max_tokens_input = ScrollSafeSpinBox()
         self.max_tokens_input.setRange(100, 100000)
         self.max_tokens_input.setValue(512)
         self.max_tokens_input.setToolTip("Maximum tokens to generate per request")
         self.max_tokens_input.valueChanged.connect(self.save_settings)
         params_layout.addRow("Max Tokens:", self.max_tokens_input)
 
-        self.temperature_input = QSpinBox()
+        self.temperature_input = ScrollSafeSpinBox()
         self.temperature_input.setRange(0, 200)
         self.temperature_input.setValue(70)
         self.temperature_input.setSuffix("%")
@@ -530,7 +530,7 @@ class AISettingsDialog(QDialog):
             lambda: self._test_connection("lmstudio", "embed")
         )
         lm_studio_form.addRow("", self.btn_test_lm_embed)
-        self.lm_timeout_input = QSpinBox()
+        self.lm_timeout_input = ScrollSafeSpinBox()
         self.lm_timeout_input.setRange(5, 300)
         self.lm_timeout_input.setValue(30)
         self.lm_timeout_input.setSuffix(" seconds")
@@ -671,7 +671,7 @@ class AISettingsDialog(QDialog):
         summary_params_layout = QFormLayout(summary_params_group)
         StyleHelper.apply_compact_spacing(summary_params_layout)
 
-        self.summary_max_tokens_input = QSpinBox()
+        self.summary_max_tokens_input = ScrollSafeSpinBox()
         self.summary_max_tokens_input.setRange(100, 100000)
         self.summary_max_tokens_input.setValue(2048)
         self.summary_max_tokens_input.setToolTip(
@@ -687,7 +687,7 @@ class AISettingsDialog(QDialog):
             "Summary Max Tokens:", self.summary_max_tokens_input
         )
 
-        self.summary_temperature_input = QSpinBox()
+        self.summary_temperature_input = ScrollSafeSpinBox()
         self.summary_temperature_input.setRange(0, 200)
         self.summary_temperature_input.setValue(0)  # Default to 0 for determinism
         self.summary_temperature_input.setToolTip(

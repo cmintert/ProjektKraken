@@ -26,7 +26,6 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
-    QSpinBox,
     QVBoxLayout,
     QWidget,
 )
@@ -48,6 +47,7 @@ from src.gui.utils.settings_reader import (
     read_str_setting,
 )
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 from src.gui.widgets.prompt_editor import PromptEditorWidget
 from src.services.ai_audit_service import (
     log_generation_event,
@@ -627,7 +627,7 @@ class LLMGenerationWidget(QWidget):
 
         grid_layout.addWidget(QLabel("Max Tokens:"), 1, 2)
 
-        self.max_tokens_spin = QSpinBox()
+        self.max_tokens_spin = ScrollSafeSpinBox()
         self.max_tokens_spin.setRange(50, 100000)
         self.max_tokens_spin.setValue(512)
         self.max_tokens_spin.setToolTip("Maximum tokens to generate")
@@ -637,7 +637,7 @@ class LLMGenerationWidget(QWidget):
         # Row 2: Temp | RAG
         grid_layout.addWidget(QLabel("Temp:"), 2, 0)
 
-        self.temperature_spin = QSpinBox()
+        self.temperature_spin = ScrollSafeSpinBox()
         self.temperature_spin.setRange(0, 200)
         self.temperature_spin.setValue(70)
         self.temperature_spin.setSuffix("%")

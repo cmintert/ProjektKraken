@@ -16,13 +16,13 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QPushButton,
-    QSpinBox,
     QVBoxLayout,
     QWidget,
 )
 
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 
 
 class SearchResultItem(QWidget):
@@ -161,7 +161,7 @@ class AISearchPanelWidget(QWidget):
 
         # Top-K control
         filter_layout.addWidget(QLabel("Results:"))
-        self.top_k_spin = QSpinBox()
+        self.top_k_spin = ScrollSafeSpinBox()
         self.top_k_spin.setMinimum(1)
         self.top_k_spin.setMaximum(100)
         self.top_k_spin.setValue(10)

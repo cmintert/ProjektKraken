@@ -29,7 +29,6 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMessageBox,
     QPushButton,
-    QSpinBox,
     QTableWidget,
     QVBoxLayout,
     QWidget,
@@ -53,6 +52,7 @@ from src.gui.widgets.map.raster_mapping import (
     normalize_value_entity_map,
     validate_no_overlaps,
 )
+from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 
 logger = logging.getLogger(__name__)
 
@@ -739,7 +739,7 @@ class RasterPaletteEditor(QDialog):
             row = item.widget()
             if row is None:
                 continue
-            pos_spin = row.findChild(QSpinBox, "pos_spin")
+            pos_spin = row.findChild(ScrollSafeSpinBox, "pos_spin")
             color_btn = row.findChild(_ColorButton, "color_btn")
             if pos_spin and color_btn:
                 stops.append(GradientStop(pos_spin.value() / 100.0, color_btn.color_hex))
@@ -1064,7 +1064,7 @@ class RasterPaletteEditor(QDialog):
             label_edit = self._table.cellWidget(r, _COL_LABEL)
             entity_edit = self._table.cellWidget(r, _COL_ENTITY_ID)
             type_combo = self._table.cellWidget(r, _COL_TYPE)
-            if not isinstance(spin, QSpinBox) or not isinstance(btn, _ColorButton):
+            if not isinstance(spin, ScrollSafeSpinBox) or not isinstance(btn, _ColorButton):
                 continue
             entry: Dict[str, Any] = {
                 "value": spin.value(),
@@ -1176,7 +1176,7 @@ class RasterPaletteEditor(QDialog):
                 spin = self._table.cellWidget(r, _COL_VALUE)
                 btn = self._table.cellWidget(r, _COL_COLOR)
                 entity_edit = self._table.cellWidget(r, _COL_ENTITY_ID)
-                if isinstance(spin, QSpinBox) and isinstance(btn, _ColorButton):
+                if isinstance(spin, ScrollSafeSpinBox) and isinstance(btn, _ColorButton):
                     eid: Optional[str] = None
                     if isinstance(entity_edit, QLineEdit):
                         eid = (entity_edit.property("linked_id") or "").strip() or None
@@ -1266,7 +1266,7 @@ class RasterPaletteEditor(QDialog):
             label_edit = self._table.cellWidget(r, _COL_LABEL)
             entity_edit = self._table.cellWidget(r, _COL_ENTITY_ID)
             type_combo = self._table.cellWidget(r, _COL_TYPE)
-            if not isinstance(spin, QSpinBox):
+            if not isinstance(spin, ScrollSafeSpinBox):
                 continue
 
             mapping_id = spin.property("mapping_id") or str(uuid.uuid4())

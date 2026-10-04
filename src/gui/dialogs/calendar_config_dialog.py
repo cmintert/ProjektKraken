@@ -20,7 +20,6 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMessageBox,
     QPushButton,
-    QSpinBox,
     QTableWidget,
     QTableWidgetItem,
     QTabWidget,
@@ -37,6 +36,7 @@ from src.core.calendar import (
 )
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 
 logger = logging.getLogger(__name__)
 
@@ -202,7 +202,7 @@ class CalendarConfigDialog(QDialog):
         preview_group = QGroupBox("Date Preview")
         preview_layout = QHBoxLayout()
 
-        self.preview_float = QSpinBox()
+        self.preview_float = ScrollSafeSpinBox()
         self.preview_float.setRange(-1000000, 1000000)
         self.preview_float.setValue(0)
         self.preview_float.valueChanged.connect(self._update_preview)

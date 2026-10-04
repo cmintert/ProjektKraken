@@ -26,7 +26,6 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QPushButton,
     QSizePolicy,
-    QSpinBox,
     QVBoxLayout,
     QWidget,
 )
@@ -41,6 +40,7 @@ from src.core.temporal_expression import (
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 
 logger = logging.getLogger(__name__)
 
@@ -462,7 +462,7 @@ class CompactDateWidget(QWidget):
         chip_layout.setContentsMargins(4, 1, 4, 1)
         chip_layout.setSpacing(0)
 
-        self.spin_year = QSpinBox()
+        self.spin_year = ScrollSafeSpinBox()
         self.spin_year.setRange(-999999, 999999)
         self.spin_year.setValue(1)
         self.spin_year.setPrefix("Year ")
@@ -517,7 +517,7 @@ class CompactDateWidget(QWidget):
         time_row.setContentsMargins(0, 0, 0, 0)
         time_row.setSpacing(8)
 
-        self.spin_hour = QSpinBox()
+        self.spin_hour = ScrollSafeSpinBox()
         self.spin_hour.setRange(0, 23)
         self.spin_hour.setValue(0)
         self.spin_hour.setSuffix("h")
@@ -528,7 +528,7 @@ class CompactDateWidget(QWidget):
         self.spin_hour.setFixedWidth(88)
         time_row.addWidget(self.spin_hour, stretch=0)
 
-        self.spin_minute = QSpinBox()
+        self.spin_minute = ScrollSafeSpinBox()
         self.spin_minute.setRange(0, 59)
         self.spin_minute.setValue(0)
         self.spin_minute.setSuffix("m")
@@ -1056,7 +1056,7 @@ class CalendarPopup(QDialog):
         # Header: Year and Month selectors
         header = QHBoxLayout()
 
-        self.spin_year = QSpinBox()
+        self.spin_year = ScrollSafeSpinBox()
         self.spin_year.setRange(-999999, 999999)
         self.spin_year.setValue(self._year)
         self.spin_year.valueChanged.connect(self._refresh_grid)

@@ -10,7 +10,6 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QDialogButtonBox,
-    QDoubleSpinBox,
     QFormLayout,
     QHBoxLayout,
     QLabel,
@@ -20,6 +19,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.analysis import AnalysisPreset, AnalysisScope, AnalysisScopeKind
+from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
 
 _MINIMUM_MULTI_SELECTION_ITEMS = 2
 
@@ -123,8 +123,8 @@ class AnalysisRunDialog(QDialog):
             checkbox.toggled.connect(self._update_validity)
 
     @staticmethod
-    def _date_spin() -> QDoubleSpinBox:
-        spin = QDoubleSpinBox()
+    def _date_spin() -> ScrollSafeDoubleSpinBox:
+        spin = ScrollSafeDoubleSpinBox()
         spin.setRange(-1_000_000_000.0, 1_000_000_000.0)
         spin.setDecimals(6)
         return spin

@@ -11,11 +11,11 @@ from PySide6.QtCore import QSize, Signal, Slot
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
-    QSpinBox,
     QWidget,
 )
 
 from src.core.calendar import CalendarConverter, CalendarDate
+from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +84,7 @@ class LoreDurationWidget(QWidget):
 
         layout.addStretch()
 
-    def _create_spinbox(self, tooltip: str) -> QSpinBox:
+    def _create_spinbox(self, tooltip: str) -> ScrollSafeSpinBox:
         """Creates a configured QSpinBox for duration input.
 
         Args:
@@ -94,7 +94,7 @@ class LoreDurationWidget(QWidget):
             QSpinBox: Configured spinbox widget.
 
         """
-        spin = QSpinBox()
+        spin = ScrollSafeSpinBox()
         spin.setRange(0, 999999)
         spin.setValue(0)
         spin.setToolTip(tooltip)

@@ -9,7 +9,6 @@ from PySide6.QtGui import QColor, QPainter, QPaintEvent, QPen, QPixmap
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
-    QDoubleSpinBox,
     QFormLayout,
     QLabel,
     QLineEdit,
@@ -20,6 +19,7 @@ from PySide6.QtWidgets import (
 from src.core.marker_icon import MarkerIconDefinition
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
 
 
 class IconAnchorPreview(QWidget):
@@ -71,13 +71,13 @@ class IconMetadataDialog(QDialog):
         form = QFormLayout()
         self.name_edit = QLineEdit(definition.name)
         self.category_edit = QLineEdit(definition.category or "")
-        self.diameter = QDoubleSpinBox()
+        self.diameter = ScrollSafeDoubleSpinBox()
         self.diameter.setDecimals(3)
         self.diameter.setRange(0.001, 1_000_000)
         self.diameter.setSuffix(" px")
         self.diameter.setValue(definition.default_native_diameter_px)
-        self.anchor_x = QDoubleSpinBox()
-        self.anchor_y = QDoubleSpinBox()
+        self.anchor_x = ScrollSafeDoubleSpinBox()
+        self.anchor_y = ScrollSafeDoubleSpinBox()
         for control, value in (
             (self.anchor_x, definition.anchor.x),
             (self.anchor_y, definition.anchor.y),
