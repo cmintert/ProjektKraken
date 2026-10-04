@@ -7,8 +7,11 @@ import logging
 from typing import Dict, List
 
 from src.commands.base_command import BaseCommand, CommandResult
+from src.commands.temporal_entity_edit_command import TemporalEntityEditCommand
+from src.commands.wiki_commands import ProcessWikiLinksCommand
 from src.core.command import LoreMutationEffect, parse_lore_mutation_effects
 from src.services.db_service import DatabaseService
+from src.services.temporal_entity_snapshot_service import TemporalEntitySnapshotService
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +83,7 @@ class CompositeCommand(BaseCommand):
                     command_name="CompositeCommand",
                 )
 
+        checkpoint_data = self._temporal_checkpoint_data(db_service)
         self._is_executed = True
         index_requests: list[dict[str, str]] = []
         marker_map_ids: list[str] = []
@@ -109,6 +113,7 @@ class CompositeCommand(BaseCommand):
                 for command in self.commands
             ),
         }
+        data.update(checkpoint_data)
         effects = self._aggregate_lore_effects(sub_results)
         if effects is not None:
             data["lore_effects"] = effects
@@ -127,6 +132,34 @@ class CompositeCommand(BaseCommand):
             command_name="CompositeCommand",
             data=data,
         )
+
+    def _temporal_checkpoint_command(self) -> TemporalEntityEditCommand | None:
+        """Identify the source-aware save plus optional WikiLink reconciliation."""
+        if not self.commands or not isinstance(
+            self.commands[0], TemporalEntityEditCommand
+        ):
+            return None
+        edit = self.commands[0]
+        if any(
+            not isinstance(command, ProcessWikiLinksCommand)
+            or command.source_id != edit.entity_id
+            for command in self.commands[1:]
+        ):
+            return None
+        return edit
+
+    def _temporal_checkpoint_data(
+        self, db_service: DatabaseService
+    ) -> dict[str, object]:
+        """Resolve the final comparison only after the entire save has succeeded."""
+        edit = self._temporal_checkpoint_command()
+        if edit is None:
+            return {}
+        return {
+            "temporal_entity_checkpoint": TemporalEntitySnapshotService(
+                db_service
+            ).build(edit.entity_id, edit.lore_time)
+        }
 
     def _aggregate_lore_effects(
         self, sub_results: list[CommandResult]

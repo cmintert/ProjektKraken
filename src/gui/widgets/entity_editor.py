@@ -8,6 +8,7 @@ import logging
 import time
 import traceback
 from contextlib import suppress
+from copy import deepcopy
 from typing import Any, Dict, Optional, cast
 
 from PySide6.QtCore import QObject, QPoint, QSize, Qt, Signal, Slot
@@ -41,6 +42,7 @@ from src.core.summary_data import (
     calculate_summary_source_hash,
     is_summary_stale,
 )
+from src.core.temporal_entity_checkpoint import parse_temporal_entity_checkpoint
 from src.core.theme_manager import ThemeManager
 from src.gui.constants import (
     EDITOR_FORM_VERTICAL_SPACING,
@@ -127,6 +129,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self._temporal_time: float | None = None
         self._dated_events: list[tuple[str, str, float]] = []
         self._temporal_save_pending = False
+        self._temporal_checkpoint_invalid = False
+        self._pending_temporal_metadata: dict[str, Any] = {}
         self.autosave_manager = AutoSaveManager(self)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
@@ -860,6 +864,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             focus.exit()
         # Handle missing entity (e.g., deleted)
         if entity is None:
+            self._temporal_save_pending = False
+            self._temporal_checkpoint_invalid = False
             self._current_entity_id = None
             self._temporal_state = None
             self._temporal_time = None
@@ -883,6 +889,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self._temporal_state = None
             self._temporal_time = None
             self._temporal_save_pending = False
+            self._temporal_checkpoint_invalid = False
             self._pending_new_description_event = None
             self._baseline_name = entity.name
             self._baseline_type = entity.type
@@ -1282,6 +1289,10 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             return
 
         self._pending_new_description_event = None
+        self._temporal_save_pending = False
+        self._temporal_checkpoint_invalid = False
+        self._pending_temporal_metadata = {}
+        self.reset_draft_tracking()
         self.set_dirty(False)
         self.discard_requested.emit(self._current_entity_id)
 
@@ -1293,6 +1304,11 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         """
         self._current_entity_id = None
+        self._temporal_state = None
+        self._temporal_time = None
+        self._temporal_save_pending = False
+        self._temporal_checkpoint_invalid = False
+        self.reset_draft_tracking()
         self._reset_pending_summary()
         self.summary_widget.clear_summary()
         self.name_edit.clear()
@@ -1553,13 +1569,15 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         """
         if entity_id != self._current_entity_id:
             return
-        if self._temporal_save_pending or self.save_pending:
+        if (
+            self._temporal_save_pending
+            or self.save_pending
+            or self._temporal_checkpoint_invalid
+        ):
             return
         if self._is_dirty:
-            # A post-save resolve advances the comparison snapshot while the
-            # author keeps typing in the live document.
-            if self._temporal_time == playhead_time:
-                self._temporal_state = state
+            # Save acknowledgements advance comparisons. Background refreshes
+            # must not rebase a draft onto an unrelated or older database value.
             return
 
         same_temporal_context = (
@@ -1726,6 +1744,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             return
         if self._temporal_save_pending:
             return
+        if self._temporal_checkpoint_invalid:
+            self.autosave_manager.stop_timer()
+            return
         patches: list[dict[str, Any]] = []
         description = self.desc_edit.get_wiki_text()
         new_description_event = getattr(self, "_pending_new_description_event", None)
@@ -1837,6 +1858,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             return
         self._temporal_save_pending = True
         self._pending_temporal_metadata = metadata
+        self._submitted_description_event = deepcopy(new_description_event)
         self.autosave_manager.stop_timer()
         self.temporal_save_requested.emit(
             {
@@ -1851,28 +1873,66 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             }
         )
 
-    def finish_temporal_save(self, success: bool) -> None:
-        """Keep failed drafts; allow successful ones to reload."""
-        self._temporal_save_pending = False
+    def finish_temporal_save(
+        self, success: bool, checkpoint: object = None
+    ) -> bool:
+        """Install saved comparisons before releasing guards; retain newer edits."""
         revision = self._pending_save_revision
+        if revision is None:
+            return False
+        parsed = (
+            parse_temporal_entity_checkpoint(
+                checkpoint, self._current_entity_id, self._temporal_time
+            )
+            if success
+            and self._current_entity_id is not None
+            and self._temporal_time is not None
+            else None
+        )
+        if success and parsed is None:
+            self._temporal_checkpoint_invalid = True
+            self._temporal_save_pending = False
+            self.finish_save(revision, False)
+            self.temporal_snapshot_label.setText(
+                "Changes were saved, but the editor could not refresh. "
+                "Copy any newer draft before reopening this entity."
+            )
+            self.temporal_snapshot_banner.show()
+            self._pending_temporal_metadata = {}
+            return False
         if success:
-            self._pending_new_description_event = None
+            assert parsed is not None
+            self._temporal_state = parsed["state"]
+            self._baseline_metadata_snapshot = parsed["baseline_metadata"]
+            self._baseline_name = self._baseline_metadata_snapshot["name"]
+            self._baseline_type = self._baseline_metadata_snapshot["type"]
+            self._baseline_tags = list(self._baseline_metadata_snapshot["_tags"] or [])
+            self._baseline_sheet_layout = deepcopy(
+                self._baseline_metadata_snapshot["_sheet_layout"]
+            )
+            self.description_source_label.setText(
+                self._source_caption(self._temporal_state.get("description_source"))
+            )
+            self.attribute_editor.set_source_labels(
+                self._temporal_state["attribute_sources"]
+            )
+            if self._pending_new_description_event == getattr(
+                self, "_submitted_description_event", None
+            ):
+                self._pending_new_description_event = None
             metadata = getattr(self, "_pending_temporal_metadata", {})
-            self._baseline_metadata_snapshot.update(
-                {key: metadata[key] for key in ("name", "type") if key in metadata}
-            )
-            self._baseline_metadata_snapshot.update(
-                metadata.get("hidden_attributes", {})
-            )
-            self._baseline_name = str(self._baseline_metadata_snapshot["name"])
-            self._baseline_type = str(self._baseline_metadata_snapshot["type"])
-            if "_tags" in self._baseline_metadata_snapshot:
-                self._baseline_tags = list(
-                    self._baseline_metadata_snapshot["_tags"] or []
-                )
+            hidden = metadata.get("hidden_attributes", {})
+            if "_sheet_layout" in hidden:
+                self._displayed_sheet_layout = deepcopy(hidden["_sheet_layout"])
+            if (
+                "_summary_data" in hidden
+                and self._pending_summary_data == hidden["_summary_data"]
+            ):
+                self._reset_pending_summary()
         self._pending_temporal_metadata = {}
-        if revision is not None:
-            self.finish_save(revision, success)
+        self._temporal_save_pending = False
+        self.finish_save(revision, success)
+        return success
 
     def _populate_inject_menu(self) -> None:
         """Populate the Fast Inject menu with available actions.

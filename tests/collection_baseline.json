@@ -2,10 +2,10 @@
   "schema": 1,
   "counts": {
     "smoke": 18,
-    "ci_fast": 1291,
+    "ci_fast": 1326,
     "slow": 1,
     "performance": 0,
-    "full": 5664,
+    "full": 5699,
     "full_only": 4364
   },
   "categories": {
@@ -18,7 +18,7 @@
     "repro": 2,
     "root": 15,
     "security": 5,
-    "unit": 5331
+    "unit": 5366
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -7073,6 +7073,111 @@
       "ci_fast"
     ],
     "tests/unit/test_temporal_resolver.py::test_same_date_order_remains_deterministic": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_acknowledged_metadata_does_not_replace_newer_metadata": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_acknowledgement_keeps_newer_attribute_edits[False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_acknowledgement_keeps_newer_attribute_edits[True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_checkpoint_failure_rolls_back_edit": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_checkpoint_round_trip_and_composite_undo_redo": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_composite_checkpoint_failure_rolls_back_children": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_consecutive_saves_without_background_refresh[False-False--12.0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_consecutive_saves_without_background_refresh[False-False-0.0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_consecutive_saves_without_background_refresh[False-False-12.0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_consecutive_saves_without_background_refresh[False-True--12.0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_consecutive_saves_without_background_refresh[False-True-0.0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_consecutive_saves_without_background_refresh[False-True-12.0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_consecutive_saves_without_background_refresh[True-False--12.0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_consecutive_saves_without_background_refresh[True-False-0.0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_consecutive_saves_without_background_refresh[True-False-12.0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_consecutive_saves_without_background_refresh[True-True--12.0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_consecutive_saves_without_background_refresh[True-True-0.0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_consecutive_saves_without_background_refresh[True-True-12.0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_coordinator_handles_missing_checkpoint_as_saved_but_unacknowledged": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_coordinator_ignores_stale_acknowledgements[command]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_coordinator_ignores_stale_acknowledgements[discard]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_coordinator_ignores_stale_acknowledgements[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_coordinator_ignores_stale_acknowledgements[time]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_coordinator_ignores_stale_acknowledgements[world]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_coordinator_installs_checkpoint_before_completion_signal": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_dated_creation_acknowledges_new_source_without_refresh": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_genuine_conflict_does_not_rebase_dirty_draft": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_invalid_acknowledgement_keeps_draft_and_stops_retries[None]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_invalid_acknowledgement_keeps_draft_and_stops_retries[malformed1]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_invalid_acknowledgement_keeps_draft_and_stops_retries[missing_source]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_invalid_acknowledgement_keeps_draft_and_stops_retries[wrong]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_invalid_acknowledgement_keeps_draft_and_stops_retries[wrong_time]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_rapid_typing_uses_acknowledgement_before_real_autosave_timer": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_snapshot_uses_calendar_aware_resolution_for_verification": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_worker_delivers_checkpoint_after_commit_and_history_round_trip": [
       "ci_fast"
     ],
     "tests/unit/test_temporal_state.py::test_apply_payload_is_immutable_and_obeys_operation_order": [],

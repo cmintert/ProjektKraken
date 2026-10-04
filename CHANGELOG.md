@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-04
-**Commit:** 78463814f0b6ce370943131ff2eca714511a2c86
+**Commit:** 718b54babfe8a128e20b97126c71c2dbf6597ee9
 ---
 
 # Changelog
@@ -45,6 +45,13 @@ All notable changes to this project will be documented in this file.
   date-anchor behavior, and added editor/navigation regression coverage.
 
 ### Fixed
+
+- *(2026-10-04)* **Entity autosave (KRT-51)**: Returned transaction-built comparison
+  snapshots with temporal saves, including WikiLink composites, and installed them
+  before allowing the next save. Preserved newer drafts, field ownership, caret,
+  undo, and genuine conflict detection when background refreshes are delayed.
+  Added recovery feedback for incomplete acknowledgements, permanent regression
+  coverage, and a recorded rapid-typing check; refreshed test suite membership.
 
 - *(2026-10-04)* **Numeric wheel navigation (KRT-49)**: Unfocused integer and
   decimal inputs pass wheel scrolling to surrounding content without changing

@@ -42,6 +42,7 @@ from src.commands.relation_commands import (
 from src.commands.temporal_entity_edit_command import TemporalEntityEditCommand
 from src.commands.wiki_commands import ProcessWikiLinksCommand
 from src.core.map import Map
+from src.core.temporal_entity_checkpoint import parse_temporal_entity_checkpoint
 from src.services.marker_icon_catalog import MarkerIconCatalog
 
 if TYPE_CHECKING:
@@ -80,6 +81,7 @@ class EditorCoordinator(BaseCoordinator):
         self._pending_temporal_revision: int | None = None
         self._pending_temporal_generation: int | None = None
         self._pending_temporal_entity_id: str | None = None
+        self._pending_temporal_time: float | None = None
         self._pending_editor_saves: dict[str, tuple[str, str, int, int, dict]] = {}
 
     @Slot(list)
@@ -120,6 +122,7 @@ class EditorCoordinator(BaseCoordinator):
         self._pending_temporal_revision = revision
         self._pending_temporal_generation = generation
         self._pending_temporal_entity_id = request["entity_id"]
+        self._pending_temporal_time = request["lore_time"]
         self.command_requested.emit(outgoing)
 
     @Slot(object)
@@ -181,24 +184,35 @@ class EditorCoordinator(BaseCoordinator):
         temporal_revision = self._pending_temporal_revision
         temporal_generation = self._pending_temporal_generation
         entity_id = self._pending_temporal_entity_id
+        lore_time = self._pending_temporal_time
         self._pending_temporal_revision = None
         self._pending_temporal_generation = None
         self._pending_temporal_entity_id = None
+        self._pending_temporal_time = None
         temporal_editor = self.main_window.entity_editor
         if (
             temporal_editor.current_entity_id != entity_id
             or temporal_editor.draft_generation != temporal_generation
+            or temporal_editor._temporal_time != lore_time
+            or temporal_editor._pending_save_revision != temporal_revision
         ):
             return
-        temporal_editor.finish_temporal_save(result.success)
+        checkpoint = (
+            parse_temporal_entity_checkpoint(
+                result.data.get("temporal_entity_checkpoint"), entity_id, lore_time
+            )
+            if result.success and entity_id is not None and lore_time is not None
+            else None
+        )
+        acknowledged = temporal_editor.finish_temporal_save(result.success, checkpoint)
         if temporal_revision is not None and entity_id is not None:
             self.editor_save_finished.emit(
                 "entity",
                 entity_id,
                 temporal_revision,
-                result.success and not temporal_editor.has_unsaved_changes(),
+                acknowledged and not temporal_editor.has_unsaved_changes(),
             )
-        if result.success:
+        if acknowledged:
             self.main_window.time_coordinator.on_temporal_save_completed()
         else:
             self.main_window.time_coordinator.on_temporal_save_failed()

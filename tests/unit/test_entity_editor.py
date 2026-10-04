@@ -17,6 +17,21 @@ def editor(qtbot):
     return widget
 
 
+def _checkpoint(entity, state, lore_time=12.0):
+    return {
+        "entity_id": entity.id,
+        "lore_time": lore_time,
+        "state": {"absent_attribute_sources": {}, **state},
+        "baseline_metadata": {
+            "name": entity.name,
+            "type": entity.type,
+            "_tags": entity.attributes.get("_tags"),
+            "_sheet_layout": entity.attributes.get("_sheet_layout"),
+            "_summary_data": entity.attributes.get("_summary_data"),
+        },
+    }
+
+
 def test_editor_init(editor):
     assert editor.name_edit is not None
     assert editor._content_widget.isHidden()  # Hidden until entity loaded
@@ -178,9 +193,12 @@ def test_temporal_save_refresh_keeps_newer_prose_and_cursor(editor, qtbot):
     inner.insertPlainText(" again")
     position = inner.textCursor().position()
 
-    editor.finish_temporal_save(True)
+    editor.finish_temporal_save(
+        True, _checkpoint(entity, {**state, "description": "Old harbor rebuilt"})
+    )
     editor.display_temporal_state(
-        entity.id, {**state, "description": "Old harbor rebuilt"},
+        entity.id,
+        {**state, "description": "Old harbor rebuilt"},
         playhead_time=12.0,
     )
 
@@ -191,9 +209,7 @@ def test_temporal_save_refresh_keeps_newer_prose_and_cursor(editor, qtbot):
     assert editor._temporal_state["description"] == "Old harbor rebuilt"
 
 
-def test_temporal_save_refresh_does_not_rebuild_acknowledged_document(
-    editor, qtbot
-):
+def test_temporal_save_refresh_does_not_rebuild_acknowledged_document(editor, qtbot):
     """The save response must preserve selection and the live undo stack."""
     from PySide6.QtGui import QTextCursor
 
@@ -212,7 +228,9 @@ def test_temporal_save_refresh_does_not_rebuild_acknowledged_document(
     inner.insertPlainText(" rebuilt")
     with qtbot.waitSignal(editor.temporal_save_requested):
         editor._on_autosave()
-    editor.finish_temporal_save(True)
+    editor.finish_temporal_save(
+        True, _checkpoint(entity, {**state, "description": "Old harbor rebuilt"})
+    )
     cursor = inner.textCursor()
     cursor.setPosition(4)
     cursor.setPosition(9, QTextCursor.MoveMode.KeepAnchor)
@@ -221,7 +239,8 @@ def test_temporal_save_refresh_does_not_rebuild_acknowledged_document(
     assert inner.document().isUndoAvailable()
 
     editor.display_temporal_state(
-        entity.id, {**state, "description": "Old harbor rebuilt"},
+        entity.id,
+        {**state, "description": "Old harbor rebuilt"},
         playhead_time=12.0,
     )
 
