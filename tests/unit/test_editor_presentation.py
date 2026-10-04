@@ -17,8 +17,79 @@ from src.core.entities import Entity
 from src.core.events import Event
 from src.core.temporal_expression import TemporalPrecision
 from src.core.theme_manager import ThemeManager
+from src.gui.widgets.editor_presentation import DisclosureButton
 from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.event_editor import EventEditorWidget
+
+
+@pytest.mark.ci_fast
+def test_fresh_event_disclosures_keep_common_case_primary(event_editor, qtbot):
+    """Contract 1: a new common-case event has labeled, collapsed extras."""
+    editor = event_editor
+    editor.resize(360, 900)
+    editor.parentWidget().show()
+    editor.show()
+    qtbot.waitUntil(editor.isVisible)
+    assert editor.date_edit.txt_date.isVisible()
+    for button in (
+        editor.date_edit.date_fields_button,
+        editor.temporal_widget.range_button,
+        editor.summary_checkbox,
+        editor.llm_checkbox,
+    ):
+        assert not button.isChecked()
+        assert button.text()
+        assert button.accessibleName()
+    assert editor.date_edit._qualification_row.isHidden()
+    assert not editor.temporal_widget.has_duration.isChecked()
+    assert not editor.has_unsaved_changes()
+
+
+@pytest.mark.ci_fast
+def test_disclosure_keyboard_preserves_advanced_event_values(event_editor, qtbot):
+    """Contract 1/5: keyboard disclosure changes presentation, never data."""
+    editor = event_editor
+    event = Event(id="journey", name="Journey", lore_date=0.5, lore_duration=5.0)
+    editor.load_event(event)
+    editor.parentWidget().show()
+    editor.show()
+    button = editor.temporal_widget.range_button
+    assert isinstance(button, DisclosureButton)
+    assert editor.temporal_widget.has_duration.isChecked()
+    assert "5" in editor.temporal_widget.range_summary.text()
+    button.setFocus()
+    qtbot.keyClick(button, Qt.Key.Key_Space)
+    assert button.isChecked()
+    qtbot.keyClick(button, Qt.Key.Key_Space)
+    assert not button.isChecked()
+    editor.load_event(event)
+    assert not button.isChecked()
+    assert editor.temporal_widget.get_start() == 0.5
+    assert editor.temporal_widget.get_duration() == 5.0
+    button.setFocus()
+    qtbot.keyClick(button, Qt.Key.Key_Space)
+    assert button.isChecked()
+    assert not editor.has_unsaved_changes()
+
+
+@pytest.mark.ci_fast
+def test_invalid_enter_then_escape_cancels_only_date_draft(event_editor, qtbot):
+    """Contract 2/5: validation and local cancellation preserve other work."""
+    editor = event_editor
+    editor.show()
+    editor.name_edit.setText("Edited name")
+    field = editor.date_edit.txt_date
+    field.setFocus()
+    field.selectAll()
+    qtbot.keyClicks(field, "not a date")
+    qtbot.keyClick(field, Qt.Key.Key_Return)
+    assert field.text() == "not a date"
+    assert editor.temporal_widget.has_pending_draft()
+    qtbot.keyClick(field, Qt.Key.Key_Escape)
+    assert not editor.temporal_widget.has_pending_draft()
+    assert editor.temporal_widget.get_start() == 0.0
+    assert editor.name_edit.text() == "Edited name"
+    assert editor.has_unsaved_changes()
 
 
 @pytest.fixture

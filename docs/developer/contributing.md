@@ -19,3 +19,15 @@ Use conventional commit types such as `feat`, `fix`, `docs`, `refactor`,
 
 Do not mix unrelated cleanup with a feature change. Preserve existing user
 changes in a dirty working tree.
+
+## Authoring interaction contract
+
+Use [UI/UX Contract v1](../ux/authoring-contract.md) for authoring UI changes.
+Linear remains the design authority; update both copies in the same work batch
+when deliberately revising a rule. In the change description, identify relevant
+contract numbers, visible entry points (including narrow layouts), keyboard
+ownership, selection/draft/caret/playhead preservation, and justified exceptions.
+Use shared disclosure and overflow presentation before inventing local patterns.
+Consult the [surface audit](../ux/authoring-interaction-audit.md) and
+[20-task benchmark](../ux/authoring-benchmark.md). Known violations belong to their
+owning issues; do not silently endorse them through regression tests.

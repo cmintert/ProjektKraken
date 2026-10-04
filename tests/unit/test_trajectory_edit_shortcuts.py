@@ -3,11 +3,53 @@
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
+import pytest
 from PySide6.QtCore import QEvent, QObject, Qt
 from PySide6.QtGui import QKeyEvent
-from PySide6.QtWidgets import QLineEdit, QWidget
+from PySide6.QtWidgets import QLineEdit, QTextEdit, QWidget
 
 from src.app.main_window import GlobalShortcutFilter
+
+
+@pytest.mark.ci_fast
+@pytest.mark.parametrize("editor_type", [QLineEdit, QTextEdit])
+def test_delivered_enter_respects_text_focus(qapp, qtbot, editor_type):
+    """Contract 2: real key delivery must not commit an unrelated map edit."""
+    window = _Window()
+    editor = editor_type()
+    qtbot.addWidget(editor)
+    shortcut_filter = GlobalShortcutFilter(window)  # type: ignore[arg-type]
+    qapp.installEventFilter(shortcut_filter)
+    try:
+        editor.show()
+        editor.setFocus()
+        qtbot.waitUntil(editor.hasFocus)
+        qtbot.keyClicks(editor, "Draft")
+        qtbot.keyClick(editor, Qt.Key.Key_Return)
+        window.trajectory_edit.apply.assert_not_called()
+        text = editor.text() if isinstance(editor, QLineEdit) else editor.toPlainText()
+        assert text == ("Draft" if isinstance(editor, QLineEdit) else "Draft\n")
+    finally:
+        qapp.removeEventFilter(shortcut_filter)
+
+
+@pytest.mark.ci_fast
+def test_delivered_escape_cancels_innermost_map_operation(qapp, qtbot):
+    """Contract 2: Escape leaves the containing trajectory session intact."""
+    window = _Window()
+    window.trajectory_edit.is_date_editing = True
+    widget = QWidget()
+    qtbot.addWidget(widget)
+    shortcut_filter = GlobalShortcutFilter(window)  # type: ignore[arg-type]
+    qapp.installEventFilter(shortcut_filter)
+    try:
+        widget.show()
+        qtbot.keyClick(widget, Qt.Key.Key_Escape)
+        window.trajectory_edit.cancel_date_edit.assert_called_once()
+        window.trajectory_edit.cancel.assert_not_called()
+        window.trajectory_edit.apply.assert_not_called()
+    finally:
+        qapp.removeEventFilter(shortcut_filter)
 
 
 class _Window(QObject):

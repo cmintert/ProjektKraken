@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-03
-**Commit:** eea5947c6c4beb7d1e26cd20a9a08dee10a82350
+**Last Updated:** 2026-10-04
+**Commit:** eb8aff5ce8501c05a3fae81aa2e1238be789f6db
 ---
 
 # Changelog
@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-10-04)* **Authoring UX safeguards (KRT-46)**: Published the synchronized
+  contract, surface audit, new 20-task protocol, and assisted baseline with
+  production-theme evidence. Assigned Longform action/deletion and selected-map
+  discoverability gaps to KRT-47/48. Added seven regression cases for lossless
+  disclosure, local keyboard ownership, and visible narrow overflow access;
+  updated suite membership. Human task videos and performance measurement follow.
 
 - *(2026-10-03)* **Icon library (KRT-28)**: Added independent management from
   File → Icon Library, batch import with names and duplicate reuse, search and

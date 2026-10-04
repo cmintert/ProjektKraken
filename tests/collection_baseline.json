@@ -2,10 +2,10 @@
   "schema": 1,
   "counts": {
     "smoke": 18,
-    "ci_fast": 1270,
+    "ci_fast": 1277,
     "slow": 1,
     "performance": 0,
-    "full": 5643,
+    "full": 5650,
     "full_only": 4364
   },
   "categories": {
@@ -18,7 +18,7 @@
     "repro": 2,
     "root": 15,
     "security": 5,
-    "unit": 5310
+    "unit": 5317
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -3093,6 +3093,9 @@
     "tests/unit/test_editor_mixin.py::test_set_dirty_ignored_during_loading": [],
     "tests/unit/test_editor_mixin.py::test_set_dirty_ignored_when_no_item": [],
     "tests/unit/test_editor_presentation.py::test_cancel_date_preserves_other_edits": [],
+    "tests/unit/test_editor_presentation.py::test_disclosure_keyboard_preserves_advanced_event_values": [
+      "ci_fast"
+    ],
     "tests/unit/test_editor_presentation.py::test_editable_combo_inner_editor_uses_parent_styling": [],
     "tests/unit/test_editor_presentation.py::test_editor_tabs_fit_compact_width[480-1200-entity]": [],
     "tests/unit/test_editor_presentation.py::test_editor_tabs_fit_compact_width[480-1200-event]": [],
@@ -3112,8 +3115,14 @@
     "tests/unit/test_editor_presentation.py::test_editor_tabs_fit_compact_width[900-800-event]": [],
     "tests/unit/test_editor_presentation.py::test_end_date_edit_is_saved": [],
     "tests/unit/test_editor_presentation.py::test_formatted_date_round_trips": [],
+    "tests/unit/test_editor_presentation.py::test_fresh_event_disclosures_keep_common_case_primary": [
+      "ci_fast"
+    ],
     "tests/unit/test_editor_presentation.py::test_hiding_time_preserves_value": [],
     "tests/unit/test_editor_presentation.py::test_invalid_date_draft_blocks_save_and_survives_reload": [],
+    "tests/unit/test_editor_presentation.py::test_invalid_enter_then_escape_cancels_only_date_draft": [
+      "ci_fast"
+    ],
     "tests/unit/test_editor_presentation.py::test_navigation_save_rejects_invalid_draft": [],
     "tests/unit/test_editor_presentation.py::test_no_calendar_uses_structured_entry": [],
     "tests/unit/test_editor_presentation.py::test_overflow_menu_reaches_every_section": [],
@@ -5359,6 +5368,9 @@
     "tests/unit/test_overflow_toolbar.py::test_attribute_toolbar_keeps_add_action_visible_without_clipping": [],
     "tests/unit/test_overflow_toolbar.py::test_checkbox_state_is_shared_with_overflow_action": [],
     "tests/unit/test_overflow_toolbar.py::test_narrow_toolbar_overflows_low_priority_without_clipping": [],
+    "tests/unit/test_overflow_toolbar.py::test_narrow_visible_menu_keyboard_invokes_original_action": [
+      "ci_fast"
+    ],
     "tests/unit/test_overflow_toolbar.py::test_overflow_button_is_spacious_and_theme_aware": [],
     "tests/unit/test_overflow_toolbar.py::test_overflow_menu_action_uses_original_button_signal": [],
     "tests/unit/test_overflow_toolbar.py::test_unavailable_context_action_is_absent_from_toolbar_and_menu": [],
@@ -7613,6 +7625,15 @@
     "tests/unit/test_trajectory_edit_session.py::test_speed_anchor_exposes_only_valid_later_range": [],
     "tests/unit/test_trajectory_edit_session.py::test_speed_equalization_preview_reports_changed_dates_and_speed": [],
     "tests/unit/test_trajectory_edit_session.py::test_whole_trajectory_equalization_uses_endpoints": [],
+    "tests/unit/test_trajectory_edit_shortcuts.py::test_delivered_enter_respects_text_focus[QLineEdit]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_trajectory_edit_shortcuts.py::test_delivered_enter_respects_text_focus[QTextEdit]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_trajectory_edit_shortcuts.py::test_delivered_escape_cancels_innermost_map_operation": [
+      "ci_fast"
+    ],
     "tests/unit/test_trajectory_edit_shortcuts.py::test_enter_confirms_equalization_preview_before_trajectory_apply": [],
     "tests/unit/test_trajectory_edit_shortcuts.py::test_enter_is_left_to_active_text_field": [],
     "tests/unit/test_trajectory_edit_shortcuts.py::test_escape_cancels_only_active_date_suboperation": [],

@@ -67,6 +67,13 @@
 - `src/commands/base_command.py`, `src/services/worker.py`, `tests/conftest.py`
 
 ## Project Skills
+- Authoring UI changes must follow `docs/ux/authoring-contract.md` (the Linear
+  document is authoritative). Identify relevant contract numbers, visible routes,
+  keyboard ownership, context preservation, and justified exceptions. Consult
+  `docs/ux/authoring-interaction-audit.md` and the 20-task benchmark before changing
+  interaction conventions. Deliberate rule changes update Linear and the repository
+  counterpart together; preserve advanced semantics and use shared presentation.
+
 - `.agents/skills/` is the canonical home for ProjektKraken-specific Codex
   workflows. Keep project-only skills there rather than installing global copies.
 

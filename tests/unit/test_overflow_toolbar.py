@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import pytest
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QCheckBox,
     QPushButton,
@@ -14,6 +16,35 @@ from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.editor_presentation import EditorPresentation
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
+
+
+@pytest.mark.ci_fast
+def test_narrow_visible_menu_keyboard_invokes_original_action(qtbot):
+    """Contract 7: a visible overflow menu reaches the original action."""
+    toolbar = OverflowToolBar()
+    primary = QPushButton("Create")
+    secondary = QPushButton("Refine connection")
+    toolbar.add_button(primary, pinned=True)
+    toolbar.add_button(secondary)
+    qtbot.addWidget(toolbar)
+    toolbar.resize(180, 32)
+    toolbar.show()
+    qtbot.waitUntil(toolbar.overflow_button.isVisible)
+    assert secondary in toolbar.overflowed_buttons()
+    assert toolbar.overflow_button.accessibleName() == "More actions"
+    calls = []
+    secondary.clicked.connect(lambda: calls.append("refine"))
+
+    def choose_action():
+        menu = toolbar.overflow_menu
+        menu.setActiveAction(menu.actions()[1])
+        qtbot.keyClick(menu, Qt.Key.Key_Return)
+
+    # The actual button opens a modal popup; choose through real key delivery.
+    QTimer.singleShot(0, choose_action)
+    qtbot.mouseClick(toolbar.overflow_button, Qt.MouseButton.LeftButton)
+    assert calls == ["refine"]
+    assert primary.isVisible()
 
 
 def test_narrow_toolbar_overflows_low_priority_without_clipping(qtbot) -> None:
