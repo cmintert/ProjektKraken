@@ -26,6 +26,7 @@ from src.core.temporal_constraints import TemporalConstraintKind
 from src.core.temporal_expression import expression_from_attributes
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
 from src.services.chronology_service import (
     collect_chronology,
@@ -135,7 +136,7 @@ class EventChronologyDialog(QDialog):
         row.setContentsMargins(0, 3, 0, 9)
         primary = QHBoxLayout()
         primary.addWidget(QLabel("This event"))
-        order = QComboBox()
+        order = ScrollSafeComboBox()
         for label, value in (
             ("Before", "before"),
             ("After", "after"),
@@ -148,7 +149,7 @@ class EventChronologyDialog(QDialog):
             "not merely overlapping dates."
         )
         primary.addWidget(order)
-        target = QComboBox()
+        target = ScrollSafeComboBox()
         target.setEditable(True)
         target.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
         target.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)

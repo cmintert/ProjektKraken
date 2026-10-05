@@ -35,6 +35,7 @@ from PySide6.QtWidgets import (
 
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
+from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
 from src.gui.widgets.standard_buttons import DestructiveButton, StandardButton
@@ -112,7 +113,7 @@ class RelationEditDialog(QDialog):
         self._setup_target_field(target_id, suggestion_items)
 
         # 2. Relation Type
-        self.type_edit = QComboBox()
+        self.type_edit = ScrollSafeComboBox()
         default_types = [
             "birth",
             "caused",
@@ -661,7 +662,7 @@ class RelationEditDialog(QDialog):
         suggestions: list[tuple[str, str, str]],
     ) -> None:
         """Expose unknown/open intent and named event anchors without numeric bounds."""
-        self.temporal_behavior = QComboBox()
+        self.temporal_behavior = ScrollSafeComboBox()
         for label, value in (
             ("Active state", "stateful"),
             ("Historical fact", "historical"),
@@ -689,7 +690,7 @@ class RelationEditDialog(QDialog):
             ("start", self.valid_from, self.check_from),
             ("end", self.valid_to, self.check_to),
         ):
-            choice = QComboBox()
+            choice = ScrollSafeComboBox()
             choice.addItem("Manual date", "manual")
             if self.source_event_date is not None:
                 choice.addItem("At source event (dynamic)", "source_event")
@@ -720,7 +721,7 @@ class RelationEditDialog(QDialog):
                 choice,
             )
             self._boundary_choices[side] = choice
-            relative = QComboBox()
+            relative = ScrollSafeComboBox()
             for title, value in (
                 ("At event", "at"),
                 ("Before event", "before"),

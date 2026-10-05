@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-05
-**Commit:** 43e463525a6066b6a6eaf852fb3dcd89b209bf6f
+**Commit:** b2fa333b88cb11d99a2cac558730d60e635e9327
 ---
 
 # Changelog
@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-05)* **Inspector human review (KRT-45)**: Recorded the partial
+  KA-01–10 v1.2 video/SRT review, eight optimization groups and 26 original
+  screenshots with source hashes. Reproduced unselected dropdown wheel mutation
+  (KRT-52) and missing Linked events playhead orientation; tracked visible link
+  creation (KRT-53) and existing relation/type follow-ups. Updated the comparison
+  register with partial outcomes; full human acceptance remains pending.
 
 - *(2026-10-05)* **Cleanup**: Archived the temporary workspace intact under
   ignored local artifacts, preserving baseline archives, benchmark worlds,
@@ -71,6 +78,12 @@ All notable changes to this project will be documented in this file.
   date-anchor behavior, and added editor/navigation regression coverage.
 
 ### Fixed
+
+- *(2026-10-05)* **Choice wheel navigation (KRT-52, KRT-45 review)**: Unfocused
+  relation, date, type and metadata dropdowns scroll their surrounding form
+  without changing values or stealing editing focus. Shared controls preserve
+  focused wheel editing, editable custom types and popup scrolling. Added 45
+  window-delivered regression cases, save/undo checks and before/after diagnostics.
 
 - *(2026-10-04)* **Entity autosave (KRT-51)**: Returned transaction-built comparison
   snapshots with temporal saves, including WikiLink composites, and installed them

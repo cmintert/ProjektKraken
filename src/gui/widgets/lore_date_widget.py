@@ -10,7 +10,6 @@ from typing import Optional
 from PySide6.QtCore import QSize, Signal, Slot
 from PySide6.QtWidgets import (
     QCheckBox,
-    QComboBox,
     QHBoxLayout,
     QLabel,
     QWidget,
@@ -18,6 +17,7 @@ from PySide6.QtWidgets import (
 
 from src.core.calendar import CalendarConverter, CalendarDate
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.numeric_inputs import (
     ScrollSafeDoubleSpinBox,
     ScrollSafeSpinBox,
@@ -73,17 +73,17 @@ class LoreDateWidget(QWidget):
         layout.addWidget(self._year_spin)
 
         # Month combo
-        self._month_combo = QComboBox()
+        self._month_combo = ScrollSafeComboBox()
         self._month_combo.currentIndexChanged.connect(self._on_month_changed)
         layout.addWidget(self._month_combo)
 
         # Day combo
-        self._day_combo = QComboBox()
+        self._day_combo = ScrollSafeComboBox()
         self._day_combo.currentIndexChanged.connect(self._on_structured_changed)
         layout.addWidget(self._day_combo)
 
         # Hour combo (0-23)
-        self._hour_combo = QComboBox()
+        self._hour_combo = ScrollSafeComboBox()
         for h in range(24):
             self._hour_combo.addItem(f"{h:02d}h")
         self._hour_combo.setCurrentIndex(0)
@@ -91,7 +91,7 @@ class LoreDateWidget(QWidget):
         layout.addWidget(self._hour_combo)
 
         # Minute combo (0-59, 5-minute intervals)
-        self._minute_combo = QComboBox()
+        self._minute_combo = ScrollSafeComboBox()
         for m in range(0, 60, 5):
             self._minute_combo.addItem(f"{m:02d}m")
         self._minute_combo.setCurrentIndex(0)

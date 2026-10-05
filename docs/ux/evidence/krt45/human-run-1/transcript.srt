@@ -1,0 +1,675 @@
+1
+00:00:04,540 --> 00:00:07,060
+Also dann beginne ich mal mit Taskilein
+
+2
+00:00:07,060 --> 00:00:07,780
+zu erstellen.
+
+3
+00:00:10,290 --> 00:00:13,076
+Ich benutze create entity. Ob jeder weiß,
+
+4
+00:00:13,076 --> 00:00:15,862
+dass eine Entity auch ein Charakter sein
+
+5
+00:00:15,862 --> 00:00:18,250
+kann, das sei jetzt mal so.
+
+6
+00:00:19,190 --> 00:00:22,159
+Dahingestellt. Vielleicht könnte
+
+7
+00:00:22,159 --> 00:00:24,826
+man das in dem Text nochmal
+
+8
+00:00:24,826 --> 00:00:25,271
+klären.
+
+9
+00:00:32,551 --> 00:00:34,631
+So, wir müssen den Typ noch ändern.
+
+10
+00:00:35,751 --> 00:00:37,271
+Ach, Charakter.
+
+11
+00:00:44,861 --> 00:00:45,301
+Das war's.
+
+12
+00:00:59,831 --> 00:01:02,471
+Gut Aufgabe 2 heißt ich muss.
+
+13
+00:01:04,181 --> 00:01:06,282
+Woanders hin navigieren, dann werde ich
+
+14
+00:01:06,282 --> 00:01:08,885
+jetzt einfach. Eine
+
+15
+00:01:08,885 --> 00:01:09,952
+neue Location.
+
+16
+00:01:12,502 --> 00:01:13,022
+Frauen.
+
+17
+00:01:17,332 --> 00:01:19,972
+Das hat mich jetzt wegnavigiert von
+
+18
+00:01:19,972 --> 00:01:21,732
+Taskleiste navigiere ich zurück.
+
+19
+00:01:22,672 --> 00:01:24,472
+Funktioniert relativ einfach.
+
+20
+00:01:41,862 --> 00:01:43,262
+Kopiere das jetzt hier einfach raus.
+
+21
+00:01:46,842 --> 00:01:48,993
+Studiert History. Das.
+
+22
+00:01:50,513 --> 00:01:53,433
+Brians. Es ist
+
+23
+00:01:53,433 --> 00:01:56,398
+gespeichert. Raus, wieder rein. Da ist
+
+24
+00:01:56,398 --> 00:01:57,153
+es perfekt.
+
+25
+00:02:08,753 --> 00:02:09,233
+Endet hier.
+
+26
+00:02:19,593 --> 00:02:22,199
+Das ist eine Faction in dem
+
+27
+00:02:22,199 --> 00:02:22,633
+Fall.
+
+28
+00:02:33,364 --> 00:02:34,444
+Okay jetzt.
+
+29
+00:02:36,944 --> 00:02:38,944
+Soll ich in Taskin eingeschlagen?
+
+30
+00:02:49,604 --> 00:02:49,844
+Ja.
+
+31
+00:03:00,394 --> 00:03:02,670
+Und ich soll das Linken, das machen wir
+
+32
+00:03:02,670 --> 00:03:02,954
+so.
+
+33
+00:03:15,755 --> 00:03:18,421
+Das scheint mir ein bisschen
+
+34
+00:03:18,421 --> 00:03:21,088
+eigenartig. Man könnte jetzt Text
+
+35
+00:03:21,088 --> 00:03:23,786
+markieren und. Mit
+
+36
+00:03:23,786 --> 00:03:26,373
+Rechtsklick ein create Link machen oder
+
+37
+00:03:26,373 --> 00:03:29,069
+eine Action?Create
+
+38
+00:03:29,069 --> 00:03:31,435
+link. Das muss man sich überlegen.
+
+39
+00:03:32,715 --> 00:03:34,395
+Aber das ist jetzt erst mal gemacht.
+
+40
+00:03:52,575 --> 00:03:55,490
+Okay das würde ich diese Connection
+
+41
+00:03:55,490 --> 00:03:55,975
+hier.
+
+42
+00:03:59,676 --> 00:04:02,516
+Wir wissen es nicht.
+
+43
+00:04:02,516 --> 00:04:05,356
+Wie der Type ist.
+
+44
+00:04:20,336 --> 00:04:22,716
+Ah, guck mal. Hier.
+
+45
+00:04:26,536 --> 00:04:27,536
+Verändert sich.
+
+46
+00:04:31,586 --> 00:04:33,506
+Die Settings müssen maßvoll.
+
+47
+00:04:35,956 --> 00:04:37,896
+Das hatte ich gedacht, dass das schon
+
+48
+00:04:37,896 --> 00:04:39,559
+gefixt ist, ist es aber anscheinend
+
+49
+00:04:39,559 --> 00:04:42,282
+nicht. Außerdem glaube ich,
+
+50
+00:04:42,282 --> 00:04:44,357
+dass hier in diesem Relationship.
+
+51
+00:04:45,557 --> 00:04:48,397
+Dialog einfach noch zu viel.
+
+52
+00:04:49,657 --> 00:04:51,017
+Kram drin steht.
+
+53
+00:04:56,717 --> 00:04:59,367
+Außerdem ist unter Connections steht
+
+54
+00:04:59,367 --> 00:05:00,957
+hier ad relation.
+
+55
+00:05:01,997 --> 00:05:04,933
+Das. Ist auch
+
+56
+00:05:04,933 --> 00:05:06,517
+nicht gerade einleuchtend.
+
+57
+00:05:07,697 --> 00:05:09,097
+Aber gemacht.
+
+58
+00:05:23,448 --> 00:05:25,048
+OK, wir.
+
+59
+00:05:25,798 --> 00:05:26,598
+Rezitieren.
+
+60
+00:05:29,018 --> 00:05:30,538
+Die Verbindung edit.
+
+61
+00:05:33,738 --> 00:05:36,298
+Connected, Canon member of.
+
+62
+00:05:37,048 --> 00:05:52,288
+
+
+63
+00:06:02,828 --> 00:06:04,613
+Relativ Straight Forward, massiv hier
+
+64
+00:06:04,613 --> 00:06:07,112
+nicht unbedingt, dass das n Textfeld ist,
+
+65
+00:06:07,112 --> 00:06:07,469
+ne?
+
+66
+00:06:20,489 --> 00:06:23,049
+Ein Event event.
+
+67
+00:06:30,939 --> 00:06:32,899
+Datum 1. Januar.
+
+68
+00:06:36,699 --> 00:06:37,659
+87.
+
+69
+00:06:43,359 --> 00:06:45,849
+Die Buttons hier sind irgendwie wild
+
+70
+00:06:45,849 --> 00:06:48,754
+verteilt, der der und der gefällt mir
+
+71
+00:06:48,754 --> 00:06:49,1000
+nicht so gut.
+
+72
+00:06:51,840 --> 00:06:54,825
+Und. Auto Safe funktioniert auch
+
+73
+00:06:54,825 --> 00:06:57,040
+nur, wenn wir das Feld wieder verlassen.
+
+74
+00:07:00,560 --> 00:07:01,200
+Erledigt.
+
+75
+00:07:13,900 --> 00:07:16,024
+Oh, bei k 7. Ich hab nicht zu Ende
+
+76
+00:07:16,024 --> 00:07:16,260
+gelesen.
+
+77
+00:07:22,220 --> 00:07:24,500
+That's the skillers membership inionar to
+
+78
+00:07:24,500 --> 00:07:26,780
+Beginn on the date you wing.
+
+79
+00:07:28,160 --> 00:07:30,809
+Starship Troopers state of
+
+80
+00:07:30,809 --> 00:07:33,458
+the session later is
+
+81
+00:07:33,458 --> 00:07:35,041
+rescue. Idiot.
+
+82
+00:07:36,001 --> 00:07:37,841
+Gucken an die Timeline.
+
+83
+00:07:40,481 --> 00:07:43,441
+Sessions hier, ich würde sagen.
+
+84
+00:07:43,521 --> 00:07:46,441
+Snappen. So, jetzt bin ich genau auf
+
+85
+00:07:46,441 --> 00:07:46,961
+dem Datum.
+
+86
+00:07:49,521 --> 00:07:51,161
+Jetzt gehen wir.
+
+87
+00:07:57,011 --> 00:07:58,331
+Auf Toskilla.
+
+88
+00:08:04,241 --> 00:08:06,971
+Und. Zu ihrem Membership
+
+89
+00:08:06,971 --> 00:08:09,451
+beginnt an den Datum, also gehen wir auf
+
+90
+00:08:09,451 --> 00:08:09,761
+Edit.
+
+91
+00:08:20,622 --> 00:08:23,406
+Genau das ist das Datum jetzt also auf
+
+92
+00:08:23,406 --> 00:08:25,843
+Deutsch. An diesem Datum soll es starten,
+
+93
+00:08:25,843 --> 00:08:27,932
+unabhängig von irgendeinem Event oder so.
+
+94
+00:08:43,062 --> 00:08:45,952
+Aber warum das jetzt
+
+95
+00:08:45,952 --> 00:08:48,842
+unter Ends aufgeführt ist
+
+96
+00:08:48,842 --> 00:08:51,732
+und warum das nicht
+
+97
+00:08:51,732 --> 00:08:54,622
+unter Starts aufgeführt ist.
+
+98
+00:08:55,802 --> 00:08:57,842
+Das finde ich ein bisschen.
+
+99
+00:08:58,722 --> 00:08:59,603
+Verwirrend.
+
+100
+00:09:01,693 --> 00:09:02,533
+Das muss ich angucken.
+
+101
+00:09:04,703 --> 00:09:07,469
+Aber passt so jetzt ka
+
+102
+00:09:07,469 --> 00:09:09,203
+08. Jo.
+
+103
+00:09:19,723 --> 00:09:20,643
+Startet.
+
+104
+00:09:38,433 --> 00:09:39,513
+Connections.
+
+105
+00:09:44,434 --> 00:09:45,114
+Hat das gemacht.
+
+106
+00:09:45,974 --> 00:10:02,374
+
+
+107
+00:10:03,964 --> 00:10:06,711
+Ob man das bei einem Wolf. Mache lassen
+
+108
+00:10:06,711 --> 00:10:09,044
+muss, damit es ein Participant ist. Das
+
+109
+00:10:09,044 --> 00:10:11,711
+ist auch nicht ganz klar, oder kann ich
+
+110
+00:10:11,711 --> 00:10:14,316
+hier. Statt den World of
+
+111
+00:10:14,316 --> 00:10:16,356
+irgendetwas anderes eintragen? Ich glaube
+
+112
+00:10:16,356 --> 00:10:19,244
+nicht. Aber klar ist es nicht.
+
+113
+00:10:20,484 --> 00:10:21,444
+Was haben wir denn noch?
+
+114
+00:10:26,425 --> 00:10:27,985
+Die endet.
+
+115
+00:10:29,275 --> 00:10:31,455
+Am Datum des Councils.
+
+116
+00:10:34,835 --> 00:10:36,475
+Hands @the Event.
+
+117
+00:10:48,635 --> 00:10:51,565
+Und. Da oben sieht man auch. Die
+
+118
+00:10:51,565 --> 00:10:53,325
+Songs. Also.
+
+119
+00:10:54,125 --> 00:10:56,525
+Im Winter country. Event.
+
+120
+00:11:05,325 --> 00:11:06,245
+Was haben wir noch?
+
+121
+00:11:13,586 --> 00:11:16,491
+Uns geht ja der Kanzler zu First
+
+122
+00:11:16,491 --> 00:11:16,906
+Genery.
+
+123
+00:11:30,416 --> 00:11:33,176
+
+
+124
+00:11:50,516 --> 00:11:52,037
+Wo sehe ich jetzt?
+
+125
+00:12:04,977 --> 00:12:07,057
+Ich kann jetzt bei the Skiller gucken.
+
+126
+00:12:12,727 --> 00:12:14,047
+Ihren Kontext.
+
+127
+00:12:16,027 --> 00:12:17,307
+Da sieht man jetzt.
+
+128
+00:12:19,387 --> 00:12:20,867
+Sie da ein Behauptes.
+
+129
+00:12:32,137 --> 00:12:34,778
+Man sieht aber bei den Linked Events.
+
+130
+00:12:38,408 --> 00:12:41,168
+Keinen Playhead mehr, wo sich der
+
+131
+00:12:41,168 --> 00:12:43,468
+Playhead hier befindet. Vorher oder
+
+132
+00:12:43,468 --> 00:12:43,928
+nachher.
+
+133
+00:12:50,308 --> 00:12:52,858
+Früher gab es das Mal, jetzt gibt es das
+
+134
+00:12:52,858 --> 00:12:53,708
+anscheinend nicht mehr.
+
+135
+00:12:58,288 --> 00:12:58,768
+Das ist.
+
+136
+00:13:05,088 --> 00:13:08,018
+Ist ja auch mal linkedin. Wo find
+
+137
+00:13:08,018 --> 00:13:09,608
+ich denn jetzt hier die Timeline?
+
+138
+00:13:21,989 --> 00:13:23,909
+Die Pilz verschwunden.
+
+139
+00:13:25,069 --> 00:13:27,942
+Und was ich auch nicht klar, das
+
+140
+00:13:27,942 --> 00:13:30,406
+hier scheint Togglebuttons zu sein, aber
+
+141
+00:13:30,406 --> 00:13:32,869
+die halten sich nicht an die.
+
+142
+00:13:33,209 --> 00:13:34,409
+An das Thema der App.
+
+143
+00:13:39,949 --> 00:13:42,429
+Es gibt hier keine Timeline mehr.
+
+144
+00:13:43,129 --> 00:13:44,289
+Tut das Gelaa?
+
+145
+00:13:46,049 --> 00:13:47,809
+Gibt es Ski? Das gibt 4.
+
+146
+00:13:49,599 --> 00:13:51,159
+Es gibt Connections.
+
+147
+00:13:52,799 --> 00:13:55,639
+History ist klar das Linked Events.
+
+148
+00:14:02,250 --> 00:14:04,839
+Aber man sieht nicht mehr, wo der actual
+
+149
+00:14:04,839 --> 00:14:05,810
+timeline ist, ne?
+
+150
+00:14:10,380 --> 00:14:13,210
+Das ist schade. Gut.
+
+151
+00:14:17,180 --> 00:14:20,013
+Wir setzen das Winter Council
+
+152
+00:14:20,013 --> 00:14:20,580
+zurück.
+
+153
+00:14:35,180 --> 00:14:42,260
+
+
+154
+00:14:45,261 --> 00:15:00,021
+
+
+155
+00:15:05,071 --> 00:15:05,351
+Schade.
+
+156
+00:15:07,851 --> 00:15:08,411
+18.
+
+157
+00:15:12,521 --> 00:15:14,761
+Wann sind 1218?
+
+158
+00:15:31,982 --> 00:15:32,662
+Das ist klar.
+
+159
+00:15:35,252 --> 00:15:36,252
+Haben wir gemacht.
+
+160
+00:15:36,822 --> 00:15:56,902
+
+
+161
+00:15:57,142 --> 00:15:57,662
+Internet.
+
+162
+00:15:59,742 --> 00:16:02,382
+Erscheint Kleines circa 1218.
+
+163
+00:16:04,332 --> 00:16:05,052
+Gut.
+
+164
+00:16:14,483 --> 00:16:16,653
+Sieht man hier unten noch an weiß
+
+165
+00:16:16,653 --> 00:16:19,257
+markiert. Ich
+
+166
+00:16:19,257 --> 00:16:22,158
+denke, wir haben schon ganz viel. Da
+
+167
+00:16:22,158 --> 00:16:25,058
+wird das Video jetzt hier abbrechen und
+
+168
+00:16:25,058 --> 00:16:27,516
+das. Dinge, dass man die mal analysiert
+
+169
+00:16:27,516 --> 00:16:29,813
+und da drangeht. Dankeschön.

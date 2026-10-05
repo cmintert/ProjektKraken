@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.standard_buttons import DestructiveButton, StandardButton
 
 
@@ -250,7 +251,7 @@ class AttributeEditorWidget(QWidget):
         self.table.setItem(row, 1, QTableWidgetItem(str_val))
 
         # Type ComboBox
-        combo = QComboBox()
+        combo = ScrollSafeComboBox()
         combo.addItems(["String", "Number", "Boolean"])
         if self._allow_null:
             combo.addItem("Null")

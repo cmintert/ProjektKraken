@@ -5,16 +5,25 @@ register, **not an executed run**. The user authorized preserving the baseline
 and implementing before human measurement. Earlier partial v1.1 and seeded
 assisted runs are separate evidence, never substitutes for these twenty tasks.
 
+**2026-10-05 partial implementation run:** [Human run 1](human-run-1.md) reviews
+`UX Part 1.mp4` with its matching SRT. KA-01–10 were attempted, with partial
+semantic outcomes; KA-11–20 were not executed. The recorded inspector matches
+the final refinement; the title appears to show `b2fa333b`. World setup precedes
+the capture, exact runtime/environment metadata is incomplete, and no matched
+human baseline or exhaustive interaction counts were recorded. This register
+therefore remains a pending comparison, with NM counts. Do not infer zeros or
+completed task acceptance from the participant's completion messages.
+
 | Run metadata | Baseline | Implementation |
 | --- | --- | --- |
-| Revision | `5e7942f7cdca032fc1c3af3be563799a8c04f366` | Final KRT-45 refinement revision; record exact hash at execution |
+| Revision | `5e7942f7cdca032fc1c3af3be563799a8c04f366` | Partial run title appears `b2fa333b`; full runtime hash unverified |
 | Catalog | v1.2 | v1.2 |
-| Participant / experience / prior exposure | Not recorded | Not recorded |
-| Date / app version / OS / Qt / theme | Not recorded | Not recorded |
+| Participant / experience / prior exposure | Not recorded | Familiar participant; exact experience not measured |
+| Date / app version / OS / Qt / theme | Not recorded | 2026-10-05 / v0.19.7 Beta / Windows / Qt unverified / dark |
 | Viewport / inspector width / height | Not recorded | Not recorded |
-| Calendar / initial playhead | Not recorded | Not recorded |
-| Empty-world video / dependencies created on camera | Not recorded | Not recorded |
-| Map image / hash / recording path | Not recorded | Not recorded |
+| Calendar / initial playhead | Not recorded | Gregorian labels; initial viewed date around 18 January 1228; World Year 1 |
+| Empty-world video / dependencies created on camera | Not recorded | Empty state visible; setup/restart precedes capture; KA-01–10 dependencies created on camera |
+| Map image / hash / recording path | Not recorded | Partial video/SRT pair and hashes in [run 1](human-run-1.md); map tasks not run |
 
 For each run and task, copy the benchmark's full task record. Additionally record
 **destination changes, disclosures, wrong turns, and ambiguity separately**.
@@ -30,23 +39,25 @@ History & context. Record each writing-panel opening and the shared information
 disclosure. The intermediate `7f723d08` renders are structural comparison
 evidence, not a completed human baseline or a substitute for the final revision.
 
-`NM` below means **not measured**, never zero. All tasks are **not executed** in
-both new human runs. B/A are baseline/after counts. Verification includes
+`NM` below means **not measured**, never zero. The baseline is **not executed**;
+the partial implementation run attempted KA-01–10. B/A are baseline/after counts.
+The after verification cells summarize evidence limits from that run, not passes.
+Verification includes
 semantic correctness, save/reopen, UUID identity and context retention, as
 specified by the catalog.
 
 | Task | Destination changes B/A | Disclosures B/A | Wrong turns B/A | Ambiguity B/A | Assistance B/A | Verification B/A |
 | --- | --- | --- | --- | --- | --- | --- |
-| KA-01 create character | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM |
-| KA-02 reopen same character | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM |
-| KA-03 description persistence | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM |
-| KA-04 linked mention and return | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM |
-| KA-05 independent authored connection | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM |
-| KA-06 membership and note | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM |
-| KA-07 fixed start at playhead | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM |
-| **KA-08 dynamic event-linked end** | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM |
-| KA-09 unknown month/day | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM |
-| **KA-10 approximate year** | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM |
+| KA-01 create character | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM | NM / Character observed; UUID unverified |
+| KA-02 reopen same character | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM | NM / Return observed; UUID unverified |
+| KA-03 description persistence | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM | NM / Text remains after return |
+| KA-04 linked mention and return | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM | NM / Link visible; follow/return unverified |
+| KA-05 independent authored connection | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM | NM / Connected row visible; timing unverified |
+| KA-06 membership and note | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM | NM / Member/note visible; reopen unverified |
+| KA-07 fixed start at playhead | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM | NM / Exact-date setup mismatch; fixed-start independence unverified |
+| **KA-08 dynamic event-linked end** | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM | NM / Date change/restore visible; bound-end verification partial |
+| KA-09 unknown month/day | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM | NM / Year-only controls visible; stored precision unverified |
+| **KA-10 approximate year** | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM | NM / c. 1218 visible; reopen unverified |
 | KA-11 independent duration | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM |
 | KA-12 viewed date vs World Time | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM |
 | KA-13 map placement | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM | NM / NM |

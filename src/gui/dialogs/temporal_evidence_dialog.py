@@ -5,7 +5,6 @@ from typing import Any
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QComboBox,
     QDialog,
     QDialogButtonBox,
     QHeaderView,
@@ -21,6 +20,7 @@ from src.core.date_parser import DateParser
 from src.core.temporal_authoring import author_temporal_evidence
 from src.core.temporal_expression import TemporalExpression
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 
 
 class TemporalEvidenceDialog(QDialog):
@@ -66,7 +66,7 @@ class TemporalEvidenceDialog(QDialog):
         )
         self.claims.setStyleSheet(StyleHelper.get_table_widget_style())
         layout.addWidget(self.claims)
-        self.preferred = QComboBox()
+        self.preferred = ScrollSafeComboBox()
         self.preferred.addItem("Keep the current event date", -1)
         for index, claim in enumerate(metadata.get("claims", [])):
             self._add_claim(

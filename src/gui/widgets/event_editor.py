@@ -16,7 +16,6 @@ from typing import Any, Dict, cast
 from PySide6.QtCore import QObject, QPoint, QSize, Qt, Signal, Slot
 from PySide6.QtGui import QDropEvent
 from PySide6.QtWidgets import (
-    QComboBox,
     QFormLayout,
     QFrame,
     QHBoxLayout,
@@ -57,6 +56,7 @@ from src.gui.utils.style_helper import StyleHelper
 from src.gui.utils.suggestion_effects import apply_suggestion_effects
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.authoring_context_widget import AuthoringContextWidget
+from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.editor_presentation import DisclosureButton, EditorPresentation
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.gallery_widget import GalleryWidget
@@ -400,7 +400,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         name_layout = QHBoxLayout()
         name_layout.addWidget(self.name_edit)
         name_layout.addWidget(self.btn_inject)
-        self.type_edit = QComboBox()
+        self.type_edit = ScrollSafeComboBox()
         self.type_edit.addItems(
             ["generic", "cosmic", "historical", "personal", "session", "combat"]
         )

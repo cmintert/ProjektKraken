@@ -23,6 +23,7 @@ from src.core.map_constants import MAP_LAYER_TYPE_GROUP
 from src.core.temporal_expression import TemporalExpression
 from src.core.temporal_window import resolve_temporal_window
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 
 
@@ -128,7 +129,7 @@ class TemporalValidityDialog(QDialog):
         row = QWidget(self)
         row_layout = QVBoxLayout(row)
         row_layout.setContentsMargins(0, 0, 0, 0)
-        mode = QComboBox(row)
+        mode = ScrollSafeComboBox(row)
         for caption, kind in (
             ("Unbounded", "open"),
             ("Date not known", "unknown"),

@@ -25,7 +25,6 @@ from PySide6.QtGui import (
     QShortcut,
 )
 from PySide6.QtWidgets import (
-    QComboBox,
     QFrame,
     QHBoxLayout,
     QInputDialog,
@@ -43,6 +42,7 @@ from PySide6.QtWidgets import (
 from src.core.theme_manager import ThemeManager
 from src.gui.constants import SHEET_VALUE_MAX_LINES
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +143,7 @@ class AttributePairWidget(QFrame):
         layout.addWidget(self.value_edit)
 
         # Type toggle (compact combo) - Hidden by default
-        self.type_combo = QComboBox()
+        self.type_combo = ScrollSafeComboBox()
         self.type_combo.addItems(["String", "Number", "Boolean"])
         self.type_combo.setCurrentText(value_type)
         self.type_combo.currentTextChanged.connect(self._on_value_changed)

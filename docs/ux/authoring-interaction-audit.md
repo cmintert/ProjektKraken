@@ -10,6 +10,27 @@ remains a separate seeded audit run.
 
 ## Evidence and disposition rules
 
+KRT-45 partial human review (2026-10-05, review checkout `b2fa333b`):
+[KA-01–10 video/SRT evidence](evidence/krt45/human-run-1.md) records eight
+optimization groups and 26 original comparison frames. Independent widget checks
+reproduce unfocused dropdown wheel mutation (new KRT-52) and missing Linked events
+playhead markers for one-event/outside-range cases (KRT-45). Relation boundary
+grouping, overload and participant terminology stay in KRT-22; visible link
+creation is KRT-53; deliberate normal creation remains KRT-14. Event action/commit
+feedback and writing-toggle state stay in KRT-45. This run does not establish a
+numeric regression of KRT-49, a parser defect, fewer measured destination changes
+or complete semantic acceptance. KA-11–20 and matched comparison remain pending.
+Contract v1 and the v1.2 prompts are unchanged.
+
+KRT-52 F1 implementation (2026-10-05): shared `ScrollSafeComboBox` protects
+relation boundaries/meaning/type/event choices, structured dates/qualification,
+Entity/Event type and metadata choices. Unfocused closed fields pass wheel
+navigation without changing values, emitting mutation signals or taking focus;
+click/Tab-focused wheel editing and open-popup scrolling remain available.
+[Inventory and window-delivery verification](evidence/krt45/human-run-1.md#f1-fix--krt-52-2026-10-05)
+cover contracts 2/5/8/9, narrow/normal geometry and save/undo. The original review
+above remains historical evidence; full KRT-45 human acceptance is still pending.
+
 KRT-45 supporting-feature refinement (2026-10-05, based on `7f723d08`): Summary…
 and Draft with AI… are quiet actions directly below the description. One
 History & context heading reveals non-button Linked events (Entity only), Map

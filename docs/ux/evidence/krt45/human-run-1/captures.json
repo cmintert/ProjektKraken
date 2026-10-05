@@ -1,0 +1,359 @@
+{
+  "ffmpeg_version": "7.1-essentials_build-www.gyan.dev built with gcc 14.2.0 (Rev1, Built by MSYS2 project)",
+  "codec": "h264",
+  "pix_fmt": "yuv420p(progressive)",
+  "audio_codec": "aac",
+  "fps": 30.0,
+  "source_size": [
+    1280,
+    720
+  ],
+  "size": [
+    1280,
+    720
+  ],
+  "rotate": 0,
+  "duration": 991.67,
+  "sources": [
+    {
+      "path": "C:\\Users\\chris\\Downloads\\UX Part 1.mp4",
+      "bytes": 104915679,
+      "sha256": "afc5f2bb4c1522eadca527114e04d748bbef5faa784d36f8892b3d31a73177be"
+    },
+    {
+      "path": "C:\\Users\\chris\\Downloads\\Video Project 9.srt",
+      "bytes": 9865,
+      "sha256": "d3446f9441943bd883ebedf5160e9539a2975c855db624539a35b88fcbd6f064"
+    }
+  ],
+  "run_id": "krt45-human-run-1",
+  "review_date": "2026-10-05",
+  "review_revision": "b2fa333b88cb11d99a2cac558730d60e635e9327",
+  "catalog": "v1.2 prompts visible in recording; sequential partial run KA-01–10",
+  "extraction": "ffmpeg -ss SECONDS -i SOURCE -frames:v 1 OUTPUT.png; unmodified full frames",
+  "evidence_limits": "1280x720 exported video contains a smaller desktop image; no higher detail is implied",
+  "frames": [
+    {
+      "file": "0020-empty-authoring-state.png",
+      "seconds": 20,
+      "timecode": "00:20",
+      "task_ids": [
+        "KA-01"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 220701,
+      "sha256": "23701d79c338ff8ebc42380fd6c91a8de24e77e9a2e2ee9a21b6dfbc7617db62"
+    },
+    {
+      "file": "0039-deliberate-character-type.png",
+      "seconds": 39,
+      "timecode": "00:39",
+      "task_ids": [
+        "KA-01"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 233358,
+      "sha256": "72910003e60a2ff5784bb0aa91b88c5764791c3689c1452321d40b57102f804e"
+    },
+    {
+      "file": "0154-description-after-return.png",
+      "seconds": 114,
+      "timecode": "01:54",
+      "task_ids": [
+        "KA-03"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 231160,
+      "sha256": "3bba55da4ee8bd4fead28366cfa9d91242c7e33ac920cf75bd4633f4d0909529"
+    },
+    {
+      "file": "0308-wiki-link-completion.png",
+      "seconds": 188,
+      "timecode": "03:08",
+      "task_ids": [
+        "KA-04"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 239668,
+      "sha256": "ef23e2026e59e18c823415d9fd11fa91f0f6c7c042451d37ca95a13e4e51672e"
+    },
+    {
+      "file": "0404-generic-relation-full-form.png",
+      "seconds": 244,
+      "timecode": "04:04",
+      "task_ids": [
+        "KA-05"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 241447,
+      "sha256": "45bc9009ef28fea2383edf451922a6a0b08cef2052ac33c6f969219c4dc44065"
+    },
+    {
+      "file": "0416-boundaries-before-scroll.png",
+      "seconds": 256,
+      "timecode": "04:16",
+      "task_ids": [
+        "KA-05"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 241343,
+      "sha256": "7f713dd0639c9ea5bb10d576812e2a063047269d38f421c4304f62e45000cd98"
+    },
+    {
+      "file": "0425-end-choice-manual.png",
+      "seconds": 265,
+      "timecode": "04:25",
+      "task_ids": [
+        "KA-05"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 239847,
+      "sha256": "c3c11a8d206345f040f2573f20f7a1358a60072f842066328e56985e84140cd9"
+    },
+    {
+      "file": "0431-boundary-choices-changing.png",
+      "seconds": 271,
+      "timecode": "04:31",
+      "task_ids": [
+        "KA-05"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 240327,
+      "sha256": "cebb04c8cc4569dd1e29f306cd15032da9bececc1c9fe3d1b1b33cd1f16c7857"
+    },
+    {
+      "file": "0443-boundary-choices-after-scroll.png",
+      "seconds": 283,
+      "timecode": "04:43",
+      "task_ids": [
+        "KA-05"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 241479,
+      "sha256": "653c192b7458164b9b37dee3e7181574fe7ddfe92f29fadb9b0bdf59aa2c9213"
+    },
+    {
+      "file": "0551-membership-and-notes.png",
+      "seconds": 351,
+      "timecode": "05:51",
+      "task_ids": [
+        "KA-06"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 244652,
+      "sha256": "ba0454181915cc7bc179e13fc42db4077d33ee159bb1742729c3cddc1072f391"
+    },
+    {
+      "file": "0638-event-timing-actions-and-draft.png",
+      "seconds": 398,
+      "timecode": "06:38",
+      "task_ids": [
+        "KA-07"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 242747,
+      "sha256": "7d23b39f6497f96011da2d2bccd037772cb3d3ed7b0b4e12aa0624d6666513a4"
+    },
+    {
+      "file": "0655-event-date-after-commit.png",
+      "seconds": 415,
+      "timecode": "06:55",
+      "task_ids": [
+        "KA-07"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 242739,
+      "sha256": "526b591a20e8e82900ecff48860467011c40280af2a721ffdf288937e9a63fa1"
+    },
+    {
+      "file": "0827-membership-playhead-shortcuts.png",
+      "seconds": 507,
+      "timecode": "08:27",
+      "task_ids": [
+        "KA-07"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 246153,
+      "sha256": "a163e0f7844fbebca4cdd120a62b445b037a143ecd99f3fe52eb9307bec442cd"
+    },
+    {
+      "file": "0841-start-date-below-end-choice.png",
+      "seconds": 521,
+      "timecode": "08:41",
+      "task_ids": [
+        "KA-07"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 248491,
+      "sha256": "420a8cfa5b81c6b3109abeefe752e596972891acc173a142a35679e91623c1c3"
+    },
+    {
+      "file": "1000-participant-default-starts-at-event.png",
+      "seconds": 600,
+      "timecode": "10:00",
+      "task_ids": [
+        "KA-08"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 253429,
+      "sha256": "ac2a53a08ced6c45511a092d4494e41e75d6fbfa0b28f5b51adfac0550578152"
+    },
+    {
+      "file": "1050-participation-end-at-event.png",
+      "seconds": 650,
+      "timecode": "10:50",
+      "task_ids": [
+        "KA-08"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 253685,
+      "sha256": "e971719405d4c2d55d256a5bff934aa66f534c50a62cf839560574a771bd2419"
+    },
+    {
+      "file": "1103-participant-state-change-controls.png",
+      "seconds": 663,
+      "timecode": "11:03",
+      "task_ids": [
+        "KA-08"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 242061,
+      "sha256": "0d717f8ab181b2e7c66acf615b0f9098f63aebf3481af14b1f31f4034fee1146"
+    },
+    {
+      "file": "1135-rescheduled-winter-council.png",
+      "seconds": 695,
+      "timecode": "11:35",
+      "task_ids": [
+        "KA-08"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 245782,
+      "sha256": "a8a3ab1ffbae5f194bd1a4440f089cc18a457140e7dceac0d8cf8d9dff2f9a73"
+    },
+    {
+      "file": "1221-linked-event-without-playhead-marker.png",
+      "seconds": 741,
+      "timecode": "12:21",
+      "task_ids": [
+        "KA-08"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 245325,
+      "sha256": "c322cdf259c5a149b01590820bf56689043eb09155d020d15d653c96bead8777"
+    },
+    {
+      "file": "1303-history-search-for-timeline.png",
+      "seconds": 783,
+      "timecode": "13:03",
+      "task_ids": [
+        "KA-08"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 246943,
+      "sha256": "42e562ac7877666fc693faf0c607b838a85e873622d75c59cb892da6aca2695a"
+    },
+    {
+      "file": "1321-writing-toggle-panel-open.png",
+      "seconds": 801,
+      "timecode": "13:21",
+      "task_ids": [
+        "KA-08"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 257212,
+      "sha256": "e224c4ebd7bc1a24f4628c9e8619d9f8fc8cebc62d370f9c4214d32c2afbadcb"
+    },
+    {
+      "file": "1339-writing-toggle-panel-closed.png",
+      "seconds": 819,
+      "timecode": "13:39",
+      "task_ids": [
+        "KA-08"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 240483,
+      "sha256": "7b41e4410ba639717b281277908f7024b01ff797a2409ec6029a3d6e5111d3be"
+    },
+    {
+      "file": "1430-winter-council-restored.png",
+      "seconds": 870,
+      "timecode": "14:30",
+      "task_ids": [
+        "KA-08"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 249907,
+      "sha256": "ad24e4c6bacb93cfa635194e2fe636fe57a89e3bff9d04af455f12203202334e"
+    },
+    {
+      "file": "1532-year-only-charter.png",
+      "seconds": 932,
+      "timecode": "15:32",
+      "task_ids": [
+        "KA-09"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 246669,
+      "sha256": "2feb7141bd3bae3d786d81fc1e7db8c29db18629a73c7ca46afe9ddcf9e59fa5"
+    },
+    {
+      "file": "1609-approximately-1218.png",
+      "seconds": 969,
+      "timecode": "16:09",
+      "task_ids": [
+        "KA-10"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 246022,
+      "sha256": "fa93afbb195261a2f03dee3e18508d067aa572fc5bf7afcf0751d150e3640e02"
+    },
+    {
+      "file": "1627-final-charter-state.png",
+      "seconds": 987,
+      "timecode": "16:27",
+      "task_ids": [
+        "KA-10"
+      ],
+      "width": 1280,
+      "height": 720,
+      "bytes": 244394,
+      "sha256": "aa5023107012b8f554646bed54d97354058891b34a399f27d51f3ee51324ed33"
+    }
+  ],
+  "supporting_files": [
+    {
+      "file": "transcript.srt",
+      "sha256": "d3446f9441943bd883ebedf5160e9539a2975c855db624539a35b88fcbd6f064"
+    },
+    {
+      "file": "widget-diagnostics.json",
+      "sha256": "a884e4fec96dd983224443fac01bea341e330fcee19e428e881fce63eba402a2"
+    }
+  ]
+}

@@ -1,0 +1,1785 @@
+{
+  "python": "3.13.14",
+  "pyside6": "6.10.1",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "mode": "isolated offscreen widgets; no database",
+  "unfocused_relation_boundary_wheel": {
+    "before": {
+      "start": "open",
+      "notes_focus": true,
+      "combo_focus": false,
+      "scroll": 0,
+      "data": [
+        "target-1",
+        "connected",
+        false,
+        {}
+      ]
+    },
+    "after": {
+      "start": "unknown",
+      "notes_focus": false,
+      "combo_focus": true,
+      "scroll": 0,
+      "data": [
+        "target-1",
+        "connected",
+        false,
+        {
+          "temporal": {
+            "schema": 1,
+            "behavior": "stateful",
+            "start": {
+              "status": "unknown"
+            },
+            "end": {
+              "status": "open"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "playhead_marker": [
+    {
+      "dates": [
+        100.0
+      ],
+      "playhead": 50.0,
+      "marker_visible": false,
+      "text": "\n100.0\nEvent 0 \n"
+    },
+    {
+      "dates": [
+        100.0
+      ],
+      "playhead": 100.0,
+      "marker_visible": false,
+      "text": "\n100.0\nEvent 0 \n"
+    },
+    {
+      "dates": [
+        100.0
+      ],
+      "playhead": 150.0,
+      "marker_visible": false,
+      "text": "\n100.0\nEvent 0 \n"
+    },
+    {
+      "dates": [
+        100.0
+      ],
+      "playhead": 250.0,
+      "marker_visible": false,
+      "text": "\n100.0\nEvent 0 \n"
+    },
+    {
+      "dates": [
+        100.0,
+        200.0
+      ],
+      "playhead": 50.0,
+      "marker_visible": false,
+      "text": "\n100.0\nEvent 0 \n\n200.0\nEvent 1 \n"
+    },
+    {
+      "dates": [
+        100.0,
+        200.0
+      ],
+      "playhead": 100.0,
+      "marker_visible": true,
+      "text": "\n100.0\nEvent 0 \n\n▾ PLAYHEAD ▾\n200.0\nEvent 1 \n"
+    },
+    {
+      "dates": [
+        100.0,
+        200.0
+      ],
+      "playhead": 150.0,
+      "marker_visible": true,
+      "text": "\n100.0\nEvent 0 \n\n▾ PLAYHEAD ▾\n200.0\nEvent 1 \n"
+    },
+    {
+      "dates": [
+        100.0,
+        200.0
+      ],
+      "playhead": 250.0,
+      "marker_visible": false,
+      "text": "\n100.0\nEvent 0 \n\n200.0\nEvent 1 \n"
+    }
+  ],
+  "choice_wheel_fix_2026_10_05": {
+    "delivery": "QTest.wheelEvent through real QWindow; offscreen; no database",
+    "baseline": "current production widgets with raw QComboBox constructors restored in memory",
+    "cases": [
+      {
+        "policy": "raw Qt",
+        "width": 400,
+        "field": "start",
+        "angle_delta": 120,
+        "before": {
+          "index": 2,
+          "text": "Unbounded",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 30
+        },
+        "after": {
+          "index": 1,
+          "text": "Date not known",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {
+              "temporal": {
+                "schema": 1,
+                "behavior": "stateful",
+                "start": {
+                  "status": "unknown"
+                },
+                "end": {
+                  "status": "open"
+                }
+              }
+            }
+          ],
+          "focus_retained": false,
+          "scroll": 30,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "raw Qt",
+        "width": 400,
+        "field": "end",
+        "angle_delta": 120,
+        "before": {
+          "index": 2,
+          "text": "Unbounded",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 41
+        },
+        "after": {
+          "index": 1,
+          "text": "Date not known",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {
+              "temporal": {
+                "schema": 1,
+                "behavior": "stateful",
+                "start": {
+                  "status": "open"
+                },
+                "end": {
+                  "status": "unknown"
+                }
+              }
+            }
+          ],
+          "focus_retained": false,
+          "scroll": 41,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "raw Qt",
+        "width": 400,
+        "field": "meaning",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "Active state",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 39
+        },
+        "after": {
+          "index": 1,
+          "text": "Historical fact",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {
+              "temporal": {
+                "schema": 1,
+                "behavior": "historical",
+                "start": {
+                  "status": "open"
+                },
+                "end": {
+                  "status": "open"
+                }
+              }
+            }
+          ],
+          "focus_retained": false,
+          "scroll": 39,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "raw Qt",
+        "width": 400,
+        "field": "type",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "connected",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 1,
+          "text": "caused",
+          "data": [
+            "target-1",
+            "caused",
+            false,
+            {}
+          ],
+          "focus_retained": false,
+          "scroll": 0,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "raw Qt",
+        "width": 400,
+        "field": "relative",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "At event",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {
+              "temporal": {
+                "schema": 1,
+                "behavior": "stateful",
+                "start": {
+                  "anchor": {
+                    "anchor_id": "event:event-1",
+                    "relation": "at",
+                    "offset_days": 0.0
+                  }
+                },
+                "end": {
+                  "status": "open"
+                }
+              }
+            }
+          ],
+          "focus_retained": true,
+          "scroll": 67
+        },
+        "after": {
+          "index": 1,
+          "text": "Before event",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {
+              "temporal": {
+                "schema": 1,
+                "behavior": "stateful",
+                "start": {
+                  "anchor": {
+                    "anchor_id": "event:event-1",
+                    "relation": "before",
+                    "offset_days": 0.0
+                  }
+                },
+                "end": {
+                  "status": "open"
+                }
+              }
+            }
+          ],
+          "focus_retained": false,
+          "scroll": 67,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "raw Qt",
+        "width": 400,
+        "field": "month",
+        "angle_delta": -120,
+        "before": {
+          "index": 3,
+          "text": "April",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 4,
+          "text": "May",
+          "data": [
+            130.5,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": false,
+          "scroll": 0,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "raw Qt",
+        "width": 400,
+        "field": "day",
+        "angle_delta": -120,
+        "before": {
+          "index": 10,
+          "text": "Day 11",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 11,
+          "text": "Day 12",
+          "data": [
+            101.5,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": false,
+          "scroll": 0,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "raw Qt",
+        "width": 400,
+        "field": "qualification",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "Asserted",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 1,
+          "text": "Approximate",
+          "data": [
+            100.0,
+            100.0,
+            "approximate"
+          ],
+          "focus_retained": false,
+          "scroll": 0,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "raw Qt",
+        "width": 400,
+        "field": "lore_month",
+        "angle_delta": -120,
+        "before": {
+          "index": 3,
+          "text": "April",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 78
+        },
+        "after": {
+          "index": 4,
+          "text": "May",
+          "data": [
+            100.0,
+            130.0,
+            "asserted"
+          ],
+          "focus_retained": false,
+          "scroll": 78,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "raw Qt",
+        "width": 400,
+        "field": "lore_day",
+        "angle_delta": -120,
+        "before": {
+          "index": 10,
+          "text": "Day 11",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 78
+        },
+        "after": {
+          "index": 11,
+          "text": "Day 12",
+          "data": [
+            100.0,
+            101.0,
+            "asserted"
+          ],
+          "focus_retained": false,
+          "scroll": 78,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "raw Qt",
+        "width": 400,
+        "field": "hour",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "00h",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 78
+        },
+        "after": {
+          "index": 1,
+          "text": "01h",
+          "data": [
+            100.0,
+            100.04166666666667,
+            "asserted"
+          ],
+          "focus_retained": false,
+          "scroll": 78,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "raw Qt",
+        "width": 400,
+        "field": "minute",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "00m",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 78
+        },
+        "after": {
+          "index": 1,
+          "text": "05m",
+          "data": [
+            100.0,
+            100.00347222222223,
+            "asserted"
+          ],
+          "focus_retained": false,
+          "scroll": 78,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "raw Qt",
+        "width": 800,
+        "field": "start",
+        "angle_delta": 120,
+        "before": {
+          "index": 2,
+          "text": "Unbounded",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 30
+        },
+        "after": {
+          "index": 1,
+          "text": "Date not known",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {
+              "temporal": {
+                "schema": 1,
+                "behavior": "stateful",
+                "start": {
+                  "status": "unknown"
+                },
+                "end": {
+                  "status": "open"
+                }
+              }
+            }
+          ],
+          "focus_retained": false,
+          "scroll": 30,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "raw Qt",
+        "width": 800,
+        "field": "end",
+        "angle_delta": 120,
+        "before": {
+          "index": 2,
+          "text": "Unbounded",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 30
+        },
+        "after": {
+          "index": 1,
+          "text": "Date not known",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {
+              "temporal": {
+                "schema": 1,
+                "behavior": "stateful",
+                "start": {
+                  "status": "open"
+                },
+                "end": {
+                  "status": "unknown"
+                }
+              }
+            }
+          ],
+          "focus_retained": false,
+          "scroll": 30,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "raw Qt",
+        "width": 800,
+        "field": "meaning",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "Active state",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 1,
+          "text": "Historical fact",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {
+              "temporal": {
+                "schema": 1,
+                "behavior": "historical",
+                "start": {
+                  "status": "open"
+                },
+                "end": {
+                  "status": "open"
+                }
+              }
+            }
+          ],
+          "focus_retained": false,
+          "scroll": 0,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "raw Qt",
+        "width": 800,
+        "field": "type",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "connected",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 1,
+          "text": "caused",
+          "data": [
+            "target-1",
+            "caused",
+            false,
+            {}
+          ],
+          "focus_retained": false,
+          "scroll": 0,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "raw Qt",
+        "width": 800,
+        "field": "relative",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "At event",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {
+              "temporal": {
+                "schema": 1,
+                "behavior": "stateful",
+                "start": {
+                  "anchor": {
+                    "anchor_id": "event:event-1",
+                    "relation": "at",
+                    "offset_days": 0.0
+                  }
+                },
+                "end": {
+                  "status": "open"
+                }
+              }
+            }
+          ],
+          "focus_retained": true,
+          "scroll": 57
+        },
+        "after": {
+          "index": 1,
+          "text": "Before event",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {
+              "temporal": {
+                "schema": 1,
+                "behavior": "stateful",
+                "start": {
+                  "anchor": {
+                    "anchor_id": "event:event-1",
+                    "relation": "before",
+                    "offset_days": 0.0
+                  }
+                },
+                "end": {
+                  "status": "open"
+                }
+              }
+            }
+          ],
+          "focus_retained": false,
+          "scroll": 57,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "raw Qt",
+        "width": 800,
+        "field": "month",
+        "angle_delta": -120,
+        "before": {
+          "index": 3,
+          "text": "April",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 4,
+          "text": "May",
+          "data": [
+            130.5,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": false,
+          "scroll": 0,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "raw Qt",
+        "width": 800,
+        "field": "day",
+        "angle_delta": -120,
+        "before": {
+          "index": 10,
+          "text": "Day 11",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 11,
+          "text": "Day 12",
+          "data": [
+            101.5,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": false,
+          "scroll": 0,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "raw Qt",
+        "width": 800,
+        "field": "qualification",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "Asserted",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 1,
+          "text": "Approximate",
+          "data": [
+            100.0,
+            100.0,
+            "approximate"
+          ],
+          "focus_retained": false,
+          "scroll": 0,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "raw Qt",
+        "width": 800,
+        "field": "lore_month",
+        "angle_delta": -120,
+        "before": {
+          "index": 3,
+          "text": "April",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 4,
+          "text": "May",
+          "data": [
+            100.0,
+            130.0,
+            "asserted"
+          ],
+          "focus_retained": false,
+          "scroll": 0,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "raw Qt",
+        "width": 800,
+        "field": "lore_day",
+        "angle_delta": -120,
+        "before": {
+          "index": 10,
+          "text": "Day 11",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 11,
+          "text": "Day 12",
+          "data": [
+            100.0,
+            101.0,
+            "asserted"
+          ],
+          "focus_retained": false,
+          "scroll": 0,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "raw Qt",
+        "width": 800,
+        "field": "hour",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "00h",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 1,
+          "text": "01h",
+          "data": [
+            100.0,
+            100.04166666666667,
+            "asserted"
+          ],
+          "focus_retained": false,
+          "scroll": 0,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "raw Qt",
+        "width": 800,
+        "field": "minute",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "00m",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 1,
+          "text": "05m",
+          "data": [
+            100.0,
+            100.00347222222223,
+            "asserted"
+          ],
+          "focus_retained": false,
+          "scroll": 0,
+          "index_signals": 1,
+          "text_signals": 1
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 400,
+        "field": "start",
+        "angle_delta": 120,
+        "before": {
+          "index": 2,
+          "text": "Unbounded",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 30
+        },
+        "after": {
+          "index": 2,
+          "text": "Unbounded",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 0,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 400,
+        "field": "end",
+        "angle_delta": 120,
+        "before": {
+          "index": 2,
+          "text": "Unbounded",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 41
+        },
+        "after": {
+          "index": 2,
+          "text": "Unbounded",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 0,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 400,
+        "field": "meaning",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "Active state",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 39
+        },
+        "after": {
+          "index": 0,
+          "text": "Active state",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 99,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 400,
+        "field": "type",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "connected",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 0,
+          "text": "connected",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 60,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 400,
+        "field": "relative",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "At event",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {
+              "temporal": {
+                "schema": 1,
+                "behavior": "stateful",
+                "start": {
+                  "anchor": {
+                    "anchor_id": "event:event-1",
+                    "relation": "at",
+                    "offset_days": 0.0
+                  }
+                },
+                "end": {
+                  "status": "open"
+                }
+              }
+            }
+          ],
+          "focus_retained": true,
+          "scroll": 67
+        },
+        "after": {
+          "index": 0,
+          "text": "At event",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {
+              "temporal": {
+                "schema": 1,
+                "behavior": "stateful",
+                "start": {
+                  "anchor": {
+                    "anchor_id": "event:event-1",
+                    "relation": "at",
+                    "offset_days": 0.0
+                  }
+                },
+                "end": {
+                  "status": "open"
+                }
+              }
+            }
+          ],
+          "focus_retained": true,
+          "scroll": 127,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 400,
+        "field": "month",
+        "angle_delta": -120,
+        "before": {
+          "index": 3,
+          "text": "April",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 3,
+          "text": "April",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 60,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 400,
+        "field": "day",
+        "angle_delta": -120,
+        "before": {
+          "index": 10,
+          "text": "Day 11",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 10,
+          "text": "Day 11",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 60,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 400,
+        "field": "qualification",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "Asserted",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 0,
+          "text": "Asserted",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 60,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 400,
+        "field": "lore_month",
+        "angle_delta": -120,
+        "before": {
+          "index": 3,
+          "text": "April",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 78
+        },
+        "after": {
+          "index": 3,
+          "text": "April",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 138,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 400,
+        "field": "lore_day",
+        "angle_delta": -120,
+        "before": {
+          "index": 10,
+          "text": "Day 11",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 78
+        },
+        "after": {
+          "index": 10,
+          "text": "Day 11",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 138,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 400,
+        "field": "hour",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "00h",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 78
+        },
+        "after": {
+          "index": 0,
+          "text": "00h",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 138,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 400,
+        "field": "minute",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "00m",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 78
+        },
+        "after": {
+          "index": 0,
+          "text": "00m",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 138,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 800,
+        "field": "start",
+        "angle_delta": 120,
+        "before": {
+          "index": 2,
+          "text": "Unbounded",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 30
+        },
+        "after": {
+          "index": 2,
+          "text": "Unbounded",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 0,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 800,
+        "field": "end",
+        "angle_delta": 120,
+        "before": {
+          "index": 2,
+          "text": "Unbounded",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 30
+        },
+        "after": {
+          "index": 2,
+          "text": "Unbounded",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 0,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 800,
+        "field": "meaning",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "Active state",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 0,
+          "text": "Active state",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 60,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 800,
+        "field": "type",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "connected",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 0,
+          "text": "connected",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {}
+          ],
+          "focus_retained": true,
+          "scroll": 60,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 800,
+        "field": "relative",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "At event",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {
+              "temporal": {
+                "schema": 1,
+                "behavior": "stateful",
+                "start": {
+                  "anchor": {
+                    "anchor_id": "event:event-1",
+                    "relation": "at",
+                    "offset_days": 0.0
+                  }
+                },
+                "end": {
+                  "status": "open"
+                }
+              }
+            }
+          ],
+          "focus_retained": true,
+          "scroll": 57
+        },
+        "after": {
+          "index": 0,
+          "text": "At event",
+          "data": [
+            "target-1",
+            "connected",
+            false,
+            {
+              "temporal": {
+                "schema": 1,
+                "behavior": "stateful",
+                "start": {
+                  "anchor": {
+                    "anchor_id": "event:event-1",
+                    "relation": "at",
+                    "offset_days": 0.0
+                  }
+                },
+                "end": {
+                  "status": "open"
+                }
+              }
+            }
+          ],
+          "focus_retained": true,
+          "scroll": 117,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 800,
+        "field": "month",
+        "angle_delta": -120,
+        "before": {
+          "index": 3,
+          "text": "April",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 3,
+          "text": "April",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 60,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 800,
+        "field": "day",
+        "angle_delta": -120,
+        "before": {
+          "index": 10,
+          "text": "Day 11",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 10,
+          "text": "Day 11",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 60,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 800,
+        "field": "qualification",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "Asserted",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 0,
+          "text": "Asserted",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 60,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 800,
+        "field": "lore_month",
+        "angle_delta": -120,
+        "before": {
+          "index": 3,
+          "text": "April",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 3,
+          "text": "April",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 60,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 800,
+        "field": "lore_day",
+        "angle_delta": -120,
+        "before": {
+          "index": 10,
+          "text": "Day 11",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 10,
+          "text": "Day 11",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 60,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 800,
+        "field": "hour",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "00h",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 0,
+          "text": "00h",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 60,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      },
+      {
+        "policy": "protected",
+        "width": 800,
+        "field": "minute",
+        "angle_delta": -120,
+        "before": {
+          "index": 0,
+          "text": "00m",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 0
+        },
+        "after": {
+          "index": 0,
+          "text": "00m",
+          "data": [
+            100.0,
+            100.0,
+            "asserted"
+          ],
+          "focus_retained": true,
+          "scroll": 60,
+          "index_signals": 0,
+          "text_signals": 0
+        }
+      }
+    ]
+  }
+}

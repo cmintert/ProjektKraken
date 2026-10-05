@@ -2,10 +2,10 @@
   "schema": 1,
   "counts": {
     "smoke": 18,
-    "ci_fast": 1381,
+    "ci_fast": 1426,
     "slow": 1,
     "performance": 0,
-    "full": 5754,
+    "full": 5799,
     "full_only": 4364
   },
   "categories": {
@@ -18,7 +18,7 @@
     "repro": 2,
     "root": 15,
     "security": 5,
-    "unit": 5421
+    "unit": 5466
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -2526,6 +2526,141 @@
       "ci_fast"
     ],
     "tests/unit/test_calendar_leap.py::TestLeapYearRule::test_standard_leap_year": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_choices_preserve_event_binding_fixed_boundary_and_undo": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_date_choices_scroll_without_date_mutations[day-400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_date_choices_scroll_without_date_mutations[day-800]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_date_choices_scroll_without_date_mutations[hour-400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_date_choices_scroll_without_date_mutations[hour-800]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_date_choices_scroll_without_date_mutations[lore_day-400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_date_choices_scroll_without_date_mutations[lore_day-800]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_date_choices_scroll_without_date_mutations[lore_month-400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_date_choices_scroll_without_date_mutations[lore_month-800]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_date_choices_scroll_without_date_mutations[minute-400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_date_choices_scroll_without_date_mutations[minute-800]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_date_choices_scroll_without_date_mutations[month-400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_date_choices_scroll_without_date_mutations[month-800]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_date_choices_scroll_without_date_mutations[qualification-400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_date_choices_scroll_without_date_mutations[qualification-800]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_deliberate_focus_keyboard_and_popup[False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_deliberate_focus_keyboard_and_popup[True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_expanded_manual_boundaries_remain_scroll_safe[400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_expanded_manual_boundaries_remain_scroll_safe[800]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[end-False-400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[end-False-800]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[end-True-400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[end-True-800]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[meaning-False-400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[meaning-False-800]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[meaning-True-400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[meaning-True-800]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[relative-False-400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[relative-False-800]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[relative-True-400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[relative-True-800]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[start-False-400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[start-False-800]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[start-True-400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[start-True-800]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[type-False-400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[type-False-800]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[type-True-400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[type-True-800]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[type_editor-False-400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[type_editor-False-800]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[type_editor-True-400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_relation_unfocused_choices_preserve_draft[type_editor-True-800]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_reported_empty_start_does_not_become_unknown[400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_choice_wheel.py::test_reported_empty_start_does_not_become_unknown[800]": [
       "ci_fast"
     ],
     "tests/unit/test_chronology_service.py::test_cycle_across_storage_owners_is_rejected": [

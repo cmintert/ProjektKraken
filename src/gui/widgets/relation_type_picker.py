@@ -10,7 +10,6 @@ from typing import List, Optional
 from PySide6.QtCore import QEvent, QObject, QPoint, Qt, Signal
 from PySide6.QtGui import QKeyEvent
 from PySide6.QtWidgets import (
-    QComboBox,
     QHBoxLayout,
     QLabel,
     QVBoxLayout,
@@ -18,6 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
 
 logger = logging.getLogger(__name__)
@@ -115,7 +115,7 @@ class RelationTypePicker(QWidget):
         input_layout.setSpacing(6)
 
         # Create combo box
-        self.combo_box = QComboBox()
+        self.combo_box = ScrollSafeComboBox()
         self.combo_box.setEditable(True)
         self.combo_box.addItems(self.relation_types)
 

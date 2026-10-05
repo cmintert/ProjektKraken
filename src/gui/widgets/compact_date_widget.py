@@ -40,6 +40,7 @@ from src.core.temporal_expression import (
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 
 logger = logging.getLogger(__name__)
@@ -166,7 +167,7 @@ class CompactDateWidget(QWidget):
         qualification_layout = QVBoxLayout(self._qualification_row)
         qualification_layout.setContentsMargins(0, 0, 0, 0)
         qualification_layout.addWidget(QLabel("Date qualification"))
-        self.qualifier_combo = QComboBox()
+        self.qualifier_combo = ScrollSafeComboBox()
         for label, qualifier in (
             ("Asserted", TemporalQualifier.ASSERTED),
             ("Approximate", TemporalQualifier.APPROXIMATE),
@@ -513,14 +514,14 @@ class CompactDateWidget(QWidget):
         self.spin_year.setFixedWidth(130)
         chip_layout.addWidget(self.spin_year, stretch=0)
 
-        self.combo_month = QComboBox()
+        self.combo_month = ScrollSafeComboBox()
         self.combo_month.setSizePolicy(
             QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
         self.combo_month.setFixedWidth(100)
         chip_layout.addWidget(self.combo_month, stretch=0)
 
-        self.combo_day = QComboBox()
+        self.combo_day = ScrollSafeComboBox()
         self.combo_day.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.combo_day.setFixedWidth(70)
         chip_layout.addWidget(self.combo_day, stretch=0)
@@ -1105,7 +1106,7 @@ class CalendarPopup(QDialog):
         self.spin_year.valueChanged.connect(self._refresh_grid)
         header.addWidget(self.spin_year)
 
-        self.combo_month = QComboBox()
+        self.combo_month = ScrollSafeComboBox()
         months = self._converter._config.get_months_for_year(self._year)
         for m in months:
             self.combo_month.addItem(m.name)

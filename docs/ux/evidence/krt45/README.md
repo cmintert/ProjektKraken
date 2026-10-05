@@ -5,9 +5,23 @@ Implementation and automated verification are complete. **Human acceptance is
 pending.** This evidence does not establish fewer observed destination changes,
 first-use discoverability, or completion of the full authoring benchmark.
 
+The [first KRT-45 human review](human-run-1.md), recorded and reviewed on
+2026-10-05, covers attempted KA-01–10 under catalog v1.2. It records dropdown
+scroll mutation, missing Linked events orientation, relation-form ambiguity and
+the needed optimizations, with 26 original video frames and the matching SRT.
+Several semantic checks remain partial; KA-11–20 and the baseline comparison
+remain pending. KRT-52/53 track the newly identified dropdown/link-action work;
+KRT-45/22/14 retain their existing scope. Human acceptance is still pending.
+
 The user explicitly authorized preserving the baseline and continuing
 implementation while the complete human v1.2 comparison remains pending.
 The issue stays In Progress. Contract v1 is unchanged.
+
+The [choice-wheel fix and inventory](human-run-1.md#f1-fix--krt-52-2026-10-05)
+implements the F1/KRT-52 follow-up from this review. Closed unfocused choices now
+pass wheel navigation to the form; focused editing and popup scrolling remain
+available. Automated acceptance and before/after diagnostics are recorded there;
+the broader KRT-45 human acceptance remains pending.
 
 This report records the initial canonical implementation, commit `7f723d08`.
 The later [supporting-feature refinement](supporting-refinement.md) replaces
