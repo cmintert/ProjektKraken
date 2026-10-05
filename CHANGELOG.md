@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-05
-**Commit:** 7f723d08acd05a1a6487823e38be9a2951d79f5f
+**Commit:** 43e463525a6066b6a6eaf852fb3dcd89b209bf6f
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-05)* **Cleanup**: Archived the temporary workspace intact under
+  ignored local artifacts, preserving baseline archives, benchmark worlds,
+  diagnostics and evidence with file-hash verification. Removed tracked scratch
+  exports/scripts from the repository and ignored future `tmp/` outputs.
+  Updated the KRT-45 baseline locations and cleared regenerable tool caches.
 
 - *(2026-10-05)* **Supporting inspector tools (KRT-45)**: Replaced five large
   supporting rows with small Summary/Draft with AI actions beside the writing

@@ -22,16 +22,24 @@ excluded from the implementation commit:
 
 | Artifact | Purpose | SHA-256 |
 | --- | --- | --- |
-| `tmp/krt45/baseline-source.zip` | Tracked source, docs, scripts, tests, dependency authority, themes and launchers | `1931399fb91788c2418f9741d6512fbfd46a51fff764cc8b5e686cb728b5a7cf` |
-| `tmp/krt45/baseline-runtime-support.zip` | Default assets, browser libraries, requirements, pytest settings and packaging metadata from the same revision | `6b76d22d42698b5c3f50327ed551f1b86c924192c4044e5dc8e134465e9c6d19` |
-| `tmp/krt45/baseline/` | Both archives extracted; baseline test failure reproduced here | Recoverable from the two archives |
+| `artifacts/worktree-cleanup/2026-10-05/temp-snapshot/krt45/baseline-source.zip` | Tracked source, docs, scripts, tests, dependency authority, themes and launchers | `1931399fb91788c2418f9741d6512fbfd46a51fff764cc8b5e686cb728b5a7cf` |
+| `artifacts/worktree-cleanup/2026-10-05/temp-snapshot/krt45/baseline-runtime-support.zip` | Default assets, browser libraries, requirements, pytest settings and packaging metadata from the same revision | `6b76d22d42698b5c3f50327ed551f1b86c924192c4044e5dc8e134465e9c6d19` |
+| `artifacts/worktree-cleanup/2026-10-05/temp-snapshot/krt45/baseline/` | Both archives extracted; baseline test failure reproduced here | Recoverable from the two archives |
+
+The user-requested cleanup on 2026-10-05 moved the complete temporary tree
+intact to the ignored local `artifacts/worktree-cleanup/2026-10-05/temp-snapshot/`
+archive. All 2,411 file hashes were verified after relocation. Baseline archives,
+QA worlds, exports, diagnostics and earlier performance evidence remain local;
+the archived scratch files are no longer tracked in Git. The local
+`cleanup-manifest.json` beside the archive records their paths and hashes.
 
 The immutable Git revision is also retained. Recover the archives without
 changing the implementation checkout:
 
 ```powershell
-git archive 5e7942f7cdca032fc1c3af3be563799a8c04f366 -o tmp/krt45/baseline-source.zip src docs scripts tests pyproject.toml themes.json launcher.py start-kraken.cmd README.md CHANGELOG.md
-git archive 5e7942f7cdca032fc1c3af3be563799a8c04f366 -o tmp/krt45/baseline-runtime-support.zip default_assets lib requirements requirements.txt pytest.ini packaging ProjektKraken.spec
+New-Item -ItemType Directory -Path artifacts/worktree-cleanup/2026-10-05/temp-snapshot/krt45 -Force | Out-Null
+git archive 5e7942f7cdca032fc1c3af3be563799a8c04f366 -o artifacts/worktree-cleanup/2026-10-05/temp-snapshot/krt45/baseline-source.zip src docs scripts tests pyproject.toml themes.json launcher.py start-kraken.cmd README.md CHANGELOG.md
+git archive 5e7942f7cdca032fc1c3af3be563799a8c04f366 -o artifacts/worktree-cleanup/2026-10-05/temp-snapshot/krt45/baseline-runtime-support.zip default_assets lib requirements requirements.txt pytest.ini packaging ProjektKraken.spec
 ```
 
 To run the preserved application, use the repository virtual environment's
