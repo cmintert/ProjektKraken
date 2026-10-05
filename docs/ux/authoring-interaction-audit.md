@@ -10,6 +10,18 @@ remains a separate seeded audit run.
 
 ## Evidence and disposition rules
 
+KRT-45 supporting-feature refinement (2026-10-05, based on `7f723d08`): Summary…
+and Draft with AI… are quiet actions directly below the description. One
+History & context heading reveals non-button Linked events (Entity only), Map
+layer links and World context sections. Its caption explains the read-only
+purpose. The existing writing panels open independently without generating or
+committing, and preserve working inputs when hidden. The World context stable
+route still reveals its embedded home or activates its independent pane.
+[Refinement evidence](evidence/krt45/supporting-refinement.md) records purpose
+copy, narrow/short rendering, keyboard and retention tests. Count writing-panel
+openings and the shared information disclosure separately; human comparison is
+still pending and Contract v1 is unchanged.
+
 KRT-45 implementation update (2026-10-05, based on `5e7942f7`): Entity/Event
 destinations are now Overview, Connections, Details and Media. Tags sit above
 Fields/Sheet; World context is a read-only Overview disclosure; both supporting

@@ -20,6 +20,7 @@ from PySide6.QtCore import (
     QCoreApplication,
     QEvent,
     QObject,
+    QPoint,
     QSettings,
     Qt,
     Signal,
@@ -136,7 +137,34 @@ def _prepare_state(editor: Editor, app: QApplication, state: str, width: int) ->
     if state == "support":
         editor.inspector.return_auxiliary("world_context")
         editor._presentation.context_disclosure.setChecked(False)
-    if state in ("context_embedded", "support"):
+    if state in ("summary", "ai_draft", "writing_panels"):
+        editor.summary_checkbox.setChecked(state != "ai_draft")
+        editor.llm_checkbox.setChecked(state != "summary")
+        _settle(app)
+        editor.scroll_area.ensureWidgetVisible(editor._presentation.writing_actions)
+    if state in ("information", "information_more"):
+        editor.summary_checkbox.setChecked(False)
+        editor.llm_checkbox.setChecked(False)
+        editor._presentation.history_disclosure.setChecked(True)
+        editor.authoring_context.more_button.setChecked(state == "information_more")
+        _settle(app)
+        editor.scroll_area.verticalScrollBar().setValue(
+            editor._presentation.history_disclosure.mapTo(
+                editor.details_container, QPoint()
+            ).y()
+        )
+    if state == "refinement_short":
+        editor.summary_checkbox.setChecked(False)
+        editor.llm_checkbox.setChecked(False)
+        editor._presentation.history_disclosure.setChecked(False)
+        editor.resize(width, 480)
+    if state == "empty_summary":
+        editor._presentation.history_disclosure.setChecked(False)
+        editor.summary_widget.clear_summary()
+        editor.summary_checkbox.setChecked(True)
+        _settle(app)
+        editor.scroll_area.ensureWidgetVisible(editor.summary_container)
+    if state in ("context_embedded", "support", "refinement_short"):
         _settle(app)
         editor.scroll_area.verticalScrollBar().setValue(
             editor.scroll_area.verticalScrollBar().maximum()
@@ -187,6 +215,7 @@ def capture(output: Path) -> None:
                                         "evidence-attachment", "Portrait"
                                     ),
                                 ),
+                                omitted_counts=(("relations", 4),),
                             )
                         )
                     else:
@@ -204,6 +233,7 @@ def capture(output: Path) -> None:
                                         "evidence-region", "entity", "Upper Rhine"
                                     ),
                                 ),
+                                omitted_counts=(("relations", 4),),
                             ),
                             date_label="c. 1218",
                         )
@@ -225,6 +255,13 @@ def capture(output: Path) -> None:
                                 "context_embedded",
                                 "context_split",
                                 "support",
+                                "summary",
+                                "ai_draft",
+                                "writing_panels",
+                                "information",
+                                "information_more",
+                                "empty_summary",
+                                "refinement_short",
                                 "more",
                             ]
                         )

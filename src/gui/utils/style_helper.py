@@ -31,11 +31,7 @@ _FULL_HEX_COLOR_LENGTH = 7
 
 def _relative_luminance(color: QColor) -> float:
     """Return a lightweight luminance estimate for contrast selection."""
-    return (
-        0.2126 * color.redF()
-        + 0.7152 * color.greenF()
-        + 0.0722 * color.blueF()
-    )
+    return 0.2126 * color.redF() + 0.7152 * color.greenF() + 0.0722 * color.blueF()
 
 
 def _contrasting_theme_text(background: str, theme: dict[str, Any]) -> str:
@@ -601,9 +597,39 @@ class StyleHelper:
             f"QPushButton:pressed {{ background-color: {app_bg}; }}"
             f"QPushButton:checked {{ "
             f"background-color: {primary}; color: {checked_text}; "
-            f"border: 2px solid {primary}; }}"
-            + StyleHelper.get_disabled_button_style()
+            f"border: 2px solid {primary}; }}" + StyleHelper.get_disabled_button_style()
         )
+
+    @staticmethod
+    def get_inspector_support_style() -> str:
+        """Style supporting headings and writing actions without button chrome."""
+        theme = ThemeManager().get_theme()
+        return f"""
+            QToolButton#InspectorSupportingHeader {{
+                color: {theme["text_main"]}; background: transparent;
+                border: 1px solid transparent; padding: 4px 2px;
+                font-weight: 600;
+            }}
+            QToolButton#InspectorWritingAction {{
+                color: {theme["accent_secondary"]}; background: transparent;
+                border: 1px solid transparent; padding: 4px 6px;
+            }}
+            QToolButton#InspectorSupportingHeader:hover,
+            QToolButton#InspectorWritingAction:hover {{
+                background: {theme["surface"]};
+            }}
+            QToolButton#InspectorWritingAction:checked {{
+                color: {theme["text_main"]}; font-weight: 600;
+            }}
+            QToolButton#InspectorSupportingHeader:focus,
+            QToolButton#InspectorWritingAction:focus {{
+                border: 2px solid {theme["text_main"]};
+            }}
+            QWidget#InspectorSupportingInformation {{
+                border-top: 1px solid {theme["border"]};
+            }}
+            QLabel#InspectorSupportCaption {{ color: {theme["text_dim"]}; }}
+        """
 
     @staticmethod
     def get_flat_tool_button_style() -> str:
@@ -689,8 +715,7 @@ class StyleHelper:
             f"border: 1px solid {theme['destructive']}; "
             f"border-radius: 4px; padding: 4px 8px; }}"
             f"QPushButton:hover {{ background-color: {theme['destructive']}; "
-            f"color: white; }}"
-            + StyleHelper.get_disabled_button_style()
+            f"color: white; }}" + StyleHelper.get_disabled_button_style()
         )
 
     @staticmethod
@@ -1080,7 +1105,6 @@ class StyleHelper:
             f"QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{ "
             f"width: 0px; }}"
         )
-
 
     @staticmethod
     def get_wiki_link_style(broken: bool = False) -> str:
@@ -1744,9 +1768,7 @@ class StyleHelper:
         Returns:
             str: QSS stylesheet string for raster mode badges.
         """
-        text_color = _contrasting_theme_text(
-            bg_color, ThemeManager().get_theme()
-        )
+        text_color = _contrasting_theme_text(bg_color, ThemeManager().get_theme())
         return (
             "QLabel#RasterModeBadge {"
             f"  background-color: {bg_color};"
@@ -1770,12 +1792,8 @@ class StyleHelper:
         theme = ThemeManager().get_theme()
         dim_color = theme.get("text_dim", "#888888")
         border_color = theme.get("border", "#333344")
-        label_style = (
-            f"color: {dim_color}; font-size: 8pt; font-weight: bold;"
-        )
-        line_style = (
-            f"color: {border_color}; background: {border_color};"
-        )
+        label_style = f"color: {dim_color}; font-size: 8pt; font-weight: bold;"
+        line_style = f"color: {border_color}; background: {border_color};"
         return label_style, line_style
 
     @staticmethod

@@ -9,6 +9,11 @@ The user explicitly authorized preserving the baseline and continuing
 implementation while the complete human v1.2 comparison remains pending.
 The issue stays In Progress. Contract v1 is unchanged.
 
+This report records the initial canonical implementation, commit `7f723d08`.
+The later [supporting-feature refinement](supporting-refinement.md) replaces
+the five large supporting rows with contextual writing actions and one quiet
+History & context heading. The original renders below remain unchanged.
+
 ## Preserved baseline
 
 Pre-change revision: `5e7942f7cdca032fc1c3af3be563799a8c04f366` (KRT-51).
@@ -150,12 +155,15 @@ Representative review images:
 | 331 × 480 px footer/action accessibility | [Event short](after/event-dark_mode-331-short.png) | [Event short](after/event-light_mode-331-short.png) |
 | Named destinations and layout routes | [More menu](after/event-dark_mode-331-more-menu.png) | [More menu](after/event-light_mode-331-more-menu.png) |
 
-Reproduce: `.venv\Scripts\python.exe -m scripts.capture_inspector_evidence --output tmp/krt45/review`
+Reproduce using the capture script and source from commit `7f723d08`:
+`.venv\Scripts\python.exe -m scripts.capture_inspector_evidence --output tmp/krt45/review`
 with offscreen Qt. The after manifest records the pre-commit base revision and
 SHA-256 hashes of source modules, capture script, stylesheet and themes. The
 implementation commit containing this report identifies the reviewed change;
 the base revision in the manifest is not a claim that the after images came
 from unchanged baseline code.
+
+The current capture script records the expanded refinement matrix instead.
 
 ## Automated verification
 

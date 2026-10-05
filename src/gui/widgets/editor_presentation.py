@@ -57,6 +57,9 @@ class DisclosureButton(QToolButton):
         ThemeManager().theme_changed.connect(self._apply_theme)
 
     def _update_arrow(self, expanded: bool) -> None:
+        if self.objectName() == "InspectorWritingAction":
+            self.setIcon(QIcon())
+            return
         theme = ThemeManager().get_theme()
         ratio = self.devicePixelRatioF()
         pixmap = QPixmap(round(16 * ratio), round(16 * ratio))
@@ -80,10 +83,28 @@ class DisclosureButton(QToolButton):
         self.setIconSize(QSize(16, 16))
 
     def _apply_theme(self, _theme: dict | None = None) -> None:
+        if self.objectName() == "InspectorWritingAction":
+            self.setStyleSheet(StyleHelper.get_inspector_support_style())
+            self._update_arrow(self.isChecked())
+            return
         self.setStyleSheet(
             StyleHelper.get_tool_button_style()
             + StyleHelper.get_inspector_focus_style()
         )
+        self._update_arrow(self.isChecked())
+
+
+class SupportingSectionHeader(DisclosureButton):
+    """Quiet, keyboard-accessible heading for supporting information."""
+
+    def __init__(self, title: str, parent: QWidget | None = None) -> None:
+        """Create a quiet heading without changing ordinary disclosures."""
+        super().__init__(title, parent)
+        self.setObjectName("InspectorSupportingHeader")
+        self._apply_theme()
+
+    def _apply_theme(self, _theme: dict | None = None) -> None:
+        self.setStyleSheet(StyleHelper.get_inspector_support_style())
         self._update_arrow(self.isChecked())
 
 
@@ -110,11 +131,6 @@ class EditorPresentation(QObject):
         editor.summary_widget.text_display.set_adaptive_width(True)
         editor.summary_widget.metadata_label.setWordWrap(True)
         editor.summary_widget.stale_label.setWordWrap(True)
-        editor.summary_widget.presence_changed.connect(
-            lambda present: editor.summary_checkbox.setText(
-                "Summary (available)" if present else "Summary"
-            )
-        )
         self._generation_grid = editor.llm_generator.layout().itemAt(1).layout()
         editor.llm_generator.layout().setContentsMargins(0, 0, 0, 0)
         assert isinstance(self._generation_grid, QGridLayout)
@@ -138,7 +154,9 @@ class EditorPresentation(QObject):
         self._toolbar_more_buttons: list[QToolButton] = []
         self._install_toolbar_menus()
         self._install_action_rows()
-        self.context_disclosure = DisclosureButton("World context (read-only)")
+        self._install_writing_support()
+        self.context_disclosure = SupportingSectionHeader("History & context")
+        self.history_disclosure = self.context_disclosure
         self.composition = EditorInspectorComposition(
             editor.inspector,
             InspectorContent(
@@ -147,6 +165,8 @@ class EditorPresentation(QObject):
                 context=editor.tab_context,
                 context_renderer=editor.authoring_context,
                 context_disclosure=self.context_disclosure,
+                linked_events=getattr(editor, "timeline_display", None),
+                map_links=editor.raster_appearances_label,
                 tags=editor.tab_tags,
                 connections=editor.tab_relations,
                 fields=editor.tab_attributes,
@@ -157,7 +177,6 @@ class EditorPresentation(QObject):
         if hasattr(editor, "temporal_snapshot_label"):
             editor.temporal_snapshot_label.setWordWrap(True)
             editor.description_source_label.setWordWrap(True)
-        editor.raster_appearances_checkbox.setText("Map appearances")
         if hasattr(editor, "timeline_display"):
             editor.desc_edit.minimum_width_changed.disconnect(
                 editor.timeline_display.setMinimumWidth
@@ -183,6 +202,7 @@ class EditorPresentation(QObject):
         editor.installEventFilter(self)
         editor.details_container.installEventFilter(self)
         editor.llm_generator.installEventFilter(self)
+        self.writing_actions.installEventFilter(self)
         self._focus_suffix = ""
         ThemeManager().theme_changed.connect(self._style_controls)
         self._style_controls()
@@ -221,6 +241,105 @@ class EditorPresentation(QObject):
         self._focus_suffix = suffix
         for button in self._toolbar_more_buttons:
             button.setStyleSheet(StyleHelper.get_overflow_button_style() + suffix)
+        for button in (self.editor.summary_checkbox, self.editor.llm_checkbox):
+            button._apply_theme()
+        self.context_disclosure._apply_theme()
+        support_style = StyleHelper.get_inspector_support_style()
+        self.writing_actions.setStyleSheet(support_style)
+        self.editor.summary_container.setStyleSheet(support_style)
+        self.editor.llm_container.setStyleSheet(support_style)
+        self.composition.history_container.setStyleSheet(support_style)
+
+    def _install_writing_support(self) -> None:
+        """Move live writing tools beside the description and retire old bars."""
+        editor = self.editor
+        form = editor.form_layout
+        for name in (
+            "summary_container",
+            "llm_container",
+            "raster_appearances_container",
+            "timeline_container",
+        ):
+            container = getattr(editor, name, None)
+            if container is not None:
+                form.takeRow(container)
+                container.hide()
+
+        self.writing_actions = QWidget()
+        self._writing_grid = QGridLayout(self.writing_actions)
+        self._writing_grid.setContentsMargins(0, 0, 0, 0)
+        self._writing_grid.setSpacing(4)
+        self._summary_action_group = QWidget()
+        summary_row = QHBoxLayout(self._summary_action_group)
+        summary_row.setContentsMargins(0, 0, 0, 0)
+        summary_row.setSpacing(4)
+        self.summary_availability = QLabel("Available")
+        self.summary_availability.setObjectName("InspectorSupportCaption")
+        self.summary_availability.setAccessibleName("Summary available")
+        self.summary_availability.hide()
+        for button, container, title, explanation in (
+            (
+                editor.summary_checkbox,
+                editor.summary_container,
+                "Summary…",
+                "A short version of this description.",
+            ),
+            (
+                editor.llm_checkbox,
+                editor.llm_container,
+                "Draft with AI…",
+                "Generate a draft, then review it before applying.",
+            ),
+        ):
+            container.layout().removeWidget(button)
+            button.setObjectName("InspectorWritingAction")
+            button.setText(title)
+            button.setAccessibleName(title)
+            button.setAccessibleDescription(explanation)
+            button.setToolTip(explanation)
+            button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
+            button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            button._apply_theme()
+            caption = QLabel(explanation)
+            caption.setObjectName("InspectorSupportCaption")
+            caption.setWordWrap(True)
+            container.layout().insertWidget(0, caption)
+            button.toggled.connect(container.setVisible)
+        summary_row.addWidget(editor.summary_checkbox)
+        summary_row.addWidget(self.summary_availability)
+        self._writing_grid.addWidget(self._summary_action_group, 0, 0)
+        self._writing_grid.addWidget(editor.llm_checkbox, 0, 1)
+        self._writing_grid.setColumnStretch(2, 1)
+        self._writing_compact: bool | None = None
+        row, _role = form.getWidgetPosition(editor.description_field)
+        # Keep the actions aligned with the writing field in a wide form.
+        # A hidden label contributes no extra line in the compact form.
+        action_label = QLabel()
+        action_label.hide()
+        form.insertRow(row + 1, action_label, self.writing_actions)
+        form.insertRow(row + 2, editor.summary_container)
+        form.insertRow(row + 3, editor.llm_container)
+        editor.summary_widget.presence_changed.connect(self._summary_presence_changed)
+
+    def _summary_presence_changed(self, present: bool) -> None:
+        """Indicate available content without promising persistence."""
+        self.summary_availability.setVisible(present)
+        self._reflow_writing_actions()
+
+    def _reflow_writing_actions(self) -> None:
+        """Wrap the two live actions only when their actual row cannot fit."""
+        needed = (
+            self._summary_action_group.sizeHint().width()
+            + self.editor.llm_checkbox.sizeHint().width()
+            + self._writing_grid.spacing()
+        )
+        compact = self.writing_actions.width() < needed
+        if compact != self._writing_compact:
+            self._writing_compact = compact
+            self._writing_grid.removeWidget(self.editor.llm_checkbox)
+            self._writing_grid.addWidget(
+                self.editor.llm_checkbox, 1 if compact else 0, 0 if compact else 1
+            )
 
     def _install_toolbar_menus(self) -> None:
         """Expose existing toolbar actions when native extensions are cramped."""
@@ -403,6 +522,7 @@ class EditorPresentation(QObject):
 
     def reflow(self) -> None:
         """Switch labels and header actions at the editor width breakpoint."""
+        self._reflow_writing_actions()
         compact = (
             min(self.editor.width(), self.editor.details_container.width())
             < COMPACT_EDITOR_WIDTH

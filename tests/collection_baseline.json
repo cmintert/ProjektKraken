@@ -2,10 +2,10 @@
   "schema": 1,
   "counts": {
     "smoke": 18,
-    "ci_fast": 1366,
+    "ci_fast": 1381,
     "slow": 1,
     "performance": 0,
-    "full": 5739,
+    "full": 5754,
     "full_only": 4364
   },
   "categories": {
@@ -18,7 +18,7 @@
     "repro": 2,
     "root": 15,
     "security": 5,
-    "unit": 5406
+    "unit": 5421
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -3868,6 +3868,12 @@
     "tests/unit/test_inspector_composition.py::test_collapsed_summary_indicates_retained_content[event]": [
       "ci_fast"
     ],
+    "tests/unit/test_inspector_composition.py::test_concurrent_summary_edit_and_generation_inputs_survive_toggle[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_concurrent_summary_edit_and_generation_inputs_survive_toggle[event]": [
+      "ci_fast"
+    ],
     "tests/unit/test_inspector_composition.py::test_context_navigation_retains_original_signals_and_renderer[entity]": [
       "ci_fast"
     ],
@@ -3889,6 +3895,9 @@
     "tests/unit/test_inspector_composition.py::test_invalid_date_and_newer_prose_survive_section_navigation[event]": [
       "ci_fast"
     ],
+    "tests/unit/test_inspector_composition.py::test_linked_events_fit_the_existing_document_without_nested_scroll[entity]": [
+      "ci_fast"
+    ],
     "tests/unit/test_inspector_composition.py::test_local_pane_width_reflows_date_without_changing_semantics[event]": [
       "ci_fast"
     ],
@@ -3907,10 +3916,22 @@
     "tests/unit/test_inspector_composition.py::test_narrow_toolbar_menus_reuse_authored_actions[event]": [
       "ci_fast"
     ],
+    "tests/unit/test_inspector_composition.py::test_opening_supporting_tools_never_generates_or_mutates[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_opening_supporting_tools_never_generates_or_mutates[event]": [
+      "ci_fast"
+    ],
     "tests/unit/test_inspector_composition.py::test_partial_content_relocation_returns_widget_home[entity]": [
       "ci_fast"
     ],
     "tests/unit/test_inspector_composition.py::test_partial_content_relocation_returns_widget_home[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_quiet_support_styles_survive_theme_changes[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_quiet_support_styles_survive_theme_changes[event]": [
       "ci_fast"
     ],
     "tests/unit/test_inspector_composition.py::test_same_context_refresh_preserves_nested_disclosure[entity]": [
@@ -3925,6 +3946,12 @@
     "tests/unit/test_inspector_composition.py::test_same_object_and_new_object_keep_destination_and_details_view[event]": [
       "ci_fast"
     ],
+    "tests/unit/test_inspector_composition.py::test_same_object_refresh_and_reset_keep_supporting_choices[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_same_object_refresh_and_reset_keep_supporting_choices[event]": [
+      "ci_fast"
+    ],
     "tests/unit/test_inspector_composition.py::test_selection_scroll_and_undo_survive_navigation_and_resize[entity]": [
       "ci_fast"
     ],
@@ -3937,10 +3964,28 @@
     "tests/unit/test_inspector_composition.py::test_split_content_can_be_dragged_and_returned_to_its_home[event]": [
       "ci_fast"
     ],
+    "tests/unit/test_inspector_composition.py::test_summary_action_retains_generation_and_staged_edit_signals[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_summary_action_retains_generation_and_staged_edit_signals[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_supporting_tools_are_contextual_and_start_closed[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_supporting_tools_are_contextual_and_start_closed[event]": [
+      "ci_fast"
+    ],
     "tests/unit/test_inspector_composition.py::test_tags_and_sheet_edits_remain_dirty_through_view_changes[entity]": [
       "ci_fast"
     ],
     "tests/unit/test_inspector_composition.py::test_tags_and_sheet_edits_remain_dirty_through_view_changes[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_writing_tool_toggles_preserve_prose_selection_scroll_and_undo[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_writing_tool_toggles_preserve_prose_selection_scroll_and_undo[event]": [
       "ci_fast"
     ],
     "tests/unit/test_integration_decomposition.py::TestAppCoordinatorIntegration::test_app_coordinator_has_all_coordinators": [],

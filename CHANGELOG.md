@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-05
-**Commit:** 5e7942f7cdca032fc1c3af3be563799a8c04f366
+**Commit:** 7f723d08acd05a1a6487823e38be9a2951d79f5f
 ---
 
 # Changelog
@@ -10,6 +10,17 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Changed
+
+- *(2026-10-05)* **Supporting inspector tools (KRT-45)**: Replaced five large
+  supporting rows with small Summary/Draft with AI actions beside the writing
+  field and one quiet History & context section. Added purpose captions and
+  summary availability feedback; retained concurrent panels, unfinished edits,
+  generator settings, nested context and split/return behavior. Fitted the
+  existing linked-events document to its content. Added 15 regression cases
+  and dark/light, narrow/normal/short render evidence against `7f723d08`.
+  Full human acceptance remains pending.
 
 ### Added
 

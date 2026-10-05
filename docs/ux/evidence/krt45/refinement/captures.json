@@ -1,0 +1,1882 @@
+{
+  "base_revision": "7f723d08acd05a1a6487823e38be9a2951d79f5f",
+  "source_sha256": {
+    "scripts/capture_inspector_evidence.py": "f46d9caeecc5e220520fd5ce5e711b3017daa44727746ec35477cb9df60aaabb",
+    "src/gui/utils/style_helper.py": "3cc0e1f1788de20ddf7b3e1c92149b75ee37cd23c5f031f38d1cd01c3e129a33",
+    "src/gui/widgets/ai_search_panel.py": "35c9e677aa2f1dcef0a50ab27c6038450f18d6ce08128f3d0d1cc66e4b176f02",
+    "src/gui/widgets/attribute_editor.py": "02e1febc710fbf2b1accf92fb489a3bd12f665c29de9969493a0b91e846a8636",
+    "src/gui/widgets/authoring_context_widget.py": "c0ab64858e8603efa0ecb282b0855d8fa958e37474007197e2c243cdd61119a3",
+    "src/gui/widgets/auto_closing_message_box.py": "aa1cd2fb29dbe4b1e04a6f51dd765a28995529008ff6337a03241fcebd68bfae",
+    "src/gui/widgets/compact_date_widget.py": "ff2622eb3ce105ac26f465344fcd4db2fa6f84bdf8636cd21313f613879de7ee",
+    "src/gui/widgets/compact_duration_widget.py": "33d678bf314e74dc62645af42a8121237555599b95bf3a1283722542730434f6",
+    "src/gui/widgets/context_tag_bar.py": "f9b45b2222103182ce5e2f2c225f9a58e1c81faee4db3e9d5ba978cf83e67693",
+    "src/gui/widgets/drag_pill.py": "8beddbaf52f1b5ea16064621e3bb349329b5ae4c228a7011f1508fad322d82f2",
+    "src/gui/widgets/editor_inspector_composition.py": "d036c57b60f6902da9b7dcaacc63f2d15608eb2b298e3434181f23bee2c898e7",
+    "src/gui/widgets/editor_presentation.py": "86cc83a0a6ff7435452935aaf6c3980094103b1ee98d48a80fe43b348b77b7bb",
+    "src/gui/widgets/empty_state_widget.py": "b98339c4347a69187e2aa66c079ed58baec68eb7e087fd33d11646dc0893817c",
+    "src/gui/widgets/entity_editor.py": "1d1494a64e166075666bb8649c4a2023e8f09bfd7f1d40409456267cb28016e0",
+    "src/gui/widgets/entity_list.py": "be7bb9d29cf1bbc524bc7d0081c8369fd0e6dcf2b94d6033f68a3bab90f1f733",
+    "src/gui/widgets/event_editor.py": "c3af9184d55d636fa8461caca4600750b46ba2e7f0889926489e965589fbcd70",
+    "src/gui/widgets/event_list.py": "f590c75955facc8227a6c0dea974d9d0d1a858aaa9364f418d90252366a57fbf",
+    "src/gui/widgets/filter_widget.py": "4c47af0602436dab208fece49d8ef0ca032b4268a41a0a7d113402a0ad02a767",
+    "src/gui/widgets/focus_writing.py": "7a75b38e30cdc0dbebdc3fca55d9510875cd89e0de8076a89606baf409b77de5",
+    "src/gui/widgets/gallery_widget.py": "80b31674dd980e095b99fce120751f9523f875d4fab40cd5a65320f7ac736fb5",
+    "src/gui/widgets/history_panel.py": "a782efbe79d961aa1cf13d9eaa10343dd9ed5bdbc9b1392666d9558f3ac63630",
+    "src/gui/widgets/inspector_section.py": "74e5f3003fcde3ac5314bf072d88cddcb5e521497d95640a0cdbf9c8e9ba462f",
+    "src/gui/widgets/llm_generation_widget.py": "4a65409b75c227e0f0fe2bd2c062e337ea5ff440de4a09b574b0080052facca1",
+    "src/gui/widgets/lore_date_widget.py": "82070ba4f3c70fefb0e1993498cd28eb7de76f42e0a35e62e6a1213a70cc6da3",
+    "src/gui/widgets/lore_duration_widget.py": "a1132703dce417ec8f3eeab0dd0a3208b0c0aea8fed670a451f719dcd7149892",
+    "src/gui/widgets/map_widget.py": "c398daaeb7b2422b1447130a40801b45955712ab12563e4f0f4eba4e25c9af54",
+    "src/gui/widgets/numeric_inputs.py": "a81bd06aab88054458b9f8113ed69c1eeeb2c7b32ffa15107b313aca33b626f2",
+    "src/gui/widgets/overflow_toolbar.py": "87f9f86d47fdf829cdbd4eeb07a5c63e4192c2ce2d9aa2de698f6c26ae1d25af",
+    "src/gui/widgets/prompt_editor.py": "2e008e9a051acf5766d12594c8bb6081d4eee93d91b93a148790ed1f93462fd1",
+    "src/gui/widgets/relation_item_widget.py": "5fc5715d4612b13468e30ca62266393c022be2f580092600c7db8baadcb3dd2a",
+    "src/gui/widgets/relation_type_picker.py": "83dc7ef5d62574d8e014a9f8920c290fd3fa30e65172c2b320dc21aecdcb6d17",
+    "src/gui/widgets/sheet_builder.py": "8e400364ebb90b2c5729684bd1b8e2c6a11cd63b1e96580d6e29012f3e5481ea",
+    "src/gui/widgets/splitter_tab_inspector.py": "e2bd172deff3cbf5fa4c4df754ee8c059ca5022189818de9d4afadaeb1e384a7",
+    "src/gui/widgets/standard_buttons.py": "1ec7cb0999280b0f2b9a97c885c13083b0f8b5891e1567114c8a0cb7d9061a00",
+    "src/gui/widgets/summary_widget.py": "48645c1aa7e5b0e41c5ee42bb00c6619070885cf404d7e014b5dbec5df38a196",
+    "src/gui/widgets/tag_chip_view.py": "f38a58e76dd9fba2a1b6132202962f2af3f91cc0d65288bad3d735c05cebb07b",
+    "src/gui/widgets/tag_editor.py": "cad9bcd7858b16e1aa3bd4ff63eb4b33f261be963fb0004cafd6653e4ef02bf7",
+    "src/gui/widgets/temporal_range_widget.py": "d0c1098488e9fdaedc06f006cc906ca928f152a4c5462eb22a73f0a980b93d32",
+    "src/gui/widgets/timeline_display_widget.py": "276115cd8a809bf4fbf72752a5db4aa480f1b4a22a189cb185c49be4f498ebff",
+    "src/gui/widgets/timeline_lane_packer.py": "b739657ab124c7b151cba8f9ad94175859e6dfdd858979a9fc4c9832041aa14b",
+    "src/gui/widgets/timeline_ruler.py": "e04fefaa29fcf5e6c466fdbeee99558a29de3d1d09e67cd1015982d3ddc30d35",
+    "src/gui/widgets/toc_widget.py": "21dc94cd8730557ff48173020adc29e9cb345d7d8721e1f3bd7460133fa03eb1",
+    "src/gui/widgets/unified_list.py": "fb07b8b2b9de321504d1638b3d78a5b99c8fd78bf4c4a822a4f0402dc1174ebc",
+    "src/gui/widgets/wiki_peek_panel.py": "bc0d0fdee9107e95e2131915b3afb06be22e35e2efdbec8095f4b0ba70d877e9",
+    "src/gui/widgets/wiki_text_edit.py": "eb9e3db033c345caadf03376f10f79cb23bee254cad01fabdd8adc53882459d3",
+    "src/resources/main.qss": "e008d548fa0f7313daaca82a8c0d87dac298b53d521bd093fdd892c53bb40816",
+    "themes.json": "7dbd3f347d23efe5fff00942eb977072b48c39ddf680a0b666eaf2f9e8e5eb49"
+  },
+  "python": "3.13.14",
+  "qt_binding": "6.10.1",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "method": "isolated component rendering; no database or human metrics",
+  "captures": [
+    {
+      "image": "entity-dark_mode-331-overview.png",
+      "width": 331,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-331-advanced.png",
+      "width": 331,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-331-short.png",
+      "width": 331,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-331-connections.png",
+      "width": 331,
+      "height": 720,
+      "state": "connections",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-331-media.png",
+      "width": 331,
+      "height": 720,
+      "state": "media",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-331-details.png",
+      "width": 331,
+      "height": 720,
+      "state": "details",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-331-sheet.png",
+      "width": 331,
+      "height": 720,
+      "state": "sheet",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-331-sheet_split.png",
+      "width": 331,
+      "height": 720,
+      "state": "sheet_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-331-context_embedded.png",
+      "width": 331,
+      "height": 720,
+      "state": "context_embedded",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-331-context_split.png",
+      "width": 331,
+      "height": 720,
+      "state": "context_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-331-support.png",
+      "width": 331,
+      "height": 720,
+      "state": "support",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-331-summary.png",
+      "width": 331,
+      "height": 720,
+      "state": "summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-331-ai_draft.png",
+      "width": 331,
+      "height": 720,
+      "state": "ai_draft",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-331-writing_panels.png",
+      "width": 331,
+      "height": 720,
+      "state": "writing_panels",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-331-information.png",
+      "width": 331,
+      "height": 720,
+      "state": "information",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-331-information_more.png",
+      "width": 331,
+      "height": 720,
+      "state": "information_more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-331-empty_summary.png",
+      "width": 331,
+      "height": 720,
+      "state": "empty_summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-331-refinement_short.png",
+      "width": 331,
+      "height": 480,
+      "state": "refinement_short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-331-more.png",
+      "width": 331,
+      "height": 480,
+      "state": "more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-560-overview.png",
+      "width": 560,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-560-advanced.png",
+      "width": 560,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-560-short.png",
+      "width": 560,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-560-connections.png",
+      "width": 560,
+      "height": 720,
+      "state": "connections",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-560-media.png",
+      "width": 560,
+      "height": 720,
+      "state": "media",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-560-details.png",
+      "width": 560,
+      "height": 720,
+      "state": "details",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-560-sheet.png",
+      "width": 560,
+      "height": 720,
+      "state": "sheet",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-560-sheet_split.png",
+      "width": 560,
+      "height": 720,
+      "state": "sheet_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-560-context_embedded.png",
+      "width": 560,
+      "height": 720,
+      "state": "context_embedded",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-560-context_split.png",
+      "width": 560,
+      "height": 720,
+      "state": "context_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-560-support.png",
+      "width": 560,
+      "height": 720,
+      "state": "support",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-560-summary.png",
+      "width": 560,
+      "height": 720,
+      "state": "summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-560-ai_draft.png",
+      "width": 560,
+      "height": 720,
+      "state": "ai_draft",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-560-writing_panels.png",
+      "width": 560,
+      "height": 720,
+      "state": "writing_panels",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-560-information.png",
+      "width": 560,
+      "height": 720,
+      "state": "information",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-560-information_more.png",
+      "width": 560,
+      "height": 720,
+      "state": "information_more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-560-empty_summary.png",
+      "width": 560,
+      "height": 720,
+      "state": "empty_summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-560-refinement_short.png",
+      "width": 560,
+      "height": 480,
+      "state": "refinement_short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-560-more.png",
+      "width": 560,
+      "height": 480,
+      "state": "more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-871-overview.png",
+      "width": 871,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-871-advanced.png",
+      "width": 871,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-871-short.png",
+      "width": 871,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-871-connections.png",
+      "width": 871,
+      "height": 720,
+      "state": "connections",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-871-media.png",
+      "width": 871,
+      "height": 720,
+      "state": "media",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-871-details.png",
+      "width": 871,
+      "height": 720,
+      "state": "details",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-871-sheet.png",
+      "width": 871,
+      "height": 720,
+      "state": "sheet",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-871-sheet_split.png",
+      "width": 871,
+      "height": 720,
+      "state": "sheet_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-871-context_embedded.png",
+      "width": 871,
+      "height": 720,
+      "state": "context_embedded",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-871-context_split.png",
+      "width": 871,
+      "height": 720,
+      "state": "context_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-871-support.png",
+      "width": 871,
+      "height": 720,
+      "state": "support",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-871-summary.png",
+      "width": 871,
+      "height": 720,
+      "state": "summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-871-ai_draft.png",
+      "width": 871,
+      "height": 720,
+      "state": "ai_draft",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-871-writing_panels.png",
+      "width": 871,
+      "height": 720,
+      "state": "writing_panels",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-871-information.png",
+      "width": 871,
+      "height": 720,
+      "state": "information",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-871-information_more.png",
+      "width": 871,
+      "height": 720,
+      "state": "information_more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-871-empty_summary.png",
+      "width": 871,
+      "height": 720,
+      "state": "empty_summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-871-refinement_short.png",
+      "width": 871,
+      "height": 480,
+      "state": "refinement_short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-dark_mode-871-more.png",
+      "width": 871,
+      "height": 480,
+      "state": "more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-331-overview.png",
+      "width": 331,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-331-advanced.png",
+      "width": 331,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-331-short.png",
+      "width": 331,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-331-connections.png",
+      "width": 331,
+      "height": 720,
+      "state": "connections",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-331-media.png",
+      "width": 331,
+      "height": 720,
+      "state": "media",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-331-details.png",
+      "width": 331,
+      "height": 720,
+      "state": "details",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-331-sheet.png",
+      "width": 331,
+      "height": 720,
+      "state": "sheet",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-331-sheet_split.png",
+      "width": 331,
+      "height": 720,
+      "state": "sheet_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-331-context_embedded.png",
+      "width": 331,
+      "height": 720,
+      "state": "context_embedded",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-331-context_split.png",
+      "width": 331,
+      "height": 720,
+      "state": "context_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-331-support.png",
+      "width": 331,
+      "height": 720,
+      "state": "support",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-331-summary.png",
+      "width": 331,
+      "height": 720,
+      "state": "summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-331-ai_draft.png",
+      "width": 331,
+      "height": 720,
+      "state": "ai_draft",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-331-writing_panels.png",
+      "width": 331,
+      "height": 720,
+      "state": "writing_panels",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-331-information.png",
+      "width": 331,
+      "height": 720,
+      "state": "information",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-331-information_more.png",
+      "width": 331,
+      "height": 720,
+      "state": "information_more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-331-empty_summary.png",
+      "width": 331,
+      "height": 720,
+      "state": "empty_summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-331-refinement_short.png",
+      "width": 331,
+      "height": 480,
+      "state": "refinement_short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-331-more.png",
+      "width": 331,
+      "height": 480,
+      "state": "more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-560-overview.png",
+      "width": 560,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-560-advanced.png",
+      "width": 560,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-560-short.png",
+      "width": 560,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-560-connections.png",
+      "width": 560,
+      "height": 720,
+      "state": "connections",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-560-media.png",
+      "width": 560,
+      "height": 720,
+      "state": "media",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-560-details.png",
+      "width": 560,
+      "height": 720,
+      "state": "details",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-560-sheet.png",
+      "width": 560,
+      "height": 720,
+      "state": "sheet",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-560-sheet_split.png",
+      "width": 560,
+      "height": 720,
+      "state": "sheet_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-560-context_embedded.png",
+      "width": 560,
+      "height": 720,
+      "state": "context_embedded",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-560-context_split.png",
+      "width": 560,
+      "height": 720,
+      "state": "context_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-560-support.png",
+      "width": 560,
+      "height": 720,
+      "state": "support",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-560-summary.png",
+      "width": 560,
+      "height": 720,
+      "state": "summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-560-ai_draft.png",
+      "width": 560,
+      "height": 720,
+      "state": "ai_draft",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-560-writing_panels.png",
+      "width": 560,
+      "height": 720,
+      "state": "writing_panels",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-560-information.png",
+      "width": 560,
+      "height": 720,
+      "state": "information",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-560-information_more.png",
+      "width": 560,
+      "height": 720,
+      "state": "information_more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-560-empty_summary.png",
+      "width": 560,
+      "height": 720,
+      "state": "empty_summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-560-refinement_short.png",
+      "width": 560,
+      "height": 480,
+      "state": "refinement_short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-560-more.png",
+      "width": 560,
+      "height": 480,
+      "state": "more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-871-overview.png",
+      "width": 871,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-871-advanced.png",
+      "width": 871,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-871-short.png",
+      "width": 871,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-871-connections.png",
+      "width": 871,
+      "height": 720,
+      "state": "connections",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-871-media.png",
+      "width": 871,
+      "height": 720,
+      "state": "media",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-871-details.png",
+      "width": 871,
+      "height": 720,
+      "state": "details",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-871-sheet.png",
+      "width": 871,
+      "height": 720,
+      "state": "sheet",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-871-sheet_split.png",
+      "width": 871,
+      "height": 720,
+      "state": "sheet_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-871-context_embedded.png",
+      "width": 871,
+      "height": 720,
+      "state": "context_embedded",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-871-context_split.png",
+      "width": 871,
+      "height": 720,
+      "state": "context_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-871-support.png",
+      "width": 871,
+      "height": 720,
+      "state": "support",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-871-summary.png",
+      "width": 871,
+      "height": 720,
+      "state": "summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-871-ai_draft.png",
+      "width": 871,
+      "height": 720,
+      "state": "ai_draft",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-871-writing_panels.png",
+      "width": 871,
+      "height": 720,
+      "state": "writing_panels",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-871-information.png",
+      "width": 871,
+      "height": 720,
+      "state": "information",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-871-information_more.png",
+      "width": 871,
+      "height": 720,
+      "state": "information_more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-871-empty_summary.png",
+      "width": 871,
+      "height": 720,
+      "state": "empty_summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-871-refinement_short.png",
+      "width": 871,
+      "height": 480,
+      "state": "refinement_short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-dark_mode-871-more.png",
+      "width": 871,
+      "height": 480,
+      "state": "more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-331-overview.png",
+      "width": 331,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-331-advanced.png",
+      "width": 331,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-331-short.png",
+      "width": 331,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-331-connections.png",
+      "width": 331,
+      "height": 720,
+      "state": "connections",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-331-media.png",
+      "width": 331,
+      "height": 720,
+      "state": "media",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-331-details.png",
+      "width": 331,
+      "height": 720,
+      "state": "details",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-331-sheet.png",
+      "width": 331,
+      "height": 720,
+      "state": "sheet",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-331-sheet_split.png",
+      "width": 331,
+      "height": 720,
+      "state": "sheet_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-331-context_embedded.png",
+      "width": 331,
+      "height": 720,
+      "state": "context_embedded",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-331-context_split.png",
+      "width": 331,
+      "height": 720,
+      "state": "context_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-331-support.png",
+      "width": 331,
+      "height": 720,
+      "state": "support",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-331-summary.png",
+      "width": 331,
+      "height": 720,
+      "state": "summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-331-ai_draft.png",
+      "width": 331,
+      "height": 720,
+      "state": "ai_draft",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-331-writing_panels.png",
+      "width": 331,
+      "height": 720,
+      "state": "writing_panels",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-331-information.png",
+      "width": 331,
+      "height": 720,
+      "state": "information",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-331-information_more.png",
+      "width": 331,
+      "height": 720,
+      "state": "information_more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-331-empty_summary.png",
+      "width": 331,
+      "height": 720,
+      "state": "empty_summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-331-refinement_short.png",
+      "width": 331,
+      "height": 480,
+      "state": "refinement_short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-331-more.png",
+      "width": 331,
+      "height": 480,
+      "state": "more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-560-overview.png",
+      "width": 560,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-560-advanced.png",
+      "width": 560,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-560-short.png",
+      "width": 560,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-560-connections.png",
+      "width": 560,
+      "height": 720,
+      "state": "connections",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-560-media.png",
+      "width": 560,
+      "height": 720,
+      "state": "media",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-560-details.png",
+      "width": 560,
+      "height": 720,
+      "state": "details",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-560-sheet.png",
+      "width": 560,
+      "height": 720,
+      "state": "sheet",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-560-sheet_split.png",
+      "width": 560,
+      "height": 720,
+      "state": "sheet_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-560-context_embedded.png",
+      "width": 560,
+      "height": 720,
+      "state": "context_embedded",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-560-context_split.png",
+      "width": 560,
+      "height": 720,
+      "state": "context_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-560-support.png",
+      "width": 560,
+      "height": 720,
+      "state": "support",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-560-summary.png",
+      "width": 560,
+      "height": 720,
+      "state": "summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-560-ai_draft.png",
+      "width": 560,
+      "height": 720,
+      "state": "ai_draft",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-560-writing_panels.png",
+      "width": 560,
+      "height": 720,
+      "state": "writing_panels",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-560-information.png",
+      "width": 560,
+      "height": 720,
+      "state": "information",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-560-information_more.png",
+      "width": 560,
+      "height": 720,
+      "state": "information_more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-560-empty_summary.png",
+      "width": 560,
+      "height": 720,
+      "state": "empty_summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-560-refinement_short.png",
+      "width": 560,
+      "height": 480,
+      "state": "refinement_short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-560-more.png",
+      "width": 560,
+      "height": 480,
+      "state": "more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-871-overview.png",
+      "width": 871,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-871-advanced.png",
+      "width": 871,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-871-short.png",
+      "width": 871,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-871-connections.png",
+      "width": 871,
+      "height": 720,
+      "state": "connections",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-871-media.png",
+      "width": 871,
+      "height": 720,
+      "state": "media",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-871-details.png",
+      "width": 871,
+      "height": 720,
+      "state": "details",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-871-sheet.png",
+      "width": 871,
+      "height": 720,
+      "state": "sheet",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-871-sheet_split.png",
+      "width": 871,
+      "height": 720,
+      "state": "sheet_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-871-context_embedded.png",
+      "width": 871,
+      "height": 720,
+      "state": "context_embedded",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-871-context_split.png",
+      "width": 871,
+      "height": 720,
+      "state": "context_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-871-support.png",
+      "width": 871,
+      "height": 720,
+      "state": "support",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-871-summary.png",
+      "width": 871,
+      "height": 720,
+      "state": "summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-871-ai_draft.png",
+      "width": 871,
+      "height": 720,
+      "state": "ai_draft",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-871-writing_panels.png",
+      "width": 871,
+      "height": 720,
+      "state": "writing_panels",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-871-information.png",
+      "width": 871,
+      "height": 720,
+      "state": "information",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-871-information_more.png",
+      "width": 871,
+      "height": 720,
+      "state": "information_more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-871-empty_summary.png",
+      "width": 871,
+      "height": 720,
+      "state": "empty_summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-871-refinement_short.png",
+      "width": 871,
+      "height": 480,
+      "state": "refinement_short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "entity-light_mode-871-more.png",
+      "width": 871,
+      "height": 480,
+      "state": "more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-331-overview.png",
+      "width": 331,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-331-advanced.png",
+      "width": 331,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-331-short.png",
+      "width": 331,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-331-connections.png",
+      "width": 331,
+      "height": 720,
+      "state": "connections",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-331-media.png",
+      "width": 331,
+      "height": 720,
+      "state": "media",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-331-details.png",
+      "width": 331,
+      "height": 720,
+      "state": "details",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-331-sheet.png",
+      "width": 331,
+      "height": 720,
+      "state": "sheet",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-331-sheet_split.png",
+      "width": 331,
+      "height": 720,
+      "state": "sheet_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-331-context_embedded.png",
+      "width": 331,
+      "height": 720,
+      "state": "context_embedded",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-331-context_split.png",
+      "width": 331,
+      "height": 720,
+      "state": "context_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-331-support.png",
+      "width": 331,
+      "height": 720,
+      "state": "support",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-331-summary.png",
+      "width": 331,
+      "height": 720,
+      "state": "summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-331-ai_draft.png",
+      "width": 331,
+      "height": 720,
+      "state": "ai_draft",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-331-writing_panels.png",
+      "width": 331,
+      "height": 720,
+      "state": "writing_panels",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-331-information.png",
+      "width": 331,
+      "height": 720,
+      "state": "information",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-331-information_more.png",
+      "width": 331,
+      "height": 720,
+      "state": "information_more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-331-empty_summary.png",
+      "width": 331,
+      "height": 720,
+      "state": "empty_summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-331-refinement_short.png",
+      "width": 331,
+      "height": 480,
+      "state": "refinement_short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-331-more.png",
+      "width": 331,
+      "height": 480,
+      "state": "more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-560-overview.png",
+      "width": 560,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-560-advanced.png",
+      "width": 560,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-560-short.png",
+      "width": 560,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-560-connections.png",
+      "width": 560,
+      "height": 720,
+      "state": "connections",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-560-media.png",
+      "width": 560,
+      "height": 720,
+      "state": "media",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-560-details.png",
+      "width": 560,
+      "height": 720,
+      "state": "details",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-560-sheet.png",
+      "width": 560,
+      "height": 720,
+      "state": "sheet",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-560-sheet_split.png",
+      "width": 560,
+      "height": 720,
+      "state": "sheet_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-560-context_embedded.png",
+      "width": 560,
+      "height": 720,
+      "state": "context_embedded",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-560-context_split.png",
+      "width": 560,
+      "height": 720,
+      "state": "context_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-560-support.png",
+      "width": 560,
+      "height": 720,
+      "state": "support",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-560-summary.png",
+      "width": 560,
+      "height": 720,
+      "state": "summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-560-ai_draft.png",
+      "width": 560,
+      "height": 720,
+      "state": "ai_draft",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-560-writing_panels.png",
+      "width": 560,
+      "height": 720,
+      "state": "writing_panels",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-560-information.png",
+      "width": 560,
+      "height": 720,
+      "state": "information",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-560-information_more.png",
+      "width": 560,
+      "height": 720,
+      "state": "information_more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-560-empty_summary.png",
+      "width": 560,
+      "height": 720,
+      "state": "empty_summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-560-refinement_short.png",
+      "width": 560,
+      "height": 480,
+      "state": "refinement_short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-560-more.png",
+      "width": 560,
+      "height": 480,
+      "state": "more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-871-overview.png",
+      "width": 871,
+      "height": 720,
+      "state": "overview",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-871-advanced.png",
+      "width": 871,
+      "height": 720,
+      "state": "advanced",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-871-short.png",
+      "width": 871,
+      "height": 480,
+      "state": "short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-871-connections.png",
+      "width": 871,
+      "height": 720,
+      "state": "connections",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-871-media.png",
+      "width": 871,
+      "height": 720,
+      "state": "media",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-871-details.png",
+      "width": 871,
+      "height": 720,
+      "state": "details",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-871-sheet.png",
+      "width": 871,
+      "height": 720,
+      "state": "sheet",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-871-sheet_split.png",
+      "width": 871,
+      "height": 720,
+      "state": "sheet_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-871-context_embedded.png",
+      "width": 871,
+      "height": 720,
+      "state": "context_embedded",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-871-context_split.png",
+      "width": 871,
+      "height": 720,
+      "state": "context_split",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-871-support.png",
+      "width": 871,
+      "height": 720,
+      "state": "support",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-871-summary.png",
+      "width": 871,
+      "height": 720,
+      "state": "summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-871-ai_draft.png",
+      "width": 871,
+      "height": 720,
+      "state": "ai_draft",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-871-writing_panels.png",
+      "width": 871,
+      "height": 720,
+      "state": "writing_panels",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-871-information.png",
+      "width": 871,
+      "height": 720,
+      "state": "information",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-871-information_more.png",
+      "width": 871,
+      "height": 720,
+      "state": "information_more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-871-empty_summary.png",
+      "width": 871,
+      "height": 720,
+      "state": "empty_summary",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-871-refinement_short.png",
+      "width": 871,
+      "height": 480,
+      "state": "refinement_short",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    },
+    {
+      "image": "event-light_mode-871-more.png",
+      "width": 871,
+      "height": 480,
+      "state": "more",
+      "horizontal_scroll": 0,
+      "visible_horizontal_scrollbars": []
+    }
+  ]
+}

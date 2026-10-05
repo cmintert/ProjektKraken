@@ -7,7 +7,7 @@ assisted runs are separate evidence, never substitutes for these twenty tasks.
 
 | Run metadata | Baseline | Implementation |
 | --- | --- | --- |
-| Revision | `5e7942f7cdca032fc1c3af3be563799a8c04f366` | Commit containing this record; record exact hash at execution |
+| Revision | `5e7942f7cdca032fc1c3af3be563799a8c04f366` | Final KRT-45 refinement revision; record exact hash at execution |
 | Catalog | v1.2 | v1.2 |
 | Participant / experience / prior exposure | Not recorded | Not recorded |
 | Date / app version / OS / Qt / theme | Not recorded | Not recorded |
@@ -23,6 +23,12 @@ to a disclosure must not become a manufactured reduction in complexity. Count
 the World context More disclosure, auxiliary open/return actions, action menus,
 dialogs and source-mode switches explicitly. Record assistance and subsequent
 observer verification separately from the initial attempt.
+
+The [supporting-feature refinement](supporting-refinement.md) adds direct
+Summary… / Draft with AI… panel actions and groups three read-only views under
+History & context. Record each writing-panel opening and the shared information
+disclosure. The intermediate `7f723d08` renders are structural comparison
+evidence, not a completed human baseline or a substitute for the final revision.
 
 `NM` below means **not measured**, never zero. All tasks are **not executed** in
 both new human runs. B/A are baseline/after counts. Verification includes

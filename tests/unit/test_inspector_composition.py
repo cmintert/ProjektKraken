@@ -17,6 +17,8 @@ from src.core.calendar import CalendarConfig, CalendarConverter
 from src.core.entities import Entity
 from src.core.events import Event
 from src.core.summary_data import SummaryData
+from src.core.theme_manager import ThemeManager
+from src.gui.widgets.editor_presentation import SupportingSectionHeader
 from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.event_editor import EventEditorWidget
 from src.gui.widgets.splitter_tab_inspector import DraggableTabWidget, _move_tab
@@ -444,12 +446,14 @@ def test_collapsed_summary_indicates_retained_content(editor):
         SummaryData(text="Saved summary", hash="source", timestamp=0, model="test")
     )
     assert not editor.summary_checkbox.isChecked()
-    assert editor.summary_checkbox.text() == "Summary (available)"
+    assert editor.summary_checkbox.text() == "Summary…"
+    assert not editor._presentation.summary_availability.isHidden()
     editor.inspector.open_auxiliary_below("world_context")
     editor.inspector.reset_layout()
-    assert editor.summary_checkbox.text() == "Summary (available)"
+    assert not editor._presentation.summary_availability.isHidden()
     editor.summary_widget.clear_summary()
-    assert editor.summary_checkbox.text() == "Summary"
+    assert editor.summary_checkbox.text() == "Summary…"
+    assert editor._presentation.summary_availability.isHidden()
     assert not editor.has_unsaved_changes()
 
 
@@ -464,3 +468,206 @@ def test_narrow_toolbar_menus_reuse_authored_actions(editor, qtbot):
     sheet.menu().actions()[2].trigger()  # The existing Add Divider action.
     assert any("divider" in str(row) for row in editor.sheet_builder.get_layout())
     assert editor.has_unsaved_changes()
+
+
+def test_supporting_tools_are_contextual_and_start_closed(editor):
+    presentation = editor._presentation
+    row, _role = editor.form_layout.getWidgetPosition(editor.description_field)
+    tools_row, _role = editor.form_layout.getWidgetPosition(
+        presentation.writing_actions
+    )
+    assert tools_row == row + 1
+    assert editor.summary_checkbox.text() == "Summary…"
+    assert editor.llm_checkbox.text() == "Draft with AI…"
+    assert presentation.writing_actions.isAncestorOf(editor.summary_checkbox)
+    assert presentation.writing_actions.isAncestorOf(editor.llm_checkbox)
+    assert editor.summary_container.isHidden()
+    assert editor.llm_container.isHidden()
+    assert isinstance(presentation.history_disclosure, SupportingSectionHeader)
+    assert presentation.history_disclosure.accessibleName() == "History & context"
+    assert not presentation.history_disclosure.isChecked()
+    assert presentation.composition.history_body.isHidden()
+    assert not editor.raster_appearances_checkbox.isVisibleTo(editor)
+    if isinstance(editor, EntityEditorWidget):
+        assert not editor.timeline_checkbox.isVisibleTo(editor)
+    else:
+        assert all(
+            getattr(label, "text", lambda: "")() != "Linked events"
+            for label in presentation.composition.history_body.findChildren(QWidget)
+        )
+    assert not editor.has_unsaved_changes()
+
+
+def test_opening_supporting_tools_never_generates_or_mutates(editor, qtbot):
+    summary_requests = []
+    generated_text = []
+    saves = []
+    editor.summary_generation_requested.connect(summary_requests.append)
+    editor.llm_generator.text_generated.connect(generated_text.append)
+    editor.save_requested.connect(saves.append)
+    text = editor.desc_edit.get_wiki_text()
+    for button in (
+        editor.summary_checkbox,
+        editor.llm_checkbox,
+        editor._presentation.history_disclosure,
+    ):
+        button.setFocus()
+        qtbot.keyClick(button, Qt.Key.Key_Space)
+        assert button.isChecked()
+    assert editor.summary_container.isVisibleTo(editor)
+    assert editor.llm_container.isVisibleTo(editor)
+    assert editor._presentation.composition.history_body.isVisibleTo(editor)
+    assert editor.desc_edit.get_wiki_text() == text
+    assert not summary_requests and not generated_text and not saves
+    assert not editor.has_unsaved_changes()
+
+
+def test_concurrent_summary_edit_and_generation_inputs_survive_toggle(editor):
+    summary = editor.summary_widget
+    summary.set_summary(
+        SummaryData(text="Old summary", hash="source", timestamp=0, model="test")
+    )
+    editor.summary_checkbox.click()
+    editor.llm_checkbox.click()
+    summary._begin_edit()
+    inner = summary.text_display.editor
+    inner.moveCursor(QTextCursor.MoveOperation.End)
+    inner.insertPlainText(" unsaved")
+    cursor = inner.textCursor()
+    cursor.setPosition(3)
+    cursor.setPosition(8, QTextCursor.MoveMode.KeepAnchor)
+    inner.setTextCursor(cursor)
+    document = inner.document()
+    generator = editor.llm_generator
+    generator.custom_prompt_edit.setPlainText("Keep the shoreline unchanged")
+    prompt_document = generator.custom_prompt_edit.editor.document()
+    generator.temperature_spin.setValue(33)
+    generator.max_tokens_spin.setValue(1024)
+    generator.rag_cb.setChecked(False)
+    committed = []
+    summary.edit_committed.connect(committed.append)
+    editor.summary_checkbox.click()
+    assert editor.llm_container.isVisibleTo(editor)
+    editor.summary_checkbox.click()
+    editor.llm_checkbox.click()
+    assert editor.summary_container.isVisibleTo(editor)
+    editor.llm_checkbox.click()
+    editor.inspector.open_auxiliary_below("world_context")
+    editor.inspector.reset_layout()
+    assert summary.text_display.get_wiki_text().endswith(" unsaved")
+    assert not summary.text_display.isReadOnly()
+    assert inner.document() is document
+    assert (inner.textCursor().anchor(), inner.textCursor().position()) == (3, 8)
+    assert inner.document().isUndoAvailable()
+    assert generator.custom_prompt_edit.editor.document() is prompt_document
+    assert generator.custom_prompt_edit.toPlainText() == "Keep the shoreline unchanged"
+    assert generator.temperature_spin.value() == 33
+    assert generator.max_tokens_spin.value() == 1024
+    assert not generator.rag_cb.isChecked()
+    assert editor.summary_checkbox.isChecked() and editor.llm_checkbox.isChecked()
+    assert not committed
+
+
+def test_same_object_refresh_and_reset_keep_supporting_choices(editor):
+    editor.summary_checkbox.setChecked(True)
+    editor.llm_checkbox.setChecked(True)
+    editor._presentation.history_disclosure.setChecked(True)
+    if isinstance(editor, EntityEditorWidget):
+        editor.load_entity(Entity(id="person", name="Ada", type="Character"))
+    else:
+        editor.load_event(Event(id="event", name="Arrival", lore_date=0))
+    editor.inspector.open_auxiliary_below("world_context")
+    editor.inspector.open_auxiliary_below("sheet")
+    editor.inspector.reset_layout()
+    assert editor.summary_checkbox.isChecked()
+    assert editor.llm_checkbox.isChecked()
+    assert editor._presentation.history_disclosure.isChecked()
+    assert not editor.has_unsaved_changes()
+
+
+@pytest.mark.parametrize("editor", ["entity"], indirect=True)
+def test_linked_events_fit_the_existing_document_without_nested_scroll(editor, qtbot):
+    assert isinstance(editor, EntityEditorWidget)
+    view = editor.timeline_display._text_display
+    document = view.document()
+    editor.timeline_display.set_relations(
+        [
+            {
+                "id": str(i),
+                "source_id": f"event-{i}",
+                "source_event_date": float(i),
+                "source_event_name": "A council meeting with a long name",
+                "attributes": {"payload": {"rank": "Master"}},
+            }
+            for i in range(6)
+        ]
+    )
+    editor.resize(331, 720)
+    editor._presentation.history_disclosure.setChecked(True)
+    qtbot.waitUntil(lambda: editor.scroll_area.verticalScrollBar().maximum() > 0)
+    qtbot.waitUntil(lambda: view.verticalScrollBar().maximum() == 0)
+    assert view.document() is document
+    assert view.verticalScrollBarPolicy() == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+    assert view.height() >= view.document().size().height()
+    assert editor.scroll_area.verticalScrollBar().maximum() > 0
+    assert not editor.has_unsaved_changes()
+
+
+def test_writing_tool_toggles_preserve_prose_selection_scroll_and_undo(editor, qtbot):
+    text = editor.desc_edit.editor
+    text.setPlainText("\n".join(f"Paragraph {i}" for i in range(100)))
+    text.moveCursor(QTextCursor.MoveOperation.End)
+    text.insertPlainText(" newer draft")
+    cursor = text.textCursor()
+    cursor.setPosition(10)
+    cursor.setPosition(25, QTextCursor.MoveMode.KeepAnchor)
+    text.setTextCursor(cursor)
+    scroll = text.verticalScrollBar()
+    scroll.setValue(scroll.maximum() // 2)
+    position = scroll.value()
+    document = text.document()
+    for button in (
+        editor.summary_checkbox,
+        editor.llm_checkbox,
+        editor._presentation.history_disclosure,
+    ):
+        button.setFocus()
+        qtbot.keyClick(button, Qt.Key.Key_Space)
+        qtbot.keyClick(button, Qt.Key.Key_Space)
+    assert text.document() is document
+    assert (text.textCursor().anchor(), text.textCursor().position()) == (10, 25)
+    assert scroll.value() == position
+    text.undo()
+    assert not text.toPlainText().endswith(" newer draft")
+    assert editor.has_unsaved_changes()
+
+
+def test_quiet_support_styles_survive_theme_changes(editor, qapp):
+    manager = ThemeManager()
+    for theme in ("light_mode", "dark_mode"):
+        manager.set_theme(theme, qapp)
+        for button in (editor.summary_checkbox, editor.llm_checkbox):
+            assert button.icon().isNull()
+            assert manager.get_theme()["accent_secondary"] in button.styleSheet()
+        assert manager.get_theme()["text_dim"] in (
+            editor._presentation.composition.history_container.styleSheet()
+        )
+
+
+def test_summary_action_retains_generation_and_staged_edit_signals(editor, qtbot):
+    editor.summary_checkbox.click()
+    with qtbot.waitSignal(editor.summary_generation_requested) as request:
+        editor.summary_widget.generate_btn.click()
+    assert request.args[0].id == editor._get_current_item_id()
+    assert not editor.has_unsaved_changes()
+    editor.summary_widget.set_summary(
+        SummaryData(text="Original summary", hash="source", timestamp=0, model="test")
+    )
+    editor.summary_widget.edit_btn.click()
+    editor.summary_widget.text_display.editor.moveCursor(QTextCursor.MoveOperation.End)
+    editor.summary_widget.text_display.editor.insertPlainText(" refined")
+    with qtbot.waitSignal(editor.summary_widget.edit_committed) as commit:
+        editor.summary_widget.done_btn.click()
+    assert commit.args == ["Original summary refined"]
+    assert editor.has_unsaved_changes()
+    assert not editor._presentation.summary_availability.isHidden()
