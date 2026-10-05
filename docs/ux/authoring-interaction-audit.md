@@ -12,7 +12,9 @@ remains a separate seeded audit run.
 
 KRT-45 partial human review (2026-10-05, review checkout `b2fa333b`):
 [KA-01–10 video/SRT evidence](evidence/krt45/human-run-1.md) records eight
-optimization groups and 26 original comparison frames. Independent widget checks
+optimization groups and source-video timestamps. The 26 full-frame screenshots
+were subsequently removed at the user's request because they included VS Code;
+capture metadata remains available. Independent widget checks
 reproduce unfocused dropdown wheel mutation (new KRT-52) and missing Linked events
 playhead markers for one-event/outside-range cases (KRT-45). Relation boundary
 grouping, overload and participant terminology stay in KRT-22; visible link

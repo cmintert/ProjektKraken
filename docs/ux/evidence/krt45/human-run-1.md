@@ -42,7 +42,10 @@ an independent audio transcription. The exported desktop image is smaller than
 the video frame; enlarging it cannot recover missing detail.
 
 The [capture manifest](human-run-1/captures.json) records both source hashes and
-26 unmodified, full-frame PNGs with timecodes, task IDs, dimensions and hashes.
+the historical metadata for 26 full-frame PNGs. Those screenshots were removed
+from the current worktree at the user's request because they included VS Code
+and the video borders. They remain in commit `69c05724`; no replacement images
+are currently supplied. Visual references below identify source-video timestamps.
 The [matching transcript](human-run-1/transcript.srt) is retained byte-for-byte,
 including the nonstandard `00:06:49,1000` timestamp and empty entries. The source
 video stays at its supplied path; it has not been copied into Git. Disposable
@@ -86,10 +89,10 @@ conditions; retain its findings separately instead of pooling task times.
 **Priority: first repair. Owner: [KRT-52](https://linear.app/projektkraken/issue/KRT-52/prevent-scrolling-from-changing-unselected-choice-fields).**
 At 04:16–04:42, the form scrolls and Starts/Ends cycle through Unbounded,
 Manual date and Date not known. The participant says settings change and expected
-the issue to have been fixed. Compare [04:16](human-run-1/0416-boundaries-before-scroll.png),
-[04:25](human-run-1/0425-end-choice-manual.png),
-[04:31](human-run-1/0431-boundary-choices-changing.png) and
-[04:43](human-run-1/0443-boundary-choices-after-scroll.png).
+the issue to have been fixed. Compare 04:16,
+04:25,
+04:31 and
+04:43.
 
 Independent current-widget reproduction confirms a new input-family gap:
 with notes focused, a +120 wheel step over the unfocused Starts `QComboBox`
@@ -108,8 +111,8 @@ Contract 2, 5, 8, 9.
 
 **Priority: first repair. Owner: KRT-45.**
 At 12:32–14:13 the participant searches for the entity timeline/playhead and says
-the old marker is gone. [History at 12:21](human-run-1/1221-linked-event-without-playhead-marker.png)
-and [13:03](human-run-1/1303-history-search-for-timeline.png) show one linked event
+the old marker is gone. History at 12:21
+and 13:03 show one linked event
 with no playhead separator while the main timeline still has its playhead.
 
 Current `TimelineDisplayWidget._refresh_display()` inserts PLAYHEAD only when
@@ -128,7 +131,7 @@ needs a stronger timeline cue. Contract 5, 6, 7, 9.
 ### F3 — The start date appears beneath Ends
 
 **Priority: high. Owner: [KRT-22](https://linear.app/projektkraken/issue/KRT-22/expose-loose-relation-capture-before-full-relation-editing).**
-[08:41](human-run-1/0841-start-date-below-end-choice.png) shows Starts, Ends, then
+08:41 shows Starts, Ends, then
 Valid From and its date. The participant asks why the date is under Ends rather
 than Starts (08:43–09:02). Source confirms layout ordering: boundary choices are
 inserted at form rows 0/1, ahead of both pre-existing manual-date rows. This is
@@ -143,8 +146,8 @@ and existing advanced attributes reachable and lossless. Contract 1, 4, 6, 8.
 ### F4 — Ordinary connection and participation use the expert form
 
 **Priority: high. Owner: KRT-22.**
-[04:04](human-run-1/0404-generic-relation-full-form.png) and
-[11:03](human-run-1/1103-participant-state-change-controls.png) show metadata,
+04:04 and
+11:03 show metadata,
 timing and state-change machinery alongside common capture. Complaints cover
 overload (04:44–04:51), Connections/Add Relation naming (04:56–05:06), weak Notes
 field affordance (06:02–06:07), and whether `involved` defines participation
@@ -162,7 +165,7 @@ Make Notes visibly editable. Contract 1, 3, 4, 7, 9.
 
 **Priority: high after safety/orientation. Owner: [KRT-53](https://linear.app/projektkraken/issue/KRT-53/expose-a-visible-way-to-link-selected-writing-to-an-existing-entry).**
 At 03:15–03:31 the participant proposes selecting prose and creating a link;
-[03:08](human-run-1/0308-wiki-link-completion.png) shows the current completion
+03:08 shows the current completion
 route. Add a visible Link to entry… action for selected text or caret insertion,
 with the same optional context-menu accelerator. Preserve the label, select an
 existing stable identity, and make acceptance one reversible writing edit.
@@ -174,7 +177,7 @@ connection or duplicate lore object as a side effect. Contract 2, 4, 5, 7, 9.
 
 **Priority: high. Owner: KRT-45.**
 At 06:43–06:57 the participant points out scattered timing buttons and expects
-autosave before leaving the date input. [06:38](human-run-1/0638-event-timing-actions-and-draft.png)
+autosave before leaving the date input. 06:38
 shows Chronology…, Date evidence… and Show world at this event separated across
 rows/columns. `CompactDateWidget` commits text through `editingFinished`; the
 observed delay is consistent with the current local date-commit boundary.
@@ -197,8 +200,8 @@ and playhead. Contract 1, 2, 5, 6, 9.
 **Priority: medium. Owner: KRT-45.**
 During the history search, Summary/Draft with AI are opened and closed. At
 13:25–13:34 the participant questions their toggle appearance and theme consistency.
-Compare [13:21 open](human-run-1/1321-writing-toggle-panel-open.png) and
-[13:39 closed](human-run-1/1339-writing-toggle-panel-closed.png).
+Compare 13:21 open and
+13:39 closed.
 
 The current scoped StyleHelper rule deliberately uses transparent writing actions
 and changes checked text weight/color; it does not provide a distinct checked

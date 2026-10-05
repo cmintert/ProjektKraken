@@ -8,7 +8,9 @@ first-use discoverability, or completion of the full authoring benchmark.
 The [first KRT-45 human review](human-run-1.md), recorded and reviewed on
 2026-10-05, covers attempted KA-01–10 under catalog v1.2. It records dropdown
 scroll mutation, missing Linked events orientation, relation-form ambiguity and
-the needed optimizations, with 26 original video frames and the matching SRT.
+the needed optimizations, with source-video timecodes and the matching SRT.
+The 26 full-frame screenshots were removed from the current worktree at the
+user's request because they included VS Code; their capture metadata is retained.
 Several semantic checks remain partial; KA-11–20 and the baseline comparison
 remain pending. KRT-52/53 track the newly identified dropdown/link-action work;
 KRT-45/22/14 retain their existing scope. Human acceptance is still pending.

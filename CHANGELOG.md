@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-05
-**Commit:** b2fa333b88cb11d99a2cac558730d60e635e9327
+**Commit:** 69c05724363829b7f40f3fe36e7cc4102fc7b22e
 ---
 
 # Changelog
@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-05)* **Review evidence cleanup (KRT-45)**: Removed the 26 full-frame
+  screenshots containing VS Code at the user's request. Retained source-video
+  timestamps, historical capture metadata, transcript and widget diagnostics;
+  replaced screenshot links with timecode references.
 
 - *(2026-10-05)* **Inspector human review (KRT-45)**: Recorded the partial
   KA-01–10 v1.2 video/SRT review, eight optimization groups and 26 original
