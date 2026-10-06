@@ -13,6 +13,11 @@ from src.core.theme_manager import ThemeManager
 from src.gui.widgets.standard_buttons import StandardButton
 
 
+def relation_type_caption(rel_type: str) -> str:
+    """Describe generic capture without requiring its internal type name."""
+    return "connection — kind not specified" if rel_type == "related" else rel_type
+
+
 class RelationItemWidget(QWidget):
     """A custom widget for displaying a relation item with a navigation button.
 
@@ -69,8 +74,7 @@ class RelationItemWidget(QWidget):
         if attr_text:
             self.attr_label = QLabel(attr_text)
             self.attr_label.setStyleSheet(
-                f"color: {ThemeManager().get_theme()['text_dim']}; "
-                "font-size: 11px;"
+                f"color: {ThemeManager().get_theme()['text_dim']}; font-size: 11px;"
             )
             layout.addWidget(self.attr_label)
 
@@ -107,17 +111,17 @@ class RelationItemWidget(QWidget):
                 font-size: 12px;
                 font-weight: bold;
                 padding: 0px;
-                border: 1px solid {theme['border']};
+                border: 1px solid {theme["border"]};
                 border-radius: 3px;
-                background-color: {theme['surface']};
-                color: {theme['text_dim']};
+                background-color: {theme["surface"]};
+                color: {theme["text_dim"]};
             }}
             QPushButton:hover {{
-                background-color: {theme['primary']};
-                color: {theme['app_bg']};
+                background-color: {theme["primary"]};
+                color: {theme["app_bg"]};
             }}
             QPushButton:pressed {{
-                background-color: {theme['app_bg']};
+                background-color: {theme["app_bg"]};
             }}
         """
         )
@@ -132,7 +136,9 @@ class RelationItemWidget(QWidget):
             parts.append(f"weight={self.attributes['weight']}")
 
         if "confidence" in self.attributes:
-            parts.append(f"confidence={self.attributes['confidence']}")
+            value = self.attributes["confidence"]
+            display = f"{value:.6g}" if isinstance(value, (float, int)) else str(value)
+            parts.append(f"confidence={display}")
 
         if "start_date" in self.attributes:
             parts.append(f"start={self.attributes['start_date']}")

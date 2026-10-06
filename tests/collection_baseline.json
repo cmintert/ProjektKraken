@@ -2,10 +2,10 @@
   "schema": 1,
   "counts": {
     "smoke": 18,
-    "ci_fast": 1426,
+    "ci_fast": 1442,
     "slow": 1,
     "performance": 0,
-    "full": 5799,
+    "full": 5815,
     "full_only": 4364
   },
   "categories": {
@@ -18,7 +18,7 @@
     "repro": 2,
     "root": 15,
     "security": 5,
-    "unit": 5466
+    "unit": 5482
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -6302,6 +6302,54 @@
     "tests/unit/test_reasoning_filter.py::TestUnclosedTags::test_unclosed_think_tag": [],
     "tests/unit/test_reasoning_filter.py::TestUnclosedTags::test_unclosed_thinking_tag": [],
     "tests/unit/test_reasoning_filter.py::TestUnclosedTags::test_unclosed_with_preceding_content": [],
+    "tests/unit/test_relation_authoring.py::test_bidirectional_replay_collision_rolls_back_first_insert": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_capture_refinement_full_undo_redo_retains_identity_and_creation": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_capture_requires_only_existing_target_and_no_semantics[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_capture_requires_only_existing_target_and_no_semantics[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_confidence_display_does_not_change_stored_precision": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_coordinator_capture_feedback_and_relation_refresh_preserve_prose[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_coordinator_capture_feedback_and_relation_refresh_preserve_prose[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_inline_timing_keeps_fixed_start_and_dynamic_end[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_inline_timing_keeps_fixed_start_and_dynamic_end[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_notes_enter_and_escape_do_not_change_description[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_notes_enter_and_escape_do_not_change_description[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_refine_only_notes_and_meaning_preserves_advanced_snapshot[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_refine_only_notes_and_meaning_preserves_advanced_snapshot[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_refresh_preserves_relation_draft_and_disclosure_then_blocks_deleted_row[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_refresh_preserves_relation_draft_and_disclosure_then_blocks_deleted_row[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_reversal_is_one_undoable_update_and_stale_snapshot_is_rejected": [
+      "ci_fast"
+    ],
     "tests/unit/test_relation_commands.py::test_add_relation_bidirectional": [
       "ci_fast"
     ],

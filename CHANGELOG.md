@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-05
-**Commit:** 69c05724363829b7f40f3fe36e7cc4102fc7b22e
+**Last Updated:** 2026-10-06
+**Commit:** 7826d960a0c1fd55ee8b6b98fb6fd1efb041aa80
 ---
 
 # Changelog
@@ -12,6 +12,15 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-06)* **Connection authoring (KRT-22)**: Added inline Connected to…
+  capture and Refine relation… in Entity/Event inspectors, with visible Notes,
+  grouped date/event boundaries and secondary advanced details. Preserved the
+  full relation editor, numeric precision, payloads and independent drafts.
+  Connection saves retain prose/caret and select the saved row; serialized
+  capture/refinement undo and redo retain relation identity and creation time.
+  Added focused acceptance tests, collection membership, contract audit notes
+  and reproducible inspector render evidence.
 
 - *(2026-10-05)* **Review evidence cleanup (KRT-45)**: Removed the 26 full-frame
   screenshots containing VS Code at the user's request. Retained source-video

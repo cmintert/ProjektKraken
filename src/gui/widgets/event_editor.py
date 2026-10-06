@@ -61,7 +61,10 @@ from src.gui.widgets.editor_presentation import DisclosureButton, EditorPresenta
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.gallery_widget import GalleryWidget
 from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
-from src.gui.widgets.relation_item_widget import RelationItemWidget
+from src.gui.widgets.relation_item_widget import (
+    RelationItemWidget,
+    relation_type_caption,
+)
 from src.gui.widgets.sheet_builder import SheetBuilderWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
 from src.gui.widgets.standard_buttons import (
@@ -106,6 +109,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
     add_relation_requested = Signal(str, str, str, dict, bool)
     remove_relation_requested = Signal(str)
     update_relation_requested = Signal(str, str, str, dict)
+    relation_authoring_requested = Signal(dict)
 
     inject_ui_requested = Signal(str)
     create_template_requested = Signal(dict)
@@ -203,7 +207,12 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
     def has_unsaved_changes(self) -> bool:
         """Include typed date drafts in navigation and close guards."""
-        return self._is_dirty or self.temporal_widget.has_pending_draft()
+        authoring = getattr(self, "relation_authoring", None)
+        return (
+            self._is_dirty
+            or self.temporal_widget.has_pending_draft()
+            or (authoring is not None and authoring.is_dirty())
+        )
 
     def _build_editor_shell(self) -> QVBoxLayout:
         """Build empty/content containers and return the content layout."""
@@ -280,9 +289,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         temporal_actions_layout.addWidget(self.chronology_button)
         self.temporal_evidence_button = QToolButton()
         self.temporal_evidence_button.setText("Date evidence…")
-        self.temporal_evidence_button.setStyleSheet(
-            StyleHelper.get_tool_button_style()
-        )
+        self.temporal_evidence_button.setStyleSheet(StyleHelper.get_tool_button_style())
         self.temporal_evidence_button.clicked.connect(self._edit_temporal_evidence)
         temporal_actions_layout.addWidget(self.temporal_evidence_button)
         self.form_layout.addRow(temporal_actions)
@@ -792,14 +799,30 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             self.btn_edit_rel,
             self.btn_remove_rel,
         ) = create_section(
-            "Custom Relations",
+            "Other connections",
             self._on_add_relation,
             self._on_edit_selected_relation,
             self._on_remove_selected_relation,
-            "No custom relations. Click + to add a link.",
+            "No connections yet. Choose Connected to… to record one.",
         )
         self.rel_list.itemSelectionChanged.connect(self._update_rel_button_states)
         layout.addWidget(self.grp_relations)
+
+        from src.gui.widgets.relation_authoring import RelationAuthoring
+
+        self.relation_authoring = RelationAuthoring(self)
+        layout.insertWidget(0, self.relation_authoring)
+        for button, title in (
+            (self.btn_add_participant, "Add participant…"),
+            (self.btn_add_location, "Add location…"),
+            (self.btn_add_rel, "Connected to…"),
+            (self.btn_edit_participant, "Refine…"),
+            (self.btn_edit_location, "Refine…"),
+            (self.btn_edit_rel, "Refine relation…"),
+        ):
+            button.setText(title)
+            button.setMinimumWidth(0)
+            button.setMaximumWidth(16777215)
 
     def _on_add_participant(self) -> None:
         """Quick add participant."""
@@ -1191,6 +1214,11 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             and self.temporal_widget.has_pending_draft()
         ):
             return
+        new_id = event.id if event is not None else None
+        if new_id != self._current_event_id:
+            if not self.relation_authoring.prepare_to_leave():
+                return
+            self.relation_authoring.cancel()
         focus = getattr(self, "_focus_controller", None)
         if (
             focus is not None
@@ -1441,6 +1469,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             incoming_relations: List of incoming relation dicts, or None.
 
         """
+        self.relation_authoring.remember_selection()
         self.rel_list.clear()
         self.participant_list.clear()
         self.location_list.clear()
@@ -1456,7 +1485,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
                 target_display = rel.get("source_name") or rel["source_id"]
                 other_id = rel["source_id"]
 
-            label = f"{prefix} {target_display} [{rel['rel_type']}]"
+            label = (
+                f"{prefix} {target_display} [{relation_type_caption(rel['rel_type'])}]"
+            )
 
             widget = RelationItemWidget(
                 label=label,
@@ -1491,6 +1522,13 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         if incoming_relations:
             for rel in incoming_relations:
                 add_relation_item(self.rel_list, rel, "←")
+
+        self.relation_authoring.refresh(
+            [*(relations or []), *(incoming_relations or [])]
+        )
+        self._update_participant_button_states()
+        self._update_location_button_states()
+        self._update_rel_button_states()
 
     @Slot(dict)
     def _on_theme_changed(self, theme: dict) -> None:
@@ -1712,7 +1750,13 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self._relation_calendar = converter
 
     @Slot(object)  # Allow Any/object for checked signal
-    def _on_add_relation(self, rel_type: Any = "involved") -> None:
+    def _on_add_relation(self, rel_type: Any = "related") -> None:
+        """Open shared inline capture with one existing-object choice."""
+        self.relation_authoring.capture(
+            rel_type if isinstance(rel_type, str) else "related"
+        )
+
+    def _on_add_detailed_relation(self, rel_type: Any = "involved") -> None:
         """Prompts user for relation details and emits signal.
 
         Uses RelationEditDialog with autocompletion.
@@ -1796,6 +1840,10 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
     @Slot(QListWidgetItem)
     def _on_edit_relation(self, item: QListWidgetItem) -> None:
+        """Refine the same saved connection inside this inspector."""
+        self.relation_authoring.refine(item.data(Qt.ItemDataRole.UserRole))
+
+    def _on_edit_relation_full(self, item: QListWidgetItem) -> None:
         """Emits update signal after dialogs."""
         rel_data = item.data(Qt.ItemDataRole.UserRole)
         if rel_data.get("rel_type") == "mentions":
@@ -1806,6 +1854,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         dlg = RelationEditDialog(
             parent=self,
             playhead_time=getattr(self, "_relation_playhead_time", None),
+            source_name=rel_data.get("source_name") or self.name_edit.text(),
             target_id=rel_data["target_id"],
             rel_type=rel_data["rel_type"],
             is_bidirectional=False,  # Editing existing

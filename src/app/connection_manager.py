@@ -194,9 +194,7 @@ class ConnectionManager:
         """Connect signals from the data handler."""
         dh = self.window.data_handler
         dc = self.window.data_coordinator
-        refresh_context = (
-            self.window.app_coordinator.authoring_context.schedule_refresh
-        )
+        refresh_context = self.window.app_coordinator.authoring_context.schedule_refresh
         refresh_entity_context = (
             self.window.app_coordinator.authoring_context.schedule_entity_refresh
         )
@@ -276,9 +274,7 @@ class ConnectionManager:
                     self.window.worker,
                     "attachments_loaded",
                     lambda owner_type, _owner_id, _items: (
-                        refresh_entity_context()
-                        if owner_type == "entity"
-                        else None
+                        refresh_entity_context() if owner_type == "entity" else None
                     ),
                     "DatabaseWorker",
                     Qt.ConnectionType.QueuedConnection,
@@ -473,6 +469,18 @@ class ConnectionManager:
                     (editor, "add_relation_requested", ec.add_relation, editor_name),
                     (
                         editor,
+                        "relation_authoring_requested",
+                        ec.author_relation,
+                        editor_name,
+                    ),
+                    (
+                        ec,
+                        "relation_authoring_finished",
+                        editor.relation_authoring.on_finished,
+                        editor_name,
+                    ),
+                    (
+                        editor,
                         "remove_relation_requested",
                         ec.remove_relation,
                         editor_name,
@@ -489,12 +497,12 @@ class ConnectionManager:
                         self.window.navigation_coordinator.navigate_to_entity,
                         editor_name,
                     ),
-                (
-                    editor,
-                    "navigate_to_relation",
-                    self.window.navigation_coordinator.navigate_to_entity,
-                    editor_name,
-                ),
+                    (
+                        editor,
+                        "navigate_to_relation",
+                        self.window.navigation_coordinator.navigate_to_entity,
+                        editor_name,
+                    ),
                     (
                         editor,
                         "completion_prefix_changed",

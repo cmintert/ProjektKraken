@@ -67,6 +67,7 @@ class EditorCoordinator(BaseCoordinator):
 
     command_requested = Signal(object)
     editor_save_finished = Signal(str, str, int, bool)
+    relation_authoring_finished = Signal(dict)
 
     def __init__(self, main_window: "MainWindow") -> None:
         """Initialize the editor coordinator.
@@ -83,6 +84,7 @@ class EditorCoordinator(BaseCoordinator):
         self._pending_temporal_entity_id: str | None = None
         self._pending_temporal_time: float | None = None
         self._pending_editor_saves: dict[str, tuple[str, str, int, int, dict]] = {}
+        self._pending_relation_requests: dict[str, str] = {}
 
     @Slot(list)
     def apply_chronology(self, operations: list[dict]) -> None:
@@ -587,6 +589,9 @@ class EditorCoordinator(BaseCoordinator):
             user cancelled or an asynchronous save has not been acknowledged.
 
         """
+        authoring = getattr(editor, "relation_authoring", None)
+        if authoring is not None and not authoring.prepare_to_leave():
+            return False
         if (
             not hasattr(editor, "has_unsaved_changes")
             or not editor.has_unsaved_changes()
@@ -755,6 +760,18 @@ class EditorCoordinator(BaseCoordinator):
             result: CommandResult object from worker.
 
         """
+        request_id = self._pending_relation_requests.pop(
+            str(result.data.get("command_id", "")), None
+        )
+        if request_id is not None:
+            self.relation_authoring_finished.emit(
+                {
+                    "request_id": request_id,
+                    "success": result.success,
+                    "message": result.message,
+                    "relation_id": result.data.get("relation_id", ""),
+                }
+            )
         if not result.success:
             return
 
@@ -775,3 +792,22 @@ class EditorCoordinator(BaseCoordinator):
         popup.exec()
 
         logger.debug("Drag-drop relation toast displayed")
+
+    @Slot(dict)
+    def author_relation(self, request: dict) -> None:
+        """Dispatch one inline relation edit through the existing worker pipeline."""
+        if request["operation"] == "capture":
+            command: BaseCommand = AddRelationCommand(
+                request["source_id"], request["target_id"], request["rel_type"], {}
+            )
+        else:
+            command = UpdateRelationCommand(
+                request["id"],
+                request["target_id"],
+                request["rel_type"],
+                request["attributes"],
+                source_id=request["source_id"],
+                expected=request["expected"],
+            )
+        self._pending_relation_requests[command.command_id] = request["request_id"]
+        self.command_requested.emit(command)

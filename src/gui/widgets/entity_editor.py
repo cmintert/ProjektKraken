@@ -58,7 +58,10 @@ from src.gui.widgets.editor_presentation import DisclosureButton, EditorPresenta
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.gallery_widget import GalleryWidget
 from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
-from src.gui.widgets.relation_item_widget import RelationItemWidget
+from src.gui.widgets.relation_item_widget import (
+    RelationItemWidget,
+    relation_type_caption,
+)
 from src.gui.widgets.sheet_builder import SheetBuilderWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
 from src.gui.widgets.standard_buttons import (
@@ -102,6 +105,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
     add_relation_requested = Signal(str, str, str, dict, bool)
     remove_relation_requested = Signal(str)
     update_relation_requested = Signal(str, str, str, dict)
+    relation_authoring_requested = Signal(dict)
     link_clicked = Signal(str)
     peek_requested = Signal(str)
     navigate_to_relation = Signal(str)
@@ -199,7 +203,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self.form_layout.addRow("Description:", self.description_field)
         self.description_source_label = QLabel()
         self.form_layout.addRow("Source:", self.description_source_label)
-        self.btn_new_description = StandardButton("Start a new description at this time")
+        self.btn_new_description = StandardButton(
+            "Start a new description at this time"
+        )
         self.btn_new_description.clicked.connect(self._start_new_description)
         self.form_layout.addRow(self.btn_new_description)
         self.description_source_label.hide()
@@ -390,16 +396,21 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self.tab_tags, "Tags", "Manage organizational tags and metadata"
         )
 
+    def has_unsaved_changes(self) -> bool:
+        """Include the independent connection draft in navigation/close guards."""
+        authoring = getattr(self, "relation_authoring", None)
+        return self._is_dirty or (authoring is not None and authoring.is_dirty())
+
     def _build_relations_tab(self) -> None:
         """Build relation actions and the relation list."""
         self.tab_relations = QWidget()
         rel_layout = QVBoxLayout(self.tab_relations)
         StyleHelper.apply_compact_spacing(rel_layout)
         buttons = QHBoxLayout()
-        self.btn_add_rel = StandardButton("Add Relation")
+        self.btn_add_rel = StandardButton("Connected to…")
         self.btn_add_rel.clicked.connect(self._on_add_relation)
         buttons.addWidget(self.btn_add_rel)
-        self.btn_edit_rel = StandardButton("Edit")
+        self.btn_edit_rel = StandardButton("Refine relation…")
         self.btn_edit_rel.clicked.connect(self._on_edit_selected_relation)
         self.btn_edit_rel.setEnabled(False)
         buttons.addWidget(self.btn_edit_rel)
@@ -409,6 +420,11 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         buttons.addWidget(self.btn_remove_rel)
         buttons.addStretch()
         rel_layout.addLayout(buttons)
+        from src.gui.widgets.relation_authoring import RelationAuthoring
+
+        self.relation_authoring = RelationAuthoring(self)
+        rel_layout.addWidget(self.relation_authoring)
+
         self.rel_list = QListWidget()
         self.rel_list.setSpacing(EDITOR_LIST_SPACING)
         self.rel_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -850,6 +866,11 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
                 to leave the section unchanged.
 
         """
+        new_id = entity.id if entity is not None else None
+        if new_id != self._current_entity_id:
+            if not self.relation_authoring.prepare_to_leave():
+                return
+            self.relation_authoring.cancel()
         focus = getattr(self, "_focus_controller", None)
         if (
             focus is not None
@@ -885,7 +906,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self._temporal_time = None
             self._temporal_save_pending = False
             self._temporal_checkpoint_invalid = False
-            self._pending_new_description_event = None
+            self._pending_new_description_event: dict[str, Any] | None = None
             self._baseline_name = entity.name
             self._baseline_type = entity.type
             self._baseline_tags = list(entity.tags)
@@ -940,9 +961,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             # Restore scroll position and description cursor
             self.reset_draft_tracking()
             self.scroll_area.verticalScrollBar().setValue(scroll_pos)
-            self._restore_desc_cursor_state(
-                desc_anchor, desc_cursor, desc_had_focus
-            )
+            self._restore_desc_cursor_state(desc_anchor, desc_cursor, desc_had_focus)
         finally:
             self._is_loading = False
 
@@ -1107,6 +1126,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             incoming_relations: List of incoming relation dicts, or None.
 
         """
+        self.relation_authoring.remember_selection()
         self.rel_list.clear()
 
         this_name = self.name_edit.text() or "this"
@@ -1114,7 +1134,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         if relations:
             for rel in relations:
                 target_display = rel.get("target_name") or rel["target_id"]
-                label = f"{this_name} --{rel['rel_type']}--> {target_display}"
+                label = f"{this_name} --{relation_type_caption(rel['rel_type'])}--> {target_display}"
 
                 widget = RelationItemWidget(
                     label=label,
@@ -1135,7 +1155,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         if incoming_relations:
             for rel in incoming_relations:
                 source_display = rel.get("source_name") or rel["source_id"]
-                label = f"{source_display} --{rel['rel_type']}--> {this_name}"
+                label = f"{source_display} --{relation_type_caption(rel['rel_type'])}--> {this_name}"
 
                 widget = RelationItemWidget(
                     label=label,
@@ -1161,6 +1181,11 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             if rel.get("source_event_date") is not None
         ]
         self.timeline_display.set_relations(event_relations)
+
+        self.relation_authoring.refresh(
+            [*(relations or []), *(incoming_relations or [])]
+        )
+        self._update_relation_button_states()
 
     @Slot(dict)
     def _on_theme_changed(self, theme: dict) -> None:
@@ -1261,9 +1286,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             entity_data["__editor_generation"] = self.draft_generation
             self.save_requested.emit(entity_data)
 
-            logger.debug(
-                "[EntityEditor] Awaiting save acknowledgement"
-            )
+            logger.debug("[EntityEditor] Awaiting save acknowledgement")
 
         except Exception as e:
             logger.error(
@@ -1318,7 +1341,13 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self._relation_calendar = converter
 
     @Slot()
-    def _on_add_relation(self) -> None:
+    def _on_add_relation(self, rel_type: Any = "related") -> None:
+        """Open shared inline capture with one existing-object choice."""
+        self.relation_authoring.capture(
+            rel_type if isinstance(rel_type, str) else "related"
+        )
+
+    def _on_add_detailed_relation(self) -> None:
         """Open the relation dialog to add a new outgoing relation.
 
         Launches :class:`~src.gui.dialogs.relation_dialog.RelationEditDialog`
@@ -1400,6 +1429,10 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
     @Slot(QListWidgetItem)
     def _on_edit_relation(self, item: QListWidgetItem) -> None:
+        """Refine the same saved connection inside this inspector."""
+        self.relation_authoring.refine(item.data(Qt.ItemDataRole.UserRole))
+
+    def _on_edit_relation_full(self, item: QListWidgetItem) -> None:
         """Handles editing a relation item.
 
         Args:
@@ -1416,6 +1449,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             parent=self,
             calendar_converter=getattr(self, "_relation_calendar", None),
             playhead_time=getattr(self, "_relation_playhead_time", None),
+            source_name=rel_data.get("source_name") or self.name_edit.text(),
             target_id=rel_data["target_id"],
             rel_type=rel_data["rel_type"],
             is_bidirectional=False,
@@ -1774,8 +1808,12 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
                 choice = QMessageBox(self)
                 choice.setWindowTitle("New attribute")
                 choice.setText(f"Where should '{key}' begin?")
-                baseline = choice.addButton("Entity baseline", QMessageBox.ButtonRole.AcceptRole)
-                dated = choice.addButton("At this time", QMessageBox.ButtonRole.ActionRole)
+                baseline = choice.addButton(
+                    "Entity baseline", QMessageBox.ButtonRole.AcceptRole
+                )
+                dated = choice.addButton(
+                    "At this time", QMessageBox.ButtonRole.ActionRole
+                )
                 choice.addButton(QMessageBox.StandardButton.Cancel)
                 choice.exec()
                 if choice.clickedButton() == baseline:
@@ -1804,8 +1842,12 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             choice = QMessageBox(self)
             choice.setWindowTitle("Remove visible attribute")
             choice.setText(f"What should removing '{key}' mean?")
-            absent = choice.addButton("Absent from this state", QMessageBox.ButtonRole.AcceptRole)
-            override = choice.addButton("Remove source override", QMessageBox.ButtonRole.ActionRole)
+            absent = choice.addButton(
+                "Absent from this state", QMessageBox.ButtonRole.AcceptRole
+            )
+            override = choice.addButton(
+                "Remove source override", QMessageBox.ButtonRole.ActionRole
+            )
             choice.addButton(QMessageBox.StandardButton.Cancel)
             choice.setInformativeText(
                 "Removing an override can reveal an earlier or baseline value."
@@ -1826,7 +1868,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             else:
                 return
         metadata: dict[str, Any] = {}
-        if self.name_edit.text() != getattr(self, "_baseline_name", self.name_edit.text()):
+        if self.name_edit.text() != getattr(
+            self, "_baseline_name", self.name_edit.text()
+        ):
             metadata["name"] = self.name_edit.text()
         if self.type_edit.currentText() != getattr(
             self, "_baseline_type", self.type_edit.currentText()
@@ -1868,9 +1912,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             }
         )
 
-    def finish_temporal_save(
-        self, success: bool, checkpoint: object = None
-    ) -> bool:
+    def finish_temporal_save(self, success: bool, checkpoint: object = None) -> bool:
         """Install saved comparisons before releasing guards; retain newer edits."""
         revision = self._pending_save_revision
         if revision is None:
@@ -2036,6 +2078,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         # Disable Relation buttons (viewing relations is still fine)
         self.btn_add_rel.setEnabled(not readonly)
+        self.relation_authoring.setEnabled(not readonly)
         self.btn_edit_rel.setEnabled(not readonly)
         self.btn_remove_rel.setEnabled(not readonly)
 

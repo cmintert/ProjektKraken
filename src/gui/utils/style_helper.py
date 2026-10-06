@@ -836,6 +836,15 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_connection_inspector_style() -> str:
+        """Keep connection inputs and captions readable on the world theme."""
+        theme = ThemeManager().get_theme()
+        return (
+            f"QWidget#ConnectionsInspector {{ background-color: {theme['app_bg']}; }}"
+            f"QWidget#ConnectionsInspector QLabel {{ color: {theme['text_main']}; }}"
+        )
+
+    @staticmethod
     def get_input_field_style() -> str:
         """Returns QSS for standard input fields.
 

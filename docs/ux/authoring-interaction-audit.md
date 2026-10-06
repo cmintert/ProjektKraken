@@ -10,6 +10,16 @@ remains a separate seeded audit run.
 
 ## Evidence and disposition rules
 
+KRT-22 implementation (2026-10-06, base `7826d960`): ordinary connection capture
+and refinement are inline in both inspectors; grouped boundary controls,
+recognizable Notes, advanced disclosures and visible full-editor routes preserve
+expert semantics. Contracts 1–10 are covered by focused acceptance and rendered
+checks, including stable serialized capture/refinement replay and independent
+prose/connection drafts. [Evidence and direction-reversal constraint](evidence/krt22/README.md).
+The historical inventory below remains the audited baseline. Implementation is
+included in the KRT-22 implementation commit; a fresh empty-world human
+comparison remains pending.
+
 KRT-45 partial human review (2026-10-05, review checkout `b2fa333b`):
 [KA-01–10 video/SRT evidence](evidence/krt45/human-run-1.md) records eight
 optimization groups and source-video timestamps. The 26 full-frame screenshots

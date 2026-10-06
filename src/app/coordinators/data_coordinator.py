@@ -158,7 +158,7 @@ class DataCoordinator(BaseCoordinator):
             "load_entities",
         )
 
-    def load_event_details(self, event_id: str) -> None:
+    def load_event_details(self, event_id: str, relations_only: bool = False) -> None:
         """Requests loading details for a specific event.
 
         Args:
@@ -167,7 +167,11 @@ class DataCoordinator(BaseCoordinator):
         """
         editor = self.main_window.event_editor
         self._event_detail_requests.append(
-            (event_id, editor.current_event_id == event_id and editor.save_pending)
+            (
+                event_id,
+                editor.current_event_id == event_id
+                and (editor.save_pending or relations_only),
+            )
         )
         invoke_queued(
             self.main_window.worker,
@@ -175,7 +179,7 @@ class DataCoordinator(BaseCoordinator):
             Q_ARG(str, event_id),
         )
 
-    def load_entity_details(self, entity_id: str) -> None:
+    def load_entity_details(self, entity_id: str, relations_only: bool = False) -> None:
         """Requests loading details for a specific entity.
 
         Args:
@@ -184,7 +188,11 @@ class DataCoordinator(BaseCoordinator):
         """
         editor = self.main_window.entity_editor
         self._entity_detail_requests.append(
-            (entity_id, editor.current_entity_id == entity_id and editor.save_pending)
+            (
+                entity_id,
+                editor.current_entity_id == entity_id
+                and (editor.save_pending or relations_only),
+            )
         )
         invoke_queued(
             self.main_window.worker,
@@ -366,8 +374,10 @@ class DataCoordinator(BaseCoordinator):
         ):
             return
         editor = self.main_window.event_editor
-        if editor.current_event_id == self._event_detail_id and (
-            editor.has_unsaved_changes() or editor.save_pending
+        if (
+            editor.current_event_id == self._event_detail_id
+            and (editor.has_unsaved_changes() or editor.save_pending)
+            and not preserve_document
         ):
             return
         self._event_relation_ids = self._relation_endpoint_ids(relations, incoming)
@@ -409,8 +419,10 @@ class DataCoordinator(BaseCoordinator):
         map_widget = getattr(self.main_window, "map_widget", None)
         maps_data = map_widget.maps_data if map_widget is not None else []
         editor = self.main_window.entity_editor
-        if editor.current_entity_id == self._entity_detail_id and (
-            editor.has_unsaved_changes() or editor.save_pending
+        if (
+            editor.current_entity_id == self._entity_detail_id
+            and (editor.has_unsaved_changes() or editor.save_pending)
+            and not preserve_document
         ):
             return
         if preserve_document and editor.current_entity_id == self._entity_detail_id:
@@ -581,14 +593,18 @@ class DataCoordinator(BaseCoordinator):
             and self.main_window.event_editor._current_event_id
         ):
             logger.debug("Reloading active event details")
-            self.load_event_details(self.main_window.event_editor._current_event_id)
+            self.load_event_details(
+                self.main_window.event_editor._current_event_id, relations_only=True
+            )
 
         elif (
             self.main_window.navigation_coordinator.selected_type == "entity"
             and self.main_window.entity_editor._current_entity_id
         ):
             logger.debug("Reloading active entity details")
-            self.load_entity_details(self.main_window.entity_editor._current_entity_id)
+            self.load_entity_details(
+                self.main_window.entity_editor._current_entity_id, relations_only=True
+            )
 
     @staticmethod
     def _relation_endpoint_ids(relations: list, incoming: list) -> set[str]:

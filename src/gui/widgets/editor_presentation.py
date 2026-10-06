@@ -450,7 +450,7 @@ class EditorPresentation(QObject):
                 editor.btn_remove_location,
             ),
             (
-                "Custom relations",
+                "Other connections",
                 editor.grp_relations,
                 editor.rel_list,
                 editor.btn_add_rel,
@@ -466,8 +466,8 @@ class EditorPresentation(QObject):
         for title, group, items, add, edit, remove in groups:
             layout.removeWidget(group)
             add.setText(
-                {"Participants": "Add participant", "Locations": "Add location"}.get(
-                    title, "Add relation"
+                {"Participants": "Add participant…", "Locations": "Add location…"}.get(
+                    title, "Connected to…"
                 )
             )
             add.setMinimumSize(0, 32)

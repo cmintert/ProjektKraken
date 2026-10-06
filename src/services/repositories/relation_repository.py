@@ -226,9 +226,7 @@ class RelationRepository(BaseRepository):
             "deleted_count": deleted_count,
         }
 
-    def restore_mentions(
-        self, source_id: str, relations: List[Dict[str, Any]]
-    ) -> None:
+    def restore_mentions(self, source_id: str, relations: List[Dict[str, Any]]) -> None:
         """Atomically restore an exact snapshot of a source's mentions rows."""
         with self.transaction() as conn:
             conn.execute(
@@ -450,6 +448,7 @@ class RelationRepository(BaseRepository):
         rel_type: str,
         attributes: Dict[str, Any],
         target_id: Optional[str] = None,
+        source_id: Optional[str] = None,
     ) -> None:
         """Update a relation's type, attributes, and optionally target_id.
 
@@ -463,7 +462,20 @@ class RelationRepository(BaseRepository):
             sqlite3.Error: If the database operation fails.
 
         """
-        if target_id is not None:
+        if source_id is not None and target_id is not None:
+            with self.transaction() as conn:
+                conn.execute(
+                    "UPDATE relations SET source_id = ?, target_id = ?, "
+                    "rel_type = ?, attributes = ? WHERE id = ?",
+                    (
+                        source_id,
+                        target_id,
+                        rel_type,
+                        self._serialize_json(attributes),
+                        relation_id,
+                    ),
+                )
+        elif target_id is not None:
             sql = """
                 UPDATE relations
                 SET target_id = ?, rel_type = ?, attributes = ?
