@@ -204,14 +204,12 @@ def test_explicit_indexing_commits_and_rolls_back(db_service, qapp):
     worker.longform_sequence_loaded.connect(results.append)
     worker.error_occurred.connect(errors.append)
     worker.load_longform_sequence("default")
-    assert results == [[]]
-    with db_service.transaction() as conn:
-        longform_builder.ensure_all_items_indexed(conn)
-    worker.load_longform_sequence("default")
     assert results and results[-1][0]["id"] == entity.id
     assert not db_service.require_connection().in_transaction
     with db_service.transaction() as conn:
         longform_builder.remove_from_longform(conn, "entities", entity.id)
+    new_entry = Entity(name="New content", type="test")
+    db_service.insert_entity(new_entry)
     original = longform_builder.insert_or_update_longform_meta
 
     def fail_after_write(*args, **kwargs):
@@ -224,15 +222,21 @@ def test_explicit_indexing_commits_and_rolls_back(db_service, qapp):
         with pytest.raises(RuntimeError, match="index failed"):
             with db_service.transaction() as conn:
                 longform_builder.ensure_all_items_indexed(conn)
-    worker.load_longform_sequence("default")
-    assert results[-1] == []
+    assert (
+        longform_builder.get_longform_meta(
+            db_service.require_connection(), "entities", new_entry.id
+        )
+        == {}
+    )
     assert not errors
     assert (
         longform_builder.get_longform_meta(
             db_service.require_connection(), "entities", entity.id
-        )
-        == {}
+        )["excluded"]
+        is True
     )
+    worker.load_longform_sequence("default")
+    assert [item["id"] for item in results[-1]] == [new_entry.id]
 
 
 def test_webserver_longform_reads_leave_world_unchanged(db_service, tmp_path):
@@ -242,9 +246,25 @@ def test_webserver_longform_reads_leave_world_unchanged(db_service, tmp_path):
     with closing(sqlite3.connect(path)) as destination:
         db_service.require_connection().backup(destination)
     before = path.read_bytes()
+    reader = DatabaseService(str(path), read_only=True)
+    reader.connect()
+    try:
+        worker = DatabaseWorker(str(path))
+        worker.db_service = reader
+        results = []
+        errors = []
+        worker.longform_sequence_loaded.connect(results.append)
+        worker.error_occurred.connect(errors.append)
+        worker.load_longform_sequence("default")
+        assert not errors
+        assert results[0][0]["id"] == entity.id
+    finally:
+        reader.close()
     app = create_app(ServerConfig(db_path=str(path)))
     with TestClient(app, headers={"host": "localhost"}) as client:
-        assert client.get("/api/longform").status_code == 200
+        result = client.get("/api/longform")
+        assert result.status_code == 200
+        assert result.json()["sections"][0]["id"] == entity.id
         assert client.get("/api/toc").status_code == 200
         assert client.get("/longform").status_code == 200
     assert path.read_bytes() == before

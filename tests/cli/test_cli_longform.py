@@ -142,12 +142,12 @@ def test_real_world_cli_metadata_and_reopen(db_service, tmp_path):
     assert read_meta(parent.id)["position"] == 100
     assert read_meta(child.id)["position"] == 200
     run("remove", *child_args)
-    assert read_meta(child.id) == {}
+    assert read_meta(child.id)["excluded"] is True
     output = tmp_path / "outline.md"
     run("export", "--output", str(output))
     assert "Parent" in output.read_text(encoding="utf-8")
     # Export respects deliberate document membership and never re-adds removals.
-    assert read_meta(child.id) == {}
+    assert read_meta(child.id)["excluded"] is True
     assert "Child" not in output.read_text(encoding="utf-8")
 
 

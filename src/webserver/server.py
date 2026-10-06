@@ -83,8 +83,7 @@ class _KrakenTrustedHostMiddleware(TrustedHostMiddleware):
 
         host = _host_from_header(Headers(scope=scope).get("host", ""))
         is_valid_host = any(
-            host == pattern
-            or (pattern.startswith("*") and host.endswith(pattern[1:]))
+            host == pattern or (pattern.startswith("*") and host.endswith(pattern[1:]))
             for pattern in self.allowed_hosts
         )
         if is_valid_host:
@@ -334,7 +333,10 @@ def create_app(config: ServerConfig) -> FastAPI:
             allowed_ids = _resolve_filter(filter_json, db)
 
             sequence = build_longform_sequence(
-                db.require_connection(), doc_id=doc_id, allowed_ids=allowed_ids
+                db.require_connection(),
+                doc_id=doc_id,
+                allowed_ids=allowed_ids,
+                include_unindexed=True,
             )
 
             data = []
@@ -377,7 +379,10 @@ def create_app(config: ServerConfig) -> FastAPI:
         try:
             allowed_ids = _resolve_filter(filter_json, db)
             sequence = build_longform_sequence(
-                db.require_connection(), doc_id=doc_id, allowed_ids=allowed_ids
+                db.require_connection(),
+                doc_id=doc_id,
+                allowed_ids=allowed_ids,
+                include_unindexed=True,
             )
             toc = []
             for item in sequence:

@@ -154,10 +154,11 @@ class TransferWorker(QObject):
                     )
                 )
         if request["format"] in {"markdown", "pdf", "docx"}:
-            sequence = build_longform_sequence(connection)
+            sequence = build_longform_sequence(connection, include_unindexed=True)
             if not sequence:
                 raise ValueError(
-                    "The longform document is empty. Add entries in Longform first."
+                    "The longform document is empty. Create world entries or restore "
+                    "removed content in Longform."
                 )
             result["document"] = document_snapshot(
                 sequence, request["options"], request["world"].get("path", "")

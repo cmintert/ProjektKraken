@@ -200,7 +200,7 @@ class AddLongformEntryCommand(MoveLongformEntryCommand):
             conn = db_service.require_connection()
             snapshot = self._snapshot_before_execute(db_service)
             metadata = snapshot["metadata"]
-            if metadata is not None:
+            if metadata is not None and not metadata.get("excluded", False):
                 self._metadata_before = snapshot
                 self._is_executed = True
                 return CommandResult(

@@ -2,10 +2,10 @@
   "schema": 1,
   "counts": {
     "smoke": 18,
-    "ci_fast": 1603,
+    "ci_fast": 1605,
     "slow": 1,
     "performance": 0,
-    "full": 5971,
+    "full": 5973,
     "full_only": 4359
   },
   "categories": {
@@ -18,7 +18,7 @@
     "repro": 2,
     "root": 15,
     "security": 5,
-    "unit": 5613
+    "unit": 5615
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -4660,6 +4660,12 @@
     "tests/unit/test_lmstudio_config.py::test_derive_all_openai_compatible_endpoints": [],
     "tests/unit/test_lmstudio_config.py::test_model_discovery_returns_sorted_unique_ids": [],
     "tests/unit/test_lmstudio_config.py::test_normalize_migrates_full_endpoint_to_base_url": [],
+    "tests/unit/test_longform_authoring.py::test_automatic_inclusion_removal_and_explicit_restore[entities]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_authoring.py::test_automatic_inclusion_removal_and_explicit_restore[events]": [
+      "ci_fast"
+    ],
     "tests/unit/test_longform_authoring.py::test_complete_deletion_requires_confirmation[16384-entities-entity]": [
       "ci_fast"
     ],

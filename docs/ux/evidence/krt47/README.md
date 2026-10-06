@@ -1,12 +1,15 @@
 # KRT-47 — Longform authoring verification
 
-2026-10-06; implementation based on `a12c84e5771fadb488c5d2d68e09ef8b0ddb67ef`.
+2026-10-06; initial implementation based on
+`a12c84e5771fadb488c5d2d68e09ef8b0ddb67ef`; automatic-inclusion correction
+based on `8d7b1e2d6526f5fcb762206185900bbe02733cae`.
 
 ## Routes and contract mapping
 
 Contracts 1/2/3/4/5/6/7/8/9 apply. **Add content…** opens a searchable inline
-existing-entry chooser; the empty state teaches the same route. Explicit selection
-and **Add to document** append one existing entry without opening its inspector.
+existing-entry chooser; the empty state explains automatic inclusion. Entities
+and events appear automatically; explicit selection and **Add to document**
+restore a removed entry without opening its inspector.
 Duplicate names retain type and stable identity; adding existing membership leaves
 its arrangement intact. **Outline actions** shares menu construction and command
 intents with right-click Move Up/Down, Promote/Demote, document removal and world
@@ -29,7 +32,10 @@ worker, including members hidden by filters. Add/Remove are registered for queue
 command execution and persisted undo/redo. New signals are bound by LongformManager;
 no new worker slot, ConnectionManager responsibility or main-thread SQL.
 
-**Remove from document** preserves the world entry. Its descendants lift one level;
+**Remove from document** preserves the world entry and saves an `excluded: true`
+decision in that document's metadata. Automatic indexing and read-only projections
+skip exclusions; explicit Add/Move clears them. Snapshots preserve the decision
+across undo/redo and persisted history. Its descendants lift one level;
 direct children occupy its former position before the next sibling. Exact worker
 snapshots restore the full section, child hierarchy, other documents and authored
 metadata with one undo operation. Failure after child updates rolls back all writes.
@@ -38,9 +44,10 @@ metadata with one undo operation. Failure after child updates rolls back all wri
 scope. Cancel emits no command. Confirmation uses EditorCoordinator, retaining
 raster-reference guards; deleting the active inspector target also respects its
 existing Save/Discard/Cancel draft guard. Tests execute real event/entity deletion
-commands and undo. Refresh, export and position reindex no longer implicitly add
-all world objects; existing authored memberships remain intact. Explicit CLI
-indexing remains available with its existing transaction ownership.
+commands and undo. Refresh, export and position reindex automatically include new
+world objects while retaining exclusions and existing authored hierarchy.
+Read-only publishing/export previews project unindexed content without writing
+to storage. CLI indexing retains its existing transaction ownership.
 
 ## Presentation and rendered evidence
 
@@ -68,20 +75,22 @@ or human task-time improvement. Fresh human KA-18 comparison remains pending.
 
 ## Validation
 
-The 20 new ci_fast acceptance cases cover visible add/nest/reorder/undo, narrow
+The 22 ci_fast acceptance cases cover visible add/nest/reorder/undo, narrow
 overflow, shared menu intents, cancellation, real confirmed world deletion and
 undo, inspector draft cancellation, authoritative membership snapshots, descendant
 lifting/rollback, unchanged refresh targets, Find and persisted history after
-database reopening. Existing Longform service, CLI, integration, outline, search,
+database reopening, automatic inclusion, per-document exclusion and explicit
+restoration. Existing Longform service, CLI, integration, outline, search,
 demand-loading and exact-undo tests also pass.
 
 Project Ruff, full mypy (441 modules), test-discovery membership, visual policy
-and complexity policy pass. The bounded suite passed **1601 tests, 2 skipped**.
+and complexity policy pass. The bounded suite passed **1603 tests, 2 skipped**.
 All 23 reviewed C901 hotspots are unchanged; no
-refactor allowance was raised. The reviewed collection change adds these 20
-ci_fast cases and renames the obsolete worker auto-indexing test to an explicit
-indexing transaction test. See `complexity.json` and `verification-ci-fast.txt`.
+refactor allowance was raised. Collection membership includes the original 20
+ci_fast cases plus two inclusion/restoration cases. Indexing transaction tests
+retain commit/rollback and exclusion coverage. See `complexity.json` and
+`verification-ci-fast.txt`.
 
-This evidence accompanies the KRT-47 implementation commit; delivery status is
-tracked in Linear. No executable build, database migration or human benchmark
-recording was performed.
+This evidence accompanies the automatic-inclusion correction commit; delivery
+status is tracked in Linear. No executable build, database migration or human
+benchmark recording was performed.

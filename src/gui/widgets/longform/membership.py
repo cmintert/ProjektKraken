@@ -31,7 +31,7 @@ class LongformMembershipWidget(QWidget):
         self._items: list[tuple[str, str, str]] = []
         layout = QVBoxLayout(self)
         StyleHelper.apply_form_spacing(layout)
-        caption = QLabel("Add existing content to this document")
+        caption = QLabel("Restore existing content to this document")
         caption.setWordWrap(True)
         layout.addWidget(caption)
         self.search = QLineEdit()
@@ -84,7 +84,8 @@ class LongformMembershipWidget(QWidget):
                 item.setToolTip(f"{name} · {kind} · {row_id}")
                 item.setData(Qt.ItemDataRole.UserRole, (table, row_id))
         self.notice.setText(
-            "Select an entry, then Add. Entries already in the document stay in place."
+            "Content is added automatically. Add restores removed entries; "
+            "existing entries stay in place."
             if self.results.count()
             else "No matching content. Create entries in Explorer, or try another search."
         )

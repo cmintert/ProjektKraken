@@ -14,7 +14,8 @@ KRT-47 implementation (2026-10-06): Longform exposes Add content, a selected-ite
 Outline actions menu and labeled Find through shared responsive overflow. Document
 removal preserves world content and lifts child sections with exact undo; complete
 world deletion requires confirmation and retains coordinator/draft guards. Refresh,
-export and reindex respect explicit membership. Contracts 1–9, enabled/disabled,
+export and reindex automatically include new content while retaining deliberate
+per-document exclusions, following the user's clarification. Contracts 1–9, enabled/disabled,
 focus, theme switching and 400/1100 px evidence are recorded in
 [Longform verification](evidence/krt47/README.md). The historical inventory remains
 the audit baseline; fresh human KA-18 comparison is pending. No contract revision.

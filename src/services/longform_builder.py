@@ -258,16 +258,45 @@ def _set_longform_meta(
     return attributes
 
 
+def _visible_longform_meta(
+    attributes: dict, doc_id: str, include_excluded: bool, include_unindexed: bool
+) -> dict | None:
+    """Distinguish new content from an explicit document exclusion."""
+    meta = _get_longform_meta(attributes, doc_id)
+    if not meta and include_unindexed:
+        return {"position": 0.0, "depth": 0, "parent_id": None}
+    if meta and meta.get("excluded", False) and not include_excluded:
+        return None
+    return meta
+
+
+def _position_unindexed_items(items: list[dict], doc_id: str) -> None:
+    """Project the same append order as indexing, without storage mutations."""
+    missing = [
+        item for item in items if not _get_longform_meta(item["attributes"], doc_id)
+    ]
+    position = max((item["meta"].get("position", 0.0) for item in items), default=0.0)
+    for item in sorted(missing, key=lambda item: item["name"].lower()):
+        position += DEFAULT_POSITION_GAP
+        item["meta"]["position"] = position
+
+
 def read_all_longform_items(
     conn: Connection,
     doc_id: str = DOC_ID_DEFAULT,
     allowed_ids: Optional[Set[str]] = None,
+    *,
+    include_excluded: bool = False,
+    include_unindexed: bool = False,
 ) -> List[Dict[str, Any]]:
     """Read all events and entities that have longform metadata.
 
     Args:
         conn: SQLite connection.
         doc_id: Document ID to filter by.
+        allowed_ids: Optional filter applied without changing membership.
+        include_excluded: Include deliberate exclusions for indexing bookkeeping.
+        include_unindexed: Project new content without writing metadata.
 
     Returns:
         List[Dict]: List of items with keys: table, id, name, content,
@@ -284,7 +313,9 @@ def read_all_longform_items(
     for row in cursor.fetchall():
         row_dict = dict(row)
         attrs = _safe_json_loads(row_dict.get("attributes", "{}"))
-        meta = _get_longform_meta(attrs, doc_id)
+        meta = _visible_longform_meta(
+            attrs, doc_id, include_excluded, include_unindexed
+        )
         if meta:
             # Filter check
             if allowed_ids is not None and row_dict["id"] not in allowed_ids:
@@ -308,7 +339,9 @@ def read_all_longform_items(
     for row in cursor.fetchall():
         row_dict = dict(row)
         attrs = _safe_json_loads(row_dict.get("attributes", "{}"))
-        meta = _get_longform_meta(attrs, doc_id)
+        meta = _visible_longform_meta(
+            attrs, doc_id, include_excluded, include_unindexed
+        )
         if meta:
             # Filter check
             if allowed_ids is not None and row_dict["id"] not in allowed_ids:
@@ -325,15 +358,14 @@ def read_all_longform_items(
                 }
             )
 
-    return items
-
-    items = read_all_longform_items(conn, doc_id)
+    if include_unindexed:
+        _position_unindexed_items(items, doc_id)
     return items
 
 
 def ensure_all_items_indexed(conn: Connection, doc_id: str = DOC_ID_DEFAULT) -> None:
     """Ensure all events and entities in the database are present in the longform
-    document. Missing items are added to the end of the document, sorted alphabetically.
+    document unless deliberately excluded. Missing items are appended alphabetically.
 
     Args:
         conn: SQLite connection.
@@ -345,7 +377,7 @@ def ensure_all_items_indexed(conn: Connection, doc_id: str = DOC_ID_DEFAULT) -> 
     max_position = 0.0
 
     # We can reuse read_all_longform_items to get current state
-    current_items = read_all_longform_items(conn, doc_id)
+    current_items = read_all_longform_items(conn, doc_id, include_excluded=True)
     for item in current_items:
         existing_ids.add(item["id"])
         pos = item["meta"].get("position", 0.0)
@@ -404,6 +436,8 @@ def build_longform_sequence(
     conn: Connection,
     doc_id: str = DOC_ID_DEFAULT,
     allowed_ids: Optional[Set[str]] = None,
+    *,
+    include_unindexed: bool = False,
 ) -> List[Dict[str, Any]]:
     """Build an ordered sequence of longform items for rendering.
 
@@ -422,7 +456,12 @@ def build_longform_sequence(
                     Each item includes: table, id, name, content, meta, heading_level.
 
     """
-    items = read_all_longform_items(conn, doc_id, allowed_ids=allowed_ids)
+    if include_unindexed:
+        items = read_all_longform_items(
+            conn, doc_id, allowed_ids=allowed_ids, include_unindexed=True
+        )
+    else:
+        items = read_all_longform_items(conn, doc_id, allowed_ids=allowed_ids)
 
     # Build parent-child map
     children_map: Dict[Optional[str], List[Dict]] = {}
@@ -509,6 +548,8 @@ def insert_or_update_longform_meta(
 
     attrs = _safe_json_loads(row["attributes"])
     meta = _get_longform_meta(attrs, doc_id) or {}
+    # An explicit add/move restores membership; automatic indexing skips exclusions.
+    meta.pop("excluded", None)
 
     # Update metadata fields (only if not sentinel)
     if position is not ...:
@@ -642,6 +683,7 @@ def reindex_document_positions(conn: Connection, doc_id: str = DOC_ID_DEFAULT) -
         doc_id: Document ID.
 
     """
+    ensure_all_items_indexed(conn, doc_id)
     sequence = build_longform_sequence(conn, doc_id)
 
     for idx, item in enumerate(sequence):
@@ -840,7 +882,7 @@ def membership_removal_updates(
 def remove_from_longform(
     conn: Connection, table: str, row_id: str, doc_id: str = DOC_ID_DEFAULT
 ) -> None:
-    """Remove longform metadata from a row.
+    """Deliberately exclude a row from automatic Longform inclusion.
 
     The row remains in the database but is no longer part of the longform document.
 
@@ -861,11 +903,9 @@ def remove_from_longform(
         return
 
     attrs = _safe_json_loads(row["attributes"])
-    if "_longform" in attrs and doc_id in attrs["_longform"]:
-        del attrs["_longform"][doc_id]
-        # Clean up empty longform dict
-        if not attrs["_longform"]:
-            del attrs["_longform"]
+    meta = (_get_longform_meta(attrs, doc_id) or {}).copy()
+    meta["excluded"] = True
+    attrs = _set_longform_meta(attrs, meta, doc_id)
 
     # Security: table name validated above, values are parameterized
     conn.execute(
@@ -890,6 +930,7 @@ def export_longform_to_markdown(conn: Connection, doc_id: str = DOC_ID_DEFAULT) 
     """
     from src.services.transfer_document import document_snapshot
 
+    ensure_all_items_indexed(conn, doc_id)
     sequence = build_longform_sequence(conn, doc_id)
     document = document_snapshot(
         sequence, {"title": f"Longform Document: {doc_id}"}, ""

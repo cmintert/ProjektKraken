@@ -3,14 +3,16 @@
 ## What this does
 
 The Longform Editor arranges events and entities into a hierarchical narrative
-without duplicating the underlying world content.
+without duplicating the underlying world content. All entities and events are
+included automatically. New entries append without changing existing hierarchy.
 
 ## Build an outline
 
 1. Open **View → Panels → Longform**.
-2. Choose **Add content…**, search for an existing entity or event, select it,
-   then choose **Add to document**. It appears at the end of the outline.
-   Adding an entry already in the document keeps its current arrangement.
+2. Existing entities and events appear automatically. To restore a deliberately
+   removed entry, choose **Add content…**, search for it, select it, then choose
+   **Add to document**. It returns at the end of the outline. Entries already in
+   the document keep their current arrangement.
 3. Select an outline item and open **Outline actions**. **Move Up/Move Down**
    reorder siblings; **Demote** nests the item beneath its preceding sibling;
    **Promote** lifts it one level. The same actions are available by right-click.
@@ -18,9 +20,10 @@ without duplicating the underlying world content.
 4. Select an item to edit its underlying content.
 
 Removing an item from Longform does not delete the event or entity from the
-world. Choose **Remove from document** to remove only its membership. Child
+world. Choose **Remove from document** to exclude it deliberately. Child
 sections lift one level and keep their relative order. Refresh, filtering and
-export retain this choice. Undo restores the removed section and its hierarchy.
+export retain this choice, including after reopening. Undo restores the removed
+section and its hierarchy. Exclusion applies only to that document.
 
 **Delete from world…** is a separate action that deletes the underlying entity
 or event, its connections and its membership in all documents. It asks for

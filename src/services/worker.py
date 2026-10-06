@@ -664,9 +664,19 @@ class DatabaseWorker(QObject):
                 raise RuntimeError("Failed to establish database connection")
             self.db_service.ensure_fresh_view()
 
-            sequence = longform_builder.build_longform_sequence(
-                connection, doc_id=doc_id, allowed_ids=allowed_ids
-            )
+            if self.db_service.read_only:
+                sequence = longform_builder.build_longform_sequence(
+                    connection,
+                    doc_id=doc_id,
+                    allowed_ids=allowed_ids,
+                    include_unindexed=True,
+                )
+            else:
+                with self.db_service.transaction() as connection:
+                    longform_builder.ensure_all_items_indexed(connection, doc_id)
+                sequence = longform_builder.build_longform_sequence(
+                    connection, doc_id=doc_id, allowed_ids=allowed_ids
+                )
             self.longform_sequence_loaded.emit(sequence)
             self.operation_finished.emit(f"Loaded {len(sequence)} longform items")
         except Exception as e:

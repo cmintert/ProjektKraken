@@ -271,9 +271,8 @@ class LongformEditorWidget(QWidget):
         self.empty_state = EmptyStateWidget(
             title="No Content Available",
             description=(
-                "The longform document is currently empty.\n"
-                "Use Add content… to choose existing entities and events,\n"
-                "or clear filters to reveal document members."
+                "World content appears automatically.\n"
+                "Add content… restores removed entries."
             ),
         )
         self.btn_empty_add = self.empty_state.add_action(

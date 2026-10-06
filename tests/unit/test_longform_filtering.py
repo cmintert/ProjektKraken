@@ -91,10 +91,12 @@ def test_worker_load_longform_sequence_pass_through_filter():
     """Test that worker.load_longform_sequence handles filter config correctly."""
     worker = DatabaseWorker("dummy.db")
     worker.db_service = MagicMock()
+    worker.db_service.read_only = False
 
     # Mock db_service methods
     mock_connection = MagicMock()
     worker.db_service.get_connection.return_value = mock_connection
+    worker.db_service.transaction.return_value.__enter__.return_value = mock_connection
     # filter_ids_by_tags returns List[tuple[str, str]] not a set
     worker.db_service.filter_ids_by_tags.return_value = [
         ("event", "id1"),

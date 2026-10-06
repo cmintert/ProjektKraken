@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-06
-**Commit:** a12c84e5771fadb488c5d2d68e09ef8b0ddb67ef
+**Commit:** 8d7b1e2d6526f5fcb762206185900bbe02733cae
 ---
 
 # Changelog
@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-06)* **Automatic Longform content (KRT-47)**: Restored automatic
+  inclusion of all entities/events while persisting deliberate per-document
+  exclusions. Add content restores removed entries; undo/redo retains the
+  exclusion decision. Read-only publishing/export previews include new content
+  without database writes. Added inclusion/restoration regressions and updated
+  user guidance and rendered evidence.
 
 - *(2026-10-06)* **Longform authoring (KRT-47)**: Added visible Add content,
   Outline actions and Find routes with responsive overflow. Document removal

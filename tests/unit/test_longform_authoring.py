@@ -257,7 +257,7 @@ def test_membership_survives_refresh_export_and_history(db_service, table):
     assert longform.build_longform_sequence(conn) == []
     assert "Keep" not in longform.export_longform_to_markdown(conn)
     longform.reindex_document_positions(conn)
-    assert longform.get_longform_meta(conn, table, entry.id) == {}
+    assert longform.get_longform_meta(conn, table, entry.id)["excluded"] is True
     assert (
         getattr(db_service, "get_entity" if table == "entities" else "get_event")(
             entry.id
@@ -444,3 +444,50 @@ def test_membership_commands_replay_after_database_reopen(db_service, tmp_path):
         assert command.execute(db_service).success
     assert longform.build_longform_sequence(db_service.require_connection()) == []
     assert db_service.get_entity(entry.id).name == "Stored entry"
+
+
+@pytest.mark.parametrize("table", ["entities", "events"])
+def test_automatic_inclusion_removal_and_explicit_restore(db_service, table):
+    entry = (
+        Entity(name="Automatic content", type="Person")
+        if table == "entities"
+        else Event(name="Automatic content", lore_date=1.0)
+    )
+    if table == "events":
+        entry.attributes = {"_longform": {"default": {}}}
+    getattr(db_service, "insert_entity" if table == "entities" else "insert_event")(
+        entry
+    )
+    conn = db_service.require_connection()
+    # Read-only publishing sees new content even before opening the editor.
+    assert (
+        longform.build_longform_sequence(conn, include_unindexed=True)[0]["id"]
+        == entry.id
+    )
+    assert longform.get_longform_meta(conn, table, entry.id) == {}
+    worker = DatabaseWorker("unused")
+    worker.db_service = db_service
+    sequences = []
+    worker.longform_sequence_loaded.connect(sequences.append)
+    worker.load_longform_sequence("default", '{"include":[]}')
+    before = deepcopy(longform.get_longform_meta(conn, table, entry.id))
+    assert sequences[-1][0]["id"] == entry.id
+    removal = RemoveLongformEntryCommand(table, entry.id, {})
+    assert removal.execute(db_service).success
+    # Exclusion is document-specific, survives auto-indexing and remains reversible.
+    worker.load_longform_sequence("default")
+    assert sequences[-1] == []
+    assert longform.build_longform_sequence(conn, include_unindexed=True) == []
+    longform.ensure_all_items_indexed(conn, "other")
+    assert longform.build_longform_sequence(conn, "other")[0]["id"] == entry.id
+    restore = AddLongformEntryCommand(table, entry.id, {}, {})
+    assert restore.execute(db_service).success
+    assert "excluded" not in longform.get_longform_meta(conn, table, entry.id)
+    restore = AddLongformEntryCommand.from_dict(restore.to_dict())
+    restore.undo(db_service)
+    assert longform.get_longform_meta(conn, table, entry.id)["excluded"] is True
+    worker.load_longform_sequence("default")
+    assert sequences[-1] == []
+    assert restore.execute(db_service).success
+    removal.undo(db_service)
+    assert longform.get_longform_meta(conn, table, entry.id) == before
