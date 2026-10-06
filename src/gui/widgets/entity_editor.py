@@ -868,6 +868,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         """
         new_id = entity.id if entity is not None else None
         if new_id != self._current_entity_id:
+            self.desc_edit.link_authoring.cancel()
             if not self.relation_authoring.prepare_to_leave():
                 return
             self.relation_authoring.cancel()

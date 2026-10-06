@@ -2,23 +2,23 @@
   "schema": 1,
   "counts": {
     "smoke": 18,
-    "ci_fast": 1454,
+    "ci_fast": 1504,
     "slow": 1,
     "performance": 0,
-    "full": 5827,
+    "full": 5877,
     "full_only": 4364
   },
   "categories": {
     "architecture": 11,
     "cli": 48,
     "gui": 14,
-    "integration": 209,
+    "integration": 233,
     "packaging": 13,
     "performance": 16,
     "repro": 2,
     "root": 15,
     "security": 5,
-    "unit": 5494
+    "unit": 5520
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -325,6 +325,78 @@
     "tests/integration/test_web_server_filtering.py::test_get_longform_filter_tag_B": [],
     "tests/integration/test_web_server_filtering.py::test_get_longform_invalid_filter_json": [],
     "tests/integration/test_web_server_filtering.py::test_get_longform_no_filter": [],
+    "tests/integration/test_wiki_link_return.py::test_cancelled_navigation_retains_exact_draft_and_bookmark[False]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_cancelled_navigation_retains_exact_draft_and_bookmark[True]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_context_change_cancels_picker_even_when_description_is_identical": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_discarded_draft_does_not_reappear_on_return": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_link_open_waits_for_exact_save_acknowledgement[False]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_link_open_waits_for_exact_save_acknowledgement[True]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_link_save_command_reopen_and_rename_keeps_identity[False-entity]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_link_save_command_reopen_and_rename_keeps_identity[False-event]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_link_save_command_reopen_and_rename_keeps_identity[True-entity]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_link_save_command_reopen_and_rename_keeps_identity[True-event]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_missing_hydration_releases_return_controls": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_missing_target_and_origin_never_create_entries": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_nested_links_return_in_order_and_unrelated_navigation_clears": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_newer_edit_during_save_cancels_link_navigation": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_open_return_restores_mode_selection_and_scroll[rich-entity-entity]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_open_return_restores_mode_selection_and_scroll[rich-entity-event]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_open_return_restores_mode_selection_and_scroll[rich-event-entity]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_open_return_restores_mode_selection_and_scroll[rich-event-event]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_open_return_restores_mode_selection_and_scroll[source-entity-entity]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_open_return_restores_mode_selection_and_scroll[source-entity-event]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_open_return_restores_mode_selection_and_scroll[source-event-entity]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_open_return_restores_mode_selection_and_scroll[source-event-event]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_peek_escalation_and_focus_writing_return": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_return_waits_for_matching_hydration_and_world_change_clears": [
+      "ci_fast"
+    ],
     "tests/integration/test_wikilink_reconciliation.py::test_empty_text_removes_reconciled_mentions": [],
     "tests/integration/test_wikilink_reconciliation.py::test_multiple_occurrences_create_one_canonical_relation": [],
     "tests/integration/test_wikilink_reconciliation.py::test_reconcile_updates_retained_relation_and_removes_stale_target": [],
@@ -8434,6 +8506,84 @@
     "tests/unit/test_wiki_linebreaks.py::test_mode_switch_source_to_rich_to_source_preserves_newline": [],
     "tests/unit/test_wiki_linebreaks.py::test_paragraph_break_unchanged": [],
     "tests/unit/test_wiki_linebreaks.py::test_single_newline_roundtrip_rich_mode": [],
+    "tests/unit/test_wiki_link_authoring.py::test_both_context_menus_offer_link_creation[False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_both_context_menus_offer_link_creation[True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_cancellation_preserves_reversed_selection_and_draft[cancel]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_cancellation_preserves_reversed_selection_and_draft[escape]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_cancellation_preserves_reversed_selection_and_draft[hide]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_caret_insertion_and_source_completion[rich]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_caret_insertion_and_source_completion[source]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_completion_separates_adjacent_word_as_one_edit[False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_completion_separates_adjacent_word_as_one_edit[True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_duplicate_choices_keep_exact_id_and_renamed_label": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_enter_in_results_accepts_selected_entry": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_invalid_selection_is_explained_without_mutation[**House**-source-0-9]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_invalid_selection_is_explained_without_mutation[One\\n\\nTwo-rich-0-7]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_invalid_selection_is_explained_without_mutation[[[id:550e8400-e29b-41d4-a716-446655440000|House]]-rich-0-5]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_mixed_formatting_whitespace_and_supported_roundtrip": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_selected_prose_label_identity_undo_and_following_typing[rich]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_selected_prose_label_identity_undo_and_following_typing[source]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_source_modifier_clicks_keep_navigation_accelerators[KeyboardModifier.AltModifier-peek_requested]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_source_modifier_clicks_keep_navigation_accelerators[KeyboardModifier.ControlModifier-link_clicked]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_source_selection_preserves_unrelated_unsupported_markdown": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_stale_picker_does_not_mutate_current_text[deleted]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_stale_picker_does_not_mutate_current_text[mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_stale_picker_does_not_mutate_current_text[readonly]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_stale_picker_does_not_mutate_current_text[text]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_visible_open_and_peek_resolve_same_id[False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_visible_open_and_peek_resolve_same_id[True]": [
+      "ci_fast"
+    ],
     "tests/unit/test_wiki_link_refresh.py::test_cursor_preservation_on_completer_refresh": [],
     "tests/unit/test_wiki_link_refresh.py::test_link_refresh_updates_all_fragments_and_invalidates_layout": [],
     "tests/unit/test_wiki_link_refresh.py::test_link_validation_updates_on_completer_load": [],

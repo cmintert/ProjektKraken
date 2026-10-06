@@ -4,6 +4,29 @@ Descriptions are stored as portable Markdown and `[[wiki links]]`. The editor
 opens ordinary paragraphs, headings `#` through `###`, `**bold**`, `*italic*`,
 and wiki links in Rich view. Single line breaks and blank lines are preserved.
 
+Select words in an Event or Entity description and choose **Link to entry…**.
+Search for an existing entry, select its row, then choose **Link**. Your selected
+words remain the link's label. With no selection, the entry's name is inserted
+at the caret. Duplicate names show the entry kind and an ID portion. Cancelling
+keeps your text and selection; Undo reverses acceptance as one writing edit.
+The action also appears in the writing context menu and stays available in
+Focus writing. Narrow controls move secondary actions into **More actions**.
+
+Place the caret inside a link to enable **Open link** or **Peek link**. Opening
+an entry shows **Return to writing** in its inspector and writing controls.
+Return restores your origin, selection, scroll, Rich/Source view and Focus
+writing presentation. Both opening and returning protect unfinished edits with
+**Save / Discard / Cancel**. Save waits for confirmation; Cancel keeps the draft;
+Discard deliberately removes it. Return does not recover discarded writing.
+Nested link visits return in order; choosing an unrelated entry ends this
+temporary return trail. The trail is not retained between world sessions.
+
+Selected text must fit within one paragraph and must not already contain links.
+In Source, select words inside formatting rather than the Markdown marks.
+Selections across unsupported source constructs are explained without changing
+the text. Unsupported Markdown elsewhere in the description remains exact.
+An entry rename keeps the link's identity and your authored label.
+
 A WikiLink references an entry from prose; it does not assert membership or
 another specific relationship. With **Auto-Create Relations from Wikilinks**
 enabled, saving a resolved link also records a `mentions` relation. For the
@@ -27,10 +50,14 @@ object. Use completion to insert a stable `[[id:...|Name]]` link when identity
 must survive renaming. Duplicate names appear as separate choices with object
 kind and an ID prefix.
 
-Use **Alt+Click** on a link, or **Peek link** in its context menu, to read its
+Use **Peek link**, **Alt+Click**, or **Peek link** in the context menu to read its
 target in the side pane without changing the current selection. **Open / Edit**
 deliberately navigates to that object and protects any unsaved draft. **Close
 Peek** returns focus to the writing surface.
+
+**Ctrl+Click** remains an accelerator for Open link. A plain name in prose is
+not a link; linking it selects an existing entry and does not create a new
+entry or an authored connection.
 
 Peek currently shows a read-only text description. Rich media previews and
 advanced Markdown editing are future product work; their source remains intact.

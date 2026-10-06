@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-06
-**Commit:** 0b097143a99fe3df28434130756126b272c692f5
+**Commit:** 11a35fdb2953aeba167c15e672454bfc888a4ec4
 ---
 
 # Changelog
@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-06)* **Writing links (KRT-53)**: Added visible Link to entry…,
+  Open link, Peek link and guarded Return to writing, including Focus writing.
+  Existing-entry selection preserves labels and identity with one undo step.
+  Fixed Source completion, formatted-label whitespace and presentation-only
+  mode changes marking drafts dirty. Added save/navigation acceptance coverage,
+  collection membership, user guidance and compact/normal theme render evidence.
 
 - *(2026-10-06)* **Entity creation (KRT-14)**: Normal creation now requires
   a deliberate type alongside the name. Common, world-specific and custom types

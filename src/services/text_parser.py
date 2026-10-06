@@ -77,7 +77,7 @@ class WikiLinkParser:
         for match in WikiLinkParser.WIKILINK_RE.finditer(text):
             raw_text = match.group(0)  # Full [[...]] text
             target = match.group(1).strip()
-            modifier = match.group(2).strip() if match.group(2) else None
+            modifier = match.group(2) if match.group(2) else None
             span = (match.start(), match.end())
 
             # Check if this is an ID-based link

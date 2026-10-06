@@ -494,7 +494,7 @@ class ConnectionManager:
                     (
                         editor,
                         "link_clicked",
-                        self.window.navigation_coordinator.navigate_to_entity,
+                        self.window.navigation_coordinator.navigate_writing_link,
                         editor_name,
                     ),
                     (

@@ -10,6 +10,19 @@ remains a separate seeded audit run.
 
 ## Evidence and disposition rules
 
+KRT-53 implementation (2026-10-06): shared description writing controls expose
+**Link to entry…**, **Open link**, **Peek link** and session-only **Return to
+writing**. A compact existing-entry picker preserves selected labels and stable
+identity, with one local undo step. Focus writing retains the visible route;
+secondary actions use shared overflow at compact widths. Enter accepts a selected
+picker row; Escape/outside dismissal cancels the local operation before leaving
+Focus writing. Opening and returning use existing Save/Discard/Cancel guards;
+applied origin loads restore mode, caret/selection, scroll and disclosure choices.
+Source completion and explicit-label whitespace now survive supported round-trips.
+Contracts 2/4/5/7/9 apply; no contract revision or new modal exception.
+[Assisted acceptance, baseline failures and rendered evidence](evidence/krt53/README.md)
+are separate from human KA-04/KA-20 timings and completion rates.
+
 KRT-14 implementation (2026-10-06): normal creation captures Name and an explicitly
 chosen Type together, with no preselected type and guarded Create/Enter. Common,
 world-specific and custom classifications remain available; Quick Capture keeps

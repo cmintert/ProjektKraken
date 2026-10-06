@@ -186,11 +186,7 @@ class WikiASTParser:
             wikilink_match = self.WIKILINK_PATTERN.match(remaining)
             if wikilink_match:
                 target = wikilink_match.group(1).strip()
-                label = (
-                    wikilink_match.group(2).strip()
-                    if wikilink_match.group(2)
-                    else target
-                )
+                label = wikilink_match.group(2) if wikilink_match.group(2) else target
                 node = WikiNode(
                     node_type=NodeType.WIKILINK,
                     text=label,

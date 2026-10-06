@@ -13,6 +13,7 @@ import shiboken6
 from PySide6.QtCore import (
     QModelIndex,
     QObject,
+    QSignalBlocker,
     Qt,
     QThread,
     QTimer,
@@ -152,6 +153,8 @@ class WikiTextEditView(QTextEdit):
 
     link_clicked = Signal(str)  # Emits the target name (e.g. "Gandalf")
     peek_requested = Signal(str)
+    link_to_entry_requested = Signal()
+    document_replacing = Signal()
     completion_prefix_changed = Signal(str)  # Emits prefix when >= 3 chars inside [[
     view_mode_changed = Signal(str)
     _lt_check_requested = Signal(
@@ -170,6 +173,7 @@ class WikiTextEditView(QTextEdit):
         self._completer: Optional[QCompleter] = None
         self._completion_map: dict[str, tuple[str, str]] = {}
         self._completion_rows: list[tuple[str, str, str]] = []
+        self._completion_items: list[tuple[str, str, str]] = []
         self._last_completion_prefix: str = ""
         self._link_resolver = None  # Will be set later
         self._section_manager = SectionManager(self.document())
@@ -261,6 +265,12 @@ class WikiTextEditView(QTextEdit):
 
     @Slot()
     def toggle_view_mode(self) -> None:
+        """Switch presentation without turning a view change into a prose edit."""
+        with QSignalBlocker(self):
+            self._switch_view_mode()
+        self.view_mode_changed.emit(self._view_mode)
+
+    def _switch_view_mode(self) -> None:
         """Toggles between Rich HTML view and Markdown Source view.
 
         Uses AST for pixel-perfect cursor position preservation.
@@ -805,6 +815,8 @@ class WikiTextEditView(QTextEdit):
             self._current_wiki_text = text
             return
 
+        self.document_replacing.emit()
+
         # If in Source mode, just set the raw text and ignore HTML rendering
         if hasattr(self, "_view_mode") and self._view_mode == "source":
             # Block signals to prevent textChanged during programmatic update
@@ -831,7 +843,7 @@ class WikiTextEditView(QTextEdit):
             Checks validity of target against known items.
             """
             target = match[1].strip()
-            label = match[2].strip() if match[2] else target
+            label = match[2] if match[2] else target
 
             # Check existence
             is_valid = False
@@ -1115,40 +1127,95 @@ class WikiTextEditView(QTextEdit):
             QTextCursor.MoveMode.KeepAnchor,
             prefix_len,
         )
-        tc.removeSelectedText()
+        start, end = tc.selectionStart(), tc.selectionEnd()
+        probe = QTextCursor(self.document())
+        probe.setPosition(max(0, start - 2))
+        probe.setPosition(start, QTextCursor.MoveMode.KeepAnchor)
+        if probe.selectedText() == "[[":
+            start -= 2
+        tc.setPosition(start)
+        tc.setPosition(end, QTextCursor.MoveMode.KeepAnchor)
+        self.insert_entry_link(tc, label, item_id, separate_following_word=True)
 
-        # Check for "[[" to left
-        tc.movePosition(
-            QTextCursor.MoveOperation.Left, QTextCursor.MoveMode.KeepAnchor, 2
-        )
-        if tc.selectedText() == "[[":
-            tc.removeSelectedText()
-        else:
-            # Logic fallback: maybe user didn't type [[ ?
-            # But our trigger logic ensures it.
-            # Restore position if check failed (unlikely)
-            tc.movePosition(
-                QTextCursor.MoveOperation.Right,
-                QTextCursor.MoveMode.MoveAnchor,
-                2,
-            )
-
+    def insert_entry_link(
+        self,
+        cursor: QTextCursor,
+        label: str,
+        item_id: str,
+        *,
+        preserve_selection: bool = False,
+        separate_following_word: bool = False,
+    ) -> None:
+        """Insert one reversible link, preserving selected rich formatting."""
+        if (
+            self.isReadOnly()
+            or not label
+            or any(char in label for char in "\n\r\u2028\u2029[]|")
+        ):
+            return
+        tc = QTextCursor(cursor)
         target = f"id:{item_id}" if item_id else label
         continuation = QTextCharFormat(tc.charFormat())
         continuation.setAnchor(False)
         continuation.setAnchorHref("")
+        continuation.setForeground(QColor(self._typography.text_color))
+        continuation.setFontUnderline(False)
         link_format = QTextCharFormat(continuation)
         link_format.setAnchor(True)
         link_format.setAnchorHref(target)
-        tc.insertText(label, link_format)
-        next_char = str(self.document().characterAt(tc.position()))
-        if next_char.isalnum():
+        link_format.setForeground(QColor(self._typography.link_color))
+        tc.beginEditBlock()
+        if self._view_mode == "source":
+            tc.insertText(
+                f"[[{target}|{label}]]" if item_id else f"[[{label}]]", continuation
+            )
+        elif preserve_selection and tc.hasSelection():
+            semantic = QTextCharFormat()
+            semantic.setAnchor(True)
+            semantic.setAnchorHref(target)
+            semantic.setForeground(QColor(self._typography.link_color))
+            tc.mergeCharFormat(semantic)
+            tc.setPosition(tc.selectionEnd())
+        else:
+            tc.insertText(label, link_format)
+        if (
+            separate_following_word
+            and str(self.document().characterAt(tc.position())).isalnum()
+        ):
             tc.insertText(" ", continuation)
         tc.setCharFormat(continuation)
+        tc.endEditBlock()
         self.setTextCursor(tc)
+        self.setCurrentCharFormat(continuation)
         self._refresh_document_layout()
 
-        # Emit signal
+    def link_target_at_cursor(self, cursor: QTextCursor | None = None) -> str:
+        """Resolve one link at the caret or selection in either writing mode."""
+        cursor = self.textCursor() if cursor is None else cursor
+        start, end = cursor.selectionStart(), cursor.selectionEnd()
+        if self._view_mode == "source":
+            from src.services.text_parser import WikiLinkParser
+
+            source = self.toPlainText()
+            for link in WikiLinkParser.extract_links(source):
+                left = len(source[: link.span[0]].encode("utf-16-le")) // 2
+                right = len(source[: link.span[1]].encode("utf-16-le")) // 2
+                if left <= start < right and end <= right:
+                    return f"id:{link.target_id}" if link.target_id else link.name or ""
+            return ""
+        targets = set()
+        positions = range(start, end) if start != end else range(start, start + 1)
+        for position in positions:
+            probe = QTextCursor(self.document())
+            probe.setPosition(position)
+            probe.movePosition(
+                QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor
+            )
+            fmt = probe.charFormat()
+            if not fmt.isAnchor():
+                return ""
+            targets.add(fmt.anchorHref())
+        return targets.pop() if len(targets) == 1 else ""
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Handles key press events for wiki link completion and formatting shortcuts.
@@ -1174,6 +1241,22 @@ class WikiTextEditView(QTextEdit):
                 return
 
         is_source_mode = hasattr(self, "_view_mode") and self._view_mode == "source"
+        if not is_source_mode and event.text() and not self.textCursor().hasSelection():
+            cursor = self.textCursor()
+            probe = QTextCursor(cursor)
+            probe.movePosition(
+                QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor
+            )
+            current = cursor.charFormat()
+            if current.isAnchor() and (
+                cursor.atEnd()
+                or probe.charFormat().anchorHref() != current.anchorHref()
+            ):
+                current.setAnchor(False)
+                current.setAnchorHref("")
+                current.setForeground(QColor(self._typography.text_color))
+                current.setFontUnderline(False)
+                self.setCurrentCharFormat(current)
         is_enter = event.key() in (
             Qt.Key.Key_Return,
             Qt.Key.Key_Enter,
@@ -1193,7 +1276,7 @@ class WikiTextEditView(QTextEdit):
             self._set_heading(0)
 
         # Check if user just closed a wiki link with ]]
-        if event.text() == "]":
+        if event.text() == "]" and not is_source_mode:
             self._check_for_link_closure()
 
         # Helper to trigger completer
@@ -1549,7 +1632,8 @@ class WikiTextEditView(QTextEdit):
         # Parse target (handle [[target|label]] format)
         # Parse target (handle [[target|label]] format)
         if "|" in link_content:
-            target, label = (part.strip() for part in link_content.split("|", 1))
+            target, label = link_content.split("|", 1)
+            target = target.strip()
         else:
             target = label = link_content.strip()
 
@@ -1745,11 +1829,16 @@ class WikiTextEditView(QTextEdit):
             event: QMouseEvent from PySide6.
 
         """
+        anchor = self.anchorAt(event.position().toPoint())
+        if self._view_mode == "source":
+            anchor = self.link_target_at_cursor(
+                self.cursorForPosition(event.position().toPoint())
+            )
         if (
             event.button() == Qt.MouseButton.LeftButton
             and event.modifiers()
             & (Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.AltModifier)
-            and (anchor := self.anchorAt(event.position().toPoint()))
+            and anchor
         ):
             # Handle ID checking
             target = anchor.split("|")[0]
@@ -1939,6 +2028,8 @@ class WikiTextEditView(QTextEdit):
         """
         cursor_pos = self.cursorForPosition(event.pos()).position()
         anchor = self.anchorAt(event.pos())
+        if self._view_mode == "source":
+            anchor = self.link_target_at_cursor(self.cursorForPosition(event.pos()))
         hit = next(
             (
                 m
@@ -1950,12 +2041,7 @@ class WikiTextEditView(QTextEdit):
 
         if not hit:
             menu = self.createStandardContextMenu()
-            if anchor:
-                menu.addSeparator()
-                menu.addAction(
-                    "Peek link (Alt+Click)",
-                    lambda: self.peek_requested.emit(anchor),
-                )
+            self._add_link_menu_actions(menu, anchor)
             self._show_context_menu(menu, event.globalPos())
             return
 
@@ -1965,6 +2051,7 @@ class WikiTextEditView(QTextEdit):
         # Do NOT reparent ``standard`` to ``menu``; a child QMenu renders
         # itself alongside its parent, causing a duplicate overlay.
         menu = QMenu(self)
+        self._add_link_menu_actions(menu, anchor)
         standard = self.createStandardContextMenu()  # noqa: F841 — kept alive intentionally
 
         if hit.replacements:
@@ -1975,13 +2062,6 @@ class WikiTextEditView(QTextEdit):
                 )
             menu.addSeparator()
 
-        if anchor:
-            menu.addAction(
-                "Peek link (Alt+Click)",
-                lambda: self.peek_requested.emit(anchor),
-            )
-            menu.addSeparator()
-
         ignore_action = menu.addAction(f"Ignore ({hit.rule_id})")
         ignore_action.triggered.connect(lambda _, m=hit: self._ignore_lt_match(m))
         menu.addSeparator()
@@ -1990,6 +2070,18 @@ class WikiTextEditView(QTextEdit):
             menu.addAction(action)
 
         self._show_context_menu(menu, event.globalPos())
+
+    def _add_link_menu_actions(self, menu: QMenu, anchor: str) -> None:
+        """Share link operations between standard and spell-check menus."""
+        menu.addSeparator()
+        action = menu.addAction("Link to entry…", self.link_to_entry_requested.emit)
+        action.setEnabled(not self.isReadOnly())
+        target = anchor or self.link_target_at_cursor()
+        if target:
+            menu.addAction("Open link", lambda: self.link_clicked.emit(target))
+            menu.addAction(
+                "Peek link (Alt+Click)", lambda: self.peek_requested.emit(target)
+            )
 
     @staticmethod
     def _show_context_menu(menu: QMenu, global_pos: Any) -> None:
@@ -2224,6 +2316,7 @@ class WikiTextEdit(QFrame):
         self.toolbar.setFloatable(False)
         self._setup_toolbar()
         main_layout.addWidget(self.toolbar)
+        self._setup_link_controls(main_layout)
         self.source_notice = QLabel(
             "Exact Markdown source. Rich view requires the supported syntax only."
         )
@@ -2380,6 +2473,68 @@ class WikiTextEdit(QFrame):
         self.action_spell_check.setChecked(
             cast(bool, s.value("SpellCheck/enabled", False, type=bool))
         )
+
+    def _setup_link_controls(self, layout: QVBoxLayout) -> None:
+        """Keep writing actions visible when formatting is collapsed."""
+        from PySide6.QtWidgets import QToolButton
+
+        from src.gui.widgets.overflow_toolbar import OverflowToolBar
+        from src.gui.widgets.wiki_link_authoring import WikiLinkAuthoring
+
+        self.link_notice = QLabel(self)
+        self.link_notice.setWordWrap(True)
+        self.link_notice.hide()
+        self.link_authoring = WikiLinkAuthoring(self.editor, self.link_notice)
+        self.editor.link_to_entry_requested.connect(self.link_authoring.open_picker)
+        self.link_toolbar = OverflowToolBar(self)
+        layout.addWidget(self.link_toolbar)
+        layout.addWidget(self.link_notice)
+        self.action_link_entry = QAction("Link to entry…", self)
+        self.action_open_link = QAction("Open link", self)
+        self.action_peek_link = QAction("Peek link", self)
+        self.action_return_writing = QAction("Return to writing", self)
+        self.action_return_writing.setVisible(False)
+        self._return_button = QToolButton(self)
+        for action, priority in (
+            (self.action_link_entry, 3),
+            (self.action_open_link, 2),
+            (self.action_peek_link, 1),
+            (self.action_return_writing, 4),
+        ):
+            button = (
+                self._return_button
+                if action is self.action_return_writing
+                else (QToolButton(self))
+            )
+            button.setDefaultAction(action)
+            button.setMinimumHeight(32)
+            self.link_toolbar.add_button(
+                button,
+                priority=priority,
+                available=action is not self.action_return_writing,
+            )
+        self.action_link_entry.triggered.connect(self.link_authoring.open_picker)
+        self.action_open_link.triggered.connect(
+            lambda: self.link_clicked.emit(self.editor.link_target_at_cursor())
+        )
+        self.action_peek_link.triggered.connect(
+            lambda: self.peek_requested.emit(self.editor.link_target_at_cursor())
+        )
+        self.editor.cursorPositionChanged.connect(self._update_link_actions)
+        self.editor.selectionChanged.connect(self._update_link_actions)
+        self.editor.textChanged.connect(self._update_link_actions)
+        self._update_link_actions()
+
+    def _update_link_actions(self) -> None:
+        target = self.editor.link_target_at_cursor()
+        self.action_link_entry.setEnabled(not self.editor.isReadOnly())
+        self.action_open_link.setEnabled(bool(target))
+        self.action_peek_link.setEnabled(bool(target))
+
+    def set_return_available(self, available: bool) -> None:
+        """Show the session's return action only while a bookmark exists."""
+        self.action_return_writing.setVisible(available)
+        self.link_toolbar.set_button_available(self._return_button, available)
 
     def _open_spell_settings(self, _checked: bool = False) -> None:
         """Show the SpellCheckSettingsDialog and sync the toolbar button state on close."""
@@ -2541,6 +2696,8 @@ class WikiTextEdit(QFrame):
             ro: True to make read-only, False to make editable.
         """
         self.editor.setReadOnly(ro)
+        self._update_link_actions()
+        self.link_authoring.cancel_stale()
 
     def setPlaceholderText(self, text: str) -> None:
         """Set the placeholder text shown when editor is empty.

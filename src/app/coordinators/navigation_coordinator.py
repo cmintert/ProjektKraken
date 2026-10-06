@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Optional
 
 import shiboken6
-from PySide6.QtCore import QSettings, Slot
+from PySide6.QtCore import QSettings, Signal, Slot
 from PySide6.QtWidgets import QApplication, QMessageBox, QWidget
 
 from src.app.constants import (
@@ -33,6 +33,10 @@ class NavigationCoordinator(BaseCoordinator):
     - State persistence (restoring last selection).
     - Missing target creation workflows.
     """
+
+    navigation_result = Signal(str, str, str)
+    peek_started = Signal()
+    peek_closed = Signal()
 
     def __init__(self, main_window: "MainWindow") -> None:
         """Initialize navigation state for the main window."""
@@ -74,6 +78,7 @@ class NavigationCoordinator(BaseCoordinator):
         workspace = self.main_window.workspace
         panel = self.main_window.wiki_peek_panel
         if self._peek_current_target is None:
+            self.peek_started.emit()
             self._peek_origin = QApplication.focusWidget()
             self._peek_previous_right_panel = workspace.active_panel("right")
             self._peek_right_was_visible = workspace.zone_visible("right")
@@ -134,11 +139,21 @@ class NavigationCoordinator(BaseCoordinator):
         self._peek_previous_right_panel = None
         if origin is not None and shiboken6.isValid(origin):
             origin.setFocus()
+        self.peek_closed.emit()
 
     @Slot(str, str)
     def _open_peek_target(self, item_type: str, item_id: str) -> None:
         """Escalate deliberately from read-only lookup to guarded editing."""
-        self.set_global_selection(item_type, item_id)
+        self.navigate_writing_link(f"id:{item_id}")
+
+    @Slot(str)
+    def navigate_writing_link(self, target: str) -> None:
+        """Delegate description links to session-only return navigation."""
+        controller = getattr(self.main_window.app_coordinator, "wiki_links", None)
+        if controller is not None:
+            controller.open_link(target)
+        else:
+            self.navigate_to_entity(target)
 
     @Slot(str, str)
     def _materialize_provisional(self, item_type: str, name: str) -> None:
@@ -181,15 +196,22 @@ class NavigationCoordinator(BaseCoordinator):
 
         if self._pending_navigation is not None:
             self._restore_selection()
+            self.navigation_result.emit(item_type, item_id, "cancelled")
             return
 
         if not self._guard_navigation(item_type, item_id):
+            self.navigation_result.emit(
+                item_type,
+                item_id,
+                "deferred" if self._pending_navigation is not None else "cancelled",
+            )
             return
 
         logger.debug(f"[NavigationCoordinator] Global selection: {item_type}/{item_id}")
 
         self._last_selected_id = item_id
         self._last_selected_type = item_type
+        self.navigation_result.emit(item_type, item_id, "selected")
 
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         settings.setValue(SETTINGS_LAST_ITEM_ID_KEY, item_id)
@@ -214,7 +236,8 @@ class NavigationCoordinator(BaseCoordinator):
         if item_type in {"event", "entity"}:
             target = self._editor_for(item_type)
             current_id = (
-                target.current_event_id if item_type == "event"
+                target.current_event_id
+                if item_type == "event"
                 else target.current_entity_id
             )
             if current_id != item_id and all(target is not e for _, e in candidates):
@@ -250,14 +273,19 @@ class NavigationCoordinator(BaseCoordinator):
             editor._on_save()
             revision = getattr(editor, "_pending_save_revision", None)
             current_id = (
-                editor.current_event_id if editor_type == "event"
+                editor.current_event_id
+                if editor_type == "event"
                 else editor.current_entity_id
             )
             if revision is None or current_id is None:
                 self._restore_selection()
                 return False
             self._pending_navigation = (
-                item_type, item_id, editor_type, current_id, revision
+                item_type,
+                item_id,
+                editor_type,
+                current_id,
+                revision,
             )
             self._restore_selection()
             return False
@@ -300,6 +328,7 @@ class NavigationCoordinator(BaseCoordinator):
             self.set_global_selection(pending[0], pending[1])
         else:
             self._restore_selection()
+            self.navigation_result.emit(pending[0], pending[1], "cancelled")
 
     @Slot(str)
     def navigate_to_entity(self, target: str) -> None:

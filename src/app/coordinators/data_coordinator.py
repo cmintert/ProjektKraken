@@ -44,6 +44,8 @@ class DataCoordinator(BaseCoordinator):
     """
 
     lore_mutation_applied = Signal(str, str, str)
+    editor_hydrated = Signal(str, str)
+    editor_hydration_failed = Signal(str, str)
     graph_temporal_requested = Signal(object, object, object)
 
     def __init__(self, main_window: "MainWindow") -> None:
@@ -361,11 +363,18 @@ class DataCoordinator(BaseCoordinator):
 
         """
         self._event_detail_id = event.id if isinstance(event, Event) else None
-        preserve_document = bool(
-            self._event_detail_requests
-            and self._event_detail_requests.pop(0) == (self._event_detail_id, True)
+        request = (
+            self._event_detail_requests.pop(0) if self._event_detail_requests else None
         )
+        preserve_document = request == (self._event_detail_id, True)
         navigation = getattr(self.main_window, "navigation_coordinator", None)
+        if event is None and request is not None:
+            self.editor_hydration_failed.emit("event", request[0])
+            if navigation is not None and (
+                navigation.selected_type,
+                navigation.selected_id,
+            ) != ("event", request[0]):
+                return
         if (
             navigation is not None
             and navigation.selected_type == "event"
@@ -389,6 +398,8 @@ class DataCoordinator(BaseCoordinator):
         editor.load_event(
             cast("Event | None", event), relations, incoming, maps_data=maps_data
         )
+        if isinstance(event, Event) and editor.current_event_id == event.id:
+            self.editor_hydrated.emit("event", event.id)
 
     @Slot(object, list, list)
     def on_entity_details_ready(
@@ -403,11 +414,20 @@ class DataCoordinator(BaseCoordinator):
 
         """
         self._entity_detail_id = entity.id if isinstance(entity, Entity) else None
-        preserve_document = bool(
-            self._entity_detail_requests
-            and self._entity_detail_requests.pop(0) == (self._entity_detail_id, True)
+        request = (
+            self._entity_detail_requests.pop(0)
+            if self._entity_detail_requests
+            else None
         )
+        preserve_document = request == (self._entity_detail_id, True)
         navigation = getattr(self.main_window, "navigation_coordinator", None)
+        if entity is None and request is not None:
+            self.editor_hydration_failed.emit("entity", request[0])
+            if navigation is not None and (
+                navigation.selected_type,
+                navigation.selected_id,
+            ) != ("entity", request[0]):
+                return
         if (
             navigation is not None
             and navigation.selected_type == "entity"
@@ -437,6 +457,8 @@ class DataCoordinator(BaseCoordinator):
         time_coordinator = getattr(self.main_window, "time_coordinator", None)
         if entity is not None and time_coordinator is not None:
             time_coordinator.resolve_selected_entity()
+        if isinstance(entity, Entity) and editor.current_entity_id == entity.id:
+            self.editor_hydrated.emit("entity", entity.id)
 
     @Slot(list, list)
     def on_graph_data_ready(self, nodes: list, edges: list) -> None:

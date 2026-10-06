@@ -89,6 +89,38 @@ class AppCoordinator(QObject):
         if hasattr(self, "icon_library"):
             self.icon_library.show_manager(self.main_window)
 
+    def bind_wiki_links(self) -> None:
+        """Compose writing-link navigation with existing cache and guard inputs."""
+        from src.app.coordinators.wiki_link_navigation import (
+            WikiLinkNavigationController,
+        )
+
+        window = self.main_window
+        self.wiki_links = WikiLinkNavigationController(
+            {"event": window.event_editor, "entity": window.entity_editor},
+            lambda: (self.navigation.selected_type, self.navigation.selected_id),
+            lambda: str(getattr(window.current_world, "id", "") or ""),
+            lambda: [
+                (item.id, item.name, kind)
+                for kind, collection in (
+                    ("entity", self.data.cached_entities),
+                    ("event", self.data.cached_events),
+                )
+                for item in collection
+            ],
+            self.navigation.set_global_selection,
+            self.navigation.peek_target,
+            lambda message: window.status_bar.showMessage(message, 5000),
+            self,
+        )
+        self.navigation.navigation_result.connect(self.wiki_links.on_navigation_result)
+        self.navigation.peek_started.connect(self.wiki_links.on_peek_started)
+        self.navigation.peek_closed.connect(self.wiki_links.on_peek_closed)
+        self.data.editor_hydrated.connect(self.wiki_links.on_editor_hydrated)
+        self.data.editor_hydration_failed.connect(
+            self.wiki_links.on_editor_hydration_failed
+        )
+
     def bind_icon_library(self) -> None:
         """Compose the icon feature using narrow command and view dependencies."""
         from PySide6.QtCore import Qt

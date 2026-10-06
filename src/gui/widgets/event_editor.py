@@ -1216,6 +1216,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             return
         new_id = event.id if event is not None else None
         if new_id != self._current_event_id:
+            self.desc_edit.link_authoring.cancel()
             if not self.relation_authoring.prepare_to_leave():
                 return
             self.relation_authoring.cancel()
