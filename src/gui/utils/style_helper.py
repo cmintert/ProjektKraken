@@ -1197,6 +1197,17 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_item_view_selection_style(selector: str) -> str:
+        """Share semantic selection and keyboard focus across item views."""
+        theme = ThemeManager().get_theme()
+        return (
+            f"{selector}::item:selected {{ "
+            f"background-color: {theme['selection_bg']}; "
+            f"color: {theme['selection_text']}; }}"
+            f"{selector}:focus {{ border: 1px solid {theme['focus_ring']}; }}"
+        )
+
+    @staticmethod
     def get_list_widget_style() -> str:
         """Returns QSS for themed list widgets.
 

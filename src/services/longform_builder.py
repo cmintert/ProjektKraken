@@ -642,7 +642,6 @@ def reindex_document_positions(conn: Connection, doc_id: str = DOC_ID_DEFAULT) -
         doc_id: Document ID.
 
     """
-    ensure_all_items_indexed(conn, doc_id)
     sequence = build_longform_sequence(conn, doc_id)
 
     for idx, item in enumerate(sequence):
@@ -788,6 +787,56 @@ def demote_item(
     logger.debug(f"Demoted {table}.{row_id} to be child of {new_parent_id}")
 
 
+def membership_removal_updates(
+    conn: Connection, table: str, row_id: str, doc_id: str = DOC_ID_DEFAULT
+) -> list[tuple[dict[str, Any], dict[str, Any]]]:
+    """Plan lifting a removed section's descendants while keeping reading order.
+
+    Commands own the transaction and exact undo snapshots for these updates.
+    Other documents and authored metadata fields are left intact.
+    """
+    meta = capture_longform_metadata(conn, table, row_id, doc_id)["metadata"]
+    if meta is None:
+        return []
+    items = read_all_longform_items(conn, doc_id)
+    children = sorted(
+        (item for item in items if item["meta"].get("parent_id") == row_id),
+        key=lambda item: item["meta"].get("position", 0.0),
+    )
+    position = meta.get("position", 0.0)
+    next_position = min(
+        (
+            item["meta"].get("position", 0.0)
+            for item in items
+            if item["meta"].get("parent_id") == meta.get("parent_id")
+            and item["meta"].get("position", 0.0) > position
+        ),
+        default=position + DEFAULT_POSITION_GAP,
+    )
+    updates = []
+    frontier = [(child, index) for index, child in enumerate(children)]
+    visited = {row_id}
+    while frontier:
+        item, child_index = frontier.pop(0)
+        if item["id"] in visited:
+            continue
+        visited.add(item["id"])
+        new_meta = item["meta"].copy()
+        new_meta["depth"] = max(0, new_meta.get("depth", 0) - 1)
+        if new_meta.get("parent_id") == row_id:
+            new_meta["parent_id"] = meta.get("parent_id")
+            new_meta["position"] = position + (
+                (next_position - position) * child_index / max(1, len(children))
+            )
+        updates.append((item, new_meta))
+        frontier.extend(
+            (child, child_index)
+            for child in items
+            if child["meta"].get("parent_id") == item["id"]
+        )
+    return updates
+
+
 def remove_from_longform(
     conn: Connection, table: str, row_id: str, doc_id: str = DOC_ID_DEFAULT
 ) -> None:
@@ -841,7 +890,6 @@ def export_longform_to_markdown(conn: Connection, doc_id: str = DOC_ID_DEFAULT) 
     """
     from src.services.transfer_document import document_snapshot
 
-    ensure_all_items_indexed(conn, doc_id)
     sequence = build_longform_sequence(conn, doc_id)
     document = document_snapshot(
         sequence, {"title": f"Longform Document: {doc_id}"}, ""

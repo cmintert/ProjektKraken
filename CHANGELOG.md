@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-06
-**Commit:** 200bfbc5599eb2ea4d0daa1ba9639eda105a8c0b
+**Commit:** a12c84e5771fadb488c5d2d68e09ef8b0ddb67ef
 ---
 
 # Changelog
@@ -12,6 +12,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-06)* **Longform authoring (KRT-47)**: Added visible Add content,
+  Outline actions and Find routes with responsive overflow. Document removal
+  retains world entries and lifts child sections with exact undo; complete world
+  deletion requires confirmation and uses existing draft/raster guards. Refresh,
+  export and reindex now respect deliberate membership instead of re-adding
+  every world object. Registered addition/removal for persisted command history;
+  updated documentation, regression membership and six-theme rendered evidence.
 
 - *(2026-10-06)* **Incremental refactoring (KRT-36)**: Added a Ruff-based
   complexity ratchet with persistent hotspot identities, strict improvement on

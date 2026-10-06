@@ -1165,20 +1165,6 @@
       "source": "text_dim_color = theme.get(\"text_dim\", \"#9E9E9E\")"
     },
     {
-      "key": "src/gui/widgets/longform/outline.py|LongformOutlineWidget._update_colors|literal-color|5056cf128952d12a",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in LongformOutlineWidget._update_colors; migrate this expression when its presentation path is next touched.",
-      "source": "self.color_entity = QColor(theme.get(\"primary\", \"#FF9900\"))"
-    },
-    {
-      "key": "src/gui/widgets/longform/outline.py|LongformOutlineWidget._update_colors|literal-color|d990ab651607e46c",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in LongformOutlineWidget._update_colors; migrate this expression when its presentation path is next touched.",
-      "source": "self.color_event = QColor(theme.get(\"accent_secondary\", \"#0078D4\"))"
-    },
-    {
       "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem._draw_edit_handles|literal-color|baa9d4300a357f02",
       "count": 1,
       "category": "legacy",

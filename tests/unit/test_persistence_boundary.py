@@ -194,7 +194,7 @@ def test_tag_filter_accepts_connection_or_service_without_reopening(db_service):
         tag_filter.filter_object_ids(object())
 
 
-def test_worker_indexing_commits_and_rolls_back(db_service, qapp):
+def test_explicit_indexing_commits_and_rolls_back(db_service, qapp):
     entity = Entity(name="Worker outline", type="test")
     db_service.insert_entity(entity)
     worker = DatabaseWorker(":memory:")
@@ -203,6 +203,10 @@ def test_worker_indexing_commits_and_rolls_back(db_service, qapp):
     errors = []
     worker.longform_sequence_loaded.connect(results.append)
     worker.error_occurred.connect(errors.append)
+    worker.load_longform_sequence("default")
+    assert results == [[]]
+    with db_service.transaction() as conn:
+        longform_builder.ensure_all_items_indexed(conn)
     worker.load_longform_sequence("default")
     assert results and results[-1][0]["id"] == entity.id
     assert not db_service.require_connection().in_transaction
@@ -217,8 +221,12 @@ def test_worker_indexing_commits_and_rolls_back(db_service, qapp):
     with patch.object(
         longform_builder, "insert_or_update_longform_meta", fail_after_write
     ):
-        worker.load_longform_sequence("default")
-    assert errors
+        with pytest.raises(RuntimeError, match="index failed"):
+            with db_service.transaction() as conn:
+                longform_builder.ensure_all_items_indexed(conn)
+    worker.load_longform_sequence("default")
+    assert results[-1] == []
+    assert not errors
     assert (
         longform_builder.get_longform_meta(
             db_service.require_connection(), "entities", entity.id

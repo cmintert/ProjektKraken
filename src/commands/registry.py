@@ -74,9 +74,11 @@ def _init_registry() -> None:
         UpdateLayerTreeCommand,
     )
     from src.commands.longform_commands import (
+        AddLongformEntryCommand,
         DemoteLongformEntryCommand,
         MoveLongformEntryCommand,
         PromoteLongformEntryCommand,
+        RemoveLongformEntryCommand,
     )
     from src.commands.map_commands import (
         CreateMapCommand,
@@ -148,6 +150,8 @@ def _init_registry() -> None:
             "InjectTemplateCommand": InjectTemplateCommand,
             "ApplyTransferCommand": ApplyTransferCommand,
             "MoveLongformEntryCommand": MoveLongformEntryCommand,
+            "AddLongformEntryCommand": AddLongformEntryCommand,
+            "RemoveLongformEntryCommand": RemoveLongformEntryCommand,
             "PromoteLongformEntryCommand": PromoteLongformEntryCommand,
             "DemoteLongformEntryCommand": DemoteLongformEntryCommand,
             "AddImagesCommand": AddImagesCommand,

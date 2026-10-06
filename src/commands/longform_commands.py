@@ -191,6 +191,44 @@ class MoveLongformEntryCommand(_LongformMetadataCommand):
         return cmd
 
 
+class AddLongformEntryCommand(MoveLongformEntryCommand):
+    """Append existing world content once without changing existing membership."""
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Determine the append position on the worker and retain exact undo."""
+        try:
+            conn = db_service.require_connection()
+            snapshot = self._snapshot_before_execute(db_service)
+            metadata = snapshot["metadata"]
+            if metadata is not None:
+                self._metadata_before = snapshot
+                self._is_executed = True
+                return CommandResult(
+                    success=True,
+                    message="Entry is already in this document",
+                    command_name="AddLongformEntryCommand",
+                )
+            if self._metadata_before is None:
+                items = longform_builder.read_all_longform_items(conn, self.doc_id)
+                position = (
+                    max(
+                        (item["meta"].get("position", 0.0) for item in items),
+                        default=0.0,
+                    )
+                    + longform_builder.DEFAULT_POSITION_GAP
+                )
+                self.new_meta = {"position": position, "parent_id": None, "depth": 0}
+            result = super().execute(db_service)
+            result.command_name = "AddLongformEntryCommand"
+            if result.success:
+                result.message = "Added content to document"
+            return result
+        except Exception as exc:
+            return CommandResult(
+                success=False, message=str(exc), command_name="AddLongformEntryCommand"
+            )
+
+
 class PromoteLongformEntryCommand(_LongformMetadataCommand):
     """Command to promote a longform entry (reduce depth).
 
@@ -392,6 +430,30 @@ class RemoveLongformEntryCommand(_LongformMetadataCommand):
         self.row_id = row_id
         self.old_meta = old_meta.copy()
         self.doc_id = doc_id
+        self._child_moves: list[MoveLongformEntryCommand] | None = None
+
+    def _prepare_child_moves(self, db_service: DatabaseService) -> None:
+        """Lift descendants on the worker so removing a section cannot hide them."""
+        if self._child_moves is not None:
+            return
+        conn = db_service.require_connection()
+        updates = longform_builder.membership_removal_updates(
+            conn, self.table, self.row_id, self.doc_id
+        )
+        self._child_moves = [
+            MoveLongformEntryCommand(
+                item["table"], item["id"], item["meta"], new_meta, self.doc_id
+            )
+            for item, new_meta in updates
+        ]
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """Restore the section and exact descendant metadata as one undo step."""
+        if not self._is_executed:
+            return
+        super().undo(db_service)
+        for move in reversed(self._child_moves or []):
+            move.undo(db_service)
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Execute the removal operation.
@@ -406,6 +468,11 @@ class RemoveLongformEntryCommand(_LongformMetadataCommand):
         try:
             metadata_before = self._snapshot_before_execute(db_service)
             logger.info(f"Executing RemoveLongformEntry: {self.table}.{self.row_id}")
+            self._prepare_child_moves(db_service)
+            for move in self._child_moves or []:
+                result = move.execute(db_service)
+                if not result.success:
+                    raise RuntimeError(result.message)
             longform_builder.remove_from_longform(
                 db_service.require_connection(),
                 self.table,
@@ -436,6 +503,11 @@ class RemoveLongformEntryCommand(_LongformMetadataCommand):
             "doc_id": self.doc_id,
             "is_executed": self._is_executed,
             **self._snapshot_payload(),
+            **(
+                {"child_moves": [move.to_dict() for move in self._child_moves]}
+                if self._child_moves is not None
+                else {}
+            ),
         }
 
     @classmethod
@@ -448,5 +520,9 @@ class RemoveLongformEntryCommand(_LongformMetadataCommand):
             doc_id=data.get("doc_id", longform_builder.DOC_ID_DEFAULT),
         )
         cmd._load_metadata_snapshot(data)
+        if "child_moves" in data:
+            cmd._child_moves = [
+                MoveLongformEntryCommand.from_dict(move) for move in data["child_moves"]
+            ]
         cmd._is_executed = data.get("is_executed", False)
         return cmd

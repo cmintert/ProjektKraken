@@ -146,8 +146,9 @@ def test_real_world_cli_metadata_and_reopen(db_service, tmp_path):
     output = tmp_path / "outline.md"
     run("export", "--output", str(output))
     assert "Parent" in output.read_text(encoding="utf-8")
-    # Export's existing indexing step also persists under explicit ownership.
-    assert read_meta(child.id)
+    # Export respects deliberate document membership and never re-adds removals.
+    assert read_meta(child.id) == {}
+    assert "Child" not in output.read_text(encoding="utf-8")
 
 
 def test_longform_reindex(mock_db, mock_validate, capsys):

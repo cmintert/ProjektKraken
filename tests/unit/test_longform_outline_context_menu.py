@@ -290,4 +290,5 @@ def test_context_menu_actions_present(
     assert "Move Down" in action_texts
     assert "Promote" in action_texts
     assert "Demote" in action_texts
-    assert "Delete Item" in action_texts
+    assert "Remove from document" in action_texts
+    assert "Delete from world…" in action_texts

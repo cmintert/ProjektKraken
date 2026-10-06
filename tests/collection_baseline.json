@@ -2,10 +2,10 @@
   "schema": 1,
   "counts": {
     "smoke": 18,
-    "ci_fast": 1583,
+    "ci_fast": 1603,
     "slow": 1,
     "performance": 0,
-    "full": 5951,
+    "full": 5971,
     "full_only": 4359
   },
   "categories": {
@@ -18,7 +18,7 @@
     "repro": 2,
     "root": 15,
     "security": 5,
-    "unit": 5593
+    "unit": 5613
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -4660,6 +4660,66 @@
     "tests/unit/test_lmstudio_config.py::test_derive_all_openai_compatible_endpoints": [],
     "tests/unit/test_lmstudio_config.py::test_model_discovery_returns_sorted_unique_ids": [],
     "tests/unit/test_lmstudio_config.py::test_normalize_migrates_full_endpoint_to_base_url": [],
+    "tests/unit/test_longform_authoring.py::test_complete_deletion_requires_confirmation[16384-entities-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_authoring.py::test_complete_deletion_requires_confirmation[16384-events-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_authoring.py::test_complete_deletion_requires_confirmation[4194304-entities-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_authoring.py::test_complete_deletion_requires_confirmation[4194304-events-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_authoring.py::test_delete_preserves_dirty_target_on_guard_cancel": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_authoring.py::test_labeled_find_and_theme_switch_keep_selection": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_authoring.py::test_labeled_routes_survive_narrow_width[1100]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_authoring.py::test_labeled_routes_survive_narrow_width[400]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_authoring.py::test_membership_add_and_cancel_do_not_navigate_or_delete": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_authoring.py::test_membership_commands_replay_after_database_reopen": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_authoring.py::test_membership_survives_refresh_export_and_history[entities]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_authoring.py::test_membership_survives_refresh_export_and_history[events]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_authoring.py::test_outline_refresh_preserves_target_without_navigation": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_authoring.py::test_remove_section_lifts_descendants_and_exact_undo": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_authoring.py::test_visible_add_nest_reorder_and_undo": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_authoring.py::test_visible_and_context_actions_share_intents[Demote-demote_requested]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_authoring.py::test_visible_and_context_actions_share_intents[Move Down-move_down_requested]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_authoring.py::test_visible_and_context_actions_share_intents[Move Up-move_up_requested]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_authoring.py::test_visible_and_context_actions_share_intents[Promote-promote_requested]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_longform_authoring.py::test_visible_and_context_actions_share_intents[Remove from document-remove_requested]": [
+      "ci_fast"
+    ],
     "tests/unit/test_longform_builder.py::test_build_longform_sequence_heading_levels": [],
     "tests/unit/test_longform_builder.py::test_build_longform_sequence_nesting": [],
     "tests/unit/test_longform_builder.py::test_build_longform_sequence_ordering": [],
@@ -5997,6 +6057,9 @@
     "tests/unit/test_persistence_boundary.py::test_connection_boundary_rejects_foreign_thread[transaction]": [
       "ci_fast"
     ],
+    "tests/unit/test_persistence_boundary.py::test_explicit_indexing_commits_and_rolls_back": [
+      "ci_fast"
+    ],
     "tests/unit/test_persistence_boundary.py::test_failed_connection_leaves_strict_access_disconnected": [
       "ci_fast"
     ],
@@ -6037,9 +6100,6 @@
       "ci_fast"
     ],
     "tests/unit/test_persistence_boundary.py::test_webserver_longform_reads_leave_world_unchanged": [
-      "ci_fast"
-    ],
-    "tests/unit/test_persistence_boundary.py::test_worker_indexing_commits_and_rolls_back": [
       "ci_fast"
     ],
     "tests/unit/test_production_workspace.py::test_activity_action_follows_moved_panel": [],

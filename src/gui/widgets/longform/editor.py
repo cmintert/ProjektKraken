@@ -11,17 +11,18 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from PySide6.QtCore import QSize, Qt, Signal, Slot
+from PySide6.QtCore import QSignalBlocker, QSize, Qt, Signal, Slot
 from PySide6.QtGui import QCloseEvent, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QMenu,
     QMessageBox,
     QPushButton,
     QSizePolicy,
     QSplitter,
-    QToolBar,
+    QTreeWidgetItemIterator,
     QVBoxLayout,
     QWidget,
 )
@@ -32,7 +33,9 @@ from src.gui.utils.shortcut_manager import ShortcutManager
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.longform.content import LongformContentWidget
+from src.gui.widgets.longform.membership import LongformMembershipWidget
 from src.gui.widgets.longform.outline import LongformOutlineWidget
+from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.services.web_service_manager import WebServiceManager
 
 logger = logging.getLogger(__name__)
@@ -49,6 +52,9 @@ class LongformEditorWidget(QWidget):
     promote_requested = Signal(str, str, dict)  # table, id, old_meta
     demote_requested = Signal(str, str, dict)  # table, id, old_meta
     delete_requested = Signal(str, str)  # table, id - completely delete the item
+    remove_requested = Signal(str, str, dict)
+    show_membership_requested = Signal()
+    add_requested = Signal(str, str)
     move_up_requested = Signal(str, str, dict)  # table, id, old_meta
     move_down_requested = Signal(str, str, dict)  # table, id, old_meta
     refresh_requested = Signal()
@@ -82,6 +88,8 @@ class LongformEditorWidget(QWidget):
         # Setup UI
         self._setup_ui()
         self._setup_shortcuts()
+        ThemeManager().theme_changed.connect(self._apply_action_theme)
+        self._apply_action_theme()
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Stop server on close."""
@@ -98,29 +106,38 @@ class LongformEditorWidget(QWidget):
         icon_color = theme["text_main"]
 
         # Toolbar
-        toolbar = QToolBar()
-        toolbar.setIconSize(QSize(16, 16))
-        toolbar.setStyleSheet("QToolBar { spacing: 10px; padding: 5px; }")
+        toolbar = self.action_toolbar = OverflowToolBar(self)
+        self.btn_add = QPushButton("Add content…")
+        self.btn_add.clicked.connect(self.show_membership_requested.emit)
+        toolbar.add_button(self.btn_add, priority=100)
+        self.btn_outline_actions = QPushButton("Outline actions")
+        self.btn_outline_actions.setToolTip(
+            "Select an outline item to arrange or remove it"
+        )
+        self.outline_actions_menu = QMenu(self)
+        self.outline_actions_menu.aboutToShow.connect(self._prepare_outline_actions)
+        self.btn_outline_actions.setMenu(self.outline_actions_menu)
+        toolbar.add_button(self.btn_outline_actions, priority=90)
 
         # Refresh Button
         self.btn_refresh = QPushButton("Refresh")
         self.btn_refresh.clicked.connect(self.refresh_requested.emit)
-        self.refresh_action = toolbar.addWidget(self.btn_refresh)
+        toolbar.add_button(self.btn_refresh)
 
         # Filter Button
         btn_filter = QPushButton("Filter...")
         btn_filter.clicked.connect(self.show_filter_dialog_requested.emit)
-        toolbar.addWidget(btn_filter)
+        toolbar.add_button(btn_filter)
 
         # Clear Filters Button
         btn_clear_filters = QPushButton("Clear Filters")
         btn_clear_filters.clicked.connect(self.clear_filters_requested.emit)
-        toolbar.addWidget(btn_clear_filters)
+        toolbar.add_button(btn_clear_filters)
 
         # Export Button
         btn_export = QPushButton("Export to Markdown")
         btn_export.clicked.connect(self.export_requested.emit)
-        toolbar.addWidget(btn_export)
+        toolbar.add_button(btn_export)
 
         # Export as Vault Button (Obsidian-compatible)
         btn_export_vault = QPushButton("Export as Vault")
@@ -128,35 +145,30 @@ class LongformEditorWidget(QWidget):
             "Export each entity and event as separate Obsidian-compatible .md files"
         )
         btn_export_vault.clicked.connect(self.export_vault_requested.emit)
-        toolbar.addWidget(btn_export_vault)
+        toolbar.add_button(btn_export_vault)
 
         # Local publishing is the safe, frictionless default. LAN sharing is a
         # separate action because it changes the server's network exposure.
         self.btn_publish = QPushButton("Publish Locally")
         self.btn_publish.setCheckable(True)
         self.btn_publish.clicked.connect(self._toggle_publish)
-        toolbar.addWidget(self.btn_publish)
+        toolbar.add_button(self.btn_publish)
 
         self.btn_share_lan = QPushButton("Share on LAN...")
         self.btn_share_lan.setCheckable(True)
         self.btn_share_lan.clicked.connect(self._toggle_lan_share)
-        toolbar.addWidget(self.btn_share_lan)
+        toolbar.add_button(self.btn_share_lan)
 
         self.url_label = QLabel("")
         self.url_label.setStyleSheet(StyleHelper.get_wiki_link_style())
         self.url_label.setOpenExternalLinks(True)
-        toolbar.addWidget(self.url_label)
+        self.url_label.hide()
 
         self.access_code_label = QLabel("")
-        toolbar.addWidget(self.access_code_label)
-
-        # Spacer to push Find button to far right
-        spacer = QWidget()
-        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        toolbar.addWidget(spacer)
+        self.access_code_label.hide()
 
         # Find Button (Discoverability - Far Right)
-        self.btn_find = QPushButton()
+        self.btn_find = QPushButton("Find")
         self.btn_find.setIcon(
             load_icon(
                 os.path.join("default_assets", "icons", "ui_icons", "search.svg"),
@@ -165,9 +177,16 @@ class LongformEditorWidget(QWidget):
         )
         self.btn_find.setToolTip(f"Find Text ({ShortcutManager.FIND.sequence})")
         self.btn_find.clicked.connect(self._toggle_search)
-        toolbar.addWidget(self.btn_find)
+        toolbar.add_button(self.btn_find, priority=80)
 
         layout.addWidget(toolbar)
+        self.url_label.setWordWrap(True)
+        layout.addWidget(self.url_label)
+        layout.addWidget(self.access_code_label)
+        self.membership = LongformMembershipWidget(self)
+        self.membership.add_requested.connect(self.add_requested.emit)
+        self.membership.cancelled.connect(self._hide_membership)
+        layout.addWidget(self.membership)
 
         # Search Bar (Hidden by default)
         self.search_widget = QWidget()
@@ -181,7 +200,7 @@ class LongformEditorWidget(QWidget):
         self.search_input.returnPressed.connect(self._perform_search_next)
 
         # Icons
-        btn_prev = QPushButton()
+        btn_prev = QPushButton("Previous")
         btn_prev.setIcon(
             load_icon(
                 os.path.join("default_assets", "icons", "ui_icons", "arrow_up.svg"),
@@ -191,7 +210,7 @@ class LongformEditorWidget(QWidget):
         btn_prev.setToolTip("Find Previous (Shift+Enter)")
         btn_prev.clicked.connect(self._perform_search_prev)
 
-        btn_next = QPushButton()
+        btn_next = QPushButton("Next")
         btn_next.setIcon(
             load_icon(
                 os.path.join("default_assets", "icons", "ui_icons", "arrow_down.svg"),
@@ -201,7 +220,7 @@ class LongformEditorWidget(QWidget):
         btn_next.setToolTip("Find Next (Enter)")
         btn_next.clicked.connect(self._perform_search_next)
 
-        btn_close = QPushButton()
+        btn_close = QPushButton("Close")
         btn_close.setIcon(
             load_icon(
                 os.path.join("default_assets", "icons", "ui_icons", "close.svg"),
@@ -230,13 +249,15 @@ class LongformEditorWidget(QWidget):
         self.outline.item_demoted.connect(self.demote_requested.emit)
         self.outline.item_moved.connect(self.item_moved.emit)
         self.outline.item_deleted.connect(self.delete_requested.emit)
+        self.outline.item_removed.connect(self.remove_requested.emit)
+        self.outline.itemSelectionChanged.connect(self._update_outline_actions)
         self.outline.item_move_up.connect(self.move_up_requested.emit)
         self.outline.item_move_down.connect(self.move_down_requested.emit)
 
         # Right: Content view
         self.content = LongformContentWidget()
         self.content.link_clicked.connect(self.link_clicked.emit)
-        self.content.item_selected.connect(self.item_selected.emit)
+        self.content.item_selected.connect(self._on_content_selected)
 
         self._splitter.addWidget(self.outline)
         self._splitter.addWidget(self.content)
@@ -251,17 +272,69 @@ class LongformEditorWidget(QWidget):
             title="No Content Available",
             description=(
                 "The longform document is currently empty.\n"
-                "Create new events/entities or adjust your filters."
+                "Use Add content… to choose existing entities and events,\n"
+                "or clear filters to reveal document members."
             ),
         )
-        self.empty_state.add_action(
-            "Clear Filters", self.clear_filters_requested.emit, primary=True
+        self.btn_empty_add = self.empty_state.add_action(
+            "Add content…", self.show_membership_requested.emit, primary=True
+        )
+        self.btn_empty_clear = self.empty_state.add_action(
+            "Clear Filters", self.clear_filters_requested.emit
         )
         layout.addWidget(self.empty_state, 1)
 
         # Status bar
         self.status_label = QLabel("No items loaded")
         layout.addWidget(self.status_label, 0)  # Stretch factor 0
+        self._update_outline_actions()
+
+    def _prepare_outline_actions(self) -> None:
+        self.outline.populate_actions_menu(self.outline_actions_menu)
+
+    def _update_outline_actions(self) -> None:
+        self.btn_outline_actions.setEnabled(bool(self.outline.selectedItems()))
+
+    def _hide_membership(self) -> None:
+        self.membership.hide()
+        self.btn_add.setFocus()
+
+    def _apply_action_theme(self, _theme: dict | None = None) -> None:
+        """Use shared neutral controls and refresh icon colors on theme changes."""
+        theme = ThemeManager().get_theme()
+        self.setStyleSheet(
+            f"LongformEditorWidget {{ background-color: {theme['app_bg']}; }}"
+        )
+        self.btn_empty_add.setStyleSheet(StyleHelper.get_primary_button_style())
+        self.btn_empty_clear.setStyleSheet(StyleHelper.get_secondary_button_style())
+        self.empty_state._apply_title_style()
+        self.empty_state._description_label.setStyleSheet(
+            StyleHelper.get_empty_state_style()
+        )
+        for button in self.findChildren(QPushButton):
+            if button.parent() in (self.action_toolbar, self.search_widget):
+                button.setStyleSheet(StyleHelper.get_secondary_button_style())
+        self.url_label.setStyleSheet(StyleHelper.get_wiki_link_style())
+        self.btn_find.setIcon(
+            load_icon(
+                os.path.join("default_assets", "icons", "ui_icons", "search.svg"),
+                color=theme["text_main"],
+            )
+        )
+
+    @Slot(str, str)
+    def _on_content_selected(self, table: str, row_id: str) -> None:
+        """Keep card and outline action targets consistent without double navigation."""
+        iterator = QTreeWidgetItemIterator(self.outline)
+        while item := iterator.value():
+            metadata = self.outline._get_item_metadata(item)
+            if metadata is not None and metadata[:2] == (table, row_id):
+                with QSignalBlocker(self.outline):
+                    self.outline.setCurrentItem(item)
+                self._update_outline_actions()
+                break
+            iterator += 1
+        self.item_selected.emit(table, row_id)
 
     def load_sequence(self, sequence: List[Dict[str, Any]]) -> None:
         """Load a longform sequence into the editor.
@@ -270,12 +343,21 @@ class LongformEditorWidget(QWidget):
             sequence: Ordered list from build_longform_sequence.
 
         """
+        same_content = sequence == self._sequence
+        cursor = self.content.textCursor()
+        scroll = self.content.verticalScrollBar().value()
         self._sequence = sequence
-        self.outline.load_sequence(sequence)
+        with QSignalBlocker(self.outline):
+            self.outline.load_sequence(sequence)
+        self._update_outline_actions()
         self.content.setSearchPaths(
             [str(Path(self.db_path).resolve().parent)] if self.db_path else []
         )
-        self.content.load_content(sequence)
+        if not same_content:
+            self.content.load_content(sequence)
+        else:
+            self.content.setTextCursor(cursor)
+            self.content.verticalScrollBar().setValue(scroll)
 
         # Toggle empty state
         if not sequence:
@@ -377,6 +459,8 @@ class LongformEditorWidget(QWidget):
     def _on_server_status_changed(self, is_running: bool, url: str) -> None:
         """Update UI based on server status."""
         is_lan_shared = is_running and self.web_manager.is_lan_shared
+        self.url_label.setVisible(is_running)
+        self.access_code_label.setVisible(is_lan_shared)
         self.btn_publish.setChecked(is_running and not is_lan_shared)
         self.btn_share_lan.setChecked(is_lan_shared)
         if is_running:
@@ -388,9 +472,7 @@ class LongformEditorWidget(QWidget):
             )
             # Create a clickable link
             escaped_url = html.escape(url, quote=True)
-            self.url_label.setText(
-                f'<a href="{escaped_url}">{escaped_url}</a>'
-            )
+            self.url_label.setText(f'<a href="{escaped_url}">{escaped_url}</a>')
             self.url_label.setToolTip("Click to open in browser")
             access_code = self.web_manager.access_code
             if access_code:
@@ -403,6 +485,7 @@ class LongformEditorWidget(QWidget):
             self.btn_share_lan.setText("Share on LAN...")
             self.url_label.setText("")
             self.access_code_label.setText("")
+        self.action_toolbar.refresh()
 
     @Slot(str)
     def _on_server_error(self, msg: str) -> None:
@@ -444,7 +527,9 @@ class LongformEditorWidget(QWidget):
 
     def _handle_escape(self) -> None:
         """Handle escape key."""
-        if self.search_widget.isVisible():
+        if self.membership.isVisible():
+            self._hide_membership()
+        elif self.search_widget.isVisible():
             self._hide_search()
 
     def _perform_search_next(self) -> None:
@@ -460,4 +545,4 @@ class LongformEditorWidget(QWidget):
 
     def set_refresh_button_visible(self, visible: bool) -> None:
         """Sets the visibility of the manual refresh button."""
-        self.refresh_action.setVisible(visible)
+        self.action_toolbar.set_button_available(self.btn_refresh, visible)

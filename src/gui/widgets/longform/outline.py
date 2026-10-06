@@ -40,6 +40,7 @@ class LongformOutlineWidget(QTreeWidget):
     item_promoted = Signal(str, str, dict)  # table, id, old_meta
     item_demoted = Signal(str, str, dict)  # table, id, old_meta
     item_deleted = Signal(str, str)  # table, id - completely delete the item
+    item_removed = Signal(str, str, dict)  # document membership only
     item_move_up = Signal(str, str, dict)  # table, id, old_meta
     item_move_down = Signal(str, str, dict)  # table, id, old_meta
 
@@ -69,8 +70,14 @@ class LongformOutlineWidget(QTreeWidget):
 
         theme = ThemeManager().get_theme()
         # Fallback to defaults if theme keys missing
-        self.color_event = QColor(theme.get("accent_secondary", "#0078D4"))
-        self.color_entity = QColor(theme.get("primary", "#FF9900"))
+        self.color_event = QColor(theme["event_main"])
+        self.color_entity = QColor(theme["entity_main"])
+        from src.gui.utils.style_helper import StyleHelper
+
+        self.setStyleSheet(
+            StyleHelper.get_tree_view_style()
+            + StyleHelper.get_item_view_selection_style("QTreeView")
+        )
 
     @Slot(dict)
     def _on_theme_changed(self, theme: dict) -> None:
@@ -348,15 +355,25 @@ class LongformOutlineWidget(QTreeWidget):
         item = self.itemAt(pos)
         if not item:
             return
+        self.setCurrentItem(item)
+        menu = QMenu(self)
+        self.populate_actions_menu(menu)
+        self._display_context_menu(menu, self.mapToGlobal(pos))
+
+    def populate_actions_menu(self, menu: QMenu) -> None:
+        """Share selected-item actions between visible and context menus."""
+        menu.clear()
+        item = self.currentItem()
+        if item is None or not item.isSelected():
+            action = menu.addAction("Select an outline item first")
+            action.setEnabled(False)
+            return
 
         meta_data = self._get_item_metadata(item)
         if not meta_data:
             return
 
         table, row_id, old_meta = meta_data
-
-        # Create context menu
-        menu = QMenu(self)
 
         # Check if item can be moved up or down
         pos_info = self._get_item_position_info(item)
@@ -368,13 +385,13 @@ class LongformOutlineWidget(QTreeWidget):
         can_move_down = index < sibling_count - 1
 
         # Move Up action
-        move_up_action = QAction("Move Up", self)
+        move_up_action = QAction("Move Up", menu)
         move_up_action.setEnabled(can_move_up)
         move_up_action.triggered.connect(lambda: self._move_up_selected())
         menu.addAction(move_up_action)
 
         # Move Down action
-        move_down_action = QAction("Move Down", self)
+        move_down_action = QAction("Move Down", menu)
         move_down_action.setEnabled(can_move_down)
         move_down_action.triggered.connect(lambda: self._move_down_selected())
         menu.addAction(move_down_action)
@@ -384,14 +401,16 @@ class LongformOutlineWidget(QTreeWidget):
         # Promote action
         # Note: Context menu disables this for depth 0 as UX improvement,
         # but keyboard shortcut (Ctrl+[) still works and command validates
-        promote_action = QAction("Promote", self)
+        promote_action = QAction("Promote", menu)
+        promote_action.setToolTip("Lift this section one level")
         current_depth = old_meta.get("depth", 0)
         promote_action.setEnabled(current_depth > 0)
         promote_action.triggered.connect(lambda: self._promote_selected())
         menu.addAction(promote_action)
 
         # Demote action (can only demote if there's a previous sibling to become parent)
-        demote_action = QAction("Demote", self)
+        demote_action = QAction("Demote", menu)
+        demote_action.setToolTip("Nest beneath the preceding sibling")
         can_demote = False
         if parent:
             can_demote = parent.indexOfChild(item) > 0
@@ -403,13 +422,14 @@ class LongformOutlineWidget(QTreeWidget):
 
         menu.addSeparator()
 
-        # Delete action - completely deletes the item
-        delete_action = QAction("Delete Item", self)
+        remove_action = menu.addAction("Remove from document")
+        remove_action.setToolTip("Keep the world entry and lift its child sections")
+        remove_action.triggered.connect(self._remove_selected)
+
+        # Complete deletion uses the application coordinator's safety guard.
+        delete_action = QAction("Delete from world…", menu)
         delete_action.triggered.connect(lambda: self._delete_selected())
         menu.addAction(delete_action)
-
-        # Show menu at global position
-        self._display_context_menu(menu, self.mapToGlobal(pos))
 
     @staticmethod
     def _display_context_menu(menu: QMenu, global_pos: QPoint) -> None:
@@ -427,6 +447,9 @@ class LongformOutlineWidget(QTreeWidget):
         # Check for OUTLINE_DEMOTE
         elif ShortcutManager.check_event(event, ShortcutManager.OUTLINE_DEMOTE):
             self._demote_selected()
+            event.accept()
+        elif event.key() == Qt.Key.Key_Delete:
+            self._delete_selected()
             event.accept()
         else:
             super().keyPressEvent(event)
@@ -516,3 +539,12 @@ class LongformOutlineWidget(QTreeWidget):
         if meta_data:
             table, row_id, old_meta = meta_data
             self.item_deleted.emit(table, row_id)
+
+    def _remove_selected(self) -> None:
+        """Request reversible membership removal, preserving the world entry."""
+        item = self.currentItem()
+        if item is not None and item.isSelected():
+            meta_data = self._get_item_metadata(item)
+            if meta_data:
+                table, row_id, old_meta = meta_data
+                self.item_removed.emit(table, row_id, old_meta.copy())

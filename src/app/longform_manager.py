@@ -11,12 +11,12 @@ from PySide6.QtCore import Q_ARG, QObject, QTimer, Signal, Slot
 from PySide6.QtWidgets import QDialog, QMessageBox
 
 from src.app.qt_invocation import invoke_queued
-from src.commands.entity_commands import DeleteEntityCommand
-from src.commands.event_commands import DeleteEventCommand
 from src.commands.longform_commands import (
+    AddLongformEntryCommand,
     DemoteLongformEntryCommand,
     MoveLongformEntryCommand,
     PromoteLongformEntryCommand,
+    RemoveLongformEntryCommand,
 )
 from src.core.logging_config import get_logger
 from src.gui.widgets.auto_closing_message_box import AutoClosingMessageBox
@@ -60,6 +60,45 @@ class LongformManager(QObject):
         self._reload_timer.setSingleShot(True)
         self._reload_timer.setInterval(100)
         self._reload_timer.timeout.connect(self._request_if_needed)
+        editor = getattr(main_window, "longform_editor", None)
+        if editor is not None:
+            editor.show_membership_requested.connect(self.show_membership)
+            editor.add_requested.connect(self.add_longform_entry)
+            editor.remove_requested.connect(self.remove_longform_entry)
+
+    @Slot()
+    def show_membership(self) -> None:
+        """Expose cached world snapshots without selecting an inspector target."""
+        data = self.window.data_coordinator
+        items = [
+            (table, entry.id, entry.name)
+            for table, entries in (
+                ("entities", data.cached_entities),
+                ("events", data.cached_events),
+            )
+            for entry in entries
+        ]
+        items.sort(key=lambda item: (item[2].casefold(), item[0], item[1]))
+        self.window.longform_editor.membership.show_items(items)
+
+    @Slot(str, str)
+    def add_longform_entry(self, table: str, row_id: str) -> None:
+        """Append an existing entry once, using authoritative worker metadata."""
+        if table not in ("entities", "events"):
+            return
+        command = AddLongformEntryCommand(table, row_id, {}, {})
+        self.window.command_requested.emit(command)
+        self.window.longform_editor._hide_membership()
+        self.window.status_bar.showMessage(
+            "Adding content. Clear filters if it is hidden by the current filter.", 5000
+        )
+
+    @Slot(str, str, dict)
+    def remove_longform_entry(self, table: str, row_id: str, old_meta: dict) -> None:
+        """Remove document membership while retaining the world object."""
+        self.window.command_requested.emit(
+            RemoveLongformEntryCommand(table, row_id, old_meta)
+        )
 
     def shutdown(self) -> None:
         """Cancel pending hydration and ignore results after window shutdown."""
@@ -150,8 +189,7 @@ class LongformManager(QObject):
             return False
         zone = workspace.panel_zone("longform")
         return (
-            workspace.zone_visible(zone)
-            and workspace.active_panel(zone) == "longform"
+            workspace.zone_visible(zone) and workspace.active_panel(zone) == "longform"
         )
 
     def show_longform_filter_dialog(self) -> None:
@@ -225,16 +263,32 @@ class LongformManager(QObject):
             row_id: ID of the item to delete.
 
         """
-        command: DeleteEventCommand | DeleteEntityCommand
-        if table == "events":
-            command = DeleteEventCommand(row_id)
-        elif table == "entities":
-            command = DeleteEntityCommand(row_id)
-        else:
+        if table not in ("events", "entities"):
             logger.error(f"Unknown table type for deletion: {table}")
             return
-
-        self.window.command_requested.emit(command)
+        kind = "event" if table == "events" else "entity"
+        answer = QMessageBox.warning(
+            self.window,
+            "Delete from world",
+            f"Delete this {kind} from the entire world, including its connections "
+            "and membership in all documents?\n\n"
+            "To keep the world entry, choose Remove from document instead. "
+            "World deletion can be undone.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Cancel,
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        navigation = self.window.navigation_coordinator
+        if (navigation.selected_type, navigation.selected_id) == (kind, row_id):
+            editor = (
+                self.window.event_editor
+                if kind == "event"
+                else self.window.entity_editor
+            )
+            if not self.window.editor_coordinator.check_unsaved_changes(editor):
+                return
+        self.window.editor_coordinator.on_item_delete_requested(kind, row_id)
 
     def move_up_longform_entry(self, table: str, row_id: str, old_meta: dict) -> None:
         """Move a longform entry up in its sibling list.

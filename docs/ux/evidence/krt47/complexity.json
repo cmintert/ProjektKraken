@@ -1,0 +1,261 @@
+{
+  "schema": 1,
+  "failures": [],
+  "adjustments": [],
+  "hotspots": [
+    {
+      "id": "c901-020f2d0c9c6b",
+      "path": "src/gui/widgets/timeline/timeline_view.py",
+      "symbol": "TimelineView.set_events",
+      "previous": 19,
+      "previous_ceiling": 19,
+      "current": 19,
+      "current_ceiling": 19,
+      "touched": false,
+      "action": "none"
+    },
+    {
+      "id": "c901-11d4d979af51",
+      "path": "src/gui/dialogs/fast_inject_dialog.py",
+      "symbol": "FastInjectDialog._on_apply",
+      "previous": 20,
+      "previous_ceiling": 20,
+      "current": 20,
+      "current_ceiling": 20,
+      "touched": false,
+      "action": "none"
+    },
+    {
+      "id": "c901-2188c36477f8",
+      "path": "src/services/temporal_analyzer.py",
+      "symbol": "TemporalAnalyzer._analyze_character_lifespans",
+      "previous": 32,
+      "previous_ceiling": 32,
+      "current": 32,
+      "current_ceiling": 32,
+      "touched": false,
+      "action": "none"
+    },
+    {
+      "id": "c901-2a61d75c48e8",
+      "path": "src/services/import_service.py",
+      "symbol": "ImportService._import_single_event_internal",
+      "previous": 32,
+      "previous_ceiling": 32,
+      "current": 32,
+      "current_ceiling": 32,
+      "touched": false,
+      "action": "none"
+    },
+    {
+      "id": "c901-3b6258d14ee6",
+      "path": "src/services/import_service.py",
+      "symbol": "ImportService._import_single_entity_internal",
+      "previous": 28,
+      "previous_ceiling": 28,
+      "current": 28,
+      "current_ceiling": 28,
+      "touched": false,
+      "action": "none"
+    },
+    {
+      "id": "c901-3c823d3f73f0",
+      "path": "src/services/import_service.py",
+      "symbol": "ImportService.import_batch",
+      "previous": 29,
+      "previous_ceiling": 29,
+      "current": 29,
+      "current_ceiling": 29,
+      "touched": false,
+      "action": "none"
+    },
+    {
+      "id": "c901-4c4821cb8abe",
+      "path": "src/commands/raster_commands.py",
+      "symbol": "CreateRasterLayerCommand.execute",
+      "previous": 26,
+      "previous_ceiling": 26,
+      "current": 26,
+      "current_ceiling": 26,
+      "touched": false,
+      "action": "none"
+    },
+    {
+      "id": "c901-5a285eb9563e",
+      "path": "src/app/data_handler.py",
+      "symbol": "DataHandler.on_command_finished",
+      "previous": 33,
+      "previous_ceiling": 33,
+      "current": 33,
+      "current_ceiling": 33,
+      "touched": false,
+      "action": "none"
+    },
+    {
+      "id": "c901-61edc4070603",
+      "path": "src/commands/wiki_commands.py",
+      "symbol": "ProcessWikiLinksCommand.execute",
+      "previous": 20,
+      "previous_ceiling": 20,
+      "current": 20,
+      "current_ceiling": 20,
+      "touched": false,
+      "action": "none"
+    },
+    {
+      "id": "c901-6a439373594b",
+      "path": "src/app/raster_controller.py",
+      "symbol": "RasterController.on_raster_query_requested",
+      "previous": 18,
+      "previous_ceiling": 18,
+      "current": 18,
+      "current_ceiling": 18,
+      "touched": false,
+      "action": "none"
+    },
+    {
+      "id": "c901-6f7372b9e889",
+      "path": "src/core/fast_inject.py",
+      "symbol": "FastInjectManager.apply_template",
+      "previous": 23,
+      "previous_ceiling": 23,
+      "current": 23,
+      "current_ceiling": 23,
+      "touched": false,
+      "action": "none"
+    },
+    {
+      "id": "c901-74f12f9185eb",
+      "path": "src/services/providers/lmstudio_provider.py",
+      "symbol": "LMStudioProvider.stream_generate",
+      "previous": 19,
+      "previous_ceiling": 19,
+      "current": 19,
+      "current_ceiling": 19,
+      "touched": false,
+      "action": "none"
+    },
+    {
+      "id": "c901-8108d73b598c",
+      "path": "src/gui/widgets/sheet_builder.py",
+      "symbol": "SheetBuilderWidget.load_attributes",
+      "previous": 17,
+      "previous_ceiling": 17,
+      "current": 17,
+      "current_ceiling": 17,
+      "touched": false,
+      "action": "none"
+    },
+    {
+      "id": "c901-8eddf5e7d055",
+      "path": "src/gui/widgets/map/map_data_buffer.py",
+      "symbol": "ColorMap.from_rgb_image",
+      "previous": 16,
+      "previous_ceiling": 16,
+      "current": 16,
+      "current_ceiling": 16,
+      "touched": false,
+      "action": "none"
+    },
+    {
+      "id": "c901-8f436a701d14",
+      "path": "src/core/temporal_constraints.py",
+      "symbol": "chronology_issues",
+      "previous": 38,
+      "previous_ceiling": 38,
+      "current": 38,
+      "current_ceiling": 38,
+      "touched": false,
+      "action": "none"
+    },
+    {
+      "id": "c901-a93f85e6d6ba",
+      "path": "src/services/authoring_context_builder.py",
+      "symbol": "AuthoringContextBuilder.build_entity_context",
+      "previous": 19,
+      "previous_ceiling": 19,
+      "current": 19,
+      "current_ceiling": 19,
+      "touched": false,
+      "action": "none"
+    },
+    {
+      "id": "c901-b081a9c47494",
+      "path": "src/services/migrations/relations.py",
+      "symbol": "normalize_relations",
+      "previous": 29,
+      "previous_ceiling": 29,
+      "current": 29,
+      "current_ceiling": 29,
+      "touched": false,
+      "action": "none"
+    },
+    {
+      "id": "c901-b0bb141a685d",
+      "path": "src/commands/temporal_entity_edit_command.py",
+      "symbol": "TemporalEntityEditCommand.execute",
+      "previous": 28,
+      "previous_ceiling": 28,
+      "current": 28,
+      "current_ceiling": 28,
+      "touched": false,
+      "action": "none"
+    },
+    {
+      "id": "c901-b90fc28385bc",
+      "path": "src/gui/widgets/entity_editor.py",
+      "symbol": "EntityEditorWidget._save_temporal",
+      "previous": 29,
+      "previous_ceiling": 29,
+      "current": 29,
+      "current_ceiling": 29,
+      "touched": false,
+      "action": "none"
+    },
+    {
+      "id": "c901-be570d3593da",
+      "path": "src/gui/dialogs/create_template_dialog.py",
+      "symbol": "CreateTemplateDialog._on_save",
+      "previous": 16,
+      "previous_ceiling": 16,
+      "current": 16,
+      "current_ceiling": 16,
+      "touched": false,
+      "action": "none"
+    },
+    {
+      "id": "c901-df9b1fc204f0",
+      "path": "src/app/raster_controller.py",
+      "symbol": "RasterController.load_raster_layers",
+      "previous": 21,
+      "previous_ceiling": 21,
+      "current": 21,
+      "current_ceiling": 21,
+      "touched": false,
+      "action": "none"
+    },
+    {
+      "id": "c901-fc39c2bb0895",
+      "path": "src/gui/widgets/map/raster_legend_widget.py",
+      "symbol": "RasterLegendWidget._build_discrete_legend",
+      "previous": 18,
+      "previous_ceiling": 18,
+      "current": 18,
+      "current_ceiling": 18,
+      "touched": false,
+      "action": "none"
+    },
+    {
+      "id": "c901-ff9a6eff0a3f",
+      "path": "src/gui/widgets/relation_form.py",
+      "symbol": "RelationForm.__init__",
+      "previous": 17,
+      "previous_ceiling": 17,
+      "current": 17,
+      "current_ceiling": 17,
+      "touched": false,
+      "action": "none"
+    }
+  ],
+  "base_ref": "a12c84e5771fadb488c5d2d68e09ef8b0ddb67ef"
+}

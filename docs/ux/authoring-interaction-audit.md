@@ -10,6 +10,15 @@ remains a separate seeded audit run.
 
 ## Evidence and disposition rules
 
+KRT-47 implementation (2026-10-06): Longform exposes Add content, a selected-item
+Outline actions menu and labeled Find through shared responsive overflow. Document
+removal preserves world content and lifts child sections with exact undo; complete
+world deletion requires confirmation and retains coordinator/draft guards. Refresh,
+export and reindex respect explicit membership. Contracts 1–9, enabled/disabled,
+focus, theme switching and 400/1100 px evidence are recorded in
+[Longform verification](evidence/krt47/README.md). The historical inventory remains
+the audit baseline; fresh human KA-18 comparison is pending. No contract revision.
+
 KRT-54 implementation (2026-10-06): the
 [visual vocabulary](visual-interaction-vocabulary.md) complements Contract v1.
 Entity/Event supporting actions and mode banners use neutral roles; disabled
