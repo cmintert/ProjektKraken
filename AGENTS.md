@@ -67,6 +67,11 @@
 - `src/commands/base_command.py`, `src/services/worker.py`, `tests/conftest.py`
 
 ## Project Skills
+- For bounded architecture refactoring or executable edits to reviewed C901
+  hotspots, use `.agents/skills/incremental-refactor/SKILL.md`. Run
+  `python -m scripts.check_complexity_policy`; touched hotspots must strictly
+  improve and their ceilings must decrease. Moves retain the allowance ID.
+
 - All new or modified UI presentation must follow
   `docs/ux/visual-interaction-vocabulary.md` (matching Linear document is
   authoritative), including surfaces outside Entity/Event. Use semantic theme

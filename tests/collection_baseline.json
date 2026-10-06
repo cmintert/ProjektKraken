@@ -2,11 +2,11 @@
   "schema": 1,
   "counts": {
     "smoke": 18,
-    "ci_fast": 1532,
+    "ci_fast": 1583,
     "slow": 1,
     "performance": 0,
-    "full": 5905,
-    "full_only": 4364
+    "full": 5951,
+    "full_only": 4359
   },
   "categories": {
     "architecture": 11,
@@ -18,7 +18,7 @@
     "repro": 2,
     "root": 15,
     "security": 5,
-    "unit": 5547
+    "unit": 5593
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -2886,6 +2886,123 @@
     "tests/unit/test_compact_duration_widget.py::TestCompactDurationWidgetPreview::test_plural_handling": [],
     "tests/unit/test_compact_duration_widget.py::TestCompactDurationWidgetPreview::test_preview_hides_zero_units": [],
     "tests/unit/test_compact_duration_widget.py::TestCompactDurationWidgetPreview::test_preview_written_format": [],
+    "tests/unit/test_complexity_policy.py::test_ambiguous_debt_and_missing_metrics_fail": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_blanket_or_file_suppression_rejected[# flake8: noqa]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_blanket_or_file_suppression_rejected[# noqa: C]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_blanket_or_file_suppression_rejected[# noqa]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_blanket_or_file_suppression_rejected[# ruff: noqa: C901]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_cli_check_is_read_only_and_tightening_removes_finished_debt": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_cli_deleted_callable_removes_allowance": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_cli_failures_leave_baseline_unchanged": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_cli_reports_json_and_tightens_only_verified_reductions": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_cli_tightening_cannot_add_or_reset_allowances": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_committed_identity_move_and_regression_use_historical_measurements": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_complexity_and_ceiling_increases_fail": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_configuration_bypasses_fail[alternate]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_configuration_bypasses_fail[ignore]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_configuration_bypasses_fail[limit]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_configuration_bypasses_fail[per_file]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_configuration_bypasses_fail[select]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_executable_edit_cannot_preserve_complexity": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_format_comments_and_docstrings_are_not_touches": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_initial_adoption_only_accepts_historical_suppression": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_invalid_baselines_fail[container]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_invalid_baselines_fail[duplicate]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_invalid_baselines_fail[empty_reason]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_invalid_baselines_fail[normal_ceiling]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_invalid_baselines_fail[schema]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_missing_git_history_fails_instead_of_skipping": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_missing_ruff_is_an_actionable_failure": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_move_and_rename_keep_allowance_without_requiring_fake_improvement": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_move_does_not_reset_ceiling_or_id": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_nested_async_callable_qualifications": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_new_extracted_code_is_held_to_normal_limit": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_noqa_text_in_strings_is_not_a_suppression": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_reduction_requires_exact_ceiling_and_tightens": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_signatures_and_decorators_are_executable_touches[decorator]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_signatures_and_decorators_are_executable_touches[signature]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_suppression_and_allowance_expire_at_normal_limit": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_tightening_never_raises_an_undersized_current_ceiling": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_unbound_suppression_fails": [
+      "ci_fast"
+    ],
+    "tests/unit/test_complexity_policy.py::test_unreviewed_debt_fails_even_without_suppression": [
+      "ci_fast"
+    ],
     "tests/unit/test_composite_command.py::TestCompositeCommand::test_execute_sequence": [
       "ci_fast"
     ],
@@ -3217,14 +3334,45 @@
     "tests/unit/test_dependency_direction.py::test_connection_guard_detects_aliases_and_reflection[setattr(db, '_connection', None)]": [
       "ci_fast"
     ],
-    "tests/unit/test_dependency_direction.py::test_gui_and_app_do_not_import_database_service": [],
+    "tests/unit/test_dependency_direction.py::test_dependency_guard_rejects_import_outside_package": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_dependency_guard_resolves_import_forms[from . import events-src.core.__init__-src.core.events]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_dependency_guard_resolves_import_forms[from .. import app-src.core.events-src.app]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_dependency_guard_resolves_import_forms[from ...gui import widgets-src.services.repositories.event-src.gui]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_dependency_guard_resolves_import_forms[from ..core import events-src.gui.editor-src.core.events]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_dependency_guard_resolves_import_forms[from ..services import db_service-src.app.worker-src.services.db_service]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_dependency_guard_resolves_import_forms[from src.services import db_service-src.gui.editor-src.services.db_service]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_gui_and_app_do_not_import_database_service": [
+      "ci_fast"
+    ],
     "tests/unit/test_dependency_direction.py::test_private_connections_stay_in_persistence_internals": [
       "ci_fast"
     ],
-    "tests/unit/test_dependency_direction.py::test_source_layers_do_not_import_upward[commands]": [],
-    "tests/unit/test_dependency_direction.py::test_source_layers_do_not_import_upward[core]": [],
-    "tests/unit/test_dependency_direction.py::test_source_layers_do_not_import_upward[gui]": [],
-    "tests/unit/test_dependency_direction.py::test_source_layers_do_not_import_upward[services]": [],
+    "tests/unit/test_dependency_direction.py::test_source_layers_do_not_import_upward[commands]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_source_layers_do_not_import_upward[core]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_source_layers_do_not_import_upward[gui]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_source_layers_do_not_import_upward[services]": [
+      "ci_fast"
+    ],
     "tests/unit/test_desc_cursor_autosave.py::test_entity_cursor_preserved_after_completer_update_then_reload": [],
     "tests/unit/test_desc_cursor_autosave.py::test_entity_desc_cursor_clamped_when_new_text_is_shorter": [],
     "tests/unit/test_desc_cursor_autosave.py::test_entity_desc_cursor_preserved_with_focus_on_reload": [],

@@ -1020,7 +1020,7 @@ class MapHandler(QObject):
         """Delegate to the raster capability controller."""
         self._raster_controller.delete_raster_layer(node_id)
 
-    def load_raster_layers(self, map_id: str) -> None:  # noqa: C901
+    def load_raster_layers(self, map_id: str) -> None:
         """Delegate to the raster capability controller."""
         self._raster_controller.load_raster_layers(map_id)
 
@@ -1064,7 +1064,7 @@ class MapHandler(QObject):
         self._raster_controller.on_raster_palette_edit(node_id)
 
     @Slot()
-    def on_raster_query_requested(self) -> None:  # noqa: C901
+    def on_raster_query_requested(self) -> None:
         """Delegate to the raster capability controller."""
         self._raster_controller.on_raster_query_requested()
 

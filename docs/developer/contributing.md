@@ -20,6 +20,39 @@ Use conventional commit types such as `feat`, `fix`, `docs`, `refactor`,
 Do not mix unrelated cleanup with a feature change. Preserve existing user
 changes in a dirty working tree.
 
+## Incremental architecture and complexity improvement
+
+Reviewed C901 debt is recorded in `scripts/complexity_policy_baseline.json`.
+Untouched debt may remain. Every executable change to a reviewed callable,
+including behavior fixes, must strictly decrease Ruff-measured complexity.
+Signatures and decorators count; comments, docstrings, formatting, and pure
+moves/renames do not. New/extracted code must satisfy the normal limit of 15.
+Existing dependency-direction tests remain the architecture authority; extend
+them with narrow guards when an extraction creates an enforceable boundary.
+
+Run `python -m scripts.check_complexity_policy` before and after editing. It
+compares the worktree against HEAD by default. Use `--base-ref <commit>` for a
+whole branch or PR and `--format json` for callable IDs, before/after values,
+touch status, and required actions. Missing history/tooling fails closed. CI
+uses the PR base/push predecessor and project-pinned Ruff. First adoption can
+only baseline existing suppressed debt from that comparison revision.
+
+Carry the persistent allowance ID through a move or rename; update its path and
+qualified symbol, never replace the ID. The recorded ceiling must equal the
+improved measurement. Remove suppressions at 15 or below, then run `--tighten`
+to apply only verified reductions/removals. Checks never change source or
+baselines by default. Tightening cannot add exceptions or raise ceilings.
+Exceptional increases require separate explicit policy review and a policy
+amendment, not baseline regeneration or a routine bypass option.
+
+Use the repository skill
+[`incremental-refactor`](../../.agents/skills/incremental-refactor/SKILL.md) to
+prepare and verify one authorized target. Record before/after evidence in its
+Linear issue, preserve behavior and architecture contracts, and keep the issue
+open until verified and committed. The skill does not schedule changes or
+authorize commits/pushes. No additional LOC targets or complexity framework
+are introduced.
+
 ## Authoring interaction contract
 
 All UI presentation changes also follow the

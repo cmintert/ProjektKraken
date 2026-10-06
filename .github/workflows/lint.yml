@@ -13,14 +13,30 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
-      - name: Install ruff
-        run: pip install ruff
+      - name: Install project-pinned Ruff
+        run: |
+          python - <<'PY'
+          import subprocess
+          import sys
+          import tomllib
+          from pathlib import Path
+          project = tomllib.loads(Path("pyproject.toml").read_text())
+          pin = next(item for item in project["project"]["optional-dependencies"]["dev"] if item.startswith("ruff=="))
+          subprocess.run([sys.executable, "-m", "pip", "install", pin], check=True)
+          PY
+
+      - name: Check incremental complexity improvement
+        env:
+          COMPLEXITY_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: python -m scripts.check_complexity_policy --base-ref "$COMPLEXITY_BASE_REF"
 
       - name: Run ruff check
         run: python -m ruff check

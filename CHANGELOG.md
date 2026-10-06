@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-06
-**Commit:** 78f689b25559d31efc67d453c4bf50199dccdcfa
+**Commit:** 200bfbc5599eb2ea4d0daa1ba9639eda105a8c0b
 ---
 
 # Changelog
@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-06)* **Incremental refactoring (KRT-36)**: Added a Ruff-based
+  complexity ratchet with persistent hotspot identities, strict improvement on
+  executable edits, exact decreasing ceilings, structured reports and safe
+  tightening. Integrated it into PR/push quality checks with pinned Ruff;
+  strengthened relative-import architecture guards and added a repository agent
+  workflow. Removed obsolete complexity suppressions from raster delegators.
 
 - *(2026-10-06)* **Visual vocabulary (KRT-54)**: Added explicit semantic and
   control-state mappings across six themes while preserving their existing
