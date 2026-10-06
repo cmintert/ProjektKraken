@@ -1,8 +1,10 @@
+import json
 import logging
 from unittest.mock import mock_open, patch
 
 import pytest
 
+from src.core.theme_defaults import DEFAULT_THEMES
 from src.core.theme_manager import ThemeManager
 
 
@@ -42,9 +44,9 @@ def test_default_theme_fallback(clean_theme_manager):
 
 
 def test_load_themes_success(clean_theme_manager):
-    mock_json = (
-        '{"dark_mode": {"app_bg": "#000000"}, "light_mode": {"app_bg": "#FFFFFF"}}'
-    )
+    mock_themes = {name: dict(theme) for name, theme in DEFAULT_THEMES.items()}
+    mock_themes["dark_mode"]["app_bg"] = "#000000"
+    mock_json = json.dumps(mock_themes)
     with patch("builtins.open", mock_open(read_data=mock_json)):
         with patch("os.path.exists", return_value=True):
             clean_theme_manager._load_themes()

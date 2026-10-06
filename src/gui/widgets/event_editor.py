@@ -689,7 +689,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             from PySide6.QtWidgets import QLabel
 
             lbl = QLabel(title)
-            lbl.setStyleSheet("font-weight: bold; color: gray;")
+            lbl.setStyleSheet(StyleHelper.get_section_header_style())
             hbox.addWidget(lbl)
             hbox.addStretch()
 
@@ -708,7 +708,6 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             btn_add.setIcon(load_icon(icon_path, color=theme["text_main"]))
 
             btn_add.setText("")  # Remove text to show only icon
-            from src.gui.utils.style_helper import StyleHelper
 
             btn_add.setStyleSheet(StyleHelper.get_icon_button_style())
 
@@ -1499,9 +1498,6 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             widget.go_to_clicked.connect(
                 lambda tid, tn: self.navigate_to_relation.emit(tid)
             )
-
-            if prefix == "←":
-                widget.label.setStyleSheet("color: gray;")
 
             item = QListWidgetItem()
             item.setData(Qt.ItemDataRole.UserRole, rel)

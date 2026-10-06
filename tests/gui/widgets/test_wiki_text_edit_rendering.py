@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QApplication
 from src.core.theme_manager import ThemeManager
 from src.gui.editor_typography import EditorTypography
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
+from tests.unit.test_visual_presentation import layout_formats
 
 # Ensure QApplication exists
 app = QApplication.instance() or QApplication([])
@@ -40,7 +41,13 @@ class TestWikiTextEditRendering(unittest.TestCase):
         broken_color = EditorTypography.from_theme(
             ThemeManager().get_theme()
         ).broken_link_color
-        self.assertIn(f"color:{broken_color}", html)
+        self.assertIn(
+            broken_color.lower(),
+            {
+                f.format.foreground().color().name()
+                for f in layout_formats(self.editor.editor)
+            },
+        )
 
     def test_rendering_mixed(self):
         """Test mixed known and unknown entities."""
@@ -55,7 +62,13 @@ class TestWikiTextEditRendering(unittest.TestCase):
         broken_color = EditorTypography.from_theme(
             ThemeManager().get_theme()
         ).broken_link_color
-        self.assertIn(f"color:{broken_color}", html)
+        self.assertIn(
+            broken_color.lower(),
+            {
+                f.format.foreground().color().name()
+                for f in layout_formats(self.editor.editor)
+            },
+        )
 
     def test_rendering_case_insensitive(self):
         """Test that casing differences are ignored."""

@@ -2,23 +2,23 @@
   "schema": 1,
   "counts": {
     "smoke": 18,
-    "ci_fast": 1504,
+    "ci_fast": 1532,
     "slow": 1,
     "performance": 0,
-    "full": 5877,
+    "full": 5905,
     "full_only": 4364
   },
   "categories": {
     "architecture": 11,
     "cli": 48,
     "gui": 14,
-    "integration": 233,
+    "integration": 234,
     "packaging": 13,
     "performance": 16,
     "repro": 2,
     "root": 15,
     "security": 5,
-    "unit": 5520
+    "unit": 5547
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -392,6 +392,9 @@
       "ci_fast"
     ],
     "tests/integration/test_wiki_link_return.py::test_peek_escalation_and_focus_writing_return": [
+      "ci_fast"
+    ],
+    "tests/integration/test_wiki_link_return.py::test_return_label_refreshes_after_rename_and_has_generic_fallback": [
       "ci_fast"
     ],
     "tests/integration/test_wiki_link_return.py::test_return_waits_for_matching_hydration_and_world_change_clears": [
@@ -8334,6 +8337,30 @@
     "tests/unit/test_visual_lexicon.py::TestResolveLexiconImages::test_path_only_icon_is_ignored": [],
     "tests/unit/test_visual_lexicon.py::TestResolveLexiconImages::test_resolves_icon_to_base64": [],
     "tests/unit/test_visual_lexicon.py::TestResolveLexiconImages::test_unknown_icon_id_does_not_override_shape": [],
+    "tests/unit/test_visual_presentation.py::test_disabled_link_geometry_and_overflow": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_presentation.py::test_return_label_width_can_shrink_after_destination_change": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_presentation.py::test_theme_link_refresh_preserves_history_and_semantics[cyberpunk_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_presentation.py::test_theme_link_refresh_preserves_history_and_semantics[dark_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_presentation.py::test_theme_link_refresh_preserves_history_and_semantics[fantasy_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_presentation.py::test_theme_link_refresh_preserves_history_and_semantics[imperial_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_presentation.py::test_theme_link_refresh_preserves_history_and_semantics[light_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_presentation.py::test_theme_link_refresh_preserves_history_and_semantics[muted_light_mode]": [
+      "ci_fast"
+    ],
     "tests/unit/test_visual_resolver.py::TestGraphBuilderVisualResolver::test_node_color_is_dict_with_background_and_border": [],
     "tests/unit/test_visual_resolver.py::TestGraphBuilderVisualResolver::test_node_with_visual_overrides": [],
     "tests/unit/test_visual_resolver.py::TestGraphBuilderVisualResolver::test_node_without_overrides_uses_defaults": [],
@@ -8366,6 +8393,63 @@
     "tests/unit/test_visual_resolver.py::TestUpdateMarkerAttributeCommand::test_not_found_returns_failure": [],
     "tests/unit/test_visual_resolver.py::TestUpdateMarkerAttributeCommand::test_serialization_roundtrip": [],
     "tests/unit/test_visual_resolver.py::TestUpdateMarkerAttributeCommand::test_undo_restores_previous": [],
+    "tests/unit/test_visual_roles.py::test_complete_accessible_palettes[cyberpunk_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_roles.py::test_complete_accessible_palettes[dark_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_roles.py::test_complete_accessible_palettes[fantasy_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_roles.py::test_complete_accessible_palettes[imperial_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_roles.py::test_complete_accessible_palettes[light_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_roles.py::test_complete_accessible_palettes[muted_light_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_roles.py::test_loading_legacy_and_external_links_are_neutral": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_roles.py::test_missing_and_invalid_tokens_fail_explicitly": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_roles.py::test_next_touch_retires_legacy_but_preserves_authored_data": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_roles.py::test_policy_detects_literals_derivation_and_ignores_docs_and_tokens": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_roles.py::test_qss_templates_do_not_hide_literal_colors": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_roles.py::test_recovery_themes_match_bundled_roles": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_roles.py::test_repository_visual_policy": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_roles.py::test_reviewed_authored_colors_and_baseline_growth_removal": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_roles.py::test_typed_and_unresolved_snapshot_resolution[Event-link_event-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_roles.py::test_typed_and_unresolved_snapshot_resolution[id:ENT-link_entity-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_roles.py::test_typed_and_unresolved_snapshot_resolution[id:Event-link_unresolved-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_roles.py::test_typed_and_unresolved_snapshot_resolution[missing-link_unresolved-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_visual_roles.py::test_typed_and_unresolved_snapshot_resolution[shared-link_unresolved-False]": [
+      "ci_fast"
+    ],
     "tests/unit/test_visual_style_wiring.py::TestDataHandlerVisualAttributes::test_attributes_included_in_processed_markers": [],
     "tests/unit/test_visual_style_wiring.py::TestDataHandlerVisualAttributes::test_legacy_color_used_when_no_v_fill": [],
     "tests/unit/test_visual_style_wiring.py::TestDataHandlerVisualAttributes::test_marker_uses_summary_instead_of_description[entity]": [],

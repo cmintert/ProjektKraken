@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-06
-**Commit:** 11a35fdb2953aeba167c15e672454bfc888a4ec4
+**Commit:** 78f689b25559d31efc67d453c4bf50199dccdcfa
 ---
 
 # Changelog
@@ -12,6 +12,16 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-06)* **Visual vocabulary (KRT-54)**: Added explicit semantic and
+  control-state mappings across six themes while preserving their existing
+  palettes. Unified authoring controls, neutral Summary/AI actions and mode
+  banners, destination-oriented Back labels and typed/unresolved wiki links.
+  Theme/target refreshes preserve text, drafts and undo history. Added CI
+  visual-policy checks with exact authored-data/legacy exceptions; legacy styling
+  must unify or correct on its next touched scope. Published synchronized Linear
+  and repository rules, updated agent/review guidance, regression membership and
+  normal/narrow rendered evidence.
 
 - *(2026-10-06)* **Writing links (KRT-53)**: Added visible Link to entry…,
   Open link, Peek link and guarded Return to writing, including Focus writing.

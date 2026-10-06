@@ -10,7 +10,12 @@ import shiboken6
 from PySide6.QtCore import QObject, Qt, Slot
 from PySide6.QtWidgets import QTabWidget, QToolButton, QWidget
 
+from src.core.theme_manager import ThemeManager
+from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.editor_presentation import DisclosureButton
+
+RETURN_NAME_LIMIT = 30
+RETURN_NAME_PREFIX = 27
 
 
 @dataclass
@@ -65,9 +70,17 @@ class WikiLinkNavigationController(QObject):
             button = QToolButton(editor.header_widget)
             button.setDefaultAction(action)
             button.setMinimumHeight(32)
+            button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             editor.header_widget.layout().addWidget(button)
             self._header_buttons.append(button)
         self._update_actions()
+        self._apply_theme()
+        ThemeManager().theme_changed.connect(self._apply_theme)
+
+    def _apply_theme(self, _theme: dict | None = None) -> None:
+        """Refresh header navigation through the standard theme notification."""
+        for button in self._header_buttons:
+            button.setStyleSheet(StyleHelper.get_action_role_style("secondary"))
 
     def _capture(self) -> WritingBookmark | None:
         kind, item_id = self.selection()
@@ -251,11 +264,38 @@ class WikiLinkNavigationController(QObject):
             self.feedback("The writing entry is no longer available.")
             self._update_actions()
 
+    @Slot(str, str, str)
+    def refresh_return_label(self, _kind: str, _item_id: str, _operation: str) -> None:
+        """Refresh wording after an entry is renamed/deleted in the GUI cache."""
+        self._update_actions()
+
     def _update_actions(self) -> None:
         available = bool(self.bookmarks)
         enabled = self._pending is None and self._restore is None
+        origin_name = ""
+        if self.bookmarks:
+            bookmark = self.bookmarks[-1]
+            origin_name = next(
+                (
+                    name.strip()
+                    for item_id, name, kind in self.entries()
+                    if (item_id, kind) == (bookmark.item_id, bookmark.kind)
+                ),
+                "",
+            )
+        destination = f"Back to {origin_name}" if origin_name else "Back to previous"
+        compact = (
+            f"Back to {origin_name[:RETURN_NAME_PREFIX]}…"
+            if len(origin_name) > RETURN_NAME_LIMIT
+            else destination
+        )
+        for button in self._header_buttons:
+            button.setAccessibleName(destination)
         for editor in self.editors.values():
+            action = editor.desc_edit.action_return_writing
+            editor.desc_edit.set_return_destination(destination, compact)
             editor.desc_edit.set_return_available(available)
-            editor.desc_edit.action_return_writing.setEnabled(enabled)
+            action.setEnabled(enabled)
+            editor.desc_edit.link_toolbar.refresh()
         for button in self._header_buttons:
             button.setVisible(available)

@@ -61,7 +61,13 @@ from src.core.wiki_ast import CursorMapper, WikiASTParser, WikiASTSerializer
 from src.core.wiki_markdown_grammar import requires_source_mode
 from src.gui.constants import SEMANTIC_COMPLETION_MIN_PREFIX_LEN
 from src.gui.editor_typography import EditorTypography
+from src.gui.utils.style_helper import StyleHelper
 from src.gui.utils.suggestion_effects import apply_suggestion_effects
+from src.gui.widgets.wiki_link_presentation import (
+    LinkPresentation,
+    WikiPresentationHighlighter,
+    resolve_link_presentation,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -174,6 +180,7 @@ class WikiTextEditView(QTextEdit):
         self._completion_map: dict[str, tuple[str, str]] = {}
         self._completion_rows: list[tuple[str, str, str]] = []
         self._completion_items: list[tuple[str, str, str]] = []
+        self._link_presentation_cache: dict[str, LinkPresentation] = {}
         self._last_completion_prefix: str = ""
         self._link_resolver = None  # Will be set later
         self._section_manager = SectionManager(self.document())
@@ -201,6 +208,10 @@ class WikiTextEditView(QTextEdit):
         # Force viewport transparency via Palette
         p = self.viewport().palette()
         p.setColor(self.viewport().backgroundRole(), Qt.GlobalColor.transparent)
+        p.setColor(p.ColorRole.Highlight, QColor(tm.get_theme()["selection_bg"]))
+        p.setColor(
+            p.ColorRole.HighlightedText, QColor(tm.get_theme()["selection_text"])
+        )
         self.viewport().setPalette(p)
 
         from src.gui.utils.style_helper import StyleHelper
@@ -211,6 +222,9 @@ class WikiTextEditView(QTextEdit):
 
         # View Mode: 'rich' (HTML) or 'source' (Markdown)
         self._view_mode = "rich"
+        self._visual_highlighter = WikiPresentationHighlighter(
+            self.document(), self.link_presentation, tm.get_theme()
+        )
 
         # Setup Shortcuts using QActions
         self._setup_actions()
@@ -268,6 +282,7 @@ class WikiTextEditView(QTextEdit):
         """Switch presentation without turning a view change into a prose edit."""
         with QSignalBlocker(self):
             self._switch_view_mode()
+        self._update_link_colors()
         self.view_mode_changed.emit(self._view_mode)
 
     def _switch_view_mode(self) -> None:
@@ -354,6 +369,7 @@ class WikiTextEditView(QTextEdit):
             # Restore scroll position
             self.verticalScrollBar().setValue(old_scroll)
 
+        self._update_link_colors()
         self.view_mode_changed.emit(self._view_mode)
 
     def set_link_resolver(self, link_resolver: Any) -> None:
@@ -418,6 +434,7 @@ class WikiTextEditView(QTextEdit):
         else:
             return
 
+        self._link_presentation_cache.clear()
         if self._completer is None:
             completer = QCompleter(self)
             completer.setWidget(self)
@@ -448,6 +465,7 @@ class WikiTextEditView(QTextEdit):
         items = self._completion_items
         for effect in effects:
             items = apply_suggestion_effects(items, [effect])
+        self._link_presentation_cache.clear()
         self._completion_items = items
         self._completion_rows = list(items)
         self._completion_map = self._unique_completion_map(items)
@@ -502,93 +520,31 @@ class WikiTextEditView(QTextEdit):
             item.setData((item_id, name, item_type), Qt.ItemDataRole.UserRole)
             model.appendRow(item)
 
+    def link_presentation(self, target: str) -> LinkPresentation:
+        """Return typed link meaning from the current completion snapshot."""
+        if target not in self._link_presentation_cache:
+            self._link_presentation_cache[target] = resolve_link_presentation(
+                target,
+                self._completion_items,
+                getattr(self, "_valid_targets_lower", None),
+            )
+        return self._link_presentation_cache[target]
+
     def _update_link_colors(self) -> None:
-        """Update anchor link colors in-place without replacing the document.
-
-        Walks every fragment in the document and updates the foreground color of
-        anchor (WikiLink) fragments based on whether their href matches a known
-        valid target.  This avoids calling setHtml() which would destroy empty
-        blocks and reset the cursor position.
-        """
-        from PySide6.QtGui import QColor, QTextCharFormat
-
-        typography = self._typography
-
-        doc = self.document()
-        updates: list[tuple[int, int, QTextCharFormat]] = []
-        was_blocked = self.blockSignals(True)
+        """Refresh transient layout formats without adding an undo command."""
+        highlighter = self._visual_highlighter
+        highlighter.rich = self._view_mode == "rich"
+        highlighter.theme = ThemeManager().get_theme()
+        blocked = self.blockSignals(True)
         try:
-            block = doc.begin()
-            while block.isValid():
-                it = block.begin()
-                while not it.atEnd():
-                    fragment = it.fragment()
-                    if fragment.isValid():
-                        fmt = fragment.charFormat()
-                        if fmt.isAnchor():
-                            href = fmt.anchorHref()
-                            check = href[3:] if href.startswith("id:") else href
-                            if not hasattr(self, "_valid_targets_lower"):
-                                is_valid = True
-                            else:
-                                is_valid = (
-                                    check.lower() in self._valid_targets_lower
-                                    or check in self._valid_ids
-                                )
-                            color = QColor(
-                                typography.link_color
-                                if is_valid
-                                else typography.broken_link_color
-                            )
-                            new_fmt = QTextCharFormat(fmt)
-                            new_fmt.setForeground(color)
-                            updates.append(
-                                (
-                                    fragment.position(),
-                                    fragment.length(),
-                                    new_fmt,
-                                )
-                            )
-                    it += 1
-                block = block.next()
-            self._apply_fragment_formats(updates)
+            highlighter.rehighlight()
         finally:
-            self.blockSignals(was_blocked)
+            self.blockSignals(blocked)
+        self._refresh_document_layout()
 
     def _update_theme_colors(self) -> None:
-        """Recolor existing fragments without replacing text or link metadata."""
-        updates: list[tuple[int, int, QTextCharFormat]] = []
-        block = self.document().begin()
-        while block.isValid():
-            iterator = block.begin()
-            while not iterator.atEnd():
-                fragment = iterator.fragment()
-                if fragment.isValid():
-                    fmt = QTextCharFormat(fragment.charFormat())
-                    if fmt.isAnchor():
-                        target = fmt.anchorHref()
-                        check = target[3:] if target.startswith("id:") else target
-                        valid = (
-                            not hasattr(self, "_valid_targets_lower")
-                            or check.lower() in self._valid_targets_lower
-                            or check in self._valid_ids
-                        )
-                        color = (
-                            self._typography.link_color
-                            if valid
-                            else self._typography.broken_link_color
-                        )
-                    else:
-                        color = self._typography.text_color
-                    fmt.setForeground(QColor(color))
-                    updates.append((fragment.position(), fragment.length(), fmt))
-                iterator += 1
-            block = block.next()
-        was_blocked = self.blockSignals(True)
-        try:
-            self._apply_fragment_formats(updates)
-        finally:
-            self.blockSignals(was_blocked)
+        """Reapply the shared presentation layer without document mutation."""
+        self._update_link_colors()
 
     def _apply_fragment_formats(
         self,
@@ -730,11 +686,9 @@ class WikiTextEditView(QTextEdit):
         tm = ThemeManager()
         theme = tm.get_theme()
 
-        scrollbar_bg = theme.get("scrollbar_bg", theme.get("app_bg", "#2B2B2B"))
-        scrollbar_handle = theme.get("scrollbar_handle", theme.get("border", "#454545"))
-        primary = theme.get("primary", "#FF9900")
-        surface = theme.get("surface", "#323232")
-        # border = theme.get("border", "#454545")  # Unused
+        scrollbar_bg = theme["scrollbar_bg"]
+        scrollbar_handle = theme["scrollbar_handle"]
+        primary = theme["primary"]
 
         from src.gui.utils.style_helper import StyleHelper
 
@@ -743,8 +697,8 @@ class WikiTextEditView(QTextEdit):
         widget_qss = f"""
             QTextEdit {{
                 {transparent_style}
-                selection-background-color: {primary};
-                selection-color: {surface};
+                selection-background-color: {theme["selection_bg"]};
+                selection-color: {theme["selection_text"]};
             }}
             QTextEdit > QWidget#qt_scrollarea_viewport {{
                 border: none;
@@ -845,43 +799,9 @@ class WikiTextEditView(QTextEdit):
             target = match[1].strip()
             label = match[2] if match[2] else target
 
-            # Check existence
-            is_valid = False
-
-            # Handle id: prefix for ID-based links
-            # Links can be:
-            #   [[Name]] -> target = "Name"
-            #   [[id:UUID|Label]] -> target = "id:UUID"
-            check_target = target
-            if target.startswith("id:"):
-                # Strip "id:" prefix for ID lookup
-                check_target = target[3:]
-
-            # Check names (case insensitive)
-            if (
-                hasattr(self, "_valid_targets_lower")
-                and check_target.lower() in self._valid_targets_lower
-            ):
-                is_valid = True
-            # Check IDs (exact match with stripped prefix)
-            elif hasattr(self, "_valid_ids") and check_target in self._valid_ids:
-                is_valid = True
-
-            # Fallback for when completer hasn't been set yet (don't mark red)
-            elif not hasattr(self, "_valid_targets_lower"):
-                is_valid = True
-
-            if not is_valid:
-                pass
-
             href = escape(target, quote=True)
             visible_label = escape(label)
-            if is_valid:
-                return f'<a href="{href}">{visible_label}</a>'
-            return (
-                f'<a href="{href}" style="color: '
-                f'{self._typography.broken_link_color};">{visible_label}</a>'
-            )
+            return f'<a href="{href}">{visible_label}</a>'
 
         md_text = pattern.sub(replace_link_md, text)
 
@@ -907,6 +827,7 @@ class WikiTextEditView(QTextEdit):
         # Update internal canonical wiki text after rendering so comparisons and
         # cursor mapping respect linebreaks and rendered output
         self._current_wiki_text = self.get_wiki_text()
+        self._update_link_colors()
 
     def get_wiki_text(self) -> str:
         """Converts the editor content back to WikiLink syntax.
@@ -1681,22 +1602,7 @@ class WikiTextEditView(QTextEdit):
             bool: True if valid, False if broken/non-existent.
 
         """
-        # Handle id: prefix
-        check_target = target[3:] if target.startswith("id:") else target
-
-        # Check names (case insensitive)
-        if (
-            hasattr(self, "_valid_targets_lower")
-            and check_target.lower() in self._valid_targets_lower
-        ):
-            return True
-
-        # Check IDs
-        if hasattr(self, "_valid_ids") and check_target in self._valid_ids:
-            return True
-
-        # Fallback if completer not set
-        return not hasattr(self, "_valid_targets_lower")
+        return self.link_presentation(target).resolved
 
     def paintEvent(self, event: QPaintEvent) -> None:
         """Override paintEvent to draw section color gutters.
@@ -1814,9 +1720,9 @@ class WikiTextEditView(QTextEdit):
             event: QMouseEvent from PySide6.
 
         """
-        if event.modifiers() & Qt.KeyboardModifier.ControlModifier and self.anchorAt(
-            event.position().toPoint()
-        ):
+        target = self.anchorAt(event.position().toPoint())
+        self.setToolTip(self.link_presentation(target).tooltip if target else "")
+        if event.modifiers() & Qt.KeyboardModifier.ControlModifier and target:
             self.viewport().setCursor(Qt.CursorShape.PointingHandCursor)
             return
         self.viewport().setCursor(Qt.CursorShape.IBeamCursor)
@@ -1995,7 +1901,7 @@ class WikiTextEditView(QTextEdit):
         self._lt_checked_text = self.toPlainText()
         tm = ThemeManager()
         theme = tm.get_theme()
-        error_color = theme.get("error", "#e05252")
+        error_color = theme["error"]
 
         fmt = QTextCharFormat()
         fmt.setUnderlineStyle(QTextCharFormat.UnderlineStyle.SpellCheckUnderline)
@@ -2135,6 +2041,14 @@ class WikiTextEditView(QTextEdit):
             return
 
         # Update widget styling (scrollbars, borders)
+        palette = self.viewport().palette()
+        palette.setColor(
+            palette.ColorRole.Highlight, QColor(theme_data["selection_bg"])
+        )
+        palette.setColor(
+            palette.ColorRole.HighlightedText, QColor(theme_data["selection_text"])
+        )
+        self.viewport().setPalette(palette)
         self._typography = EditorTypography.from_theme(theme_data)
         self._apply_widget_style()
 
@@ -2340,7 +2254,7 @@ class WikiTextEdit(QFrame):
 
         # Subtle right border for TOC since it's on the left
         style = self.toc_widget.styleSheet()
-        border_color = ThemeManager().get_theme().get("border", "#454545")
+        border_color = ThemeManager().get_theme()["border"]
         self.toc_widget.setStyleSheet(
             style + f"\nTOCWidget {{ border-right: 1px solid {border_color}; }}"
         )
@@ -2487,12 +2401,13 @@ class WikiTextEdit(QFrame):
         self.link_authoring = WikiLinkAuthoring(self.editor, self.link_notice)
         self.editor.link_to_entry_requested.connect(self.link_authoring.open_picker)
         self.link_toolbar = OverflowToolBar(self)
+        self.link_toolbar.setStyleSheet(StyleHelper.get_action_role_style("secondary"))
         layout.addWidget(self.link_toolbar)
         layout.addWidget(self.link_notice)
         self.action_link_entry = QAction("Link to entry…", self)
         self.action_open_link = QAction("Open link", self)
         self.action_peek_link = QAction("Peek link", self)
-        self.action_return_writing = QAction("Return to writing", self)
+        self.action_return_writing = QAction("Back to previous", self)
         self.action_return_writing.setVisible(False)
         self._return_button = QToolButton(self)
         for action, priority in (
@@ -2508,6 +2423,8 @@ class WikiTextEdit(QFrame):
             )
             button.setDefaultAction(action)
             button.setMinimumHeight(32)
+            button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            button.setAttribute(Qt.WidgetAttribute.WA_AlwaysShowToolTips)
             self.link_toolbar.add_button(
                 button,
                 priority=priority,
@@ -2528,6 +2445,14 @@ class WikiTextEdit(QFrame):
     def _update_link_actions(self) -> None:
         target = self.editor.link_target_at_cursor()
         self.action_link_entry.setEnabled(not self.editor.isReadOnly())
+        self.action_open_link.setToolTip(
+            "Open linked entry" if target else "Place the cursor in a link to open it."
+        )
+        self.action_peek_link.setToolTip(
+            "Preview linked entry"
+            if target
+            else "Place the cursor in a link to peek at it."
+        )
         self.action_open_link.setEnabled(bool(target))
         self.action_peek_link.setEnabled(bool(target))
 
@@ -2535,6 +2460,13 @@ class WikiTextEdit(QFrame):
         """Show the session's return action only while a bookmark exists."""
         self.action_return_writing.setVisible(available)
         self.link_toolbar.set_button_available(self._return_button, available)
+
+    def set_return_destination(self, destination: str, compact: str) -> None:
+        """Present a compact return route with its full accessible destination."""
+        self.action_return_writing.setText(compact.replace("&", "&&"))
+        self.action_return_writing.setToolTip(destination)
+        self._return_button.setAccessibleName(destination)
+        self.link_toolbar.refresh()
 
     def _open_spell_settings(self, _checked: bool = False) -> None:
         """Show the SpellCheckSettingsDialog and sync the toolbar button state on close."""
@@ -2600,6 +2532,7 @@ class WikiTextEdit(QFrame):
         """
         self._apply_style()
         self._apply_editor_width_limit()
+        self.link_toolbar.setStyleSheet(StyleHelper.get_action_role_style("secondary"))
 
     @Slot()
     def _toggle_toc(self) -> None:

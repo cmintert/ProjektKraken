@@ -337,6 +337,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             "Timeline snapshot — read-only. Return to Current Time to resume editing."
         )
         self.temporal_snapshot_label.setObjectName("TemporalSnapshotLabel")
+        self.temporal_snapshot_label.setWordWrap(True)
         banner_layout.addWidget(self.temporal_snapshot_label)
         self.temporal_snapshot_banner.setStyleSheet(
             StyleHelper.get_temporal_snapshot_banner_style()
@@ -1167,7 +1168,6 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
                 widget.go_to_clicked.connect(
                     lambda tid, tn: self.navigate_to_relation.emit(tid)
                 )
-                widget.label.setStyleSheet("color: gray;")
 
                 item = QListWidgetItem()
                 item.setData(Qt.ItemDataRole.UserRole, rel)

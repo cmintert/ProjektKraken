@@ -116,6 +116,7 @@ class AppCoordinator(QObject):
         self.navigation.navigation_result.connect(self.wiki_links.on_navigation_result)
         self.navigation.peek_started.connect(self.wiki_links.on_peek_started)
         self.navigation.peek_closed.connect(self.wiki_links.on_peek_closed)
+        self.data.lore_mutation_applied.connect(self.wiki_links.refresh_return_label)
         self.data.editor_hydrated.connect(self.wiki_links.on_editor_hydrated)
         self.data.editor_hydration_failed.connect(
             self.wiki_links.on_editor_hydration_failed

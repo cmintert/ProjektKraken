@@ -1,0 +1,2554 @@
+{
+  "schema": 1,
+  "review": "KRT-54 initial inventory, 2026-10-06. Exact expressions only; no directory exemptions.",
+  "exceptions": [
+    {
+      "key": "src/app/main_window.py|MainWindow._update_window_style|literal-color|8247d3ddc88fab21",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MainWindow._update_window_style; migrate this expression when its presentation path is next touched.",
+      "source": "app_bg = theme_data.get(\"app_bg\", \"#2B2B2B\")"
+    },
+    {
+      "key": "src/app/main_window.py|MainWindow._update_window_style|literal-color|d139cb99d3390891",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MainWindow._update_window_style; migrate this expression when its presentation path is next touched.",
+      "source": "text_main = theme_data.get(\"text_main\", \"#E0E0E0\")"
+    },
+    {
+      "key": "src/app/raster_controller.py|RasterController.on_raster_palette_edit|literal-color|dad8252028023902",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in RasterController.on_raster_palette_edit; migrate this expression when its presentation path is next touched.",
+      "source": "color=\"#808080\","
+    },
+    {
+      "key": "src/gui/constants.py||literal-color|294d87e261a7c4b9",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in module constants; migrate this expression when its presentation path is next touched.",
+      "source": "MAP_FEATURE_DEFAULT_FILL_COLOR = \"#403498DB\""
+    },
+    {
+      "key": "src/gui/constants.py||literal-color|441c8c5adc1d1c36",
+      "count": 2,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in module constants; migrate this expression when its presentation path is next touched.",
+      "source": "MAP_EDIT_STROKE_COLOR = \"#e67e22\""
+    },
+    {
+      "key": "src/gui/constants.py||literal-color|5b4908a7ca585d15",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in module constants; migrate this expression when its presentation path is next touched.",
+      "source": "MAP_FEATURE_DEFAULT_STROKE_COLOR = \"#3498DB\""
+    },
+    {
+      "key": "src/gui/constants.py||literal-color|76d8ddec29f78afa",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in module constants; migrate this expression when its presentation path is next touched.",
+      "source": "MAP_MIDPOINT_HANDLE_COLOR = \"#2ecc71\""
+    },
+    {
+      "key": "src/gui/constants.py||literal-color|7bbf3f0e2c235b07",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in module constants; migrate this expression when its presentation path is next touched.",
+      "source": "MAP_SNAP_INDICATOR_VERTEX_COLOR = \"#f1c40f\""
+    },
+    {
+      "key": "src/gui/constants.py||literal-color|a6d2cde0220c4b00",
+      "count": 2,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in module constants; migrate this expression when its presentation path is next touched.",
+      "source": "MAP_SNAP_INDICATOR_EDGE_COLOR = \"#3498db\""
+    },
+    {
+      "key": "src/gui/constants.py||literal-color|af6db2e75490e4f1",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in module constants; migrate this expression when its presentation path is next touched.",
+      "source": "MAP_FEATURE_REGION_STROKE_COLOR = \"#2C3E50\""
+    },
+    {
+      "key": "src/gui/constants.py||literal-color|c1cf462f2c9a8a30",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in module constants; migrate this expression when its presentation path is next touched.",
+      "source": "MAP_FEATURE_LABEL_COLOR = \"#333333\""
+    },
+    {
+      "key": "src/gui/constants.py||literal-color|d2e8bb359bfdd903",
+      "count": 4,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in module constants; migrate this expression when its presentation path is next touched.",
+      "source": "MAP_FEATURE_SELECTION_PEN_COLOR = \"#FFFFFF\""
+    },
+    {
+      "key": "src/gui/constants.py||literal-color|e489a2d78e91eb01",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in module constants; migrate this expression when its presentation path is next touched.",
+      "source": "MAP_FEATURE_REGION_FILL_COLOR = \"#303498DB\""
+    },
+    {
+      "key": "src/gui/constants.py||literal-color|ff0d44b25e5b27c9",
+      "count": 2,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in module constants; migrate this expression when its presentation path is next touched.",
+      "source": "MAP_VERTEX_HANDLE_COLOR = \"#e74c3c\""
+    },
+    {
+      "key": "src/gui/dialogs/backup_settings_dialog.py|BackupSettingsDialog._create_location_section|literal-color|571ccac103b418f2",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in BackupSettingsDialog._create_location_section; migrate this expression when its presentation path is next touched.",
+      "source": "self.lbl_current_path.setStyleSheet(\"color: #888;\")"
+    },
+    {
+      "key": "src/gui/dialogs/database_manager_dialog.py|DatabaseManagerDialog.__init__|literal-color|8861bf6a9819787a",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in DatabaseManagerDialog.__init__; migrate this expression when its presentation path is next touched.",
+      "source": "info.setStyleSheet(\"color: gray; margin-bottom: 10px;\")"
+    },
+    {
+      "key": "src/gui/dialogs/database_manager_dialog.py|DatabaseManagerDialog._refresh_list|literal-color|468fb5b27ae376c8",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in DatabaseManagerDialog._refresh_list; migrate this expression when its presentation path is next touched.",
+      "source": "item.setForeground(Qt.GlobalColor.green)"
+    },
+    {
+      "key": "src/gui/dialogs/fast_inject_dialog.py|FastInjectDialog._setup_configure_tab|literal-color|30491eb7f9fb8c10",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in FastInjectDialog._setup_configure_tab; migrate this expression when its presentation path is next touched.",
+      "source": "self.lbl_desc.setStyleSheet(\"color: gray;\")"
+    },
+    {
+      "key": "src/gui/dialogs/grouping_config_dialog.py|ColorSwatch.__init__|literal-color|008fea238b891932",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in ColorSwatch.__init__; migrate this expression when its presentation path is next touched.",
+      "source": "f\"background-color: {color}; border: 1px solid #ccc; border-radius: 2px;\""
+    },
+    {
+      "key": "src/gui/dialogs/grouping_config_dialog.py|ColorSwatch.set_color|literal-color|008fea238b891932",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in ColorSwatch.set_color; migrate this expression when its presentation path is next touched.",
+      "source": "f\"background-color: {color}; border: 1px solid #ccc; border-radius: 2px;\""
+    },
+    {
+      "key": "src/gui/dialogs/lexicon_editor_dialog.py|LexiconEditorDialog._add_edge_row|literal-color|673ad5d8a95855d4",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in LexiconEditorDialog._add_edge_row; migrate this expression when its presentation path is next touched.",
+      "source": "color_btn = _ColorButton(QColor(style.get(\"color\", \"#888888\")))"
+    },
+    {
+      "key": "src/gui/dialogs/lexicon_editor_dialog.py|LexiconEditorDialog._add_node_row|literal-color|673ad5d8a95855d4",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in LexiconEditorDialog._add_node_row; migrate this expression when its presentation path is next touched.",
+      "source": "fill_color = style.get(\"color\", \"#888888\")"
+    },
+    {
+      "key": "src/gui/dialogs/lexicon_editor_dialog.py|_ColorButton.__init__|literal-color|673ad5d8a95855d4",
+      "count": 2,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _ColorButton.__init__; migrate this expression when its presentation path is next touched.",
+      "source": "self, color: QColor | str = \"#888888\", parent: Optional[QWidget] = None"
+    },
+    {
+      "key": "src/gui/dialogs/lexicon_editor_dialog.py|_ColorButton._choose_color|literal-color|673ad5d8a95855d4",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _ColorButton._choose_color; migrate this expression when its presentation path is next touched.",
+      "source": "initial = self._color if not self._is_none else QColor(\"#888888\")"
+    },
+    {
+      "key": "src/gui/dialogs/lexicon_editor_dialog.py|_ColorButton._update_style|literal-color|15fb6ab00d209ab9",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _ColorButton._update_style; migrate this expression when its presentation path is next touched.",
+      "source": "f\"QPushButton {{ background-color: {self._color.name()}; \""
+    },
+    {
+      "key": "src/gui/dialogs/lexicon_editor_dialog.py|_ColorButton._update_style|literal-color|fb5ef19b6788aaf8",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _ColorButton._update_style; migrate this expression when its presentation path is next touched.",
+      "source": "\"QPushButton { background: qlineargradient(\""
+    },
+    {
+      "key": "src/gui/models/explorer_model.py|ExplorerModel.__init__|literal-color|5056cf128952d12a",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in ExplorerModel.__init__; migrate this expression when its presentation path is next touched.",
+      "source": "self.color_entity = QColor(theme.get(\"primary\", \"#FF9900\"))"
+    },
+    {
+      "key": "src/gui/models/explorer_model.py|ExplorerModel.__init__|literal-color|d990ab651607e46c",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in ExplorerModel.__init__; migrate this expression when its presentation path is next touched.",
+      "source": "self.color_event = QColor(theme.get(\"accent_secondary\", \"#0078D4\"))"
+    },
+    {
+      "key": "src/gui/models/explorer_model.py|ExplorerModel._on_theme_changed|literal-color|5056cf128952d12a",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in ExplorerModel._on_theme_changed; migrate this expression when its presentation path is next touched.",
+      "source": "self.color_entity = QColor(theme.get(\"primary\", \"#FF9900\"))"
+    },
+    {
+      "key": "src/gui/models/explorer_model.py|ExplorerModel._on_theme_changed|literal-color|d990ab651607e46c",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in ExplorerModel._on_theme_changed; migrate this expression when its presentation path is next touched.",
+      "source": "self.color_event = QColor(theme.get(\"accent_secondary\", \"#0078D4\"))"
+    },
+    {
+      "key": "src/gui/splash_screen.py|SplashScreen._build_ui|local-color-derivation|b8cbccd11abfe0fd",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in SplashScreen._build_ui; migrate this expression when its presentation path is next touched.",
+      "source": "shadow_color.setAlpha(95)"
+    },
+    {
+      "key": "src/gui/splash_screen.py|SplashScreen._load_logo|local-color-derivation|d82f8dbfefb60ce4",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in SplashScreen._load_logo; migrate this expression when its presentation path is next touched.",
+      "source": "logo_color.setAlpha(210)"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_dialog_button_style|literal-color|e194909a03963ac1",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_dialog_button_style; migrate this expression when its presentation path is next touched.",
+      "source": "f\"background-color: {theme['primary']}; \""
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_dim_text_color|literal-color|673ad5d8a95855d4",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_dim_text_color; migrate this expression when its presentation path is next touched.",
+      "source": "return theme.get(\"text_dim\", \"#888888\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_drag_overlay_style|literal-color|ff2d8988a7fc5cdf",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_drag_overlay_style; migrate this expression when its presentation path is next touched.",
+      "source": "overlay = f\"rgba({accent.red()}, {accent.green()}, {accent.blue()}, 0.15)\""
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_editor_toolbar_style|literal-color|217395977d074a07",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_editor_toolbar_style; migrate this expression when its presentation path is next touched.",
+      "source": "surface = theme.get(\"surface\", \"#1A1A1A\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_editor_toolbar_style|literal-color|5e8e3e7489fb069e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_editor_toolbar_style; migrate this expression when its presentation path is next touched.",
+      "source": "primary = theme.get(\"primary\", \"#5C82FF\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_editor_toolbar_style|literal-color|c1cf462f2c9a8a30",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_editor_toolbar_style; migrate this expression when its presentation path is next touched.",
+      "source": "border = theme.get(\"border\", \"#333333\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_editor_toolbar_style|literal-color|d139cb99d3390891",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_editor_toolbar_style; migrate this expression when its presentation path is next touched.",
+      "source": "text = theme.get(\"text_main\", \"#E0E0E0\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_entity_color|literal-color|84f59c038b7f5792",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_entity_color; migrate this expression when its presentation path is next touched.",
+      "source": "return theme.get(\"entity_main\", theme.get(\"accent_secondary\", \"#4A90D9\"))"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_event_color|literal-color|673ad5d8a95855d4",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_event_color; migrate this expression when its presentation path is next touched.",
+      "source": "return theme.get(\"event_main\", theme.get(\"primary\", \"#888888\"))"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_flat_tool_button_style|literal-color|4434aa511bf8a76a",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_flat_tool_button_style; migrate this expression when its presentation path is next touched.",
+      "source": "f\"QToolButton:pressed {{ background-color: {primary}; color: white; }}\""
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_flat_tool_button_style|literal-color|5e8e3e7489fb069e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_flat_tool_button_style; migrate this expression when its presentation path is next touched.",
+      "source": "primary = theme.get(\"primary\", \"#5C82FF\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_flat_tool_button_style|literal-color|c1cf462f2c9a8a30",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_flat_tool_button_style; migrate this expression when its presentation path is next touched.",
+      "source": "border = theme.get(\"border\", \"#333333\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_flat_tool_button_style|literal-color|d139cb99d3390891",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_flat_tool_button_style; migrate this expression when its presentation path is next touched.",
+      "source": "text_main = theme.get(\"text_main\", \"#E0E0E0\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_flat_tool_button_style|literal-color|dad8252028023902",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_flat_tool_button_style; migrate this expression when its presentation path is next touched.",
+      "source": "text_dim = theme.get(\"text_dim\", \"#808080\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_ghost_destructive_button_style|literal-color|4434aa511bf8a76a",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_ghost_destructive_button_style; migrate this expression when its presentation path is next touched.",
+      "source": "f\"QPushButton:hover {{ background-color: {theme['destructive']}; \""
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_icon_raster_tool_button_style|literal-color|1c9cff88918b9af8",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_icon_raster_tool_button_style; migrate this expression when its presentation path is next touched.",
+      "source": "surface = theme.get(\"surface\", \"#1E1E1E\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_icon_raster_tool_button_style|literal-color|5e8e3e7489fb069e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_icon_raster_tool_button_style; migrate this expression when its presentation path is next touched.",
+      "source": "primary = theme.get(\"primary\", \"#5C82FF\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_icon_raster_tool_button_style|literal-color|9bab2a5a42e0a3ab",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_icon_raster_tool_button_style; migrate this expression when its presentation path is next touched.",
+      "source": "app_bg = theme.get(\"app_bg\", \"#121212\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_icon_raster_tool_button_style|literal-color|c1cf462f2c9a8a30",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_icon_raster_tool_button_style; migrate this expression when its presentation path is next touched.",
+      "source": "border = theme.get(\"border\", \"#333333\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_icon_raster_tool_button_style|literal-color|d139cb99d3390891",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_icon_raster_tool_button_style; migrate this expression when its presentation path is next touched.",
+      "source": "text_main = theme.get(\"text_main\", \"#E0E0E0\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_legend_overlay_style|literal-color|038c7447f897a832",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_legend_overlay_style; migrate this expression when its presentation path is next touched.",
+      "source": "border = theme.get(\"border\", \"#444444\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_legend_overlay_style|literal-color|18148ecd41dded25",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_legend_overlay_style; migrate this expression when its presentation path is next touched.",
+      "source": "bg = theme.get(\"surface_alt\", \"#2A2A2A\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_list_widget_style|literal-color|128f2f8c392eb402",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_list_widget_style; migrate this expression when its presentation path is next touched.",
+      "source": "primary = theme.get(\"primary\", \"#4A9EFF\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_list_widget_style|literal-color|1347044e7231a78a",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_list_widget_style; migrate this expression when its presentation path is next touched.",
+      "source": "hover_bg = \"rgba(74, 158, 255, 0.1)\""
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_list_widget_style|literal-color|ff2d8988a7fc5cdf",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_list_widget_style; migrate this expression when its presentation path is next touched.",
+      "source": "hover_bg = f\"rgba({r}, {g}, {b}, 0.1)\""
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_mode_indicator_style|literal-color|3ac6da29cfe3b9de",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_mode_indicator_style; migrate this expression when its presentation path is next touched.",
+      "source": "f\"  background: {bg_color};\""
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_mode_pill_style|literal-color|1efd07cfe5c4ee11",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_mode_pill_style; migrate this expression when its presentation path is next touched.",
+      "source": "f\"QPushButton {{ background-color: {bg_color}; color: white; \""
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_overlay_banner_style|literal-color|402f9a2a0f14000b",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_overlay_banner_style; migrate this expression when its presentation path is next touched.",
+      "source": "bg = theme.get(\"surface_alt\", \"rgba(0, 0, 0, 180)\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_overlay_banner_style|literal-color|8b9dd38061756b2d",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_overlay_banner_style; migrate this expression when its presentation path is next touched.",
+      "source": "f\"  background-color: {bg};\""
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_pill_painter_data|literal-color|84f59c038b7f5792",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_pill_painter_data; migrate this expression when its presentation path is next touched.",
+      "source": "hex_color = base_color or theme.get(\"accent_secondary\", \"#4A90D9\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_pill_style|literal-color|2ffc1f29764649da",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_pill_style; migrate this expression when its presentation path is next touched.",
+      "source": "f\"#{object_name} QToolButton {{ \""
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_pill_style|literal-color|f234e9cc8c9ae5b1",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_pill_style; migrate this expression when its presentation path is next touched.",
+      "source": "f\"  color: {theme['error']}; \""
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_probe_popup_style|literal-color|038c7447f897a832",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_probe_popup_style; migrate this expression when its presentation path is next touched.",
+      "source": "border = theme.get(\"border\", \"#444444\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_probe_popup_style|literal-color|18148ecd41dded25",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_probe_popup_style; migrate this expression when its presentation path is next touched.",
+      "source": "bg = theme.get(\"surface_alt\", \"#2A2A2A\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_probe_popup_style|literal-color|3f8aa17905bd07ef",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_probe_popup_style; migrate this expression when its presentation path is next touched.",
+      "source": "text = theme.get(\"text_main\", \"#E8E8E8\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_raster_tool_button_style|literal-color|1c9cff88918b9af8",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_raster_tool_button_style; migrate this expression when its presentation path is next touched.",
+      "source": "surface = theme.get(\"surface\", \"#1E1E1E\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_raster_tool_button_style|literal-color|5e8e3e7489fb069e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_raster_tool_button_style; migrate this expression when its presentation path is next touched.",
+      "source": "primary = theme.get(\"primary\", \"#5C82FF\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_raster_tool_button_style|literal-color|9bab2a5a42e0a3ab",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_raster_tool_button_style; migrate this expression when its presentation path is next touched.",
+      "source": "app_bg = theme.get(\"app_bg\", \"#121212\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_raster_tool_button_style|literal-color|c1cf462f2c9a8a30",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_raster_tool_button_style; migrate this expression when its presentation path is next touched.",
+      "source": "border = theme.get(\"border\", \"#333333\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_raster_tool_button_style|literal-color|d139cb99d3390891",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_raster_tool_button_style; migrate this expression when its presentation path is next touched.",
+      "source": "text_main = theme.get(\"text_main\", \"#E0E0E0\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_scrollbar_style|literal-color|8247d3ddc88fab21",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_scrollbar_style; migrate this expression when its presentation path is next touched.",
+      "source": "scrollbar_bg = theme.get(\"scrollbar_bg\", \"#2B2B2B\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_scrollbar_style|literal-color|b2073dab09feac72",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_scrollbar_style; migrate this expression when its presentation path is next touched.",
+      "source": "scrollbar_handle = theme.get(\"scrollbar_handle\", \"#555555\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_section_separator_style|literal-color|673ad5d8a95855d4",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_section_separator_style; migrate this expression when its presentation path is next touched.",
+      "source": "dim_color = theme.get(\"text_dim\", \"#888888\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_section_separator_style|literal-color|b50e2fccc1c64148",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_section_separator_style; migrate this expression when its presentation path is next touched.",
+      "source": "border_color = theme.get(\"border\", \"#333344\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_attribute_style|literal-color|5e8e3e7489fb069e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_attribute_style; migrate this expression when its presentation path is next touched.",
+      "source": "primary = theme.get(\"primary\", \"#5C82FF\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_attribute_style|literal-color|c1cf462f2c9a8a30",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_attribute_style; migrate this expression when its presentation path is next touched.",
+      "source": "border = theme.get(\"border\", \"#333333\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_divider_style|literal-color|5e8e3e7489fb069e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_divider_style; migrate this expression when its presentation path is next touched.",
+      "source": "primary = theme.get(\"primary\", \"#5C82FF\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_divider_style|literal-color|c1cf462f2c9a8a30",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_divider_style; migrate this expression when its presentation path is next touched.",
+      "source": "border = theme.get(\"border\", \"#333333\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_header_style|literal-color|5e8e3e7489fb069e",
+      "count": 2,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_header_style; migrate this expression when its presentation path is next touched.",
+      "source": "accent = theme.get(\"accent_secondary\", theme.get(\"primary\", \"#5C82FF\"))"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_header_style|literal-color|d139cb99d3390891",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_header_style; migrate this expression when its presentation path is next touched.",
+      "source": "text = theme.get(\"text\", \"#E0E0E0\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_resize_handle_style|literal-color|5e8e3e7489fb069e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_resize_handle_style; migrate this expression when its presentation path is next touched.",
+      "source": "primary = theme.get(\"primary\", \"#5C82FF\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_spacer_style|literal-color|5e8e3e7489fb069e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_spacer_style; migrate this expression when its presentation path is next touched.",
+      "source": "primary = theme.get(\"primary\", \"#5C82FF\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_spacer_style|literal-color|a9b70348305d8e94",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_spacer_style; migrate this expression when its presentation path is next touched.",
+      "source": "border: 1px solid {primary};"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_spacer_style|literal-color|c1cf462f2c9a8a30",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_spacer_style; migrate this expression when its presentation path is next touched.",
+      "source": "border = theme.get(\"border\", \"#333333\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_spacer_style|literal-color|f777e31cf075e6a9",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_spacer_style; migrate this expression when its presentation path is next touched.",
+      "source": "border: 1px solid {primary};"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_text_block_style|literal-color|5e8e3e7489fb069e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_text_block_style; migrate this expression when its presentation path is next touched.",
+      "source": "primary = theme.get(\"primary\", \"#5C82FF\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_text_block_style|literal-color|d139cb99d3390891",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_text_block_style; migrate this expression when its presentation path is next touched.",
+      "source": "text = theme.get(\"text\", \"#E0E0E0\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_text_block_style|literal-color|dad8252028023902",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_text_block_style; migrate this expression when its presentation path is next touched.",
+      "source": "text_dim = theme.get(\"text_dim\", \"#808080\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_table_widget_style|literal-color|128f2f8c392eb402",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_table_widget_style; migrate this expression when its presentation path is next touched.",
+      "source": "primary = theme.get(\"primary\", \"#4A9EFF\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_table_widget_style|literal-color|1347044e7231a78a",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_table_widget_style; migrate this expression when its presentation path is next touched.",
+      "source": "hover_bg = \"rgba(74, 158, 255, 0.1)\""
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_table_widget_style|literal-color|18148ecd41dded25",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_table_widget_style; migrate this expression when its presentation path is next touched.",
+      "source": "surface_alt = theme.get(\"surface_alt\", theme.get(\"surface\", \"#2A2A2A\"))"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_table_widget_style|literal-color|ff2d8988a7fc5cdf",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_table_widget_style; migrate this expression when its presentation path is next touched.",
+      "source": "hover_bg = f\"rgba({r}, {g}, {b}, 0.1)\""
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_temporal_segment_style|literal-color|84f59c038b7f5792",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_temporal_segment_style; migrate this expression when its presentation path is next touched.",
+      "source": "bg = theme.get(\"primary\", \"#4A90D9\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_tree_view_style|literal-color|128f2f8c392eb402",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_tree_view_style; migrate this expression when its presentation path is next touched.",
+      "source": "primary = theme.get(\"primary\", \"#4A9EFF\")"
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_tree_view_style|literal-color|1347044e7231a78a",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_tree_view_style; migrate this expression when its presentation path is next touched.",
+      "source": "hover_bg = \"rgba(74, 158, 255, 0.1)\""
+    },
+    {
+      "key": "src/gui/utils/style_helper.py|StyleHelper.get_tree_view_style|literal-color|ff2d8988a7fc5cdf",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in StyleHelper.get_tree_view_style; migrate this expression when its presentation path is next touched.",
+      "source": "hover_bg = f\"rgba({r}, {g}, {b}, 0.1)\""
+    },
+    {
+      "key": "src/gui/utils/window_utils.py|ModalWindowThemeFilter._apply_dialog_theme|literal-color|8247d3ddc88fab21",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in ModalWindowThemeFilter._apply_dialog_theme; migrate this expression when its presentation path is next touched.",
+      "source": "background = QColor(str(theme_data.get(\"app_bg\", \"#2B2B2B\")))"
+    },
+    {
+      "key": "src/gui/utils/window_utils.py|ModalWindowThemeFilter._apply_dialog_theme|literal-color|d139cb99d3390891",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in ModalWindowThemeFilter._apply_dialog_theme; migrate this expression when its presentation path is next touched.",
+      "source": "foreground = QColor(str(theme_data.get(\"text_main\", \"#E0E0E0\")))"
+    },
+    {
+      "key": "src/gui/widgets/analysis/_analysis_utils.py||literal-color|4c71a422adacd2cb",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in module constants; migrate this expression when its presentation path is next touched.",
+      "source": "_HR = \"<hr style='margin:6px 0;border:1px solid #888;'/>\""
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/gradient_scrubber.py|GradientScrubberWidget.paintEvent|literal-color|391319773cb53b7c",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GradientScrubberWidget.paintEvent; migrate this expression when its presentation path is next touched.",
+      "source": "border_col = QColor(theme.get(\"border\", \"#444\"))"
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/gradient_scrubber.py|GradientScrubberWidget.paintEvent|literal-color|5e8e3e7489fb069e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GradientScrubberWidget.paintEvent; migrate this expression when its presentation path is next touched.",
+      "source": "handle_col = QColor(theme.get(\"primary\", \"#5C82FF\"))"
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/gradient_scrubber.py|GradientScrubberWidget.paintEvent|literal-color|d539d89533e1848d",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GradientScrubberWidget.paintEvent; migrate this expression when its presentation path is next touched.",
+      "source": "surface_col = QColor(theme.get(\"surface\", \"#222\"))"
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/gradient_scrubber.py|GradientScrubberWidget.paintEvent|local-color-derivation|e72d000afbf6847f",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GradientScrubberWidget.paintEvent; migrate this expression when its presentation path is next touched.",
+      "source": "painter.setPen(QPen(handle_col.darker(140), 1))"
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/inline_color_picker.py|InlineColorPickerPopover.__init__|literal-color|dad8252028023902",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in InlineColorPickerPopover.__init__; migrate this expression when its presentation path is next touched.",
+      "source": "initial_color: str = \"#808080\","
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/inline_color_picker.py|InlineColorPickerPopover._apply_theme|literal-color|3df34c0c9f786098",
+      "count": 3,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in InlineColorPickerPopover._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "f\"QLabel {{ color: {theme.get('text_main', '#eee')}; border: none; }}\""
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/inline_color_picker.py|InlineColorPickerPopover._apply_theme|literal-color|4f6666232a525634",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in InlineColorPickerPopover._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "f\"QFrame {{ background-color: {theme.get('background', '#1e1e1e')}; \""
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/inline_color_picker.py|InlineColorPickerPopover._apply_theme|literal-color|5e8e3e7489fb069e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in InlineColorPickerPopover._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "f\"QPushButton {{ background-color: {theme.get('primary', '#5C82FF')}; \""
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/inline_color_picker.py|InlineColorPickerPopover._apply_theme|literal-color|aba542a1fcf9f9ab",
+      "count": 3,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in InlineColorPickerPopover._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "f\"border: 1px solid {theme.get('border', '#555')}; \""
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/inline_color_picker.py|InlineColorPickerPopover._apply_theme|literal-color|d539d89533e1848d",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in InlineColorPickerPopover._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "f\"QLineEdit {{ background-color: {theme.get('surface', '#222')}; \""
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/inline_color_picker.py|InlineColorPickerPopover._apply_theme|literal-color|e877dc5cadf089b0",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in InlineColorPickerPopover._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "f\"QPushButton {{ background-color: {theme.get('primary', '#5C82FF')}; \""
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/inline_color_picker.py|InlineColorPickerPopover._refresh_preview|literal-color|aba542a1fcf9f9ab",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in InlineColorPickerPopover._refresh_preview; migrate this expression when its presentation path is next touched.",
+      "source": "f\"border: 1px solid {theme.get('border', '#555')}; \""
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/inline_color_picker.py|_HueStrip.paintEvent|literal-color|020e7e5d327e7d89",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _HueStrip.paintEvent; migrate this expression when its presentation path is next touched.",
+      "source": "painter.setPen(QPen(QColor(\"white\"), 2))"
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/inline_color_picker.py|_HueStrip.paintEvent|literal-color|7dbc902a06a0bb66",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _HueStrip.paintEvent; migrate this expression when its presentation path is next touched.",
+      "source": "painter.setPen(QPen(QColor(\"black\"), 1))"
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/inline_color_picker.py|_SVSquare.paintEvent|literal-color|020e7e5d327e7d89",
+      "count": 2,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _SVSquare.paintEvent; migrate this expression when its presentation path is next touched.",
+      "source": "sat_grad.setColorAt(0.0, QColor(\"white\"))"
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/inline_color_picker.py|_SVSquare.paintEvent|literal-color|7dbc902a06a0bb66",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _SVSquare.paintEvent; migrate this expression when its presentation path is next touched.",
+      "source": "painter.setPen(QPen(QColor(\"black\"), 1))"
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/inline_color_picker.py|_SVSquare.paintEvent|literal-color|ac3d42d8c7f04bde",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _SVSquare.paintEvent; migrate this expression when its presentation path is next touched.",
+      "source": "val_grad.setColorAt(0.0, QColor(0, 0, 0, 0))"
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/inline_color_picker.py|_SVSquare.paintEvent|literal-color|fa339f9cea627399",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _SVSquare.paintEvent; migrate this expression when its presentation path is next touched.",
+      "source": "val_grad.setColorAt(1.0, QColor(0, 0, 0, 255))"
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/recent_values_strip.py|_ValueTile.paintEvent|literal-color|3df34c0c9f786098",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _ValueTile.paintEvent; migrate this expression when its presentation path is next touched.",
+      "source": "painter.setPen(QColor(theme.get(\"text_main\", \"#eee\")))"
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/recent_values_strip.py|_ValueTile.paintEvent|literal-color|aba542a1fcf9f9ab",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _ValueTile.paintEvent; migrate this expression when its presentation path is next touched.",
+      "source": "border = QColor(theme.get(\"border\", \"#555\"))"
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/recent_values_strip.py|_ValueTile.paintEvent|literal-color|d539d89533e1848d",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _ValueTile.paintEvent; migrate this expression when its presentation path is next touched.",
+      "source": "painter.setBrush(QColor(theme.get(\"surface\", \"#222\")))"
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/swatch_grid.py|SwatchGridWidget.paintEvent|literal-color|391319773cb53b7c",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in SwatchGridWidget.paintEvent; migrate this expression when its presentation path is next touched.",
+      "source": "border_col = QColor(theme.get(\"border\", \"#444\"))"
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/swatch_grid.py|SwatchGridWidget.paintEvent|literal-color|3df34c0c9f786098",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in SwatchGridWidget.paintEvent; migrate this expression when its presentation path is next touched.",
+      "source": "text_col = QColor(theme.get(\"text_main\", \"#eee\"))"
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/swatch_grid.py|SwatchGridWidget.paintEvent|literal-color|5e8e3e7489fb069e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in SwatchGridWidget.paintEvent; migrate this expression when its presentation path is next touched.",
+      "source": "primary_col = QColor(theme.get(\"primary\", \"#5C82FF\"))"
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/swatch_grid.py|SwatchGridWidget.paintEvent|literal-color|d539d89533e1848d",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in SwatchGridWidget.paintEvent; migrate this expression when its presentation path is next touched.",
+      "source": "surface_col = QColor(theme.get(\"surface\", \"#222\"))"
+    },
+    {
+      "key": "src/gui/widgets/color_pickers/swatch_grid.py|SwatchGridWidget.paintEvent|literal-color|dd8a841d4e027115",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in SwatchGridWidget.paintEvent; migrate this expression when its presentation path is next touched.",
+      "source": "dim_col = QColor(theme.get(\"text_dim\", \"#888\"))"
+    },
+    {
+      "key": "src/gui/widgets/compact_date_widget.py|CompactDateWidget._update_icons|literal-color|ed74e2833cb39417",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in CompactDateWidget._update_icons; migrate this expression when its presentation path is next touched.",
+      "source": "color = theme.get(\"accent_secondary\", theme.get(\"text_main\", \"#e0e0e0\"))"
+    },
+    {
+      "key": "src/gui/widgets/context_tag_bar.py|ContextTagBar._rebuild_chips|literal-color|383efc24a4078905",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in ContextTagBar._rebuild_chips; migrate this expression when its presentation path is next touched.",
+      "source": "f\"color: {theme['text_main']};\""
+    },
+    {
+      "key": "src/gui/widgets/drag_pill.py|DragPill._apply_theme|literal-color|7a5575158710e4a9",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in DragPill._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "shadow.setColor(QColor(0, 0, 0, 76))"
+    },
+    {
+      "key": "src/gui/widgets/focus_writing.py|_PaneTint.apply_theme|literal-color|5cc01d430143c34a",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _PaneTint.apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "\"background-color: rgba(\""
+    },
+    {
+      "key": "src/gui/widgets/focus_writing.py|_PaneTint.apply_theme|local-color-derivation|7b4527c04ed1b3c1",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _PaneTint.apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "color = QColor(ThemeManager().get_theme()[\"app_bg\"]).darker(150)"
+    },
+    {
+      "key": "src/gui/widgets/graph_view/graph_builder.py|GraphBuilder._build_network|literal-color|4f6666232a525634",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GraphBuilder._build_network; migrate this expression when its presentation path is next touched.",
+      "source": "bgcolor=theme.get(\"background_color\", \"#1e1e1e\"),"
+    },
+    {
+      "key": "src/gui/widgets/graph_view/graph_builder.py|GraphBuilder._build_network|literal-color|673ad5d8a95855d4",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GraphBuilder._build_network; migrate this expression when its presentation path is next touched.",
+      "source": "edge_color = theme.get(\"edge_color\", \"#888888\")"
+    },
+    {
+      "key": "src/gui/widgets/graph_view/graph_builder.py|GraphBuilder._inject_theme_css|literal-color|4f6666232a525634",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GraphBuilder._inject_theme_css; migrate this expression when its presentation path is next touched.",
+      "source": "bg_color = theme.get(\"background_color\", \"#1e1e1e\")"
+    },
+    {
+      "key": "src/gui/widgets/graph_view/graph_builder.py|GraphBuilder.build_empty_html|literal-color|4f6666232a525634",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GraphBuilder.build_empty_html; migrate this expression when its presentation path is next touched.",
+      "source": "bg_color = theme.get(\"background_color\", \"#1e1e1e\")"
+    },
+    {
+      "key": "src/gui/widgets/graph_view/graph_builder.py|GraphBuilder.build_empty_html|literal-color|673ad5d8a95855d4",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GraphBuilder.build_empty_html; migrate this expression when its presentation path is next touched.",
+      "source": "text_color = theme.get(\"text_color\", \"#888888\")"
+    },
+    {
+      "key": "src/gui/widgets/graph_view/graph_builder.py|GraphBuilder.build_html|literal-color|4f6666232a525634",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GraphBuilder.build_html; migrate this expression when its presentation path is next touched.",
+      "source": "background = theme.get(\"background_color\", \"#1e1e1e\")"
+    },
+    {
+      "key": "src/gui/widgets/graph_view/graph_builder.py|GraphBuilder.build_html|literal-color|baa9d4300a357f02",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GraphBuilder.build_html; migrate this expression when its presentation path is next touched.",
+      "source": "text_color = theme.get(\"text_color\", \"#ffffff\")"
+    },
+    {
+      "key": "src/gui/widgets/graph_view/graph_builder.py|GraphBuilder|literal-color|0d29a6eb91e26dc6",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GraphBuilder; migrate this expression when its presentation path is next touched.",
+      "source": "\"background_color\": \"#000000\","
+    },
+    {
+      "key": "src/gui/widgets/graph_view/graph_builder.py|GraphBuilder|literal-color|198106448e2990b9",
+      "count": 2,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GraphBuilder; migrate this expression when its presentation path is next touched.",
+      "source": "ENTITY_COLOR = \"#CCCCCC\""
+    },
+    {
+      "key": "src/gui/widgets/graph_view/graph_builder.py|GraphBuilder|literal-color|ab997dd06a0667cd",
+      "count": 2,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GraphBuilder; migrate this expression when its presentation path is next touched.",
+      "source": "EVENT_COLOR = \"#AAAAAA\""
+    },
+    {
+      "key": "src/gui/widgets/graph_view/graph_builder.py|GraphBuilder|literal-color|d2e8bb359bfdd903",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GraphBuilder; migrate this expression when its presentation path is next touched.",
+      "source": "\"text_color\": \"#FFFFFF\","
+    },
+    {
+      "key": "src/gui/widgets/graph_view/graph_builder.py|GraphBuilder|literal-color|d96bf68232e1310c",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GraphBuilder; migrate this expression when its presentation path is next touched.",
+      "source": "\"edge_color\": \"#666666\","
+    },
+    {
+      "key": "src/gui/widgets/graph_view/graph_web_view.py|GraphWebView.update_graph_data|literal-color|673ad5d8a95855d4",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GraphWebView.update_graph_data; migrate this expression when its presentation path is next touched.",
+      "source": "edge_color = theme.get(\"edge_color\", \"#888888\")"
+    },
+    {
+      "key": "src/gui/widgets/graph_view/graph_widget.py|GraphWidget._get_current_theme_config|literal-color|412a334b405a8a9b",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GraphWidget._get_current_theme_config; migrate this expression when its presentation path is next touched.",
+      "source": "\"event_main\", theme.get(\"primary\", \"#E67E22\")"
+    },
+    {
+      "key": "src/gui/widgets/graph_view/graph_widget.py|GraphWidget._get_current_theme_config|literal-color|4f6666232a525634",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GraphWidget._get_current_theme_config; migrate this expression when its presentation path is next touched.",
+      "source": "\"background_color\": theme.get(\"app_bg\", \"#1e1e1e\"),"
+    },
+    {
+      "key": "src/gui/widgets/graph_view/graph_widget.py|GraphWidget._get_current_theme_config|literal-color|673ad5d8a95855d4",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GraphWidget._get_current_theme_config; migrate this expression when its presentation path is next touched.",
+      "source": "\"edge_color\": theme.get(\"text_dim\", \"#888888\"),"
+    },
+    {
+      "key": "src/gui/widgets/graph_view/graph_widget.py|GraphWidget._get_current_theme_config|literal-color|84f59c038b7f5792",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GraphWidget._get_current_theme_config; migrate this expression when its presentation path is next touched.",
+      "source": "\"entity_main\", theme.get(\"accent_secondary\", \"#4A90D9\")"
+    },
+    {
+      "key": "src/gui/widgets/graph_view/graph_widget.py|GraphWidget._get_current_theme_config|literal-color|baa9d4300a357f02",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GraphWidget._get_current_theme_config; migrate this expression when its presentation path is next touched.",
+      "source": "\"text_color\": theme.get(\"text_main\", \"#ffffff\"),"
+    },
+    {
+      "key": "src/gui/widgets/graph_view/graph_widget.py|GraphWidget._on_theme_changed|literal-color|4f6666232a525634",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GraphWidget._on_theme_changed; migrate this expression when its presentation path is next touched.",
+      "source": "bg_color = self._current_theme_config.get(\"background_color\", \"#1e1e1e\")"
+    },
+    {
+      "key": "src/gui/widgets/history_panel.py|HistoryPanelWidget._add_command_item|literal-color|128f2f8c392eb402",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in HistoryPanelWidget._add_command_item; migrate this expression when its presentation path is next touched.",
+      "source": "bg_color = QColor(theme.get(\"primary\", \"#4A9EFF\"))"
+    },
+    {
+      "key": "src/gui/widgets/history_panel.py|HistoryPanelWidget._add_command_item|literal-color|90a7255aa35f97df",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in HistoryPanelWidget._add_command_item; migrate this expression when its presentation path is next touched.",
+      "source": "bg_color = QColor(theme.get(\"accent\", \"#FF9800\"))"
+    },
+    {
+      "key": "src/gui/widgets/history_panel.py|HistoryPanelWidget._add_command_item|literal-color|d139cb99d3390891",
+      "count": 2,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in HistoryPanelWidget._add_command_item; migrate this expression when its presentation path is next touched.",
+      "source": "color = QColor(theme.get(\"text_main\", \"#E0E0E0\"))"
+    },
+    {
+      "key": "src/gui/widgets/history_panel.py|HistoryPanelWidget._add_command_item|literal-color|dad8252028023902",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in HistoryPanelWidget._add_command_item; migrate this expression when its presentation path is next touched.",
+      "source": "color = QColor(theme.get(\"text_dim\", \"#808080\"))"
+    },
+    {
+      "key": "src/gui/widgets/history_panel.py|HistoryPanelWidget._add_command_item|local-color-derivation|5d79aa3168d56c1b",
+      "count": 2,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in HistoryPanelWidget._add_command_item; migrate this expression when its presentation path is next touched.",
+      "source": "bg_color.setAlpha(30)"
+    },
+    {
+      "key": "src/gui/widgets/history_panel.py|HistoryPanelWidget._apply_theme|literal-color|a2fec634d2eca09e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in HistoryPanelWidget._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "self.backgroundRole(), QColor(theme.get(\"surface\", \"#323232\"))"
+    },
+    {
+      "key": "src/gui/widgets/history_panel.py|HistoryPanelWidget._apply_theme|literal-color|d139cb99d3390891",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in HistoryPanelWidget._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "self.foregroundRole(), QColor(theme.get(\"text_main\", \"#E0E0E0\"))"
+    },
+    {
+      "key": "src/gui/widgets/longform/content.py|LongformContentWidget._apply_theme|literal-color|4f6666232a525634",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in LongformContentWidget._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "bg_color = theme.get(\"app_bg\", \"#1e1e1e\")"
+    },
+    {
+      "key": "src/gui/widgets/longform/content.py|LongformContentWidget._get_theme_css|literal-color|5056cf128952d12a",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in LongformContentWidget._get_theme_css; migrate this expression when its presentation path is next touched.",
+      "source": "primary_color = theme.get(\"primary\", \"#FF9900\")"
+    },
+    {
+      "key": "src/gui/widgets/longform/content.py|LongformContentWidget._get_theme_css|literal-color|8c34e4c9775a95f0",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in LongformContentWidget._get_theme_css; migrate this expression when its presentation path is next touched.",
+      "source": "border_color = theme.get(\"border\", \"#454545\")"
+    },
+    {
+      "key": "src/gui/widgets/longform/content.py|LongformContentWidget._get_theme_css|literal-color|a2fec634d2eca09e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in LongformContentWidget._get_theme_css; migrate this expression when its presentation path is next touched.",
+      "source": "surface_color = theme.get(\"surface\", \"#323232\")"
+    },
+    {
+      "key": "src/gui/widgets/longform/content.py|LongformContentWidget._get_theme_css|literal-color|bbb81caf851e9452",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in LongformContentWidget._get_theme_css; migrate this expression when its presentation path is next touched.",
+      "source": "link_color = theme.get(\"accent_secondary\", \"#2980b9\")"
+    },
+    {
+      "key": "src/gui/widgets/longform/content.py|LongformContentWidget._get_theme_css|literal-color|d139cb99d3390891",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in LongformContentWidget._get_theme_css; migrate this expression when its presentation path is next touched.",
+      "source": "text_color = theme.get(\"text_main\", \"#E0E0E0\")"
+    },
+    {
+      "key": "src/gui/widgets/longform/content.py|LongformContentWidget._get_theme_css|literal-color|e1863ddf8ab4952d",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in LongformContentWidget._get_theme_css; migrate this expression when its presentation path is next touched.",
+      "source": "return \"\"\""
+    },
+    {
+      "key": "src/gui/widgets/longform/content.py|LongformContentWidget._get_theme_css|literal-color|fb08bc1e1cfab1fc",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in LongformContentWidget._get_theme_css; migrate this expression when its presentation path is next touched.",
+      "source": "text_dim_color = theme.get(\"text_dim\", \"#9E9E9E\")"
+    },
+    {
+      "key": "src/gui/widgets/longform/outline.py|LongformOutlineWidget._update_colors|literal-color|5056cf128952d12a",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in LongformOutlineWidget._update_colors; migrate this expression when its presentation path is next touched.",
+      "source": "self.color_entity = QColor(theme.get(\"primary\", \"#FF9900\"))"
+    },
+    {
+      "key": "src/gui/widgets/longform/outline.py|LongformOutlineWidget._update_colors|literal-color|d990ab651607e46c",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in LongformOutlineWidget._update_colors; migrate this expression when its presentation path is next touched.",
+      "source": "self.color_event = QColor(theme.get(\"accent_secondary\", \"#0078D4\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem._draw_edit_handles|literal-color|baa9d4300a357f02",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem._draw_edit_handles; migrate this expression when its presentation path is next touched.",
+      "source": "handle_border = QColor(\"#ffffff\")"
+    },
+    {
+      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem._draw_edit_handles|local-color-derivation|092b2d4d37943aee",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem._draw_edit_handles; migrate this expression when its presentation path is next touched.",
+      "source": "handle_fill.setAlpha(220)"
+    },
+    {
+      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem._draw_edit_handles|local-color-derivation|802cea12bcf05074",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem._draw_edit_handles; migrate this expression when its presentation path is next touched.",
+      "source": "handle_border.setAlpha(200)"
+    },
+    {
+      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem._draw_label|literal-color|8247d3ddc88fab21",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem._draw_label; migrate this expression when its presentation path is next touched.",
+      "source": "bg = QColor(theme.get(\"app_bg\", \"#2B2B2B\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem._draw_label|literal-color|d139cb99d3390891",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem._draw_label; migrate this expression when its presentation path is next touched.",
+      "source": "text_col = QColor(theme.get(\"text_main\", \"#E0E0E0\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem._draw_label|literal-color|d65e1faca512a558",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem._draw_label; migrate this expression when its presentation path is next touched.",
+      "source": "border = QColor(theme.get(\"accent_secondary\", \"#4DA6FF\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem._draw_label|local-color-derivation|02bfbe6315fbbc6b",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem._draw_label; migrate this expression when its presentation path is next touched.",
+      "source": "bg.setAlpha(200)"
+    },
+    {
+      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem._draw_label|local-color-derivation|2ba595ef712bc9cd",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem._draw_label; migrate this expression when its presentation path is next touched.",
+      "source": "border.setAlpha(180)"
+    },
+    {
+      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem.paint|literal-color|5056cf128952d12a",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem.paint; migrate this expression when its presentation path is next touched.",
+      "source": "primary = theme.get(\"primary\", \"#FF9900\")"
+    },
+    {
+      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem.paint|literal-color|d65e1faca512a558",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem.paint; migrate this expression when its presentation path is next touched.",
+      "source": "accent = theme.get(\"accent_secondary\", \"#4DA6FF\")"
+    },
+    {
+      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem.paint|local-color-derivation|787d880929ae32b8",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem.paint; migrate this expression when its presentation path is next touched.",
+      "source": "outline_color.setAlpha(200)"
+    },
+    {
+      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem.paint|local-color-derivation|9c7e377fdd5de3cb",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem.paint; migrate this expression when its presentation path is next touched.",
+      "source": "fill_color.setAlpha(45)"
+    },
+    {
+      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem.paint|local-color-derivation|b98b4b7409b3af60",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem.paint; migrate this expression when its presentation path is next touched.",
+      "source": "tint.setAlpha(25)"
+    },
+    {
+      "key": "src/gui/widgets/map/drawing_tool.py|DrawingTool._add_drawing_vertex|literal-color|217395977d074a07",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in DrawingTool._add_drawing_vertex; migrate this expression when its presentation path is next touched.",
+      "source": "dot.setPen(QPen(QColor(_t.get(\"surface\", \"#1A1A1A\")), 1))"
+    },
+    {
+      "key": "src/gui/widgets/map/drawing_tool.py|DrawingTool._add_drawing_vertex|literal-color|ff0d44b25e5b27c9",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in DrawingTool._add_drawing_vertex; migrate this expression when its presentation path is next touched.",
+      "source": "dot.setBrush(QBrush(QColor(_t.get(\"error\", \"#e74c3c\"))))"
+    },
+    {
+      "key": "src/gui/widgets/map/drawing_tool.py|DrawingTool._update_drawing_preview|literal-color|ff0d44b25e5b27c9",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in DrawingTool._update_drawing_preview; migrate this expression when its presentation path is next touched.",
+      "source": "_err = QColor(_t.get(\"error\", \"#e74c3c\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/drawing_tool.py|DrawingTool._update_drawing_preview|local-color-derivation|4e76d809f6f3f48e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in DrawingTool._update_drawing_preview; migrate this expression when its presentation path is next touched.",
+      "source": "_fill.setAlpha(40)"
+    },
+    {
+      "key": "src/gui/widgets/map/interaction_handler.py|InteractionHandler.show_feature_style_dialog._pick_fill|literal-color|04652b1ac6a816dd",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in InteractionHandler.show_feature_style_dialog._pick_fill; migrate this expression when its presentation path is next touched.",
+      "source": "f\"background-color: {c.name()}; color: white; \""
+    },
+    {
+      "key": "src/gui/widgets/map/interaction_handler.py|InteractionHandler.show_feature_style_dialog._pick_stroke|literal-color|04652b1ac6a816dd",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in InteractionHandler.show_feature_style_dialog._pick_stroke; migrate this expression when its presentation path is next touched.",
+      "source": "f\"background-color: {safe}; color: white; padding: 4px 12px;\""
+    },
+    {
+      "key": "src/gui/widgets/map/interaction_handler.py|InteractionHandler.show_feature_style_dialog|literal-color|04652b1ac6a816dd",
+      "count": 2,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in InteractionHandler.show_feature_style_dialog; migrate this expression when its presentation path is next touched.",
+      "source": "f\"background-color: {stroke_init}; color: white; padding: 4px 12px;\""
+    },
+    {
+      "key": "src/gui/widgets/map/interaction_handler.py|_safe_color_css|literal-color|dad8252028023902",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _safe_color_css; migrate this expression when its presentation path is next touched.",
+      "source": "return ThemeManager().get_theme().get(\"text_dim\", \"#808080\").lower()"
+    },
+    {
+      "key": "src/gui/widgets/map/map_data_buffer.py|ColorMap.from_dict|literal-color|0d29a6eb91e26dc6",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "GradientStop(0.0, data.get(\"gradient_start\", \"#000000\")),"
+    },
+    {
+      "key": "src/gui/widgets/map/map_data_buffer.py|ColorMap.from_dict|literal-color|d2e8bb359bfdd903",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "GradientStop(1.0, data.get(\"gradient_end\", \"#FFFFFF\")),"
+    },
+    {
+      "key": "src/gui/widgets/map/map_graphics_view.py|MapGraphicsView._show_marker_placement_preview|literal-color|a6d2cde0220c4b00",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapGraphicsView._show_marker_placement_preview; migrate this expression when its presentation path is next touched.",
+      "source": "color = QColor(theme.get(\"accent_secondary\", \"#3498db\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/map_graphics_view.py|MapGraphicsView._show_marker_placement_preview|local-color-derivation|c6bf19dbc914c1c7",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapGraphicsView._show_marker_placement_preview; migrate this expression when its presentation path is next touched.",
+      "source": "fill.setAlpha(72)"
+    },
+    {
+      "key": "src/gui/widgets/map/map_graphics_view.py|MapGraphicsView.drawForeground|literal-color|5f17d88816108c10",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapGraphicsView.drawForeground; migrate this expression when its presentation path is next touched.",
+      "source": "painter.setPen(Qt.GlobalColor.white)"
+    },
+    {
+      "key": "src/gui/widgets/map/map_graphics_view.py|MapGraphicsView.drawForeground|literal-color|80a4a59cd5fe35b3",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapGraphicsView.drawForeground; migrate this expression when its presentation path is next touched.",
+      "source": "painter.setBrush(QColor(0, 0, 0, 180))"
+    },
+    {
+      "key": "src/gui/widgets/map/map_graphics_view.py|MapGraphicsView.drawForeground|literal-color|ff0d44b25e5b27c9",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapGraphicsView.drawForeground; migrate this expression when its presentation path is next touched.",
+      "source": "pen = QPen(QColor(theme.get(\"destructive\", \"#e74c3c\")))"
+    },
+    {
+      "key": "src/gui/widgets/map/map_graphics_view.py||literal-color|7bbf3f0e2c235b07",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in module constants; migrate this expression when its presentation path is next touched.",
+      "source": "KEYFRAME_COLOR_DEFAULT = \"#f1c40f\"  # Yellow (fallback)"
+    },
+    {
+      "key": "src/gui/widgets/map/map_label_item.py|MapLabelItem.paint|literal-color|217395977d074a07",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapLabelItem.paint; migrate this expression when its presentation path is next touched.",
+      "source": "background = QColor(theme.get(\"surface\", \"#1A1A1A\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/map_label_item.py|MapLabelItem.paint|literal-color|c1cf462f2c9a8a30",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapLabelItem.paint; migrate this expression when its presentation path is next touched.",
+      "source": "border = QColor(theme.get(\"border\", \"#333333\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/map_label_item.py|MapLabelItem.paint|literal-color|d2e8bb359bfdd903",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapLabelItem.paint; migrate this expression when its presentation path is next touched.",
+      "source": "text_color = QColor(theme.get(\"text_main\", \"#FFFFFF\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/map_layer_panel.py|MapLayerPanel._build_mode_specific_paint_controls|literal-color|78544dbc1adda837",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapLayerPanel._build_mode_specific_paint_controls; migrate this expression when its presentation path is next touched.",
+      "source": "self._rgba_color_button = QPushButton(\"#FFFFFFFF\")"
+    },
+    {
+      "key": "src/gui/widgets/map/map_layer_panel.py|MapLayerPanel._build_mode_specific_paint_controls|literal-color|ac3d42d8c7f04bde",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapLayerPanel._build_mode_specific_paint_controls; migrate this expression when its presentation path is next touched.",
+      "source": "self._rgba_gradient_from = QColor(0, 0, 0, 0)"
+    },
+    {
+      "key": "src/gui/widgets/map/map_layer_panel.py|MapLayerPanel._build_mode_specific_paint_controls|literal-color|b2c7950c3d1fdf64",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapLayerPanel._build_mode_specific_paint_controls; migrate this expression when its presentation path is next touched.",
+      "source": "self._rgba_gradient_from_button = QPushButton(\"From #00000000\")"
+    },
+    {
+      "key": "src/gui/widgets/map/map_layer_panel.py|MapLayerPanel._build_mode_specific_paint_controls|literal-color|ce94bac2f65ca68c",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapLayerPanel._build_mode_specific_paint_controls; migrate this expression when its presentation path is next touched.",
+      "source": "self._rgba_gradient_to_button = QPushButton(\"To #FFFFFFFF\")"
+    },
+    {
+      "key": "src/gui/widgets/map/map_layer_panel.py|MapLayerPanel._build_mode_specific_paint_controls|literal-color|f3398309d54ac949",
+      "count": 2,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapLayerPanel._build_mode_specific_paint_controls; migrate this expression when its presentation path is next touched.",
+      "source": "self._rgba_color = QColor(255, 255, 255, 255)"
+    },
+    {
+      "key": "src/gui/widgets/map/map_layer_panel.py|MapLayerPanel._build_paint_value_selector|literal-color|673ad5d8a95855d4",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapLayerPanel._build_paint_value_selector; migrate this expression when its presentation path is next touched.",
+      "source": "dim_color = ThemeManager().get_theme().get(\"text_dim\", \"#888888\")"
+    },
+    {
+      "key": "src/gui/widgets/map/map_layer_panel.py|MapLayerPanel._make_labeled_slider|literal-color|673ad5d8a95855d4",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapLayerPanel._make_labeled_slider; migrate this expression when its presentation path is next touched.",
+      "source": "ThemeManager().get_theme().get(\"text_dim\", \"#888888\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/map_layer_panel.py|MapLayerPanel._on_rgba_alpha_changed|local-color-derivation|9c193a6f1eed90fe",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapLayerPanel._on_rgba_alpha_changed; migrate this expression when its presentation path is next touched.",
+      "source": "self._rgba_color.setAlpha(alpha)"
+    },
+    {
+      "key": "src/gui/widgets/map/map_layer_panel.py|MapLayerPanel._show_mode_badge|literal-color|5e8e3e7489fb069e",
+      "count": 2,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapLayerPanel._show_mode_badge; migrate this expression when its presentation path is next touched.",
+      "source": "bg = theme.get(\"accent_primary\", theme.get(\"primary\", \"#5C82FF\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/map_layer_panel.py|MapLayerPanel._show_mode_badge|literal-color|84f59c038b7f5792",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapLayerPanel._show_mode_badge; migrate this expression when its presentation path is next touched.",
+      "source": "bg = theme.get(\"accent_secondary\", \"#4A90D9\")"
+    },
+    {
+      "key": "src/gui/widgets/map/map_layer_panel.py|MapLayerPanel._theme_token|literal-color|673ad5d8a95855d4",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapLayerPanel._theme_token; migrate this expression when its presentation path is next touched.",
+      "source": "return ThemeManager().get_theme().get(key, \"#888888\")"
+    },
+    {
+      "key": "src/gui/widgets/map/map_layer_panel.py|TemporalLayerDelegate.paint|literal-color|673ad5d8a95855d4",
+      "count": 2,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TemporalLayerDelegate.paint; migrate this expression when its presentation path is next touched.",
+      "source": "QColor(ThemeManager().get_theme().get(\"text_dim\", \"#888888\")),"
+    },
+    {
+      "key": "src/gui/widgets/map/marker_item.py|MarkerItem._draw_keyframe_indicator|literal-color|5056cf128952d12a",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MarkerItem._draw_keyframe_indicator; migrate this expression when its presentation path is next touched.",
+      "source": "primary_color = QColor(theme.get(\"primary\", \"#FF9900\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/marker_item.py|MarkerItem.paint|literal-color|dd100b43deca67cd",
+      "count": 2,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MarkerItem.paint; migrate this expression when its presentation path is next touched.",
+      "source": "selection_pen = QPen(QColor(255, 255, 255), 2)"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_edit_tool.py|RasterEditTool.__init__|literal-color|3f8aa17905bd07ef",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in RasterEditTool.__init__; migrate this expression when its presentation path is next touched.",
+      "source": "self._cursor_hex: str = \"#E8E8E8\""
+    },
+    {
+      "key": "src/gui/widgets/map/raster_edit_tool.py|RasterEditTool._refresh_theme_colors|literal-color|3f8aa17905bd07ef",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in RasterEditTool._refresh_theme_colors; migrate this expression when its presentation path is next touched.",
+      "source": "self._cursor_hex = theme.get(\"text_main\", \"#E8E8E8\")"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_edit_tool.py|RasterEditTool._update_cursor|local-color-derivation|464cf1c36a3f582c",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in RasterEditTool._update_cursor; migrate this expression when its presentation path is next touched.",
+      "source": "_cursor_color.setAlpha(180)"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_edit_tool.py|RasterEditTool._update_cursor|local-color-derivation|81cd1cca52e49664",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in RasterEditTool._update_cursor; migrate this expression when its presentation path is next touched.",
+      "source": "_fill_color.setAlpha(30)"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_layer_dialog.py|RasterLayerDialog.__init__|literal-color|6611bef5ecb98f65",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in RasterLayerDialog.__init__; migrate this expression when its presentation path is next touched.",
+      "source": "f\"background-color: {theme.get('surface_alt', '#222222')};\""
+    },
+    {
+      "key": "src/gui/widgets/map/raster_layer_dialog.py|RasterLayerDialog.__init__|literal-color|8c34e4c9775a95f0",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in RasterLayerDialog.__init__; migrate this expression when its presentation path is next touched.",
+      "source": "f\"border: 1px solid {theme.get('border', '#454545')}; \""
+    },
+    {
+      "key": "src/gui/widgets/map/raster_legend_widget.py|RasterLegendWidget._add_placeholder|literal-color|673ad5d8a95855d4",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in RasterLegendWidget._add_placeholder; migrate this expression when its presentation path is next touched.",
+      "source": "dim_color = ThemeManager().get_theme().get(\"text_dim\", \"#888888\")"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_legend_widget.py|RasterLegendWidget._apply_theme|literal-color|3f8aa17905bd07ef",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in RasterLegendWidget._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "f\"color: {theme.get('text_main', '#E8E8E8')}; \""
+    },
+    {
+      "key": "src/gui/widgets/map/raster_legend_widget.py|RasterLegendWidget._apply_theme|literal-color|5a06cd0e34821a35",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in RasterLegendWidget._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "f\"QLabel {{ color: {theme.get('text_dim', '#aaaaaa')}; \""
+    },
+    {
+      "key": "src/gui/widgets/map/raster_legend_widget.py|RasterLegendWidget._build_continuous_legend|literal-color|0d29a6eb91e26dc6",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in RasterLegendWidget._build_continuous_legend; migrate this expression when its presentation path is next touched.",
+      "source": "{\"position\": 0.0, \"color\": color_map.get(\"gradient_start\", \"#000000\")},"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_legend_widget.py|RasterLegendWidget._build_continuous_legend|literal-color|d2e8bb359bfdd903",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in RasterLegendWidget._build_continuous_legend; migrate this expression when its presentation path is next touched.",
+      "source": "{\"position\": 1.0, \"color\": color_map.get(\"gradient_end\", \"#FFFFFF\")},"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_legend_widget.py|RasterLegendWidget._build_discrete_legend|literal-color|dad8252028023902",
+      "count": 3,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in RasterLegendWidget._build_discrete_legend; migrate this expression when its presentation path is next touched.",
+      "source": "color_hex = ce.get(\"color\", \"#808080\")"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_legend_widget.py|RasterLegendWidget._make_no_data_row|literal-color|673ad5d8a95855d4",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in RasterLegendWidget._make_no_data_row; migrate this expression when its presentation path is next touched.",
+      "source": "dim_color = ThemeManager().get_theme().get(\"text_dim\", \"#888888\")"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_legend_widget.py|RasterLegendWidget._make_swatch_row|literal-color|3f8aa17905bd07ef",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in RasterLegendWidget._make_swatch_row; migrate this expression when its presentation path is next touched.",
+      "source": "combined_lbl.setStyleSheet(f\"color: {ThemeManager().get_theme().get('text_main', '#E8E8E8')};\")"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_legend_widget.py|_GradientBarWidget.__init__|literal-color|038c7447f897a832",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _GradientBarWidget.__init__; migrate this expression when its presentation path is next touched.",
+      "source": "self._bar_border_color = QColor(_theme.get(\"border\", \"#444444\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_legend_widget.py|_GradientBarWidget.__init__|literal-color|0d29a6eb91e26dc6",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _GradientBarWidget.__init__; migrate this expression when its presentation path is next touched.",
+      "source": "{\"position\": 0.0, \"color\": \"#000000\"},"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_legend_widget.py|_GradientBarWidget.__init__|literal-color|5a06cd0e34821a35",
+      "count": 2,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _GradientBarWidget.__init__; migrate this expression when its presentation path is next touched.",
+      "source": "self._tick_color = QColor(_theme.get(\"text_dim\", \"#aaaaaa\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_legend_widget.py|_GradientBarWidget.__init__|literal-color|d2e8bb359bfdd903",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _GradientBarWidget.__init__; migrate this expression when its presentation path is next touched.",
+      "source": "{\"position\": 1.0, \"color\": \"#FFFFFF\"},"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_legend_widget.py|_GradientBarWidget.__init__|local-color-derivation|f54b5a721cb552fa",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _GradientBarWidget.__init__; migrate this expression when its presentation path is next touched.",
+      "source": "self._tick_color.setAlpha(160)"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_legend_widget.py|_GradientBarWidget._redraw_bar|literal-color|0d29a6eb91e26dc6",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _GradientBarWidget._redraw_bar; migrate this expression when its presentation path is next touched.",
+      "source": "gradient.setColorAt(1.0, QColor(\"#000000\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_legend_widget.py|_GradientBarWidget._redraw_bar|literal-color|d2e8bb359bfdd903",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _GradientBarWidget._redraw_bar; migrate this expression when its presentation path is next touched.",
+      "source": "gradient.setColorAt(0.0, QColor(\"#FFFFFF\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_legend_widget.py|_GradientBarWidget._refresh_bar_theme_colors|literal-color|038c7447f897a832",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _GradientBarWidget._refresh_bar_theme_colors; migrate this expression when its presentation path is next touched.",
+      "source": "self._bar_border_color = QColor(theme.get(\"border\", \"#444444\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_legend_widget.py|_GradientBarWidget._refresh_bar_theme_colors|literal-color|5a06cd0e34821a35",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _GradientBarWidget._refresh_bar_theme_colors; migrate this expression when its presentation path is next touched.",
+      "source": "self._tick_color = QColor(theme.get(\"text_dim\", \"#aaaaaa\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_legend_widget.py|_GradientBarWidget._refresh_bar_theme_colors|local-color-derivation|f54b5a721cb552fa",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _GradientBarWidget._refresh_bar_theme_colors; migrate this expression when its presentation path is next touched.",
+      "source": "self._tick_color.setAlpha(160)"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py|RasterPaletteEditor._add_entry_row|literal-color|dad8252028023902",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette values, imported palette defaults or gradient stops; not UI chrome. KRT-54 reviewed data exception.",
+      "source": "color: str = \"#808080\","
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py|RasterPaletteEditor._build_discrete_ui|literal-color|dad8252028023902",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette values, imported palette defaults or gradient stops; not UI chrome. KRT-54 reviewed data exception.",
+      "source": "btn_add.clicked.connect(lambda: self._add_entry_row(0, \"#808080\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py|RasterPaletteEditor._build_gradient_ui|literal-color|0d29a6eb91e26dc6",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette values, imported palette defaults or gradient stops; not UI chrome. KRT-54 reviewed data exception.",
+      "source": "GradientStop(0.0, \"#000000\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py|RasterPaletteEditor._build_gradient_ui|literal-color|d2e8bb359bfdd903",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette values, imported palette defaults or gradient stops; not UI chrome. KRT-54 reviewed data exception.",
+      "source": "GradientStop(1.0, \"#FFFFFF\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py|RasterPaletteEditor._on_add_stop|literal-color|dad8252028023902",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette values, imported palette defaults or gradient stops; not UI chrome. KRT-54 reviewed data exception.",
+      "source": "self._add_stop_row(0.5, \"#808080\")"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py|RasterPaletteEditor._on_import_palette|literal-color|dad8252028023902",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette values, imported palette defaults or gradient stops; not UI chrome. KRT-54 reviewed data exception.",
+      "source": "color=str(entry.get(\"color\", \"#808080\")),"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py|RasterPaletteEditor._populate_discrete_rows|literal-color|dad8252028023902",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette values, imported palette defaults or gradient stops; not UI chrome. KRT-54 reviewed data exception.",
+      "source": "color=\"#808080\","
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py|_ColorButton.__init__|literal-color|dad8252028023902",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "self, color_hex: str = \"#808080\", parent: Optional[QWidget] = None"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py|_ColorButton._apply_color|literal-color|5e8e3e7489fb069e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _ColorButton._apply_color; migrate this expression when its presentation path is next touched.",
+      "source": "primary = theme.get(\"primary\", \"#5C82FF\")"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py|_ColorButton._apply_color|literal-color|b2073dab09feac72",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _ColorButton._apply_color; migrate this expression when its presentation path is next touched.",
+      "source": "border = theme.get(\"border\", \"#555555\")"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py|_GradientPreview.__init__|literal-color|0d29a6eb91e26dc6",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette values, imported palette defaults or gradient stops; not UI chrome. KRT-54 reviewed data exception.",
+      "source": "GradientStop(0.0, \"#000000\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py|_GradientPreview.__init__|literal-color|d2e8bb359bfdd903",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette values, imported palette defaults or gradient stops; not UI chrome. KRT-54 reviewed data exception.",
+      "source": "GradientStop(1.0, \"#FFFFFF\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|0b99d2edc31bd4c5",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "\"#f781bf\","
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|0d29a6eb91e26dc6",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "GradientStop(0.0, \"#000000\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|1098bef6f85d09ae",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "GradientStop(0.75, \"#8B4513\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|1f5fc132d71b0927",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "\"#a65628\","
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|2997c7a3c3434336",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "GradientStop(0.25, \"#F46D43\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|3e240c586296a398",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "\"#984ea3\","
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|47b5b763ae9f2e25",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "GradientStop(0.5, \"#FFFFBF\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|4ad9ea76c35b3b2e",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "GradientStop(0.67, \"#FFFF00\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|54f0f4f89e895ff2",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "GradientStop(0.0, \"#0000FF\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|60017a50efbe7e82",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "GradientStop(0.0, \"#9E0142\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|653986f664fc53fd",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "GradientStop(0.0, \"#00000000\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|677745a512593d75",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "GradientStop(1.0, \"#5E4FA2\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|6922d45b14afb304",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "\"#4daf4a\","
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|80f50820f3270e1e",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "\"#377eb8\","
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|86ac6360bad36de6",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "GradientStop(0.5, \"#DAA520\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|8b7a6aadbfc5f053",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "\"#e78ac3\","
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|97668cd83672d4d0",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "GradientStop(1.0, \"#FF000080\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|99f4fa522447d51a",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "\"#999999\","
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|a0401a0e81369484",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "\"#e41a1c\","
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|ae3a3f3069a1f0d4",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "\"#fc8d62\","
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|b5b948acf8f00371",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "GradientStop(1.0, \"#FF0000\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|bd86fbc7aefb7a70",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "GradientStop(0.0, \"#2060B0\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|bf5b84b746154ebb",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "\"#8da0cb\","
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|c3466a363894cfd1",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "GradientStop(0.33, \"#00FFFF\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|ceaa6d38ab81f62f",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "\"#ff7f00\","
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|d2e8bb359bfdd903",
+      "count": 2,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "GradientStop(1.0, \"#FFFFFF\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|da100e5e9b17025b",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "GradientStop(0.25, \"#4DAF4A\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|dbf989643e33634c",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "GradientStop(0.75, \"#66C2A5\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_palette_editor.py||literal-color|e125d680b85b7e14",
+      "count": 1,
+      "category": "authored-data",
+      "reason": "Authored raster palette/default data; independent of application theme.",
+      "source": "\"#66c2a5\","
+    },
+    {
+      "key": "src/gui/widgets/map/raster_stats_panel.py|_HistogramWidget._refresh_theme_colors|literal-color|5e8e3e7489fb069e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _HistogramWidget._refresh_theme_colors; migrate this expression when its presentation path is next touched.",
+      "source": "self._bar_color = QColor(theme.get(\"primary\", \"#5C82FF\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_stats_panel.py|_HistogramWidget._refresh_theme_colors|literal-color|6b5fa1da21f7aa39",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _HistogramWidget._refresh_theme_colors; migrate this expression when its presentation path is next touched.",
+      "source": "self._bg_color = QColor(theme.get(\"app_bg\", \"#1E1E2E\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/raster_stats_panel.py|_HistogramWidget._refresh_theme_colors|literal-color|a0ced6eac139259b",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _HistogramWidget._refresh_theme_colors; migrate this expression when its presentation path is next touched.",
+      "source": "self._border_color = QColor(theme.get(\"primary_dark\", \"#3A5ACC\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/scale_bar_painter.py|ScaleBarPainter.__init__|literal-color|5b696335f182943e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in ScaleBarPainter.__init__; migrate this expression when its presentation path is next touched.",
+      "source": "self.pen_black = QPen(Qt.GlobalColor.black, 2)"
+    },
+    {
+      "key": "src/gui/widgets/map/scale_bar_painter.py|ScaleBarPainter.__init__|literal-color|5f17d88816108c10",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in ScaleBarPainter.__init__; migrate this expression when its presentation path is next touched.",
+      "source": "self.pen_white = QPen(Qt.GlobalColor.white, 2)"
+    },
+    {
+      "key": "src/gui/widgets/map/scale_bar_painter.py|ScaleBarPainter.__init__|literal-color|9e71c7eb497c0986",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in ScaleBarPainter.__init__; migrate this expression when its presentation path is next touched.",
+      "source": "QColor(255, 255, 255, 180)"
+    },
+    {
+      "key": "src/gui/widgets/map/scale_bar_painter.py|ScaleBarPainter.paint|literal-color|5b696335f182943e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in ScaleBarPainter.paint; migrate this expression when its presentation path is next touched.",
+      "source": "painter.setPen(Qt.GlobalColor.black)"
+    },
+    {
+      "key": "src/gui/widgets/map/trajectory_edit_overlay.py|TrajectoryEditOverlay._add_relocation_connector|literal-color|441c8c5adc1d1c36",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TrajectoryEditOverlay._add_relocation_connector; migrate this expression when its presentation path is next touched.",
+      "source": "pen = QPen(QColor(theme.get(\"warning\", \"#e67e22\")), 3.0)"
+    },
+    {
+      "key": "src/gui/widgets/map/trajectory_edit_overlay.py|TrajectoryEditOverlay._rebuild_path|literal-color|441c8c5adc1d1c36",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TrajectoryEditOverlay._rebuild_path; migrate this expression when its presentation path is next touched.",
+      "source": "pen = QPen(QColor(theme.get(\"warning\", \"#e67e22\")), 3.0)"
+    },
+    {
+      "key": "src/gui/widgets/map/trajectory_edit_overlay.py|TrajectoryEditOverlay._rebuild_temporal_path|literal-color|ff0d44b25e5b27c9",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TrajectoryEditOverlay._rebuild_temporal_path; migrate this expression when its presentation path is next touched.",
+      "source": "pen = QPen(QColor(theme.get(\"error\", \"#e74c3c\")), 5.0)"
+    },
+    {
+      "key": "src/gui/widgets/map/trajectory_edit_overlay.py|TrajectoryEditOverlay._set_temporal_range_path|literal-color|76d8ddec29f78afa",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TrajectoryEditOverlay._set_temporal_range_path; migrate this expression when its presentation path is next touched.",
+      "source": "pen = QPen(QColor(theme.get(\"success\", \"#2ecc71\")), 5.0)"
+    },
+    {
+      "key": "src/gui/widgets/map/trajectory_edit_overlay.py|TrajectoryEditOverlay._style_handle|literal-color|441c8c5adc1d1c36",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TrajectoryEditOverlay._style_handle; migrate this expression when its presentation path is next touched.",
+      "source": "fill = theme.get(\"warning\", \"#e67e22\")"
+    },
+    {
+      "key": "src/gui/widgets/map/trajectory_edit_overlay.py|TrajectoryEditOverlay._style_handle|literal-color|76d8ddec29f78afa",
+      "count": 2,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TrajectoryEditOverlay._style_handle; migrate this expression when its presentation path is next touched.",
+      "source": "fill = theme.get(\"success\", \"#2ecc71\")"
+    },
+    {
+      "key": "src/gui/widgets/map/trajectory_edit_overlay.py|TrajectoryEditOverlay._style_handle|literal-color|7a7e7cb1946ac0f7",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TrajectoryEditOverlay._style_handle; migrate this expression when its presentation path is next touched.",
+      "source": "fill = theme.get(\"text_muted\", \"#95a5a6\")"
+    },
+    {
+      "key": "src/gui/widgets/map/trajectory_edit_overlay.py|TrajectoryEditOverlay._style_handle|literal-color|7bbf3f0e2c235b07",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TrajectoryEditOverlay._style_handle; migrate this expression when its presentation path is next touched.",
+      "source": "fill = theme.get(\"accent_secondary\", \"#f1c40f\")"
+    },
+    {
+      "key": "src/gui/widgets/map/trajectory_edit_overlay.py|TrajectoryEditOverlay._style_handle|literal-color|a6d2cde0220c4b00",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TrajectoryEditOverlay._style_handle; migrate this expression when its presentation path is next touched.",
+      "source": "border = theme.get(\"accent_primary\", \"#3498db\")"
+    },
+    {
+      "key": "src/gui/widgets/map/trajectory_edit_overlay.py|TrajectoryEditOverlay._style_handle|literal-color|baa9d4300a357f02",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TrajectoryEditOverlay._style_handle; migrate this expression when its presentation path is next touched.",
+      "source": "border = theme.get(\"text_main\", \"#ffffff\")"
+    },
+    {
+      "key": "src/gui/widgets/map/trajectory_edit_overlay.py|TrajectoryEditOverlay._style_handle|literal-color|ff0d44b25e5b27c9",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TrajectoryEditOverlay._style_handle; migrate this expression when its presentation path is next touched.",
+      "source": "fill = theme.get(\"error\", \"#e74c3c\")"
+    },
+    {
+      "key": "src/gui/widgets/map/trajectory_edit_overlay.py|TrajectoryEditOverlay.show|literal-color|7bbf3f0e2c235b07",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TrajectoryEditOverlay.show; migrate this expression when its presentation path is next touched.",
+      "source": "fill_color=theme.get(\"accent_secondary\", \"#f1c40f\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/trajectory_edit_overlay.py|TrajectoryEditOverlay.show|literal-color|a6d2cde0220c4b00",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TrajectoryEditOverlay.show; migrate this expression when its presentation path is next touched.",
+      "source": "fill_color=theme.get(\"accent_primary\", \"#3498db\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/trajectory_edit_overlay.py|TrajectoryEditOverlay.show|literal-color|baa9d4300a357f02",
+      "count": 2,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TrajectoryEditOverlay.show; migrate this expression when its presentation path is next touched.",
+      "source": "border_color=theme.get(\"text_main\", \"#ffffff\"),"
+    },
+    {
+      "key": "src/gui/widgets/map/trajectory_renderer.py|KeyframeLabelItem.paint|literal-color|217395977d074a07",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in KeyframeLabelItem.paint; migrate this expression when its presentation path is next touched.",
+      "source": "bg_color = QColor(theme.get(\"surface\", \"#1A1A1A\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/trajectory_renderer.py|KeyframeLabelItem.paint|literal-color|c1cf462f2c9a8a30",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in KeyframeLabelItem.paint; migrate this expression when its presentation path is next touched.",
+      "source": "border_color = QColor(theme.get(\"border\", \"#333333\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/trajectory_renderer.py|KeyframeLabelItem.paint|literal-color|d2e8bb359bfdd903",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in KeyframeLabelItem.paint; migrate this expression when its presentation path is next touched.",
+      "source": "text_color = QColor(theme.get(\"text_main\", \"#FFFFFF\"))"
+    },
+    {
+      "key": "src/gui/widgets/map/trajectory_renderer.py|TrajectoryRenderer._add_relocation_connector|literal-color|441c8c5adc1d1c36",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TrajectoryRenderer._add_relocation_connector; migrate this expression when its presentation path is next touched.",
+      "source": "pen = QPen(QColor(theme.get(\"warning\", \"#e67e22\")), 2)"
+    },
+    {
+      "key": "src/gui/widgets/map/trajectory_renderer.py||literal-color|7bbf3f0e2c235b07",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in module constants; migrate this expression when its presentation path is next touched.",
+      "source": "KEYFRAME_COLOR_DEFAULT = \"#f1c40f\"  # Yellow (fallback)"
+    },
+    {
+      "key": "src/gui/widgets/map/trajectory_renderer.py||literal-color|a6d2cde0220c4b00",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in module constants; migrate this expression when its presentation path is next touched.",
+      "source": "TRAJECTORY_PATH_COLOR = \"#3498db\"  # Blue (fallback)"
+    },
+    {
+      "key": "src/gui/widgets/map_widget.py|MapWidget._apply_mode_indicator_style|literal-color|441c8c5adc1d1c36",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapWidget._apply_mode_indicator_style; migrate this expression when its presentation path is next touched.",
+      "source": "\"vertex\": theme.get(\"primary\", \"#e67e22\"),"
+    },
+    {
+      "key": "src/gui/widgets/map_widget.py|MapWidget._apply_mode_indicator_style|literal-color|5a06cd0e34821a35",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapWidget._apply_mode_indicator_style; migrate this expression when its presentation path is next touched.",
+      "source": "bg = color_map.get(mode, theme.get(\"text_dim\", \"#aaaaaa\"))"
+    },
+    {
+      "key": "src/gui/widgets/map_widget.py|MapWidget._apply_mode_indicator_style|literal-color|76d8ddec29f78afa",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapWidget._apply_mode_indicator_style; migrate this expression when its presentation path is next touched.",
+      "source": "\"normal\": theme.get(\"success\", \"#2ecc71\"),"
+    },
+    {
+      "key": "src/gui/widgets/map_widget.py|MapWidget._apply_mode_indicator_style|literal-color|a6d2cde0220c4b00",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapWidget._apply_mode_indicator_style; migrate this expression when its presentation path is next touched.",
+      "source": "\"drawing\": theme.get(\"accent_secondary\", \"#3498db\"),"
+    },
+    {
+      "key": "src/gui/widgets/map_widget.py|MapWidget.set_breadcrumb|literal-color|d65e1faca512a558",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapWidget.set_breadcrumb; migrate this expression when its presentation path is next touched.",
+      "source": "link_color = theme.get(\"accent_secondary\", \"#4DA6FF\")"
+    },
+    {
+      "key": "src/gui/widgets/map_widget.py|MapWidget.set_breadcrumb|literal-color|fb08bc1e1cfab1fc",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in MapWidget.set_breadcrumb; migrate this expression when its presentation path is next touched.",
+      "source": "dim_color = theme.get(\"text_dim\", \"#9E9E9E\")"
+    },
+    {
+      "key": "src/gui/widgets/relation_type_picker.py|RelationTypePicker._apply_theme|literal-color|1c9cff88918b9af8",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in RelationTypePicker._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "app_bg = theme.get(\"app_bg\", \"#1E1E1E\")"
+    },
+    {
+      "key": "src/gui/widgets/relation_type_picker.py|RelationTypePicker._apply_theme|literal-color|5056cf128952d12a",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in RelationTypePicker._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "primary = theme.get(\"primary\", \"#FF9900\")"
+    },
+    {
+      "key": "src/gui/widgets/relation_type_picker.py|RelationTypePicker._apply_theme|literal-color|8a5b404762f92659",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in RelationTypePicker._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "text_dim = theme.get(\"text_dim\", \"#757575\")"
+    },
+    {
+      "key": "src/gui/widgets/relation_type_picker.py|RelationTypePicker._apply_theme|literal-color|8c34e4c9775a95f0",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in RelationTypePicker._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "border = theme.get(\"border\", \"#454545\")"
+    },
+    {
+      "key": "src/gui/widgets/relation_type_picker.py|RelationTypePicker._apply_theme|literal-color|a2fec634d2eca09e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in RelationTypePicker._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "surface = theme.get(\"surface\", \"#323232\")"
+    },
+    {
+      "key": "src/gui/widgets/relation_type_picker.py|RelationTypePicker._apply_theme|literal-color|d139cb99d3390891",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in RelationTypePicker._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "text_main = theme.get(\"text_main\", \"#E0E0E0\")"
+    },
+    {
+      "key": "src/gui/widgets/sheet_builder.py|AttributePairWidget._apply_theme|literal-color|5e8e3e7489fb069e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in AttributePairWidget._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "primary = theme.get(\"primary\", \"#5C82FF\")"
+    },
+    {
+      "key": "src/gui/widgets/sheet_builder.py|SheetBuilderWidget._apply_theme|literal-color|217395977d074a07",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in SheetBuilderWidget._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "surface = theme.get(\"surface\", \"#1A1A1A\")"
+    },
+    {
+      "key": "src/gui/widgets/sheet_builder.py|SheetBuilderWidget._apply_theme|literal-color|c1cf462f2c9a8a30",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in SheetBuilderWidget._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "border = theme.get(\"border\", \"#333333\")"
+    },
+    {
+      "key": "src/gui/widgets/sheet_builder.py|_GhostWidget._apply_theme|literal-color|5e8e3e7489fb069e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _GhostWidget._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "primary = theme.get(\"primary\", \"#5C82FF\")"
+    },
+    {
+      "key": "src/gui/widgets/sheet_builder.py|_GhostWidget._apply_theme|literal-color|d139cb99d3390891",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _GhostWidget._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "text = theme.get(\"text\", \"#E0E0E0\")"
+    },
+    {
+      "key": "src/gui/widgets/sheet_builder.py|_InsertionLine._apply_theme|literal-color|5e8e3e7489fb069e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in _InsertionLine._apply_theme; migrate this expression when its presentation path is next touched.",
+      "source": "primary = theme.get(\"primary\", \"#5C82FF\")"
+    },
+    {
+      "key": "src/gui/widgets/tag_chip_view.py|TagChipDelegate._accent|literal-color|84f59c038b7f5792",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TagChipDelegate._accent; migrate this expression when its presentation path is next touched.",
+      "source": "or self._theme.get(\"accent_secondary\", \"#4A90D9\")"
+    },
+    {
+      "key": "src/gui/widgets/tag_chip_view.py|TagChipDelegate.paint|literal-color|d139cb99d3390891",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TagChipDelegate.paint; migrate this expression when its presentation path is next touched.",
+      "source": "self._theme.get(\"text_main\" if enabled else \"text_dim\", \"#E0E0E0\")"
+    },
+    {
+      "key": "src/gui/widgets/tag_chip_view.py|TagChipDelegate.paint|literal-color|dad8252028023902",
+      "count": 2,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TagChipDelegate.paint; migrate this expression when its presentation path is next touched.",
+      "source": "border = QColor(self._theme.get(\"border\", \"#808080\"))"
+    },
+    {
+      "key": "src/gui/widgets/tag_chip_view.py|TagChipDelegate.paint|local-color-derivation|52aadfaca90f806a",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TagChipDelegate.paint; migrate this expression when its presentation path is next touched.",
+      "source": "fill.setAlpha(18)"
+    },
+    {
+      "key": "src/gui/widgets/tag_chip_view.py|TagChipDelegate.paint|local-color-derivation|6f069235f7dc1fb9",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TagChipDelegate.paint; migrate this expression when its presentation path is next touched.",
+      "source": "border.setAlpha(230 if selected or focused else 150)"
+    },
+    {
+      "key": "src/gui/widgets/tag_chip_view.py|TagChipDelegate.paint|local-color-derivation|94e991a6f6e4a261",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TagChipDelegate.paint; migrate this expression when its presentation path is next touched.",
+      "source": "fill.setAlpha(120 if selected else 96 if hovered else 72)"
+    },
+    {
+      "key": "src/gui/widgets/tag_chip_view.py|tag_color_for_theme|literal-color|d2e8bb359bfdd903",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in tag_color_for_theme; migrate this expression when its presentation path is next touched.",
+      "source": "surface = QColor(theme.get(\"surface\", \"#FFFFFF\"))"
+    },
+    {
+      "key": "src/gui/widgets/timeline/event_item.py|EventItem._paint_duration|local-color-derivation|9cc376c61d62e1d7",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in EventItem._paint_duration; migrate this expression when its presentation path is next touched.",
+      "source": "possible.setAlpha(110)"
+    },
+    {
+      "key": "src/gui/widgets/timeline/event_item.py|EventItem._paint_occurrence|local-color-derivation|223a1a48b213e1e8",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in EventItem._paint_occurrence; migrate this expression when its presentation path is next touched.",
+      "source": "faint.setAlpha(35)"
+    },
+    {
+      "key": "src/gui/widgets/timeline/event_item.py|EventItem._paint_occurrence|local-color-derivation|aab370346571172b",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in EventItem._paint_occurrence; migrate this expression when its presentation path is next touched.",
+      "source": "transparent.setAlpha(0)"
+    },
+    {
+      "key": "src/gui/widgets/timeline/event_item.py|EventItem._paint_occurrence|local-color-derivation|d1faf04f84892e44",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in EventItem._paint_occurrence; migrate this expression when its presentation path is next touched.",
+      "source": "faint.setAlpha(65)"
+    },
+    {
+      "key": "src/gui/widgets/timeline/group_band_item.py|GroupBandItem.paint|local-color-derivation|58aaec0ed49930aa",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GroupBandItem.paint; migrate this expression when its presentation path is next touched.",
+      "source": "tick_color = QColor(self._color).lighter(150)"
+    },
+    {
+      "key": "src/gui/widgets/timeline/group_band_item.py|GroupBandItem.paint|local-color-derivation|9a9b77af822105f5",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GroupBandItem.paint; migrate this expression when its presentation path is next touched.",
+      "source": "border_color = QColor(self._color).darker(120)"
+    },
+    {
+      "key": "src/gui/widgets/timeline/group_band_item.py|GroupBandItem.paint|local-color-derivation|bc8555b59d2ae474",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GroupBandItem.paint; migrate this expression when its presentation path is next touched.",
+      "source": "bg_color.setAlphaF(0.3)"
+    },
+    {
+      "key": "src/gui/widgets/timeline/group_band_item.py|GroupBandItem.paint|local-color-derivation|d4cb64d406be2237",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GroupBandItem.paint; migrate this expression when its presentation path is next touched.",
+      "source": "bg_color.setAlphaF(0.6)"
+    },
+    {
+      "key": "src/gui/widgets/timeline/group_band_item.py|GroupBandItem.paint|local-color-derivation|ed29d246c0d717c7",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GroupBandItem.paint; migrate this expression when its presentation path is next touched.",
+      "source": "bg_color = bg_color.lighter(120)"
+    },
+    {
+      "key": "src/gui/widgets/timeline/group_label_overlay.py|GroupLabelOverlay.paintEvent|local-color-derivation|88ef5de79ba7b0e6",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in GroupLabelOverlay.paintEvent; migrate this expression when its presentation path is next touched.",
+      "source": "color.setAlphaF(0.8)"
+    },
+    {
+      "key": "src/gui/widgets/timeline/timeline_scene.py|CurrentTimeLineItem.__init__|literal-color|f45dd0b35cbdedca",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in CurrentTimeLineItem.__init__; migrate this expression when its presentation path is next touched.",
+      "source": "pen = QPen(QColor(100, 150, 255), 3)  # Blue current time line, thicker"
+    },
+    {
+      "key": "src/gui/widgets/timeline/timeline_scene.py|PlayheadItem.__init__|literal-color|73e4129483e80c15",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in PlayheadItem.__init__; migrate this expression when its presentation path is next touched.",
+      "source": "pen = QPen(QColor(255, 100, 100), 2)  # Red playhead"
+    },
+    {
+      "key": "src/gui/widgets/timeline/timeline_view.py|TimelineView.__init__|literal-color|1de3507a13b83862",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TimelineView.__init__; migrate this expression when its presentation path is next touched.",
+      "source": "axis_pen = QPen(QColor(100, 100, 100))"
+    },
+    {
+      "key": "src/gui/widgets/timeline/timeline_view.py|TimelineView._create_drop_line|literal-color|b842af3cba76786c",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TimelineView._create_drop_line; migrate this expression when its presentation path is next touched.",
+      "source": "pen = QPen(QColor(80, 80, 80), 1, Qt.PenStyle.DashLine)"
+    },
+    {
+      "key": "src/gui/widgets/timeline/timeline_view.py|TimelineView._draw_playhead_handle|local-color-derivation|586cc8de359ffe16",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TimelineView._draw_playhead_handle; migrate this expression when its presentation path is next touched.",
+      "source": "handle_color = handle_color.lighter(120)"
+    },
+    {
+      "key": "src/gui/widgets/timeline/timeline_view.py|TimelineView._draw_playhead_handle|local-color-derivation|f7ef5a0be4d7d05a",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TimelineView._draw_playhead_handle; migrate this expression when its presentation path is next touched.",
+      "source": "handle_color = handle_color.lighter(130)"
+    },
+    {
+      "key": "src/gui/widgets/timeline/timeline_view.py|TimelineView._update_corner_widget|literal-color|8247d3ddc88fab21",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TimelineView._update_corner_widget; migrate this expression when its presentation path is next touched.",
+      "source": "scrollbar_bg = theme.get(\"scrollbar_bg\", theme.get(\"app_bg\", \"#2B2B2B\"))"
+    },
+    {
+      "key": "src/gui/widgets/timeline/timeline_view.py|TimelineView.drawForeground|literal-color|c19fec4ef0a029d2",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TimelineView.drawForeground; migrate this expression when its presentation path is next touched.",
+      "source": "grid_color = QColor(255, 255, 255, int(15 * tick.opacity))"
+    },
+    {
+      "key": "src/gui/widgets/timeline/timeline_view.py|TimelineView.drawForeground|local-color-derivation|3888a363d1ccb5fe",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TimelineView.drawForeground; migrate this expression when its presentation path is next touched.",
+      "source": "text_color.setAlphaF(tick.opacity)"
+    },
+    {
+      "key": "src/gui/widgets/timeline/timeline_view.py|TimelineView.drawForeground|local-color-derivation|42ac6bf2e783ac8e",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TimelineView.drawForeground; migrate this expression when its presentation path is next touched.",
+      "source": "painter.setBrush(QColor(theme[\"surface\"]).darker(110))"
+    },
+    {
+      "key": "src/gui/widgets/timeline/timeline_view.py|TimelineView.drawForeground|local-color-derivation|6a9f800182f38615",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TimelineView.drawForeground; migrate this expression when its presentation path is next touched.",
+      "source": "tick_color.setAlphaF(tick.opacity)"
+    },
+    {
+      "key": "src/gui/widgets/timeline/timeline_view.py|TimelineView|literal-color|73e4129483e80c15",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TimelineView; migrate this expression when its presentation path is next touched.",
+      "source": "PLAYHEAD_COLOR = QColor(255, 100, 100)"
+    },
+    {
+      "key": "src/gui/widgets/timeline/timeline_view.py|TimelineView|literal-color|dad8252028023902",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TimelineView; migrate this expression when its presentation path is next touched.",
+      "source": "ALL_EVENTS_COLOR = \"#808080\"  # Neutral gray"
+    },
+    {
+      "key": "src/gui/widgets/timeline_display_widget.py|TimelineDisplayWidget._refresh_display|literal-color|515b87d5b1d2994d",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TimelineDisplayWidget._refresh_display; migrate this expression when its presentation path is next touched.",
+      "source": "\"<p style='color: gray; font-style: italic;'>\""
+    },
+    {
+      "key": "src/gui/widgets/toc_widget.py|TOCWidget._apply_style|literal-color|5056cf128952d12a",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TOCWidget._apply_style; migrate this expression when its presentation path is next touched.",
+      "source": "primary = theme.get(\"primary\", \"#FF9900\")"
+    },
+    {
+      "key": "src/gui/widgets/toc_widget.py|TOCWidget._apply_style|literal-color|8247d3ddc88fab21",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TOCWidget._apply_style; migrate this expression when its presentation path is next touched.",
+      "source": "surface = theme.get(\"surface\", \"#2B2B2B\")"
+    },
+    {
+      "key": "src/gui/widgets/toc_widget.py|TOCWidget._apply_style|literal-color|8c34e4c9775a95f0",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TOCWidget._apply_style; migrate this expression when its presentation path is next touched.",
+      "source": "border = theme.get(\"border\", \"#454545\")"
+    },
+    {
+      "key": "src/gui/widgets/toc_widget.py|TOCWidget._apply_style|literal-color|d139cb99d3390891",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in TOCWidget._apply_style; migrate this expression when its presentation path is next touched.",
+      "source": "text = theme.get(\"text_main\", \"#E0E0E0\")"
+    },
+    {
+      "key": "src/gui/widgets/unified_list.py|UnifiedListWidget.__init__|literal-color|dad8252028023902",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in UnifiedListWidget.__init__; migrate this expression when its presentation path is next touched.",
+      "source": "text_dim = theme.get(\"text_dim\", \"#808080\")"
+    },
+    {
+      "key": "src/gui/widgets/unified_list.py|UnifiedListWidget._toggle_sort_direction|literal-color|dad8252028023902",
+      "count": 1,
+      "category": "legacy",
+      "reason": "KRT-54 legacy presentation in UnifiedListWidget._toggle_sort_direction; migrate this expression when its presentation path is next touched.",
+      "source": "text_dim = theme.get(\"text_dim\", \"#808080\")"
+    },
+    {
+      "key": "src/resources/main.qss|stylesheet|literal-color|ad8a15884081c13b",
+      "count": 2,
+      "category": "legacy",
+      "reason": "KRT-54 initial production-QSS inventory: legacy application control/selection foreground; migrate when this presentation rule is next touched.",
+      "source": "color: #121212; /* High contrast on primary */"
+    },
+    {
+      "key": "src/resources/main.qss|stylesheet|literal-color|b58363ef8364d2a6",
+      "count": 2,
+      "category": "legacy",
+      "reason": "KRT-54 initial production-QSS inventory: legacy application control/selection foreground; migrate when this presentation rule is next touched.",
+      "source": "selection-color: black;"
+    },
+    {
+      "key": "src/resources/main.qss|stylesheet|literal-color|c93b8f8709ffa0a8",
+      "count": 2,
+      "category": "legacy",
+      "reason": "KRT-54 initial production-QSS inventory: legacy application control/selection foreground; migrate when this presentation rule is next touched.",
+      "source": "color: black;"
+    }
+  ]
+}

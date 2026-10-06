@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from src.core.paths import get_resource_path
+from src.core.theme_defaults import DEFAULT_THEMES
+from src.core.visual_roles import validate_visual_roles
 
 logger = logging.getLogger(__name__)
 
@@ -72,53 +74,22 @@ class BaseThemeManager:
             logger.warning(
                 f"Theme file not found at '{self.theme_file}', using fallback themes"
             )
-            # Fallback hardcoded if missing
-            self.themes = {
-                "dark_mode": {
-                    "app_bg": "#2B2B2B",
-                    "surface": "#323232",
-                    "border": "#454545",
-                    "primary": "#FF9900",
-                    "accent_secondary": "#4DA6FF",
-                    "text_main": "#E0E0E0",
-                    "text_dim": "#9E9E9E",
-                    "error": "#CF6679",
-                    "scrollbar_bg": "#2B2B2B",
-                    "scrollbar_handle": "#555555",
-                    "font_size_h1": "14pt",
-                    "font_size_h2": "12pt",
-                    "font_size_h3": "11pt",
-                    "font_size_body": "10pt",
-                },
-                "light_mode": {
-                    "app_bg": "#F5F5F5",
-                    "surface": "#FFFFFF",
-                    "border": "#E0E0E0",
-                    "primary": "#E68A00",
-                    "accent_secondary": "#005A9E",
-                    "text_main": "#212121",
-                    "text_dim": "#757575",
-                    "error": "#B00020",
-                    "scrollbar_bg": "#F0F0F0",
-                    "scrollbar_handle": "#C0C0C0",
-                    "font_size_h1": "14pt",
-                    "font_size_h2": "12pt",
-                    "font_size_h3": "11pt",
-                    "font_size_body": "10pt",
-                },
-            }
+            self.themes = {name: dict(theme) for name, theme in DEFAULT_THEMES.items()}
             return
 
         try:
             with open(self.theme_file, "r") as f:
                 self.themes = json.load(f)
             logger.debug(f"Successfully loaded themes: {list(self.themes.keys())}")
+            for name, theme in self.themes.items():
+                validate_visual_roles(name, theme)
             # Log font size keys for verification
             for theme_name, theme_data in self.themes.items():
                 font_keys = [k for k in theme_data.keys() if "font" in k]
                 logger.debug(f"Theme '{theme_name}' font settings: {font_keys}")
-        except Exception as e:
+        except (OSError, json.JSONDecodeError) as e:
             logger.error(f"Error loading themes: {e}")
+            self.themes = {name: dict(theme) for name, theme in DEFAULT_THEMES.items()}
 
     def load_stylesheet(self, path: str) -> None:
         """Loads and caches the stylesheet template.

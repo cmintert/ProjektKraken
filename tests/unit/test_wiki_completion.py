@@ -52,6 +52,8 @@ def test_incremental_completion_preserves_model_and_duplicate_identity(qapp):
         ]
     )
     model = editor._completer.model()
+    assert editor.editor.link_presentation("Alpha").role == "link_unresolved"
+    assert editor.editor.link_presentation("Zulu").role == "link_entity"
     editor.apply_completion_effects(
         [
             {
@@ -78,6 +80,8 @@ def test_incremental_completion_preserves_model_and_duplicate_identity(qapp):
         ["event-1", "Alpha", "event"],
     ]
     assert "Alpha" not in editor.editor._completion_map
+    assert editor.editor.link_presentation("Zulu").role == "link_unresolved"
+    assert editor.editor.link_presentation("id:entity-2").tooltip == "Entity: Beta"
 
     editor.apply_completion_effects(
         [
@@ -95,6 +99,8 @@ def test_incremental_completion_preserves_model_and_duplicate_identity(qapp):
         "Beta",
     ]
     assert editor.editor._completion_map["Alpha"] == ("entity-1", "entity")
+    assert editor.editor.link_presentation("Alpha").role == "link_entity"
+    assert editor.editor.link_presentation("id:event-1").role == "link_unresolved"
 
 
 def test_insert_completion(qapp):

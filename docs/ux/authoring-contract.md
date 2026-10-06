@@ -160,3 +160,8 @@ Apply this contract first to:
 New authoring changes identify the relevant contract numbers, visible entry points, keyboard ownership, context-preservation behavior, and justified exceptions. Use the existing shared presentation widgets before adding local patterns.
 
 The repository audit is `docs/ux/authoring-interaction-audit.md`; the reproducible 20-task protocol is `docs/ux/authoring-benchmark.md`. This audit milestone establishes the inventory, baseline and safeguards. Measured creator improvement requires later before/after observations; an assisted walkthrough or automated test cannot establish that improvement.
+
+
+## Visual vocabulary companion — 2026-10-06
+
+All new or modified UI presentation also follows [Kraken visual interaction vocabulary v1](https://linear.app/projektkraken/document/kraken-visual-interaction-vocabulary-v1-6adef31c1900), with repository counterpart `docs/ux/visual-interaction-vocabulary.md`. It defines theme-owned semantic roles, shared control states, disabled affordance, focus, contrast and narrow-layout presentation. UI change notes identify roles, relevant contract numbers, verification and exceptions. This supplements Contract v1; its interaction rules remain unchanged.

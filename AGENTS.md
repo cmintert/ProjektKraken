@@ -67,6 +67,17 @@
 - `src/commands/base_command.py`, `src/services/worker.py`, `tests/conftest.py`
 
 ## Project Skills
+- All new or modified UI presentation must follow
+  `docs/ux/visual-interaction-vocabulary.md` (matching Linear document is
+  authoritative), including surfaces outside Entity/Event. Use semantic theme
+  roles and shared StyleHelper controls; no local colors or ad-hoc variants.
+  Run `python -m scripts.check_visual_policy`. Plans/change descriptions identify
+  roles, contract numbers, disabled/focus/theme/narrow evidence and preserved
+  context. Review semantic meaning as well as token ownership. Legacy exact
+  exceptions expire on the next function/method or stylesheet touch: unify or
+  correct that presentation path. CI compares the change baseline. Explain exception
+  changes; never regenerate the baseline to silence CI.
+
 - Authoring UI changes must follow `docs/ux/authoring-contract.md` (the Linear
   document is authoritative). Identify relevant contract numbers, visible routes,
   keyboard ownership, context preservation, and justified exceptions. Consult

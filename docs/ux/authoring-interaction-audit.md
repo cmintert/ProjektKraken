@@ -10,6 +10,17 @@ remains a separate seeded audit run.
 
 ## Evidence and disposition rules
 
+KRT-54 implementation (2026-10-06): the
+[visual vocabulary](visual-interaction-vocabulary.md) complements Contract v1.
+Entity/Event supporting actions and mode banners use neutral roles; disabled
+Open/Peek retain button affordance and overflow availability; Back labels name
+the origin; typed/unresolved wiki cues refresh without authoring undo entries.
+All six palettes retain existing identity colors with explicit accessible link
+and control-state mappings. [Verification and renders](evidence/krt54/README.md)
+cover contracts 2/4/5/6/7/8/9. CI and review guidance require future role mapping
+and unify/correct legacy styling on the next touched scope. KRT-45 geometry and
+fresh human KA-04/KA-20 comparisons remain separate; no interaction rule changed.
+
 KRT-53 implementation (2026-10-06): shared description writing controls expose
 **Link to entry…**, **Open link**, **Peek link** and session-only **Return to
 writing**. A compact existing-entry picker preserves selected labels and stable

@@ -44,6 +44,15 @@ Use these files as canonical examples:
 
 ## Conventions
 
+All new or modified UI presentation follows
+`docs/ux/visual-interaction-vocabulary.md`, across every application surface.
+Use semantic theme roles and shared control helpers. Run
+`python -m scripts.check_visual_policy`; migrate touched legacy presentation
+paths rather than extending their exact baseline exceptions. UI change notes
+identify roles, contract numbers, disabled/focus/theme/narrow checks, preserved
+context and justified exceptions. Theme ownership alone does not prove that
+the selected semantic role is appropriate.
+
 - Follow ruff rules from `pyproject.toml`: 88-character lines, double quotes, type annotations on non-test code.
 - Write Google-style docstrings for public classes and methods.
 - Use `logging`, never `print()`.

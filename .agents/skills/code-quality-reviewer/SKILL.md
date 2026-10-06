@@ -20,6 +20,15 @@ authoritative.
 
 ## Review priorities
 
+- **Visual vocabulary:** Read `docs/ux/visual-interaction-vocabulary.md` for UI
+  presentation changes. Check semantic role meaning, shared helpers, disabled
+  affordance, keyboard focus, theme switching and narrow layouts. Run
+  `python -m scripts.check_visual_policy`. Review exact baseline diffs and their
+  reasons; legacy styling must unify/correct on its next function/method or
+  stylesheet touch (enforced against the change baseline). Reject decorative misuse
+  of object accents even if token ownership passes. Require role/contract mapping
+  and relevant rendered evidence in PR or direct-commit verification notes.
+
 - **Correctness and data integrity:** Trace inputs, mutations, persistence, undo/redo,
   failure handling, and edge cases. Verify claims against tests or call sites.
 - **Architecture:** Preserve `app -> gui -> commands -> services -> core`; keep GUI

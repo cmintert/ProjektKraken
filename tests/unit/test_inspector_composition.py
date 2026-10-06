@@ -648,7 +648,9 @@ def test_quiet_support_styles_survive_theme_changes(editor, qapp):
         manager.set_theme(theme, qapp)
         for button in (editor.summary_checkbox, editor.llm_checkbox):
             assert button.icon().isNull()
-            assert manager.get_theme()["accent_secondary"] in button.styleSheet()
+            assert manager.get_theme()["action_quiet_normal_text"] in button.styleSheet()
+            assert manager.get_theme()["entity_main"] not in button.styleSheet()
+            assert manager.get_theme()["event_main"] not in button.styleSheet()
         assert manager.get_theme()["text_dim"] in (
             editor._presentation.composition.history_container.styleSheet()
         )

@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.core.visual_roles import CONTROL_ROLES, CONTROL_STATES
 from src.gui.constants import (
     TOOLTIP_DELAY_MS,
     TOOLTIP_DURATION_MS,
@@ -86,6 +87,41 @@ class StyleHelper:
     """
 
     @staticmethod
+    def get_action_role_style(
+        role: str = "secondary",
+        selector: str = "QPushButton, QToolButton",
+    ) -> str:
+        """Render a control role with stable geometry in every state.
+
+        Focus follows hover/pressed/checked; disabled always wins. All color
+        decisions, including state variants, belong to the theme definitions.
+        """
+        if role not in CONTROL_ROLES:
+            raise ValueError(f"Unknown action role: {role}")
+        theme = ThemeManager().get_theme()
+        selectors = [part.strip() for part in selector.split(",")]
+        rules = [
+            f"{selector} {{ border: 2px solid transparent; "
+            "border-radius: 4px; padding: 4px 8px; }"
+        ]
+        for state in CONTROL_STATES:
+            suffix = "" if state == "normal" else f":{state}"
+            target = ", ".join(part + suffix for part in selectors)
+            prefix = f"action_{role}_{state}"
+            rules.append(
+                f"{target} {{ background-color: {theme[prefix + '_bg']}; "
+                f"color: {theme[prefix + '_text']}; "
+                f"border-color: {theme[prefix + '_border']}; }}"
+            )
+        focus = ", ".join(part + ":focus:enabled" for part in selectors)
+        rules.append(
+            f"{focus} {{ border-color: {theme['focus_ring']}; "
+            f"background-color: {theme['action_secondary_normal_bg']}; "
+            f"color: {theme['action_secondary_normal_text']}; }}"
+        )
+        return "\n".join(rules)
+
+    @staticmethod
     def get_inspector_focus_style() -> str:
         """Give inspector controls visible keyboard focus using theme tokens."""
         theme = ThemeManager().get_theme()
@@ -95,7 +131,7 @@ class StyleHelper:
             f" border-color: {theme['text_dim']}; }}"
             "QLineEdit:focus, QComboBox:focus, QSpinBox:focus, "
             "QPushButton:focus, QToolButton:focus {"
-            f" border: 2px solid {theme['text_main']}; }}"
+            f" border: 2px solid {theme['focus_ring']}; }}"
         )
 
     @staticmethod
@@ -451,94 +487,26 @@ class StyleHelper:
 
     @staticmethod
     def get_primary_button_style() -> str:
-        """Returns QSS for primary action buttons.
-
-        Primary buttons use the primary theme color and stand out.
-
-        Returns:
-            str: QSS stylesheet string for primary buttons.
-
-        """
-
-        theme = ThemeManager().get_theme()
-        text_color = _contrasting_theme_text(theme["primary"], theme)
-        return (
-            f"QPushButton {{ background-color: {theme['primary']}; "
-            f"color: {text_color}; border: 1px solid {theme['primary']}; "
-            f"border-radius: 4px; padding: 6px 16px; font-weight: bold; }}"
-            f"QPushButton:hover {{ background-color: {theme['border']}; "
-            f"color: {theme['text_main']}; }}"
-            f"QPushButton:pressed {{ background-color: {theme['surface']}; }}"
-            + StyleHelper.get_disabled_button_style()
-        )
+        """Return the shared primary control presentation."""
+        return StyleHelper.get_action_role_style("primary")
 
     @staticmethod
     def get_secondary_button_style() -> str:
-        """Returns QSS for secondary (ghost) action buttons.
-
-        Secondary buttons use a transparent background with a subtle border,
-        suitable for less prominent actions alongside primary buttons.
-
-        Returns:
-            str: QSS stylesheet string for secondary buttons.
-
-        """
-
-        theme = ThemeManager().get_theme()
-        return (
-            f"QPushButton {{ background-color: transparent; "
-            f"color: {theme['text_main']}; border: 1px solid {theme['border']}; "
-            f"border-radius: 4px; padding: 6px 16px; }}"
-            f"QPushButton:hover {{ background-color: {theme['surface']}; }}"
-            f"QPushButton:pressed {{ background-color: {theme['border']}; }}"
-            + StyleHelper.get_disabled_button_style()
-        )
+        """Return the shared secondary control presentation."""
+        return StyleHelper.get_action_role_style("secondary")
 
     @staticmethod
     def get_tool_button_style() -> str:
-        """
-        Style sheet for tool and secondary action buttons targeting QToolButton and QPushButton.
-
-        The style uses the theme's surface, text, border, primary, and app background colors and defines base, hover, pressed, and checked states.
-
-        Returns:
-            str: QSS stylesheet string for tool and secondary action buttons.
-        """
-
-        theme = ThemeManager().get_theme()
-        return (
-            f"QToolButton, QPushButton {{ background-color: {theme['surface']}; "
-            f"color: {theme['text_main']}; border: 1px solid {theme['border']}; "
-            f"border-radius: 4px; padding: 4px; }}"
-            f"QToolButton:hover, QPushButton:hover {{ "
-            f"background-color: {theme['border']}; }}"
-            f"QToolButton:pressed, QPushButton:pressed {{ "
-            f"background-color: {theme['app_bg']}; }}"
-            f"QToolButton:checked, QPushButton:checked {{ "
-            f"background-color: {theme['border']}; "
-            f"border: 1px solid {theme['primary']}; }}"
-            + StyleHelper.get_disabled_button_style()
-        )
+        """Return the shared secondary control presentation."""
+        return StyleHelper.get_action_role_style("secondary")
 
     @staticmethod
     def get_overflow_button_style() -> str:
-        """Return theme-aware styling for compact overflow menu buttons."""
-        theme = ThemeManager().get_theme()
-        return (
-            "QToolButton#OverflowToolBarMenuButton { "
-            f"background-color: {theme['surface']}; "
-            f"color: {theme['text_main']}; "
-            f"border: 1px solid {theme['border']}; "
-            "border-radius: 4px; padding: 0; font-size: 18px; "
-            "font-weight: bold; }"
-            "QToolButton#OverflowToolBarMenuButton:hover { "
-            f"background-color: {theme['border']}; "
-            f"border-color: {theme['primary']}; }}"
-            "QToolButton#OverflowToolBarMenuButton:pressed, "
-            "QToolButton#OverflowToolBarMenuButton:open { "
-            f"background-color: {theme['app_bg']}; }}"
-            "QToolButton#OverflowToolBarMenuButton::menu-indicator { "
-            "image: none; width: 0; height: 0; }"
+        """Render compact overflow access with the secondary control vocabulary."""
+        selector = "QToolButton#OverflowToolBarMenuButton"
+        return StyleHelper.get_action_role_style("secondary", selector) + (
+            f"{selector} {{ padding: 0; font-size: 18px; font-weight: bold; }}"
+            f"{selector}::menu-indicator {{ image: none; width: 0; height: 0; }}"
         )
 
     @staticmethod
@@ -604,32 +572,29 @@ class StyleHelper:
     def get_inspector_support_style() -> str:
         """Style supporting headings and writing actions without button chrome."""
         theme = ThemeManager().get_theme()
-        return f"""
+        return (
+            StyleHelper.get_action_role_style(
+                "quiet", "QToolButton#InspectorWritingAction"
+            )
+            + f"""
+            QToolButton#InspectorWritingAction {{ color: {theme["supporting_text"]}; }}
             QToolButton#InspectorSupportingHeader {{
                 color: {theme["text_main"]}; background: transparent;
-                border: 1px solid transparent; padding: 4px 2px;
+                border: 2px solid transparent; padding: 4px 2px;
                 font-weight: 600;
             }}
-            QToolButton#InspectorWritingAction {{
-                color: {theme["accent_secondary"]}; background: transparent;
-                border: 1px solid transparent; padding: 4px 6px;
-            }}
-            QToolButton#InspectorSupportingHeader:hover,
-            QToolButton#InspectorWritingAction:hover {{
+            QToolButton#InspectorSupportingHeader:hover {{
                 background: {theme["surface"]};
             }}
-            QToolButton#InspectorWritingAction:checked {{
-                color: {theme["text_main"]}; font-weight: 600;
-            }}
-            QToolButton#InspectorSupportingHeader:focus,
-            QToolButton#InspectorWritingAction:focus {{
-                border: 2px solid {theme["text_main"]};
+            QToolButton#InspectorSupportingHeader:focus {{
+                border-color: {theme["focus_ring"]};
             }}
             QWidget#InspectorSupportingInformation {{
                 border-top: 1px solid {theme["border"]};
             }}
-            QLabel#InspectorSupportCaption {{ color: {theme["text_dim"]}; }}
+            QLabel#InspectorSupportCaption {{ color: {theme["supporting_caption"]}; }}
         """
+        )
 
     @staticmethod
     def get_flat_tool_button_style() -> str:
@@ -656,24 +621,8 @@ class StyleHelper:
 
     @staticmethod
     def get_destructive_button_style() -> str:
-        """
-        Provide QSS for destructive action buttons using the theme's destructive color.
-
-        Styles normal, hover, and disabled states for QPushButton to ensure consistent destructive button appearance.
-
-        Returns:
-            str: QSS stylesheet string for destructive action buttons.
-        """
-
-        theme = ThemeManager().get_theme()
-        return (
-            f"QPushButton {{ background-color: {theme['surface']}; "
-            f"color: {theme['destructive']}; border: 1px solid {theme['destructive']}; "
-            f"border-radius: 4px; padding: 6px 16px; }}"
-            f"QPushButton:hover {{ background-color: {theme['destructive']}; "
-            f"color: white; border: 1px solid {theme['destructive']}; }}"
-            + StyleHelper.get_disabled_button_style()
-        )
+        """Return the shared destructive control presentation."""
+        return StyleHelper.get_action_role_style("destructive")
 
     @staticmethod
     def get_toggle_button_style() -> str:
@@ -1133,9 +1082,11 @@ class StyleHelper:
         theme = ThemeManager().get_theme()
 
         if broken:
-            return f"color: {theme['error']}; text-decoration: underline dotted;"
+            return (
+                f"color: {theme['link_unresolved']}; text-decoration: underline dotted;"
+            )
         else:
-            return f"color: {theme['accent_secondary']}; text-decoration: underline;"
+            return f"color: {theme['link_neutral']}; text-decoration: underline;"
 
     @staticmethod
     def get_timeline_header_style() -> str:
@@ -1654,18 +1605,15 @@ class StyleHelper:
 
     @staticmethod
     def get_temporal_snapshot_banner_style() -> str:
-        """Return the themed style for a read-only timeline snapshot notice."""
+        """Render temporal editing information using neutral mode roles."""
         theme = ThemeManager().get_theme()
-        accent = theme.get("accent_secondary", theme.get("primary", "#5C82FF"))
-        surface_alt = theme.get("surface_alt", theme.get("surface", "#2A2A2A"))
-        text_main = theme.get("text_main", theme.get("text", "#E0E0E0"))
         return (
             "QFrame#TemporalSnapshotBanner { "
-            f"background-color: {surface_alt}; "
-            f"border: 1px solid {accent}; "
+            f"background-color: {theme['mode_bg']}; "
+            f"border: 1px solid {theme['mode_border']}; "
             "border-radius: 4px; padding: 0; }"
             "QLabel#TemporalSnapshotLabel { "
-            f"background-color: transparent; color: {text_main}; "
+            f"background-color: transparent; color: {theme['mode_text']}; "
             "border: none; font-size: 11px; font-weight: bold; }"
         )
 

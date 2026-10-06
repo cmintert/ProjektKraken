@@ -1,0 +1,17 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.14, pytest-9.0.2, pluggy-1.6.0
+PySide6 6.10.1 -- Qt runtime 6.10.1 -- Qt compiled 6.10.1
+rootdir: C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken
+configfile: pytest.ini
+plugins: anyio-4.14.2, cov-7.0.0, qt-4.5.0
+collected 94 items
+
+tests\unit\test_visual_roles.py ...................                      [ 20%]
+tests\unit\test_visual_presentation.py ........                          [ 28%]
+tests\unit\test_wiki_link_refresh.py ...                                 [ 31%]
+tests\unit\test_wiki_completion.py ......                                [ 38%]
+tests\unit\test_editor_presentation.py ................................. [ 73%]
+                                                                         [ 73%]
+tests\integration\test_wiki_link_return.py .........................     [100%]
+
+============================= 94 passed in 23.22s =============================

@@ -115,6 +115,13 @@ def test_open_return_restores_mode_selection_and_scroll(
     assert len(controller.bookmarks) == 1
     destination = editor_for(window, target_kind)
     assert destination.desc_edit.action_return_writing.isVisible()
+    assert (
+        destination.desc_edit.action_return_writing.text() == f"Back to {origin.name}"
+    )
+    assert (
+        destination.desc_edit.action_return_writing.toolTip()
+        == f"Back to {origin.name}"
+    )
     destination.desc_edit.action_return_writing.trigger()
     assert window.navigation_coordinator.selected_id == origin.id
     assert editor.desc_edit.editor._view_mode == mode
@@ -123,6 +130,28 @@ def test_open_return_restores_mode_selection_and_scroll(
     assert editor.desc_edit.editor.verticalScrollBar().value() == 30
     assert editor.desc_edit.get_wiki_text() == text
     assert controller.bookmarks == []
+
+
+def test_return_label_refreshes_after_rename_and_has_generic_fallback(session):
+    window, objects = session
+    origin, _editor = start(window, objects, "entity")
+    controller = window.app_coordinator.wiki_links
+    controller.open_link(f"id:{objects['event'][1].id}")
+    origin.name = "Renamed origin"
+    controller.refresh_return_label("entity", origin.id, "update")
+    for editor in controller.editors.values():
+        assert editor.desc_edit.action_return_writing.text() == "Back to Renamed origin"
+    origin.name = ""
+    controller.refresh_return_label("entity", origin.id, "update")
+    assert (
+        window.event_editor.desc_edit.action_return_writing.text() == "Back to previous"
+    )
+    origin.name = "A very long destination name " * 5
+    controller.refresh_return_label("entity", origin.id, "update")
+    action = window.event_editor.desc_edit.action_return_writing
+    assert len(action.text()) < len(action.toolTip())
+    assert action.toolTip() == f"Back to {origin.name.strip()}"
+    assert window.event_editor.desc_edit._return_button.accessibleName() == action.toolTip()
 
 
 def test_nested_links_return_in_order_and_unrelated_navigation_clears(session):

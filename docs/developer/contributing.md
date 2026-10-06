@@ -22,6 +22,17 @@ changes in a dirty working tree.
 
 ## Authoring interaction contract
 
+All UI presentation changes also follow the
+[visual vocabulary](../ux/visual-interaction-vocabulary.md), including Map,
+Timeline, Graph and Longform. Use shared roles/helpers and run
+`python -m scripts.check_visual_policy`. PR/direct-commit verification notes
+record role choices, contract numbers, disabled/focus/theme-switch/narrow evidence,
+context preservation and justified exceptions. Review exact visual-policy baseline
+changes with their explanation; new violations and stale exceptions fail CI.
+Unify/correct legacy styling on the next function/method or stylesheet touch;
+the policy checker expires those exemptions against HEAD locally and the PR/push
+baseline in CI. Unrelated paths do not require a whole-app redesign.
+
 Use [UI/UX Contract v1](../ux/authoring-contract.md) for authoring UI changes.
 Linear remains the design authority; update both copies in the same work batch
 when deliberately revising a rule. In the change description, identify relevant

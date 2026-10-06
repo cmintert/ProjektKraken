@@ -57,9 +57,7 @@ class OverflowToolBar(QWidget):
         self.overflow_button.setText("...")
         self.overflow_button.setAccessibleName("More actions")
         self.overflow_button.setToolTip("More actions")
-        self.overflow_button.setPopupMode(
-            QToolButton.ToolButtonPopupMode.InstantPopup
-        )
+        self.overflow_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.overflow_button.setMenu(self.overflow_menu)
         self.overflow_button.setFixedSize(40, 32)
         self._apply_theme()
@@ -70,9 +68,7 @@ class OverflowToolBar(QWidget):
 
     def _apply_theme(self, _theme: dict | None = None) -> None:
         """Refresh overflow styling from the active application theme."""
-        self.overflow_button.setStyleSheet(
-            StyleHelper.get_overflow_button_style()
-        )
+        self.overflow_button.setStyleSheet(StyleHelper.get_overflow_button_style())
 
     def add_button(
         self,
@@ -84,6 +80,7 @@ class OverflowToolBar(QWidget):
     ) -> None:
         """Add a button, with higher priorities retained for longer."""
         button.setParent(self)
+        button.setProperty("toolbarMinimumWidth", button.minimumWidth())
         button.setSizePolicy(
             QSizePolicy.Policy.Fixed,
             QSizePolicy.Policy.Fixed,
@@ -99,17 +96,13 @@ class OverflowToolBar(QWidget):
         if callable(menu_getter) and (button_menu := menu_getter()) is not None:
             action.setMenu(button_menu)
         action.triggered.connect(
-            lambda checked=False, target=button: self._trigger_button(
-                target, checked
-            )
+            lambda checked=False, target=button: self._trigger_button(target, checked)
         )
         if button.isCheckable():
             button.toggled.connect(action.setChecked)
         self.overflow_menu.addAction(action)
 
-        self._items.append(
-            _ToolbarItem(button, action, priority, pinned, available)
-        )
+        self._items.append(_ToolbarItem(button, action, priority, pinned, available))
         if isinstance(button, QCheckBox):
             self._layout.addWidget(button)
         else:
@@ -176,6 +169,7 @@ class OverflowToolBar(QWidget):
             QEvent.Type.EnabledChange,
             QEvent.Type.FontChange,
             QEvent.Type.StyleChange,
+            QEvent.Type.LayoutRequest,
         ):
             self._update_overflow()
         return super().eventFilter(watched, event)
@@ -187,9 +181,7 @@ class OverflowToolBar(QWidget):
 
         active_items = [item for item in self._items if item.available]
         for item in active_items:
-            item.button.setMinimumWidth(
-                self._required_button_width(item.button)
-            )
+            item.button.setMinimumWidth(self._required_button_width(item.button))
 
         spacing = self._layout.spacing()
         available = max(0, self.contentsRect().width())
@@ -239,7 +231,11 @@ class OverflowToolBar(QWidget):
             else button.fontMetrics().horizontalAdvance(button.text())
             + self._TEXT_BUTTON_CHROME
         )
-        return max(button.minimumWidth(), button.sizeHint().width(), text_width)
+        return max(
+            int(button.property("toolbarMinimumWidth") or 0),
+            button.sizeHint().width(),
+            text_width,
+        )
 
     def _sync_menu_actions(self) -> None:
         for item in self._items:

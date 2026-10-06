@@ -35,6 +35,7 @@ def test_compact_date_widget_theme_compliance(qtbot):
 
     # Change theme and verify update
     new_theme = {
+        **tm.get_theme(),
         "surface": "#abcdef",
         "border": "#123456",
         "text_main": "#000000",
@@ -90,6 +91,7 @@ def test_compact_duration_widget_theme_compliance(qtbot):
 
     # Change theme
     new_theme = {
+        **tm.get_theme(),
         "surface": "#fedcba",
         "border": "#654321",
         "text_main": "#111111",
