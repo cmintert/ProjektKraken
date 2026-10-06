@@ -208,9 +208,19 @@ def test_editor_creation_and_map_creation_use_context_factory(qapp):
     window.command_requested = MagicMock()
     coordinator = EditorCoordinator(window)
 
-    with patch(
-        "src.app.coordinators.editor_coordinator.QInputDialog.getText",
-        return_value=("Created", True),
+    with (
+        patch(
+            "src.app.coordinators.editor_coordinator.QInputDialog.getText",
+            return_value=("Created", True),
+        ),
+        patch(
+            "src.app.coordinators.editor_coordinator.EntityCreationDialog",
+            **{
+                "return_value.exec.return_value": 1,
+                "return_value.name.return_value": "Created",
+                "return_value.entity_type.return_value": "Character",
+            },
+        ),
     ):
         coordinator.create_entity()
         coordinator.create_event()

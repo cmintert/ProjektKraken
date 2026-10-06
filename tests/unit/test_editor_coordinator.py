@@ -126,10 +126,12 @@ class TestCreateOperations:
 
         assert len(signals) == 0
 
-    @patch("src.app.coordinators.editor_coordinator.QInputDialog")
+    @patch("src.app.coordinators.editor_coordinator.EntityCreationDialog")
     def test_create_entity_emits_command(self, mock_dialog, coordinator, fake_window):
         """Creating an entity should emit a CreateEntityCommand."""
-        mock_dialog.getText.return_value = ("Test Entity", True)
+        mock_dialog.return_value.exec.return_value = 1
+        mock_dialog.return_value.name.return_value = "Test Entity"
+        mock_dialog.return_value.entity_type.return_value = "Character"
 
         signals = []
         fake_window.command_requested.connect(lambda cmd: signals.append(cmd))
@@ -141,10 +143,12 @@ class TestCreateOperations:
 
         assert isinstance(signals[0], CreateEntityCommand)
 
-    @patch("src.app.coordinators.editor_coordinator.QInputDialog")
+    @patch("src.app.coordinators.editor_coordinator.EntityCreationDialog")
     def test_create_entity_cancelled(self, mock_dialog, coordinator, fake_window):
         """Cancelling create entity dialog should not emit command."""
-        mock_dialog.getText.return_value = ("", False)
+        mock_dialog.return_value.exec.return_value = 0
+        mock_dialog.return_value.name.return_value = ""
+        mock_dialog.return_value.entity_type.return_value = "Character"
 
         signals = []
         fake_window.command_requested.connect(lambda cmd: signals.append(cmd))
@@ -153,14 +157,16 @@ class TestCreateOperations:
 
         assert len(signals) == 0
 
-    @patch("src.app.coordinators.editor_coordinator.QInputDialog")
+    @patch("src.app.coordinators.editor_coordinator.EntityCreationDialog")
     def test_create_entity_cancelled_navigation_does_not_create(
         self, mock_dialog, coordinator, fake_window
     ):
         """A dirty source draft is guarded before a creation command is sent."""
         from PySide6.QtWidgets import QMessageBox
 
-        mock_dialog.getText.return_value = ("New Entity", True)
+        mock_dialog.return_value.exec.return_value = 1
+        mock_dialog.return_value.name.return_value = "New Entity"
+        mock_dialog.return_value.entity_type.return_value = "Character"
         fake_window.navigation_coordinator.selected_type = "event"
         fake_window.event_editor.has_unsaved_changes.return_value = True
         commands = []
@@ -174,14 +180,16 @@ class TestCreateOperations:
         assert commands == []
         fake_window.event_editor._on_discard.assert_not_called()
 
-    @patch("src.app.coordinators.editor_coordinator.QInputDialog")
+    @patch("src.app.coordinators.editor_coordinator.EntityCreationDialog")
     def test_create_entity_discards_source_before_creation(
         self, mock_dialog, coordinator, fake_window
     ):
         """Discarding an active event draft permits direct entity navigation."""
         from PySide6.QtWidgets import QMessageBox
 
-        mock_dialog.getText.return_value = ("New Entity", True)
+        mock_dialog.return_value.exec.return_value = 1
+        mock_dialog.return_value.name.return_value = "New Entity"
+        mock_dialog.return_value.entity_type.return_value = "Character"
         fake_window.navigation_coordinator.selected_type = "event"
         fake_window.event_editor.has_unsaved_changes.return_value = True
         commands = []
@@ -196,14 +204,16 @@ class TestCreateOperations:
         fake_window.event_editor.set_dirty.assert_called_once_with(False)
         fake_window.event_editor._on_discard.assert_called_once()
 
-    @patch("src.app.coordinators.editor_coordinator.QInputDialog")
+    @patch("src.app.coordinators.editor_coordinator.EntityCreationDialog")
     def test_create_entity_waits_for_source_save(
         self, mock_dialog, coordinator, fake_window
     ):
         """An asynchronous source save must finish before creation is retried."""
         from PySide6.QtWidgets import QMessageBox
 
-        mock_dialog.getText.return_value = ("New Entity", True)
+        mock_dialog.return_value.exec.return_value = 1
+        mock_dialog.return_value.name.return_value = "New Entity"
+        mock_dialog.return_value.entity_type.return_value = "Character"
         fake_window.navigation_coordinator.selected_type = "event"
         fake_window.event_editor.has_unsaved_changes.return_value = True
         commands = []
@@ -217,14 +227,16 @@ class TestCreateOperations:
         assert commands == []
         fake_window.event_editor._on_save.assert_called_once()
 
-    @patch("src.app.coordinators.editor_coordinator.QInputDialog")
+    @patch("src.app.coordinators.editor_coordinator.EntityCreationDialog")
     def test_create_entity_does_not_partly_discard_when_guard_cancelled(
         self, mock_dialog, coordinator, fake_window
     ):
         """A later cancellation leaves both existing drafts untouched."""
         from PySide6.QtWidgets import QMessageBox
 
-        mock_dialog.getText.return_value = ("New Entity", True)
+        mock_dialog.return_value.exec.return_value = 1
+        mock_dialog.return_value.name.return_value = "New Entity"
+        mock_dialog.return_value.entity_type.return_value = "Character"
         fake_window.navigation_coordinator.selected_type = "event"
         fake_window.event_editor.has_unsaved_changes.return_value = True
         fake_window.entity_editor.has_unsaved_changes.return_value = True

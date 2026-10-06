@@ -12,7 +12,7 @@ from copy import deepcopy
 from typing import TYPE_CHECKING, Dict, List, Optional
 
 from PySide6.QtCore import QSettings, Signal, Slot
-from PySide6.QtWidgets import QInputDialog, QMessageBox, QWidget
+from PySide6.QtWidgets import QDialog, QInputDialog, QMessageBox, QWidget
 
 from src.app.constants import (
     SETTINGS_AUTO_RELATION_KEY,
@@ -43,6 +43,7 @@ from src.commands.temporal_entity_edit_command import TemporalEntityEditCommand
 from src.commands.wiki_commands import ProcessWikiLinksCommand
 from src.core.map import Map
 from src.core.temporal_entity_checkpoint import parse_temporal_entity_checkpoint
+from src.gui.dialogs.entity_creation_dialog import EntityCreationDialog
 from src.services.marker_icon_catalog import MarkerIconCatalog
 
 if TYPE_CHECKING:
@@ -259,9 +260,16 @@ class EditorCoordinator(BaseCoordinator):
         self.command_requested.emit(cmd)
 
     def create_entity(self) -> None:
-        """Creates a new entity by prompting for a name and emitting a command."""
-        name, ok = QInputDialog.getText(self.main_window, "New Entity", "Entity Name:")
-        if not ok or not name.strip():
+        """Capture a deliberate name/type choice and emit an undoable command."""
+        data_coordinator = getattr(self.main_window, "data_coordinator", None)
+        entity_types = (
+            data_coordinator.cached_entity_types if data_coordinator else []
+        )
+        dialog = EntityCreationDialog(self.main_window, entity_types)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        name, entity_type = dialog.name(), dialog.entity_type()
+        if not name or not entity_type:
             return
 
         navigation = self.main_window.navigation_coordinator
@@ -280,7 +288,7 @@ class EditorCoordinator(BaseCoordinator):
             editor.set_dirty(False)
             editor._on_discard()
 
-        cmd = self._create_entity_command({"name": name.strip(), "type": "Concept"})
+        cmd = self._create_entity_command({"name": name, "type": entity_type})
         self.command_requested.emit(cmd)
 
     # ------------------------------------------------------------------

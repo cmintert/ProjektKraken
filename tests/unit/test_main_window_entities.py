@@ -33,9 +33,11 @@ def test_entity_workspace_panels_exist(main_window):
 def test_create_entity(main_window, qtbot):
     """Test creating an entity via editor_coordinator."""
     with patch(
-        "src.app.coordinators.editor_coordinator.QInputDialog.getText"
+        "src.app.coordinators.editor_coordinator.EntityCreationDialog"
     ) as mock_input:
-        mock_input.return_value = ("Test Entity", True)
+        mock_input.return_value.exec.return_value = 1
+        mock_input.return_value.name.return_value = "Test Entity"
+        mock_input.return_value.entity_type.return_value = "Character"
 
         context = main_window.app_coordinator.context_tags
         with patch.object(
@@ -50,7 +52,7 @@ def test_create_entity(main_window, qtbot):
 
             create_command.assert_called_once()
             args, _ = create_command.call_args
-            assert args[0] == {"name": "Test Entity", "type": "Concept"}
+            assert args[0] == {"name": "Test Entity", "type": "Character"}
 
 
 def test_delete_entity(main_window, qtbot):

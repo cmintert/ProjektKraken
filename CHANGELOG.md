@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-06
-**Commit:** b880010cd3ed1a8d59d2c5500c4f2d72eec432c0
+**Commit:** 0b097143a99fe3df28434130756126b272c692f5
 ---
 
 # Changelog
@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-06)* **Entity creation (KRT-14)**: Normal creation now requires
+  a deliberate type alongside the name. Common, world-specific and custom types
+  remain available; Create stays disabled until both fields are supplied.
+  Quick Capture retains its intentional Concept default and editing context.
+  Added focused acceptance tests, reviewed collection membership, contract
+  mapping and compact/normal rendered evidence.
 
 - *(2026-10-06)* **Documentation examples (KRT-16)**: Used a generic guild
   affiliation in the authoring definitions so the examples stand independently

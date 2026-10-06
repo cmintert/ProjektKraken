@@ -10,6 +10,15 @@ remains a separate seeded audit run.
 
 ## Evidence and disposition rules
 
+KRT-14 implementation (2026-10-06): normal creation captures Name and an explicitly
+chosen Type together, with no preselected type and guarded Create/Enter. Common,
+world-specific and custom classifications remain available; Quick Capture keeps
+its intentional Concept default. Existing draft guards and normal/provisional
+selection behavior remain. [Contract mapping, focused checks and compact/normal
+renders](evidence/krt14/README.md) cover contracts 1–10, including the bounded
+initial-capture dialog exception. Contract v1 and benchmark v1.2 are unchanged;
+fresh human KA-01/04 comparison remains pending.
+
 KRT-22 implementation (2026-10-06, base `7826d960`): ordinary connection capture
 and refinement are inline in both inspectors; grouped boundary controls,
 recognizable Notes, advanced disclosures and visible full-editor routes preserve

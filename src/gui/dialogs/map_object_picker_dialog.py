@@ -8,10 +8,8 @@ from typing import Any
 from PySide6.QtCore import QEvent, QObject, Qt, QTimer
 from PySide6.QtGui import QKeyEvent, QShowEvent
 from PySide6.QtWidgets import (
-    QComboBox,
     QDialog,
     QDialogButtonBox,
-    QFormLayout,
     QHBoxLayout,
     QInputDialog,
     QLabel,
@@ -22,6 +20,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from src.gui.dialogs.entity_creation_dialog import EntityCreationDialog
 
 
 @dataclass(frozen=True)
@@ -35,66 +35,16 @@ class MapObjectChoice:
     entity_type: str = ""
 
 
-class EntityQuickCaptureDialog(QDialog):
-    """Capture the minimum data needed to create a typed entity."""
-
-    DEFAULT_TYPES = ("Character", "Location", "Faction", "Item", "Concept")
+class EntityQuickCaptureDialog(EntityCreationDialog):
+    """Capture an entity while deliberately deferring classification."""
 
     def __init__(
         self,
         parent: QWidget | None = None,
         entity_types: list[str] | None = None,
     ) -> None:
-        """Initialize a minimal name-and-type capture form."""
-        super().__init__(parent)
-        self.setWindowTitle("New Entity")
-        self.setModal(True)
-
-        layout = QVBoxLayout(self)
-        form = QFormLayout()
-        self.name_edit = QLineEdit(self)
-        self.name_edit.setObjectName("entityNameEdit")
-        self.type_combo = QComboBox(self)
-        self.type_combo.setObjectName("entityTypeCombo")
-        self.type_combo.setEditable(True)
-
-        types = sorted(
-            {
-                item.strip()
-                for item in [*self.DEFAULT_TYPES, *(entity_types or [])]
-                if item.strip()
-            },
-            key=str.casefold,
-        )
-        self.type_combo.addItems(types)
-        self.type_combo.setCurrentText("Concept")
-        form.addRow("Name:", self.name_edit)
-        form.addRow("Type:", self.type_combo)
-        layout.addLayout(form)
-
-        self.buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok
-            | QDialogButtonBox.StandardButton.Cancel,
-            parent=self,
-        )
-        self.buttons.accepted.connect(self.accept)
-        self.buttons.rejected.connect(self.reject)
-        layout.addWidget(self.buttons)
-        self.name_edit.textChanged.connect(self._update_accept_enabled)
-        self.type_combo.currentTextChanged.connect(self._update_accept_enabled)
-        self._update_accept_enabled()
-
-    def _update_accept_enabled(self) -> None:
-        button = self.buttons.button(QDialogButtonBox.StandardButton.Ok)
-        button.setEnabled(bool(self.name() and self.entity_type()))
-
-    def name(self) -> str:
-        """Return the trimmed entity name."""
-        return self.name_edit.text().strip()
-
-    def entity_type(self) -> str:
-        """Return the chosen or custom entity type."""
-        return self.type_combo.currentText().strip()
+        """Retain the intentional Concept default for Quick Capture."""
+        super().__init__(parent, entity_types, initial_type="Concept")
 
 
 class MapObjectPickerDialog(QDialog):

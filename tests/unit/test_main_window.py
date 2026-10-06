@@ -109,8 +109,12 @@ def test_create_event_flow(main_window, qtbot):
 
 def test_create_entity(main_window, qtbot):
     with patch(
-        "src.app.coordinators.editor_coordinator.QInputDialog.getText",
-        return_value=("New Entity", True),
+        "src.app.coordinators.editor_coordinator.EntityCreationDialog",
+        **{
+            "return_value.exec.return_value": 1,
+            "return_value.name.return_value": "New Entity",
+            "return_value.entity_type.return_value": "Character",
+        },
     ):
         # Ensure editor check passes
         main_window.entity_editor.has_unsaved_changes = MagicMock(return_value=False)

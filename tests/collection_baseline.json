@@ -2,10 +2,10 @@
   "schema": 1,
   "counts": {
     "smoke": 18,
-    "ci_fast": 1442,
+    "ci_fast": 1454,
     "slow": 1,
     "performance": 0,
-    "full": 5815,
+    "full": 5827,
     "full_only": 4364
   },
   "categories": {
@@ -18,7 +18,7 @@
     "repro": 2,
     "root": 15,
     "security": 5,
-    "unit": 5482
+    "unit": 5494
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -2876,6 +2876,15 @@
     "tests/unit/test_creation_ux.py::test_explorer_create_reveals_entity_hidden_by_advanced_filter": [],
     "tests/unit/test_creation_ux.py::test_explorer_create_reveals_entity_hidden_by_search": [],
     "tests/unit/test_creation_ux.py::test_provisional_create_keeps_origin": [],
+    "tests/unit/test_creation_ux.py::test_real_creation_form_persists_type_and_undo_redo[Airship]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_real_creation_form_persists_type_and_undo_redo[Character]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_real_creation_form_persists_type_and_undo_redo[Faction]": [
+      "ci_fast"
+    ],
     "tests/unit/test_creation_ux.py::test_select_item_switches_filter_if_needed": [],
     "tests/unit/test_data_coordinator.py::TestCompleterData::test_on_completer_data_loaded": [],
     "tests/unit/test_data_coordinator.py::TestDataLoading::test_incremental_entity_effect_does_not_touch_timeline": [],
@@ -3371,6 +3380,33 @@
       "ci_fast"
     ],
     "tests/unit/test_entity_commands.py::test_update_entity_undo": [
+      "ci_fast"
+    ],
+    "tests/unit/test_entity_creation_dialog.py::test_common_type_accepts_named_entity[Character]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_entity_creation_dialog.py::test_common_type_accepts_named_entity[Concept]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_entity_creation_dialog.py::test_common_type_accepts_named_entity[Faction]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_entity_creation_dialog.py::test_common_type_accepts_named_entity[Item]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_entity_creation_dialog.py::test_common_type_accepts_named_entity[Location]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_entity_creation_dialog.py::test_escape_cancels_without_reusing_last_type": [
+      "ci_fast"
+    ],
+    "tests/unit/test_entity_creation_dialog.py::test_keyboard_custom_type_and_clearing": [
+      "ci_fast"
+    ],
+    "tests/unit/test_entity_creation_dialog.py::test_name_alone_cannot_create_even_with_enter": [
+      "ci_fast"
+    ],
+    "tests/unit/test_entity_creation_dialog.py::test_quick_capture_keeps_intentional_concept_default": [
       "ci_fast"
     ],
     "tests/unit/test_entity_editor.py::test_add_relation_flow": [],

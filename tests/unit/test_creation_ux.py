@@ -45,12 +45,54 @@ def _connect_creation_flow(window):
     )
 
 
+@pytest.mark.ci_fast
+@pytest.mark.parametrize("entity_type", ["Character", "Faction", "Airship"])
+def test_real_creation_form_persists_type_and_undo_redo(
+    main_window, db_service, monkeypatch, qtbot, entity_type
+):
+    """The visible creation route persists the authored type in one command."""
+    from PySide6.QtCore import Qt, QTimer
+    from PySide6.QtWidgets import QDialogButtonBox
+
+    from src.gui.dialogs.entity_creation_dialog import EntityCreationDialog
+
+    original_exec = EntityCreationDialog.exec
+
+    def fill_dialog(dialog):
+        def fill():
+            assert dialog.entity_type() == ""
+            dialog.name_edit.setText("New lore")
+            dialog.type_combo.setEditText(entity_type)
+            qtbot.mouseClick(
+                dialog.buttons.button(QDialogButtonBox.StandardButton.Ok),
+                Qt.MouseButton.LeftButton,
+            )
+
+        QTimer.singleShot(0, fill)
+        return original_exec(dialog)
+
+    monkeypatch.setattr(EntityCreationDialog, "exec", fill_dialog)
+    _connect_creation_flow(main_window)
+    commands = []
+    main_window.editor_coordinator.command_requested.connect(commands.append)
+    main_window.unified_list.create_entity_requested.emit()
+    assert len(commands) == 1
+    command = commands[0]
+    assert command.select_after_create is True
+    assert command.execute(db_service).success
+    assert db_service.get_entity(command.entity_id).type == entity_type
+    command.undo(db_service)
+    assert db_service.get_entity(command.entity_id) is None
+    assert command.execute(db_service).success
+    assert db_service.get_entity(command.entity_id).type == entity_type
+
+
 def test_create_cancel_does_nothing(main_window):
     """Test cancelling creation."""
     with patch(
-        "src.app.coordinators.editor_coordinator.QInputDialog.getText"
+        "src.app.coordinators.editor_coordinator.EntityCreationDialog"
     ) as mock_input:
-        mock_input.return_value = ("", False)
+        mock_input.return_value.exec.return_value = 0
 
         with patch(
             "src.app.coordinators.editor_coordinator.CreateEntityCommand"
@@ -67,8 +109,12 @@ def test_explorer_create_opens_new_entity(main_window, db_service):
     main_window.editor_coordinator.command_requested.connect(commands.append)
     with (
         patch(
-            "src.app.coordinators.editor_coordinator.QInputDialog.getText",
-            return_value=("Tasgillia", True),
+            "src.app.coordinators.editor_coordinator.EntityCreationDialog",
+            **{
+                "return_value.exec.return_value": 1,
+                "return_value.name.return_value": "Tasgillia",
+                "return_value.entity_type.return_value": "Character",
+            },
         ),
         patch.object(main_window.data_coordinator, "load_entity_details") as load,
     ):
@@ -85,16 +131,18 @@ def test_explorer_create_opens_new_entity(main_window, db_service):
     navigation = main_window.navigation_coordinator
     assert navigation.selected_type == "entity"
     assert navigation.selected_id == entity_id
-    assert main_window.workspace.active_panel(
-        main_window.workspace.panel_zone("entity")
-    ) == "entity"
+    assert (
+        main_window.workspace.active_panel(main_window.workspace.panel_zone("entity"))
+        == "entity"
+    )
     load.assert_called_once_with(entity_id)
     assert main_window.entity_editor.current_entity_id == entity_id
     current = main_window.unified_list.list_widget.currentIndex()
     source = main_window.unified_list._proxy_model.mapToSource(current)
-    assert main_window.unified_list._model.data(
-        source, ExplorerModel.ItemIdRole
-    ) == entity_id
+    assert (
+        main_window.unified_list._model.data(source, ExplorerModel.ItemIdRole)
+        == entity_id
+    )
 
 
 def test_provisional_create_keeps_origin(main_window, db_service):
@@ -115,9 +163,11 @@ def test_provisional_create_keeps_origin(main_window, db_service):
         main_window.data_handler.on_command_finished(result)
 
     assert navigation.selected_id is None
-    assert main_window.workspace.active_panel(
-        main_window.workspace.panel_zone("entity")
-    ) == original_panel
+    assert db_service.get_entity(commands[0].entity_id).type == "Concept"
+    assert (
+        main_window.workspace.active_panel(main_window.workspace.panel_zone("entity"))
+        == original_panel
+    )
     load.assert_not_called()
     assert any(
         entity.id == commands[0].entity_id
@@ -133,8 +183,12 @@ def test_explorer_create_reveals_entity_hidden_by_search(main_window, db_service
     main_window.editor_coordinator.command_requested.connect(commands.append)
     with (
         patch(
-            "src.app.coordinators.editor_coordinator.QInputDialog.getText",
-            return_value=("Tasgillia", True),
+            "src.app.coordinators.editor_coordinator.EntityCreationDialog",
+            **{
+                "return_value.exec.return_value": 1,
+                "return_value.name.return_value": "Tasgillia",
+                "return_value.entity_type.return_value": "Character",
+            },
         ),
         patch.object(main_window.data_coordinator, "load_entity_details"),
     ):
@@ -157,8 +211,12 @@ def test_explorer_create_reveals_entity_hidden_by_advanced_filter(
     main_window.editor_coordinator.command_requested.connect(commands.append)
     with (
         patch(
-            "src.app.coordinators.editor_coordinator.QInputDialog.getText",
-            return_value=("Tasgillia", True),
+            "src.app.coordinators.editor_coordinator.EntityCreationDialog",
+            **{
+                "return_value.exec.return_value": 1,
+                "return_value.name.return_value": "Tasgillia",
+                "return_value.entity_type.return_value": "Character",
+            },
         ),
         patch.object(main_window.data_coordinator, "load_entity_details"),
     ):
