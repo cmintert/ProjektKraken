@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-06
-**Commit:** 89fd8d2f122e26b1090def217dcfb10ac12b6aef
+**Commit:** b880010cd3ed1a8d59d2c5500c4f2d72eec432c0
 ---
 
 # Changelog
@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-06)* **Documentation examples (KRT-16)**: Used a generic guild
+  affiliation in the authoring definitions so the examples stand independently
+  of a particular setting.
 
 - *(2026-10-06)* **Authoring definitions (KRT-16)**: Clarified attributes,
   relations and linked mentions in the user manual, with examples of intentional

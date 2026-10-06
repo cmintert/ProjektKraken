@@ -58,17 +58,17 @@ ones that suit your writing and modelling; they can coexist intentionally.
 | What you want to express | What each representation gives you |
 | --- | --- |
 | Alice has grey eyes | An **Eye colour** attribute stores **Grey** as a value on Alice's entry. |
-| Alice belongs to House Tytalus | An **Allegiance** attribute can store the house's name. A **Member of** relation explicitly connects Alice to the house's entry. You may use either or both, depending on what you want to record. |
-| Alice's biography discusses House Tytalus | Plain prose records the discussion. A linked mention additionally lets you open the house's entry; it does not by itself record membership. |
-| Alice belonged to the house during a particular period | A membership relation can carry start and end boundaries for connection views. A dated attribute can describe allegiance in Alice's historical record. These express different parts of the model and are edited separately. |
-| A source lists Alice's allegiance as "House Tytalus" | An attribute can preserve that source's label even when the house has no entry. An unresolved WikiLink can preserve a reference in prose while you write. |
-| Alice joined the house at a coronation | An event can describe the joining, a relation can record membership, and prose can tell the story. You can combine them without one replacing the others. |
+| Alice belongs to the Silver Guild | An **Affiliation** attribute can store the guild's name. A **Member of** relation explicitly connects Alice to the guild's entry. You may use either or both, depending on what you want to record. |
+| Alice's biography discusses the Silver Guild | Plain prose records the discussion. A linked mention additionally lets you open the guild's entry; it does not by itself record membership. |
+| Alice belonged to the guild during a particular period | A membership relation can carry start and end boundaries for connection views. A dated attribute can describe affiliation in Alice's historical record. These express different parts of the model and are edited separately. |
+| A source lists Alice's affiliation as "Silver Guild" | An attribute can preserve that source's label even when the guild has no entry. An unresolved WikiLink can preserve a reference in prose while you write. |
+| Alice joined the guild at a ceremony | An event can describe the joining, a relation can record membership, and prose can tell the story. You can combine them without one replacing the others. |
 
 ### Use several representations together
 
-For a character's house affiliation, you might store an allegiance attribute,
-record a membership relation, and link to the house in the biography. Each
-serves its own purpose. Editing the allegiance value does not edit the
+For a character's guild affiliation, you might store an affiliation attribute,
+record a membership relation, and link to the guild in the biography. Each
+serves its own purpose. Editing the affiliation value does not edit the
 membership relation, and editing the relation does not rewrite the biography.
 
 Kraken does not choose which account is true or keep independently authored
