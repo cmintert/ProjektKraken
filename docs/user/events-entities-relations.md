@@ -33,6 +33,56 @@ Use the inspector to:
 Changes are saved after editing. Use **Edit → Undo** when you need to reverse a
 supported content mutation.
 
+## Attributes, relations, and mentions
+
+These are different ways to express information about your world. Choose the
+ones that suit your writing and modelling; they can coexist intentionally.
+
+- **Attribute:** a named value on an entry, such as eye colour, population,
+  allegiance, or an imported label. A value can contain another entry's name,
+  but that name alone does not create a connection or a navigable link.
+- **Relation:** an explicit connection between two entries. Its direction and
+  kind express the connection you want to record. It can also carry notes,
+  other details, and timing. The Graph uses relations to draw connections;
+  which connections are visible depends on its filters and viewed time.
+- **Mention in prose:** a reference within your writing. Ordinary text can
+  mention a person or group without linking to its entry.
+- **Linked mention:** a reference in prose that links to an entry. It lets you
+  navigate to that entry. When **Auto-Create Relations from Wikilinks** is
+  enabled, saving a resolved link also records a `mentions` relation. This
+  records the reference; it does not assert membership, ownership, location,
+  or another specific relationship.
+
+### Examples
+
+| What you want to express | What each representation gives you |
+| --- | --- |
+| Alice has grey eyes | An **Eye colour** attribute stores **Grey** as a value on Alice's entry. |
+| Alice belongs to House Tytalus | An **Allegiance** attribute can store the house's name. A **Member of** relation explicitly connects Alice to the house's entry. You may use either or both, depending on what you want to record. |
+| Alice's biography discusses House Tytalus | Plain prose records the discussion. A linked mention additionally lets you open the house's entry; it does not by itself record membership. |
+| Alice belonged to the house during a particular period | A membership relation can carry start and end boundaries for connection views. A dated attribute can describe allegiance in Alice's historical record. These express different parts of the model and are edited separately. |
+| A source lists Alice's allegiance as "House Tytalus" | An attribute can preserve that source's label even when the house has no entry. An unresolved WikiLink can preserve a reference in prose while you write. |
+| Alice joined the house at a coronation | An event can describe the joining, a relation can record membership, and prose can tell the story. You can combine them without one replacing the others. |
+
+### Use several representations together
+
+For a character's house affiliation, you might store an allegiance attribute,
+record a membership relation, and link to the house in the biography. Each
+serves its own purpose. Editing the allegiance value does not edit the
+membership relation, and editing the relation does not rewrite the biography.
+
+Kraken does not choose which account is true or keep independently authored
+representations in sync. Differences may be deliberate, such as a quoted
+claim alongside an uncertain relationship. When you intend them to describe
+the same fact, review each representation when that fact changes.
+
+For historical attribute editing, see
+[View and correct an entity at another time](#view-and-correct-an-entity-at-another-time).
+For relation timing, see
+[Historical validity and uncertainty](#historical-validity-and-uncertainty).
+For unresolved and stable links, see
+[Wiki editor Markdown and links](wiki-editor-markdown.md).
+
 ## Set an event date or duration
 
 The Event inspector starts with one clear date field. Type a date in the

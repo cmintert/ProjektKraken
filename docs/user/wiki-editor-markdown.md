@@ -4,6 +4,12 @@ Descriptions are stored as portable Markdown and `[[wiki links]]`. The editor
 opens ordinary paragraphs, headings `#` through `###`, `**bold**`, `*italic*`,
 and wiki links in Rich view. Single line breaks and blank lines are preserved.
 
+A WikiLink references an entry from prose; it does not assert membership or
+another specific relationship. With **Auto-Create Relations from Wikilinks**
+enabled, saving a resolved link also records a `mentions` relation. For the
+distinction between values, explicit connections, and textual references, see
+[Attributes, relations, and mentions](events-entities-relations.md#attributes-relations-and-mentions).
+
 When a description contains a construct the Rich serializer cannot safely
 round-trip, the editor opens **exact Markdown Source** instead. Lists,
 blockquotes, tables, code spans and fences, standard Markdown links and images,
