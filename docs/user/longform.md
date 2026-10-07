@@ -17,7 +17,12 @@ included automatically. New entries append without changing existing hierarchy.
    reorder siblings; **Demote** nests the item beneath its preceding sibling;
    **Promote** lifts it one level. The same actions are available by right-click.
    At narrow widths, controls remain available through **More actions (…)**.
-4. Select an item to edit its underlying content.
+4. Select an item, then choose **Open in inspector** to edit its underlying
+   content. Clicking an entry keeps Longform visible when the inspector shares
+   its workspace pane. An inspector already visible in a separate pane can
+   follow completed clicks through the usual draft guards. Title and wiki links
+   deliberately open their destination. Holding a press, dragging an outline
+   entry or selecting document text does not switch inspector tabs.
 
 Removing an item from Longform does not delete the event or entity from the
 world. Choose **Remove from document** to exclude it deliberately. Child

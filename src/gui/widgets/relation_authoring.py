@@ -5,7 +5,9 @@ from typing import Any, cast
 from uuid import uuid4
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QKeyEvent
 from PySide6.QtWidgets import (
+    QApplication,
     QFormLayout,
     QLabel,
     QMessageBox,
@@ -21,6 +23,7 @@ from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.editor_presentation import DisclosureButton
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
+from src.gui.widgets.relation_drop_target import RelationDropTarget
 from src.gui.widgets.relation_form import RelationForm, take_form_row
 from src.gui.widgets.relation_target import RelationTargetEdit
 from src.gui.widgets.standard_buttons import StandardButton
@@ -58,6 +61,7 @@ class RelationAuthoring(QWidget):
         self.preferred_id = ""
         self.reversed = False
         self.capture_open = False
+        self._drop_capture: dict[str, str] | None = None
         self._layout = QVBoxLayout(self)
         StyleHelper.apply_no_margins(self._layout)
         self.status = QLabel()
@@ -66,6 +70,8 @@ class RelationAuthoring(QWidget):
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
         self._layout.addWidget(self.status)
+        self.drop_target = RelationDropTarget(self)
+        self._layout.addWidget(self.drop_target)
         self.body = QWidget()
         self.body_layout = QVBoxLayout(self.body)
         StyleHelper.apply_no_margins(self.body_layout)
@@ -105,6 +111,8 @@ class RelationAuthoring(QWidget):
         self.editor.tab_relations.setStyleSheet(
             StyleHelper.get_connection_inspector_style()
         )
+        if hasattr(self, "drop_target"):
+            self.drop_target.apply_theme()
 
     def _current_id(self) -> str:
         return str(
@@ -126,6 +134,7 @@ class RelationAuthoring(QWidget):
         self.target = None
         self.relation = None
         self.capture_open = False
+        self._drop_capture = None
         self.reversed = False
         while self.footer_layout.count():
             item = self.footer_layout.takeAt(0)
@@ -177,6 +186,81 @@ class RelationAuthoring(QWidget):
             if popup is not None and popup.isVisible():
                 return
         self.apply()
+
+    def resolve_drop(self, item_id: str, kind: str) -> dict[str, str] | None:
+        """Resolve a drop against current serializable suggestions and editability."""
+        if not self.isEnabled() or not self._current_id() or self.pending_id:
+            return None
+        if item_id == self._current_id():
+            self.status.setText(
+                "An entry cannot be dropped onto its own Connections target."
+            )
+            return None
+        for known_id, name, known_kind in getattr(self.editor, "_suggestion_items", []):
+            if known_id == item_id and known_kind.casefold() == kind:
+                return {"id": item_id, "name": name, "type": kind}
+        self.status.setText(
+            "Choose an existing Entity or Event to prepare a connection."
+        )
+        return None
+
+    def stage_drop(self, payload: dict[str, str]) -> bool:
+        """Prepare a directed connection without replacing an unfinished draft."""
+        resolved = self.resolve_drop(payload["id"], payload["type"])
+        if resolved is None or not self.prepare_to_leave():
+            return False
+        self.capture()
+        if self.target is None:
+            return False
+        target_id = self._current_id()
+        self.source_id = resolved["id"]
+        self.source_name = resolved["name"]
+        self.target.initial_id = target_id
+        self.target.setText(target_id)
+        self.target.hide()
+        capture_label = self.body_layout.itemAt(0).widget()
+        if capture_label is not None:
+            capture_label.hide()
+        self._drop_capture = {**resolved, "target_id": target_id}
+        preview = QLabel(
+            f"{self.source_name} → {self.editor.name_edit.text()}: "
+            "connection — kind not specified"
+        )
+        preview.setWordWrap(True)
+        self.body_layout.insertWidget(0, preview)
+        meaning = ScrollSafeComboBox()
+        for value, title in MEANINGS.items():
+            meaning.addItem(title, value)
+        self.body_layout.insertWidget(1, meaning)
+        meaning.currentIndexChanged.connect(
+            lambda: self._set_drop_meaning(str(meaning.currentData()), preview)
+        )
+        self.body_scroll.setMinimumHeight(150)
+        self.body_scroll.setMaximumHeight(200)
+        self.status.setText(
+            "Connection prepared. Connect saves it; Cancel discards it."
+        )
+        self.apply_button.setFocus()
+        return True
+
+    def _set_drop_meaning(self, kind: str, preview: QLabel) -> None:
+        self.capture_type = kind
+        preview.setText(
+            f"{self.source_name} → {self.editor.name_edit.text()}: {MEANINGS[kind]}"
+        )
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        """Own only the draft action keys after nested controls handled them."""
+        if event.key() == Qt.Key.Key_Escape:
+            self.cancel()
+            event.accept()
+        elif event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter) and (
+            QApplication.focusWidget() is getattr(self, "apply_button", None)
+        ):
+            self.apply()
+            event.accept()
+        else:
+            super().keyPressEvent(event)
 
     def refine(self, relation: dict[str, Any]) -> None:
         """Open the existing row with advanced data retained in its snapshot."""
@@ -471,6 +555,14 @@ class RelationAuthoring(QWidget):
         """Validate local fields and emit one capture or refinement request."""
         if self.pending_id or not self.isEnabled() or not self.apply_button.isEnabled():
             return
+        if self._drop_capture is not None and (
+            self._current_id() != self._drop_capture["target_id"]
+            or self.resolve_drop(self.source_id, self._drop_capture["type"]) is None
+        ):
+            self.status.setText(
+                "This connection's target changed. Cancel and prepare it again."
+            )
+            return
         request: dict[str, Any] = {"source_id": self.source_id}
         if self.target is not None:
             target = self.target.resolve()
@@ -517,6 +609,7 @@ class RelationAuthoring(QWidget):
         self.pending_id = str(uuid4())
         request["request_id"] = self.pending_id
         self.body.setEnabled(False)
+        self.apply_button.setEnabled(False)
         self.status.setText("Saving connection…")
         self.editor.relation_authoring_requested.emit(request)
 
@@ -526,6 +619,7 @@ class RelationAuthoring(QWidget):
             return
         self.pending_id = ""
         self.body.setEnabled(True)
+        self.apply_button.setEnabled(True)
         if result.get("success"):
             self.preferred_id = str(result.get("relation_id", ""))
             self._clear_body()

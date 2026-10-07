@@ -174,6 +174,12 @@ command. Destructive operations must follow the guarded production mutation path
   while preserving selection and applying navigation guards. It must not execute
   an unrelated mutation or open modal configuration. Double-click remains edit
   for relation rows, layer naming and suitable object surfaces.
+  KRT-56 clarification (2026-10-07): Longform pointer selection remains local
+  until click completion; drag and text selection never navigate. Passive
+  inspection updates only a visible inspector in another zone. The labeled
+  Open in inspector action and explicit title/wiki links reveal a shared-zone
+  or hidden inspector. Connections drops stage Connect/Cancel drafts; whole
+  inspector drops do not create relations.
 * **E-02 — Structured date fallback.** Without an active calendar, text-first date
   parsing cannot be offered honestly. Structured fields and explanatory feedback
   remain visible; `test_no_calendar_uses_structured_entry` protects the fallback.

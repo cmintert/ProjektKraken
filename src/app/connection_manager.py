@@ -653,6 +653,7 @@ class ConnectionManager:
         """Connect signals from the longform editor widget."""
         longform = self.window.longform_editor
         lm = self.window.longform_manager
+        self.window.app_coordinator.bind_longform_navigation()
         return self._connect_batch(
             [
                 (
@@ -685,12 +686,6 @@ class ConnectionManager:
                     lm.export_as_vault,
                     "LongformEditor",
                 ),
-                (
-                    longform,
-                    "item_selected",
-                    self.window.navigation_coordinator.on_item_selected,
-                    "LongformEditor",
-                ),
                 (longform, "item_moved", lm.move_longform_entry, "LongformEditor"),
                 (
                     longform,
@@ -708,12 +703,6 @@ class ConnectionManager:
                     longform,
                     "move_down_requested",
                     lm.move_down_longform_entry,
-                    "LongformEditor",
-                ),
-                (
-                    longform,
-                    "link_clicked",
-                    self.window.navigation_coordinator.navigate_to_entity,
                     "LongformEditor",
                 ),
                 (

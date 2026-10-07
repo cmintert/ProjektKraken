@@ -9,7 +9,7 @@ import re
 from typing import Any, Dict, List, Optional
 
 import markdown  # type: ignore[import-untyped]  # Package has no py.typed marker.
-from PySide6.QtCore import QUrl, Signal, Slot
+from PySide6.QtCore import QPoint, Qt, QUrl, Signal, Slot
 from PySide6.QtGui import (
     QDesktopServices,
     QMouseEvent,
@@ -17,7 +17,7 @@ from PySide6.QtGui import (
     QTextDocument,
     QTextTable,
 )
-from PySide6.QtWidgets import QTextBrowser, QWidget
+from PySide6.QtWidgets import QApplication, QTextBrowser, QWidget
 
 from src.core.theme_manager import ThemeManager
 
@@ -32,6 +32,7 @@ class LongformContentWidget(QTextBrowser):
 
     link_clicked = Signal(str)  # Emits target (e.g., "id:123" or "Name")
     item_selected = Signal(str, str)  # Emits table, id
+    gesture_started = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the content widget."""
@@ -40,6 +41,8 @@ class LongformContentWidget(QTextBrowser):
         self.anchorClicked.connect(self._on_anchor_clicked)
         self._sequence: list[dict[str, Any]] = []
         self._calendar_converter = None
+        self._card_press: tuple[QPoint, int] | None = None
+        self._card_dragged = False
 
         # Connect to theme changes
         ThemeManager().theme_changed.connect(lambda _: self._apply_theme())
@@ -59,24 +62,45 @@ class LongformContentWidget(QTextBrowser):
             self.load_content(self._sequence)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        """Detect card clicks vs link clicks."""
+        """Retain text selection ownership until a card click completes."""
+        self._card_press = None
+        self._card_dragged = False
         pos = event.position().toPoint()
-
-        if self.anchorAt(pos):
-            # Clicked on a real link (WikiLink or Title link)
-            super().mousePressEvent(event)
-            return
-
-        # Clicked on a card background/text area that is NOT a link
-        cursor = self.cursorForPosition(pos)
-        if (table := cursor.currentTable()) and (
-            idx := self._get_item_index_from_table(table)
-        ) is not None:
-            if 0 <= idx < len(self._sequence):
-                item = self._sequence[idx]
-                self.item_selected.emit(item["table"], item["id"])
-
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.gesture_started.emit()
+            if not self.anchorAt(pos):
+                table = self.cursorForPosition(pos).currentTable()
+                idx = self._get_item_index_from_table(table) if table else None
+                if idx is not None:
+                    self._card_press = (pos, idx)
         super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        """Remember a selection gesture even if it ends at its starting point."""
+        if self._card_press is not None and (
+            (event.position().toPoint() - self._card_press[0]).manhattanLength()
+            >= QApplication.startDragDistance()
+        ):
+            self._card_dragged = True
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        """Select a card only after release without a text-selection gesture."""
+        press, self._card_press = self._card_press, None
+        super().mouseReleaseEvent(event)
+        if press is None or event.button() != Qt.MouseButton.LeftButton:
+            return
+        distance = (event.position().toPoint() - press[0]).manhattanLength()
+        if (
+            self._card_dragged
+            or distance >= QApplication.startDragDistance()
+            or self.textCursor().hasSelection()
+        ):
+            return
+        idx = press[1]
+        if 0 <= idx < len(self._sequence):
+            item = self._sequence[idx]
+            self.item_selected.emit(item["table"], item["id"])
 
     def _get_item_index_from_table(self, table: QTextTable) -> Optional[int]:
         """Maps a QTextTable to its index in self._sequence."""

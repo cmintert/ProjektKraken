@@ -27,7 +27,11 @@ adds no attribute conversion or new rule about which representation is canonical
 | Expert | Visible More actions → **Full relation editor…** / **Add detailed relation…** | Retains custom types, target changes, payloads and all current expert semantics. |
 
 Use the existing `related` type for loose capture, consistent with current
-Explorer drop behavior. Create one outgoing relation with empty attributes;
+loose-capture storage. KRT-56 (2026-10-07) replaces immediate inspector-drop
+creation with a labeled Connections drop target and a directed Connect/Cancel
+draft. A visible meaning choice replaces modifier-only type selection. Preserve
+the dropped-object → inspected-object direction and reject self-drops without
+banning advanced authored self-relations. Create one outgoing relation with empty attributes;
 do not manufacture a reverse relation, temporal binding, confidence or payload.
 Describe it as **Connection — kind not specified**. Timing is **Not specified**,
 not an assertion that the relation is timeless or that dates are unknown.

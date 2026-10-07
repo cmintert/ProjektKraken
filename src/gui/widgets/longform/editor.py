@@ -61,6 +61,9 @@ class LongformEditorWidget(QWidget):
     export_requested = Signal()
     export_vault_requested = Signal()  # For Obsidian-compatible vault export
     item_selected = Signal(str, str)  # table, id
+    browse_requested = Signal(str, str)
+    open_requested = Signal(str, str)
+    gesture_started = Signal()
     item_moved = Signal(str, str, dict, dict)  # table, id, old_meta, new_meta
     link_clicked = Signal(str)
     show_filter_dialog_requested = Signal()
@@ -118,6 +121,10 @@ class LongformEditorWidget(QWidget):
         self.outline_actions_menu.aboutToShow.connect(self._prepare_outline_actions)
         self.btn_outline_actions.setMenu(self.outline_actions_menu)
         toolbar.add_button(self.btn_outline_actions, priority=90)
+        self.btn_open_inspector = QPushButton("Open in inspector")
+        self.btn_open_inspector.setToolTip("Select an entry to open its inspector")
+        self.btn_open_inspector.clicked.connect(self._open_selected)
+        toolbar.add_button(self.btn_open_inspector, priority=85)
 
         # Refresh Button
         self.btn_refresh = QPushButton("Refresh")
@@ -245,6 +252,8 @@ class LongformEditorWidget(QWidget):
         # Left: Outline
         self.outline = LongformOutlineWidget()
         self.outline.item_selected.connect(self._on_item_selected)
+        self.outline.browse_requested.connect(self.browse_requested)
+        self.outline.gesture_started.connect(self.gesture_started)
         self.outline.item_promoted.connect(self.promote_requested.emit)
         self.outline.item_demoted.connect(self.demote_requested.emit)
         self.outline.item_moved.connect(self.item_moved.emit)
@@ -258,6 +267,7 @@ class LongformEditorWidget(QWidget):
         self.content = LongformContentWidget()
         self.content.link_clicked.connect(self.link_clicked.emit)
         self.content.item_selected.connect(self._on_content_selected)
+        self.content.gesture_started.connect(self.gesture_started)
 
         self._splitter.addWidget(self.outline)
         self._splitter.addWidget(self.content)
@@ -293,6 +303,12 @@ class LongformEditorWidget(QWidget):
 
     def _update_outline_actions(self) -> None:
         self.btn_outline_actions.setEnabled(bool(self.outline.selectedItems()))
+        self.btn_open_inspector.setEnabled(bool(self.outline.selectedItems()))
+
+    def _open_selected(self) -> None:
+        selection = self.get_current_selection()
+        if selection is not None:
+            self.open_requested.emit(selection[0], selection[1])
 
     def _hide_membership(self) -> None:
         self.membership.hide()
@@ -334,6 +350,7 @@ class LongformEditorWidget(QWidget):
                 break
             iterator += 1
         self.item_selected.emit(table, row_id)
+        self.browse_requested.emit(table, row_id)
 
     def load_sequence(self, sequence: List[Dict[str, Any]]) -> None:
         """Load a longform sequence into the editor.

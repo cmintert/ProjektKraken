@@ -15,6 +15,7 @@ from PySide6.QtGui import (
     QDrag,
     QDropEvent,
     QKeyEvent,
+    QMouseEvent,
 )
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -36,6 +37,8 @@ class LongformOutlineWidget(QTreeWidget):
     """
 
     item_selected = Signal(str, str)  # table, id
+    browse_requested = Signal(str, str)
+    gesture_started = Signal()
     item_moved = Signal(str, str, dict, dict)  # table, id, old_meta, new_meta
     item_promoted = Signal(str, str, dict)  # table, id, old_meta
     item_demoted = Signal(str, str, dict)  # table, id, old_meta
@@ -54,6 +57,8 @@ class LongformOutlineWidget(QTreeWidget):
 
         # Store item metadata
         self._item_meta: dict[int, tuple[str, str, dict[str, Any]]] = {}
+        self._pointer_pressed = False
+        self._dragged = False
 
         # Connect signals
         self.itemSelectionChanged.connect(self._on_selection_changed)
@@ -107,6 +112,9 @@ class LongformOutlineWidget(QTreeWidget):
         """
         from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
 
+        self._dragged = True
+        self.gesture_started.emit()
+
         item = self.currentItem()
         if not item:
             return
@@ -138,6 +146,29 @@ class LongformOutlineWidget(QTreeWidget):
 
         # Execute drag - CopyAction for external, MoveAction for internal
         drag.exec(Qt.DropAction.CopyAction | Qt.DropAction.MoveAction)
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        """Select locally while the pointer gesture is unresolved."""
+        self._pointer_pressed = event.button() == Qt.MouseButton.LeftButton
+        self._dragged = False
+        if self._pointer_pressed:
+            self.gesture_started.emit()
+        super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        """Browse only a completed click, never the release after a drag."""
+        browse = self._pointer_pressed and not self._dragged
+        self._pointer_pressed = False
+        super().mouseReleaseEvent(event)
+        if browse and event.button() == Qt.MouseButton.LeftButton:
+            self._browse_selected()
+
+    def _browse_selected(self) -> None:
+        item = self.currentItem()
+        if item is not None and item in self.selectedItems():
+            meta = self._get_item_metadata(item)
+            if meta is not None:
+                self.browse_requested.emit(meta[0], meta[1])
 
     def dropEvent(self, event: QDropEvent) -> None:
         """Handle drop event to reorder items.
@@ -451,8 +482,22 @@ class LongformOutlineWidget(QTreeWidget):
         elif event.key() == Qt.Key.Key_Delete:
             self._delete_selected()
             event.accept()
+        elif event.key() == Qt.Key.Key_Escape:
+            self._dragged = True
+            self._pointer_pressed = False
+            self.gesture_started.emit()
+            super().keyPressEvent(event)
         else:
             super().keyPressEvent(event)
+            if event.key() in (
+                Qt.Key.Key_Up,
+                Qt.Key.Key_Down,
+                Qt.Key.Key_Home,
+                Qt.Key.Key_End,
+                Qt.Key.Key_PageUp,
+                Qt.Key.Key_PageDown,
+            ):
+                self._browse_selected()
 
     def _promote_selected(self) -> None:
         """Promote the selected item."""

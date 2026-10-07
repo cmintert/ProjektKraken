@@ -41,6 +41,8 @@ def mock_main_window(qapp):
     window.navigation_coordinator = Mock()  # Add NavigationCoordinator mock
     window.event_editor = MockWidget()
     window.entity_editor = MockWidget()
+    window.event_editor.relation_authoring = Mock()
+    window.entity_editor.relation_authoring = Mock()
     window.timeline = Mock()
     window.longform_editor = Mock()
     window.map_widget = Mock()

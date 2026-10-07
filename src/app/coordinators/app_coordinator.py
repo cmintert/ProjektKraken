@@ -89,6 +89,17 @@ class AppCoordinator(QObject):
         if hasattr(self, "icon_library"):
             self.icon_library.show_manager(self.main_window)
 
+    def bind_longform_navigation(self) -> None:
+        """Compose Longform navigation once its view is available."""
+        if not hasattr(self, "longform_navigation"):
+            from src.app.coordinators.longform_navigation import (
+                LongformNavigationController,
+            )
+
+            self.longform_navigation = LongformNavigationController(
+                self.main_window.longform_editor, self.navigation
+            )
+
     def bind_wiki_links(self) -> None:
         """Compose writing-link navigation with existing cache and guard inputs."""
         from src.app.coordinators.wiki_link_navigation import (

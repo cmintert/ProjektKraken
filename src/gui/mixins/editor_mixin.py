@@ -250,47 +250,12 @@ class BaseEditorMixin:
                 self.desc_edit.editor.setFocus()
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-        """Handle drag enter event to accept MIME data from Project Explorer.
-
-        Args:
-            event: QDragEnterEvent with MIME data.
-
-        """
-        from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
-
-        if (
-            event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE)
-            and self._get_current_item_id()
-        ):
-            event.acceptProposedAction()
-            self._is_drag_over = True
-            self._selected_relation_type = "related"
-            self._show_drop_hint(self._selected_relation_type)
-            logger.debug(
-                f"{self._get_editor_label()}: Accepting drag from Project Explorer"
-            )
-        else:
-            event.ignore()
+        """Leave relation acceptance to the labeled Connections drop target."""
+        event.ignore()
 
     def dragMoveEvent(self, event: QDragMoveEvent) -> None:
-        """Handle drag move event.
-
-        Args:
-            event: QDragMoveEvent.
-
-        """
-        from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
-
-        if (
-            event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE)
-            and self._get_current_item_id()
-        ):
-            event.acceptProposedAction()
-            if not self._is_drag_over:
-                self._is_drag_over = True
-            self._show_drop_hint(self._selected_relation_type)
-        else:
-            event.ignore()
+        """Leave relation acceptance to the labeled Connections drop target."""
+        event.ignore()
 
     def dragLeaveEvent(self, event: QDragLeaveEvent) -> None:
         """Handle drag leave event - hide drop hint and type picker.

@@ -1,0 +1,74 @@
+[
+  {
+    "file": "entity-dark_mode.png",
+    "width": 518,
+    "height": 292,
+    "connect_enabled": true
+  },
+  {
+    "file": "entity-light_mode.png",
+    "width": 518,
+    "height": 294,
+    "connect_enabled": true
+  },
+  {
+    "file": "entity-fantasy_mode.png",
+    "width": 518,
+    "height": 294,
+    "connect_enabled": true
+  },
+  {
+    "file": "entity-imperial_mode.png",
+    "width": 518,
+    "height": 294,
+    "connect_enabled": true
+  },
+  {
+    "file": "entity-cyberpunk_mode.png",
+    "width": 518,
+    "height": 294,
+    "connect_enabled": true
+  },
+  {
+    "file": "entity-muted_light_mode.png",
+    "width": 518,
+    "height": 294,
+    "connect_enabled": true
+  },
+  {
+    "file": "event-dark_mode.png",
+    "width": 518,
+    "height": 292,
+    "connect_enabled": true
+  },
+  {
+    "file": "event-light_mode.png",
+    "width": 518,
+    "height": 294,
+    "connect_enabled": true
+  },
+  {
+    "file": "event-fantasy_mode.png",
+    "width": 518,
+    "height": 294,
+    "connect_enabled": true
+  },
+  {
+    "file": "event-imperial_mode.png",
+    "width": 518,
+    "height": 294,
+    "connect_enabled": true
+  },
+  {
+    "file": "event-cyberpunk_mode.png",
+    "width": 518,
+    "height": 294,
+    "connect_enabled": true
+  },
+  {
+    "file": "event-muted_light_mode.png",
+    "width": 518,
+    "height": 294,
+    "connect_enabled": true
+  }
+]

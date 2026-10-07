@@ -165,3 +165,19 @@ The repository audit is `docs/ux/authoring-interaction-audit.md`; the reproducib
 ## Visual vocabulary companion — 2026-10-06
 
 All new or modified UI presentation also follows [Kraken visual interaction vocabulary v1](https://linear.app/projektkraken/document/kraken-visual-interaction-vocabulary-v1-6adef31c1900), with repository counterpart `docs/ux/visual-interaction-vocabulary.md`. It defines theme-owned semantic roles, shared control states, disabled affordance, focus, contrast and narrow-layout presentation. UI change notes identify roles, relevant contract numbers, verification and exceptions. This supplements Contract v1; its interaction rules remain unchanged.
+
+## Gesture and passive inspection interpretation — 2026-10-07, KRT-56
+
+Longform selection is local while a pointer gesture is unresolved. Dragging,
+holding a press or selecting document text must not navigate, activate an
+inspector tab or create relations. A completed click or keyboard selection may
+update an already-visible inspector in another workspace zone through draft
+guards. Shared-zone and hidden inspectors are revealed through the labeled
+**Open in inspector** action or an explicit title/wiki link. Local outline
+selection remains distinct from the inspected object when navigation is declined.
+
+Inspector relation drops use a labeled Connections target and prepare a directed
+draft with **Connect / Cancel**. Dropping does not persist a relation. Self-drops
+are rejected; deliberate advanced self-relations and distinct timed relations
+remain representable. This interpretation applies Contracts 2/5/6/7/8/9 and
+preserves spatial map drops and structural document reordering.

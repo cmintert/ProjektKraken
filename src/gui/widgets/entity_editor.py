@@ -62,6 +62,7 @@ from src.gui.widgets.relation_item_widget import (
     RelationItemWidget,
     relation_type_caption,
 )
+from src.gui.widgets.relation_snapshots import distinct_relation_directions
 from src.gui.widgets.sheet_builder import SheetBuilderWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
 from src.gui.widgets.standard_buttons import (
@@ -551,111 +552,18 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self._drop_hint_label.hide()
 
     def dropEvent(self, event: QDropEvent) -> None:
-        """Handle a drop event to create a relation from the dragged item.
-
-        Accepts drops carrying the custom MIME type
-        ``application/x-kraken-item`` (see
-        :data:`~src.gui.widgets.unified_list.KRAKEN_ITEM_MIME_TYPE`).  The
-        MIME payload is a UTF-8–encoded JSON object with the keys:
-
-        - ``"id"`` (str): UUID of the dragged item.
-        - ``"type"`` (str): Domain type, e.g. ``"entity"`` or ``"event"``.
-        - ``"name"`` (str): Display name of the dragged item.
-
-        If the **Shift** key is held during the drop, a type-picker popup is
-        shown so the user can choose a specific relation type.  Otherwise the
-        default relation type ``"related"`` is used.
-
-        Args:
-            event: The Qt drop event carrying the MIME data.
-
-        """
-        import json
-
-        from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
-
-        if not event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE):
-            event.ignore()
-            return
-
-        if not self._current_entity_id:
-            logger.warning("Cannot drop: No entity loaded in editor")
-            event.ignore()
-            return
-
-        try:
-            # Parse MIME data
-            mime_data = event.mimeData().data(KRAKEN_ITEM_MIME_TYPE)
-            data = json.loads(bytes(mime_data.data()).decode("utf-8"))
-
-            dropped_id = data.get("id")
-            dropped_type = data.get("type")
-            dropped_name = data.get("name", "Unknown")
-
-            if not dropped_id or not dropped_type:
-                logger.error("Invalid MIME data: missing id or type")
-                event.ignore()
-                return
-
-            # Check if Shift key is pressed - show type picker
-            if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
-                # Post-drop selection flow
-                self._initiated_relation_drop = {
-                    "source_id": dropped_id,
-                    "source_type": dropped_type,
-                    "source_name": dropped_name,
-                }
-                event.acceptProposedAction()
-                self._show_type_picker(event.pos())
-                return
-
-            # Standard Flow (Default "related")
-            self._create_relation(dropped_id, dropped_type, dropped_name, "related")
-            event.acceptProposedAction()
-
-        except Exception as e:
-            logger.error(f"Error handling drop event: {e}", exc_info=True)
-            event.ignore()
-            self._hide_drop_hint()
-
-            if self._type_picker and self._type_picker.isVisible():
-                self._type_picker.hide()
+        """Ignore whole-inspector drops; the labeled Connections target owns them."""
+        event.ignore()
 
     def _create_relation(
         self, source_id: str, source_type: str, source_name: str, rel_type: str
     ) -> None:
-        """Emit the signal to create a new directed relation via drop.
-
-        Logs the creation attempt and emits :attr:`add_relation_requested` so
-        that the application coordinator can execute the corresponding command.
-        Cleans up drop-UI state (overlay and type-picker) after emitting.
-
-        Args:
-            source_id: UUID of the item that was dropped onto this editor.
-            source_type: Domain type of the dropped item (e.g. ``"entity"``
-                or ``"event"``).
-            source_name: Display name of the dropped item, used for logging.
-            rel_type: Relation type label to assign (e.g. ``"related"``).
-
-        """
-        logger.info(
-            f"EntityEditor: Creating relation {source_id} -> {self._current_entity_id} "
-            f"(dropped {source_type}: {source_name}, type: {rel_type})"
-        )
-
-        self.add_relation_requested.emit(
-            source_id,
-            self._current_entity_id,
-            rel_type,
-            {},
-            False,
-        )
-
-        # Cleanup UI
+        """Stage legacy drop intent through the shared connection draft."""
+        payload = self.relation_authoring.resolve_drop(source_id, source_type)
+        if payload is not None and self.relation_authoring.stage_drop(payload):
+            self.relation_authoring.capture_type = rel_type
         self._is_drag_over = False
         self._hide_drop_hint()
-        if self._type_picker:
-            self._type_picker.hide()
 
     def set_summary_service(self, service: Any) -> None:
         """Set the summary service used to generate and check entity summaries.
@@ -1128,6 +1036,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             incoming_relations: List of incoming relation dicts, or None.
 
         """
+        relations, incoming_relations = distinct_relation_directions(
+            relations, incoming_relations
+        )
         self.relation_authoring.remember_selection()
         self.rel_list.clear()
 

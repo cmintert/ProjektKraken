@@ -46,6 +46,8 @@ class NavigationCoordinator(BaseCoordinator):
         self._last_selected_id: Optional[str] = None
         self._last_selected_type: Optional[str] = None
         self._pending_navigation: tuple[str, str, str, str, int] | None = None
+        self._pending_navigation_context: tuple[str | None, bool] = (None, True)
+        self._request_context: tuple[str | None, bool] = (None, True)
         self._save_signal_connected = False
         self._peek_origin: QWidget | None = None
         self._peek_current_target: str | None = None
@@ -174,7 +176,14 @@ class NavigationCoordinator(BaseCoordinator):
         self.main_window.command_requested.emit(command)
 
     @Slot(str, str)
-    def set_global_selection(self, item_type: str, item_id: str) -> None:
+    def set_global_selection(
+        self,
+        item_type: str,
+        item_id: str,
+        *,
+        source_panel: str | None = None,
+        reveal: bool = True,
+    ) -> None:
         """Centralized method to handle global item selection.
 
         Synchronizes all UI components:
@@ -190,8 +199,14 @@ class NavigationCoordinator(BaseCoordinator):
         elif item_type == "entities":
             item_type = "entity"
 
+        if not reveal and not self._can_inspect_in_place(source_panel, item_type):
+            return
+        self._request_context = (source_panel, reveal)
+
         # 2. Avoid redundant updates if already selected
         if item_id == self._last_selected_id and item_type == self._last_selected_type:
+            if source_panel is not None and reveal:
+                self.main_window.workspace.show_panel(item_type)
             return
 
         if self._pending_navigation is not None:
@@ -218,14 +233,37 @@ class NavigationCoordinator(BaseCoordinator):
         settings.setValue(SETTINGS_LAST_ITEM_TYPE_KEY, item_type)
 
         if item_type == "event":
-            self.main_window.workspace.show_panel("event")
+            if reveal:
+                self.main_window.workspace.show_panel("event")
             self.main_window.data_coordinator.load_event_details(item_id)
             self.main_window.timeline.focus_event(item_id)
         elif item_type == "entity":
-            self.main_window.workspace.show_panel("entity")
+            if reveal:
+                self.main_window.workspace.show_panel("entity")
             self.main_window.data_coordinator.load_entity_details(item_id)
 
         self.main_window.unified_list.select_item(item_type, item_id)
+
+    def _can_inspect_in_place(self, source: str | None, target: str) -> bool:
+        """Require a visible destination outside the source's current zone."""
+        if source is None or target not in {"entity", "event"}:
+            return False
+        workspace = self.main_window.workspace
+        target_zone = workspace.panel_zone(target)
+        return bool(
+            workspace.panel_zone(source) != target_zone
+            and workspace.panel(source).isVisible()
+            and workspace.active_panel(target_zone) == target
+            and workspace.panel(target).isVisible()
+        )
+
+    def cancel_source_navigation(self, source_panel: str) -> None:
+        """Cancel continuation intent without cancelling the underlying save."""
+        self._selection_timer.stop()
+        self._pending_selection = None
+        if self._pending_navigation_context[0] == source_panel:
+            self._pending_navigation = None
+            self._pending_navigation_context = (None, True)
 
     def _guard_navigation(self, item_type: str, item_id: str) -> bool:
         """Protect every draft that a destination selection would abandon."""
@@ -243,6 +281,10 @@ class NavigationCoordinator(BaseCoordinator):
             if current_id != item_id and all(target is not e for _, e in candidates):
                 candidates.append((item_type, target))
         for editor_type, editor in candidates:
+            authoring = getattr(editor, "relation_authoring", None)
+            if authoring is not None and not authoring.prepare_to_leave():
+                self._restore_selection()
+                return False
             if not editor.has_unsaved_changes():
                 continue
             reply = QMessageBox.warning(
@@ -287,6 +329,7 @@ class NavigationCoordinator(BaseCoordinator):
                 current_id,
                 revision,
             )
+            self._pending_navigation_context = self._request_context
             self._restore_selection()
             return False
         return True
@@ -324,14 +367,18 @@ class NavigationCoordinator(BaseCoordinator):
         if pending is None or pending[2:] != (item_type, item_id, revision):
             return
         self._pending_navigation = None
+        source_panel, reveal = self._pending_navigation_context
+        self._pending_navigation_context = (None, True)
         if complete:
-            self.set_global_selection(pending[0], pending[1])
+            self.set_global_selection(
+                pending[0], pending[1], source_panel=source_panel, reveal=reveal
+            )
         else:
             self._restore_selection()
             self.navigation_result.emit(pending[0], pending[1], "cancelled")
 
     @Slot(str)
-    def navigate_to_entity(self, target: str) -> None:
+    def navigate_to_entity(self, target: str, *, source_panel: str | None = None) -> None:
         """Navigates to the entity or event with the given name or ID.
 
         Handles both ID-based links (UUIDs) and legacy name-based links.
@@ -362,7 +409,7 @@ class NavigationCoordinator(BaseCoordinator):
                 ),
                 None,
             ):
-                self.set_global_selection("entity", entity.id)
+                self.set_global_selection("entity", entity.id, source_panel=source_panel)
                 return
 
             if event := next(
@@ -373,7 +420,7 @@ class NavigationCoordinator(BaseCoordinator):
                 ),
                 None,
             ):
-                self.set_global_selection("event", event.id)
+                self.set_global_selection("event", event.id, source_panel=source_panel)
                 return
 
             self.peek_target(f"id:{target}")
@@ -389,7 +436,7 @@ class NavigationCoordinator(BaseCoordinator):
             ]
             if len(matches) == 1:
                 kind, item = matches[0]
-                self.set_global_selection(kind, item.id)
+                self.set_global_selection(kind, item.id, source_panel=source_panel)
             else:
                 self.peek_target(target)
 

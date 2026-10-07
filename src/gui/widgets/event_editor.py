@@ -65,6 +65,7 @@ from src.gui.widgets.relation_item_widget import (
     RelationItemWidget,
     relation_type_caption,
 )
+from src.gui.widgets.relation_snapshots import distinct_relation_directions
 from src.gui.widgets.sheet_builder import SheetBuilderWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
 from src.gui.widgets.standard_buttons import (
@@ -553,84 +554,18 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             self._drop_hint_label.hide()
 
     def dropEvent(self, event: QDropEvent) -> None:
-        """Handle drop event to create relation from dragged item to current event.
-
-        Args:
-            event: QDropEvent with MIME data.
-        """
-        import json
-
-        from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
-
-        if not event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE):
-            event.ignore()
-            return
-
-        if not self._current_event_id:
-            logger.warning("Cannot drop: No event loaded in editor")
-            event.ignore()
-            return
-
-        try:
-            # Parse MIME data
-            mime_data = event.mimeData().data(KRAKEN_ITEM_MIME_TYPE)
-            data = json.loads(bytes(mime_data.data()).decode("utf-8"))
-
-            dropped_id = data.get("id")
-            dropped_type = data.get("type")
-            dropped_name = data.get("name", "Unknown")
-
-            if not dropped_id or not dropped_type:
-                logger.error("Invalid MIME data: missing id or type")
-                event.ignore()
-                return
-
-            # Check if Shift key is pressed - show type picker
-            if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
-                # Post-drop selection flow
-                self._initiated_relation_drop = {
-                    "source_id": dropped_id,
-                    "source_type": dropped_type,
-                    "source_name": dropped_name,
-                }
-                event.acceptProposedAction()
-                self._show_type_picker(event.pos())
-                return
-
-            # Standard Flow (Default "related")
-            self._create_relation(dropped_id, dropped_type, dropped_name, "related")
-            event.acceptProposedAction()
-
-        except Exception as e:
-            logger.error(f"Error handling drop event: {e}", exc_info=True)
-            event.ignore()
-            self._hide_drop_hint()
-
-            if self._type_picker and self._type_picker.isVisible():
-                self._type_picker.hide()
+        """Ignore whole-inspector drops; the labeled Connections target owns them."""
+        event.ignore()
 
     def _create_relation(
         self, source_id: str, source_type: str, source_name: str, rel_type: str
     ) -> None:
-        """Helper to emit relation creation signal."""
-        logger.info(
-            f"EventEditor: Creating relation {source_id} -> {self._current_event_id} "
-            f"(dropped {source_type}: {source_name}, type: {rel_type})"
-        )
-
-        self.add_relation_requested.emit(
-            source_id,
-            self._current_event_id,
-            rel_type,
-            {},
-            False,
-        )
-
-        # Cleanup UI
+        """Stage legacy drop intent through the shared connection draft."""
+        payload = self.relation_authoring.resolve_drop(source_id, source_type)
+        if payload is not None and self.relation_authoring.stage_drop(payload):
+            self.relation_authoring.capture_type = rel_type
         self._is_drag_over = False
         self._hide_drop_hint()
-        if self._type_picker:
-            self._type_picker.hide()
 
     def set_summary_service(self, service: Any) -> None:
         """Sets the summary service."""
@@ -1469,6 +1404,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             incoming_relations: List of incoming relation dicts, or None.
 
         """
+        relations, incoming_relations = distinct_relation_directions(
+            relations, incoming_relations
+        )
         self.relation_authoring.remember_selection()
         self.rel_list.clear()
         self.participant_list.clear()

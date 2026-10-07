@@ -149,9 +149,13 @@ position, and normal inspector layout are restored.
 
 ## Create relations
 
-Drag an event or entity onto another item to create a relation. Hold **Shift**
-while dropping when you want to choose the relation type explicitly. You can
-also edit relations from the selected item's inspector.
+Open the item's **Connections** tab and drop an existing Entity or Event onto
+the labeled connection target. Review the preview and choose the meaning, then
+select **Connect** to save or **Cancel** to discard. The dropped entry is the
+source and the inspected entry is the target. Dropping elsewhere in the
+inspector does not create a relation; dropping an entry onto itself is rejected.
+Holding Shift does not save a connection or bypass this review. Advanced custom
+types remain available through the full relation editor.
 
 Relations are directional. Read the preview in the relation dialog to confirm
 which item is the subject and which is the target.

@@ -17,6 +17,234 @@ from src.gui.widgets.relation_item_widget import RelationItemWidget
 pytestmark = pytest.mark.ci_fast
 
 
+def deliver_connection_drop(editor, item_id="target", kind="entity", shift=False):
+    """Deliver real Qt drag events to the explicit target, preserving MIME lifetime."""
+    import json
+
+    from PySide6.QtCore import QMimeData, QPoint, QPointF
+    from PySide6.QtGui import QDragEnterEvent, QDropEvent
+    from PySide6.QtWidgets import QApplication
+
+    from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
+
+    mime = QMimeData()
+    mime.setData(
+        KRAKEN_ITEM_MIME_TYPE,
+        json.dumps({"id": item_id, "type": kind, "name": "Untrusted name"}).encode(),
+    )
+    modifiers = (
+        Qt.KeyboardModifier.ShiftModifier if shift else Qt.KeyboardModifier.NoModifier
+    )
+    target = editor.relation_authoring.drop_target
+    enter = QDragEnterEvent(
+        QPoint(5, 5),
+        Qt.DropAction.CopyAction,
+        mime,
+        Qt.MouseButton.LeftButton,
+        modifiers,
+    )
+    QApplication.sendEvent(target, enter)
+    drop = QDropEvent(
+        QPointF(5, 5),
+        Qt.DropAction.CopyAction,
+        mime,
+        Qt.MouseButton.LeftButton,
+        modifiers,
+    )
+    QApplication.sendEvent(target, drop)
+    return enter.isAccepted(), drop.isAccepted()
+
+
+@pytest.mark.parametrize("shift", [False, True])
+def test_drop_stages_named_directed_draft_and_connect_emits_once(editor, shift):
+    requests = []
+    editor.relation_authoring_requested.connect(requests.append)
+    assert deliver_connection_drop(editor, shift=shift) == (True, True)
+    panel = editor.relation_authoring
+    assert requests == []
+    assert panel.source_name == "House Bjornaer"
+    assert panel.source_id == "target"
+    panel.apply()
+    panel.apply()
+    assert len(requests) == 1
+    assert requests[0]["source_id"] == "target"
+    assert requests[0]["target_id"] == "source"
+    assert requests[0]["attributes"] == {}
+    assert not panel.apply_button.isEnabled()
+    assert deliver_connection_drop(editor) == (False, False)
+    panel.on_finished(
+        {"request_id": panel.pending_id, "success": False, "message": "Try again"}
+    )
+    assert panel.apply_button.isEnabled()
+    assert panel.source_id == "target"
+    panel.cancel()
+    assert panel._drop_capture is None
+
+
+@pytest.mark.parametrize(
+    "item_id,kind", [("source", "entity"), ("missing", "entity"), ("target", "map")]
+)
+def test_invalid_and_self_drops_never_stage_or_mutate(editor, item_id, kind):
+    requests = []
+    editor.relation_authoring_requested.connect(requests.append)
+    assert deliver_connection_drop(editor, item_id, kind) == (False, False)
+    assert not editor.relation_authoring.capture_open
+    assert requests == []
+
+
+def test_readonly_and_changed_target_reject_drop(editor):
+    panel = editor.relation_authoring
+    panel.setEnabled(False)
+    assert deliver_connection_drop(editor) == (False, False)
+    panel.setEnabled(True)
+    assert deliver_connection_drop(editor) == (True, True)
+    if hasattr(editor, "_current_entity_id"):
+        editor._current_entity_id = "another"
+    else:
+        editor._current_event_id = "another"
+    requests = []
+    editor.relation_authoring_requested.connect(requests.append)
+    panel.apply()
+    assert requests == []
+    assert "target changed" in panel.status.text()
+
+
+def test_drop_does_not_replace_unfinished_draft(editor, monkeypatch):
+    panel = editor.relation_authoring
+    panel.capture()
+    panel.target.setText("House Bjornaer")
+    previous = panel.target
+    monkeypatch.setattr(panel, "prepare_to_leave", lambda: False)
+    assert deliver_connection_drop(editor) == (True, False)
+    assert panel.target is previous
+    assert panel._drop_capture is None
+
+
+def test_self_relation_is_displayed_once_distinct_ids_remain(editor):
+    rows = [
+        {
+            "id": item_id,
+            "source_id": "source",
+            "target_id": "source",
+            "source_name": "Self",
+            "target_name": "Self",
+            "rel_type": "related",
+            "attributes": {},
+        }
+        for item_id in ("first", "second")
+    ]
+    loader = (
+        getattr(editor, "_load_entity_relations", None) or editor._load_event_relations
+    )
+    loader(rows, [dict(row) for row in rows])
+    assert editor.rel_list.count() == 2
+    assert {
+        editor.rel_list.item(i).data(Qt.ItemDataRole.UserRole)["id"] for i in range(2)
+    } == {"first", "second"}
+
+
+def test_drop_connect_is_one_undoable_command_with_preserved_direction(
+    editor, db_service
+):
+    kind = "entity" if hasattr(editor, "_current_entity_id") else "event"
+    owner = (
+        Entity(id="source", name="Inspector", type="Character")
+        if kind == "entity"
+        else Event(id="source", name="Inspector", lore_date=100)
+    )
+    getattr(db_service, f"insert_{kind}")(owner)
+    db_service.insert_entity(Entity(id="target", name="House", type="Faction"))
+    requests = []
+    editor.relation_authoring_requested.connect(requests.append)
+    assert deliver_connection_drop(editor) == (True, True)
+    assert db_service.get_relations("target") == []
+    editor.relation_authoring.apply()
+    request = requests[0]
+    command = AddRelationCommand(
+        request["source_id"],
+        request["target_id"],
+        request["rel_type"],
+        request["attributes"],
+    )
+    assert command.execute(db_service).success
+    rows = db_service.get_relations("target")
+    assert len(rows) == 1 and rows[0]["target_id"] == "source"
+    saved_id = rows[0]["id"]
+    command.undo(db_service)
+    assert db_service.get_relations("target") == []
+    assert command.execute(db_service).success
+    assert db_service.get_relations("target")[0]["id"] == saved_id
+
+
+def test_whole_inspector_drop_never_stages_or_mutates(editor):
+    from PySide6.QtCore import QMimeData, QPointF
+    from PySide6.QtGui import QDropEvent
+
+    from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
+
+    mime = QMimeData()
+    mime.setData(KRAKEN_ITEM_MIME_TYPE, b'{"id":"target","type":"entity"}')
+    drop = QDropEvent(
+        QPointF(5, 5),
+        Qt.DropAction.CopyAction,
+        mime,
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+    )
+    requests = []
+    editor.add_relation_requested.connect(lambda *args: requests.append(args))
+    editor.dropEvent(drop)
+    assert not drop.isAccepted()
+    assert not editor.relation_authoring.capture_open
+    assert requests == []
+
+
+def test_drop_target_rechecks_identity_between_enter_and_drop(editor):
+    from PySide6.QtCore import QMimeData, QPoint, QPointF
+    from PySide6.QtGui import QDragEnterEvent, QDropEvent
+    from PySide6.QtWidgets import QApplication
+
+    from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
+
+    mime = QMimeData()
+    mime.setData(KRAKEN_ITEM_MIME_TYPE, b'{"id":"target","type":"entity"}')
+    target = editor.relation_authoring.drop_target
+    enter = QDragEnterEvent(
+        QPoint(5, 5),
+        Qt.DropAction.CopyAction,
+        mime,
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+    )
+    QApplication.sendEvent(target, enter)
+    assert enter.isAccepted()
+    if hasattr(editor, "_current_entity_id"):
+        editor._current_entity_id = "changed"
+    else:
+        editor._current_event_id = "changed"
+    drop = QDropEvent(
+        QPointF(5, 5),
+        Qt.DropAction.CopyAction,
+        mime,
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+    )
+    QApplication.sendEvent(target, drop)
+    assert not drop.isAccepted()
+    assert not editor.relation_authoring.capture_open
+
+
+def test_escape_discards_staged_drop_without_discarding_prose(editor, qtbot):
+    editor.parentWidget().show()
+    editor.show()
+    editor.inspector.activate_section_id("connections")
+    editor.desc_edit.set_wiki_text("Keep this prose draft")
+    assert deliver_connection_drop(editor) == (True, True)
+    qtbot.keyClick(editor.relation_authoring.apply_button, Qt.Key.Key_Escape)
+    assert not editor.relation_authoring.capture_open
+    assert editor.desc_edit.get_wiki_text() == "Keep this prose draft"
+
+
 @pytest.fixture(params=["entity", "event"])
 def editor(request, qtbot, init_theme_manager):
     parent = QWidget()

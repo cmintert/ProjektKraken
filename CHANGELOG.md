@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-06
-**Commit:** 8d7b1e2d6526f5fcb762206185900bbe02733cae
+**Last Updated:** 2026-10-07
+**Commit:** 03935dd60f807d5dd327a03dd5a9d07cacab82c6
 ---
 
 # Changelog
@@ -12,6 +12,15 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-07)* **Longform gestures and relation drops (KRT-56)**: Kept held
+  presses, outline drags and document text selection from navigating inspectors.
+  Completed selection preserves the document's pane; Open in inspector provides
+  deliberate navigation. Connections drops now stage a directed Connect/Cancel
+  draft, reject accidental self-drops, and preserve advanced relation semantics.
+  Inspector lists display each relation UUID once across incoming/outgoing rows.
+  Added gesture/drop regressions, six-theme rendered evidence and synchronized
+  user guidance and authoring contracts; native desktop validation remains open.
 
 - *(2026-10-06)* **Automatic Longform content (KRT-47)**: Restored automatic
   inclusion of all entities/events while persisting deliberate per-document
