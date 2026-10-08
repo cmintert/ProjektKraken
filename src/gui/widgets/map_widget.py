@@ -18,6 +18,7 @@ Behaviour is composed from focused mixins:
 """
 
 import logging
+from collections.abc import Callable
 from typing import Optional
 
 from PySide6.QtCore import QSize, Qt, QTimer, Signal, Slot
@@ -166,6 +167,8 @@ class MapWidget(
     map_created = Signal(str, str)
     # map_deleted carries map_id after user confirms
     map_deleted = Signal(str)
+    marker_scene_updated = Signal(str)
+    map_selection_requested = Signal(str)
     map_selected = Signal(str)  # map_id
     # marker_created carries (map_id, obj_id, obj_type, name, x, y)
     marker_created = Signal(str, str, str, str, float, float)
@@ -262,6 +265,11 @@ class MapWidget(
         # Create view
         self.view = MapGraphicsView(self)
         self._feature_geometry_edit_pending = False
+        self._feature_geometry_apply_available = True
+        self._accepted_map_id: str | None = None
+        self.edit_transition_handler: (
+            Callable[[str, Callable[[], None]], None] | None
+        ) = None
 
         # Layout
         layout = QVBoxLayout(self)
@@ -523,12 +531,25 @@ class MapWidget(
         """Build controls for applying or cancelling geometry edits."""
         self.feature_geometry_edit_strip = QFrame(self)
         self.feature_geometry_edit_strip.setStyleSheet(StyleHelper.get_frame_style())
-        geometry_layout = QHBoxLayout(self.feature_geometry_edit_strip)
+        geometry_layout = QVBoxLayout(self.feature_geometry_edit_strip)
+        heading = QHBoxLayout()
         geometry_layout.setContentsMargins(8, 4, 8, 4)
         self.feature_geometry_edit_label = QLabel("Edit Geometry")
         self.feature_geometry_edit_source = QLabel("")
-        geometry_layout.addWidget(self.feature_geometry_edit_label)
-        geometry_layout.addWidget(self.feature_geometry_edit_source, 1)
+        self.feature_geometry_edit_label.setWordWrap(True)
+        heading.addWidget(self.feature_geometry_edit_label)
+        self.feature_geometry_edit_source.setWordWrap(True)
+        heading.addWidget(self.feature_geometry_edit_source, 1)
+        geometry_layout.addLayout(heading)
+        self.btn_geometry_discard_reload = QPushButton("Discard and reload", self)
+        self.btn_geometry_discard_reload.setStyleSheet(
+            StyleHelper.get_action_role_style("destructive")
+        )
+        self.btn_geometry_discard_reload.clicked.connect(
+            self.feature_geometry_cancel_requested.emit
+        )
+        self.btn_geometry_discard_reload.hide()
+        geometry_layout.addWidget(self.btn_geometry_discard_reload)
         self.feature_geometry_edit_strip.hide()
         layout.addWidget(self.feature_geometry_edit_strip)
 
@@ -1288,6 +1309,9 @@ class MapWidget(
         if self.active_map_session_mode() == "marker":
             self.cancel_active_session()
             return
+        self.request_edit_transition("place a marker", self._begin_marker_placement)
+
+    def _begin_marker_placement(self) -> None:
         self.cancel_active_session()
         self.btn_draw_path.setChecked(False)
         self.btn_draw_region.setChecked(False)
@@ -1328,7 +1352,8 @@ class MapWidget(
         if mode in {"path", "region"}:
             return self.view._drawing_tool.can_finish
         if mode == "vertices":
-            return not self._feature_geometry_edit_pending
+            return (not self._feature_geometry_edit_pending
+                    and self._feature_geometry_apply_available)
         return mode in {"marker_appearance", "footprint"}
 
     @Slot()
@@ -1400,7 +1425,9 @@ class MapWidget(
         for m in maps:
             self.map_selector.addItem(m.name, m.id)
 
-        self.map_selector.setCurrentIndex(-1)
+        self.map_selector.setCurrentIndex(
+            self.map_selector.findData(self._accepted_map_id)
+        )
         self.map_selector.blockSignals(False)
 
         if not maps:
@@ -1471,29 +1498,48 @@ class MapWidget(
         if self._breadcrumb_parent_id:
             self.select_map(self._breadcrumb_parent_id)
 
+    def request_edit_transition(
+        self, reason: str, continuation: Callable[[], None]
+    ) -> None:
+        """Send replacement intent to the app guard when composed."""
+        if self.edit_transition_handler is not None:
+            self.edit_transition_handler(reason, continuation)
+        else:
+            continuation()
+
     @Slot(int)
     def _on_map_selected(self, index: int) -> None:
-        """Handle map selection change.
+        """Request navigation while retaining the accepted authoring context."""
+        map_id = self.map_selector.itemData(index) if index >= 0 else None
+        if map_id == self._accepted_map_id:
+            return
+        self.map_selector.blockSignals(True)
+        self.map_selector.setCurrentIndex(
+            self.map_selector.findData(self._accepted_map_id)
+        )
+        self.map_selector.blockSignals(False)
+        if map_id is not None:
+            self.map_selection_requested.emit(map_id)
+            self.request_edit_transition(
+                "open another map", lambda: self.accept_map_selection(map_id)
+            )
 
-        Cancels any active map authoring/editing session before switching.
-        """
-        # Exit active editors before switching maps.
+    def accept_map_selection(self, map_id: str) -> None:
+        """Commit a still-available selection after approval."""
+        index = self.map_selector.findData(map_id)
+        if index < 0 or map_id == self._accepted_map_id:
+            return
         self.layer_panel.close_properties_editor()
         self.cancel_active_session()
-
-        if index >= 0:
-            map_id = self.map_selector.itemData(index)
-            self.map_selected.emit(map_id)
+        self._accepted_map_id = map_id
+        self.map_selector.blockSignals(True)
+        self.map_selector.setCurrentIndex(index)
+        self.map_selector.blockSignals(False)
+        self.map_selected.emit(map_id)
 
     def get_selected_map_id(self) -> Optional[str]:
-        """Returns the currently selected map ID.
-
-        Returns:
-            Optional[str]: The map ID, or None if no map is selected.
-
-        """
-        index = self.map_selector.currentIndex()
-        return self.map_selector.itemData(index) if index >= 0 else None
+        """Return the accepted map while navigation awaits a decision."""
+        return self._accepted_map_id
 
     @property
     def maps_data(self) -> list:
@@ -1704,9 +1750,23 @@ class MapWidget(
         self._feature_geometry_edit_pending = pending
         self._update_mode_indicator()
 
+    def set_feature_geometry_edit_available(
+        self, available: bool, explanation: str = ""
+    ) -> None:
+        """Render validation/conflict state supplied by the session owner."""
+        self._feature_geometry_apply_available = available
+        self.btn_geometry_discard_reload.setVisible(not available)
+        self.btn_geometry_discard_reload.setEnabled(
+            not self._feature_geometry_edit_pending
+        )
+        self.btn_confirm_map_edit.setToolTip(explanation)
+        self._update_mode_indicator()
+
     def hide_feature_geometry_edit(self) -> None:
         """Hide working-copy controls after apply or cancellation."""
         self.feature_geometry_edit_strip.hide()
+        self._feature_geometry_apply_available = True
+        self.btn_geometry_discard_reload.hide()
         self._feature_geometry_edit_pending = False
         self._update_mode_indicator()
 

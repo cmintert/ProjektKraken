@@ -108,13 +108,6 @@
       "source": "self.lbl_current_path.setStyleSheet(\"color: #888;\")"
     },
     {
-      "key": "src/gui/dialogs/database_manager_dialog.py|DatabaseManagerDialog.__init__|literal-color|8861bf6a9819787a",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in DatabaseManagerDialog.__init__; migrate this expression when its presentation path is next touched.",
-      "source": "info.setStyleSheet(\"color: gray; margin-bottom: 10px;\")"
-    },
-    {
       "key": "src/gui/dialogs/database_manager_dialog.py|DatabaseManagerDialog._refresh_list|literal-color|468fb5b27ae376c8",
       "count": 1,
       "category": "legacy",

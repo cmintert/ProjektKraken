@@ -10,6 +10,18 @@ remains a separate seeded audit run.
 
 ## Evidence and disposition rules
 
+KRT-26 implementation (2026-10-08): journey and managed geometry
+drafts share Apply / Keep editing / Discard protection before navigation, target
+or mode replacement, affected deletion, world selection, restore and close.
+Same-map refreshes preserve accepted context; geometry owns copied vertices and
+conflict recovery, and Apply continues only after its correlated acknowledgement.
+Contracts 2/3/4/5/6/7/8/9, six-theme/narrow decision renders and assisted modified
+KA-16/geometry replays are recorded in [verification](evidence/krt26/README.md).
+The historical inventory below remains the audited baseline. Automated/assisted
+acceptance is covered; a fresh human benchmark comparison is still separate.
+No contract revision.
+
+
 KRT-47 implementation (2026-10-06): Longform exposes Add content, a selected-item
 Outline actions menu and labeled Find through shared responsive overflow. Document
 removal preserves world content and lifts child sections with exact undo; complete

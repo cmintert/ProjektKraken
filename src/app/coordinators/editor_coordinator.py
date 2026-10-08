@@ -302,6 +302,17 @@ class EditorCoordinator(BaseCoordinator):
             event_id: The ID of the event to delete.
 
         """
+        app = getattr(self.main_window, "app_coordinator", None)
+        guard = getattr(app, "map_edits", None)
+        if guard is not None and guard.protects_object(event_id):
+            guard.request_transition(
+                "delete this event", lambda: self._delete_event_accepted(event_id)
+            )
+            return
+        self._delete_event_accepted(event_id)
+
+    def _delete_event_accepted(self, event_id: str) -> None:
+        """Delete after resolving any map edit for the event."""
         cmd = DeleteEventCommand(event_id)
         self.command_requested.emit(cmd)
 
@@ -316,6 +327,17 @@ class EditorCoordinator(BaseCoordinator):
             entity_id: The ID of the entity to delete.
 
         """
+        app = getattr(self.main_window, "app_coordinator", None)
+        guard = getattr(app, "map_edits", None)
+        if guard is not None and guard.protects_object(entity_id):
+            guard.request_transition(
+                "delete this entity", lambda: self._delete_entity_accepted(entity_id)
+            )
+            return
+        self._delete_entity_accepted(entity_id)
+
+    def _delete_entity_accepted(self, entity_id: str) -> None:
+        """Retain existing raster-reference decisions after map protection."""
         from src.commands.raster_commands import SetRasterMappingCommand
         from src.gui.dialogs.raster_orphan_warning_dialog import (
             RasterOrphanWarningDialog,

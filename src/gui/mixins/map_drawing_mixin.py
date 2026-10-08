@@ -4,6 +4,7 @@ Provides path/region drawing mode management for the MapWidget.
 """
 
 import logging
+from collections.abc import Callable
 from typing import TYPE_CHECKING, cast
 
 from PySide6.QtCore import Slot
@@ -47,6 +48,12 @@ class MapDrawingMixin:
             """Return the active map editing session mode."""
             ...
 
+        def request_edit_transition(
+            self, reason: str, continuation: Callable[[], None]
+        ) -> None:
+            """Request replacement of the current working copy."""
+            ...
+
         def cancel_active_session(self) -> None:
             """Discard the active map editing session."""
             ...
@@ -67,6 +74,9 @@ class MapDrawingMixin:
         if self.active_map_session_mode() == "path":
             self.cancel_active_session()
             return
+        self.request_edit_transition("draw a path", self._begin_path_drawing)
+
+    def _begin_path_drawing(self) -> None:
         self.cancel_active_session()
         self.btn_add_marker.setChecked(False)
         self.btn_draw_region.setChecked(False)
@@ -79,6 +89,9 @@ class MapDrawingMixin:
         if self.active_map_session_mode() == "region":
             self.cancel_active_session()
             return
+        self.request_edit_transition("draw a region", self._begin_region_drawing)
+
+    def _begin_region_drawing(self) -> None:
         self.cancel_active_session()
         self.btn_add_marker.setChecked(False)
         self.btn_draw_path.setChecked(False)

@@ -212,6 +212,12 @@ class MapHandler(QObject):
             map_id: ID of the map to delete.
 
         """
+        self._map_widget.request_edit_transition(
+            "delete this map", lambda: self._delete_map_accepted(map_id)
+        )
+
+    def _delete_map_accepted(self, map_id: str) -> None:
+        """Delete only after the working copy has been resolved."""
         self._map_widget.exit_editing_modes()
         cmd = DeleteMapCommand(map_id)
         self.command_requested.emit(cmd)
@@ -391,6 +397,12 @@ class MapHandler(QObject):
             marker_id: The object_id from the UI (not the actual marker.id).
 
         """
+        self._map_widget.request_edit_transition(
+            "delete this feature", lambda: self._delete_marker_accepted(marker_id)
+        )
+
+    def _delete_marker_accepted(self, marker_id: str) -> None:
+        """Remove the scene item only after draft protection accepts."""
         # Translate object_id to actual marker ID
         actual_marker_id = self._marker_object_to_id.get(marker_id)
         if not actual_marker_id:
@@ -504,6 +516,8 @@ class MapHandler(QObject):
         # Restore the previous selection if it still exists
         if current_map_id and any(m.id == current_map_id for m in maps):
             self._map_widget.select_map(current_map_id)
+            # Refresh dependent snapshots without re-entering navigation guards.
+            self.on_map_selected(current_map_id)
 
         # Auto-select first map if none selected
         if maps:
@@ -564,6 +578,9 @@ class MapHandler(QObject):
             # Full rebuild already resynchronises the model from fresh maps_data.
             self._pending_layer_node_sync = False
             self._full_marker_rebuild(map_id, processed_markers)
+
+        # Rebind independent working copies after scene-item replacement.
+        self._map_widget.marker_scene_updated.emit(map_id)
 
         # Load raster layers for this map
         self.load_raster_layers(map_id)

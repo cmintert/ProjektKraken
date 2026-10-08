@@ -230,6 +230,7 @@ class MapGraphicsView(QGraphicsView):
 
     # -- Feature editing signals --
     feature_style_changed = Signal(str, dict)
+    feature_geometry_preview_changed = Signal(str, list)
     feature_geometry_changed = Signal(str, list)
     feature_geometry_edit_requested = Signal(str)
     feature_geometry_manage_requested = Signal(str)
@@ -1020,6 +1021,8 @@ class MapGraphicsView(QGraphicsView):
             self._vertex_editor.finish_vertex_editing(emit_geometry_change=False)
         if self._editing_marker_appearance_id == marker_id:
             self.cancel_marker_appearance_edit()
+        if self._vertex_editor.editing_feature_id == marker_id:
+            self._vertex_editor.finish_vertex_editing(emit_geometry_change=False)
         self._marker_manager.remove_marker(marker_id)
         self._schedule_label_layout()
 
@@ -1042,7 +1045,20 @@ class MapGraphicsView(QGraphicsView):
             return
         map_widget = self._find_map_widget()
         if map_widget is not None:
+            map_widget.request_edit_transition(
+                "edit marker appearance", lambda: self._accepted_start_marker_appearance_edit(marker_id)
+            )
+        else:
+            self._accepted_start_marker_appearance_edit(marker_id)
+
+    def _accepted_start_marker_appearance_edit(self, marker_id: str) -> None:
+        """Begin editing only after resolving a protected draft."""
+        map_widget = self._find_map_widget()
+        if map_widget is not None:
             map_widget.cancel_active_session()
+        marker = self.markers.get(marker_id)
+        if marker is None:
+            return
         self.exit_all_editing(commit_feature_edits=False)
         self._editing_marker_appearance_id = marker_id
         self.graphics_scene.clearSelection()
@@ -1625,6 +1641,16 @@ class MapGraphicsView(QGraphicsView):
         """
         if not self._footprints_visible:
             return
+        map_widget = self._find_map_widget()
+        if map_widget is not None:
+            map_widget.request_edit_transition(
+                "edit a map footprint", lambda: self._accepted_start_footprint_edit(detail_map_id)
+            )
+        else:
+            self._accepted_start_footprint_edit(detail_map_id)
+
+    def _accepted_start_footprint_edit(self, detail_map_id: str) -> None:
+        """Begin editing only after resolving a protected draft."""
         map_widget = self._find_map_widget()
         if map_widget is not None:
             map_widget.cancel_active_session()

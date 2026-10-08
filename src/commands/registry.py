@@ -54,6 +54,7 @@ def _init_registry() -> None:
     )
     from src.commands.feature_geometry_commands import (
         ReplaceFeatureGeometryStatesCommand,
+        UpdateFeatureBaseGeometryCommand,
     )
     from src.commands.icon_library_commands import IconLibraryCommand
     from src.commands.image_commands import (
@@ -166,6 +167,7 @@ def _init_registry() -> None:
             "UpdateMarkerColorCommand": UpdateMarkerColorCommand,
             "UpdateMarkerAttributeCommand": UpdateMarkerAttributeCommand,
             "UpdateTrajectoryCommand": UpdateTrajectoryCommand,
+            "UpdateFeatureBaseGeometryCommand": UpdateFeatureBaseGeometryCommand,
             "ReplaceFeatureGeometryStatesCommand": (
                 ReplaceFeatureGeometryStatesCommand
             ),

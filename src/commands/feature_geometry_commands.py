@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import dataclasses
 from collections.abc import Sequence
 from typing import Any
 
@@ -28,7 +29,9 @@ class ReplaceFeatureGeometryStatesCommand(BaseCommand):
         self.marker_id = marker_id
         self.before_snapshot = copy.deepcopy(before_snapshot)
         self.after_states = [
-            state.to_dict() if isinstance(state, FeatureGeometryState) else copy.deepcopy(state)
+            state.to_dict()
+            if isinstance(state, FeatureGeometryState)
+            else copy.deepcopy(state)
             for state in after_states
         ]
         self.after_snapshot: list[dict] | None = None
@@ -40,10 +43,12 @@ class ReplaceFeatureGeometryStatesCommand(BaseCommand):
             return CommandResult(False, "Geometry-state update is already applied.")
         replacement = self.after_snapshot or self.after_states
         try:
-            self.after_snapshot = db_service.feature_geometry_repo.replace_marker_states(
-                self.marker_id,
-                replacement,
-                expected_snapshot=copy.deepcopy(self.before_snapshot),
+            self.after_snapshot = (
+                db_service.feature_geometry_repo.replace_marker_states(
+                    self.marker_id,
+                    replacement,
+                    expected_snapshot=copy.deepcopy(self.before_snapshot),
+                )
             )
             self._is_executed = True
             return CommandResult(
@@ -109,7 +114,9 @@ class ReplaceFeatureGeometryStatesCommand(BaseCommand):
             str(data.get("description", "Update Dated Geometry")),
         )
         raw_after = data.get("after_snapshot")
-        command.after_snapshot = copy.deepcopy(raw_after) if raw_after is not None else None
+        command.after_snapshot = (
+            copy.deepcopy(raw_after) if raw_after is not None else None
+        )
         return command
 
     def _effect(self) -> dict[str, str]:
@@ -118,3 +125,79 @@ class ReplaceFeatureGeometryStatesCommand(BaseCommand):
             "map_id": self.map_id,
             "marker_id": self.marker_id,
         }
+
+
+class UpdateFeatureBaseGeometryCommand(BaseCommand):
+    """Compare and replace Base geometry without overwriting concurrent edits."""
+
+    def __init__(
+        self, marker_id: str, before: dict[str, Any], after: dict[str, Any]
+    ) -> None:
+        """Capture only the geometry and anchor fields owned by this edit."""
+        super().__init__()
+        self.marker_id = marker_id
+        self.update_data = copy.deepcopy(after)
+        self.before = copy.deepcopy(before)
+
+    def _replace(
+        self,
+        db_service: DatabaseService,
+        expected: dict[str, Any],
+        replacement: dict[str, Any],
+    ) -> str:
+        with db_service.transaction():
+            marker = db_service.get_marker(self.marker_id)
+            if marker is None:
+                raise ValueError("The edited feature no longer exists.")
+            current = {"geometry": marker.geometry, "x": marker.x, "y": marker.y}
+            if current != expected:
+                raise ValueError("Base geometry changed while you were editing.")
+            db_service.insert_marker(dataclasses.replace(marker, **replacement))
+            return marker.map_id
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Apply only when the original Base geometry still matches."""
+        try:
+            map_id = self._replace(db_service, self.before, self.update_data)
+            self._is_executed = True
+            return CommandResult(
+                True,
+                "Base geometry updated.",
+                command_name=self.__class__.__name__,
+                data={"effects": [self._effect(map_id)]},
+            )
+        except Exception as exc:
+            return CommandResult(False, str(exc), command_name=self.__class__.__name__)
+
+    def undo(self, db_service: DatabaseService) -> CommandResult:
+        """Restore geometry while preserving unrelated current marker fields."""
+        try:
+            map_id = self._replace(db_service, self.update_data, self.before)
+            self._is_executed = False
+            return CommandResult(
+                True,
+                "Base geometry restored.",
+                command_name=f"Undo_{self.__class__.__name__}",
+                data={"effects": [self._effect(map_id)]},
+            )
+        except Exception as exc:
+            return CommandResult(
+                False, str(exc), command_name=f"Undo_{self.__class__.__name__}"
+            )
+
+    @staticmethod
+    def _effect(map_id: str) -> dict[str, str]:
+        return {"kind": "feature_base_geometry_changed", "map_id": map_id}
+
+    def to_dict(self) -> dict:
+        """Serialize the optimistic before/after geometry snapshots."""
+        return {
+            "marker_id": self.marker_id,
+            "before": self.before,
+            "after": self.update_data,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "UpdateFeatureBaseGeometryCommand":
+        """Restore a serialized geometry command."""
+        return cls(data["marker_id"], data["before"], data["after"])

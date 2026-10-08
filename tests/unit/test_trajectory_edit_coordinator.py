@@ -14,6 +14,7 @@ from src.core.trajectory import TrajectoryDistanceContext
 
 class _Worker(QObject):
     command_finished = Signal(CommandResult)
+    error_occurred = Signal(str)
 
 
 class _MapWidget:
@@ -211,14 +212,14 @@ def test_deleting_down_to_one_point_restarts_guided_second_location_flow():
     assert coordinator._session.is_awaiting_second_location is True
 
 
-def test_switching_maps_discards_active_edit():
+def test_accepted_map_notification_does_not_discard_draft():
     coordinator, window = _coordinator()
     coordinator.start_edit("marker-1")
 
     coordinator.on_map_selected("map-2")
 
-    assert not coordinator.is_active
-    window.map_widget.clear_trajectory_edit.assert_called_once()
+    assert coordinator.is_active
+    window.map_widget.clear_trajectory_edit.assert_not_called()
 
 
 def test_apply_emits_one_atomic_command_and_waits_for_reload():
@@ -494,3 +495,59 @@ def test_whole_speed_equalization_uses_map_distance_context():
     assert coordinator._session is not None
     assert coordinator._session.is_equalization_previewing
     window.map_widget.get_trajectory_distance_context.assert_called_once()
+
+
+def test_transition_apply_waits_for_expected_authoritative_reload():
+    from src.app.coordinators.map_edit_transition_coordinator import (
+        MapEditTransitionCoordinator,
+    )
+
+    coordinator, _window = _coordinator()
+    coordinator.start_edit("marker-1")
+    edit_id = coordinator._session.working_keyframes[0].edit_id
+    coordinator.move_keyframe(edit_id, 0.3, 0.4)
+    coordinator._request_reload = MagicMock()
+    commands, actions = [], []
+    coordinator.command_requested.connect(commands.append)
+    guard = MapEditTransitionCoordinator(
+        [coordinator], lambda: "world", lambda *_: "apply", lambda _: None
+    )
+    guard.request_transition("open another map", lambda: actions.append(True))
+    command = commands[0]
+    assert actions == []
+    after = {**_record(x=0.3)["row_snapshot"], "trajectory": "updated"}
+    coordinator.on_command_finished(CommandResult(
+        True, "saved", command_name="UpdateTrajectoryCommand",
+        data={"command_id": command.command_id,
+              "command_state": {"data": {"after_snapshot": after}}},
+    ))
+    assert actions == []
+    incoming = _record(x=0.3)
+    incoming["row_snapshot"] = after
+    coordinator.on_trajectories_ready("map-1", [incoming])
+    assert actions == [True] and not coordinator.is_active
+
+
+def test_failed_acknowledgement_reload_does_not_release_navigation():
+    from src.app.coordinators.map_edit_transition_coordinator import (
+        MapEditTransitionCoordinator,
+    )
+
+    coordinator, _window = _coordinator()
+    coordinator.start_edit("marker-1")
+    coordinator.move_keyframe(coordinator._session.working_keyframes[0].edit_id, 0.3, 0.4)
+    coordinator._request_reload = MagicMock()
+    commands, actions = [], []
+    coordinator.command_requested.connect(commands.append)
+    guard = MapEditTransitionCoordinator(
+        [coordinator], lambda: "world", lambda *_: "apply", lambda _: None
+    )
+    guard.request_transition("leave", lambda: actions.append(True))
+    coordinator.on_command_finished(CommandResult(
+        True, "saved", command_name="UpdateTrajectoryCommand",
+        data={"command_id": commands[0].command_id,
+              "command_state": {"data": {"after_snapshot": {"id": "after"}}}},
+    ))
+    coordinator.on_reload_failed("Failed to load trajectories for map map-1.")
+    assert actions == [] and not guard.is_waiting
+    assert coordinator.is_active and coordinator._session.is_conflicted

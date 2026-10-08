@@ -2125,6 +2125,16 @@ class MapLayerPanel(QWidget):
             self.raster_edit_stopped.emit()
             self.reset_edit_toggle()
 
+    def set_raster_edit_active(self, active: bool) -> None:
+        """Reflect an asynchronously approved painting request without new intent."""
+        if not active:
+            self.reset_edit_toggle()
+            return
+        self._btn_edit_toggle.blockSignals(True)
+        self._btn_edit_toggle.setChecked(True)
+        self._btn_edit_toggle.setText("Stop painting")
+        self._btn_edit_toggle.blockSignals(False)
+
     def reset_edit_toggle(self) -> None:
         """Reset the edit toggle button without emitting signals.
 

@@ -57,6 +57,7 @@ def restore_window(qapp, tmp_path, monkeypatch):
     window.app_coordinator = SimpleNamespace(
         trajectory_edit=SimpleNamespace(is_active=False),
         feature_geometry=SimpleNamespace(is_active=False),
+        map_edits=SimpleNamespace(is_waiting=False, request_transition=Mock()),
     )
     window.command_coordinator = SimpleNamespace(mutations_suspended=False)
     window.longform_manager = Mock()
@@ -151,3 +152,15 @@ def test_invalid_backup_keeps_session_active(restore_window, invalid, tmp_path):
     assert order == []
     assert window.worker_thread.isRunning()
     assert window.isEnabled()
+
+
+def test_restore_guard_retains_continuation_without_stopping_worker(restore_window):
+    window, coordinator, backup, order = restore_window
+    window.app_coordinator.trajectory_edit.is_active = True
+    coordinator._execute_restore(str(backup))
+    guard = window.app_coordinator.map_edits
+    guard.request_transition.assert_called_once()
+    reason, continuation = guard.request_transition.call_args.args
+    assert reason == "restore the backup" and order == []
+    assert callable(continuation)
+    assert window.worker_thread.isRunning()

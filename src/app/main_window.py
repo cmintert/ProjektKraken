@@ -589,6 +589,7 @@ class MainWindow(QMainWindow):
         self.setStatusBar(self.status_bar)
         self.app_coordinator.trajectory_edit.bind_ui()
         self.app_coordinator.feature_geometry.bind_ui()
+        self.app_coordinator.bind_map_edits()
 
         # Install one real central workspace around the existing feature widgets.
         self.workspace = WorkspaceShell(self)
@@ -1084,6 +1085,16 @@ class MainWindow(QMainWindow):
                 "Projekt Kraken again.",
             )
             event.ignore()
+            return
+
+        map_edits = self.app_coordinator.map_edits
+        if (self.app_coordinator.trajectory_edit.is_active
+                or self.app_coordinator.feature_geometry.is_active
+                or map_edits.is_waiting):
+            event.ignore()
+            map_edits.request_transition(
+                "close Projekt Kraken", lambda: QTimer.singleShot(0, self.close)
+            )
             return
 
         # Check unsaved changes

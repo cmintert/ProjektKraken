@@ -193,15 +193,12 @@ class BackupCoordinator(BaseCoordinator):
         for editor in (window.event_editor, window.entity_editor):
             if not window.check_unsaved_changes(editor):
                 return
-        # A map working copy must be deliberately resolved in its own editor.
-        if (
-            window.app_coordinator.trajectory_edit.is_active
-            or window.app_coordinator.feature_geometry.is_active
-        ):
-            QMessageBox.information(
-                window,
-                "Unfinished Map Edit",
-                "Apply or cancel the map edit before restoring a backup.",
+        map_edits = window.app_coordinator.map_edits
+        if (window.app_coordinator.trajectory_edit.is_active
+                or window.app_coordinator.feature_geometry.is_active
+                or map_edits.is_waiting):
+            map_edits.request_transition(
+                "restore the backup", lambda: self._execute_restore(backup_file)
             )
             return
         self.restore_in_progress = True

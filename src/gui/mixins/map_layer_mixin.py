@@ -379,12 +379,22 @@ class MapLayerMixin:
             if answer != QMessageBox.StandardButton.Yes:
                 return
 
+        request = getattr(self, "request_edit_transition", None)
+        if callable(request):
+            request("delete this layer", lambda: self._delete_layer_accepted(node_id))
+        else:
+            self._delete_layer_accepted(node_id)
+
+    def _delete_layer_accepted(self, node_id: str) -> None:
+        """Emit deletion only after the draft guard accepts."""
+        if self._layer_model is None:
+            return
+        node = self._layer_model.find_node_by_id(node_id)
+        if node is None:
+            return
         exit_editing_modes = getattr(self, "exit_editing_modes", None)
         if callable(exit_editing_modes):
             exit_editing_modes()
-
-        # The canonical tree and all descendant data are removed together by
-        # one worker command.  The UI is refreshed only after command success.
         self.layer_delete_feature_requested.emit(node_id, node.layer_type)
 
     def _collect_subtree_nodes(self, node: MapLayerNode) -> List[MapLayerNode]:
@@ -518,6 +528,17 @@ class MapLayerMixin:
     @Slot(str)
     def _on_raster_edit_requested(self, node_id: str) -> None:
         """Start raster editing mode in the graphics view."""
+        request = getattr(self, "request_edit_transition", None)
+        if callable(request):
+            request("paint a raster layer", lambda: self._begin_raster_edit(node_id))
+            view = getattr(self, "view", None)
+            if view is not None and not view._raster_edit_tool.is_active:
+                self.layer_panel.reset_edit_toggle()
+        else:
+            self._begin_raster_edit(node_id)
+
+    def _begin_raster_edit(self, node_id: str) -> None:
+        """Start painting only after resolving a protected working copy."""
         from src.gui.widgets.map.raster_edit_tool import RasterEditMode
 
         view = getattr(self, "view", None)
@@ -565,6 +586,7 @@ class MapLayerMixin:
         )
 
         view.start_raster_editing(node_id)
+        panel.set_raster_edit_active(view._raster_edit_tool.is_active)
         # Transfer keyboard focus to the map view so Space-to-pan works
         # immediately without requiring a mouse click on the canvas first.
         view.setFocus(Qt.FocusReason.OtherFocusReason)

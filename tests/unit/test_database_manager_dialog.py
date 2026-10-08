@@ -149,3 +149,28 @@ def test_link_and_revoke_external_database(qtbot, tmp_path):
             dialog._revoke_external_database()
 
     assert not dialog.storage_settings.is_external_path_approved(linked)
+
+
+def test_select_world_does_not_change_settings_until_transition_accepts(
+    qtbot, tmp_path, monkeypatch
+):
+    from src.services.world_storage_settings import WorldStorageSettings
+
+    world = World.create(tmp_path, "Protected destination")
+    with patch("src.gui.dialogs.database_manager_dialog.ensure_worlds_directory",
+               return_value=tmp_path):
+        dialog = DatabaseManagerDialog()
+        qtbot.addWidget(dialog)
+    _select_world(dialog, world.path)
+    requests = []
+    dialog.edit_transition_handler = lambda reason, action: requests.append(action)
+    monkeypatch.setattr(WorldStorageSettings, "active_world_path", lambda _: None)
+    activated = []
+    monkeypatch.setattr(WorldStorageSettings, "set_active_world_path",
+                        lambda _self, path: activated.append(path))
+    monkeypatch.setattr("src.gui.dialogs.database_manager_dialog.QMessageBox.information",
+                        lambda *_: QMessageBox.StandardButton.Ok)
+    dialog._select_world()
+    assert len(requests) == 1 and activated == []
+    requests[0]()
+    assert activated == [world.path]

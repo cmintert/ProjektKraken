@@ -6,6 +6,7 @@ external database links.
 
 import logging
 import os
+from collections.abc import Callable
 from pathlib import Path
 from typing import Optional
 
@@ -29,6 +30,7 @@ from src.core.paths import ensure_worlds_directory
 from src.core.world import EXTERNAL_DATABASE_STORAGE, World, WorldManager
 from src.gui.constants import SETTINGS_ACTIVE_DB_KEY
 from src.gui.dialogs.external_database_warning import external_database_warning
+from src.gui.utils.style_helper import StyleHelper
 from src.services.world_storage_settings import WorldStorageSettings
 
 logger = logging.getLogger(__name__)
@@ -56,6 +58,11 @@ class DatabaseManagerDialog(QDialog):
         self.resize(720, 440)
         main_layout = QVBoxLayout(self)
 
+        self._transition_generation = 0
+        self.finished.connect(self._invalidate_transition)
+        self.edit_transition_handler: (
+            Callable[[str, Callable[[], None]], None] | None
+        ) = None
         self.storage_settings = WorldStorageSettings()
 
         # Initialize worlds directory
@@ -88,7 +95,8 @@ class DatabaseManagerDialog(QDialog):
         )
         info = QLabel(info_text)
         info.setWordWrap(True)
-        info.setStyleSheet("color: gray; margin-bottom: 10px;")
+        info.setObjectName("InspectorSupportCaption")
+        info.setStyleSheet(StyleHelper.get_inspector_support_style())
         main_layout.addWidget(info)
 
         # List
@@ -508,6 +516,29 @@ class DatabaseManagerDialog(QDialog):
         if not self._approve_external_world_if_needed(world):
             return
 
+        if self.edit_transition_handler is not None:
+            generation = self._transition_generation
+            self.edit_transition_handler(
+                "select another world",
+                lambda: self._activate_world_if_current(world, generation),
+            )
+        else:
+            self._activate_world(world)
+
+    def _invalidate_transition(self, _result: int) -> None:
+        self._transition_generation += 1
+
+    def _activate_world_if_current(self, world: World, generation: int) -> None:
+        selected = self._selected_world()
+        if (generation == self._transition_generation and selected is not None
+                and selected.path == world.path):
+            self._activate_world(world)
+
+    def _activate_world(self, world: World) -> None:
+        """Record world selection only after draft protection accepts."""
+        if not world.db_path.is_file():
+            return
+        settings = QSettings()
         self.storage_settings.register_world_path(world.path)
         self.storage_settings.set_active_world_path(world.path)
         settings.setValue(SETTINGS_ACTIVE_DB_KEY, world.name)

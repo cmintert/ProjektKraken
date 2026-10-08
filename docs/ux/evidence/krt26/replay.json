@@ -1,0 +1,8 @@
+{
+  "evidence": "Assisted production-widget replay; no human timing claim",
+  "journey_modified_keep_refresh_discard": "passed",
+  "geometry_vertex_modified_keep_refresh_discard": "passed",
+  "geometry_failed_apply_restores_handles_and_cancels_navigation": "passed",
+  "commands_before_apply": 0,
+  "viewing_date": 5.0
+}

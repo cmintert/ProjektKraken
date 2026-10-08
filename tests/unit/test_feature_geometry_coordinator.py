@@ -1,6 +1,7 @@
 """Cached playback tests for the dated geometry coordinator."""
 
-from PySide6.QtCore import QObject, Signal
+import pytest
+from PySide6.QtCore import QCoreApplication, QObject, Signal
 
 from src.app.coordinators.feature_geometry_coordinator import (
     FeatureGeometryCoordinator,
@@ -8,8 +9,8 @@ from src.app.coordinators.feature_geometry_coordinator import (
 from src.commands.base_command import CommandResult
 from src.commands.feature_geometry_commands import (
     ReplaceFeatureGeometryStatesCommand,
+    UpdateFeatureBaseGeometryCommand,
 )
-from src.commands.marker_commands import UpdateMarkerCommand
 
 
 class _Item:
@@ -31,8 +32,12 @@ class _VertexEditor:
         self.started = False
 
 
-class _View:
+class _View(QObject):
+    feature_geometry_preview_changed = Signal(str, list)
+
     def __init__(self) -> None:
+        super().__init__()
+        self.pixmap_item = None
         self.feature_items = {"object": _Item()}
         self._vertex_editor = _VertexEditor()
 
@@ -59,6 +64,7 @@ class _Widget(QObject):
     feature_geometry_apply_requested = Signal()
     feature_geometry_cancel_requested = Signal()
     map_selected = Signal(str)
+    marker_scene_updated = Signal(str)
 
     def __init__(self) -> None:
         super().__init__()
@@ -79,6 +85,9 @@ class _Widget(QObject):
 
     def set_feature_geometry_edit_pending(self, pending: bool) -> None:
         self.edit_pending = pending
+
+    def set_feature_geometry_edit_available(self, available, explanation="") -> None:
+        self.apply_available = available
 
     def hide_feature_geometry_edit(self) -> None:
         self.edit_visible = False
@@ -171,6 +180,9 @@ def test_edit_between_states_creates_one_atomic_command() -> None:
         {"x": 0.3, "y": 0.3},
         {"x": 0.5, "y": 0.5},
     ]
+    coordinator.on_preview_changed(
+        "object", window.map_widget.view.feature_items["object"]._geometry
+    )
     coordinator.apply_edit()
 
     assert len(commands) == 1
@@ -218,16 +230,20 @@ def test_base_apply_updates_cache_before_future_playhead_changes() -> None:
         {"x": 0.8, "y": 0.8},
     ]
 
+    coordinator.on_preview_changed(
+        "object", window.map_widget.view.feature_items["object"]._geometry
+    )
     coordinator.apply_edit()
-    assert isinstance(commands[0], UpdateMarkerCommand)
+    assert isinstance(commands[0], UpdateFeatureBaseGeometryCommand)
     window.worker.command_finished.emit(
         CommandResult(
             True,
             "saved",
             data={"command_id": commands[0].command_id},
-            command_name="UpdateMarkerCommand",
+            command_name="UpdateFeatureBaseGeometryCommand",
         )
     )
+    QCoreApplication.processEvents()
     window.timeline.playhead_time_changed.emit(50.0)
 
     assert window.map_widget.updates[-1][1][0]["x"] == 0.4
@@ -254,6 +270,87 @@ def test_failed_geometry_apply_keeps_session_editable() -> None:
         )
     )
 
+    QCoreApplication.processEvents()
     assert window.map_widget.edit_visible
+    assert window.map_widget.view._vertex_editor.started
     assert not window.map_widget.edit_pending
     assert coordinator._session is not None
+
+
+def test_geometry_draft_survives_recreated_scene_item_and_detects_conflict():
+    window = _Window()
+    coordinator = FeatureGeometryCoordinator(window)
+    coordinator.bind_ui()
+    snapshot = _marker_snapshot()
+    coordinator.on_markers_ready("map", [snapshot])
+    coordinator._start_session("map", "marker", snapshot, "base", {
+        "geometry": snapshot["geometry"], "anchor_x": snapshot["x"],
+        "anchor_y": snapshot["y"],
+    }, [])
+    working = [{"x": 0.4, "y": 0.4}, {"x": 0.8, "y": 0.8}]
+    window.map_widget.view.feature_geometry_preview_changed.emit("object", working)
+    working[0]["x"] = 0.99
+    window.map_widget.view.feature_items["object"] = _Item()
+    window.map_widget.marker_scene_updated.emit("map")
+    assert window.map_widget.view.feature_items["object"]._geometry[0]["x"] == 0.4
+    assert coordinator.edit_status()["dirty"]
+    changed = {**snapshot, "x": 0.2}
+    coordinator.on_markers_ready("map", [changed])
+    assert coordinator.edit_status()["conflicted"]
+    assert not coordinator.edit_status()["can_apply"]
+    assert coordinator._session["working_geometry"][0]["x"] == 0.4
+
+
+def test_geometry_removal_retains_independent_working_copy():
+    window = _Window()
+    coordinator = FeatureGeometryCoordinator(window)
+    coordinator.on_markers_ready("map", [_marker_snapshot()])
+    coordinator.start_edit_at_playhead("object")
+    coordinator.on_preview_changed("object", [{"x": 0.4, "y": 0.4},
+                                               {"x": 0.8, "y": 0.8}])
+    window.map_widget.view.feature_items.clear()
+    coordinator.on_markers_ready("map", [])
+    assert coordinator.edit_status()["conflicted"]
+    assert coordinator._session["working_geometry"][0]["x"] == 0.4
+
+
+@pytest.mark.parametrize("target_type", ["base", "state", "new_state"])
+@pytest.mark.parametrize("decision", ["keep", "discard", "apply"])
+def test_geometry_transition_resolves_each_target(target_type, decision):
+    from src.app.coordinators.map_edit_transition_coordinator import (
+        MapEditTransitionCoordinator,
+    )
+    from src.core.feature_geometry_state import FeatureGeometryState
+
+    window = _Window()
+    coordinator = FeatureGeometryCoordinator(window)
+    snapshot = _marker_snapshot()
+    coordinator.on_markers_ready("map", [snapshot])
+    state = FeatureGeometryState(
+        marker_id="marker", effective_date=0.0, geometry=snapshot["geometry"],
+        anchor_x=snapshot["x"], anchor_y=snapshot["y"],
+    ).to_dict()
+    before = [state] if target_type == "state" else []
+    coordinator.on_states_ready("map", before)
+    target = ({"geometry": snapshot["geometry"], "anchor_x": snapshot["x"],
+               "anchor_y": snapshot["y"]} if target_type == "base" else state)
+    coordinator._start_session("map", "marker", snapshot, target_type, target, before)
+    coordinator.on_preview_changed("object", [{"x": 0.4, "y": 0.4},
+                                               {"x": 0.8, "y": 0.8}])
+    commands, actions = [], []
+    window.command_requested.connect(commands.append)
+    guard = MapEditTransitionCoordinator(
+        [coordinator], lambda: "world", lambda *_: decision, lambda _: None
+    )
+    guard.request_transition("open another map", lambda: actions.append(True))
+    if decision == "keep":
+        assert actions == [] and commands == [] and coordinator.is_active
+    elif decision == "discard":
+        assert actions == [True] and commands == [] and not coordinator.is_active
+    else:
+        assert actions == [] and len(commands) == 1
+        coordinator.on_command_finished(CommandResult(
+            True, "saved", data={"command_id": commands[0].command_id},
+            command_name=commands[0].__class__.__name__,
+        ))
+        assert actions == [True] and not coordinator.is_active

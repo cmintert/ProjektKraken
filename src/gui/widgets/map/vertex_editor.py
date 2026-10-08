@@ -310,6 +310,14 @@ class VertexEditor:
             item.update()
 
             self._update_midpoint_positions()
+            self._emit_preview(item)
+
+    def _emit_preview(self, item: "PathItem | RegionItem") -> None:
+        """Publish copied vertices to the managed working-copy owner."""
+        if self._managed_session:
+            self._view.feature_geometry_preview_changed.emit(
+                item.marker_id, deepcopy(item._geometry)
+            )
 
     def _snap_to_nearby_vertex(self, moving_index: int, scene_pos: QPointF) -> QPointF:
         """Snaps a position to the nearest existing vertex within snap radius.
@@ -358,6 +366,7 @@ class VertexEditor:
 
         self._rebuild_vertex_handles(item)
         self._rebuild_midpoint_handles()
+        self._emit_preview(item)
         logger.info(f"Deleted vertex {index}, {len(item._geometry)} remaining")
 
     def _on_midpoint_insert(self, segment_index: int, scene_pos: QPointF) -> None:
@@ -394,6 +403,7 @@ class VertexEditor:
 
         self._rebuild_vertex_handles(item)
         self._rebuild_midpoint_handles()
+        self._emit_preview(item)
         logger.info(
             f"Inserted vertex after index {segment_index}, {len(item._geometry)} total"
         )

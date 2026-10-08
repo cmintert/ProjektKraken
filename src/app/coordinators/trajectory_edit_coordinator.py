@@ -2,6 +2,7 @@
 
 import copy
 import logging
+import uuid
 from typing import TYPE_CHECKING, Any, cast
 
 from PySide6.QtCore import Q_ARG, QObject, Qt, Signal, Slot
@@ -31,12 +32,15 @@ class TrajectoryEditCoordinator(QObject):
     """Own the single active trajectory working copy and persistence boundary."""
 
     command_requested = Signal(object)
+    transition_finished = Signal(dict)
 
     def __init__(self, main_window: "MainWindow") -> None:
         """Initialize direct trajectory-edit coordination."""
         super().__init__(main_window)
         self._window = main_window
         self._session: TrajectoryEditSession | None = None
+        self._session_id = ""
+        self._apply_acknowledged = False
         self._authoritative_by_map: dict[str, list[dict[str, Any]]] = {}
         self._latest_deferred: list[dict[str, Any]] | None = None
         self._before_snapshot: dict[str, Any] | None = None
@@ -62,12 +66,53 @@ class TrajectoryEditCoordinator(QObject):
         """Whether speed redistribution awaits preview confirmation."""
         return self._session is not None and self._session.is_equalization_previewing
 
+    def edit_status(self) -> dict[str, Any] | None:
+        """Describe meaningful draft state without exposing the live session."""
+        session = self._session
+        if session is None:
+            return None
+        pending = self._pending_command_id is not None
+        dirty = session.is_dirty or session.is_equalization_previewing
+        if session.is_awaiting_second_location:
+            dirty = dirty or not session.is_second_location_following_cursor
+        return {
+            "session_id": self._session_id,
+            "world_id": str(
+                getattr(getattr(self._window, "current_world", None), "id", "")
+            ),
+            "map_id": session.map_id,
+            "target_id": session.marker_id,
+            "object_id": session.marker_id,
+            "label": self._edit_label(),
+            "dirty": dirty,
+            "new": self._before_snapshot is None,
+            "pending": pending,
+            "conflicted": session.is_conflicted,
+            "command_id": self._pending_command_id,
+            "can_apply": session.can_apply and not pending,
+            "explanation": "Finish location, date or speed proposals and resolve "
+            "validation or reload conflicts before applying.",
+        }
+
+    def _edit_label(self) -> str:
+        session = self._session
+        view = getattr(self._window.map_widget, "view", None)
+        marker = view.markers.get(session.marker_id) if view and session else None
+        return f"the journey for {marker.label}" if marker else "this journey"
+
+    def apply_for_transition(self) -> None:
+        """Apply without implicitly accepting a nested preview."""
+        self.apply()
+
+    def discard_for_transition(self) -> None:
+        """Explicitly abandon a draft through the existing cancel path."""
+        self.cancel()
+
     def bind_ui(self) -> None:
         """Connect map intents after the MainWindow widget skeleton exists."""
         if self._bound:
             return
         widget = self._window.map_widget
-        widget.map_selected.connect(self.on_map_selected)
         widget.trajectory_edit_requested.connect(self.start_edit)
         widget.trajectory_keyframe_selected.connect(self.select_keyframe)
         widget.trajectory_keyframe_moved.connect(self.move_keyframe)
@@ -123,13 +168,37 @@ class TrajectoryEditCoordinator(QObject):
             Qt.ConnectionType.QueuedConnection,
         )
         self._window.timeline.playhead_time_changed.connect(self.on_playhead_changed)
+        self._window.worker.error_occurred.connect(
+            self.on_reload_failed, Qt.ConnectionType.QueuedConnection
+        )
         self._bound = True
 
     @Slot(str)
+    def on_reload_failed(self, message: str) -> None:
+        """Retain the draft when Apply acknowledgement cannot be hydrated."""
+        session = self._session
+        if (
+            session is None
+            or not self._apply_acknowledged
+            or self._pending_command_id is None
+            or message != f"Failed to load trajectories for map {session.map_id}."
+        ):
+            return
+        command_id = self._pending_command_id
+        self._pending_command_id = None
+        session.mark_conflicted()
+        self.transition_finished.emit(
+            {
+                "session_id": self._session_id,
+                "command_id": command_id,
+                "success": False,
+            }
+        )
+        self._render()
+
+    @Slot(str)
     def on_map_selected(self, map_id: str) -> None:
-        """Discard an active edit when the user changes map context."""
-        if self._session is not None and self._session.map_id != map_id:
-            self.cancel()
+        """Accepted navigation must already have resolved the active draft."""
 
     @Slot(str, list)
     def on_trajectories_ready(
@@ -150,12 +219,23 @@ class TrajectoryEditCoordinator(QObject):
         incoming_row = matching[0].get("row_snapshot") if len(matching) == 1 else None
 
         if self._pending_command_id is not None:
+            if not self._apply_acknowledged:
+                self._render(pending=True)
+                return
             if len(matching) <= 1 and incoming_row == self._expected_after_snapshot:
                 self._finish_session(incoming)
             else:
+                pending_id = self._pending_command_id
                 self._pending_command_id = None
                 self._expected_after_snapshot = None
                 session.mark_conflicted()
+                self.transition_finished.emit(
+                    {
+                        "session_id": self._session_id,
+                        "command_id": pending_id,
+                        "success": False,
+                    }
+                )
                 self._render()
             return
 
@@ -176,11 +256,21 @@ class TrajectoryEditCoordinator(QObject):
     @Slot(str)
     def start_edit(self, marker_id: str) -> None:
         """Start editing one unambiguous trajectory on the selected map."""
-        if self._session is not None:
-            if self._session.marker_id == marker_id:
-                return
-            self._show_status("Finish the current trajectory edit first.")
+        if self._session is not None and self._session.marker_id == marker_id:
             return
+        app = getattr(self._window, "app_coordinator", None)
+        guard = getattr(app, "map_edits", None)
+        if guard is not None:
+            guard.request_transition(
+                "edit another journey", lambda: self._start_edit(marker_id)
+            )
+            return
+        if self._session is not None:
+            return
+        self._start_edit(marker_id)
+
+    def _start_edit(self, marker_id: str) -> None:
+        """Create a session only after the transition guard accepts."""
         map_id = self._window.map_widget.get_selected_map_id()
         if map_id is None:
             return
@@ -205,6 +295,7 @@ class TrajectoryEditCoordinator(QObject):
                 x=position[0],
                 y=position[1],
             )
+            self._session_id = str(uuid.uuid4())
             self._session = TrajectoryEditSession.create(
                 map_id=map_id,
                 marker_id=marker_id,
@@ -242,6 +333,7 @@ class TrajectoryEditCoordinator(QObject):
             segment_modes[(str(item["from_id"]), str(item["to_id"]))] = cast(
                 "SegmentMode", mode
             )
+        self._session_id = str(uuid.uuid4())
         self._session = TrajectoryEditSession.create(
             map_id=map_id,
             marker_id=marker_id,
@@ -643,6 +735,7 @@ class TrajectoryEditCoordinator(QObject):
             session.to_keyframes(),
             session.to_properties(),
         )
+        self._apply_acknowledged = False
         self._pending_command_id = command.command_id
         self._render(pending=True)
         self.command_requested.emit(command)
@@ -676,6 +769,13 @@ class TrajectoryEditCoordinator(QObject):
             if command_id != self._pending_command_id:
                 return
             if not result.success:
+                self.transition_finished.emit(
+                    {
+                        "session_id": self._session_id,
+                        "command_id": self._pending_command_id,
+                        "success": False,
+                    }
+                )
                 self._pending_command_id = None
                 self._render()
                 return
@@ -683,6 +783,7 @@ class TrajectoryEditCoordinator(QObject):
             data = (
                 command_state.get("data", {}) if isinstance(command_state, dict) else {}
             )
+            self._apply_acknowledged = True
             self._expected_after_snapshot = copy.deepcopy(
                 data.get("after_snapshot") if isinstance(data, dict) else None
             )
@@ -707,6 +808,11 @@ class TrajectoryEditCoordinator(QObject):
 
     def _finish_session(self, trajectories: list[dict[str, Any]]) -> None:
         session = self._session
+        completion = {
+            "session_id": self._session_id,
+            "command_id": self._pending_command_id,
+            "success": True,
+        }
         self._session = None
         self._before_snapshot = None
         self._active_record_at_start = None
@@ -719,6 +825,8 @@ class TrajectoryEditCoordinator(QObject):
                 session.map_id, copy.deepcopy(trajectories)
             )
         self._window.map_widget.clear_trajectory_edit()
+        if completion["command_id"] is not None:
+            self.transition_finished.emit(completion)
 
     def _current_authoritative(self) -> list[dict[str, Any]]:
         if self._session is None:

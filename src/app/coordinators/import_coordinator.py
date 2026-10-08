@@ -167,6 +167,9 @@ class ImportCoordinator(BaseCoordinator):
     def show_database_manager(self) -> None:
         """Shows the Database Manager dialog."""
         dialog = DatabaseManagerDialog(self.main_window)
+        dialog.edit_transition_handler = (
+            self.main_window.app_coordinator.map_edits.request_transition
+        )
         if dialog.exec() == QDialog.DialogCode.Accepted:
             pass
 

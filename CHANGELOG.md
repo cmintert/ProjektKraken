@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-08
-**Commit:** 1c56b035d4239b6784e3fa8887c58aa9425d1110
+**Commit:** 7b7fc211acb1780ed3fa7177a4d0b2db126f5cb5
 ---
 
 # Changelog
@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-08)* **Unfinished map edits (KRT-26)**: Added Apply / Keep editing /
+  Discard protection for journey and geometry drafts before map/edit replacement,
+  affected deletion, world selection, restore and close. Same-map refreshes retain
+  drafts; Apply waits for its own acknowledgement, and geometry conflicts retain
+  independent vertices with explicit discard/reload recovery. Added regression
+  checks, six-theme decisions and assisted modified-draft replay evidence.
 
 - *(2026-10-08)* **Documentation**: Included the timeline investigation and
   implementation evidence in Sphinx navigation, resolving the three missing-

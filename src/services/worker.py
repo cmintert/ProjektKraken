@@ -783,6 +783,7 @@ class DatabaseWorker(QObject):
                     success=False,
                     message="Database is not ready for editing.",
                     command_name=cmd_name,
+                    data={"command_id": command.command_id},
                 )
             )
             return

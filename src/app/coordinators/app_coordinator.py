@@ -84,6 +84,23 @@ class AppCoordinator(QObject):
         self.main_window = main_window
         logger.debug("AppCoordinator initialized with 11 coordinators")
 
+    def bind_map_edits(self) -> None:
+        """Compose draft protection once widgets and session owners exist."""
+        from src.app.coordinators.map_edit_transition_coordinator import (
+            MapEditTransitionCoordinator,
+        )
+        from src.gui.dialogs.map_edit_transition_dialog import decide_map_transition
+
+        window = self.main_window
+        self.map_edits = MapEditTransitionCoordinator(
+            [self.trajectory_edit, self.feature_geometry],
+            lambda: str(getattr(window.current_world, "id", "")),
+            lambda reason, status: decide_map_transition(reason, status, window),
+            lambda message: window.status_bar.showMessage(message, 5000),
+            self,
+        )
+        window.map_widget.edit_transition_handler = self.map_edits.request_transition
+
     def show_icon_library(self) -> None:
         """Open the active world's standalone icon manager."""
         if hasattr(self, "icon_library"):

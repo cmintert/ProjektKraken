@@ -98,6 +98,10 @@ def test_delete_map_exits_editing_before_emitting_command(map_handler, mock_map_
     map_handler.command_requested.connect(lambda _cmd: order.append("emit"))
 
     map_handler.delete_map("map_1")
+    assert order == []
+    reason, accepted = mock_map_widget.request_edit_transition.call_args.args
+    assert reason == "delete this map"
+    accepted()
 
     mock_map_widget.exit_editing_modes.assert_called_once_with()
     assert order == ["exit", "emit"]
