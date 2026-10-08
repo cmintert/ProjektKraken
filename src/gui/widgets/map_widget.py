@@ -19,10 +19,10 @@ Behaviour is composed from focused mixins:
 
 import logging
 from collections.abc import Callable
-from typing import Optional
+from typing import Optional, cast
 
 from PySide6.QtCore import QSize, Qt, QTimer, Signal, Slot
-from PySide6.QtGui import QKeyEvent, QPaintEvent, QResizeEvent
+from PySide6.QtGui import QAction, QKeyEvent, QPaintEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QFrame,
@@ -34,6 +34,7 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QSplitter,
     QToolBar,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -52,6 +53,7 @@ from src.gui.mixins.map_trajectory_mixin import MapTrajectoryMixin
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
+from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 from src.gui.widgets.map.map_layer_model import MapLayerModel
 from src.gui.widgets.map.map_layer_panel import MapLayerPanel
@@ -163,6 +165,7 @@ class MapWidget(
 
     marker_position_changed = Signal(str, float, float)
     marker_clicked = Signal(str, str)
+    open_inspector_requested = Signal(str, str)  # object_type, object_id
     # map_created carries (file_path, name) after user completes dialogs
     map_created = Signal(str, str)
     # map_deleted carries map_id after user confirms
@@ -400,6 +403,7 @@ class MapWidget(
         layout.addWidget(self.toolbar)
         self._breadcrumb_parent_id: Optional[str] = None
         self._build_map_management_controls()
+        self._build_inspector_control()
         self.toolbar.addSeparator()
         self._build_viewport_controls()
         self.toolbar.addSeparator()
@@ -408,6 +412,43 @@ class MapWidget(
         self._build_view_toggle_controls()
         self.toolbar.addSeparator()
         self._build_mode_controls()
+
+    def _build_inspector_control(self) -> None:
+        """Expose deliberate opening, including in the toolbar overflow menu."""
+        self.open_inspector_action = QAction("Open in inspector", self)
+        self.open_inspector_action.setToolTip(
+            "Select a map feature to open its entity or event in the inspector"
+        )
+        self.open_inspector_action.setEnabled(False)
+        self.open_inspector_action.triggered.connect(self._open_selected_inspector)
+        self.toolbar.addAction(self.open_inspector_action)
+        self.btn_open_inspector = cast(
+            QToolButton, self.toolbar.widgetForAction(self.open_inspector_action)
+        )
+        self.btn_open_inspector.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
+
+    def _selected_inspector_target(self) -> tuple[str, str] | None:
+        """Return the selected visible feature's underlying object identity."""
+        for item in self.view.graphics_scene.selectedItems():
+            if (
+                isinstance(item, (MarkerItem, PathItem, RegionItem))
+                and item.isVisible()
+                and item.object_type in {"entity", "event"}
+            ):
+                return item.object_type, item.marker_id
+        return None
+
+    def _open_selected_inspector(self) -> None:
+        """Emit explicit opening for the current selection, never a stale target."""
+        target = self._selected_inspector_target()
+        if target is not None:
+            self.open_inspector_requested.emit(*target)
+
+    def _update_inspector_action(self) -> None:
+        """Keep availability aligned with selection and temporal visibility."""
+        self.open_inspector_action.setEnabled(
+            self._selected_inspector_target() is not None
+        )
 
     def _build_breadcrumb(self, layout: QVBoxLayout) -> None:
         """Build the optional master/detail navigation breadcrumb."""
@@ -965,6 +1006,7 @@ class MapWidget(
         self.view.effective_visibility_changed.connect(
             self._refresh_selected_trajectory_visibility
         )
+        self.view.effective_visibility_changed.connect(self._update_inspector_action)
         self.view.feature_geometry_changed.connect(self._on_geometry_changed)
         self.view.graphics_scene.selectionChanged.connect(self._on_selection_changed)
         self.view.marker_clicked.connect(self._on_marker_clicked_select_layer)
@@ -1177,6 +1219,7 @@ class MapWidget(
 
     def _on_selection_changed(self) -> None:
         """Updates UI state based on selection."""
+        self._update_inspector_action()
         self._update_trajectory_edit_action()
 
     def _request_selected_trajectory_edit(self) -> None:
@@ -1806,6 +1849,7 @@ class MapWidget(
     def _apply_theme_styles(self) -> None:
         """Apply current theme styles to map controls with local QSS."""
         tool_style = StyleHelper.get_tool_button_style()
+        self.btn_open_inspector.setStyleSheet(StyleHelper.get_secondary_button_style())
         for button in (
             self.btn_new_map,
             self.btn_map_overflow,

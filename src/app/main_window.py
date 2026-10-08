@@ -568,11 +568,12 @@ class MainWindow(QMainWindow):
         )
 
         # Initialize MapHandler with injected dependencies (no self reference)
+        self.app_coordinator.bind_map_navigation()
         self.map_handler = MapHandler(
             map_widget=self.map_widget,
             worker=self.worker,
             db_path_accessor=lambda: self.db_path,
-            navigation_set_selection=(self.navigation_coordinator.set_global_selection),
+            navigation_set_selection=self.app_coordinator.map_navigation.browse,
             world_root_accessor=lambda: str(
                 self.current_world.path if self.current_world else Path(self.db_path).parent
             ),

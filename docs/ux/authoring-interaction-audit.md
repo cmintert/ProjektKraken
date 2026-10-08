@@ -1,5 +1,15 @@
 # Authoring interaction audit v1 — KRT-46
 
+KRT-64 implementation (2026-10-08): map feature selection stays local when the
+Entity/Event inspector shares its zone or is hidden/inactive. An already-visible
+inspector in another dynamically resolved zone updates through existing draft
+guards. The secondary **Open in inspector** toolbar action provides deliberate
+navigation, including through narrow-toolbar overflow and focused-button keyboard
+activation. New map gestures supersede earlier map-origin save continuations;
+local selection, layers, trajectories, map drafts and playhead remain independent
+of inspected identity. Contracts 2/5/6/7/8; see [evidence](evidence/krt64/README.md).
+This applies the existing interaction contract without revising its rules.
+
 Audited 2026-10-04 against source revision `eb8aff5c` and
 [Contract v1](authoring-contract.md). This inventories the major authoring
 capabilities, including their advanced entry points; it is not a claim that all

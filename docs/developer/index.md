@@ -17,6 +17,7 @@ contributing
 documentation
 ../ux/evidence/krt50/README
 ../ux/evidence/krt26/README
+../ux/evidence/krt64/README
 ../ux/investigations/krt26-map-edit-context
 ../ux/northwatch-demo
 ../ux/evidence/krt18/verification

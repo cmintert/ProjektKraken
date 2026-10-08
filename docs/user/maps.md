@@ -14,6 +14,16 @@ temporal trajectories, nested detail maps, and optional editable raster layers.
 
 ## Add markers and features
 
+Click a marker, path, or region to select it without leaving the map. If its
+Entity or Event inspector is already visible in another workspace zone, that
+inspector updates through the usual draft safeguards. Hidden inspectors and
+inspectors sharing the map's zone stay in place.
+
+Choose **Open in inspector** in the map toolbar to deliberately open the selected
+feature's Entity or Event. On narrow panels, the labeled action is available in
+the toolbar overflow menu. You can also select a feature in Layers before
+opening its inspector. Map selection remains local if you decline navigation.
+
 - Select **Add Marker**, click to preview its position, then choose **Confirm**
   or press **Enter**. Click elsewhere before confirming to move the preview.
 - Use **Draw Path** or **Draw Region** to create a feature.

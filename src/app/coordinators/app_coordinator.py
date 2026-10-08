@@ -106,6 +106,15 @@ class AppCoordinator(QObject):
         if hasattr(self, "icon_library"):
             self.icon_library.show_manager(self.main_window)
 
+    def bind_map_navigation(self) -> None:
+        """Compose map navigation once its spatial view is available."""
+        if not hasattr(self, "map_navigation"):
+            from src.app.coordinators.map_navigation import MapNavigationController
+
+            self.map_navigation = MapNavigationController(
+                self.main_window.map_widget, self.navigation
+            )
+
     def bind_longform_navigation(self) -> None:
         """Compose Longform navigation once its view is available."""
         if not hasattr(self, "longform_navigation"):

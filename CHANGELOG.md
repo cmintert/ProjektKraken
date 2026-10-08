@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-08
-**Commit:** e1d6b79b67422415c3ccbb4e54b264efc2cc5c5a
+**Commit:** 1a556a7003e43e10993c50eeaa78da2293ff3309
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-08)* **Map inspection (KRT-64)**: Feature selection keeps the map
+  active and updates only an already-visible inspector in another workspace
+  zone. Added a labeled Open in inspector action with narrow-toolbar overflow,
+  preserving draft guards and cancelling superseded map navigation. Added pointer
+  and workspace regressions, user guidance and six-theme rendered evidence.
 
 - *(2026-10-08)* **Unfinished map edits (KRT-26)**: Added Apply / Keep editing /
   Discard protection for journey and geometry drafts before map/edit replacement,

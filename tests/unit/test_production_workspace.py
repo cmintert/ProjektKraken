@@ -1,6 +1,6 @@
 """Production-window architecture checks for the unified workspace shell."""
 
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 from PySide6.QtWidgets import QDockWidget
@@ -60,6 +60,25 @@ def test_factory_layout_matches_workspace_contract(main_window) -> None:
     ]
     assert panes["right"].panel_ids() == ["analysis", "ai_search", "wiki_peek"]
     assert panes["bottom"].panel_ids() == ["timeline", "history"]
+
+
+@pytest.mark.parametrize("kind", ["entity", "event"])
+def test_production_map_click_keeps_shared_workspace_active(
+    main_window, qtbot, kind
+) -> None:
+    main_window.show()
+    qtbot.waitExposed(main_window)
+    main_window.workspace.show_panel("map")
+    main_window.navigation_coordinator.selected_id = "prior"
+    main_window.navigation_coordinator.selected_type = "entity"
+    loader = Mock()
+    setattr(main_window.data_coordinator, f"load_{kind}_details", loader)
+
+    main_window.map_widget.view.marker_clicked.emit("target", kind)
+
+    assert main_window.workspace.active_panel("center") == "map"
+    assert main_window.navigation_coordinator.selected_id == "prior"
+    loader.assert_not_called()
 
 
 def test_activity_action_follows_moved_panel(main_window) -> None:
