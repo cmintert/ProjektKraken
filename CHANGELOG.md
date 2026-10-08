@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-08
-**Commit:** 7b7fc211acb1780ed3fa7177a4d0b2db126f5cb5
+**Commit:** e1d6b79b67422415c3ccbb4e54b264efc2cc5c5a
 ---
 
 # Changelog
@@ -137,6 +137,12 @@ All notable changes to this project will be documented in this file.
   Full human acceptance remains pending.
 
 ### Added
+
+- *(2026-10-08)* **Northwatch demonstration (KRT-18)**: Added a reproducible,
+  portable sample world with changing ruler, descriptions, border and army route;
+  preserved uncertain month-only dating and one repairable validation finding.
+  Included illustrated map/army assets, a first-session guide, rendered evidence
+  and five persistence/atomic-generation tests. Newcomer observation remains pending.
 
 - *(2026-10-05)* **Canonical inspectors (KRT-45)**: Grouped Entity/Event editing
   into Overview, Connections, Details and Media, with tags above Fields/Sheet.
