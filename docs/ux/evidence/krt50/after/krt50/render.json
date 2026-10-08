@@ -1,0 +1,3470 @@
+[
+  {
+    "file": "year-visible.png",
+    "pixels_per_day": 1.2,
+    "cases": [
+      {
+        "name": "1 Exact date",
+        "authored": "14 June 1218 12:00",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444664.5,
+          "possible_end": 444664.50069444446,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "14 June 1218 12:00",
+          "kind": "point",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444664.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -13.0,
+            -20.0,
+            431.0,
+            41.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "exact",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "exact",
+          "left": -8.0,
+          "right": 8.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "2 Exact date + 3 days",
+        "authored": "14 June 1218 12:00",
+        "duration_days": 3,
+        "display": {
+          "possible_start": 444664.5,
+          "possible_end": 444667.50069444446,
+          "certain_start": 444664.50069444446,
+          "certain_end": 444667.5,
+          "caption": "Starts: 14 June 1218 12:00 \u00b7 Duration: 3 days",
+          "kind": "duration",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444664.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -6.199999999965075,
+            -12.0,
+            410.0,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "duration",
+                "left": -1.1999999999650754,
+                "right": 4.800000000034925,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": 0.8000000000349246,
+                "certain_right": 2.8000000000349248
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "duration",
+          "left": -1.1999999999650754,
+          "right": 4.800000000034925,
+          "marker_x": 0.0,
+          "compact": true,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": 0.8000000000349246,
+          "certain_right": 2.8000000000349248
+        }
+      },
+      {
+        "name": "3 Year only",
+        "authored": "1218",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444500.0,
+          "possible_end": 444865.0,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "1218 \u00b7 exact date unknown",
+          "kind": "point",
+          "precision": "year",
+          "qualifier": "asserted",
+          "anchor": 444682.5,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -224.0,
+            -12.0,
+            448.0,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "window",
+                "left": -219.0,
+                "right": 219.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": true,
+                "cap_right": true,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "window",
+          "left": -219.0,
+          "right": 219.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": true,
+          "cap_right": true,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "4 Approximate year",
+        "authored": "c. 1218",
+        "duration_days": 0,
+        "display": {
+          "possible_start": null,
+          "possible_end": null,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "c. 1218 \u00b7 exact date unknown",
+          "kind": "point",
+          "precision": "year",
+          "qualifier": "approximate",
+          "anchor": 444500.0,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -21.0,
+            -12.0,
+            410.0,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "soft",
+                "left": -16.0,
+                "right": 16.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "soft",
+          "left": -16.0,
+          "right": 16.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "5 Year only + 3 days",
+        "authored": "1218",
+        "duration_days": 3,
+        "display": {
+          "possible_start": 444500.0,
+          "possible_end": 444868.0,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "Starts: 1218 \u00b7 Duration: 3 days",
+          "kind": "duration",
+          "precision": "year",
+          "qualifier": "asserted",
+          "anchor": 444682.5,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -320.0,
+            -36.0,
+            547.6,
+            125.0
+          ],
+          "rows": [
+            {
+              "label": "Starts",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "window",
+                "left": -219.0,
+                "right": 219.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": true,
+                "cap_right": true,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Duration",
+              "y": 26.0,
+              "measure": true,
+              "value": "3 days",
+              "geometry": {
+                "mode": "duration",
+                "left": -219.0,
+                "right": -213.0,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Possible span",
+              "y": 52.0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "duration",
+                "left": -219.0,
+                "right": 222.6,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "duration",
+          "left": -219.0,
+          "right": 222.6,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "6 Approximate year + 3 days",
+        "authored": "c. 1218",
+        "duration_days": 3,
+        "display": {
+          "possible_start": null,
+          "possible_end": null,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "Starts: c. 1218 \u00b7 Duration: 3 days",
+          "kind": "duration",
+          "precision": "year",
+          "qualifier": "approximate",
+          "anchor": 444500.0,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -117.0,
+            -36.0,
+            502.0,
+            125.0
+          ],
+          "rows": [
+            {
+              "label": "Starts",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "soft",
+                "left": -16.0,
+                "right": 16.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Duration",
+              "y": 26.0,
+              "measure": true,
+              "value": "3 days",
+              "geometry": {
+                "mode": "duration",
+                "left": -16.0,
+                "right": -10.0,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Possible span",
+              "y": 52.0,
+              "measure": false,
+              "value": "Span not bounded",
+              "geometry": {
+                "mode": "soft",
+                "left": -16.0,
+                "right": 16.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "unresolved",
+          "left": -8,
+          "right": 8,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "7 Exact date + 240 days",
+        "authored": "1 January 1218 12:00",
+        "duration_days": 240,
+        "display": {
+          "possible_start": 444500.5,
+          "possible_end": 444740.50069444446,
+          "certain_start": 444500.50069444446,
+          "certain_end": 444740.5,
+          "caption": "Starts: 1 January 1218 12:00 \u00b7 Duration: 240 days",
+          "kind": "duration",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444500.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -5.000416666641831,
+            -12.0,
+            410.0,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "duration",
+                "left": -0.000416666641831398,
+                "right": 288.00041666671166,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": 0.0004166667116805911,
+                "certain_right": 287.99958333335815
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "duration",
+          "left": -0.000416666641831398,
+          "right": 288.00041666671166,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": 0.0004166667116805911,
+          "certain_right": 287.99958333335815
+        }
+      },
+      {
+        "name": "Neighbor: year begins",
+        "authored": "1 January 1218 12:00",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444500.5,
+          "possible_end": 444500.50069444446,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "1 January 1218 12:00",
+          "kind": "point",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444500.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -13.0,
+            -20.0,
+            431.0,
+            41.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "exact",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "exact",
+          "left": -8.0,
+          "right": 8.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "Neighbor: next year begins",
+        "authored": "1 January 1219 12:00",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444865.5,
+          "possible_end": 444865.50069444446,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "1 January 1219 12:00",
+          "kind": "point",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444865.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -13.0,
+            -20.0,
+            431.0,
+            41.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "exact",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "exact",
+          "left": -8.0,
+          "right": 8.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      }
+    ]
+  },
+  {
+    "file": "year-tight.png",
+    "pixels_per_day": 2.4,
+    "cases": [
+      {
+        "name": "1 Exact date",
+        "authored": "14 June 1218 12:00",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444664.5,
+          "possible_end": 444664.50069444446,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "14 June 1218 12:00",
+          "kind": "point",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444664.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -13.0,
+            -20.0,
+            431.0,
+            41.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "exact",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "exact",
+          "left": -8.0,
+          "right": 8.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "2 Exact date + 3 days",
+        "authored": "14 June 1218 12:00",
+        "duration_days": 3,
+        "display": {
+          "possible_start": 444664.5,
+          "possible_end": 444667.50069444446,
+          "certain_start": 444664.50069444446,
+          "certain_end": 444667.5,
+          "caption": "Starts: 14 June 1218 12:00 \u00b7 Duration: 3 days",
+          "kind": "duration",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444664.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -5.000833333283663,
+            -12.0,
+            410.0,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "duration",
+                "left": -0.000833333283662796,
+                "right": 7.200833333423361,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": 0.0008333334233611822,
+                "certain_right": 7.199166666716337
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "duration",
+          "left": -0.000833333283662796,
+          "right": 7.200833333423361,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": 0.0008333334233611822,
+          "certain_right": 7.199166666716337
+        }
+      },
+      {
+        "name": "3 Year only",
+        "authored": "1218",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444500.0,
+          "possible_end": 444865.0,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "1218 \u00b7 exact date unknown",
+          "kind": "point",
+          "precision": "year",
+          "qualifier": "asserted",
+          "anchor": 444682.5,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -443.0,
+            -12.0,
+            886.0,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "window",
+                "left": -438.0,
+                "right": 438.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": true,
+                "cap_right": true,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "window",
+          "left": -438.0,
+          "right": 438.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": true,
+          "cap_right": true,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "4 Approximate year",
+        "authored": "c. 1218",
+        "duration_days": 0,
+        "display": {
+          "possible_start": null,
+          "possible_end": null,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "c. 1218 \u00b7 exact date unknown",
+          "kind": "point",
+          "precision": "year",
+          "qualifier": "approximate",
+          "anchor": 444500.0,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -21.0,
+            -12.0,
+            410.0,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "soft",
+                "left": -16.0,
+                "right": 16.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "soft",
+          "left": -16.0,
+          "right": 16.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "5 Year only + 3 days",
+        "authored": "1218",
+        "duration_days": 3,
+        "display": {
+          "possible_start": 444500.0,
+          "possible_end": 444868.0,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "Starts: 1218 \u00b7 Duration: 3 days",
+          "kind": "duration",
+          "precision": "year",
+          "qualifier": "asserted",
+          "anchor": 444682.5,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -539.0,
+            -36.0,
+            989.2,
+            125.0
+          ],
+          "rows": [
+            {
+              "label": "Starts",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "window",
+                "left": -438.0,
+                "right": 438.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": true,
+                "cap_right": true,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Duration",
+              "y": 26.0,
+              "measure": true,
+              "value": "3 days",
+              "geometry": {
+                "mode": "duration",
+                "left": -438.0,
+                "right": -430.8,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Possible span",
+              "y": 52.0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "duration",
+                "left": -438.0,
+                "right": 445.2,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "duration",
+          "left": -438.0,
+          "right": 445.2,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "6 Approximate year + 3 days",
+        "authored": "c. 1218",
+        "duration_days": 3,
+        "display": {
+          "possible_start": null,
+          "possible_end": null,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "Starts: c. 1218 \u00b7 Duration: 3 days",
+          "kind": "duration",
+          "precision": "year",
+          "qualifier": "approximate",
+          "anchor": 444500.0,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -117.0,
+            -36.0,
+            502.0,
+            125.0
+          ],
+          "rows": [
+            {
+              "label": "Starts",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "soft",
+                "left": -16.0,
+                "right": 16.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Duration",
+              "y": 26.0,
+              "measure": true,
+              "value": "3 days",
+              "geometry": {
+                "mode": "duration",
+                "left": -16.0,
+                "right": -8.8,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Possible span",
+              "y": 52.0,
+              "measure": false,
+              "value": "Span not bounded",
+              "geometry": {
+                "mode": "soft",
+                "left": -16.0,
+                "right": 16.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "unresolved",
+          "left": -8,
+          "right": 8,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "7 Exact date + 240 days",
+        "authored": "1 January 1218 12:00",
+        "duration_days": 240,
+        "display": {
+          "possible_start": 444500.5,
+          "possible_end": 444740.50069444446,
+          "certain_start": 444500.50069444446,
+          "certain_end": 444740.5,
+          "caption": "Starts: 1 January 1218 12:00 \u00b7 Duration: 240 days",
+          "kind": "duration",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444500.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -5.000833333283663,
+            -12.0,
+            586.001666666707,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "duration",
+                "left": -0.000833333283662796,
+                "right": 576.0008333334233,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": 0.0008333334233611822,
+                "certain_right": 575.9991666667163
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "duration",
+          "left": -0.000833333283662796,
+          "right": 576.0008333334233,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": 0.0008333334233611822,
+          "certain_right": 575.9991666667163
+        }
+      },
+      {
+        "name": "Neighbor: year begins",
+        "authored": "1 January 1218 12:00",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444500.5,
+          "possible_end": 444500.50069444446,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "1 January 1218 12:00",
+          "kind": "point",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444500.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -13.0,
+            -20.0,
+            431.0,
+            41.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "exact",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "exact",
+          "left": -8.0,
+          "right": 8.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "Neighbor: next year begins",
+        "authored": "1 January 1219 12:00",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444865.5,
+          "possible_end": 444865.50069444446,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "1 January 1219 12:00",
+          "kind": "point",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444865.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -13.0,
+            -20.0,
+            431.0,
+            41.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "exact",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "exact",
+          "left": -8.0,
+          "right": 8.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      }
+    ]
+  },
+  {
+    "file": "duration-below-6px.png",
+    "pixels_per_day": 0.015,
+    "cases": [
+      {
+        "name": "1 Exact date",
+        "authored": "14 June 1218 12:00",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444664.5,
+          "possible_end": 444664.50069444446,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "14 June 1218 12:00",
+          "kind": "point",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444664.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -13.0,
+            -20.0,
+            431.0,
+            41.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "exact",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "exact",
+          "left": -8.0,
+          "right": 8.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "2 Exact date + 3 days",
+        "authored": "14 June 1218 12:00",
+        "duration_days": 3,
+        "display": {
+          "possible_start": 444664.5,
+          "possible_end": 444667.50069444446,
+          "certain_start": 444664.50069444446,
+          "certain_end": 444667.5,
+          "caption": "Starts: 14 June 1218 12:00 \u00b7 Duration: 3 days",
+          "kind": "duration",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444664.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -7.977499999999564,
+            -12.0,
+            410.0,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "duration",
+                "left": -2.9774999999995635,
+                "right": 3.0225000000004365,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": -0.9774999999995635,
+                "certain_right": 1.0225000000004365
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "duration",
+          "left": -2.9774999999995635,
+          "right": 3.0225000000004365,
+          "marker_x": 0.0,
+          "compact": true,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": -0.9774999999995635,
+          "certain_right": 1.0225000000004365
+        }
+      },
+      {
+        "name": "3 Year only",
+        "authored": "1218",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444500.0,
+          "possible_end": 444865.0,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "1218 \u00b7 exact date unknown",
+          "kind": "point",
+          "precision": "year",
+          "qualifier": "asserted",
+          "anchor": 444682.5,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -13.0,
+            -12.0,
+            410.0,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "window",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": true,
+                "cap_right": true,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "window",
+          "left": -8.0,
+          "right": 8.0,
+          "marker_x": 0.0,
+          "compact": true,
+          "cap_left": true,
+          "cap_right": true,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "4 Approximate year",
+        "authored": "c. 1218",
+        "duration_days": 0,
+        "display": {
+          "possible_start": null,
+          "possible_end": null,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "c. 1218 \u00b7 exact date unknown",
+          "kind": "point",
+          "precision": "year",
+          "qualifier": "approximate",
+          "anchor": 444500.0,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -21.0,
+            -12.0,
+            410.0,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "soft",
+                "left": -16.0,
+                "right": 16.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "soft",
+          "left": -16.0,
+          "right": 16.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "5 Year only + 3 days",
+        "authored": "1218",
+        "duration_days": 3,
+        "display": {
+          "possible_start": 444500.0,
+          "possible_end": 444868.0,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "Starts: 1218 \u00b7 Duration: 3 days",
+          "kind": "duration",
+          "precision": "year",
+          "qualifier": "asserted",
+          "anchor": 444682.5,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -109.0,
+            -36.0,
+            502.0,
+            125.0
+          ],
+          "rows": [
+            {
+              "label": "Starts",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "window",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": true,
+                "cap_right": true,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Duration",
+              "y": 26.0,
+              "measure": true,
+              "value": "3 days",
+              "geometry": {
+                "mode": "duration",
+                "left": -8.0,
+                "right": -2.0,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Possible span",
+              "y": 52.0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "duration",
+                "left": -2.9775,
+                "right": 3.0225,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "duration",
+          "left": -2.9775,
+          "right": 3.0225,
+          "marker_x": 0.0,
+          "compact": true,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "6 Approximate year + 3 days",
+        "authored": "c. 1218",
+        "duration_days": 3,
+        "display": {
+          "possible_start": null,
+          "possible_end": null,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "Starts: c. 1218 \u00b7 Duration: 3 days",
+          "kind": "duration",
+          "precision": "year",
+          "qualifier": "approximate",
+          "anchor": 444500.0,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -117.0,
+            -36.0,
+            502.0,
+            125.0
+          ],
+          "rows": [
+            {
+              "label": "Starts",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "soft",
+                "left": -16.0,
+                "right": 16.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Duration",
+              "y": 26.0,
+              "measure": true,
+              "value": "3 days",
+              "geometry": {
+                "mode": "duration",
+                "left": -16.0,
+                "right": -10.0,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Possible span",
+              "y": 52.0,
+              "measure": false,
+              "value": "Span not bounded",
+              "geometry": {
+                "mode": "soft",
+                "left": -16.0,
+                "right": 16.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "unresolved",
+          "left": -8,
+          "right": 8,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "7 Exact date + 240 days",
+        "authored": "1 January 1218 12:00",
+        "duration_days": 240,
+        "display": {
+          "possible_start": 444500.5,
+          "possible_end": 444740.50069444446,
+          "certain_start": 444500.50069444446,
+          "certain_end": 444740.5,
+          "caption": "Starts: 1 January 1218 12:00 \u00b7 Duration: 240 days",
+          "kind": "duration",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444500.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -6.199999999999564,
+            -12.0,
+            410.0,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "duration",
+                "left": -1.1999999999995636,
+                "right": 4.800000000000436,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": 0.8000000000004366,
+                "certain_right": 2.800000000000437
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "duration",
+          "left": -1.1999999999995636,
+          "right": 4.800000000000436,
+          "marker_x": 0.0,
+          "compact": true,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": 0.8000000000004366,
+          "certain_right": 2.800000000000437
+        }
+      },
+      {
+        "name": "Neighbor: year begins",
+        "authored": "1 January 1218 12:00",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444500.5,
+          "possible_end": 444500.50069444446,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "1 January 1218 12:00",
+          "kind": "point",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444500.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -13.0,
+            -20.0,
+            431.0,
+            41.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "exact",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "exact",
+          "left": -8.0,
+          "right": 8.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "Neighbor: next year begins",
+        "authored": "1 January 1219 12:00",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444865.5,
+          "possible_end": 444865.50069444446,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "1 January 1219 12:00",
+          "kind": "point",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444865.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -13.0,
+            -20.0,
+            431.0,
+            41.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "exact",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "exact",
+          "left": -8.0,
+          "right": 8.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      }
+    ]
+  },
+  {
+    "file": "duration-above-6px.png",
+    "pixels_per_day": 0.017,
+    "cases": [
+      {
+        "name": "1 Exact date",
+        "authored": "14 June 1218 12:00",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444664.5,
+          "possible_end": 444664.50069444446,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "14 June 1218 12:00",
+          "kind": "point",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444664.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -13.0,
+            -20.0,
+            431.0,
+            41.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "exact",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "exact",
+          "left": -8.0,
+          "right": 8.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "2 Exact date + 3 days",
+        "authored": "14 June 1218 12:00",
+        "duration_days": 3,
+        "display": {
+          "possible_start": 444664.5,
+          "possible_end": 444667.50069444446,
+          "certain_start": 444664.50069444446,
+          "certain_end": 444667.5,
+          "caption": "Starts: 14 June 1218 12:00 \u00b7 Duration: 3 days",
+          "kind": "duration",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444664.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -7.974499999999505,
+            -12.0,
+            410.0,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "duration",
+                "left": -2.974499999999505,
+                "right": 3.025500000000495,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": -0.9744999999995052,
+                "certain_right": 1.0255000000004948
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "duration",
+          "left": -2.974499999999505,
+          "right": 3.025500000000495,
+          "marker_x": 0.0,
+          "compact": true,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": -0.9744999999995052,
+          "certain_right": 1.0255000000004948
+        }
+      },
+      {
+        "name": "3 Year only",
+        "authored": "1218",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444500.0,
+          "possible_end": 444865.0,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "1218 \u00b7 exact date unknown",
+          "kind": "point",
+          "precision": "year",
+          "qualifier": "asserted",
+          "anchor": 444682.5,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -13.0,
+            -12.0,
+            410.0,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "window",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": true,
+                "cap_right": true,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "window",
+          "left": -8.0,
+          "right": 8.0,
+          "marker_x": 0.0,
+          "compact": true,
+          "cap_left": true,
+          "cap_right": true,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "4 Approximate year",
+        "authored": "c. 1218",
+        "duration_days": 0,
+        "display": {
+          "possible_start": null,
+          "possible_end": null,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "c. 1218 \u00b7 exact date unknown",
+          "kind": "point",
+          "precision": "year",
+          "qualifier": "approximate",
+          "anchor": 444500.0,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -21.0,
+            -12.0,
+            410.0,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "soft",
+                "left": -16.0,
+                "right": 16.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "soft",
+          "left": -16.0,
+          "right": 16.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "5 Year only + 3 days",
+        "authored": "1218",
+        "duration_days": 3,
+        "display": {
+          "possible_start": 444500.0,
+          "possible_end": 444868.0,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "Starts: 1218 \u00b7 Duration: 3 days",
+          "kind": "duration",
+          "precision": "year",
+          "qualifier": "asserted",
+          "anchor": 444682.5,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -109.0,
+            -36.0,
+            502.0,
+            125.0
+          ],
+          "rows": [
+            {
+              "label": "Starts",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "window",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": true,
+                "cap_right": true,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Duration",
+              "y": 26.0,
+              "measure": true,
+              "value": "3 days",
+              "geometry": {
+                "mode": "duration",
+                "left": -8.0,
+                "right": -2.0,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Possible span",
+              "y": 52.0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "duration",
+                "left": -3.1025,
+                "right": 3.1535,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "duration",
+          "left": -3.1025,
+          "right": 3.1535,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "6 Approximate year + 3 days",
+        "authored": "c. 1218",
+        "duration_days": 3,
+        "display": {
+          "possible_start": null,
+          "possible_end": null,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "Starts: c. 1218 \u00b7 Duration: 3 days",
+          "kind": "duration",
+          "precision": "year",
+          "qualifier": "approximate",
+          "anchor": 444500.0,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -117.0,
+            -36.0,
+            502.0,
+            125.0
+          ],
+          "rows": [
+            {
+              "label": "Starts",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "soft",
+                "left": -16.0,
+                "right": 16.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Duration",
+              "y": 26.0,
+              "measure": true,
+              "value": "3 days",
+              "geometry": {
+                "mode": "duration",
+                "left": -16.0,
+                "right": -10.0,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Possible span",
+              "y": 52.0,
+              "measure": false,
+              "value": "Span not bounded",
+              "geometry": {
+                "mode": "soft",
+                "left": -16.0,
+                "right": 16.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "unresolved",
+          "left": -8,
+          "right": 8,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "7 Exact date + 240 days",
+        "authored": "1 January 1218 12:00",
+        "duration_days": 240,
+        "display": {
+          "possible_start": 444500.5,
+          "possible_end": 444740.50069444446,
+          "certain_start": 444500.50069444446,
+          "certain_end": 444740.5,
+          "caption": "Starts: 1 January 1218 12:00 \u00b7 Duration: 240 days",
+          "kind": "duration",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444500.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -5.959999999999505,
+            -12.0,
+            410.0,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "duration",
+                "left": -0.9599999999995052,
+                "right": 5.040000000000495,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": 1.0400000000004948,
+                "certain_right": 3.0400000000004948
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "duration",
+          "left": -0.9599999999995052,
+          "right": 5.040000000000495,
+          "marker_x": 0.0,
+          "compact": true,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": 1.0400000000004948,
+          "certain_right": 3.0400000000004948
+        }
+      },
+      {
+        "name": "Neighbor: year begins",
+        "authored": "1 January 1218 12:00",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444500.5,
+          "possible_end": 444500.50069444446,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "1 January 1218 12:00",
+          "kind": "point",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444500.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -13.0,
+            -20.0,
+            431.0,
+            41.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "exact",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "exact",
+          "left": -8.0,
+          "right": 8.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "Neighbor: next year begins",
+        "authored": "1 January 1219 12:00",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444865.5,
+          "possible_end": 444865.50069444446,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "1 January 1219 12:00",
+          "kind": "point",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444865.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -13.0,
+            -20.0,
+            431.0,
+            41.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "exact",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "exact",
+          "left": -8.0,
+          "right": 8.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      }
+    ]
+  },
+  {
+    "file": "occurrence-below-24px.png",
+    "pixels_per_day": 0.064,
+    "cases": [
+      {
+        "name": "1 Exact date",
+        "authored": "14 June 1218 12:00",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444664.5,
+          "possible_end": 444664.50069444446,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "14 June 1218 12:00",
+          "kind": "point",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444664.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -13.0,
+            -20.0,
+            431.0,
+            41.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "exact",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "exact",
+          "left": -8.0,
+          "right": 8.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "2 Exact date + 3 days",
+        "authored": "14 June 1218 12:00",
+        "duration_days": 3,
+        "display": {
+          "possible_start": 444664.5,
+          "possible_end": 444667.50069444446,
+          "certain_start": 444664.50069444446,
+          "certain_end": 444667.5,
+          "caption": "Starts: 14 June 1218 12:00 \u00b7 Duration: 3 days",
+          "kind": "duration",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444664.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -7.903999999998137,
+            -12.0,
+            410.0,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "duration",
+                "left": -2.9039999999981374,
+                "right": 3.0960000000018626,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": -0.9039999999981374,
+                "certain_right": 1.0960000000018626
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "duration",
+          "left": -2.9039999999981374,
+          "right": 3.0960000000018626,
+          "marker_x": 0.0,
+          "compact": true,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": -0.9039999999981374,
+          "certain_right": 1.0960000000018626
+        }
+      },
+      {
+        "name": "3 Year only",
+        "authored": "1218",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444500.0,
+          "possible_end": 444865.0,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "1218 \u00b7 exact date unknown",
+          "kind": "point",
+          "precision": "year",
+          "qualifier": "asserted",
+          "anchor": 444682.5,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -13.0,
+            -12.0,
+            410.0,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "window",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": true,
+                "cap_right": true,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "window",
+          "left": -8.0,
+          "right": 8.0,
+          "marker_x": 0.0,
+          "compact": true,
+          "cap_left": true,
+          "cap_right": true,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "4 Approximate year",
+        "authored": "c. 1218",
+        "duration_days": 0,
+        "display": {
+          "possible_start": null,
+          "possible_end": null,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "c. 1218 \u00b7 exact date unknown",
+          "kind": "point",
+          "precision": "year",
+          "qualifier": "approximate",
+          "anchor": 444500.0,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -21.0,
+            -12.0,
+            410.0,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "soft",
+                "left": -16.0,
+                "right": 16.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "soft",
+          "left": -16.0,
+          "right": 16.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "5 Year only + 3 days",
+        "authored": "1218",
+        "duration_days": 3,
+        "display": {
+          "possible_start": 444500.0,
+          "possible_end": 444868.0,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "Starts: 1218 \u00b7 Duration: 3 days",
+          "kind": "duration",
+          "precision": "year",
+          "qualifier": "asserted",
+          "anchor": 444682.5,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -109.0,
+            -36.0,
+            502.0,
+            125.0
+          ],
+          "rows": [
+            {
+              "label": "Starts",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "window",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": true,
+                "cap_right": true,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Duration",
+              "y": 26.0,
+              "measure": true,
+              "value": "3 days",
+              "geometry": {
+                "mode": "duration",
+                "left": -8.0,
+                "right": -2.0,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Possible span",
+              "y": 52.0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "duration",
+                "left": -11.68,
+                "right": 11.872,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "duration",
+          "left": -11.68,
+          "right": 11.872,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "6 Approximate year + 3 days",
+        "authored": "c. 1218",
+        "duration_days": 3,
+        "display": {
+          "possible_start": null,
+          "possible_end": null,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "Starts: c. 1218 \u00b7 Duration: 3 days",
+          "kind": "duration",
+          "precision": "year",
+          "qualifier": "approximate",
+          "anchor": 444500.0,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -117.0,
+            -36.0,
+            502.0,
+            125.0
+          ],
+          "rows": [
+            {
+              "label": "Starts",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "soft",
+                "left": -16.0,
+                "right": 16.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Duration",
+              "y": 26.0,
+              "measure": true,
+              "value": "3 days",
+              "geometry": {
+                "mode": "duration",
+                "left": -16.0,
+                "right": -10.0,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Possible span",
+              "y": 52.0,
+              "measure": false,
+              "value": "Span not bounded",
+              "geometry": {
+                "mode": "soft",
+                "left": -16.0,
+                "right": 16.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "unresolved",
+          "left": -8,
+          "right": 8,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "7 Exact date + 240 days",
+        "authored": "1 January 1218 12:00",
+        "duration_days": 240,
+        "display": {
+          "possible_start": 444500.5,
+          "possible_end": 444740.50069444446,
+          "certain_start": 444500.50069444446,
+          "certain_end": 444740.5,
+          "caption": "Starts: 1 January 1218 12:00 \u00b7 Duration: 240 days",
+          "kind": "duration",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444500.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -5.000022222220898,
+            -12.0,
+            410.0,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "duration",
+                "left": -2.222222089767456e-05,
+                "right": 15.360022222224623,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": 2.222222462296486e-05,
+                "certain_right": 15.359977777779102
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "duration",
+          "left": -2.222222089767456e-05,
+          "right": 15.360022222224623,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": 2.222222462296486e-05,
+          "certain_right": 15.359977777779102
+        }
+      },
+      {
+        "name": "Neighbor: year begins",
+        "authored": "1 January 1218 12:00",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444500.5,
+          "possible_end": 444500.50069444446,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "1 January 1218 12:00",
+          "kind": "point",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444500.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -13.0,
+            -20.0,
+            431.0,
+            41.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "exact",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "exact",
+          "left": -8.0,
+          "right": 8.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "Neighbor: next year begins",
+        "authored": "1 January 1219 12:00",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444865.5,
+          "possible_end": 444865.50069444446,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "1 January 1219 12:00",
+          "kind": "point",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444865.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -13.0,
+            -20.0,
+            431.0,
+            41.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "exact",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "exact",
+          "left": -8.0,
+          "right": 8.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      }
+    ]
+  },
+  {
+    "file": "occurrence-above-24px.png",
+    "pixels_per_day": 0.067,
+    "cases": [
+      {
+        "name": "1 Exact date",
+        "authored": "14 June 1218 12:00",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444664.5,
+          "possible_end": 444664.50069444446,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "14 June 1218 12:00",
+          "kind": "point",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444664.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -13.0,
+            -20.0,
+            431.0,
+            41.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "exact",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "exact",
+          "left": -8.0,
+          "right": 8.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "2 Exact date + 3 days",
+        "authored": "14 June 1218 12:00",
+        "duration_days": 3,
+        "display": {
+          "possible_start": 444664.5,
+          "possible_end": 444667.50069444446,
+          "certain_start": 444664.50069444446,
+          "certain_end": 444667.5,
+          "caption": "Starts: 14 June 1218 12:00 \u00b7 Duration: 3 days",
+          "kind": "duration",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444664.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -7.89949999999805,
+            -12.0,
+            410.0,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "duration",
+                "left": -2.89949999999805,
+                "right": 3.10050000000195,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": -0.8994999999980501,
+                "certain_right": 1.10050000000195
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "duration",
+          "left": -2.89949999999805,
+          "right": 3.10050000000195,
+          "marker_x": 0.0,
+          "compact": true,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": -0.8994999999980501,
+          "certain_right": 1.10050000000195
+        }
+      },
+      {
+        "name": "3 Year only",
+        "authored": "1218",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444500.0,
+          "possible_end": 444865.0,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "1218 \u00b7 exact date unknown",
+          "kind": "point",
+          "precision": "year",
+          "qualifier": "asserted",
+          "anchor": 444682.5,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -17.2275,
+            -12.0,
+            410.0,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "window",
+                "left": -12.227500000000001,
+                "right": 12.227500000000001,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": true,
+                "cap_right": true,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "window",
+          "left": -12.227500000000001,
+          "right": 12.227500000000001,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": true,
+          "cap_right": true,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "4 Approximate year",
+        "authored": "c. 1218",
+        "duration_days": 0,
+        "display": {
+          "possible_start": null,
+          "possible_end": null,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "c. 1218 \u00b7 exact date unknown",
+          "kind": "point",
+          "precision": "year",
+          "qualifier": "approximate",
+          "anchor": 444500.0,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -21.0,
+            -12.0,
+            410.0,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "soft",
+                "left": -16.0,
+                "right": 16.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "soft",
+          "left": -16.0,
+          "right": 16.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "5 Year only + 3 days",
+        "authored": "1218",
+        "duration_days": 3,
+        "display": {
+          "possible_start": 444500.0,
+          "possible_end": 444868.0,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "Starts: 1218 \u00b7 Duration: 3 days",
+          "kind": "duration",
+          "precision": "year",
+          "qualifier": "asserted",
+          "anchor": 444682.5,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -113.22749999999999,
+            -36.0,
+            502.0,
+            125.0
+          ],
+          "rows": [
+            {
+              "label": "Starts",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "window",
+                "left": -12.227500000000001,
+                "right": 12.227500000000001,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": true,
+                "cap_right": true,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Duration",
+              "y": 26.0,
+              "measure": true,
+              "value": "3 days",
+              "geometry": {
+                "mode": "duration",
+                "left": -12.227500000000001,
+                "right": -6.227500000000001,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Possible span",
+              "y": 52.0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "duration",
+                "left": -12.227500000000001,
+                "right": 12.428500000000001,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "duration",
+          "left": -12.227500000000001,
+          "right": 12.428500000000001,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "6 Approximate year + 3 days",
+        "authored": "c. 1218",
+        "duration_days": 3,
+        "display": {
+          "possible_start": null,
+          "possible_end": null,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "Starts: c. 1218 \u00b7 Duration: 3 days",
+          "kind": "duration",
+          "precision": "year",
+          "qualifier": "approximate",
+          "anchor": 444500.0,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -117.0,
+            -36.0,
+            502.0,
+            125.0
+          ],
+          "rows": [
+            {
+              "label": "Starts",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "soft",
+                "left": -16.0,
+                "right": 16.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Duration",
+              "y": 26.0,
+              "measure": true,
+              "value": "3 days",
+              "geometry": {
+                "mode": "duration",
+                "left": -16.0,
+                "right": -10.0,
+                "marker_x": 0.0,
+                "compact": true,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            },
+            {
+              "label": "Possible span",
+              "y": 52.0,
+              "measure": false,
+              "value": "Span not bounded",
+              "geometry": {
+                "mode": "soft",
+                "left": -16.0,
+                "right": 16.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "unresolved",
+          "left": -8,
+          "right": 8,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "7 Exact date + 240 days",
+        "authored": "1 January 1218 12:00",
+        "duration_days": 240,
+        "display": {
+          "possible_start": 444500.5,
+          "possible_end": 444740.50069444446,
+          "certain_start": 444500.50069444446,
+          "certain_end": 444740.5,
+          "caption": "Starts: 1 January 1218 12:00 \u00b7 Duration: 240 days",
+          "kind": "duration",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444500.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -5.000023263887503,
+            -12.0,
+            410.0,
+            55.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "duration",
+                "left": -2.326388750225306e-05,
+                "right": 16.080023263891402,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": 2.326389140216634e-05,
+                "certain_right": 16.0799767361125
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "duration",
+          "left": -2.326388750225306e-05,
+          "right": 16.080023263891402,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": 2.326389140216634e-05,
+          "certain_right": 16.0799767361125
+        }
+      },
+      {
+        "name": "Neighbor: year begins",
+        "authored": "1 January 1218 12:00",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444500.5,
+          "possible_end": 444500.50069444446,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "1 January 1218 12:00",
+          "kind": "point",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444500.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -13.0,
+            -20.0,
+            431.0,
+            41.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "exact",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "exact",
+          "left": -8.0,
+          "right": 8.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      },
+      {
+        "name": "Neighbor: next year begins",
+        "authored": "1 January 1219 12:00",
+        "duration_days": 0,
+        "display": {
+          "possible_start": 444865.5,
+          "possible_end": 444865.50069444446,
+          "certain_start": null,
+          "certain_end": null,
+          "caption": "1 January 1219 12:00",
+          "kind": "point",
+          "precision": "minute",
+          "qualifier": "asserted",
+          "anchor": 444865.5003472222,
+          "explicit_window": false,
+          "error": false
+        },
+        "layout": {
+          "bounds": [
+            -13.0,
+            -20.0,
+            431.0,
+            41.0
+          ],
+          "rows": [
+            {
+              "label": "",
+              "y": 0,
+              "measure": false,
+              "value": "",
+              "geometry": {
+                "mode": "exact",
+                "left": -8.0,
+                "right": 8.0,
+                "marker_x": 0.0,
+                "compact": false,
+                "cap_left": false,
+                "cap_right": false,
+                "certain_left": null,
+                "certain_right": null
+              }
+            }
+          ]
+        },
+        "presence_geometry": {
+          "mode": "exact",
+          "left": -8.0,
+          "right": 8.0,
+          "marker_x": 0.0,
+          "compact": false,
+          "cap_left": false,
+          "cap_right": false,
+          "certain_left": null,
+          "certain_right": null
+        }
+      }
+    ]
+  }
+]

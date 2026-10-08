@@ -8,10 +8,6 @@ import pytest
 from PySide6.QtGui import QImage, QPainter
 from PySide6.QtWidgets import QStyleOptionGraphicsItem
 
-from src.app.constants import (
-    TEMPORAL_FUTURE_OPACITY,
-    TEMPORAL_FUTURE_SATURATION_FACTOR,
-)
 from src.core.events import Event
 from src.gui.widgets.timeline import EventItem, TimelineView
 
@@ -50,7 +46,7 @@ def test_event_item_set_temporal_state_future(qapp_module):
 
     assert item.is_future is True
     assert item.is_past is False
-    assert item.opacity() == TEMPORAL_FUTURE_OPACITY
+    assert item.opacity() == 1.0
 
 
 def test_event_item_set_temporal_state_present(qapp_module):
@@ -60,7 +56,7 @@ def test_event_item_set_temporal_state_present(qapp_module):
 
     # Set to future first
     item.set_temporal_state(is_future=True, is_past=False)
-    assert item.opacity() == TEMPORAL_FUTURE_OPACITY
+    assert item.opacity() == 1.0
 
     # Now set to present
     item.set_temporal_state(is_future=False, is_past=False)
@@ -70,27 +66,14 @@ def test_event_item_set_temporal_state_present(qapp_module):
 
 
 def test_event_item_get_effective_color_future(qapp_module):
-    """Test that future events have desaturated color."""
+    """Test that future cues preserve event identity and readable captions."""
     event = Event(name="Future Event", lore_date=100.0, type="generic")
     item = EventItem(event, scale_factor=10.0)
 
-    # Get normal color
     normal_color = item._get_effective_color()
-    h_normal, s_normal, l_normal, a_normal = normal_color.getHslF()
-
-    # Set future state
     item.set_temporal_state(is_future=True, is_past=False)
-
-    # Get future color
-    future_color = item._get_effective_color()
-    h_future, s_future, l_future, a_future = future_color.getHslF()
-
-    # Saturation should be reduced
-    expected_saturation = s_normal * TEMPORAL_FUTURE_SATURATION_FACTOR
-    assert abs(s_future - expected_saturation) < 0.01
-
-    # Lightness should be slightly increased
-    assert l_future > l_normal
+    assert item._get_effective_color() == normal_color
+    assert item.display_name == "Future Event · Not yet"
 
 
 def test_event_item_get_effective_color_present(qapp_module):
@@ -136,7 +119,9 @@ def test_timeline_view_updates_future_events(timeline_view):
     timeline_view.update_events_temporal_state()
 
     # Get event items
-    event_items = [i for i in timeline_view.graphics_scene.items() if isinstance(i, EventItem)]
+    event_items = [
+        i for i in timeline_view.graphics_scene.items() if isinstance(i, EventItem)
+    ]
 
     # Find each event
     past_item = next((i for i in event_items if i.event.id == "e1"), None)
@@ -153,7 +138,7 @@ def test_timeline_view_updates_future_events(timeline_view):
 
     # Future should be marked as future
     assert future_item.is_future is True
-    assert future_item.opacity() == TEMPORAL_FUTURE_OPACITY
+    assert future_item.opacity() == 1.0
 
 
 def test_timeline_view_updates_on_playhead_change(timeline_view):
@@ -169,7 +154,9 @@ def test_timeline_view_updates_on_playhead_change(timeline_view):
     # Set playhead to 75 (e1 is past, e2 and e3 are future)
     timeline_view.set_playhead_time(75.0)
 
-    event_items = [i for i in timeline_view.graphics_scene.items() if isinstance(i, EventItem)]
+    event_items = [
+        i for i in timeline_view.graphics_scene.items() if isinstance(i, EventItem)
+    ]
     e1_item = next((i for i in event_items if i.event.id == "e1"), None)
     e2_item = next((i for i in event_items if i.event.id == "e2"), None)
     e3_item = next((i for i in event_items if i.event.id == "e3"), None)
@@ -201,7 +188,7 @@ def test_event_item_set_temporal_state_idempotent(qapp_module):
     item.set_temporal_state(is_future=True, is_past=False)
     third_opacity = item.opacity()
 
-    assert first_opacity == second_opacity == third_opacity == TEMPORAL_FUTURE_OPACITY
+    assert first_opacity == second_opacity == third_opacity == 1.0
 
 
 def test_event_item_paint_does_not_crash_with_temporal_state(qtbot, qapp_module):

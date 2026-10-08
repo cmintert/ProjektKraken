@@ -15,6 +15,9 @@ SEMANTIC_ROLES = (
     "text_main",
     "entity_main",
     "event_main",
+    "timeline_viewed_time",
+    "timeline_world_time",
+    "timeline_grid",
     "error",
     "warning",
     "success",
@@ -111,6 +114,8 @@ def contrast_failures(theme: Mapping[str, str]) -> list[str]:
                     ):
                         failures.append(f"{prefix}: boundary contrast < 3")
     for fg, bg, minimum in (
+        ("timeline_viewed_time", "app_bg", 3),
+        ("timeline_world_time", "app_bg", 3),
         ("mode_text", "mode_bg", 4.5),
         ("mode_border", "mode_bg", 3),
         ("selection_text", "selection_bg", 4.5),

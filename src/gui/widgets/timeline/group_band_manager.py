@@ -10,6 +10,9 @@ from typing import Callable, Dict, List, Optional
 from PySide6.QtCore import QObject, QPoint, Signal
 from PySide6.QtWidgets import QGraphicsScene, QMenu
 
+from src.core.calendar import CalendarConverter
+from src.core.temporal_presentation import event_temporal_presentation
+from src.gui.widgets.timeline.event_item import EventItem
 from src.gui.widgets.timeline.group_band_item import GroupBandItem
 
 logger = logging.getLogger(__name__)
@@ -122,8 +125,7 @@ class GroupBandManager(QObject):
                 events = self._get_events_for_group(
                     tag_name=tag_name, date_range=date_range
                 )
-                event_dates = [e.lore_date for e in events]
-                band.set_event_dates(event_dates)
+                self._set_occurrences(band, events, EventItem._calendar_converter)
 
             # Add to scene
             self.scene.addItem(band)
@@ -166,6 +168,28 @@ class GroupBandManager(QObject):
                     latest_date=meta["latest_date"],
                 )
 
+    def _set_occurrences(
+        self, band: GroupBandItem, events: list, converter: CalendarConverter | None
+    ) -> None:
+        """Supply occurrence marks and authored duration captions from cached events."""
+        presentations = [
+            event_temporal_presentation(event, converter) for event in events
+        ]
+        band.set_event_presentations(
+            [projection.start for projection in presentations],
+            [
+                f"{event.name}: {projection.presence.caption}"
+                for event, projection in zip(events, presentations)
+            ],
+        )
+
+    def refresh_occurrences(self, converter: CalendarConverter | None) -> None:
+        """Refresh compact projections using the provider's cached snapshots."""
+        for tag, band in self._bands.items():
+            if band.is_collapsed:
+                events = self._get_events_for_group(tag_name=tag)
+                self._set_occurrences(band, events, converter)
+
     def _on_expand_requested(self, tag_name: str) -> None:
         """Handle band expansion request."""
         logger.debug(f"Expanding band: {tag_name}")
@@ -193,8 +217,7 @@ class GroupBandManager(QObject):
 
             # Load event dates for tick marks via callback
             events = self._get_events_for_group(tag_name=tag_name)
-            event_dates = [e.lore_date for e in events]
-            band.set_event_dates(event_dates)
+            self._set_occurrences(band, events, EventItem._calendar_converter)
 
             # Add to collapsed set
             self._collapsed_tags.add(tag_name)
@@ -268,6 +291,7 @@ class GroupBandManager(QObject):
         for tag_name, band in self._bands.items():
             is_collapsed = tag_name in self._collapsed_tags
             band.set_collapsed(is_collapsed)
+        self.refresh_occurrences(EventItem._calendar_converter)
 
         # Reposition
         self._reposition_bands()

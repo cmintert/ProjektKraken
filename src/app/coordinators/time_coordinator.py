@@ -1,7 +1,7 @@
 """Coordinate calendar configuration and current lore time."""
 
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from PySide6.QtCore import Q_ARG, Slot
 from PySide6.QtWidgets import QDialog, QMessageBox
@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QDialog, QMessageBox
 from src.app.coordinators.base_coordinator import BaseCoordinator
 from src.app.qt_invocation import invoke_queued
 from src.core.calendar import CalendarConfig, CalendarConverter
+from src.core.temporal_presentation import event_navigation_context
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
@@ -33,6 +34,16 @@ class TimeCoordinator(BaseCoordinator):
         self._follow_after_save: float | None = None
         self._pending_go_to_date: float | None = None
         self._resolve_request_id = 0
+
+    def _accepts_navigation(self, time: float) -> bool:
+        """Allow disclosure only after the existing dirty-draft guard accepts."""
+        return self._current_playhead_time == time and self._follow_after_save != time
+
+    def _bind_navigation_guard(self) -> None:
+        """Bind after UI construction; coordinators are created before widgets."""
+        setter = getattr(self.main_window.timeline, "set_navigation_acceptor", None)
+        if callable(setter):
+            setter(self._accepts_navigation)
 
     @property
     def current_playhead_time(self) -> Optional[float]:
@@ -117,12 +128,22 @@ class TimeCoordinator(BaseCoordinator):
             None,
         )
         if event is not None:
-            self.go_to_date(event.lore_date)
+            self.go_to_date(
+                event.lore_date,
+                event_navigation_context(event, self.main_window.calendar_converter),
+            )
 
-    def go_to_date(self, target: float) -> None:
+    def go_to_date(
+        self, target: float, navigation_context: dict[str, Any] | None = None
+    ) -> None:
         """Move the playhead and center after its dirty-draft guard accepts."""
+        self._bind_navigation_guard()
         self._pending_go_to_date = target
-        self.main_window.timeline.set_playhead_time(target)
+        if navigation_context is None:
+            self.main_window.timeline.set_playhead_time(target)
+        else:
+            self.main_window.timeline.queue_navigation_context(navigation_context)
+            self.main_window.timeline.set_playhead_time(target)
         self._center_accepted_go_to_date()
 
     def _center_accepted_go_to_date(self) -> None:
@@ -169,6 +190,7 @@ class TimeCoordinator(BaseCoordinator):
             self._current_playhead_time = target
         self.resolve_selected_entity(after_save=True)
         self._center_accepted_go_to_date()
+        self.main_window.timeline.accept_navigation_context()
 
     def on_temporal_save_failed(self) -> None:
         """Restore a pending exact-date jump when its draft save fails."""
@@ -191,6 +213,7 @@ class TimeCoordinator(BaseCoordinator):
     @Slot(float)
     def on_playhead_changed(self, time: float) -> None:
         """Refreshes entity inspector based on playhead time."""
+        self._bind_navigation_guard()
         if self._pending_go_to_date is not None and time != self._pending_go_to_date:
             self._pending_go_to_date = None
         entity_editor = self.main_window.entity_editor
@@ -207,7 +230,9 @@ class TimeCoordinator(BaseCoordinator):
                 "Save or discard it before following the new time."
             )
             save = prompt.addButton("Save", QMessageBox.ButtonRole.AcceptRole)
-            discard = prompt.addButton("Discard", QMessageBox.ButtonRole.DestructiveRole)
+            discard = prompt.addButton(
+                "Discard", QMessageBox.ButtonRole.DestructiveRole
+            )
             prompt.addButton(QMessageBox.StandardButton.Cancel)
             prompt.exec()
             if prompt.clickedButton() == save:
@@ -281,7 +306,9 @@ class TimeCoordinator(BaseCoordinator):
         """
         try:
             if config is None:
-                logger.warning("World calendar unavailable; no temporary calendar created")
+                logger.warning(
+                    "World calendar unavailable; no temporary calendar created"
+                )
                 self.main_window.ui_manager.show_calendar_dialog(None)
                 return
             converter = CalendarConverter(config)

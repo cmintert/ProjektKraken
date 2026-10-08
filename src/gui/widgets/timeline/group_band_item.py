@@ -8,9 +8,8 @@ lanes.
 import logging
 from typing import Dict, Optional
 
-from PySide6.QtCore import QRectF, Qt, Signal
+from PySide6.QtCore import QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import (
-    QBrush,
     QColor,
     QCursor,
     QPainter,
@@ -26,7 +25,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.temporal_display import TemporalDisplay
 from src.core.theme_manager import ThemeManager
+from src.gui.widgets.timeline.temporal_geometry import project_temporal_geometry
+from src.gui.widgets.timeline.temporal_painter import paint_occurrence
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +88,8 @@ class GroupBandItem(QGraphicsObject):
 
         # Event positions for tick marks
         self.event_dates: list[float] = []
+        self.presentations: tuple[TemporalDisplay, ...] = ()
+        self.event_captions: tuple[str, ...] = ()
 
         # Visual settings
         self.setAcceptHoverEvents(True)
@@ -109,19 +113,14 @@ class GroupBandItem(QGraphicsObject):
         self.update()
 
     def _update_tooltip(self) -> None:
-        """Update the tooltip with current metadata."""
-        if self.count == 0:
-            tooltip = f"{self.tag_name}\nNo events"
-        else:
-            date_range = f"{self.earliest_date:.1f} - {self.latest_date:.1f}"
-            span = self.latest_date - self.earliest_date
-            tooltip = (
-                f"<b>{self.tag_name}</b><br>"
-                f"Events: {self.count}<br>"
-                f"Range: {date_range}<br>"
-                f"Span: {span:.1f}"
-            )
-        self.setToolTip(tooltip)
+        """Describe group membership and authored timing without raw layout dates."""
+        heading = (
+            f"{self.tag_name}\nEvents: {self.count}"
+            if self.count
+            else f"{self.tag_name}\nNo events"
+        )
+        details = self.event_captions or tuple(p.caption for p in self.presentations)
+        self.setToolTip(heading + ("\n" + "\n".join(details) if details else ""))
 
     def boundingRect(self) -> QRectF:
         """Returns the bounding rectangle for the band.
@@ -143,81 +142,43 @@ class GroupBandItem(QGraphicsObject):
         option: QStyleOptionGraphicsItem,
         widget: Optional[QWidget] = None,
     ) -> None:
-        """Paints the group band.
-
-        Args:
-            painter: The QPainter to use for drawing
-            option: Style options (unused)
-            widget: The widget being painted on (unused)
-
-        """
+        """Draw neutral structural bands and device-space occurrence marks."""
+        painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-
-        height = (
-            self.BAND_HEIGHT_COLLAPSED
-            if self.is_collapsed
-            else self.BAND_HEIGHT_EXPANDED
-        )
-
-        # Get visible rect from the view
-        if widget:
-            view_rect = widget.rect()
-            # Map to scene coordinates
-            scene_rect = painter.transform().inverted()[0].mapRect(QRectF(view_rect))
-        else:
-            # Fallback to a large rect
-            scene_rect = QRectF(-10000, 0, 20000, height)
-
-        # Background color (slightly transparent)
-        bg_color = QColor(self._color)
-        if self.is_collapsed:
-            bg_color.setAlphaF(0.6)
-        else:
-            bg_color.setAlphaF(0.3)
-
-        # Hover effect
-        if self._hovered and not self.is_collapsed:
-            bg_color = bg_color.lighter(120)
-
-        # Draw background
-        painter.setBrush(QBrush(bg_color))
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.drawRect(QRectF(scene_rect.left(), 0, scene_rect.width(), height))
-
-        # Draw border
-        border_color = QColor(self._color).darker(120)
-        painter.setPen(QPen(border_color, 1))
+        transform = painter.worldTransform()
+        width = widget.width() if widget is not None else 1000
+        origin = transform.map(QPointF(0, 0))
+        painter.resetTransform()
+        height = self.get_height()
+        role = "action_quiet_hover_bg" if self._hovered else "surface"
+        painter.fillRect(QRectF(0, origin.y(), width, height), QColor(self.theme[role]))
+        painter.setPen(QPen(QColor(self.theme["border"]), 1))
         painter.drawLine(
-            int(scene_rect.left()),
-            int(height - 1),
-            int(scene_rect.right()),
-            int(height - 1),
+            QPointF(0, origin.y() + height - 1), QPointF(width, origin.y() + height - 1)
         )
+        if self.is_collapsed:
+            self._paint_occurrences(painter, transform, origin.y() + height / 2)
+        painter.restore()
 
-        if not self.is_collapsed:
-            # No internal labels drawn here anymore - handled by GroupLabelOverlay
-            pass
-        else:
-            # Draw tick marks for collapsed band
-            if self.event_dates:
-                # Get scale factor from parent if available
-                scale_factor = 20.0  # Default
-                if hasattr(self.scene(), "views") and self.scene().views():
-                    view = self.scene().views()[0]
-                    if hasattr(view, "scale_factor"):
-                        scale_factor = view.scale_factor
+    def _paint_occurrences(
+        self, painter: QPainter, transform: object, y: float
+    ) -> None:
+        """Use screen-space strokes; a layout anchor never becomes a precise tick."""
+        from PySide6.QtGui import QTransform
 
-                # Draw vertical tick for each event
-                tick_color = QColor(self._color).lighter(150)
-                painter.setPen(QPen(tick_color, 1))
-
-                for event_date in self.event_dates:
-                    # Calculate X position
-                    x_pos = event_date * scale_factor
-
-                    # Only draw if in visible range
-                    if scene_rect.left() <= x_pos <= scene_rect.right():
-                        painter.drawLine(int(x_pos), 0, int(x_pos), int(height))
+        assert isinstance(transform, QTransform)
+        views = self.scene().views() if self.scene() is not None else []
+        scale = getattr(views[0], "scale_factor", 20.0) if views else 20.0
+        pixels_per_day = scale * transform.m11()
+        for display in self.presentations:
+            geometry = project_temporal_geometry(display, pixels_per_day)
+            position = transform.map(QPointF(display.anchor * scale, 0))
+            painter.save()
+            painter.translate(position.x(), y)
+            paint_occurrence(
+                painter, geometry, self._color, QColor(self.theme["supporting_text"])
+            )
+            painter.restore()
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """Handle mouse press."""
@@ -304,7 +265,21 @@ class GroupBandItem(QGraphicsObject):
 
         """
         self.event_dates = event_dates
-        self.update()
+        self.set_event_presentations(
+            [TemporalDisplay(date, date, anchor=date) for date in event_dates]
+        )
+
+    def set_event_presentations(
+        self, presentations: list[TemporalDisplay], captions: list[str] | None = None
+    ) -> None:
+        """Accept immutable occurrence projections, retaining their uncertainty."""
+        snapshot = tuple(presentations)
+        details = tuple(captions or ())
+        if snapshot != self.presentations or details != self.event_captions:
+            self.presentations = snapshot
+            self.event_captions = details
+            self._update_tooltip()
+            self.update()
 
     def get_height(self) -> int:
         """Get the current height of the band.

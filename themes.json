@@ -90,7 +90,12 @@
         "action_destructive_checked_border": "#E57C7C",
         "action_destructive_disabled_bg": "#323232",
         "action_destructive_disabled_text": "#9E9E9E",
-        "action_destructive_disabled_border": "#9E9E9E"
+        "action_destructive_disabled_border": "#9E9E9E",
+        "timeline_viewed_time": "#E0E0E0",
+        "timeline_world_time": "#E0E0E0",
+        "timeline_grid": "#454545",
+        "timeline_halo_opacity": "0.25",
+        "timeline_window_opacity": "0.14"
     },
     "light_mode": {
         "app_bg": "#F5F5F5",
@@ -183,7 +188,12 @@
         "action_destructive_checked_border": "#B92727",
         "action_destructive_disabled_bg": "#FFFFFF",
         "action_destructive_disabled_text": "#707070",
-        "action_destructive_disabled_border": "#757575"
+        "action_destructive_disabled_border": "#757575",
+        "timeline_viewed_time": "#212121",
+        "timeline_world_time": "#212121",
+        "timeline_grid": "#E0E0E0",
+        "timeline_halo_opacity": "0.25",
+        "timeline_window_opacity": "0.14"
     },
     "fantasy_mode": {
         "app_bg": "#24211C",
@@ -276,7 +286,12 @@
         "action_destructive_checked_border": "#AC6765",
         "action_destructive_disabled_bg": "#2E2A25",
         "action_destructive_disabled_text": "#989183",
-        "action_destructive_disabled_border": "#948C7E"
+        "action_destructive_disabled_border": "#948C7E",
+        "timeline_viewed_time": "#E6DCC3",
+        "timeline_world_time": "#E6DCC3",
+        "timeline_grid": "#453F36",
+        "timeline_halo_opacity": "0.25",
+        "timeline_window_opacity": "0.14"
     },
     "imperial_mode": {
         "app_bg": "#0D0D0D",
@@ -369,7 +384,12 @@
         "action_destructive_checked_border": "#BD3434",
         "action_destructive_disabled_bg": "#1C1C1C",
         "action_destructive_disabled_text": "#888888",
-        "action_destructive_disabled_border": "#888888"
+        "action_destructive_disabled_border": "#888888",
+        "timeline_viewed_time": "#E0E0E0",
+        "timeline_world_time": "#E0E0E0",
+        "timeline_grid": "#3E3E3E",
+        "timeline_halo_opacity": "0.25",
+        "timeline_window_opacity": "0.14"
     },
     "cyberpunk_mode": {
         "app_bg": "#0A0A12",
@@ -462,7 +482,12 @@
         "action_destructive_checked_border": "#FB4C8B",
         "action_destructive_disabled_bg": "#12121F",
         "action_destructive_disabled_text": "#7A7AA3",
-        "action_destructive_disabled_border": "#6B6B99"
+        "action_destructive_disabled_border": "#6B6B99",
+        "timeline_viewed_time": "#D1D1FF",
+        "timeline_world_time": "#D1D1FF",
+        "timeline_grid": "#2E2E48",
+        "timeline_halo_opacity": "0.25",
+        "timeline_window_opacity": "0.14"
     },
     "muted_light_mode": {
         "app_bg": "#EAE7E0",
@@ -555,6 +580,11 @@
         "action_destructive_checked_border": "#9E5E5D",
         "action_destructive_disabled_bg": "#F2F0EB",
         "action_destructive_disabled_text": "#6A6760",
-        "action_destructive_disabled_border": "#858178"
+        "action_destructive_disabled_border": "#858178",
+        "timeline_viewed_time": "#45433E",
+        "timeline_world_time": "#45433E",
+        "timeline_grid": "#D6D3CC",
+        "timeline_halo_opacity": "0.25",
+        "timeline_window_opacity": "0.14"
     }
 }

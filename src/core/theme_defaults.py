@@ -188,3 +188,12 @@ DEFAULT_THEMES: dict[str, dict[str, str]] = {
         "action_destructive_disabled_border": "#757575",
     },
 }
+
+
+for _palette in DEFAULT_THEMES.values():
+    _palette["timeline_viewed_time"] = _palette["text_main"]
+    _palette["timeline_world_time"] = _palette["supporting_text"]
+    _palette["timeline_grid"] = _palette["border"]
+
+    _palette["timeline_halo_opacity"] = "0.25"
+    _palette["timeline_window_opacity"] = "0.14"

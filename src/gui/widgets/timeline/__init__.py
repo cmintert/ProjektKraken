@@ -10,6 +10,7 @@ maintainability:
 - timeline/timeline_view.py - Main view with zoom/pan and interaction
 """
 
+from collections.abc import Callable
 from typing import Any, Optional, cast
 
 from PySide6.QtCore import QSettings, QSize, Qt, Signal
@@ -23,8 +24,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.theme_manager import ThemeManager
+from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.timeline.event_item import EventItem
+from src.gui.widgets.timeline.time_indicators import TimelineTimeStatus
 from src.gui.widgets.timeline.timeline_scene import (
     CurrentTimeLineItem,
     PlayheadItem,
@@ -42,6 +46,7 @@ class TimelineWidget(QWidget):
     event_date_changed = Signal(str, float)  # (event_id, new_lore_date)
     create_event_requested = Signal()  # Expose empty state action from view
     go_to_date_requested = Signal()
+    navigation_context_changed = Signal(dict)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the TimelineWidget.
@@ -146,9 +151,38 @@ class TimelineWidget(QWidget):
         self.view.event_selected.connect(self.event_selected.emit)
         self.view.playhead_time_changed.connect(self.playhead_time_changed.emit)
         self.view.current_time_changed.connect(self.current_time_changed.emit)
+        self.view.navigation_context_changed.connect(
+            self.navigation_context_changed.emit
+        )
         self.view.event_date_changed.connect(self.event_date_changed.emit)
         self.view.create_event_requested.connect(self.create_event_requested.emit)
+        self.time_status = TimelineTimeStatus(self)
+        main_layout.addWidget(self.time_status)
         main_layout.addWidget(self.view)
+        self.view.time_indicators.status = self.time_status
+        self._apply_theme()
+        ThemeManager().theme_changed.connect(self._apply_theme)
+        self.view.time_indicators.refresh()
+        self._next_navigation_context: dict[str, Any] | None = None
+
+    def _apply_theme(self, theme: dict[str, str] | None = None) -> None:
+        """Share normal, disabled, checked and keyboard-focus action presentation."""
+        self.action_toolbar.setStyleSheet(
+            StyleHelper.get_action_role_style("secondary", "QPushButton")
+        )
+        self.view.time_indicators.refresh()
+
+    def set_navigation_acceptor(self, accepts: Callable[[float], bool]) -> None:
+        """Use the existing application guard as the acceptance authority."""
+        self.view.time_indicators.accepts = accepts
+
+    def accept_navigation_context(self) -> None:
+        """Complete disclosure after a deferred save accepts its viewing date."""
+        self.view.time_indicators.settle()
+
+    def queue_navigation_context(self, context: dict[str, Any]) -> None:
+        """Associate a serializable target snapshot with the next float time request."""
+        self._next_navigation_context = dict(context)
 
     def set_data_provider(self, provider: Any) -> None:
         """Sets the data provider for timeline grouping features.
@@ -207,14 +241,18 @@ class TimelineWidget(QWidget):
         self.view.set_playhead_event_snapping(enabled)
         QSettings().setValue("timeline/snap_playhead_to_events", enabled)
 
-    def set_playhead_time(self, time: float) -> None:
+    def set_playhead_time(
+        self, time: float, navigation_context: dict[str, Any] | None = None
+    ) -> None:
         """Sets the playhead to a specific time.
 
         Args:
             time: Time in lore_date units.
 
         """
-        self.view.set_playhead_time(time)
+        context = navigation_context or self._next_navigation_context
+        self._next_navigation_context = None
+        self.view.set_playhead_time(time, context)
 
     def get_playhead_time(self) -> float:
         """Gets the current playhead time.
@@ -266,6 +304,11 @@ class TimelineWidget(QWidget):
         EventItem.set_calendar_converter(converter)
         # Also configure the ruler for calendar-aware date divisions
         self.view.set_ruler_calendar(converter)
+        self.view.time_indicators.converter = converter
+        self.view.time_indicators.settle()
+        if self.view._band_manager is not None:
+            self.view._band_manager.refresh_occurrences(converter)
+        self.view.repack_events()
         self.btn_go_to_date.setEnabled(converter is not None)
         # Trigger repaint to update existing items
         self.view.viewport().update()

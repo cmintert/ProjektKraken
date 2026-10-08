@@ -1,0 +1,74 @@
+[
+  {
+    "theme": "dark_mode",
+    "role": "text_main",
+    "normal": 10.725857653191909,
+    "future": 10.725857653191909
+  },
+  {
+    "theme": "dark_mode",
+    "role": "supporting_caption",
+    "normal": 5.284883186916832,
+    "future": 5.284883186916832
+  },
+  {
+    "theme": "light_mode",
+    "role": "text_main",
+    "normal": 14.769522972831433,
+    "future": 14.769522972831433
+  },
+  {
+    "theme": "light_mode",
+    "role": "supporting_caption",
+    "normal": 4.542288769612194,
+    "future": 4.542288769612194
+  },
+  {
+    "theme": "fantasy_mode",
+    "role": "text_main",
+    "normal": 11.75408203503339,
+    "future": 11.75408203503339
+  },
+  {
+    "theme": "fantasy_mode",
+    "role": "supporting_caption",
+    "normal": 5.127055615104635,
+    "future": 5.127055615104635
+  },
+  {
+    "theme": "imperial_mode",
+    "role": "text_main",
+    "normal": 14.72296854915625,
+    "future": 14.72296854915625
+  },
+  {
+    "theme": "imperial_mode",
+    "role": "supporting_caption",
+    "normal": 5.482700198252324,
+    "future": 5.482700198252324
+  },
+  {
+    "theme": "cyberpunk_mode",
+    "role": "text_main",
+    "normal": 13.403271219973309,
+    "future": 13.403271219973309
+  },
+  {
+    "theme": "cyberpunk_mode",
+    "role": "supporting_caption",
+    "normal": 4.826218030415841,
+    "future": 4.826218030415841
+  },
+  {
+    "theme": "muted_light_mode",
+    "role": "text_main",
+    "normal": 8.00070747224021,
+    "future": 8.00070747224021
+  },
+  {
+    "theme": "muted_light_mode",
+    "role": "supporting_caption",
+    "normal": 4.569035373012062,
+    "future": 4.569035373012062
+  }
+]

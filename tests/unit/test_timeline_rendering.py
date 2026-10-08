@@ -122,7 +122,7 @@ def test_timeline_scene_refreshes_existing_event_item_theme(qapp):
 
         assert item.base_color.name() == theme["event_main"].lower()
         assert item._text_color.name() == theme["text_main"].lower()
-        assert item._secondary_text_color.name() == theme["text_dim"].lower()
+        assert item._secondary_text_color.name() == theme["supporting_caption"].lower()
         assert item._border_color.name() == theme["border"].lower()
     finally:
         theme_manager.current_theme_name = previous_theme
@@ -255,7 +255,8 @@ def test_timeline_view_lane_height_constant(timeline_view):
 
 def test_timeline_view_ruler_height_constant(timeline_view):
     """Test RULER_HEIGHT constant."""
-    assert timeline_view.RULER_HEIGHT == 50
+    assert timeline_view.CALENDAR_RULER_HEIGHT == 50
+    assert timeline_view.RULER_HEIGHT == 82
 
 
 def test_timeline_scene_rect_is_zoom_relative(timeline_view):

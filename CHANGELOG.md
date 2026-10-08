@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-07
-**Commit:** 03935dd60f807d5dd327a03dd5a9d07cacab82c6
+**Last Updated:** 2026-10-08
+**Commit:** e8a00a8bdc30efa42985883940901d395750712a
 ---
 
 # Changelog
@@ -12,6 +12,17 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-07)* **Timeline temporal meaning (KRT-50/KRT-57/KRT-58)**:
+  Separated uncertain occurrence, detached duration length and possible/certain
+  presence; preserved uncertainty in collapsed groups and explained uncertain
+  navigation anchors after acceptance. Added pinned viewed/world dates, labeled
+  solid/dashed time marks, readable future captions and shared toolbar focus.
+  Unified paint/hit/packing extents and corrected grouped duplicate zoom.
+  Added regression coverage and separate before/after evidence; fresh human
+  interpretation remains required before acceptance.
+  Fixed startup restoration of a saved nonzero playhead by restoring it after
+  timeline consumers initialize; retained the saved value without resetting settings.
 
 - *(2026-10-07)* **Longform gestures and relation drops (KRT-56)**: Kept held
   presses, outline drags and document text selection from navigating inspectors.

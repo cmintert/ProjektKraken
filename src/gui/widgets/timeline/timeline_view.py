@@ -33,11 +33,13 @@ from PySide6.QtWidgets import QGraphicsLineItem, QGraphicsView, QSizePolicy, QWi
 
 from src.core.command import LoreMutationEffect
 from src.core.events import Event
+from src.core.temporal_presentation import event_navigation_context
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.timeline.event_item import EventItem
 from src.gui.widgets.timeline.group_band_manager import GroupBandManager
 from src.gui.widgets.timeline.group_label_overlay import GroupLabelOverlay
+from src.gui.widgets.timeline.time_indicators import TimelineTimeIndicators
 from src.gui.widgets.timeline.timeline_scene import (
     CurrentTimeLineItem,
     PlayheadItem,
@@ -72,10 +74,12 @@ class TimelineView(QGraphicsView):
     event_date_changed = Signal(str, float)  # (event_id, new_lore_date)
     create_event_requested = Signal()  # Emitted from empty state action
     layout_requested = Signal()
+    navigation_context_changed = Signal(dict)
 
     # Use the tallest event type height for lane spacing
     LANE_HEIGHT = EventItem.DURATION_EVENT_HEIGHT
-    RULER_HEIGHT = 50  # Increased for semantic ruler with context tier
+    CALENDAR_RULER_HEIGHT = 50
+    RULER_HEIGHT = 82  # Separate time identity labels from calendar tick text.
 
     # Zoom limits
     MIN_ZOOM = 0.000001  # Maximum zoom out (0.0001% of normal)
@@ -88,7 +92,7 @@ class TimelineView(QGraphicsView):
     HORIZONTAL_REBASE_MARGIN = 0.1
 
     # Ruler & Playhead Constants
-    PLAYHEAD_COLOR = QColor(255, 100, 100)
+    # Time identities are resolved through theme roles at paint time.
     PLAYHEAD_HANDLE_WIDTH = 20
     PLAYHEAD_HANDLE_RECT_HEIGHT = 12
     PLAYHEAD_HANDLE_TRI_HEIGHT = 8
@@ -99,7 +103,6 @@ class TimelineView(QGraphicsView):
 
     # Special "All Events" group
     ALL_EVENTS_GROUP_NAME = "All events"
-    ALL_EVENTS_COLOR = "#808080"  # Neutral gray
 
     def __init__(self, parent: QWidget | None = None) -> None:
         """Initializes the TimelineView.
@@ -117,7 +120,7 @@ class TimelineView(QGraphicsView):
         self._graphics_scene = TimelineScene(self)
         self.setScene(self._graphics_scene)
 
-        axis_pen = QPen(QColor(100, 100, 100))
+        axis_pen = QPen(QColor(ThemeManager().get_theme()["timeline_grid"]))
         axis_pen.setCosmetic(True)
         self._axis_line = self.graphics_scene.addLine(-1e12, 0, 1e12, 0, axis_pen)
         self._drop_lines: dict[str, QGraphicsLineItem] = {}
@@ -196,10 +199,6 @@ class TimelineView(QGraphicsView):
             float, settings.value("timeline/playhead_time", 0.0, type=float)
         )
 
-        # Apply restoration
-        if persisted_time != 0.0:
-            self.set_playhead_time(persisted_time)
-
         # Async layout worker infrastructure
         self._thread_pool = QThreadPool.globalInstance()
         self._layout_in_progress = False
@@ -247,6 +246,12 @@ class TimelineView(QGraphicsView):
             "Create Event", self.create_event_requested.emit, primary=True
         )
         self._empty_state.show()
+        self.time_indicators = TimelineTimeIndicators(self)
+        self._programmatic_time_change = False
+
+        # Restore only after all consumers of playhead changes are initialized.
+        if persisted_time != 0.0:
+            self.set_playhead_time(persisted_time)
 
     @property
     def graphics_scene(self) -> TimelineScene:
@@ -279,6 +284,8 @@ class TimelineView(QGraphicsView):
 
         Updates the internal time and emits signal.
         """
+        if self._programmatic_time_change:
+            return
         new_time = self._manual_playhead_time(x_pos)
         self._playhead._time = new_time  # Directly update internal state
         self.playhead_time_changed.emit(new_time)
@@ -296,6 +303,7 @@ class TimelineView(QGraphicsView):
         """Resolve one manual playhead position, applying screen-space snapping."""
         candidate = scene_x / self.scale_factor
         if not self._snap_playhead_to_events or not self.events:
+            self.time_indicators.queue({}, round(candidate, 4))
             return round(candidate, 4)
 
         nearest = min(self.events, key=lambda event: abs(event.lore_date - candidate))
@@ -303,7 +311,12 @@ class TimelineView(QGraphicsView):
             abs(nearest.lore_date - candidate) * self.scale_factor * self._current_zoom
         )
         if distance_px <= self.PLAYHEAD_EVENT_SNAP_DISTANCE_PX:
+            self.time_indicators.queue(
+                event_navigation_context(nearest, EventItem._calendar_converter),
+                nearest.lore_date,
+            )
             return float(nearest.lore_date)
+        self.time_indicators.queue({}, round(candidate, 4))
         return round(candidate, 4)
 
     def _on_event_drag_complete(self, event_id: str, new_lore_date: float) -> None:
@@ -396,6 +409,7 @@ class TimelineView(QGraphicsView):
         viewport_rect = self.viewport().rect()
         w = viewport_rect.width()
         h = self.RULER_HEIGHT
+        calendar_h = self.CALENDAR_RULER_HEIGHT
         context_h = self.CONTEXT_TIER_HEIGHT
 
         # Get theme with error handling for test environments
@@ -410,7 +424,7 @@ class TimelineView(QGraphicsView):
             }
 
         # 2. Draw context tier background (top band)
-        painter.setBrush(QColor(theme["surface"]).darker(110))
+        painter.setBrush(QColor(theme["surface"]))
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawRect(0, 0, w, context_h)
 
@@ -470,22 +484,24 @@ class TimelineView(QGraphicsView):
             else:
                 tick_height = self.MINOR_TICK_HEIGHT
                 painter.setFont(minor_font)
-                text_color = QColor(theme["text_dim"])
+                text_color = QColor(theme["supporting_caption"])
 
             # Apply opacity for fade-in effect
-            text_color.setAlphaF(tick.opacity)
-            tick_color = QColor(theme["text_dim"])
-            tick_color.setAlphaF(tick.opacity)
+            tick_color = QColor(theme["supporting_caption"])
 
             # Draw tick line
             painter.setPen(QPen(tick_color, 1))
-            painter.drawLine(int(screen_x), h - tick_height, int(screen_x), h)
+            painter.drawLine(
+                int(screen_x), calendar_h - tick_height, int(screen_x), calendar_h
+            )
 
             # Draw label if present
             if tick.label:
                 painter.setPen(text_color)
                 # Position labels in the main ruler area (below context tier)
-                label_rect = QRectF(screen_x + 4, context_h + 2, 70, h - context_h - 14)
+                label_rect = QRectF(
+                    screen_x + 4, context_h + 2, 70, calendar_h - context_h - 14
+                )
                 painter.drawText(
                     label_rect,
                     Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
@@ -494,7 +510,7 @@ class TimelineView(QGraphicsView):
 
             # Draw vertical grid line (subtle)
             if tick.is_major:
-                grid_color = QColor(255, 255, 255, int(15 * tick.opacity))
+                grid_color = QColor(theme["timeline_grid"])
                 painter.setPen(QPen(grid_color, 1))
                 painter.drawLine(
                     int(screen_x), h, int(screen_x), viewport_rect.height()
@@ -515,6 +531,7 @@ class TimelineView(QGraphicsView):
             )
 
         # 8. Draw Playhead Handle (on top of everything else)
+        self.time_indicators.paint(painter)
         self._draw_playhead_handle(painter, QRectF(rect))
 
         # 9. Clean up
@@ -522,6 +539,8 @@ class TimelineView(QGraphicsView):
 
     def _draw_playhead_handle(self, painter: QPainter, rect: QRectF) -> None:
         """Draws a handle for the playhead in the ruler area."""
+        if not self._playhead.isVisible():
+            return
         playhead_time = self._playhead.get_time(self.scale_factor)
 
         # Convert to screen coordinates
@@ -537,21 +556,12 @@ class TimelineView(QGraphicsView):
         # A pentagon shape pointing down
         # Width: 14px, Height: 12px
 
-        handle_color = QColor(self.PLAYHEAD_COLOR)  # Match playhead red
-
-        # Determine if we're hovering over the handle/ruler area
-        is_hovered = False
-        if hasattr(self, "_playhead_hovered") and self._playhead_hovered:
-            is_hovered = True
-        elif hasattr(self, "_ruler_hovered") and self._ruler_hovered:
-            # Maybe slightly highlight if anywhere in ruler
-            pass
-
-        # Check for hover/drag state to highlight
-        if hasattr(self, "_dragging_playhead") and self._dragging_playhead:
-            handle_color = handle_color.lighter(130)
-        elif is_hovered or self._playhead.isUnderMouse():
-            handle_color = handle_color.lighter(120)
+        theme = ThemeManager().get_theme()
+        handle_color = QColor(theme["timeline_viewed_time"])
+        if getattr(self, "_dragging_playhead", False):
+            handle_color = QColor(theme["action_secondary_pressed_border"])
+        elif getattr(self, "_playhead_hovered", False):
+            handle_color = QColor(theme["action_secondary_hover_border"])
 
         painter.setBrush(handle_color)
         painter.setPen(Qt.PenStyle.NoPen)
@@ -763,9 +773,7 @@ class TimelineView(QGraphicsView):
                 item.on_drag_complete = self._on_event_drag_complete
                 self.graphics_scene.addItem(item)
                 self._event_items[event_id] = item
-                line = self._create_drop_line(
-                    item.x(), -self.RULER_HEIGHT, 80
-                )
+                line = self._create_drop_line(item.x(), -self.RULER_HEIGHT, 80)
                 self._drop_lines[event_id] = line
                 layout_changed = True
             else:
@@ -835,6 +843,7 @@ class TimelineView(QGraphicsView):
         grouping_active = getattr(self, "_grouping_tag_order", None)
 
         if grouping_active and self._band_manager:
+            self._band_manager.refresh_occurrences(EventItem._calendar_converter)
             # Validate that bands actually exist - if not, clear stale state
             bands_exist = any(
                 self._band_manager.get_band(tag) for tag in grouping_active
@@ -978,9 +987,9 @@ class TimelineView(QGraphicsView):
         from itertools import accumulate
 
         # Each offset is previous offset + previous height + padding
-        # Start at 80.
+        first_y = self.RULER_HEIGHT + 40
         lane_y_offsets = list(
-            accumulate((h + 10 for h in lane_heights[:-1]), initial=80)
+            accumulate((h + 10 for h in lane_heights[:-1]), initial=first_y)
         )
 
         # Disable view updates during batch operation for better performance
@@ -994,14 +1003,14 @@ class TimelineView(QGraphicsView):
                 if isinstance(item, EventItem):
                     existing_items[item.event.id] = item
 
-            max_y = 80
+            max_y = first_y
             for event in self.events:
                 if event.id in existing_items:
                     lane_index = event_lane_assignments[event.id]
                     y = (
                         lane_y_offsets[lane_index]
                         if lane_index < len(lane_y_offsets)
-                        else 80
+                        else first_y
                     )
                     item = existing_items[event.id]
 
@@ -1114,6 +1123,7 @@ class TimelineView(QGraphicsView):
             Events are sorted by date before packing for optimal layout.
             Duplicate items are cleared before repacking to prevent visual issues.
         """
+        self._lane_packer.scale_factor = self.scale_factor * self._current_zoom
         # Sort events by date first for proper packing
         self.events.sort(key=lambda e: e.lore_date)
 
@@ -1129,7 +1139,7 @@ class TimelineView(QGraphicsView):
             self.events, self._grouping_tag_order, self._grouping_mode
         )
 
-        current_y = 60.0  # Start below ruler
+        current_y = float(self.RULER_HEIGHT + 10)  # Start below identity rows.
         placed_event_ids: set[str] = set()
 
         # 2. Position tag group bands and their events
@@ -1187,7 +1197,7 @@ class TimelineView(QGraphicsView):
             band.setY(current_y)
             band.setVisible(True)
             band_height = band.get_height()
-            current_y += band_height + 25
+            current_y += band_height + 40
 
             # If band is collapsed, hide events and skip space
             if band.is_collapsed:
@@ -1225,6 +1235,7 @@ class TimelineView(QGraphicsView):
                     for i in range(lane_idx):
                         y_offset += lane_heights[i] + self._lane_packer.LANE_PADDING
 
+                    item.set_zoom(self._current_zoom)
                     item.setY(current_y + y_offset)
                     item.setVisible(True)
                     item._initial_y = current_y + y_offset
@@ -1283,7 +1294,7 @@ class TimelineView(QGraphicsView):
             all_events_band.setY(current_y)
             all_events_band.setVisible(True)
             band_height = all_events_band.get_height()
-            current_y += band_height + 25
+            current_y += band_height + 40
 
         grouped_event_ids = placed_event_ids
 
@@ -1436,8 +1447,7 @@ class TimelineView(QGraphicsView):
                 shifted_scene_point = self.mapToScene(cursor_pos)
                 cursor_shift = scene_under_cursor.x() - shifted_scene_point.x()
                 target_center_date = (
-                    self._visible_center_date()
-                    + cursor_shift / self.scale_factor
+                    self._visible_center_date() + cursor_shift / self.scale_factor
                 )
                 self._set_horizontal_window(target_center_date)
 
@@ -1691,6 +1701,7 @@ class TimelineView(QGraphicsView):
         drop_lines: dict[str, QGraphicsLineItem] | None = None,
     ) -> None:
         """Positions an event item and updates its associated drop line."""
+        item.set_zoom(self._current_zoom)
         item.setY(y)
         item.setVisible(True)
         item._initial_y = y
@@ -1725,14 +1736,16 @@ class TimelineView(QGraphicsView):
         """
         return self._playback_timer.isActive()
 
-    def set_playhead_time(self, time: float) -> None:
-        """Sets the playhead to a specific time position.
-
-        Args:
-            time: The time in lore_date units.
-
-        """
-        self._playhead.set_time(time, self.scale_factor)
+    def set_playhead_time(
+        self, time: float, navigation_context: dict[str, Any] | None = None
+    ) -> None:
+        """Move the viewing coordinate while keeping context pending until accepted."""
+        self.time_indicators.queue(navigation_context or {}, time)
+        self._programmatic_time_change = True
+        try:
+            self._playhead.set_time(time, self.scale_factor)
+        finally:
+            self._programmatic_time_change = False
         self.playhead_time_changed.emit(time)
         self.update_events_temporal_state()
 

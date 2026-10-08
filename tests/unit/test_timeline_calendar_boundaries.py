@@ -332,5 +332,5 @@ def test_january_event_aligns_with_painted_year_tick(
     assert 0 < event_x < image.width() - 1
     assert tick_x == event_x
     # Inspect actual paint output in the tick stem, away from labels and grid lines.
-    stem_y = view.RULER_HEIGHT - view.MAJOR_TICK_HEIGHT // 2
+    stem_y = view.CALENDAR_RULER_HEIGHT - view.MAJOR_TICK_HEIGHT // 2
     assert image.pixelColor(event_x, stem_y) != image.pixelColor(event_x + 2, stem_y)

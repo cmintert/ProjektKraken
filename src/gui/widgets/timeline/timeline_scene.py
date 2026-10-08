@@ -8,8 +8,14 @@ from collections.abc import Callable
 from typing import Any, Optional
 
 from PySide6.QtCore import QObject, Qt
-from PySide6.QtGui import QBrush, QColor, QCursor, QPainterPath, QPen
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsLineItem, QGraphicsScene
+from PySide6.QtGui import QBrush, QColor, QCursor, QPainter, QPainterPath, QPen
+from PySide6.QtWidgets import (
+    QGraphicsItem,
+    QGraphicsLineItem,
+    QGraphicsScene,
+    QStyleOptionGraphicsItem,
+    QWidget,
+)
 
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.timeline.event_item import EventItem
@@ -43,7 +49,19 @@ class TimelineScene(QGraphicsScene):
                 item.refresh_theme(theme)
 
 
-class PlayheadItem(QGraphicsLineItem):
+class _ScreenPaintedTimeLine(QGraphicsLineItem):
+    """Keep scene hit geometry while the view paints clipped device-space strokes."""
+
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionGraphicsItem,
+        widget: QWidget | None = None,
+    ) -> None:
+        """The time-indicator controller owns painting, including dash lengths."""
+
+
+class PlayheadItem(_ScreenPaintedTimeLine):
     """Draggable vertical line representing the current playback position."""
 
     def __init__(self, parent: Optional[QGraphicsItem] = None) -> None:
@@ -56,7 +74,9 @@ class PlayheadItem(QGraphicsLineItem):
         super().__init__(0, -100000, 0, 100000, parent)
 
         # Style
-        pen = QPen(QColor(255, 100, 100), 2)  # Red playhead
+        pen = QPen(
+            QColor(ThemeManager().get_theme()["timeline_viewed_time"]), 2
+        )  # Red playhead
         pen.setCosmetic(True)
         self.setPen(pen)
 
@@ -170,7 +190,7 @@ class PlayheadItem(QGraphicsLineItem):
         return self.x() / scale_factor
 
 
-class CurrentTimeLineItem(QGraphicsLineItem):
+class CurrentTimeLineItem(_ScreenPaintedTimeLine):
     """Non-draggable vertical line representing the current time in the world.
 
     This is distinct from the playhead and represents the "now" of the world.
@@ -186,7 +206,9 @@ class CurrentTimeLineItem(QGraphicsLineItem):
         super().__init__(0, -100000, 0, 100000, parent)
 
         # Style - distinct from playhead (blue instead of red)
-        pen = QPen(QColor(100, 150, 255), 3)  # Blue current time line, thicker
+        pen = QPen(
+            QColor(ThemeManager().get_theme()["timeline_world_time"]), 3
+        )  # Blue current time line, thicker
         pen.setCosmetic(True)
         pen.setStyle(Qt.PenStyle.DashLine)  # Dashed to distinguish from playhead
         self.setPen(pen)

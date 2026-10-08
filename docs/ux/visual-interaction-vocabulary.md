@@ -103,3 +103,46 @@ Static checks cannot determine whether a role means the right thing. Reviewers
 must reject semantic misuse (for example, Entity blue on an AI action), even when
 colors come from themes. Rendered evidence establishes presentation, not human
 task-time improvement. KA-04/KA-20 remain relevant to empty-world comparisons.
+## Timeline temporal grammar — 2026-10-07
+
+KRT-50/KRT-57/KRT-58 extend this vocabulary to the world timeline.
+This does not change stored temporal assertions or the authoring interaction contract.
+
+- Occurrence marks answer when an event might start: precise points are filled;
+  finite precision/occurrence windows use hollow anchors and caps; unbounded
+  approximate dates use uncapped halos; one-sided assertions retain their hard
+  cap and open direction. Hollow anchors are layout positions, not exact dates.
+- For uncertain starts with a known duration, Starts, Duration and Possible span
+  remain visible together. Duration is a detached length measure on a neutral
+  surface; its horizontal placement does not assert a start/end date. Below six
+  pixels it uses a broken compact measure and keeps the authored value visible.
+- Possible span is a thin hatched possible-presence envelope with a solid
+  guaranteed-presence core. It must not serve as the duration-length measure.
+  Independently asserted endpoints show Starts, Ends and Possible span; their
+  representative difference is not an authored fixed duration.
+- Valid unbounded timing retains its occurrence grammar and explains that its
+  presence span is not bounded. Question-mark marks indicate actual unresolved
+  assertions or unavailable calendars.
+- Collapsed group marks retain occurrence uncertainty with readable device-space
+  strokes. Expansion and tooltips retain event names and authored duration.
+- Viewing and World current time stay named in a pinned, wrapping date strip.
+  The viewed-time mark is solid with a draggable handle; world time is dashed
+  without a draggable handle. Separate identity rows below calendar ticks prevent
+  label collisions. Coincident marks identify both roles.
+- Snapping and event-directed navigation may use a representative position.
+  Uncertain targets receive a disclosure after navigation safeguards accept;
+  canceled/failed navigation retains the previous accepted context.
+- Date captions use supporting_caption at full opacity. Definitely future
+  occurrences show Not yet without dimming their names/dates. The existing
+  past-start flag does not assert that a duration has finished.
+- timeline_viewed_time and timeline_world_time are theme-owned time-identity
+  roles, initially mapped to readable neutral text tokens; pattern, handle and
+  text supply the distinction. timeline_grid and theme-owned halo/window opacity
+  values control secondary geometry. event_main retains event identity; shared
+  supporting text, selection and focus roles keep marks and controls readable.
+
+Contracts 1/2/4/5/6/7/8/9 apply. Theme changes, accepted-target refresh and
+collapsed-group refresh must preserve selection, drafts, playhead/world-time
+separation and undo. Review normal/future, selected/unselected, focus, disabled,
+hover/drag, six palettes and narrow overflow. Screenshot evidence establishes
+rendering; fresh unprompted interpretation is required before claiming usability.

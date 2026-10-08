@@ -7,11 +7,12 @@ overlaps using a greedy "First Fit" approach.
 from PySide6.QtGui import QFont, QFontMetrics
 
 from src.core.events import Event
-from src.core.temporal_display import TemporalDisplay, event_temporal_display
+from src.core.temporal_display import TemporalDisplay
+from src.core.temporal_presentation import event_temporal_presentation
 from src.gui.widgets.timeline.event_item import EventItem
+from src.gui.widgets.timeline.item_layout import timeline_item_layout
 from src.gui.widgets.timeline.temporal_geometry import (
     TemporalGeometry,
-    project_temporal_geometry,
 )
 
 
@@ -65,35 +66,28 @@ class TimelineLanePacker:
         lanes_heights: list[int] = []
         event_lane_assignments: dict[str, int] = {}
 
-        projected: list[tuple[float, Event, TemporalDisplay, TemporalGeometry]] = []
+        projected = []
         for event in events:
-            display = event_temporal_display(event, EventItem._calendar_converter)
-            geometry = project_temporal_geometry(display, self.scale_factor)
-            projected.append(
-                (
-                    event.lore_date + geometry.left / self.scale_factor,
-                    event,
-                    display,
-                    geometry,
-                )
+            layout = timeline_item_layout(
+                event_temporal_presentation(event, EventItem._calendar_converter),
+                event.name,
+                self.scale_factor,
             )
+            start = event.lore_date + layout.bounds.left() / self.scale_factor
+            projected.append((start, event, layout))
         projected.sort(key=lambda entry: entry[0])
-        for start_time, event, display, geometry in projected:
-            event_height = EventItem.get_event_height(event)
-
-            visual_duration = self._calculate_visual_duration(
-                event, display=display, geometry=geometry
-            )
+        for start_time, event, layout in projected:
+            visual_duration = layout.bounds.width() / self.scale_factor
             gap_duration = self.GAP_PIXELS / self.scale_factor
-
-            end_time = start_time + visual_duration + gap_duration
-
-            # First Fit (Gravity) - find first available lane
-            assigned_lane = self._find_available_lane(
-                lanes_end_times, lanes_heights, start_time, end_time, event_height
+            self._find_and_record_lane(
+                event.id,
+                lanes_end_times,
+                lanes_heights,
+                event_lane_assignments,
+                start_time,
+                start_time + visual_duration + gap_duration,
+                max(layout.height, EventItem.get_event_height(event)),
             )
-
-            event_lane_assignments[event.id] = assigned_lane
 
         return event_lane_assignments, lanes_heights
 
@@ -116,23 +110,27 @@ class TimelineLanePacker:
             float: Visual duration in lore date units.
 
         """
-        if self.fm is None:
-            self._ensure_font_metrics()
-        # Double check after ensure
-        if self.fm is None:
-            # Should practically never happen if QApplication exists
-            return 0.0
-
-        if display is None:
-            display = event_temporal_display(event, EventItem._calendar_converter)
-        if geometry is None:
-            geometry = project_temporal_geometry(display, self.scale_factor)
-        label_width = max(
-            self.fm.horizontalAdvance(event.name),
-            self.fm.horizontalAdvance(display.caption),
+        layout = timeline_item_layout(
+            event_temporal_presentation(event, EventItem._calendar_converter),
+            event.name,
+            self.scale_factor,
         )
-        right = max(geometry.right, geometry.label_left + label_width + 10)
-        return (right - geometry.left) / self.scale_factor
+        return layout.bounds.width() / self.scale_factor
+
+    def _find_and_record_lane(
+        self,
+        event_id: str,
+        ends: list[float],
+        heights: list[int],
+        assignments: dict[str, int],
+        start: float,
+        end: float,
+        height: int,
+    ) -> None:
+        """Record the lane selected for a complete measured item."""
+        assignments[event_id] = self._find_available_lane(
+            ends, heights, start, end, height
+        )
 
     def _find_available_lane(
         self,

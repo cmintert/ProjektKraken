@@ -313,3 +313,72 @@ def test_failed_deferred_save_restores_previous_playhead(
     assert fake_window.timeline.set_playhead_time.call_args_list[-1].args == (10.0,)
     fake_window.timeline.center_on_date.assert_not_called()
     assert coordinator._pending_go_to_date is None
+
+
+@pytest.mark.ci_fast
+@pytest.mark.parametrize("decision", ["cancel", "save-success", "save-failure"])
+def test_real_timeline_context_follows_authoring_guard(
+    coordinator, fake_window, qtbot, decision
+):
+    from src.core.calendar import CalendarConfig, CalendarConverter
+    from src.core.date_parser import DateParser
+    from src.core.events import Event
+    from src.core.temporal_presentation import event_navigation_context
+    from src.gui.widgets.timeline import EventItem, TimelineWidget
+
+    converter = CalendarConverter(CalendarConfig.create_default())
+    parser = DateParser(converter._config)
+    owners = []
+    for text in ("1218", "1219"):
+        expression = parser.parse_expression(text)
+        owners.append(
+            Event(
+                name="Council",
+                lore_date=expression.representative_time(converter),
+                attributes={
+                    "_temporal_v2": {"schema": 1, "expression": expression.to_dict()}
+                },
+            )
+        )
+    widget = TimelineWidget()
+    qtbot.addWidget(widget)
+    widget.set_calendar_converter(converter)
+    widget.set_events(owners)
+    fake_window.timeline = widget
+    fake_window.calendar_converter = converter
+    fake_window.entity_editor.current_entity_id = None
+    fake_window.entity_editor.has_unsaved_changes.return_value = False
+    widget.playhead_time_changed.connect(coordinator.on_playhead_changed)
+    widget.set_playhead_time(
+        owners[0].lore_date, event_navigation_context(owners[0], converter)
+    )
+    widget.accept_navigation_context()
+    original = dict(widget.view.time_indicators.context)
+    editor = fake_window.entity_editor
+    editor._temporal_time = owners[0].lore_date
+    editor.has_unsaved_changes.return_value = True
+    editor._temporal_save_pending = True
+    with patch("src.app.coordinators.time_coordinator.QMessageBox") as dialog:
+        dialog.return_value.addButton.side_effect = ["save", "discard", "cancel"]
+        dialog.return_value.clickedButton.return_value = (
+            "cancel" if decision == "cancel" else "save"
+        )
+        # A modal event loop must not publish unaccepted context while the prompt is open.
+        dialog.return_value.exec.side_effect = widget.accept_navigation_context
+        coordinator.go_to_date(
+            owners[1].lore_date, event_navigation_context(owners[1], converter)
+        )
+    widget.accept_navigation_context()
+    assert widget.view.time_indicators.context == original
+    if decision == "save-success":
+        editor.has_unsaved_changes.return_value = False
+        coordinator.on_temporal_save_completed()
+        assert widget.view.time_indicators.context["event_id"] == owners[1].id
+    elif decision == "save-failure":
+        coordinator.on_temporal_save_failed()
+        widget.accept_navigation_context()
+        assert widget.get_playhead_time() == owners[0].lore_date
+        assert widget.view.time_indicators.context == original
+    else:
+        assert widget.get_playhead_time() == owners[0].lore_date
+    EventItem.set_calendar_converter(None)

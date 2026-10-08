@@ -68,7 +68,7 @@ def test_year_extent_is_calendar_bound_not_midpoint(qtbot, duration):
     item.set_zoom(1.5)
     rect = item._display_rect(display)
     assert rect.left() == (converter.start_of_year(961) - event.lore_date) * 3
-    assert rect.center().y() == 0
+    assert rect.center().y() == (52 if duration > 0 else 0)
     assert item.shape().contains(rect.center())
     assert item.boundingRect().contains(rect)
     EventItem.set_calendar_converter(None)

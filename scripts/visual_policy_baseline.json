@@ -2306,95 +2306,11 @@
       "source": "surface = QColor(theme.get(\"surface\", \"#FFFFFF\"))"
     },
     {
-      "key": "src/gui/widgets/timeline/event_item.py|EventItem._paint_duration|local-color-derivation|9cc376c61d62e1d7",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in EventItem._paint_duration; migrate this expression when its presentation path is next touched.",
-      "source": "possible.setAlpha(110)"
-    },
-    {
-      "key": "src/gui/widgets/timeline/event_item.py|EventItem._paint_occurrence|local-color-derivation|223a1a48b213e1e8",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in EventItem._paint_occurrence; migrate this expression when its presentation path is next touched.",
-      "source": "faint.setAlpha(35)"
-    },
-    {
-      "key": "src/gui/widgets/timeline/event_item.py|EventItem._paint_occurrence|local-color-derivation|aab370346571172b",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in EventItem._paint_occurrence; migrate this expression when its presentation path is next touched.",
-      "source": "transparent.setAlpha(0)"
-    },
-    {
-      "key": "src/gui/widgets/timeline/event_item.py|EventItem._paint_occurrence|local-color-derivation|d1faf04f84892e44",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in EventItem._paint_occurrence; migrate this expression when its presentation path is next touched.",
-      "source": "faint.setAlpha(65)"
-    },
-    {
-      "key": "src/gui/widgets/timeline/group_band_item.py|GroupBandItem.paint|local-color-derivation|58aaec0ed49930aa",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in GroupBandItem.paint; migrate this expression when its presentation path is next touched.",
-      "source": "tick_color = QColor(self._color).lighter(150)"
-    },
-    {
-      "key": "src/gui/widgets/timeline/group_band_item.py|GroupBandItem.paint|local-color-derivation|9a9b77af822105f5",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in GroupBandItem.paint; migrate this expression when its presentation path is next touched.",
-      "source": "border_color = QColor(self._color).darker(120)"
-    },
-    {
-      "key": "src/gui/widgets/timeline/group_band_item.py|GroupBandItem.paint|local-color-derivation|bc8555b59d2ae474",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in GroupBandItem.paint; migrate this expression when its presentation path is next touched.",
-      "source": "bg_color.setAlphaF(0.3)"
-    },
-    {
-      "key": "src/gui/widgets/timeline/group_band_item.py|GroupBandItem.paint|local-color-derivation|d4cb64d406be2237",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in GroupBandItem.paint; migrate this expression when its presentation path is next touched.",
-      "source": "bg_color.setAlphaF(0.6)"
-    },
-    {
-      "key": "src/gui/widgets/timeline/group_band_item.py|GroupBandItem.paint|local-color-derivation|ed29d246c0d717c7",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in GroupBandItem.paint; migrate this expression when its presentation path is next touched.",
-      "source": "bg_color = bg_color.lighter(120)"
-    },
-    {
       "key": "src/gui/widgets/timeline/group_label_overlay.py|GroupLabelOverlay.paintEvent|local-color-derivation|88ef5de79ba7b0e6",
       "count": 1,
       "category": "legacy",
       "reason": "KRT-54 legacy presentation in GroupLabelOverlay.paintEvent; migrate this expression when its presentation path is next touched.",
       "source": "color.setAlphaF(0.8)"
-    },
-    {
-      "key": "src/gui/widgets/timeline/timeline_scene.py|CurrentTimeLineItem.__init__|literal-color|f45dd0b35cbdedca",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in CurrentTimeLineItem.__init__; migrate this expression when its presentation path is next touched.",
-      "source": "pen = QPen(QColor(100, 150, 255), 3)  # Blue current time line, thicker"
-    },
-    {
-      "key": "src/gui/widgets/timeline/timeline_scene.py|PlayheadItem.__init__|literal-color|73e4129483e80c15",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in PlayheadItem.__init__; migrate this expression when its presentation path is next touched.",
-      "source": "pen = QPen(QColor(255, 100, 100), 2)  # Red playhead"
-    },
-    {
-      "key": "src/gui/widgets/timeline/timeline_view.py|TimelineView.__init__|literal-color|1de3507a13b83862",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in TimelineView.__init__; migrate this expression when its presentation path is next touched.",
-      "source": "axis_pen = QPen(QColor(100, 100, 100))"
     },
     {
       "key": "src/gui/widgets/timeline/timeline_view.py|TimelineView._create_drop_line|literal-color|b842af3cba76786c",
@@ -2404,67 +2320,11 @@
       "source": "pen = QPen(QColor(80, 80, 80), 1, Qt.PenStyle.DashLine)"
     },
     {
-      "key": "src/gui/widgets/timeline/timeline_view.py|TimelineView._draw_playhead_handle|local-color-derivation|586cc8de359ffe16",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in TimelineView._draw_playhead_handle; migrate this expression when its presentation path is next touched.",
-      "source": "handle_color = handle_color.lighter(120)"
-    },
-    {
-      "key": "src/gui/widgets/timeline/timeline_view.py|TimelineView._draw_playhead_handle|local-color-derivation|f7ef5a0be4d7d05a",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in TimelineView._draw_playhead_handle; migrate this expression when its presentation path is next touched.",
-      "source": "handle_color = handle_color.lighter(130)"
-    },
-    {
       "key": "src/gui/widgets/timeline/timeline_view.py|TimelineView._update_corner_widget|literal-color|8247d3ddc88fab21",
       "count": 1,
       "category": "legacy",
       "reason": "KRT-54 legacy presentation in TimelineView._update_corner_widget; migrate this expression when its presentation path is next touched.",
       "source": "scrollbar_bg = theme.get(\"scrollbar_bg\", theme.get(\"app_bg\", \"#2B2B2B\"))"
-    },
-    {
-      "key": "src/gui/widgets/timeline/timeline_view.py|TimelineView.drawForeground|literal-color|c19fec4ef0a029d2",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in TimelineView.drawForeground; migrate this expression when its presentation path is next touched.",
-      "source": "grid_color = QColor(255, 255, 255, int(15 * tick.opacity))"
-    },
-    {
-      "key": "src/gui/widgets/timeline/timeline_view.py|TimelineView.drawForeground|local-color-derivation|3888a363d1ccb5fe",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in TimelineView.drawForeground; migrate this expression when its presentation path is next touched.",
-      "source": "text_color.setAlphaF(tick.opacity)"
-    },
-    {
-      "key": "src/gui/widgets/timeline/timeline_view.py|TimelineView.drawForeground|local-color-derivation|42ac6bf2e783ac8e",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in TimelineView.drawForeground; migrate this expression when its presentation path is next touched.",
-      "source": "painter.setBrush(QColor(theme[\"surface\"]).darker(110))"
-    },
-    {
-      "key": "src/gui/widgets/timeline/timeline_view.py|TimelineView.drawForeground|local-color-derivation|6a9f800182f38615",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in TimelineView.drawForeground; migrate this expression when its presentation path is next touched.",
-      "source": "tick_color.setAlphaF(tick.opacity)"
-    },
-    {
-      "key": "src/gui/widgets/timeline/timeline_view.py|TimelineView|literal-color|73e4129483e80c15",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in TimelineView; migrate this expression when its presentation path is next touched.",
-      "source": "PLAYHEAD_COLOR = QColor(255, 100, 100)"
-    },
-    {
-      "key": "src/gui/widgets/timeline/timeline_view.py|TimelineView|literal-color|dad8252028023902",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in TimelineView; migrate this expression when its presentation path is next touched.",
-      "source": "ALL_EVENTS_COLOR = \"#808080\"  # Neutral gray"
     },
     {
       "key": "src/gui/widgets/timeline_display_widget.py|TimelineDisplayWidget._refresh_display|literal-color|515b87d5b1d2994d",
