@@ -170,6 +170,107 @@ def test_visible_open_and_peek_resolve_same_id(writing, source, qtbot):
     assert peeked.args == opened.args
 
 
+@pytest.mark.parametrize("source", [False, True])
+def test_peek_eye_cursor_matches_modifier_and_preserves_writing(writing, source, qtbot):
+    from unittest.mock import patch
+
+    from PySide6.QtCore import QEvent, QPointF
+    from PySide6.QtGui import QCursor, QKeyEvent, QMouseEvent
+    from PySide6.QtWidgets import QApplication
+
+    writing.set_wiki_text("See [[House Bjornaer]] today.")
+    if source:
+        writing.toggle_view_mode()
+    view = writing.editor
+    cursor = view.textCursor()
+    cursor.setPosition(8 if source else 6)
+    point = view.cursorRect(cursor).center()
+    assert view._link_target_at_point(point) == "House Bjornaer"
+    select(writing, 0, 3)
+    before = (
+        writing.get_wiki_text(),
+        view.textCursor().anchor(),
+        view.textCursor().position(),
+        view.document().isModified(),
+        view.document().isUndoAvailable(),
+    )
+
+    def move(modifiers, position=point):
+        event = QMouseEvent(
+            QEvent.Type.MouseMove,
+            QPointF(position),
+            QPointF(view.viewport().mapToGlobal(position)),
+            Qt.MouseButton.NoButton,
+            Qt.MouseButton.NoButton,
+            modifiers,
+        )
+        QApplication.sendEvent(view.viewport(), event)
+
+    move(Qt.KeyboardModifier.AltModifier)
+    assert view.viewport().cursor().shape() == Qt.CursorShape.BitmapCursor
+    assert not view.viewport().cursor().pixmap().isNull()
+    move(Qt.KeyboardModifier.ControlModifier)
+    assert view.viewport().cursor().shape() == Qt.CursorShape.PointingHandCursor
+    move(Qt.KeyboardModifier.AltModifier | Qt.KeyboardModifier.ControlModifier)
+    assert view.viewport().cursor().shape() == Qt.CursorShape.BitmapCursor
+    move(Qt.KeyboardModifier.NoModifier)
+    assert view.viewport().cursor().shape() == Qt.CursorShape.IBeamCursor
+    with patch.object(QCursor, "pos", return_value=view.viewport().mapToGlobal(point)):
+        QApplication.sendEvent(
+            view,
+            QKeyEvent(
+                QEvent.Type.KeyPress, Qt.Key.Key_Alt, Qt.KeyboardModifier.AltModifier
+            ),
+        )
+        assert view.viewport().cursor().shape() == Qt.CursorShape.BitmapCursor
+        QApplication.sendEvent(
+            view,
+            QKeyEvent(
+                QEvent.Type.KeyRelease, Qt.Key.Key_Alt, Qt.KeyboardModifier.AltModifier
+            ),
+        )
+        assert view.viewport().cursor().shape() == Qt.CursorShape.IBeamCursor
+    outside = view.textCursor()
+    outside.setPosition(view.document().characterCount() - 3)
+    move(Qt.KeyboardModifier.AltModifier, view.cursorRect(outside).center())
+    assert view.viewport().cursor().shape() == Qt.CursorShape.IBeamCursor
+    assert (
+        writing.get_wiki_text(),
+        view.textCursor().anchor(),
+        view.textCursor().position(),
+        view.document().isModified(),
+        view.document().isUndoAvailable(),
+    ) == before
+
+
+def test_peek_cursor_recolors_with_theme_without_editing_document(writing):
+    from PySide6.QtGui import QColor
+    from PySide6.QtWidgets import QApplication
+
+    from src.core.theme_manager import ThemeManager
+
+    manager = ThemeManager()
+    original_theme = manager.current_theme_name
+    writing.set_wiki_text("See [[House Bjornaer]].")
+    before = writing.get_wiki_text()
+    try:
+        for theme in manager.themes:
+            writing.editor.viewport().setCursor(writing.editor._peek_link_cursor())
+            manager.set_theme(theme, QApplication.instance())
+            cursor = writing.editor.viewport().cursor()
+            assert cursor.shape() == Qt.CursorShape.BitmapCursor
+            image = cursor.pixmap().toImage()
+            expected = QColor(manager.get_theme()["supporting_text"])
+            assert any(
+                image.pixelColor(x, y) == expected
+                for x in range(image.width())
+                for y in range(image.height())
+            )
+            assert writing.get_wiki_text() == before
+    finally:
+        manager.set_theme(original_theme, QApplication.instance())
+
+
 def test_source_selection_preserves_unrelated_unsupported_markdown(writing):
     original = "- unsupported list\n\nSee House Bjornaer."
     writing.set_wiki_text(original)

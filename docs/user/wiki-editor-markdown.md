@@ -42,9 +42,16 @@ are removed. Source text is saved and reopened exactly as entered. Rich view
 does not claim to edit the larger Markdown vocabulary.
 
 Type `[[Name]]` to keep an unresolved reference while writing. It saves without
-requiring an object. Click an unresolved link to see its provisional state in
-the **Wiki Peek** pane; creating an Entity or Event there is optional and
-undoable. Creation leaves the current editor open and retains the link's
+requiring an object. Place the caret inside the link and choose **Open link**
+or **Peek link** (use **More actions** when the writing controls are narrow).
+**Ctrl+Click** also opens a missing target in the **Wiki Peek** pane;
+**Alt+Click** peeks at it. A plain click places the caret without navigating.
+Holding Alt over a wiki link shows an eye cursor for Peek; holding Ctrl shows
+the hand cursor for Open. These cues work in Rich and Source views.
+Choose **Create Entity** or **Create Event** in Wiki Peek to make the reference
+an actual object. Creation is optional and undoable; it leaves the current
+editor open. After creation, choose **Open / Edit** or follow the link again
+to open the object deliberately. The link retains its
 original spelling. A name link resolves once its name uniquely identifies an
 object. Use completion to insert a stable `[[id:...|Name]]` link when identity
 must survive renaming. Duplicate names appear as separate choices with object

@@ -444,6 +444,38 @@ class DataHandler(QObject):
         """Forward map-scoped dated geometry snapshots."""
         self.feature_geometry_states_ready.emit(map_id, states)
 
+    def _refresh_created_marker(self, result: CommandResult) -> None:
+        """Reload placement without hydrating unrelated lore editors."""
+        map_id = result.data.get("map_id")
+        if isinstance(map_id, str) and map_id:
+            self.reload_markers.emit(map_id)
+        else:
+            self.reload_markers_for_current_map.emit()
+
+    def _refresh_creation_fallback(self, result: CommandResult) -> bool:
+        """Refresh lore/placement creation without rehydrating authoring drafts.
+
+        Selection is queued only for explicit creation, including when the
+        worker's incremental effects are absent or malformed.
+        """
+        if result.command_name == "CreateMarkerCommand":
+            self._refresh_created_marker(result)
+            return True
+        object_type = {
+            "CreateEventCommand": "event",
+            "CreateEntityCommand": "entity",
+        }.get(result.command_name)
+        if object_type is None:
+            return False
+        object_id = result.data.get("id")
+        if object_id and result.data.get("select_after_apply") is not False:
+            self._pending_select_type = object_type
+            self._pending_select_id = str(object_id)
+        self._reload_lore_cache_then_markers(object_type)
+        if object_id:
+            self.index_object_requested.emit(object_type, str(object_id))
+        return True
+
     @Slot(CommandResult)
     def on_command_finished(self, result: CommandResult) -> None:  # noqa: C901
         """Handles completion of async commands, emitting signals for necessary UI
@@ -504,17 +536,13 @@ class DataHandler(QObject):
             if effects is not None:
                 self._apply_incremental_lore_refresh(result, effects)
                 return
+            if self._refresh_creation_fallback(result):
+                return
             if "lore_effects" in result.data:
                 logger.warning(
                     "Invalid lore mutation effects for %s; using full refresh",
                     command_name,
                 )
-                if command_name == "CreateEventCommand" and result.data.get("id"):
-                    self._pending_select_type = "event"
-                    self._pending_select_id = str(result.data["id"])
-                elif command_name == "CreateEntityCommand" and result.data.get("id"):
-                    self._pending_select_type = "entity"
-                    self._pending_select_id = str(result.data["id"])
                 if "Event" in command_name:
                     self._schedule_marker_after_lore("event")
                 if "Entity" in command_name:
@@ -522,13 +550,6 @@ class DataHandler(QObject):
                 self.reload_all_data.emit()
                 self.reload_longform.emit()
                 return
-
-            if command_name == "CreateEventCommand" and result.data.get("id"):
-                self._pending_select_type = "event"
-                self._pending_select_id = cast(str, result.data["id"])
-            elif command_name == "CreateEntityCommand" and result.data.get("id"):
-                self._pending_select_type = "entity"
-                self._pending_select_id = cast(str, result.data["id"])
 
             # These layer/map commands only update metadata that is already
             # applied optimistically in the UI — a full map+marker+raster

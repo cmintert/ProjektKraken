@@ -13,6 +13,7 @@ import shiboken6
 from PySide6.QtCore import (
     QModelIndex,
     QObject,
+    QPoint,
     QSignalBlocker,
     Qt,
     QThread,
@@ -24,6 +25,7 @@ from PySide6.QtGui import (
     QAction,
     QCloseEvent,
     QColor,
+    QCursor,
     QFont,
     QFontMetricsF,
     QKeyEvent,
@@ -61,6 +63,7 @@ from src.core.wiki_ast import CursorMapper, WikiASTParser, WikiASTSerializer
 from src.core.wiki_markdown_grammar import requires_source_mode
 from src.gui.constants import SEMANTIC_COMPLETION_MIN_PREFIX_LEN
 from src.gui.editor_typography import EditorTypography
+from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.utils.suggestion_effects import apply_suggestion_effects
 from src.gui.widgets.wiki_link_presentation import (
@@ -78,6 +81,7 @@ _HEADING_LEVEL_THREE = 3
 _WIKI_LINK_CLOSING_TOKEN_LENGTH = 2
 _MINIMUM_SPELLCHECK_TEXT_LENGTH = 15
 _COMPLETION_ROW_FIELDS = 3
+_PEEK_CURSOR_SIZE = 24
 
 
 class SectionData(QTextBlockUserData):
@@ -183,6 +187,8 @@ class WikiTextEditView(QTextEdit):
         self._link_presentation_cache: dict[str, LinkPresentation] = {}
         self._last_completion_prefix: str = ""
         self._link_resolver = None  # Will be set later
+        self._peek_cursor: QCursor | None = None
+        self._peek_cursor_color = ""
         self._section_manager = SectionManager(self.document())
         self._current_wiki_text = ""  # Store for re-rendering on theme change
 
@@ -1149,6 +1155,7 @@ class WikiTextEditView(QTextEdit):
             event: QKeyEvent from PySide6.
 
         """
+        self._refresh_modifier_cursor(event)
         # Check for formatting shortcuts first
         if self._completer and (popup := self._completer.popup()) and popup.isVisible():
             if event.key() in (
@@ -1713,6 +1720,57 @@ class WikiTextEditView(QTextEdit):
         curr_rect.setWidth(popup.sizeHintForColumn(0) + sb_width)
         completer.complete(curr_rect)
 
+    def _link_target_at_point(self, point: QPoint) -> str:
+        """Resolve the same link under the pointer in Rich and Source views."""
+        if self._view_mode == "source":
+            return self.link_target_at_cursor(self.cursorForPosition(point))
+        return self.anchorAt(point)
+
+    def _peek_link_cursor(self) -> QCursor:
+        """Use the shared eye icon and supporting-action theme role for Peek."""
+        color = ThemeManager().get_theme()["supporting_text"]
+        if self._peek_cursor is None or color != self._peek_cursor_color:
+            icon = load_icon("default_assets/icons/ui_icons/eye.svg", color=color)
+            pixmap = icon.pixmap(_PEEK_CURSOR_SIZE, _PEEK_CURSOR_SIZE)
+            self._peek_cursor = QCursor(
+                pixmap, _PEEK_CURSOR_SIZE // 2, _PEEK_CURSOR_SIZE // 2
+            )
+            self._peek_cursor_color = color
+        return self._peek_cursor
+
+    def _update_link_cursor(
+        self, point: QPoint, modifiers: Qt.KeyboardModifier
+    ) -> None:
+        """Distinguish Peek, Open and ordinary writing without moving the caret."""
+        target = self._link_target_at_point(point)
+        if target and modifiers & Qt.KeyboardModifier.AltModifier:
+            self.viewport().setCursor(self._peek_link_cursor())
+        elif target and modifiers & Qt.KeyboardModifier.ControlModifier:
+            self.viewport().setCursor(Qt.CursorShape.PointingHandCursor)
+        else:
+            self.viewport().setCursor(Qt.CursorShape.IBeamCursor)
+
+    def _refresh_modifier_cursor(self, event: QKeyEvent, *, released: bool = False) -> None:
+        """Refresh a stationary link hover when its navigation modifier changes."""
+        modifiers_by_key: dict[int, Qt.KeyboardModifier] = {
+            Qt.Key.Key_Alt: Qt.KeyboardModifier.AltModifier,
+            Qt.Key.Key_Control: Qt.KeyboardModifier.ControlModifier,
+        }
+        modifier = modifiers_by_key.get(event.key())
+        if modifier is None:
+            return
+        point = self.viewport().mapFromGlobal(QCursor.pos())
+        if not self.viewport().rect().contains(point):
+            return
+        modifiers = event.modifiers()
+        modifiers = modifiers & ~modifier if released else modifiers | modifier
+        self._update_link_cursor(point, modifiers)
+
+    def keyReleaseEvent(self, event: QKeyEvent) -> None:
+        """End the modifier cursor cue without consuming ordinary key release."""
+        super().keyReleaseEvent(event)
+        self._refresh_modifier_cursor(event, released=True)
+
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         """Handles mouse move events to show pointer cursor over links.
 
@@ -1720,10 +1778,13 @@ class WikiTextEditView(QTextEdit):
             event: QMouseEvent from PySide6.
 
         """
-        target = self.anchorAt(event.position().toPoint())
+        point = event.position().toPoint()
+        target = self._link_target_at_point(point)
         self.setToolTip(self.link_presentation(target).tooltip if target else "")
-        if event.modifiers() & Qt.KeyboardModifier.ControlModifier and target:
-            self.viewport().setCursor(Qt.CursorShape.PointingHandCursor)
+        if target and event.modifiers() & (
+            Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.AltModifier
+        ):
+            self._update_link_cursor(point, event.modifiers())
             return
         self.viewport().setCursor(Qt.CursorShape.IBeamCursor)
         super().mouseMoveEvent(event)
@@ -1735,11 +1796,7 @@ class WikiTextEditView(QTextEdit):
             event: QMouseEvent from PySide6.
 
         """
-        anchor = self.anchorAt(event.position().toPoint())
-        if self._view_mode == "source":
-            anchor = self.link_target_at_cursor(
-                self.cursorForPosition(event.position().toPoint())
-            )
+        anchor = self._link_target_at_point(event.position().toPoint())
         if (
             event.button() == Qt.MouseButton.LeftButton
             and event.modifiers()
@@ -2049,6 +2106,8 @@ class WikiTextEditView(QTextEdit):
             palette.ColorRole.HighlightedText, QColor(theme_data["selection_text"])
         )
         self.viewport().setPalette(palette)
+        if self.viewport().cursor().shape() == Qt.CursorShape.BitmapCursor:
+            self.viewport().setCursor(self._peek_link_cursor())
         self._typography = EditorTypography.from_theme(theme_data)
         self._apply_widget_style()
 

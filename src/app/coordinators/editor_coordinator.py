@@ -708,6 +708,7 @@ class EditorCoordinator(BaseCoordinator):
         cmd = self._create_entity_command(
             {"id": new_id, "name": name, "type": entity_type}
         )
+        cmd.select_after_create = False
         self.command_requested.emit(cmd)
 
     @Slot(str, str)
@@ -723,6 +724,7 @@ class EditorCoordinator(BaseCoordinator):
         cmd = self._create_event_command(
             {"id": new_id, "name": name, "lore_date": lore_date}
         )
+        cmd.select_after_create = False
         self.command_requested.emit(cmd)
 
     @Slot(str, str, str, str, str, float, float)
@@ -739,8 +741,10 @@ class EditorCoordinator(BaseCoordinator):
         """Create a lore object and its point marker as one undoable action."""
         if object_type == "event":
             lore_date = float(self.main_window.timeline.get_playhead_time())
-            create_object: BaseCommand = self._create_event_command(
-                {"id": new_id, "name": name, "lore_date": lore_date}
+            create_object: CreateEntityCommand | CreateEventCommand = (
+                self._create_event_command(
+                    {"id": new_id, "name": name, "lore_date": lore_date}
+                )
             )
         else:
             create_object = self._create_entity_command(
@@ -751,6 +755,7 @@ class EditorCoordinator(BaseCoordinator):
                 }
             )
 
+        create_object.select_after_create = False
         create_marker = CreateMarkerCommand(
             {
                 "map_id": map_id,

@@ -7,6 +7,9 @@ import logging
 from typing import Dict, List
 
 from src.commands.base_command import BaseCommand, CommandResult
+from src.commands.entity_commands import CreateEntityCommand
+from src.commands.event_commands import CreateEventCommand
+from src.commands.marker_commands import CreateMarkerCommand
 from src.commands.temporal_entity_edit_command import TemporalEntityEditCommand
 from src.commands.wiki_commands import ProcessWikiLinksCommand
 from src.core.command import LoreMutationEffect, parse_lore_mutation_effects
@@ -14,6 +17,8 @@ from src.services.db_service import DatabaseService
 from src.services.temporal_entity_snapshot_service import TemporalEntitySnapshotService
 
 logger = logging.getLogger(__name__)
+
+_OBJECT_MARKER_COMMAND_COUNT = 2
 
 
 class CompositeCommand(BaseCommand):
@@ -117,21 +122,49 @@ class CompositeCommand(BaseCommand):
         effects = self._aggregate_lore_effects(sub_results)
         if effects is not None:
             data["lore_effects"] = effects
-            if any(
-                result.command_name
-                in {"CreateEventCommand", "CreateEntityCommand"}
-                for result in sub_results
-            ):
-                data["select_after_apply"] = {
-                    "object_type": effects[0]["object_type"],
-                    "object_id": effects[0]["object_id"],
-                }
+            data["select_after_apply"] = self._creation_selection(sub_results)
         return CommandResult(
             success=True,
             message=f"{self.get_description()} completed.",
             command_name="CompositeCommand",
             data=data,
         )
+
+    def _creation_selection(
+        self, results: list[CommandResult]
+    ) -> dict[str, str] | bool:
+        """Carry the creating child's navigation intent into a safe composite."""
+        for result in results:
+            object_type = {
+                "CreateEntityCommand": "entity",
+                "CreateEventCommand": "event",
+            }.get(result.command_name)
+            if object_type and result.data.get("select_after_apply") is not False:
+                return {
+                    "object_type": object_type,
+                    "object_id": str(result.data["id"]),
+                }
+        return False
+
+    def _is_object_marker_creation(self) -> bool:
+        """Recognize only atomic creation of one object and its own marker."""
+        if len(self.commands) != _OBJECT_MARKER_COMMAND_COUNT:
+            return False
+        create, marker = self.commands
+        if not isinstance(marker, CreateMarkerCommand):
+            return False
+        marker_data = marker.to_dict()["marker_data"]
+        if isinstance(create, CreateEntityCommand):
+            return (
+                marker_data["object_type"] == "entity"
+                and marker_data["object_id"] == create.entity_id
+            )
+        if isinstance(create, CreateEventCommand):
+            return (
+                marker_data["object_type"] == "event"
+                and marker_data["object_id"] == create.event_id
+            )
+        return False
 
     def _temporal_checkpoint_command(self) -> TemporalEntityEditCommand | None:
         """Identify the source-aware save plus optional WikiLink reconciliation."""
@@ -164,7 +197,7 @@ class CompositeCommand(BaseCommand):
     def _aggregate_lore_effects(
         self, sub_results: list[CommandResult]
     ) -> list[LoreMutationEffect] | None:
-        """Return effects only for a safe CRUD plus WikiLinks composite."""
+        """Return effects for safe CRUD/wiki saves or matched object-marker creation."""
         allowed = {
             "CreateEventCommand",
             "UpdateEventCommand",
@@ -174,6 +207,8 @@ class CompositeCommand(BaseCommand):
             "DeleteEntityCommand",
             "ProcessWikiLinksCommand",
         }
+        if self._is_object_marker_creation():
+            allowed.add("CreateMarkerCommand")
         if not self.commands or any(
             command.__class__.__name__ not in allowed for command in self.commands
         ):

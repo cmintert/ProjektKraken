@@ -231,6 +231,26 @@ def test_editor_creation_and_map_creation_use_context_factory(qapp):
     assert context.create_event_command.call_count == 2
 
 
+@pytest.mark.parametrize("object_type", ["entity", "event"])
+def test_contextual_map_creation_keeps_submission_tags(context, object_type):
+    window = context.main_window
+    window.app_coordinator = SimpleNamespace(context_tags=context)
+    coordinator = EditorCoordinator(window)
+    commands = []
+    coordinator.command_requested.connect(commands.append)
+    context.save_tags(["Origin"], activate=True)
+    if object_type == "entity":
+        coordinator.on_map_create_entity("new", "New", "Airship")
+    else:
+        coordinator.on_map_create_event("new", "New")
+    context.save_tags(["Later"], activate=True)
+    command = commands[0]
+    payload = command.to_dict()[object_type]
+    assert payload["attributes"]["_tags"] == ["Origin"]
+    assert command.select_after_create is False
+    assert type(command).from_dict(command.to_dict()).select_after_create is False
+
+
 def test_context_bar_renders_inactive_active_and_review_states(qtbot):
     bar = ContextTagBar()
     qtbot.addWidget(bar)

@@ -34,9 +34,7 @@ def test_existing_entity_emits_marker_created(map_widget_fixture):
         map_widget_fixture.marker_created.connect(spy)
         map_widget_fixture._on_create_marker_requested(0.5, 0.5)
 
-    spy.assert_called_once_with(
-        "map_1", "ent_1", "entity", "Rivendell", 0.5, 0.5
-    )
+    spy.assert_called_once_with("map_1", "ent_1", "entity", "Rivendell", 0.5, 0.5)
 
 
 @pytest.mark.parametrize(
@@ -61,16 +59,12 @@ def test_existing_entity_emits_marker_created(map_widget_fixture):
             "entity",
         ),
         (
-            MapObjectChoice(
-                action="create", object_type="event", name="The Crossing"
-            ),
+            MapObjectChoice(action="create", object_type="event", name="The Crossing"),
             "event",
         ),
     ],
 )
-def test_new_object_requests_atomic_creation(
-    map_widget_fixture, choice, expected_type
-):
+def test_new_object_requests_atomic_creation(map_widget_fixture, choice, expected_type):
     with patch.object(map_widget_fixture, "_choose_map_object", return_value=choice):
         atomic_spy = MagicMock()
         marker_spy = MagicMock()
@@ -100,7 +94,10 @@ def test_cancel_emits_nothing(map_widget_fixture):
     atomic_spy.assert_not_called()
 
 
-def test_feature_creation_preserves_chosen_entity_type(map_widget_fixture):
+@pytest.mark.parametrize("feature_type", ["path", "region"])
+def test_feature_creation_preserves_chosen_entity_type(
+    map_widget_fixture, feature_type
+):
     choice = MapObjectChoice(
         action="create",
         object_type="entity",
@@ -113,8 +110,23 @@ def test_feature_creation_preserves_chosen_entity_type(map_widget_fixture):
         map_widget_fixture.create_entity_requested.connect(entity_spy)
         map_widget_fixture.feature_created.connect(feature_spy)
         geometry = [{"x": 0.1, "y": 0.1}, {"x": 0.5, "y": 0.5}]
-        map_widget_fixture._on_drawing_finished("path", geometry)
+        map_widget_fixture._on_drawing_finished(feature_type, geometry)
 
     entity_spy.assert_called_once()
     assert entity_spy.call_args.args[1:] == ("Northern League", "Faction")
     feature_spy.assert_called_once()
+    assert feature_spy.call_args.args[1] == entity_spy.call_args.args[0]
+    assert feature_spy.call_args.args[-2:] == (feature_type, geometry)
+
+
+@pytest.mark.parametrize("feature_type", ["path", "region"])
+def test_feature_cancel_does_not_create_lore(map_widget_fixture, feature_type):
+    entity_spy, event_spy, feature_spy = MagicMock(), MagicMock(), MagicMock()
+    map_widget_fixture.create_entity_requested.connect(entity_spy)
+    map_widget_fixture.create_event_requested.connect(event_spy)
+    map_widget_fixture.feature_created.connect(feature_spy)
+    with patch.object(map_widget_fixture, "_choose_map_object", return_value=None):
+        map_widget_fixture._on_drawing_finished(feature_type, [{"x": 0.1, "y": 0.2}])
+    entity_spy.assert_not_called()
+    event_spy.assert_not_called()
+    feature_spy.assert_not_called()

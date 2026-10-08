@@ -54,7 +54,7 @@
       "id": "c901-5a285eb9563e",
       "path": "src/app/data_handler.py",
       "symbol": "DataHandler.on_command_finished",
-      "ceiling": 33,
+      "ceiling": 30,
       "reason": "Existing production complexity reviewed for KRT-36; untouched debt only, executable edits must strictly improve."
     },
     {

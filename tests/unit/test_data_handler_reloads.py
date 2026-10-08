@@ -61,6 +61,7 @@ def test_create_marker_reloads_exact_affected_map(data_handler):
     """Point-marker creation refreshes its map without current-map inference."""
     data_handler.reload_markers = MagicMock()
     data_handler.reload_markers_for_current_map = MagicMock()
+    data_handler.reload_all_data = MagicMock()
     result = CommandResult(
         success=True,
         command_name="CreateMarkerCommand",
@@ -72,15 +73,14 @@ def test_create_marker_reloads_exact_affected_map(data_handler):
 
     data_handler.reload_markers.emit.assert_called_once_with("map-1")
     data_handler.reload_markers_for_current_map.emit.assert_not_called()
+    data_handler.reload_all_data.emit.assert_not_called()
 
 
 def test_composite_creation_reloads_exact_map_after_lore_cache(
     data_handler, db_service
 ):
-    """Atomic object-marker creation waits for fresh lore, then reloads its map."""
-    db_service.insert_map(
-        Map(id="map-1", name="Test Map", image_path="test.png")
-    )
+    """Atomic creation patches lore before reloading its map without hydration."""
+    db_service.insert_map(Map(id="map-1", name="Test Map", image_path="test.png"))
     command = CompositeCommand(
         [
             CreateEntityCommand(
@@ -111,20 +111,15 @@ def test_composite_creation_reloads_exact_map_after_lore_cache(
     data_handler.reload_markers_for_current_map = MagicMock()
 
     data_handler.on_command_finished(result)
-    data_handler.reload_all_data.emit.assert_called_once()
-    data_handler.reload_markers.emit.assert_not_called()
-
-    data_handler.on_entities_loaded([db_service.get_entity("entity-1")])
-
+    data_handler.reload_all_data.emit.assert_not_called()
+    assert data_handler._cached_entities[0].id == "entity-1"
     data_handler.reload_markers.emit.assert_called_once_with("map-1")
     data_handler.reload_markers_for_current_map.emit.assert_not_called()
 
 
 def test_event_marker_composite_reports_created_event(db_service):
     """New-event composites expose the event ID needed by refresh handling."""
-    db_service.insert_map(
-        Map(id="map-1", name="Test Map", image_path="test.png")
-    )
+    db_service.insert_map(Map(id="map-1", name="Test Map", image_path="test.png"))
     command = CompositeCommand(
         [
             CreateEventCommand(

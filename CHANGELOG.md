@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-08
-**Commit:** 1a556a7003e43e10993c50eeaa78da2293ff3309
+**Commit:** b372e883316a923a4946b2bdf7b1ad548011c0b8
 ---
 
 # Changelog
@@ -12,6 +12,16 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-08)* **Referenced-object creation (KRT-21)**: Kept map contextual
+  Entity/Event creation in the originating task. Object/marker composites and
+  placement completion now refresh without hydrating unrelated drafts; legacy
+  creation refreshes honor selection intent. Preserved explicit create-and-open,
+  context tags, local IDs and playhead dates. Added route audit and regressions
+  for drafts, caret/focus, late completion, cancellation, rollback and undo/redo;
+  reduced the fallback handler complexity ceiling from 33 to 30. Clarified the
+  missing-link creation route and added a theme-aware eye cursor for Alt+Peek
+  in Rich/Source, using reliable direct rendering in the shared SVG loader.
 
 - *(2026-10-08)* **Map inspection (KRT-64)**: Feature selection keeps the map
   active and updates only an already-visible inspector in another workspace

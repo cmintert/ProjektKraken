@@ -5,8 +5,8 @@
     "ci_fast": 1605,
     "slow": 1,
     "performance": 0,
-    "full": 5973,
-    "full_only": 4359
+    "full": 5974,
+    "full_only": 4360
   },
   "categories": {
     "architecture": 11,
@@ -18,7 +18,7 @@
     "repro": 2,
     "root": 15,
     "security": 5,
-    "unit": 5615
+    "unit": 5616
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -5320,7 +5320,8 @@
     "tests/unit/test_map_graphics_view.py::TestSpacePanningRasterMode::test_space_release_in_raster_mode_restores_no_drag": [],
     "tests/unit/test_map_handler_create.py::test_cancel_emits_nothing": [],
     "tests/unit/test_map_handler_create.py::test_existing_entity_emits_marker_created": [],
-    "tests/unit/test_map_handler_create.py::test_feature_creation_preserves_chosen_entity_type": [],
+    "tests/unit/test_map_handler_create.py::test_feature_creation_preserves_chosen_entity_type[path]": [],
+    "tests/unit/test_map_handler_create.py::test_feature_creation_preserves_chosen_entity_type[region]": [],
     "tests/unit/test_map_handler_create.py::test_new_object_requests_atomic_creation[choice0-entity]": [],
     "tests/unit/test_map_handler_create.py::test_new_object_requests_atomic_creation[choice1-entity]": [],
     "tests/unit/test_map_handler_create.py::test_new_object_requests_atomic_creation[choice2-event]": [],
