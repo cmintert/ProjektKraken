@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-08
-**Commit:** e8a00a8bdc30efa42985883940901d395750712a
+**Commit:** 1c56b035d4239b6784e3fa8887c58aa9425d1110
 ---
 
 # Changelog
@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-08)* **Documentation**: Included the timeline investigation and
+  implementation evidence in Sphinx navigation, resolving the three missing-
+  toctree warnings introduced by the timeline evidence pages.
 
 - *(2026-10-07)* **Timeline temporal meaning (KRT-50/KRT-57/KRT-58)**:
   Separated uncertain occurrence, detached duration length and possible/certain

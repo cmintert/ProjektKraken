@@ -12,6 +12,14 @@ The [implementation and after-state evidence](implementation.md) record the loca
 fixes, validation and remaining human interpretation check. The images below
 remain the preserved baseline.
 
+```{toctree}
+:hidden:
+:maxdepth: 1
+
+indicators-review
+implementation
+```
+
 ## Screenshot review
 
 Inspect [year visible](year-visible.png) and [tighter year view](year-tight.png)
