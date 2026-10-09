@@ -7,6 +7,16 @@ This module has been refactored:
 This shim preserves backward compatibility for existing imports.
 """
 
+if __name__ == "__main__":
+    # Start capture before the compatibility imports below.
+    from src.core.runtime_diagnostics import install_runtime_diagnostics
+
+    install_runtime_diagnostics()
+    from src.app.entry import main
+
+    main()
+    raise SystemExit(0)
+
 # Re-export MainWindow for backward compatibility
 # Re-export classes that tests may patch
 # These imports maintain backward compatibility with existing test mocks
@@ -37,7 +47,3 @@ from src.commands.relation_commands import (  # noqa: F401
     UpdateRelationCommand,
 )
 from src.services.worker import DatabaseWorker  # noqa: F401
-
-# Support direct execution
-if __name__ == "__main__":
-    main()

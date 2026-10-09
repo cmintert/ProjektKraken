@@ -22,6 +22,12 @@ failure notice, the package version, and your Windows version when reporting a
 problem. AI audit logging is opt-in, uses separate per-process files, and remains
 isolated from normal diagnostics.
 
+Uncaught Python failures, Qt warnings and critical messages, and native crash
+tracebacks are written to `logs/faults.<process ID>.log` in the same portable or
+user data log directory. Include this file when reporting a crash. It is held
+open for the application session so a native failure can write to it even when
+the packaged app has no console.
+
 ## A saved layout prevents startup
 
 If the application opens, choose **Layouts → Reset Layout**. This restores the

@@ -12,6 +12,11 @@ from src.app.startup_check import (  # noqa: E402
     report_startup_failure,
     report_unhandled_startup_exception,
 )
+from src.core.runtime_diagnostics import (  # noqa: E402
+    install_runtime_diagnostics,
+    record_startup_exception,
+    shutdown_runtime_diagnostics,
+)
 
 
 def run() -> int:
@@ -26,16 +31,24 @@ def run() -> int:
             print(f"Environment OK: Python {sys.version.split()[0]}")
             return 0
 
+    install_runtime_diagnostics()
     try:
-        from src.app.main import main
+        from src.app.entry import main
 
         main()
     except SystemExit as exc:
         return int(exc.code or 0)
     except BaseException as exc:
-        report_unhandled_startup_exception(exc)
+        record_startup_exception(exc)
+        try:
+            report_unhandled_startup_exception(exc)
+        except Exception:
+            pass
         return 1
+    finally:
+        shutdown_runtime_diagnostics()
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(run())

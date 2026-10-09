@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-10
-**Commit:** 7c06f4d3f75346b13a8f090044dfd2df185ec522
+**Commit:** 80f8b2c9cf6d48c14e3de5bf84680207d4c178a0
 ---
 
 # Changelog
@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-10)* **Persistent failure diagnostics (KRT-61)**: Record uncaught
+  Python and Qt callback tracebacks, background-thread failures, relevant Qt
+  messages and native fault dumps in a per-process file kept open through
+  shutdown. Start capture before application imports and document crash evidence.
 
 - *(2026-10-10)* **Logging reliability (KRT-62)**: Close application-owned
   handlers on reconfiguration, isolate each process's rotating diagnostics and

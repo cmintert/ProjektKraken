@@ -64,7 +64,7 @@ def _add_owned_handler(logger: logging.Logger, handler: logging.Handler) -> None
     _owned_handlers.setdefault(logger, []).append(handler)
 
 
-def _writable_log_directory() -> str | None:
+def get_writable_log_directory() -> str | None:
     """Prefer portable logs, then the user data directory; never use cwd."""
     for candidate in (_resolve_log_directory, lambda: get_user_data_path("logs")):
         try:
@@ -141,7 +141,7 @@ def setup_logging(debug_mode: bool = False, log_to_console: bool = True) -> None
         log_to_console (bool): If True, adds a StreamHandler. Defaults to True.
 
     """
-    log_dir = _writable_log_directory()
+    log_dir = get_writable_log_directory()
     root_logger = logging.getLogger()
     _replace_owned_handlers(root_logger)
 
@@ -216,7 +216,7 @@ def setup_audit_logging() -> None:
 
     audit_logger.setLevel(logging.INFO)
     audit_logger.propagate = False  # Don't spam the main log
-    log_dir = _writable_log_directory()
+    log_dir = get_writable_log_directory()
     if log_dir is None:
         _replace_owned_handlers(audit_logger)
         return

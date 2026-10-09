@@ -25,6 +25,7 @@ record and the automated packaged smoke are both green.
 - Map opens and renders controls/icons:
 - Longform opens and bundled web assets load:
 - `logs/kraken.<process ID>.log` contains no startup failure:
+- `logs/faults.<process ID>.log` records the session start (retain it if the app crashes):
 - Validator/date/name:
 - Result: PASS / FAIL
 

@@ -37,7 +37,15 @@ from src.core.logging_config import (  # noqa: E402
     shutdown_logging,
 )
 from src.core.paths import get_resource_path  # noqa: E402
+from src.core.runtime_diagnostics import (  # noqa: E402
+    install_qt_message_handler,
+    install_runtime_diagnostics,
+    record_startup_exception,
+    shutdown_runtime_diagnostics,
+)
 from src.core.theme_manager import ThemeManager  # noqa: E402
+
+install_qt_message_handler()
 
 # Initialize Logging
 # setup_logging(debug_mode=True)  # Removed module-level side-effect
@@ -46,10 +54,8 @@ logger = get_logger(__name__)
 
 def main() -> None:
     """Application entry point."""
-    import faulthandler
-
-    if sys.stderr is not None:
-        faulthandler.enable()
+    install_runtime_diagnostics()
+    install_qt_message_handler()
 
     # Defer MainWindow import to ensure AA_ShareOpenGLContexts is already set
     from src.app.main_window import MainWindow
@@ -75,7 +81,7 @@ def main() -> None:
 
         # Pass arguments after 'import'
         exit_code = run_import_cli(sys.argv[2:])
-        shutdown_logging()
+        cleanup_app()
         sys.exit(exit_code)
 
     logger.info("=" * 60)
@@ -158,9 +164,7 @@ def main() -> None:
         window = MainWindow()
         if splash is not None:
             splash.set_status("Loading world data…")
-            window.startup_completed.connect(
-                lambda _success: splash.dismiss(window)
-            )
+            window.startup_completed.connect(lambda _success: splash.dismiss(window))
             # Retain the splash until the asynchronous startup signal arrives.
             setattr(app, "_startup_splash", splash)
         window.show()
@@ -187,14 +191,23 @@ def main() -> None:
         cleanup_app()
         sys.exit(exit_code)
     except Exception as exc:
+        record_startup_exception(exc)
         logger.exception("CRITICAL: Unhandled exception in main application loop")
         from src.app.startup_check import report_unhandled_startup_exception
 
-        report_unhandled_startup_exception(exc)
+        try:
+            report_unhandled_startup_exception(exc)
+        except Exception:
+            pass
+        finally:
+            cleanup_app()
         sys.exit(1)
 
 
 def cleanup_app() -> None:
     """Performs global cleanup operations before exit."""
     logger.info("Shimmying down the drain pipe...Shutting down logging.")
-    shutdown_logging()
+    try:
+        shutdown_logging()
+    finally:
+        shutdown_runtime_diagnostics()
