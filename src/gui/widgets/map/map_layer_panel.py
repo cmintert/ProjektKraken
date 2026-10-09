@@ -34,10 +34,12 @@ from PySide6.QtWidgets import (
     QLabel,
     QMenu,
     QPushButton,
+    QSizePolicy,
     QSlider,
     QStackedWidget,
     QStyledItemDelegate,
     QStyleOptionViewItem,
+    QToolButton,
     QTreeView,
     QVBoxLayout,
     QWidget,
@@ -101,9 +103,7 @@ class TemporalLayerFilterProxy(QSortFilterProxyModel):
         self._outside_only = bool(enabled)
         self.invalidate()
 
-    def filterAcceptsRow(
-        self, source_row: int, source_parent: ModelIndex
-    ) -> bool:
+    def filterAcceptsRow(self, source_row: int, source_parent: ModelIndex) -> bool:
         """Return whether a layer satisfies the optional temporal filter."""
         if not self._outside_only:
             return True
@@ -116,9 +116,7 @@ class TemporalLayerFilterProxy(QSortFilterProxyModel):
         layer_type = index.data(MapLayerModel.LayerTypeRole)
         state = index.data(MapLayerModel.TemporalValidityRole)
         return bool(
-            layer_type in VECTOR_LAYER_TYPES
-            and state is not None
-            and not state.valid
+            layer_type in VECTOR_LAYER_TYPES and state is not None and not state.valid
         )
 
 
@@ -263,9 +261,7 @@ class MapLayerPanel(QWidget):
     raster_stats_requested = Signal(str)  # node_id — open stats dialog
     raster_blend_mode_changed = Signal(str, str, str)  # (node_id, new_mode, old_mode)
     raster_snapshot_requested = Signal(str)  # node_id — save snapshot at current date
-    raster_snapshot_selected = Signal(
-        str, float
-    )  # node_id, lore_date — jump playhead
+    raster_snapshot_selected = Signal(str, float)  # node_id, lore_date — jump playhead
     raster_snapshot_edit_requested = Signal(str, float)
     raster_base_edit_requested = Signal(str)
     raster_snapshot_delete_requested = Signal(
@@ -296,6 +292,12 @@ class MapLayerPanel(QWidget):
         self._proxy_model = TemporalLayerFilterProxy(self)
         self._playhead_time = 0.0
         self._selected_node_id: Optional[str] = None
+        self._syncing_selection = False
+        self.feature_menu_requested: Callable[[], None] | None = None
+        self.feature_context_menu: Callable[[str, QMenu], None] | None = None
+        self.capture_feature_guard: Callable[[str, str], Callable[[], bool]] | None = (
+            None
+        )
         self._current_node_id: str = ""
         self._slider_updating = False  # guard against feedback loops
         self._start_opacity: Optional[float] = None  # Opacity at drag start
@@ -313,8 +315,10 @@ class MapLayerPanel(QWidget):
         self._calendar_converter: Optional[CalendarConverter] = None
         self._properties_dialog: Optional["LayerPropertiesDialog"] = None
         self._properties_node_id: Optional[str] = None
+        self._properties_guard: Callable[[], bool] = lambda: False
         self._temporal_dialog: Optional["TemporalValidityDialog"] = None
         self._temporal_node_id: Optional[str] = None
+        self._temporal_guard: Callable[[], bool] = lambda: False
         # Internal lookup: node_id → mode string (populated by MapHandler)
         self._raster_mode_by_id: dict[str, str] = {}
         self._raster_edit_target_label_by_id: dict[str, str] = {}
@@ -332,6 +336,7 @@ class MapLayerPanel(QWidget):
         )
 
         self._build_header(main_layout)
+        self._build_feature_actions_row(main_layout)
         self._build_tree_view(main_layout)
         self._build_opacity_bar(main_layout)
         self._build_raster_toolbar(main_layout)
@@ -363,9 +368,7 @@ class MapLayerPanel(QWidget):
             "Show only vector features outside the current playhead date"
         )
         self._temporal_count_button.setEnabled(False)
-        self._temporal_count_button.toggled.connect(
-            self.set_temporal_filter_enabled
-        )
+        self._temporal_count_button.toggled.connect(self.set_temporal_filter_enabled)
         header_layout.addWidget(self._temporal_count_button)
         header_layout.addStretch()
 
@@ -389,7 +392,9 @@ class MapLayerPanel(QWidget):
         )
         self.btn_new_raster.setIconSize(QSize(16, 16))
         self.btn_new_raster.setFixedSize(QSize(28, 28))
-        self.btn_new_raster.setToolTip("New Raster — Create a new raster / heatmap layer")
+        self.btn_new_raster.setToolTip(
+            "New Raster — Create a new raster / heatmap layer"
+        )
         self.btn_new_raster.setStyleSheet(StyleHelper.get_icon_button_style())
         self.btn_new_raster.clicked.connect(self._on_new_raster)
         header_layout.addWidget(self.btn_new_raster)
@@ -410,6 +415,51 @@ class MapLayerPanel(QWidget):
 
         parent_layout.addLayout(header_layout)
 
+    def _build_feature_actions_row(self, parent_layout: QVBoxLayout) -> None:
+        """Keep selection-specific actions readable below the busy header."""
+        row = QHBoxLayout()
+        self.btn_feature_actions = QToolButton(self)
+        self.btn_feature_actions.setText("Feature actions")
+        self.btn_feature_actions.setEnabled(False)
+        self.btn_feature_actions.setToolTip("Select a map feature")
+        self.btn_feature_actions.setStyleSheet(StyleHelper.get_secondary_button_style())
+        self.btn_feature_actions.clicked.connect(self._show_feature_actions)
+        row.addWidget(self.btn_feature_actions)
+        self.feature_selection_label = QLabel("Select a map feature", self)
+        self.feature_selection_label.setTextFormat(Qt.TextFormat.PlainText)
+        self.feature_selection_label.setMinimumWidth(0)
+        self.feature_selection_label.setSizePolicy(
+            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred
+        )
+        row.addWidget(self.feature_selection_label, 1)
+        parent_layout.addLayout(row)
+
+    def _show_feature_actions(self) -> None:
+        """Delegate menu presentation to the shared map presenter."""
+        if self.feature_menu_requested is not None:
+            self.feature_menu_requested()
+
+    def feature_node(self, node_id: str) -> MapLayerNode | None:
+        """Resolve supported feature nodes without requiring canvas visibility."""
+        node = self._model.find_node_by_id(node_id) if self._model else None
+        return node if node and node.layer_type in VECTOR_LAYER_TYPES else None
+
+    def feature_valid(self, node_id: str) -> bool:
+        """Expose the model's existing temporal projection for presentation."""
+        node = self.feature_node(node_id)
+        return bool(node and self._model and self._model.temporal_validity(node).valid)
+
+    def clear_feature_selection(self) -> None:
+        """Mirror explicit canvas deselection without emitting new selection intent."""
+        self._syncing_selection = True
+        try:
+            self._tree.clearSelection()
+            self._tree.setCurrentIndex(QModelIndex())
+        finally:
+            self._syncing_selection = False
+        self._selected_node_id = None
+        self._update_button_state()
+
     def _build_tree_view(self, parent_layout: QVBoxLayout) -> None:
         """Build the layer tree view with drag-and-drop.
 
@@ -426,7 +476,9 @@ class MapLayerPanel(QWidget):
         self._tree.setAnimated(True)
         self._tree.setExpandsOnDoubleClick(False)  # double-click = rename
         self._tree.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self._tree.setItemDelegate(TemporalLayerDelegate(self._toggle_lock_at_index, self._tree))
+        self._tree.setItemDelegate(
+            TemporalLayerDelegate(self._toggle_lock_at_index, self._tree)
+        )
         self._tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self._tree.customContextMenuRequested.connect(self._show_context_menu)
         self._tree.clicked.connect(self._on_item_clicked)
@@ -527,22 +579,30 @@ class MapLayerPanel(QWidget):
         _icon_style = StyleHelper.get_icon_raster_tool_button_style()
         tool_defs: list[tuple[str, str, bool, str, str]] = [
             (
-                "_btn_brush", "Brush", True,
+                "_btn_brush",
+                "Brush",
+                True,
                 "Paint individual pixels with the selected value",
                 "default_assets/icons/ui_icons/paint-brush.svg",
             ),
             (
-                "_btn_fill", "Fill", False,
+                "_btn_fill",
+                "Fill",
+                False,
                 "Flood-fill a contiguous region with the selected value",
                 "default_assets/icons/ui_icons/paint-bucket.svg",
             ),
             (
-                "_btn_gradient", "Gradient", False,
+                "_btn_gradient",
+                "Gradient",
+                False,
                 "Paint a smooth gradient from center to edge of brush",
                 "default_assets/icons/ui_icons/gradient.svg",
             ),
             (
-                "_btn_sample", "Sample", False,
+                "_btn_sample",
+                "Sample",
+                False,
                 "Sample the value under the cursor (eye-dropper)",
                 "default_assets/icons/ui_icons/eyedropper.svg",
             ),
@@ -575,17 +635,15 @@ class MapLayerPanel(QWidget):
         Args:
             rt: Raster toolbar layout to append into.
         """
-        self._brush_size_spin, self._brush_size_slider = (
-            self._make_slider_scrubber_row(
-                rt,
-                "Size:",
-                1,
-                128,
-                8,
-                "Brush radius in pixels (1–128)",
-                self._on_brush_size_slider_changed,
-                self._on_brush_size_spin_changed,
-            )
+        self._brush_size_spin, self._brush_size_slider = self._make_slider_scrubber_row(
+            rt,
+            "Size:",
+            1,
+            128,
+            8,
+            "Brush radius in pixels (1–128)",
+            self._on_brush_size_slider_changed,
+            self._on_brush_size_spin_changed,
         )
         self._brush_size_row = cast(QWidget, self._brush_size_spin.parentWidget())
 
@@ -606,15 +664,17 @@ class MapLayerPanel(QWidget):
         )
         self._hardness_row = cast(QWidget, self._falloff_slider.parentWidget())
 
-        self._brush_opacity_slider, self._brush_opacity_label = self._make_labeled_slider(
-            rt,
-            "Opacity:",
-            0,
-            100,
-            100,
-            "Brush opacity (100=full replacement, 0=no change)",
-            self._on_brush_opacity_changed,
-            icon_path="default_assets/icons/ui_icons/circle-half.svg",
+        self._brush_opacity_slider, self._brush_opacity_label = (
+            self._make_labeled_slider(
+                rt,
+                "Opacity:",
+                0,
+                100,
+                100,
+                "Brush opacity (100=full replacement, 0=no change)",
+                self._on_brush_opacity_changed,
+                icon_path="default_assets/icons/ui_icons/circle-half.svg",
+            )
         )
         self._brush_opacity_row = cast(
             QWidget, self._brush_opacity_slider.parentWidget()
@@ -629,9 +689,7 @@ class MapLayerPanel(QWidget):
         self._advanced_paint_toggle.setToolTip(
             "Show raw raster values for specialist workflows"
         )
-        self._advanced_paint_toggle.toggled.connect(
-            self._on_advanced_paint_toggled
-        )
+        self._advanced_paint_toggle.toggled.connect(self._on_advanced_paint_toggled)
         rt.addWidget(self._advanced_paint_toggle)
 
         self._display_value_row = QWidget()
@@ -641,9 +699,7 @@ class MapLayerPanel(QWidget):
         self._display_value_spin = ScrollSafeDoubleSpinBox()
         self._display_value_spin.setDecimals(3)
         self._display_value_spin.setRange(0.0, 65535.0)
-        self._display_value_spin.valueChanged.connect(
-            self._on_display_value_changed
-        )
+        self._display_value_spin.valueChanged.connect(self._on_display_value_changed)
         display_layout.addWidget(self._display_value_spin, 1)
         self._display_unit_label = QLabel("raw")
         display_layout.addWidget(self._display_unit_label)
@@ -748,9 +804,7 @@ class MapLayerPanel(QWidget):
         self._paint_value_spin.setToolTip(
             "Raw raster value to paint (0–65535) — drag to scrub, double-click to type"
         )
-        self._paint_value_spin.valueChanged.connect(
-            self._on_paint_value_spin_changed
-        )
+        self._paint_value_spin.valueChanged.connect(self._on_paint_value_spin_changed)
         scrub_row.addWidget(self._paint_value_spin)
 
         self._paint_value_display_label = QLabel("")
@@ -791,9 +845,7 @@ class MapLayerPanel(QWidget):
         self._recent_paint_values = RecentValuesStrip(
             "raster.paint_value", is_color=False
         )
-        self._recent_paint_values.set_label_formatter(
-            self._format_value_for_display
-        )
+        self._recent_paint_values.set_label_formatter(self._format_value_for_display)
         self._recent_paint_values.value_chosen.connect(self._on_recent_value_chosen)
         rt.addWidget(self._recent_paint_values)
 
@@ -892,7 +944,9 @@ class MapLayerPanel(QWidget):
         self._btn_edit_toggle = QPushButton("Paint")
         self._btn_edit_toggle.setCheckable(True)
         self._btn_edit_toggle.setEnabled(False)
-        self._btn_edit_toggle.setToolTip("Enter/exit raster edit mode — changes are applied to the active layer")
+        self._btn_edit_toggle.setToolTip(
+            "Enter/exit raster edit mode — changes are applied to the active layer"
+        )
         self._btn_edit_toggle.toggled.connect(self._on_edit_toggled)
         action_row.addWidget(self._btn_edit_toggle)
 
@@ -902,7 +956,9 @@ class MapLayerPanel(QWidget):
         )
         self._btn_palette.setIconSize(QSize(16, 16))
         self._btn_palette.setAccessibleName("Palette")
-        self._btn_palette.setToolTip("Palette — Open the colour map / class palette editor")
+        self._btn_palette.setToolTip(
+            "Palette — Open the colour map / class palette editor"
+        )
         self._btn_palette.setStyleSheet(StyleHelper.get_icon_button_style())
         self._btn_palette.clicked.connect(self._on_palette_clicked)
         action_row.addWidget(self._btn_palette)
@@ -913,7 +969,9 @@ class MapLayerPanel(QWidget):
         )
         self._btn_stats.setIconSize(QSize(16, 16))
         self._btn_stats.setAccessibleName("Analyze")
-        self._btn_stats.setToolTip("Stats — Show coverage statistics for this raster layer")
+        self._btn_stats.setToolTip(
+            "Stats — Show coverage statistics for this raster layer"
+        )
         self._btn_stats.setStyleSheet(StyleHelper.get_icon_button_style())
         self._btn_stats.clicked.connect(self._on_stats_clicked)
         action_row.addWidget(self._btn_stats)
@@ -1000,7 +1058,9 @@ class MapLayerPanel(QWidget):
         )
         self._btn_notes.setIconSize(QSize(16, 16))
         self._btn_notes.setFixedSize(QSize(28, 28))
-        self._btn_notes.setToolTip("Notes — Add or edit text notes for this raster layer")
+        self._btn_notes.setToolTip(
+            "Notes — Add or edit text notes for this raster layer"
+        )
         self._btn_notes.setStyleSheet(StyleHelper.get_icon_button_style())
         self._btn_notes.clicked.connect(self._on_notes_clicked)
         notes_row.addWidget(self._btn_notes)
@@ -1049,7 +1109,9 @@ class MapLayerPanel(QWidget):
         )
         self._btn_clear_query.setIconSize(QSize(16, 16))
         self._btn_clear_query.setFixedSize(QSize(28, 28))
-        self._btn_clear_query.setToolTip("Clear Query — Remove the spatial query overlay")
+        self._btn_clear_query.setToolTip(
+            "Clear Query — Remove the spatial query overlay"
+        )
         self._btn_clear_query.setStyleSheet(StyleHelper.get_icon_button_style())
         self._btn_clear_query.clicked.connect(lambda: self.raster_query_cleared.emit())
         self._btn_clear_query.setVisible(False)
@@ -1295,6 +1357,12 @@ class MapLayerPanel(QWidget):
         self._model = model
         self._proxy_model.setSourceModel(model)
         self._tree.setModel(self._proxy_model)
+        self._tree.selectionModel().currentChanged.connect(
+            self._on_tree_current_changed
+        )
+        self._tree.selectionModel().selectionChanged.connect(
+            self._on_tree_selection_changed
+        )
         model.layer_tree_changed.connect(self._reconcile_selection_with_model)
         model.dataChanged.connect(self._on_model_data_changed)
         model.temporal_state_changed.connect(self._on_temporal_state_changed)
@@ -1336,9 +1404,7 @@ class MapLayerPanel(QWidget):
             node = self._model.find_node_by_id(node_id)
             if node is None:
                 continue
-            index = self._proxy_model.mapFromSource(
-                self._model.index_from_node(node)
-            )
+            index = self._proxy_model.mapFromSource(self._model.index_from_node(node))
             if index.isValid():
                 self._tree.setExpanded(index, True)
 
@@ -1366,13 +1432,21 @@ class MapLayerPanel(QWidget):
         if selected is not None:
             index = self._model.index_from_node(selected)
             if index.isValid():
-                self._tree.setCurrentIndex(self._proxy_model.mapFromSource(index))
+                self._syncing_selection = True
+                try:
+                    self._tree.setCurrentIndex(self._proxy_model.mapFromSource(index))
+                finally:
+                    self._syncing_selection = False
             self._update_button_state()
             return
 
         self._selected_node_id = None
-        self._tree.clearSelection()
-        self._tree.setCurrentIndex(QModelIndex())
+        self._syncing_selection = True
+        try:
+            self._tree.clearSelection()
+            self._tree.setCurrentIndex(QModelIndex())
+        finally:
+            self._syncing_selection = False
         self._update_button_state()
 
         if (
@@ -1418,7 +1492,11 @@ class MapLayerPanel(QWidget):
             if not proxy_index.isValid() and self._temporal_count_button.isChecked():
                 self.set_temporal_filter_enabled(False)
                 proxy_index = self._proxy_model.mapFromSource(index)
-            self._tree.setCurrentIndex(proxy_index)
+            self._syncing_selection = True
+            try:
+                self._tree.setCurrentIndex(proxy_index)
+            finally:
+                self._syncing_selection = False
             self._tree.scrollTo(proxy_index)
             self._selected_node_id = node_id
             self._sync_opacity_slider(node)
@@ -1464,9 +1542,7 @@ class MapLayerPanel(QWidget):
             return
         valid, outside = self._model.vector_temporal_counts()
         self.temporal_counts_changed.emit(valid, outside)
-        self._temporal_count_button.setText(
-            f"{valid} in date · {outside} outside"
-        )
+        self._temporal_count_button.setText(f"{valid} in date · {outside} outside")
         self._temporal_count_button.setEnabled(outside > 0)
         if outside == 0 and self._temporal_count_button.isChecked():
             self.set_temporal_filter_enabled(False)
@@ -1588,6 +1664,23 @@ class MapLayerPanel(QWidget):
     # Private — tree interactions
     # ------------------------------------------------------------------
 
+    def _on_tree_current_changed(
+        self, current: QModelIndex, _previous: QModelIndex
+    ) -> None:
+        """Keyboard selection owns the same route as a pointer click."""
+        if not self._syncing_selection and current.isValid():
+            self._on_item_clicked(current)
+
+    def _on_tree_selection_changed(self) -> None:
+        """An explicit tree deselection clears the feature action target."""
+        if (
+            not self._syncing_selection
+            and not self._tree.selectionModel().hasSelection()
+        ):
+            self._selected_node_id = None
+            self._update_button_state()
+            self.layer_selected.emit("")
+
     @Slot(QModelIndex)
     def _on_item_clicked(self, index: QModelIndex) -> None:
         """Handle a click on a tree item.
@@ -1641,10 +1734,11 @@ class MapLayerPanel(QWidget):
             return
         source_index = self.source_index(index)
         node = self._model.node_from_index(source_index)
+        guard = self._capture_dialog_guard(node.id, "lock")
         name, ok = QInputDialog.getText(
             self, "Rename Layer", "New name:", text=node.name
         )
-        if ok and name.strip():
+        if ok and name.strip() and guard():
             self.layer_renamed.emit(node.id, name.strip())
 
     def _toggle_lock_at_index(self, index: ModelIndex) -> None:
@@ -1696,7 +1790,9 @@ class MapLayerPanel(QWidget):
                 menu.addSeparator()
                 action_del = menu.addAction("🗑 Delete Snapshot")
                 action_del.triggered.connect(
-                    lambda _=False, pid=parent_id, ld=lore_date: self.raster_snapshot_delete_requested.emit(pid, ld)
+                    lambda _=False,
+                    pid=parent_id,
+                    ld=lore_date: self.raster_snapshot_delete_requested.emit(pid, ld)
                 )
                 menu.exec(self._tree.viewport().mapToGlobal(pos))
                 return
@@ -1704,6 +1800,14 @@ class MapLayerPanel(QWidget):
             self._selected_node_id = node.id
             self._sync_opacity_slider(node)
             self._update_button_state()
+
+            if node.layer_type in VECTOR_LAYER_TYPES and self.feature_context_menu:
+                self.feature_context_menu(node.id, menu)
+                if not node.locked:
+                    menu.addSeparator()
+                    self._populate_feature_layer_actions(menu, node.id)
+                menu.exec(self._tree.viewport().mapToGlobal(pos))
+                return
 
             if node.layer_type in VECTOR_LAYER_TYPES and node.locked:
                 action_unlock = menu.addAction("Unlock")
@@ -1739,9 +1843,7 @@ class MapLayerPanel(QWidget):
                     lambda: self._on_item_double_clicked(index)
                 )
                 action_properties = menu.addAction("Properties…")
-                action_properties.triggered.connect(
-                    lambda: self._edit_properties(node)
-                )
+                action_properties.triggered.connect(lambda: self._edit_properties(node))
 
                 if node.layer_type in VECTOR_LAYER_TYPES or node.layer_type == "group":
                     temporal_action = menu.addAction("Temporal Validity…")
@@ -1774,6 +1876,36 @@ class MapLayerPanel(QWidget):
 
         menu.exec(self._tree.viewport().mapToGlobal(pos))
 
+    def _populate_feature_layer_actions(self, menu: QMenu, node_id: str) -> None:
+        """Retain layer-only actions after the shared feature menu portion."""
+        node = self.feature_node(node_id)
+        if node is None:
+            return
+        action = menu.addAction("Hide layer" if node.visible else "Show layer")
+        guard = self._capture_dialog_guard(node_id, "lock")
+        action.triggered.connect(
+            lambda: self._toggle_feature_visibility(node_id) if guard() else None
+        )
+        properties = menu.addAction("Layer properties…")
+        properties.triggered.connect(
+            lambda: self.edit_properties(node_id) if guard() else None
+        )
+        rename = menu.addAction("Rename…")
+        rename.triggered.connect(
+            lambda: self._rename_feature(node_id) if guard() else None
+        )
+
+    def _toggle_feature_visibility(self, node_id: str) -> None:
+        node = self.feature_node(node_id)
+        if node is not None and not node.locked:
+            self._toggle_visibility(node)
+
+    def _rename_feature(self, node_id: str) -> None:
+        node = self.feature_node(node_id)
+        if node is not None and not node.locked and self._model is not None:
+            index = self._proxy_model.mapFromSource(self._model.index_from_node(node))
+            self._on_item_double_clicked(index)
+
     def edit_properties(self, node_id: str) -> None:
         """Open properties for a node by id through the existing command path."""
         if self._model is None:
@@ -1798,7 +1930,7 @@ class MapLayerPanel(QWidget):
 
         self._close_temporal_dialog()
         if self._properties_dialog is not None:
-            if self._properties_node_id == node.id:
+            if self._properties_node_id == node.id and self._properties_guard():
                 self._properties_dialog.show()
                 self._properties_dialog.raise_()
                 self._properties_dialog.activateWindow()
@@ -1811,12 +1943,14 @@ class MapLayerPanel(QWidget):
         )
         self._properties_dialog = dialog
         self._properties_node_id = node.id
+        guard = self._capture_dialog_guard(node.id, "lock")
+        self._properties_guard = guard
         dialog.accepted.connect(
-            lambda: self.layer_properties_changed.emit(
-                node.id, dialog.properties()
-            )
+            lambda: self._accept_feature_properties(node.id, dialog.properties(), guard)
         )
-        dialog.destroyed.connect(self._on_properties_dialog_destroyed)
+        dialog.destroyed.connect(
+            lambda _obj=None, key=id(dialog): self._on_properties_dialog_destroyed(key)
+        )
         dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
         dialog.show()
         dialog.raise_()
@@ -1830,7 +1964,7 @@ class MapLayerPanel(QWidget):
 
         self._close_properties_dialog()
         if self._temporal_dialog is not None:
-            if self._temporal_node_id == node.id:
+            if self._temporal_node_id == node.id and self._temporal_guard():
                 self._temporal_dialog.set_playhead_time(self._playhead_time)
                 self._temporal_dialog.show()
                 self._temporal_dialog.raise_()
@@ -1846,20 +1980,37 @@ class MapLayerPanel(QWidget):
         )
         self._temporal_dialog = dialog
         self._temporal_node_id = node.id
+        guard = self._capture_dialog_guard(node.id, "validity")
+        self._temporal_guard = guard
         dialog.accepted.connect(
-            lambda: self.layer_properties_changed.emit(
-                node.id, dialog.properties()
-            )
+            lambda: self._accept_feature_properties(node.id, dialog.properties(), guard)
         )
-        dialog.destroyed.connect(self._on_temporal_dialog_destroyed)
+        dialog.destroyed.connect(
+            lambda _obj=None, key=id(dialog): self._on_temporal_dialog_destroyed(key)
+        )
         dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
         dialog.show()
         dialog.raise_()
         dialog.activateWindow()
 
+    def _capture_dialog_guard(self, node_id: str, action_id: str) -> Callable[[], bool]:
+        """Capture feature identity for a modeless editor, retaining group routes."""
+        if self.feature_node(node_id) is not None and self.capture_feature_guard:
+            return self.capture_feature_guard(node_id, action_id)
+        return lambda: bool(self._model and self._model.find_node_by_id(node_id))
+
+    def _accept_feature_properties(
+        self, node_id: str, properties: dict, guard: Callable[[], bool]
+    ) -> None:
+        """Reject modeless results whose captured target is no longer valid."""
+        if guard():
+            self.layer_properties_changed.emit(node_id, properties)
+
     @Slot()
-    def _on_properties_dialog_destroyed(self) -> None:
+    def _on_properties_dialog_destroyed(self, dialog_id: int | None = None) -> None:
         """Forget the modeless editor after either OK or Cancel."""
+        if dialog_id is not None and dialog_id != id(self._properties_dialog):
+            return
         self._properties_dialog = None
         self._properties_node_id = None
 
@@ -1872,8 +2023,10 @@ class MapLayerPanel(QWidget):
             dialog.reject()
 
     @Slot()
-    def _on_temporal_dialog_destroyed(self) -> None:
+    def _on_temporal_dialog_destroyed(self, dialog_id: int | None = None) -> None:
         """Forget the temporal editor after either OK or Cancel."""
+        if dialog_id is not None and dialog_id != id(self._temporal_dialog):
+            return
         self._temporal_dialog = None
         self._temporal_node_id = None
 
@@ -2353,7 +2506,9 @@ class MapLayerPanel(QWidget):
                 allowed_values.add(val)
                 lbl = label_by_value.get(val, str(val))
                 hotkey = idx + 1 if idx < _MAXIMUM_SWATCH_HOTKEY_INDEX else None
-                swatches.append(Swatch(value=val, color=entry.color, label=lbl, hotkey=hotkey))
+                swatches.append(
+                    Swatch(value=val, color=entry.color, label=lbl, hotkey=hotkey)
+                )
         if self._current_node_id:
             self._discrete_paint_values_by_id[self._current_node_id] = allowed_values
         if (
@@ -2546,7 +2701,11 @@ class MapLayerPanel(QWidget):
         Returns:
             Human-readable value (e.g. ``"23.5 °C"`` or ``"42"``).
         """
-        layer_meta = self._raster_meta_by_id.get(self._current_node_id) if self._current_node_id else None
+        layer_meta = (
+            self._raster_meta_by_id.get(self._current_node_id)
+            if self._current_node_id
+            else None
+        )
         cm_dict = (layer_meta or {}).get("color_map")
         if not cm_dict:
             return str(int(value))
@@ -2591,9 +2750,7 @@ class MapLayerPanel(QWidget):
         ):
             raw_min = float(color_map.stretch_min or 0)
             raw_max = float(
-                color_map.stretch_max
-                if color_map.stretch_max is not None
-                else 65535
+                color_map.stretch_max if color_map.stretch_max is not None else 65535
             )
             fraction = (float(raw_value) - raw_min) / max(raw_max - raw_min, 1.0)
             display_value = color_map.display_min + fraction * (
@@ -2616,9 +2773,7 @@ class MapLayerPanel(QWidget):
         ):
             raw_min = float(color_map.stretch_min or 0)
             raw_max = float(
-                color_map.stretch_max
-                if color_map.stretch_max is not None
-                else 65535
+                color_map.stretch_max if color_map.stretch_max is not None else 65535
             )
             fraction = (display_value - color_map.display_min) / max(
                 color_map.display_max - color_map.display_min,
@@ -2790,13 +2945,13 @@ class MapLayerPanel(QWidget):
                     self._refresh_entity_picker(layer_meta, mode, name_map)
                     self._update_snapshot_count_label(layer_meta)
                     self._refresh_snapshot_list(self._selected_node_id, layer_meta)
-                    self._refresh_edit_target_state(
-                        self._selected_node_id, layer_meta
-                    )
+                    self._refresh_edit_target_state(self._selected_node_id, layer_meta)
                     # Notify consumers to refresh the floating legend
                     self.raster_layer_selected.emit(self._selected_node_id, layer_meta)
 
-    def _update_snapshot_count_label(self, layer_meta: Optional[Dict[str, Any]]) -> None:
+    def _update_snapshot_count_label(
+        self, layer_meta: Optional[Dict[str, Any]]
+    ) -> None:
         """Refresh the snapshot count label for the selected raster layer."""
         snap_count = len((layer_meta or {}).get("snapshots", {}))
         if snap_count:
@@ -2930,9 +3085,7 @@ class MapLayerPanel(QWidget):
         self._rgba_gradient_row.setVisible(is_gradient and is_rgba)
         self._fill_tolerance_row.setVisible(is_fill and not is_discrete)
         self._rgba_color_row.setVisible(is_rgba and (is_brush or is_fill))
-        self._display_value_row.setVisible(
-            is_continuous and (is_brush or is_fill)
-        )
+        self._display_value_row.setVisible(is_continuous and (is_brush or is_fill))
         self._paint_value_stack.setVisible(
             not is_sample and not is_rgba and not is_gradient
         )
@@ -2946,13 +3099,9 @@ class MapLayerPanel(QWidget):
             )
         )
         self._entity_picker_row.setVisible(
-            is_discrete
-            and not is_sample
-            and self._entity_picker_combo.count() > 0
+            is_discrete and not is_sample and self._entity_picker_combo.count() > 0
         )
-        self._advanced_paint_toggle.setVisible(
-            is_discrete or is_continuous
-        )
+        self._advanced_paint_toggle.setVisible(is_discrete or is_continuous)
         if is_discrete:
             self._advanced_paint_toggle.setText("Manual value")
             self._advanced_paint_toggle.setToolTip(
@@ -2960,13 +3109,9 @@ class MapLayerPanel(QWidget):
             )
         else:
             self._advanced_paint_toggle.setText("Advanced")
-            self._advanced_paint_toggle.setToolTip(
-                "Show the raw 0–65535 raster value"
-            )
+            self._advanced_paint_toggle.setToolTip("Show the raw 0–65535 raster value")
         self._raw_value_row.setVisible(
-            not is_sample
-            and not is_rgba
-            and self._advanced_paint_toggle.isChecked()
+            not is_sample and not is_rgba and self._advanced_paint_toggle.isChecked()
         )
         self._refresh_paint_action_state()
 
@@ -2978,7 +3123,9 @@ class MapLayerPanel(QWidget):
         return (
             "gradient"
             if self._btn_gradient.isChecked()
-            else "sample" if self._btn_sample.isChecked() else "brush"
+            else "sample"
+            if self._btn_sample.isChecked()
+            else "brush"
         )
 
     @property

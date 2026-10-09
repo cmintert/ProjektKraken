@@ -33,8 +33,12 @@ def map_window(qtbot, init_theme_manager, tmp_path):
     window.workspace.reset_layout()
     window.workspace.show_panel("map")
     for name in (
-        "event_editor", "entity_editor", "editor_coordinator", "unified_list",
-        "timeline", "data_coordinator",
+        "event_editor",
+        "entity_editor",
+        "editor_coordinator",
+        "unified_list",
+        "timeline",
+        "data_coordinator",
     ):
         setattr(window, name, Mock())
     window.event_editor.has_unsaved_changes.return_value = False
@@ -66,8 +70,13 @@ def add_feature(window, kind="entity", feature="point"):
     if feature == "region":
         geometry.append({"x": 0.5, "y": 0.7})
     widget.add_marker(
-        "target", kind, "Target", 0.5, 0.5,
-        feature_type=feature, geometry=geometry if feature != "point" else None,
+        "target",
+        kind,
+        "Target",
+        0.5,
+        0.5,
+        feature_type=feature,
+        geometry=geometry if feature != "point" else None,
     )
     widget.view.fit_to_view()
     return widget.view.find_item_by_id("target")
@@ -179,7 +188,8 @@ def test_pending_save_retains_map_origin_and_new_press_supersedes(
     assert window.navigation._pending_navigation is not None
     if supersede:
         qtbot.mousePress(
-            window.map_widget.view.viewport(), Qt.MouseButton.LeftButton,
+            window.map_widget.view.viewport(),
+            Qt.MouseButton.LeftButton,
             pos=QPoint(10, 10),
         )
     source.has_unsaved_changes.return_value = False
@@ -188,7 +198,8 @@ def test_pending_save_retains_map_origin_and_new_press_supersedes(
     assert window.workspace.active_panel("center") == "map"
     if supersede:
         qtbot.mouseRelease(
-            window.map_widget.view.viewport(), Qt.MouseButton.LeftButton,
+            window.map_widget.view.viewport(),
+            Qt.MouseButton.LeftButton,
             pos=QPoint(10, 10),
         )
 
@@ -215,9 +226,16 @@ def test_narrow_toolbar_keeps_labeled_open_action_in_overflow(map_window, qtbot)
     add_feature(window).setSelected(True)
     window.resize(550, 700)
     qtbot.wait(30)
-    extension = window.map_widget.toolbar.findChild(QToolButton, "qt_toolbar_ext_button")
+    extension = window.map_widget.toolbar.findChild(
+        QToolButton, "qt_toolbar_ext_button"
+    )
     assert extension.isVisible()
-    assert window.map_widget.open_inspector_action in extension.menu().actions()
+    # Native overflow depends on the available font metrics. The labeled route
+    # must remain usable whether it still fits or has moved into the menu.
+    button = window.map_widget.btn_open_inspector
+    assert button.isVisible() or (
+        window.map_widget.open_inspector_action in extension.menu().actions()
+    )
     assert window.map_widget.open_inspector_action.text() == "Open in inspector"
 
 

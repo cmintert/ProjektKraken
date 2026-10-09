@@ -1,0 +1,152 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.14, pytest-9.0.2, pluggy-1.6.0
+PySide6 6.10.1 -- Qt runtime 6.10.1 -- Qt compiled 6.10.1
+rootdir: C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken
+configfile: pytest.ini
+testpaths: tests
+plugins: anyio-4.14.2, platformdirs-4.12.4, cov-7.0.0, qt-4.5.0
+collected 6232 items / 4396 deselected / 1836 selected
+
+tests\cli\test_backup_cli.py .....                                       [  0%]
+tests\cli\test_cli_attachment.py ...                                     [  0%]
+tests\cli\test_cli_calendar.py ...                                       [  0%]
+tests\cli\test_cli_entity.py .....                                       [  0%]
+tests\cli\test_cli_event.py .....                                        [  1%]
+tests\cli\test_cli_longform.py .....                                     [  1%]
+tests\cli\test_cli_map.py ........                                       [  1%]
+tests\cli\test_cli_relation.py ....                                      [  2%]
+tests\cli\test_graph_cli.py ...                                          [  2%]
+tests\cli\test_info_cli.py .                                             [  2%]
+tests\cli\test_new_cli.py ...                                            [  2%]
+tests\cli\test_obsidian_cli.py ...                                       [  2%]
+tests\cli\test_preflight.py .................                            [  3%]
+tests\integration\test_demo_world.py .....                               [  3%]
+tests\integration\test_wiki_link_return.py .........................     [  5%]
+tests\integration\test_world_data_trust.py .................             [  6%]
+tests\integration\test_world_migrations.py ............................. [  7%]
+.................                                                        [  8%]
+tests\packaging\test_windows_package_contract.py .............           [  9%]
+tests\security\test_path_traversal.py .....                              [  9%]
+tests\unit\core\test_chronology_validation.py .........                  [ 10%]
+tests\unit\core\test_date_parser.py .................................... [ 12%]
+...........                                                              [ 12%]
+tests\unit\core\test_raster_grid.py .                                    [ 12%]
+tests\unit\core\test_standalone_date_parser.py ......................... [ 14%]
+........................................................................ [ 17%]
+....................................................                     [ 20%]
+tests\unit\core\test_temporal_uncertainty.py ........................... [ 22%]
+                                                                         [ 22%]
+tests\unit\repositories\test_entity_repository.py ....                   [ 22%]
+tests\unit\services\repositories\test_feature_geometry_repository.py ... [ 22%]
+                                                                         [ 22%]
+tests\unit\services\repositories\test_trajectory_repository.py ......... [ 23%]
+.........                                                                [ 23%]
+tests\unit\services\test_backup_service.py ........................      [ 24%]
+tests\unit\services\test_backup_wal_trust.py .....                       [ 25%]
+tests\unit\services\test_import_date_parsing.py ............             [ 25%]
+tests\unit\services\test_import_deduplication.py ........                [ 26%]
+tests\unit\services\test_import_feedback.py ...                          [ 26%]
+tests\unit\services\test_import_forward_refs.py ...                      [ 26%]
+tests\unit\services\test_import_normalization.py ....                    [ 26%]
+tests\unit\services\test_language_tool_service.py ...................... [ 28%]
+..                                                                       [ 28%]
+tests\unit\services\test_markdown_parser.py ............................ [ 29%]
+...                                                                      [ 29%]
+tests\unit\services\test_obsidian_exporter_enhanced.py .........         [ 30%]
+tests\unit\services\test_transfer_pipeline.py ................           [ 31%]
+tests\unit\test_asset_store.py .......................ss......           [ 32%]
+tests\unit\test_attachment_repository.py .....                           [ 33%]
+tests\unit\test_attachment_service.py ...                                [ 33%]
+tests\unit\test_backup_config.py ..........                              [ 33%]
+tests\unit\test_backup_restore_coordinator.py .........                  [ 34%]
+tests\unit\test_calendar.py ............................................ [ 36%]
+..                                                                       [ 36%]
+tests\unit\test_calendar_commands.py .........                           [ 37%]
+tests\unit\test_calendar_context_service.py ......                       [ 37%]
+tests\unit\test_calendar_db.py ........                                  [ 38%]
+tests\unit\test_calendar_leap.py ........                                [ 38%]
+tests\unit\test_choice_wheel.py ........................................ [ 40%]
+.....                                                                    [ 41%]
+tests\unit\test_chronology_service.py ........                           [ 41%]
+tests\unit\test_command_atomicity.py .                                   [ 41%]
+tests\unit\test_command_coordinator.py ....................              [ 42%]
+tests\unit\test_command_registry.py .....                                [ 42%]
+tests\unit\test_complexity_policy.py ................................... [ 44%]
+....                                                                     [ 44%]
+tests\unit\test_composite_command.py .....                               [ 45%]
+tests\unit\test_composite_persistent_undo.py .                           [ 45%]
+tests\unit\test_creation_ux.py .............................             [ 46%]
+tests\unit\test_db_bulk_operations.py ............................       [ 48%]
+tests\unit\test_db_hydration.py ....                                     [ 48%]
+tests\unit\test_db_service.py .........                                  [ 49%]
+tests\unit\test_deletion_integrity.py ..                                 [ 49%]
+tests\unit\test_dependency_contract.py .......                           [ 49%]
+tests\unit\test_dependency_direction.py ....................             [ 50%]
+tests\unit\test_drag_navigation_mitigation.py ..........                 [ 51%]
+tests\unit\test_editor_presentation.py ...                               [ 51%]
+tests\unit\test_entities.py ........                                     [ 51%]
+tests\unit\test_entity_commands.py ........                              [ 52%]
+tests\unit\test_entity_creation_dialog.py .........                      [ 52%]
+tests\unit\test_event_chronology_dialog.py ..                            [ 52%]
+tests\unit\test_event_commands.py .................                      [ 53%]
+tests\unit\test_feature_geometry_commands.py ..                          [ 53%]
+tests\unit\test_graph_persistence.py ....                                [ 54%]
+tests\unit\test_graph_prepare_helpers.py .................               [ 55%]
+tests\unit\test_graph_theme.py .                                         [ 55%]
+tests\unit\test_graph_web_view.py .                                      [ 55%]
+tests\unit\test_icon_library_commands.py ...........................     [ 56%]
+Windows fatal exception: access violation
+
+Thread 0x0000779c (most recent call first):
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\src\services\migrations\steps.py", line 92 in _table_contract
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\src\services\migrations\steps.py", line 141 in validate_structure
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\src\services\migrations\runner.py", line 112 in _inspect_database
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\src\services\migrations\runner.py", line 22 in inspect_database
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\src\services\migrations\runner.py", line 229 in prepare_database
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\src\services\db_service.py", line 138 in connect
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\src\services\worker.py", line 225 in initialize_db
+
+Current thread 0x00009efc (most recent call first):
+  File "c:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\pytestqt\qt_compat.py", line 160 in exec
+  File "c:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\pytestqt\wait_signal.py", line 58 in wait
+  File "c:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\pytestqt\wait_signal.py", line 155 in __exit__
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\tests\unit\test_icon_library_coordinator.py", line 63 in queued_library
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\_pytest\fixtures.py", line 908 in call_fixture_func
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\_pytest\fixtures.py", line 1202 in pytest_fixture_setup
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\_pytest\fixtures.py", line 1110 in execute
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\_pytest\fixtures.py", line 627 in _get_active_fixturedef
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\_pytest\fixtures.py", line 539 in getfixturevalue
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\_pytest\fixtures.py", line 707 in _fillfixtures
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\_pytest\python.py", line 1723 in setup
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\_pytest\runner.py", line 523 in setup
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\_pytest\runner.py", line 165 in pytest_runtest_setup
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\_pytest\runner.py", line 245 in <lambda>
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\_pytest\runner.py", line 353 in from_call
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\_pytest\runner.py", line 244 in call_and_report
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\_pytest\runner.py", line 131 in runtestprotocol
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\_pytest\runner.py", line 118 in pytest_runtest_protocol
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\_pytest\main.py", line 396 in pytest_runtestloop
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\_pytest\main.py", line 372 in _main
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\_pytest\main.py", line 318 in wrap_session
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\_pytest\main.py", line 365 in pytest_cmdline_main
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\_pytest\config\__init__.py", line 199 in main
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\_pytest\config\__init__.py", line 223 in console_main
+  File "C:\Users\chris\VSCodeProjects\ProjektKraken\ProjektKraken\.venv\Lib\site-packages\pytest\__main__.py", line 9 in <module>
+  File "<frozen runpy>", line 88 in _run_code
+  File "<frozen runpy>", line 203 in _run_module_as_main
+tests\unit\test_icon_library_coordinator.py ..........

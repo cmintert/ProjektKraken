@@ -1277,27 +1277,6 @@
       "source": "_fill.setAlpha(40)"
     },
     {
-      "key": "src/gui/widgets/map/interaction_handler.py|InteractionHandler.show_feature_style_dialog._pick_fill|literal-color|04652b1ac6a816dd",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in InteractionHandler.show_feature_style_dialog._pick_fill; migrate this expression when its presentation path is next touched.",
-      "source": "f\"background-color: {c.name()}; color: white; \""
-    },
-    {
-      "key": "src/gui/widgets/map/interaction_handler.py|InteractionHandler.show_feature_style_dialog._pick_stroke|literal-color|04652b1ac6a816dd",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in InteractionHandler.show_feature_style_dialog._pick_stroke; migrate this expression when its presentation path is next touched.",
-      "source": "f\"background-color: {safe}; color: white; padding: 4px 12px;\""
-    },
-    {
-      "key": "src/gui/widgets/map/interaction_handler.py|InteractionHandler.show_feature_style_dialog|literal-color|04652b1ac6a816dd",
-      "count": 2,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in InteractionHandler.show_feature_style_dialog; migrate this expression when its presentation path is next touched.",
-      "source": "f\"background-color: {stroke_init}; color: white; padding: 4px 12px;\""
-    },
-    {
       "key": "src/gui/widgets/map/interaction_handler.py|_safe_color_css|literal-color|dad8252028023902",
       "count": 1,
       "category": "legacy",

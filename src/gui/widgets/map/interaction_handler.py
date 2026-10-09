@@ -6,6 +6,7 @@ style dialogs. Keeps UI interaction logic separate from the core view.
 
 import json
 import logging
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Optional
 
 from PySide6.QtCore import QPoint, QPointF
@@ -24,7 +25,6 @@ from PySide6.QtWidgets import (
 from src.core.marker_appearance import (
     MARKER_ICON_ANCHOR_ATTRIBUTE,
     MARKER_ICON_ID_ATTRIBUTE,
-    MarkerAppearance,
     MarkerIconAnchor,
 )
 from src.core.marker_icon import MarkerIconDefinition
@@ -51,6 +51,7 @@ from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
 if TYPE_CHECKING:
     from PySide6.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent
 
+    from src.gui.widgets.map.feature_actions import FeatureActionPresenter
     from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 
 logger = logging.getLogger(__name__)
@@ -114,6 +115,7 @@ class InteractionHandler:
     def __init__(self, view: "MapGraphicsView") -> None:
         """Initialize map pointer and keyboard interaction handling."""
         self._view = view
+        self.feature_presenter: FeatureActionPresenter | None = None
         self._copied_marker_appearance: Optional[dict] = None
 
     # ------------------------------------------------------------------
@@ -121,155 +123,90 @@ class InteractionHandler:
     # ------------------------------------------------------------------
 
     def show_marker_context_menu(self, item: MarkerItem, global_pos: QPoint) -> None:
-        """Shows context menu for a marker.
+        """Expose the shared marker vocabulary through the secondary gesture."""
+        self._show_feature_menu(item, global_pos)
 
-        Args:
-            item: The marker item.
-            global_pos: Screen position for the menu.
-        """
+    def _show_feature_menu(
+        self, item: MarkerItem | PathItem | RegionItem, global_pos: QPoint
+    ) -> None:
+        from src.gui.widgets.map.feature_actions import (
+            feature_actions,
+            item_context,
+            populate_feature_menu,
+        )
+
+        if self.feature_presenter is not None:
+            self.feature_presenter.show_canvas_menu(item, global_pos)
+            return
         menu = QMenu(self._view)
-
-        if item.is_locked:
-            self._populate_unlock_menu(menu, item.marker_id)
-            menu.exec(global_pos)
-            return
-
-        self._populate_lock_menu(menu, item.marker_id)
-        menu.addSeparator()
-
-        if item.is_temporal_ghost:
-            self._populate_temporal_ghost_menu(menu, item.marker_id)
-            menu.exec(global_pos)
-            return
-
-        if item.object_type != "event":
-            has_trajectory = item.marker_id in self._view._trajectory_marker_ids
-            edit_trajectory_action = QAction(
-                "Edit Trajectory" if has_trajectory else "Create Trajectory",
-                self._view,
-            )
-            edit_trajectory_action.triggered.connect(
-                lambda: self._view.trajectory_edit_requested.emit(item.marker_id)
-            )
-            menu.addAction(edit_trajectory_action)
-            menu.addSeparator()
-
-        change_icon_action = QAction(self._view)
-        change_icon_action.setText("Change Icon...")
-        change_icon_action.triggered.connect(lambda: self.show_icon_picker(item))
-        menu.addAction(change_icon_action)
-
-        # --- Visual Styling sub-menu ---
-        style_menu = QMenu("Visual Styling", self._view)
-
-        edit_appearance_action = QAction("Edit Appearance...", self._view)
-        edit_appearance_action.setStatusTip(
-            "Drag the corner to resize and the centre handle to set the anchor; "
-            "press Enter to apply or Escape to cancel"
+        populate_feature_menu(
+            menu,
+            feature_actions(item_context(item, self._view)),
+            lambda key: self.execute_feature_action(key, item, lambda: True),
         )
-        edit_appearance_action.triggered.connect(
-            lambda: self._view.start_marker_appearance_edit(item.marker_id)
-        )
-        style_menu.addAction(edit_appearance_action)
-
-        copy_appearance_action = QAction("Copy Appearance", self._view)
-        copy_appearance_action.triggered.connect(
-            lambda: self._copy_marker_appearance(item)
-        )
-        style_menu.addAction(copy_appearance_action)
-
-        paste_appearance_action = QAction("Paste Appearance", self._view)
-        paste_appearance_action.setEnabled(self._copied_marker_appearance is not None)
-        paste_appearance_action.triggered.connect(
-            lambda: self._paste_marker_appearance(item)
-        )
-        style_menu.addAction(paste_appearance_action)
-
-        reset_anchor_action = QAction("Reset Anchor to Centre", self._view)
-        reset_anchor_action.setEnabled(
-            not MarkerAppearance.from_attributes(
-                item._visual_attributes
-            ).anchor.is_centered
-        )
-        reset_anchor_action.triggered.connect(
-            lambda: self._reset_marker_anchor(item)
-        )
-        style_menu.addAction(reset_anchor_action)
-
-        style_menu.addSeparator()
-
-        scale_action = QAction("Size & Zoom...", self._view)
-        scale_action.triggered.connect(lambda: self.show_scale_dialog(item))
-        style_menu.addAction(scale_action)
-
-        reset_size_action = QAction("Reset Size to Icon Default", self._view)
-        reset_size_action.setEnabled(
-            self._view.marker_icon_catalog.resolve_attributes(
-                item._visual_attributes
-            )
-            is not None
-        )
-        reset_size_action.triggered.connect(
-            lambda: self._reset_size_to_icon_default(item)
-        )
-        style_menu.addAction(reset_size_action)
-
-        border_action = QAction("Set Border Strength...", self._view)
-        border_action.triggered.connect(lambda: self.show_border_strength_dialog(item))
-        style_menu.addAction(border_action)
-
-        fill_action = QAction("Set Fill Color...", self._view)
-        fill_action.triggered.connect(lambda: self.show_fill_color_picker(item))
-        style_menu.addAction(fill_action)
-
-        border_color_action = QAction("Set Border Color...", self._view)
-        border_color_action.triggered.connect(
-            lambda: self.show_border_color_picker(item)
-        )
-        style_menu.addAction(border_color_action)
-
-        style_menu.addSeparator()
-
-        no_fill_action = QAction("No Fill (Transparent)", self._view)
-        no_fill_action.triggered.connect(lambda: self._apply_no_fill(item))
-        style_menu.addAction(no_fill_action)
-
-        no_border_action = QAction("No Border", self._view)
-        no_border_action.triggered.connect(lambda: self._apply_no_border(item))
-        style_menu.addAction(no_border_action)
-
-        self._configure_vector_style_actions(
-            item,
-            (
-                border_action,
-                fill_action,
-                border_color_action,
-                no_fill_action,
-                no_border_action,
-            ),
-        )
-
-        menu.addMenu(style_menu)
-
-        temporal_action = QAction("Temporal Validity...", self._view)
-        temporal_action.triggered.connect(
-            lambda: self._view.temporal_validity_requested.emit(item.marker_id)
-        )
-        menu.addAction(temporal_action)
-
-        menu.addSeparator()
-
-        delete_action = QAction(self._view)
-        delete_action.setText("Delete Marker")
-        delete_action.triggered.connect(
-            lambda: self._view.delete_marker_requested.emit(item.marker_id)
-        )
-        menu.addAction(delete_action)
         menu.exec(global_pos)
 
-    def show_trajectory_context_menu(
-        self, marker_id: str, global_pos: QPoint
+    def execute_feature_action(
+        self,
+        action_id: str,
+        item: MarkerItem | PathItem | RegionItem,
+        guard: Callable[[], bool],
     ) -> None:
+        """Delegate shared action IDs to the original handlers and signals."""
+        common: dict[str, Callable[[], None]] = {
+            "lock": lambda: self._view.set_feature_locked(item.marker_id, True),
+            "unlock": lambda: self._view.unlock_feature(item.marker_id),
+            "geometry": lambda: self._view.feature_geometry_edit_requested.emit(
+                item.marker_id
+            ),
+            "history": lambda: self._view.feature_geometry_manage_requested.emit(
+                item.marker_id
+            ),
+            "journey": lambda: self._view.trajectory_edit_requested.emit(
+                item.marker_id
+            ),
+            "validity": lambda: self._view.temporal_validity_requested.emit(
+                item.marker_id
+            ),
+            "jump": lambda: self._view.temporal_jump_requested.emit(item.marker_id),
+            "layers": lambda: self._view.temporal_show_in_layers_requested.emit(
+                item.marker_id
+            ),
+            "delete": lambda: self._view.delete_marker_requested.emit(item.marker_id),
+        }
+        if not guard():
+            return
+        if action_id in common:
+            common[action_id]()
+        elif isinstance(item, MarkerItem):
+            self._execute_marker_action(action_id, item, guard)
+        elif action_id == "style":
+            self.show_feature_style_dialog(item, guard=guard)
+
+    def _execute_marker_action(
+        self, action_id: str, item: MarkerItem, guard: Callable[[], bool]
+    ) -> None:
+        routes: dict[str, Callable[[], None]] = {
+            "appearance": lambda: self._view.start_marker_appearance_edit(
+                item.marker_id
+            ),
+            "icon": lambda: self.show_icon_picker(item, guard=guard),
+            "copy": lambda: self._copy_marker_appearance(item),
+            "paste": lambda: self._paste_marker_appearance(item),
+            "anchor": lambda: self._reset_marker_anchor(item),
+            "size": lambda: self.show_scale_dialog(item, guard=guard),
+            "reset_size": lambda: self._reset_size_to_icon_default(item),
+            "border": lambda: self.show_border_strength_dialog(item, guard=guard),
+            "fill": lambda: self.show_fill_color_picker(item, guard=guard),
+            "border_color": lambda: self.show_border_color_picker(item, guard=guard),
+            "no_fill": lambda: self._apply_no_fill(item),
+            "no_border": lambda: self._apply_no_border(item),
+        }
+        callback = routes.get(action_id)
+        if callback is not None:
+            callback()
+
+    def show_trajectory_context_menu(self, marker_id: str, global_pos: QPoint) -> None:
         """Show actions for a passive trajectory path."""
         menu = QMenu(self._view)
         edit_action = QAction("Edit Trajectory", self._view)
@@ -315,79 +252,8 @@ class InteractionHandler:
     def show_feature_context_menu(
         self, item: PathItem | RegionItem, global_pos: QPoint
     ) -> None:
-        """Shows context menu for a path or region feature.
-
-        Args:
-            item: The PathItem or RegionItem.
-            global_pos: Screen position for the menu.
-        """
-        menu = QMenu(self._view)
-
-        if item.is_locked:
-            self._populate_unlock_menu(menu, item.marker_id)
-            menu.exec(global_pos)
-            return
-
-        self._populate_lock_menu(menu, item.marker_id)
-        menu.addSeparator()
-
-        if item.is_temporal_ghost:
-            self._populate_temporal_ghost_menu(menu, item.marker_id)
-            menu.exec(global_pos)
-            return
-
-        feature_label = "Path" if isinstance(item, PathItem) else "Region"
-
-        edit_style_action = QAction(self._view)
-        edit_style_action.setText(f"Edit {feature_label} Style...")
-        edit_style_action.triggered.connect(
-            lambda: self.show_feature_style_dialog(item)
-        )
-        menu.addAction(edit_style_action)
-
-        edit_vertices_action = QAction(self._view)
-        edit_vertices_action.setText("Edit Geometry at Playhead...")
-        edit_vertices_action.triggered.connect(
-            lambda: self._view.feature_geometry_edit_requested.emit(item.marker_id)
-        )
-        menu.addAction(edit_vertices_action)
-
-        manage_states_action = QAction(self._view)
-        manage_states_action.setText("Manage Geometry States...")
-        manage_states_action.triggered.connect(
-            lambda: self._view.feature_geometry_manage_requested.emit(item.marker_id)
-        )
-        menu.addAction(manage_states_action)
-
-        temporal_action = QAction("Temporal Validity...", self._view)
-        temporal_action.triggered.connect(
-            lambda: self._view.temporal_validity_requested.emit(item.marker_id)
-        )
-        menu.addAction(temporal_action)
-
-        menu.addSeparator()
-
-        delete_action = QAction(self._view)
-        delete_action.setText(f"Delete {feature_label}")
-        delete_action.triggered.connect(
-            lambda: self._view.delete_marker_requested.emit(item.marker_id)
-        )
-        menu.addAction(delete_action)
-        menu.exec(global_pos)
-
-    def _populate_unlock_menu(self, menu: QMenu, marker_id: str) -> None:
-        """Add the sole permitted action for a locked canvas feature."""
-        action = QAction("Unlock", self._view)
-        action.triggered.connect(lambda: self._view.unlock_feature(marker_id))
-        menu.addAction(action)
-
-    def _populate_lock_menu(self, menu: QMenu, marker_id: str) -> None:
-        """Add the canvas action that locks an otherwise interactive feature."""
-        action = QAction("Lock", self._view)
-        action.triggered.connect(
-            lambda: self._view.set_feature_locked(marker_id, True)
-        )
-        menu.addAction(action)
+        """Expose the shared path/region vocabulary through right-click."""
+        self._show_feature_menu(item, global_pos)
 
     def _copy_marker_appearance(self, item: MarkerItem) -> None:
         """Store a validated, semantic-data-free marker appearance snapshot."""
@@ -425,31 +291,13 @@ class InteractionHandler:
             if not enabled:
                 action.setStatusTip("Available for SVG and fallback markers only")
 
-    def _populate_temporal_ghost_menu(self, menu: QMenu, marker_id: str) -> None:
-        """Add the restricted authoring actions available for a ghost."""
-        jump_action = QAction("Jump to Valid Time", self._view)
-        jump_action.triggered.connect(
-            lambda: self._view.temporal_jump_requested.emit(marker_id)
-        )
-        menu.addAction(jump_action)
-
-        validity_action = QAction("Temporal Validity...", self._view)
-        validity_action.triggered.connect(
-            lambda: self._view.temporal_validity_requested.emit(marker_id)
-        )
-        menu.addAction(validity_action)
-
-        show_action = QAction("Show in Layers", self._view)
-        show_action.triggered.connect(
-            lambda: self._view.temporal_show_in_layers_requested.emit(marker_id)
-        )
-        menu.addAction(show_action)
-
     # ------------------------------------------------------------------
     # Picker Dialogs
     # ------------------------------------------------------------------
 
-    def show_icon_picker(self, marker_item: MarkerItem) -> None:
+    def show_icon_picker(
+        self, marker_item: MarkerItem, *, guard: Callable[[], bool] | None = None
+    ) -> None:
         """Shows the icon picker dialog for a marker.
 
         Args:
@@ -461,7 +309,7 @@ class InteractionHandler:
             catalog=self._view.marker_icon_catalog,
         )
         self._view.icon_picker_created.emit(dialog)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
+        if dialog.exec() == QDialog.DialogCode.Accepted and (guard is None or guard()):
             self._view.marker_icon_catalog = dialog._catalog
             definition = dialog.selected_definition
             if definition is None:
@@ -502,7 +350,9 @@ class InteractionHandler:
     # Visual Styling Dialogs
     # ------------------------------------------------------------------
 
-    def show_scale_dialog(self, marker_item: MarkerItem) -> None:
+    def show_scale_dialog(
+        self, marker_item: MarkerItem, *, guard: Callable[[], bool] | None = None
+    ) -> None:
         """Show the per-marker size and zoom behavior dialog.
 
         Args:
@@ -521,7 +371,7 @@ class InteractionHandler:
             self._view.transform().m11(),
             self._view,
         )
-        if dialog.exec() == QDialog.DialogCode.Accepted:
+        if dialog.exec() == QDialog.DialogCode.Accepted and (guard is None or guard()):
             updates = {
                 MARKER_SIZING_ATTRIBUTE: dialog.get_settings().to_dict(),
                 MARKER_SIZING_SOURCE_ATTRIBUTE: MarkerSizingSource.CUSTOM.value,
@@ -557,7 +407,9 @@ class InteractionHandler:
         self._view._schedule_label_layout()
         self._view.marker_visual_style_changed.emit(marker_item.marker_id, updates)
 
-    def show_border_strength_dialog(self, marker_item: MarkerItem) -> None:
+    def show_border_strength_dialog(
+        self, marker_item: MarkerItem, *, guard: Callable[[], bool] | None = None
+    ) -> None:
         """Shows a dialog to set the marker's border width.
 
         Args:
@@ -590,7 +442,7 @@ class InteractionHandler:
         buttons.rejected.connect(dialog.reject)
         layout.addRow(buttons)
 
-        if dialog.exec() == QDialog.DialogCode.Accepted:
+        if dialog.exec() == QDialog.DialogCode.Accepted and (guard is None or guard()):
             updates = {V_BORDER_WIDTH: spin.value()}
             new_attrs = dict(marker_item._visual_attributes)
             new_attrs.update(updates)
@@ -600,7 +452,9 @@ class InteractionHandler:
                 updates,
             )
 
-    def show_fill_color_picker(self, marker_item: MarkerItem) -> None:
+    def show_fill_color_picker(
+        self, marker_item: MarkerItem, *, guard: Callable[[], bool] | None = None
+    ) -> None:
         """Shows a color picker for the marker's visual fill color.
 
         Args:
@@ -612,7 +466,7 @@ class InteractionHandler:
             marker_item._visual_attributes, marker_item.object_type
         )
         color = QColorDialog.getColor(QColor(initial), self._view, "Select Fill Color")
-        if color.isValid():
+        if color.isValid() and (guard is None or guard()):
             color_hex = color.name().upper()
             updates = {V_FILL: color_hex}
             new_attrs = dict(marker_item._visual_attributes)
@@ -625,7 +479,9 @@ class InteractionHandler:
                 updates,
             )
 
-    def show_border_color_picker(self, marker_item: MarkerItem) -> None:
+    def show_border_color_picker(
+        self, marker_item: MarkerItem, *, guard: Callable[[], bool] | None = None
+    ) -> None:
         """Shows a color picker for the marker's border color.
 
         Args:
@@ -639,7 +495,7 @@ class InteractionHandler:
         color = QColorDialog.getColor(
             QColor(initial), self._view, "Select Border Color"
         )
-        if color.isValid():
+        if color.isValid() and (guard is None or guard()):
             color_hex = color.name().upper()
             updates = {V_BORDER: color_hex}
             new_attrs = dict(marker_item._visual_attributes)
@@ -650,18 +506,20 @@ class InteractionHandler:
                 updates,
             )
 
-    def show_feature_style_dialog(self, item: PathItem | RegionItem) -> None:
+    def show_feature_style_dialog(
+        self, item: PathItem | RegionItem, *, guard: Callable[[], bool] | None = None
+    ) -> None:
         """Opens an inline dialog to edit a feature's visual style.
 
         Args:
             item: The PathItem or RegionItem to edit.
         """
         from PySide6.QtWidgets import (
-            QComboBox,
             QDialogButtonBox,
             QFormLayout,
         )
 
+        from src.gui.widgets.choice_inputs import ScrollSafeComboBox
         from src.gui.widgets.map.feature_items import (
             DEFAULT_REGION_FILL_COLOR,
             DEFAULT_STROKE_COLOR,
@@ -669,6 +527,7 @@ class InteractionHandler:
         )
 
         dialog = QDialog(self._view)
+        dialog.setStyleSheet(StyleHelper.get_dialog_base_style())
         dialog.setWindowTitle(f"Edit {item.label} Style")
         dialog.setMinimumWidth(300)
         layout = QFormLayout(dialog)
@@ -678,9 +537,7 @@ class InteractionHandler:
             item._style.get("stroke_color", DEFAULT_STROKE_COLOR)
         )
         stroke_btn = QPushButton(stroke_init)
-        stroke_btn.setStyleSheet(
-            f"background-color: {stroke_init}; color: white; padding: 4px 12px;"
-        )
+        self._set_color_swatch(stroke_btn, stroke_init)
         _stroke_color = [stroke_init]
 
         def _pick_stroke() -> None:
@@ -689,9 +546,7 @@ class InteractionHandler:
                 safe = c.name()
                 _stroke_color[0] = safe
                 stroke_btn.setText(safe)
-                stroke_btn.setStyleSheet(
-                    f"background-color: {safe}; color: white; padding: 4px 12px;"
-                )
+                self._set_color_swatch(stroke_btn, safe)
 
         stroke_btn.clicked.connect(_pick_stroke)
         layout.addRow("Stroke Color:", stroke_btn)
@@ -702,9 +557,9 @@ class InteractionHandler:
         )
         layout.addRow("Stroke Width:", width_control)
 
-        line_style_combo: QComboBox | None = None
+        line_style_combo: ScrollSafeComboBox | None = None
         if isinstance(item, PathItem):
-            line_style_combo = QComboBox()
+            line_style_combo = ScrollSafeComboBox()
             current_pattern = item._dash_pattern()
             if current_pattern not in [pattern for _, pattern in PATH_LINE_STYLES]:
                 pattern_text = ", ".join(str(value) for value in current_pattern)
@@ -730,9 +585,7 @@ class InteractionHandler:
                 preserve_alpha=True,
             )
             fill_btn = QPushButton(fill_init)
-            fill_btn.setStyleSheet(
-                f"background-color: {fill_init}; color: white; padding: 4px 12px;"
-            )
+            self._set_color_swatch(fill_btn, fill_init)
             _fill_color = [fill_init]
 
             def _pick_fill() -> None:
@@ -745,10 +598,7 @@ class InteractionHandler:
                 if c.isValid():
                     _fill_color[0] = c.name(QColor.NameFormat.HexArgb)
                     fill_btn.setText(_fill_color[0])
-                    fill_btn.setStyleSheet(
-                        f"background-color: {c.name()}; color: white; "
-                        f"padding: 4px 12px;"
-                    )
+                    self._set_color_swatch(fill_btn, _fill_color[0])
 
             fill_btn.clicked.connect(_pick_fill)
             layout.addRow("Fill Color:", fill_btn)
@@ -760,7 +610,7 @@ class InteractionHandler:
         buttons.rejected.connect(dialog.reject)
         layout.addRow(buttons)
 
-        if dialog.exec() == QDialog.DialogCode.Accepted:
+        if dialog.exec() == QDialog.DialogCode.Accepted and (guard is None or guard()):
             new_style = dict(item._style)
             new_style["stroke_color"] = _stroke_color[0]
             new_style["stroke_width"] = width_spin.value()
@@ -775,6 +625,16 @@ class InteractionHandler:
             item.update()
             self._view.feature_style_changed.emit(item.marker_id, new_style)
             logger.info(f"Style updated for {item.marker_id}: {new_style}")
+
+    @staticmethod
+    def _set_color_swatch(button: QPushButton, color: str) -> None:
+        """Draw authored map color separately from theme-owned button chrome."""
+        from PySide6.QtGui import QIcon, QPixmap
+
+        swatch = QPixmap(16, 16)
+        swatch.fill(QColor(color))
+        button.setIcon(QIcon(swatch))
+        button.setStyleSheet(StyleHelper.get_secondary_button_style())
 
     def _apply_no_fill(self, marker_item: MarkerItem) -> None:
         """Sets the marker fill to transparent (no fill).
@@ -945,9 +805,7 @@ def _safe_color_css(color_str: str, *, preserve_alpha: bool = False) -> str:
     c = QColor(color_str)
     if c.isValid():
         name_format = (
-            QColor.NameFormat.HexArgb
-            if preserve_alpha
-            else QColor.NameFormat.HexRgb
+            QColor.NameFormat.HexArgb if preserve_alpha else QColor.NameFormat.HexRgb
         )
         return c.name(name_format)
     return ThemeManager().get_theme().get("text_dim", "#808080").lower()

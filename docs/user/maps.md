@@ -30,10 +30,12 @@ opening its inspector. Map selection remains local if you decline navigation.
 - Use **Confirm** or press **Enter** to complete a drawing. **Cancel** or
   **Esc** discards the draft.
 - Press **Escape** to cancel the current tool.
-- Right-click a feature and choose **Edit Geometry at Playhead…** to move,
-  insert, or remove vertices in a working copy.
+- Select a region or path and choose **Feature actions > Edit border at current
+  date** or **Edit path at current date** to move, insert, or remove vertices in
+  a working copy. Feature actions is also below the Layers header and in the
+  toolbar overflow on narrow panels. Right-click offers the same feature actions.
 
-Right-click a point marker and choose **Change Icon…** to use a bundled icon,
+Select a point marker and choose **Feature actions > Change icon…** to use a bundled icon,
 reuse an icon stored in the world, or import an SVG, PNG, JPG/JPEG, or WebP
 file. Imported icons are copied into the portable world's `assets/images/`
 folder. SVG markers support fill and border styling. Raster icons retain their
@@ -42,7 +44,7 @@ disabled, but their size controls remain available.
 
 Point-marker icons scale with the map by default. This gives character tokens
 and location symbols a stable footprint: zooming in makes both the map and its
-icons larger. Right-click a marker and choose **Visual Styling > Size &
+icons larger. Choose **Feature actions > Advanced appearance > Size &
 Zoom…** to set that marker's behavior and size. Uncalibrated maps use a
 percentage of total map width; calibrated maps also offer metres and
 kilometres as alternate representations of the same map-space footprint.
@@ -52,10 +54,10 @@ readable at every zoom level. Different markers on the same map may use
 different modes and sizes. Labels stay screen-sized and collision-managed, but
 remain visually attached to their marker instead of drifting away from it.
 
-Use **Visual Styling > Copy Appearance** and **Paste Appearance** to transfer a
+Use **Feature actions > Advanced appearance > Copy appearance** and **Paste appearance** to transfer a
 marker's icon, colours, border, sizing, and icon anchor without copying its
-position, layer, timeline validity, or linked object. Choose **Edit
-Appearance…** for direct manipulation: drag the corner handle to resize the
+position, layer, timeline validity, or linked object. Choose **Feature actions >
+Edit appearance** for direct manipulation: drag the corner handle to resize the
 marker and move the anchor handle to select the point in the artwork that
 should remain attached to the map coordinate. The edit banner shows the active
 size and anchor percentages. Choose **Confirm** or press **Enter** to save the
@@ -66,7 +68,7 @@ appearance. Use
 Snapping helps align new or edited vertices with existing geometry. Paths need
 at least two vertices; regions need at least three.
 
-Right-click a path and choose **Edit Path Style…** to select its stroke width,
+Select a path and choose **Feature actions > Edit appearance…** to select its stroke width,
 colour, and line pattern. Available patterns are **Solid**, **Dotted**,
 **Short Dash**, **Long Dash**, and **Dash Dot**. The chosen pattern applies to
 the whole path and is saved as part of its global feature style.
@@ -78,7 +80,8 @@ Before the first dated state, ProjektKraken draws Base Geometry. On a state's
 exact date and until the next state, it draws the latest applicable state.
 Geometry switches immediately; shapes are not interpolated or morphed.
 
-Choose **Edit Geometry at Playhead…** from a feature's context menu. On the
+Choose **Feature actions > Edit border at current date** for a region or
+**Edit path at current date** for a path. On the
 exact date of an existing state, this edits that state. At any other date,
 ProjektKraken clones the currently resolved geometry into a new state at the
 playhead, so editing a later border never silently changes earlier history.
@@ -86,7 +89,8 @@ Choose **Confirm** or press **Enter** to save the working copy as one undoable
 operation; **Cancel** or **Escape** restores the geometry appropriate for the
 playhead.
 
-Choose **Manage Geometry States…** to edit Base Geometry explicitly, edit a
+Choose **Feature actions > Manage historical borders…** or **Manage historical
+paths…** to edit Base Geometry explicitly, edit a
 dated state, change its calendar-aware date, or delete it. Base Geometry cannot
 be deleted, and two states cannot share a date. Deleting a dated state reveals
 the preceding state or Base Geometry at affected dates.
@@ -98,7 +102,8 @@ markers continue to use their ordinary positions or trajectories.
 ## Temporal visibility
 
 Point markers, paths, and regions can exist only during part of the timeline.
-Right-click a feature or its layer and choose **Temporal Validity…**, then set
+Select a feature on the map or in Layers and choose **Feature actions >
+Visibility dates…**, then set
 optional **Exists from** and **Exists until** dates. Temporal validity has its
 own focused editor; ordinary layer properties remain separate. Group dates
 apply to the vector features beneath them. Choose **Manual date**, **Date not
@@ -116,7 +121,8 @@ The layer tree keeps absent features available for authoring. A clock badge and
 dimmed name mean the feature is outside the current date; an eye-slash means it
 is manually hidden. The panel and map status show how many vector features are
 outside the date. Select that count to filter the tree, then use **Jump to
-Start** or **Jump to Last Valid Day** to inspect a hidden feature.
+valid time** from Feature actions to inspect an absent feature. Groups retain
+their existing Temporal Validity and date-jump context-menu actions.
 
 **Temporal Ghosts** is an optional, session-only authoring view. It shows
 outside-time features as faint dashed shapes while still respecting manual,
@@ -125,12 +131,14 @@ directly; use their menu to jump to a valid date, change validity, or reveal the
 feature in Layers.
 
 Use the lock icon at the right of a point marker, path, or region in the layer
-tree to protect it from map interaction. You can also right-click its layer row
-and choose **Lock Feature**, or right-click the unlocked feature on the map and
+tree to protect it from map interaction. You can also select it in Layers or on
+the map and choose **Feature actions > Lock**, or right-click the unlocked feature and
 choose **Lock**. A locked feature remains visible and shows its hover tooltip,
 but cannot be selected, opened, or moved on the map.
-Right-clicking a locked feature, or its layer-tree row, offers only **Unlock**.
-Its layer-tree row remains available so you can unlock it.
+Selecting a locked feature in Layers exposes **Feature actions > Unlock**.
+Right-clicking it also offers only **Unlock**. Layers keeps hidden and absent
+features available: visibility-date management remains accessible, while edits
+requiring a visible canvas representation explain that prerequisite.
 
 Trajectory dates continue to answer where an entity would be. Temporal
 validity separately decides whether it exists on the map. A normal selected
@@ -144,7 +152,9 @@ uncertainty; `(?)` marks its keyframe labels.
 
 ## Create or edit a trajectory
 
-Select an entity marker and choose **Create Trajectory**. ProjektKraken starts
+Select an entity marker and choose **Feature actions > Create journey**.
+The existing **Create Trajectory** toolbar shortcut remains available.
+ProjektKraken starts
 an unsaved track with one dated location: the marker's current map position at
 the current playhead date. It then guides you to create a second location:
 
@@ -160,7 +170,8 @@ then choose **Apply** to create the complete track as one undoable change.
 Choose **Cancel** to leave the entity unchanged. Existing one-location tracks
 open in the same guided completion flow. Event markers cannot have trajectories.
 
-For an entity that already has a track, choose **Edit Trajectory**. The map
+For an entity that already has a track, choose **Feature actions > Edit journey**
+or the existing **Edit Trajectory** shortcut. The map
 shows a working copy while the saved track remains unchanged.
 
 - Drag a dated point to change its position.

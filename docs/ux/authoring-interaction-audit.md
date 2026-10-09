@@ -1,5 +1,18 @@
 # Authoring interaction audit v1 — KRT-46
 
+KRT-48 implementation (2026-10-09): labeled **Feature actions** routes in the
+Map toolbar/native overflow and a compact Layers selection row expose the shared
+border/path, appearance, journey, historical geometry and visibility-date
+vocabulary. Explicit selection source and identity remain independent of the
+inspected object; locked features offer Unlock, unavailable canvas edits explain
+their prerequisite, and stale menu/dialog results are rejected. Existing temporal
+commands, KRT-26 draft transitions and KRT-64 deliberate navigation remain.
+Contracts 1–9, automated KA-14 persistence replay and six-theme normal/narrow,
+focus/hover/disabled renders are recorded in [verification](evidence/krt48/README.md).
+The historical inventory below remains the original baseline. The user confirmed
+human review passed on 2026-10-09; measured learnability/task-time comparison
+remains separate. No contract revision.
+
 KRT-64 implementation (2026-10-08): map feature selection stays local when the
 Entity/Event inspector shares its zone or is hidden/inactive. An already-visible
 inspector in another dynamically resolved zone updates through existing draft

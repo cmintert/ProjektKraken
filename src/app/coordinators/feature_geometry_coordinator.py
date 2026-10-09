@@ -332,6 +332,8 @@ class FeatureGeometryCoordinator(QObject):
         )
 
         states = self.states_for_marker(map_id, marker_id)
+        presenter = getattr(self._window.map_widget, "feature_actions", None)
+        guard = presenter.capture_guard(object_id, "history") if presenter else None
         dialog = FeatureGeometryStatesDialog(
             str(snapshot.get("label") or "Map feature"),
             states,
@@ -341,6 +343,7 @@ class FeatureGeometryCoordinator(QObject):
         if (
             dialog.exec() != dialog.DialogCode.Accepted
             or dialog.selected_action is None
+            or (guard is not None and not guard())
         ):
             return
         action, state_id, date = dialog.selected_action

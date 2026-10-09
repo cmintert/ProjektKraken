@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-09
-**Commit:** 8ce7afdd9386705de5342a1acfa7b074eccb560f
+**Commit:** bc43e2d7cada2345ea920db90e21f0e5a1606f30
 ---
 
 # Changelog
@@ -12,6 +12,15 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-09)* **Visible map feature actions (KRT-48)**: Added labeled
+  Feature actions menus in the map toolbar and below the Layers header, with
+  creator-language border/path, appearance, journey and visibility-date actions.
+  Shared canvas/Layers targeting handles locked and unavailable features,
+  keyboard selection, narrow overflow and stale menu/dialog results while
+  preserving dated geometry, draft guards and deliberate inspector opening.
+  Added 43 regression cases, six-theme rendered evidence and updated map/audit
+  guidance; corrected legacy style swatches and isolated Qt render-test lifetimes.
 
 - *(2026-10-09)* **PR #189 push validation (KRT-65)**: Reject dirty checkouts
   and pushed commits that differ from HEAD, including additional refs in one

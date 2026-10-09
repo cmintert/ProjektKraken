@@ -53,6 +53,7 @@ from src.gui.mixins.map_trajectory_mixin import MapTrajectoryMixin
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
+from src.gui.widgets.map.feature_actions import FeatureActionPresenter
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 from src.gui.widgets.map.map_layer_model import MapLayerModel
@@ -63,6 +64,7 @@ from src.gui.widgets.map.raster_legend_widget import RasterLegendWidget
 logger = logging.getLogger(__name__)
 
 _MINIMUM_BREADCRUMB_CHAIN_LENGTH = 2
+
 
 class NoLayoutLabel(QWidget):
     """A minimal label that draws text without participating in layout.
@@ -291,6 +293,18 @@ class MapWidget(
 
         self._build_map_content(layout)
 
+        self.feature_actions = FeatureActionPresenter(
+            self.view,
+            self.layer_panel,
+            self.get_selected_map_id,
+            self.request_edit_transition,
+            self._update_feature_actions,
+        )
+        self.feature_actions_menu.aboutToShow.connect(
+            lambda: self.feature_actions.populate(self.feature_actions_menu)
+        )
+        self.marker_scene_updated.connect(self.feature_actions.scene_ready)
+
         self._apply_theme_styles()
         ThemeManager().theme_changed.connect(self._on_theme_changed)
         self._connect_view_signals()
@@ -361,9 +375,7 @@ class MapWidget(
         self.map_edit_action_bar.hide()
         coord_label = NoLayoutLabel("Ready")
         self.coord_label = coord_label
-        coord_label.setSizePolicy(
-            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed
-        )
+        coord_label.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
         self._build_map_status_row(layout, coord_label)
 
     def _build_map_status_row(
@@ -404,6 +416,7 @@ class MapWidget(
         self._breadcrumb_parent_id: Optional[str] = None
         self._build_map_management_controls()
         self._build_inspector_control()
+        self._build_feature_actions_control()
         self.toolbar.addSeparator()
         self._build_viewport_controls()
         self.toolbar.addSeparator()
@@ -425,16 +438,48 @@ class MapWidget(
         self.btn_open_inspector = cast(
             QToolButton, self.toolbar.widgetForAction(self.open_inspector_action)
         )
-        self.btn_open_inspector.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
+        self.btn_open_inspector.setToolButtonStyle(
+            Qt.ToolButtonStyle.ToolButtonTextOnly
+        )
+
+    def _build_feature_actions_control(self) -> None:
+        """Expose labeled feature actions through native toolbar overflow."""
+        self.feature_actions_menu = QMenu(self)
+        self.feature_actions_action = QAction("Feature actions", self)
+        self.feature_actions_action.setMenu(self.feature_actions_menu)
+        self.feature_actions_action.setEnabled(False)
+        self.feature_actions_action.setToolTip("Select a map feature")
+        self.toolbar.addAction(self.feature_actions_action)
+        self.btn_feature_actions = cast(
+            QToolButton, self.toolbar.widgetForAction(self.feature_actions_action)
+        )
+        self.btn_feature_actions.setToolButtonStyle(
+            Qt.ToolButtonStyle.ToolButtonTextOnly
+        )
+        self.btn_feature_actions.setPopupMode(
+            QToolButton.ToolButtonPopupMode.InstantPopup
+        )
+
+    def _update_feature_actions(self) -> None:
+        """Refresh visible action availability without changing authoring context."""
+        context = self.feature_actions.context()
+        self.feature_actions_action.setEnabled(context is not None)
+        self.feature_actions_action.setToolTip(
+            self.layer_panel.btn_feature_actions.toolTip()
+        )
+        self._update_inspector_action()
 
     def _selected_inspector_target(self) -> tuple[str, str] | None:
         """Return the selected visible feature's underlying object identity."""
-        for item in self.view.graphics_scene.selectedItems():
-            if (
-                isinstance(item, (MarkerItem, PathItem, RegionItem))
-                and item.isVisible()
-                and item.object_type in {"entity", "event"}
-            ):
+        if not hasattr(self, "feature_actions"):
+            return None
+        target = self.feature_actions.target
+        context = self.feature_actions.context()
+        if target is None or context is None or context.locked:
+            return None
+        item = self.view.find_item_by_id(target.object_id)
+        if isinstance(item, (MarkerItem, PathItem, RegionItem)):
+            if item.isVisible() and item.object_type in {"entity", "event"}:
                 return item.object_type, item.marker_id
         return None
 
@@ -917,9 +962,7 @@ class MapWidget(
             "Show selectable authoring ghosts for vector features outside "
             "the current playhead date"
         )
-        self.btn_temporal_ghosts.toggled.connect(
-            self.view.set_temporal_ghosts_visible
-        )
+        self.btn_temporal_ghosts.toggled.connect(self.view.set_temporal_ghosts_visible)
         self.toolbar.addWidget(self.btn_temporal_ghosts)
 
     def _build_mode_controls(self) -> None:
@@ -973,9 +1016,7 @@ class MapWidget(
         self.view.marker_visual_style_changed.connect(
             self.marker_visual_style_changed.emit
         )
-        self.view.marker_appearance_changed.connect(
-            self.marker_appearance_changed.emit
-        )
+        self.view.marker_appearance_changed.connect(self.marker_appearance_changed.emit)
         self.view.marker_drop_requested.connect(self.marker_drop_requested.emit)
         self.view.mouse_coordinates_changed.connect(self._on_mouse_coordinates_changed)
         self.view.zoom_factor_changed.connect(self._on_zoom_factor_changed)
@@ -997,9 +1038,7 @@ class MapWidget(
         self.view.temporal_validity_requested.connect(
             self.layer_panel.edit_temporal_validity
         )
-        self.view.temporal_jump_requested.connect(
-            self.layer_panel.jump_to_valid_time
-        )
+        self.view.temporal_jump_requested.connect(self.layer_panel.jump_to_valid_time)
         self.view.temporal_show_in_layers_requested.connect(
             self.layer_panel.select_node
         )
@@ -1066,9 +1105,7 @@ class MapWidget(
     def _on_temporal_counts_changed(self, _valid: int, outside: int) -> None:
         """Refresh the compact map-level temporal awareness control."""
         noun = "feature" if outside == 1 else "features"
-        self.temporal_outside_button.setText(
-            f"{outside} {noun} outside this date"
-        )
+        self.temporal_outside_button.setText(f"{outside} {noun} outside this date")
         self.temporal_outside_button.setVisible(outside > 0)
         if outside == 0 and self.temporal_outside_button.isChecked():
             self.temporal_outside_button.setChecked(False)
@@ -1224,13 +1261,10 @@ class MapWidget(
 
     def _request_selected_trajectory_edit(self) -> None:
         """Request editing for the currently selected trajectory owner."""
-        selected_items = self.view.graphics_scene.selectedItems()
-        selected_marker = next(
-            (item for item in selected_items if isinstance(item, MarkerItem)),
-            None,
-        )
-        if selected_marker is not None:
-            self.trajectory_edit_requested.emit(selected_marker.marker_id)
+        target = self.feature_actions.target
+        if target is not None:
+            guard = self.feature_actions.capture_guard(target.object_id, "journey")
+            self.feature_actions.activate(target, "journey", guard)
 
     def _request_selected_trajectory_date_edit(self) -> None:
         """Request temporal editing for the selected stable keyframe."""
@@ -1264,16 +1298,21 @@ class MapWidget(
 
     def _update_trajectory_edit_action(self) -> None:
         """Expose direct editing only for a selected entity trajectory."""
-        selected_items = self.view.graphics_scene.selectedItems()
-        selected_marker = (
-            selected_items[0]
-            if selected_items and isinstance(selected_items[0], MarkerItem)
-            else None
-        )
+        target = self.feature_actions.target
+        context = self.feature_actions.context()
+        item = self.view.find_item_by_id(target.object_id) if target else None
+        selected_marker = item if isinstance(item, MarkerItem) else None
         is_event = (
             selected_marker is not None and selected_marker.object_type == "event"
         )
-        can_record = selected_marker is not None and not is_event
+        can_record = (
+            selected_marker is not None
+            and not is_event
+            and context is not None
+            and not context.locked
+            and not context.outside_date
+            and context.canvas_available
+        )
 
         can_edit = (
             can_record
@@ -1287,6 +1326,7 @@ class MapWidget(
             )
         self._edit_trajectory_action.setVisible(can_edit)
         self._edit_trajectory_action.setEnabled(can_edit)
+        self.feature_actions.refresh()
 
     # -- Trajectory / drawing / dialog methods provided by mixins ------
 
@@ -1395,8 +1435,10 @@ class MapWidget(
         if mode in {"path", "region"}:
             return self.view._drawing_tool.can_finish
         if mode == "vertices":
-            return (not self._feature_geometry_edit_pending
-                    and self._feature_geometry_apply_available)
+            return (
+                not self._feature_geometry_edit_pending
+                and self._feature_geometry_apply_available
+            )
         return mode in {"marker_appearance", "footprint"}
 
     @Slot()
@@ -1464,6 +1506,11 @@ class MapWidget(
         self.map_selector.blockSignals(True)
         self.map_selector.clear()
         self._maps_data = maps
+        if self._accepted_map_id and not any(
+            map_data.id == self._accepted_map_id for map_data in maps
+        ):
+            self._accepted_map_id = None
+            self.feature_actions.reset()
 
         for m in maps:
             self.map_selector.addItem(m.name, m.id)
@@ -1527,9 +1574,7 @@ class MapWidget(
 
         # Back-to-parent: parent is the second-to-last in the chain.
         parent_id = (
-            chain[-2][0]
-            if len(chain) >= _MINIMUM_BREADCRUMB_CHAIN_LENGTH
-            else None
+            chain[-2][0] if len(chain) >= _MINIMUM_BREADCRUMB_CHAIN_LENGTH else None
         )
         self._breadcrumb_parent_id = parent_id
         self.btn_parent.setVisible(parent_id is not None)
@@ -1575,6 +1620,9 @@ class MapWidget(
         self.layer_panel.close_properties_editor()
         self.cancel_active_session()
         self._accepted_map_id = map_id
+        self.feature_actions.reset(
+            wait_for_scene=bool(self.view.markers or self.view.feature_items)
+        )
         self.map_selector.blockSignals(True)
         self.map_selector.setCurrentIndex(index)
         self.map_selector.blockSignals(False)
@@ -1776,9 +1824,7 @@ class MapWidget(
         anchor_y: float,
     ) -> None:
         """Replace the rendered geometry for one path or region."""
-        self.view.update_feature_geometry(
-            marker_id, geometry, anchor_x, anchor_y
-        )
+        self.view.update_feature_geometry(marker_id, geometry, anchor_x, anchor_y)
 
     def show_feature_geometry_edit(self, label: str, source: str) -> None:
         """Show the working-copy controls for a feature geometry edit."""
@@ -1833,6 +1879,7 @@ class MapWidget(
     def clear_markers(self) -> None:
         """Removes all markers from the map and resets the layer model."""
         self.cancel_active_session()
+        self.feature_actions.refreshing_scene = True
         self.view.clear_markers()
         self._base_marker_positions.clear()
         # Reset layer model — will be recreated when new markers load
@@ -1850,6 +1897,10 @@ class MapWidget(
         """Apply current theme styles to map controls with local QSS."""
         tool_style = StyleHelper.get_tool_button_style()
         self.btn_open_inspector.setStyleSheet(StyleHelper.get_secondary_button_style())
+        self.btn_feature_actions.setStyleSheet(StyleHelper.get_secondary_button_style())
+        self.layer_panel.btn_feature_actions.setStyleSheet(
+            StyleHelper.get_secondary_button_style()
+        )
         for button in (
             self.btn_new_map,
             self.btn_map_overflow,
@@ -1878,12 +1929,8 @@ class MapWidget(
             StyleHelper.get_secondary_button_style()
         )
 
-        self.btn_confirm_map_edit.setStyleSheet(
-            StyleHelper.get_primary_button_style()
-        )
-        self.btn_cancel_map_edit.setStyleSheet(
-            StyleHelper.get_secondary_button_style()
-        )
+        self.btn_confirm_map_edit.setStyleSheet(StyleHelper.get_primary_button_style())
+        self.btn_cancel_map_edit.setStyleSheet(StyleHelper.get_secondary_button_style())
         self.overlay_banner.setStyleSheet(StyleHelper.get_overlay_banner_style())
         self.legend_overlay.setStyleSheet(StyleHelper.get_legend_overlay_style())
         self._apply_mode_indicator_style(self._mode_indicator_mode)
@@ -1961,9 +2008,7 @@ class MapWidget(
             self._update_overlay_position()
 
         elif self.view.is_editing_marker_appearance:
-            marker = self.view.markers.get(
-                self.view.editing_marker_appearance_id or ""
-            )
+            marker = self.view.markers.get(self.view.editing_marker_appearance_id or "")
             size = marker.appearance_edit_size_text if marker is not None else ""
             anchor = (
                 marker.appearance_edit_anchor

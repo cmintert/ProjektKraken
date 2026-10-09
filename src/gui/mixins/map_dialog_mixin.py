@@ -20,6 +20,9 @@ from src.gui.dialogs.map_object_picker_dialog import (
     MapObjectPickerDialog,
 )
 
+if TYPE_CHECKING:
+    from src.gui.widgets.map.feature_actions import FeatureActionPresenter
+
 logger = logging.getLogger(__name__)
 
 
@@ -27,6 +30,7 @@ class MapDialogMixin:
     """Provide map CRUD and linked-object selection dialogs."""
 
     if TYPE_CHECKING:
+        feature_actions: FeatureActionPresenter
         map_selector: QComboBox
         map_created: SignalInstance
         map_deleted: SignalInstance
@@ -72,9 +76,7 @@ class MapDialogMixin:
 
         new_id = str(uuid.uuid4())
         if choice.object_type == "entity":
-            self.create_entity_requested.emit(
-                new_id, choice.name, choice.entity_type
-            )
+            self.create_entity_requested.emit(new_id, choice.name, choice.entity_type)
         else:
             self.create_event_requested.emit(new_id, choice.name)
         return new_id, choice.object_type, choice.name
@@ -87,9 +89,7 @@ class MapDialogMixin:
         )
         if not file_path:
             return
-        name, ok = QInputDialog.getText(
-            cast(QWidget, self), "New Map", "Map Name:"
-        )
+        name, ok = QInputDialog.getText(cast(QWidget, self), "New Map", "Map Name:")
         if ok and name.strip():
             self.map_created.emit(file_path, name.strip())
 
@@ -154,11 +154,12 @@ class MapDialogMixin:
     @Slot(str)
     def _on_delete_marker_requested(self, marker_id: str) -> None:
         """Confirm marker removal and emit ``marker_delete_confirmed``."""
+        guard = self.feature_actions.capture_guard(marker_id, "delete")
         confirm = QMessageBox.question(
             cast(QWidget, self),
             "Delete Marker",
             "Remove this marker?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
-        if confirm == QMessageBox.StandardButton.Yes:
+        if confirm == QMessageBox.StandardButton.Yes and guard():
             self.marker_delete_confirmed.emit(marker_id)

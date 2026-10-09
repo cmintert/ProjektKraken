@@ -23,6 +23,7 @@ from src.gui.constants import (
 from src.gui.widgets.map.map_layer_model import MapLayerModel
 
 if TYPE_CHECKING:
+    from src.gui.widgets.map.feature_actions import FeatureActionPresenter
     from src.gui.widgets.map.map_graphics_view import MapGraphicsView
     from src.gui.widgets.map.map_layer_panel import MapLayerPanel
 
@@ -43,6 +44,7 @@ class MapLayerMixin:
     """
 
     if TYPE_CHECKING:
+        feature_actions: FeatureActionPresenter
         view: MapGraphicsView
         layer_panel: MapLayerPanel
         _layer_model: Optional[MapLayerModel]
@@ -81,6 +83,7 @@ class MapLayerMixin:
         self._layer_model = model
         self.view.set_layer_model(model)
         self.layer_panel.set_model(model)
+        self.feature_actions.bind_model(model)
         # Forward model mutations → widget signal for command-stack persistence
         model.layer_tree_changed.connect(self.layer_tree_changed.emit)
         # Apply the persisted basemap state to the pixmap item immediately
@@ -255,16 +258,8 @@ class MapLayerMixin:
             node_id: The clicked layer node's ID.
 
         """
-        if self._layer_model is None:
-            return
-        node = self._layer_model.find_node_by_id(node_id)
-        if node is not None and node.locked:
-            return
-        # Select the graphics item on the map
-        item = self.view.find_item_by_id(node_id)
-        if item is not None:
-            self.view.graphics_scene.clearSelection()
-            item.setSelected(True)
+        self.feature_actions.layers_selected(node_id)
+        self.feature_actions.mirror_canvas_selection(node_id)
 
     @Slot(str)
     def _on_create_group(self, name: str) -> None:
@@ -341,15 +336,10 @@ class MapLayerMixin:
             return
 
         nodes = self._collect_subtree_nodes(node)
-        group_count = sum(
-            item.layer_type == MAP_LAYER_TYPE_GROUP for item in nodes
-        )
-        raster_ids = {
-            item.id for item in nodes if item.layer_type == "raster"
-        }
+        group_count = sum(item.layer_type == MAP_LAYER_TYPE_GROUP for item in nodes)
+        raster_ids = {item.id for item in nodes if item.layer_type == "raster"}
         feature_count = sum(
-            item.layer_type not in {MAP_LAYER_TYPE_GROUP, "raster"}
-            for item in nodes
+            item.layer_type not in {MAP_LAYER_TYPE_GROUP, "raster"} for item in nodes
         )
         snapshot_count = 0
         for map_obj in getattr(self, "maps_data", []) or []:
