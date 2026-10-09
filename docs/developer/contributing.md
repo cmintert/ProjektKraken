@@ -4,10 +4,11 @@
    request is optional for solo work. A verified direct commit is also fine.
 2. Update tests and documentation when behaviour changes.
 3. Add a dated entry to the Unreleased changelog before committing.
-4. Run the relevant test, lint, type, and documentation checks. CI requires
-   `python -m ruff check` and `python -m mypy src` to pass with no diagnostics.
-5. Commit the change. If using a pull request, explain user-visible behaviour
-   and architectural implications there.
+4. Run focused tests during development. Install the two Git hooks from
+   [Development Setup](development.md): fast Ruff at commit time, complete local
+   verification before pushing; remote CI stays small.
+5. Commit, then let the local pre-push gate verify the changes. If using a pull
+   request, explain user-visible behaviour and architectural implications.
 
 Linear tracks substantial features, bugs, and planned investigations. Reuse an
 existing `KRT` issue when one fits; small fixes and housekeeping need no issue.
@@ -33,8 +34,8 @@ them with narrow guards when an extraction creates an enforceable boundary.
 Run `python -m scripts.check_complexity_policy` before and after editing. It
 compares the worktree against HEAD by default. Use `--base-ref <commit>` for a
 whole branch or PR and `--format json` for callable IDs, before/after values,
-touch status, and required actions. Missing history/tooling fails closed. CI
-uses the PR base/push predecessor and project-pinned Ruff. First adoption can
+touch status, and required actions. Missing history/tooling fails closed. Local pre-push checks compare with the remote main merge-base. Small remote
+CI uses the PR base/push predecessor and pinned Ruff. First adoption can
 only baseline existing suppressed debt from that comparison revision.
 
 Carry the persistent allowance ID through a move or rename; update its path and
@@ -46,7 +47,7 @@ Exceptional increases require separate explicit policy review and a policy
 amendment, not baseline regeneration or a routine bypass option.
 
 Use the repository skill
-[`incremental-refactor`](../../.agents/skills/incremental-refactor/SKILL.md) to
+[`incremental-refactor`](https://github.com/cmintert/ProjektKraken/blob/main/.agents/skills/incremental-refactor/SKILL.md) to
 prepare and verify one authorized target. Record before/after evidence in its
 Linear issue, preserve behavior and architecture contracts, and keep the issue
 open until verified and committed. The skill does not schedule changes or
@@ -63,8 +64,8 @@ record role choices, contract numbers, disabled/focus/theme-switch/narrow eviden
 context preservation and justified exceptions. Review exact visual-policy baseline
 changes with their explanation; new violations and stale exceptions fail CI.
 Unify/correct legacy styling on the next function/method or stylesheet touch;
-the policy checker expires those exemptions against HEAD locally and the PR/push
-baseline in CI. Unrelated paths do not require a whole-app redesign.
+the policy checker expires those exemptions against remote main locally and the
+PR/push baseline in CI. Unrelated paths do not require a whole-app redesign.
 
 Use [UI/UX Contract v1](../ux/authoring-contract.md) for authoring UI changes.
 Linear remains the design authority; update both copies in the same work batch

@@ -18,6 +18,7 @@ from src.core.theme_manager import ThemeManager  # noqa: E402
 from src.gui.widgets.longform.editor import LongformEditorWidget  # noqa: E402
 
 OUTPUT = Path(__file__).parent
+NARROW_WIDTH = 400
 RETAINED: list[QWidget] = []
 
 
@@ -53,7 +54,7 @@ def main() -> None:
         ]
         for theme in manager.themes:
             manager.set_theme(theme, app)
-            for width in (400, 1100):
+            for width in (NARROW_WIDTH, 1100):
                 editor = LongformEditorWidget()
                 RETAINED.append(editor)
                 editor.resize(width, 650)
@@ -81,7 +82,7 @@ def main() -> None:
                     str(OUTPUT / f"{theme}-{width}-actions.png")
                 )
                 editor.outline_actions_menu.hide()
-                if width == 400:
+                if width == NARROW_WIDTH:
                     editor.action_toolbar.overflow_menu.popup(
                         editor.action_toolbar.overflow_button.mapToGlobal(
                             editor.action_toolbar.overflow_button.rect().bottomLeft()

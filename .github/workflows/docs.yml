@@ -1,10 +1,22 @@
 name: Build and Deploy Sphinx Docs
 
-# Local Sphinx validation happens before push; publish only on request or beta tag.
 on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'src/**'
+      - 'pyproject.toml'
+      - 'requirements/**'
+      - '.github/workflows/docs.yml'
   push:
-    tags:
-      - '*-beta*'
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - 'src/**'
+      - 'pyproject.toml'
+      - 'requirements/**'
+      - '.github/workflows/docs.yml'
   workflow_dispatch:
 
 permissions:
@@ -39,7 +51,7 @@ jobs:
           path: docs/_build/html
 
   deploy:
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     permissions:

@@ -1,5 +1,7 @@
 """Reproduce seeded KRT-22 inspector render evidence from the repository root."""
 
+# ruff: noqa: I001
+
 from __future__ import annotations
 
 import os

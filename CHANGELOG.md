@@ -13,6 +13,13 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-10-09)* **Local-first verification**: Replaced large repeated remote
+  test/type/doc gates with installable pre-push local checks, retaining smoke
+  and lightweight policies on GitHub plus manual full-suite fallback. Fixed an
+  obsolete KRT-26 test baseline entry, screenshot-script lint, UX evidence
+  navigation and developer instructions. Normal pushes now require local checks
+  when both Git hooks are installed.
+
 - *(2026-10-08)* **Referenced-object creation (KRT-21)**: Kept map contextual
   Entity/Event creation in the originating task. Object/marker composites and
   placement completion now refresh without hydrating unrelated drafts; legacy

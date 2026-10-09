@@ -5,8 +5,8 @@
     "ci_fast": 1605,
     "slow": 1,
     "performance": 0,
-    "full": 5974,
-    "full_only": 4360
+    "full": 5973,
+    "full_only": 4359
   },
   "categories": {
     "architecture": 11,
@@ -18,7 +18,7 @@
     "repro": 2,
     "root": 15,
     "security": 5,
-    "unit": 5616
+    "unit": 5615
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -8409,7 +8409,6 @@
     "tests/unit/test_trajectory_edit_coordinator.py::test_one_point_track_opens_guided_and_accepts_later_playhead_destination": [],
     "tests/unit/test_trajectory_edit_coordinator.py::test_selected_keyframe_date_can_copy_current_playhead_without_moving_it": [],
     "tests/unit/test_trajectory_edit_coordinator.py::test_speed_equalization_preview_has_no_persistence_side_effect": [],
-    "tests/unit/test_trajectory_edit_coordinator.py::test_switching_maps_discards_active_edit": [],
     "tests/unit/test_trajectory_edit_coordinator.py::test_use_playhead_inside_date_edit_keeps_suboperation_open": [],
     "tests/unit/test_trajectory_edit_coordinator.py::test_whole_speed_equalization_uses_map_distance_context": [],
     "tests/unit/test_trajectory_edit_overlay.py::test_date_edit_highlights_adjacent_affected_segments": [],
