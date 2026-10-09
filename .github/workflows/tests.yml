@@ -1,158 +1,91 @@
-name: Tests
+# Small remote safety net: broad verification lives in the local pre-push hook.
+name: Smoke CI
 
 on:
   push:
-    branches: ["**"]
-    tags: ["*-beta*"]
+    branches: [main]
   pull_request:
-    branches: ["**"]
-  schedule:
-    - cron: "17 2 * * *"
+    branches: [main]
   workflow_dispatch:
+    inputs:
+      full_regression:
+        description: "Run full regression and coverage (manual fallback)"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: smoke-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   smoke:
-    name: Smoke Tests
+    name: Smoke and lightweight quality
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: read
+    timeout-minutes: 15
     env:
       QT_QPA_PLATFORM: offscreen
       QT_OPENGL: software
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
           cache: pip
-
-      - name: Install dependencies
+          cache-dependency-path: requirements/dev.txt
+      - name: Install headless Qt libraries
         run: |
-          sudo apt-get update
+          sudo apt-get update -qq
           sudo apt-get install -y libegl1 libgl1 libdbus-1-3 libxcb-icccm4 \
             libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
             libxcb-xinerama0 libxkbcommon-x11-0
-          python -m pip install -r requirements.txt
-
-      - name: Check semantic visual policy
-        run: python -m scripts.check_visual_policy --base-ref "${{ github.event.pull_request.base.sha || github.event.before || 'HEAD^' }}"
-
-      - name: Check test discovery and suite membership
-        run: python -m scripts.check_test_policy
-
-      - name: Run smoke suite
+      - name: Install dependencies without embeddings or docs
+        run: python -m pip install -r requirements/dev.txt
+      - name: Repository-wide Ruff
+        run: python -m ruff check
+      - name: Changed-source policies
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before || 'HEAD^' }}
         run: |
-          python -m pytest -m smoke -q --maxfail=1 \
-            --junitxml=test-results-smoke.xml
+          python -m scripts.check_complexity_policy --base-ref "$BASE_REF"
+          python -m scripts.check_visual_policy --base-ref "$BASE_REF"
+      - name: Small smoke suite
+        run: python -m pytest -m smoke -q --maxfail=1
 
-      - name: Upload smoke test report
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: smoke-test-report
-          path: test-results-smoke.xml
-
-  fast-regression:
-    name: Fast PR Regression
+  full-manual:
+    name: Manual full regression
+    if: github.event_name == 'workflow_dispatch' && inputs.full_regression
     runs-on: ubuntu-latest
-    timeout-minutes: 12
-    permissions:
-      contents: read
+    timeout-minutes: 60
     env:
       QT_QPA_PLATFORM: offscreen
       QT_OPENGL: software
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
           cache: pip
-
-      - name: Install dependencies
+          cache-dependency-path: requirements.txt
+      - name: Install headless Qt libraries
         run: |
-          sudo apt-get update
+          sudo apt-get update -qq
           sudo apt-get install -y libegl1 libgl1 libdbus-1-3 libxcb-icccm4 \
             libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
-            libxcb-xinerama0 libxkbcommon-x11-0
-          python -m pip install -r requirements.txt
-
-      - name: Check semantic visual policy
-        run: python -m scripts.check_visual_policy --base-ref "${{ github.event.pull_request.base.sha || github.event.before || 'HEAD^' }}"
-
-      - name: Check test discovery and suite membership
-        run: python -m scripts.check_test_policy
-
-      - name: Run curated PR regression suite
-        run: |
-          python -m pytest -m ci_fast -q --maxfail=1 \
-            --durations=20 --junitxml=test-results-fast.xml
-
-      - name: Upload fast suite artifacts
+            libxcb-xinerama0 libxcb-xkbcommon-x11-0
+      - run: python -m pip install -r requirements.txt
+      - run: python -m scripts.check_test_policy
+      - name: Full regression with coverage
+        run: python -m pytest --maxfail=1 --durations=30 --cov=src --cov-report=xml --cov-report=term-missing
+      - name: Upload coverage
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
-          name: fast-regression-artifacts
-          path: |
-            test-results-fast.xml
-
-  full-regression:
-    name: Full Regression and Coverage
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    permissions:
-      contents: read
-    env:
-      QT_QPA_PLATFORM: offscreen
-      QT_OPENGL: software
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.13"
-          cache: pip
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libegl1 libgl1 libdbus-1-3 libxcb-icccm4 \
-            libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
-            libxcb-xinerama0 libxkbcommon-x11-0
-          python -m pip install -r requirements.txt
-
-      - name: Check semantic visual policy
-        run: python -m scripts.check_visual_policy --base-ref "${{ github.event.pull_request.base.sha || github.event.before || 'HEAD^' }}"
-
-      - name: Check test discovery and suite membership
-        run: python -m scripts.check_test_policy
-
-      - name: Run full regression suite with coverage
-        run: |
-          python -m pytest --maxfail=1 --durations=50 \
-            --junitxml=test-results-full.xml \
-            --cov=src --cov-report=xml --cov-report=term-missing
-
-      - name: Upload full regression artifacts
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: full-regression-artifacts
-          path: |
-            test-results-full.xml
-            coverage.xml
+          name: manual-full-coverage
+          path: coverage.xml
+          if-no-files-found: ignore
