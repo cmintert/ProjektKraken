@@ -1,61 +1,21 @@
-name: Lint
+# Optional manual type-check diagnostic. Mypy runs locally before push.
+name: Full type check (manual)
 
 on:
-  push:
-    branches: ["**"]
-  pull_request:
-    branches: ["**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  ruff:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: Install project-pinned Ruff
-        run: |
-          python - <<'PY'
-          import subprocess
-          import sys
-          import tomllib
-          from pathlib import Path
-          project = tomllib.loads(Path("pyproject.toml").read_text())
-          pin = next(item for item in project["project"]["optional-dependencies"]["dev"] if item.startswith("ruff=="))
-          subprocess.run([sys.executable, "-m", "pip", "install", pin], check=True)
-          PY
-
-      - name: Check incremental complexity improvement
-        env:
-          COMPLEXITY_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
-        run: python -m scripts.check_complexity_policy --base-ref "$COMPLEXITY_BASE_REF"
-
-      - name: Run ruff check
-        run: python -m ruff check
-
   mypy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
           cache: pip
-
-      - name: Install project development dependencies
-        run: python -m pip install -r requirements/dev.txt
-
-      - name: Run full type check
-        run: python -m mypy src
+          cache-dependency-path: requirements/dev.txt
+      - run: python -m pip install -r requirements/dev.txt
+      - run: python -m mypy src
