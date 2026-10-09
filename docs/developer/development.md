@@ -28,13 +28,23 @@ environment with the project's development and docs requirements installed):
 
 ```powershell
 python -m pip install "pre-commit>=4,<5"
-python -m pre_commit install --hook-type pre-commit --hook-type pre-push
+python -m scripts.install_hooks
 ```
 
 Commits only lint and format changed Python files. An ordinary `git push`
 automatically runs `python -m scripts.preflight push`. It checks all tracked
 source via Ruff and mypy; dependency, complexity, semantic-visual, test-inventory
 and schema contracts; strict Sphinx; then the `smoke or ci_fast` regression suite.
+The native push hook reads every ref supplied by Git and requires a clean
+checkout with every pushed commit matching HEAD (annotated tags are peeled).
+Commit or stash local changes before pushing. Check out another branch before
+pushing it; multi-ref pushes are allowed only when all updates point to HEAD.
+Deletion-only pushes need no code validation. Existing clones must rerun the
+installer to replace the previous pre-commit push wrapper. The installer binds
+the push gate to the selected Python and preserves unrelated hooks by refusing
+to overwrite them. `git push --no-verify` bypasses these local hooks and never
+counts as release validation.
+
 It blocks a failed push. It does **not** update reviewed baselines. Policy checks
 compare with the merge-base of `origin/main`; if this tracking ref is unavailable,
 run `git fetch origin main`, or explicitly pass `--base-ref <commit>`.
@@ -63,7 +73,7 @@ python -m pytest -m smoke -q
 python -m pytest -m ci_fast -q
 python -m ruff check
 python -m mypy src
-``
+```
 
 
 Before approving a public beta, also complete the

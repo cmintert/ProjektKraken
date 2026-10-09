@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-08
-**Commit:** b372e883316a923a4946b2bdf7b1ad548011c0b8
+**Last Updated:** 2026-10-09
+**Commit:** 8ce7afdd9386705de5342a1acfa7b074eccb560f
 ---
 
 # Changelog
@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-09)* **PR #189 push validation (KRT-65)**: Reject dirty checkouts
+  and pushed commits that differ from HEAD, including additional refs in one
+  push. Added a native hook installer using the selected Python and repaired
+  the development guide's code fence.
 
 - *(2026-10-09)* **Local-first verification**: Replaced large repeated remote
   test/type/doc gates with installable pre-push local checks, retaining smoke

@@ -1,4 +1,4 @@
-# Install both hook types; commits are cheap, pushes are thoroughly verified.
+# Install via python -m scripts.install_hooks; native pre-push reads every ref.
 repos:
   - repo: local
     hooks:
@@ -15,6 +15,7 @@ repos:
         types: [python]
         stages: [pre-commit]
       - id: local-preflight
+        # Fail closed for clones still using the old pre-commit push wrapper.
         name: Kraken pre-push quality gate
         entry: python -m scripts.preflight push
         language: system
