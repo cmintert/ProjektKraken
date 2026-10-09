@@ -64,7 +64,7 @@ modeless-reopening fix passed **152 focused feature/temporal/layer tests**.
 
 ## Rendered evidence
 
-The [screenshots](screenshots/) directory contains six palettes at normal width
+The `screenshots/` directory contains six palettes at normal width
 (1400 px) and requested narrow width (520 px; the existing splitter minimum can
 make the actual widget slightly wider), with menu, focus, hover and disabled
 variants. Production `src/resources/main.qss` and shared local control styles

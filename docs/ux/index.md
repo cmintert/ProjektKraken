@@ -31,6 +31,7 @@ evidence/krt45/supporting-refinement
 evidence/krt46/baseline
 evidence/krt46/human-run-1
 evidence/krt47/README
+evidence/krt48/README
 evidence/krt49/numeric-wheel
 evidence/krt50/README
 evidence/krt51/temporal-save-checkpoints

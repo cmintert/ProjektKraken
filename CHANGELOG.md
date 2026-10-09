@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-09
-**Commit:** bc43e2d7cada2345ea920db90e21f0e5a1606f30
+**Commit:** 85b2aa1f59a931062325c54f48b21cfabc8b4654
 ---
 
 # Changelog
@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-09)* **Documentation (KRT-48)**: Registered feature-action
+  verification in the published UX index and corrected its screenshot-directory
+  reference for strict Sphinx validation.
 
 - *(2026-10-09)* **Visible map feature actions (KRT-48)**: Added labeled
   Feature actions menus in the map toolbar and below the Layers header, with
