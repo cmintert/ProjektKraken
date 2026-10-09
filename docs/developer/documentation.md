@@ -31,6 +31,7 @@ python docs/generate_schema_docs.py --check
 sphinx-build -n -W --keep-going -b html docs docs/_build/html
 ```
 
-Every Markdown file under `docs/` must be reachable from a toctree. Do not put
-research notes or implementation diaries in the Sphinx source directory.
+Every Markdown file under `docs/` must be reachable from a toctree. UX
+contracts and verification evidence are indexed in [UX navigation](../ux/index.md).
+Do not put unindexed research notes in the Sphinx source directory.
 

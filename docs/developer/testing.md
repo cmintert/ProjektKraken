@@ -9,16 +9,17 @@
 
 ## CI suites
 
-- `smoke` is the short critical-path gate for every pull request.
-- `ci_fast` is the required pull-request regression suite. It covers CLI,
+- `smoke` is the small safety net on GitHub pushes and pull requests.
+- `ci_fast` is the locally required pre-push regression suite. It covers CLI,
   security, packaging, core/services/repositories, and selected command and
   persistence tests. Keep it deterministic and within the 12-minute CI budget.
-- The full suite, including coverage, runs nightly, on beta tags, and when
-  manually dispatched. Run it before approving a release.
+- The full suite, including coverage, runs locally before release via
+  `python -m scripts.preflight release`. Remote full regression is an optional
+  manual-dispatch fallback.
 
 ### Discovery and membership policy
 
-`tests/` is the single test root. PR and release CI run
+`tests/` is the single test root. The local push/release gate runs
 `python -m scripts.check_test_policy` before executing tests. This checks
 project-owned `test_*.py` files, including untracked files, for misplaced tests,
 then collects the entire canonical suite and compares it with the reviewed
@@ -75,6 +76,12 @@ been explicitly marked slow, not a bounded fast suite.
 
 Use fixtures from `tests/conftest.py`, including `qapp`, `db_service`, and
 `init_theme_manager`.
+
+## Local pre-push automation
+
+See [Development Setup](development.md) to install the commit and push hooks.
+The pre-push gate covers the entire `ci_fast` membership on your Windows PC;
+GitHub no longer duplicates that curated suite on every push.
 
 ## Windows GUI tests
 

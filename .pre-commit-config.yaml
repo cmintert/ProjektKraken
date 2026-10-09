@@ -1,20 +1,24 @@
+# Install via python -m scripts.install_hooks; native pre-push reads every ref.
 repos:
   - repo: local
     hooks:
       - id: ruff-check
-        name: ruff
+        name: Ruff staged Python files
         entry: python -m ruff check --fix
         language: system
         types: [python]
+        stages: [pre-commit]
       - id: ruff-format
-        name: ruff-format
+        name: Format staged Python files
         entry: python -m ruff format
         language: system
         types: [python]
-      - id: pytest
-        name: pytest
-        entry: python -m pytest -x -q
-        language: system
-        types: [python]
-        pass_filenames: false
         stages: [pre-commit]
+      - id: local-preflight
+        # Fail closed for clones still using the old pre-commit push wrapper.
+        name: Kraken pre-push quality gate
+        entry: python -m scripts.preflight push
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]

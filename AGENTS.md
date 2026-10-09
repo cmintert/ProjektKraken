@@ -33,17 +33,17 @@
 
 ## Build, Test, And CI Workflow
 - App: `start-kraken.cmd` on Windows or `python -m src.app.main`; environment:
-  `python launcher.py --check`; tests: `pytest`; fast suites: `pytest -m smoke -q`,
-  `pytest -m "not slow"`.
-- On Windows GUI tests, set `$env:QT_QPA_PLATFORM = "offscreen"` before running pytest.
-- Quality gates: `python -m ruff check src/ tests/`, `python -m ruff check src/ tests/ --fix`, `python -m mypy src/`.
-- Mypy debt follows a no-new-errors ratchet. For every changed Python module,
-  fix all errors introduced by the change and all errors in the changed code
-  path. If the module has 0-10 existing errors, leave the whole module clean;
-  with 11-30, fix related errors plus a small bounded cleanup; with more than
-  30, keep the feature scoped and schedule a dedicated typing cleanup. Use a
-  narrow `# type: ignore[code]` only for a verified third-party stub/runtime
-  mismatch, with an explanatory comment. See `docs/developer/contributing.md`.
+  `python launcher.py --check`. Focused tests: `pytest -m smoke -q`,
+  `pytest -m ci_fast -q`; never use `not slow` as a fast-suite selector.
+- Install both Git hooks once per clone (see `docs/developer/development.md`).
+  `python -m scripts.preflight push` runs complete local gates before pushing;
+  `python -m scripts.preflight release` runs full regression with coverage,
+  followed by actual Windows package verification. Remote push CI is small.
+- On Windows GUI tests, set `$env:QT_QPA_PLATFORM = "offscreen"` before pytest.
+- Quality checks: `python -m ruff check`, `python -m mypy src`.
+- Mypy is repository-wide and must be clean before pushing. Use a narrow
+  `# type: ignore[code]` only for a verified third-party stub/runtime mismatch,
+  with an explanatory comment. See `docs/developer/contributing.md`.
 - Reuse `tests/conftest.py` fixtures (`qapp`, `db_service`, `init_theme_manager`); avoid ad-hoc Qt/DB fixture copies.
 - Watch for test pitfalls: shared `MockQSettings._storage`, teardown validity checks (`shiboken6.isValid(...)`), and debounce/timer-driven UI behavior.
 

@@ -21,23 +21,60 @@ python -m src.app.main
 `src/app/main.py` is a compatibility shim; startup orchestration lives in
 `src/app/entry.py`.
 
-## Quality commands
+## Local-first quality checks
 
-```text
-python -m ruff check src/ tests/
-python -m mypy src/
-pytest
-pytest -m smoke -q
-pytest -m ci_fast -q
+Install both local Git hooks once in each clone (in an activated Python 3.13
+environment with the project's development and docs requirements installed):
+
+```powershell
+python -m pip install "pre-commit>=4,<5"
+python -m scripts.install_hooks
 ```
 
-CI requires both `python -m ruff check` and a clean, repository-wide
-`python -m mypy src` result. `pyrightconfig.json` remains available for IDE
-diagnostics, but Pyright is not a separate CI gate.
+Commits only lint and format changed Python files. An ordinary `git push`
+automatically runs `python -m scripts.preflight push`. It checks all tracked
+source via Ruff and mypy; dependency, complexity, semantic-visual, test-inventory
+and schema contracts; strict Sphinx; then the `smoke or ci_fast` regression suite.
+The native push hook reads every ref supplied by Git and requires a clean
+checkout with every pushed commit matching HEAD (annotated tags are peeled).
+Commit or stash local changes before pushing. Check out another branch before
+pushing it; multi-ref pushes are allowed only when all updates point to HEAD.
+Deletion-only pushes need no code validation. Existing clones must rerun the
+installer to replace the previous pre-commit push wrapper. The installer binds
+the push gate to the selected Python and preserves unrelated hooks by refusing
+to overwrite them. `git push --no-verify` bypasses these local hooks and never
+counts as release validation.
 
-Pull requests run the smoke and `ci_fast` suites. The full, coverage-enabled
-regression suite runs nightly, on beta tags, and on manual dispatch; run that
-workflow before approving a release.
+It blocks a failed push. It does **not** update reviewed baselines. Policy checks
+compare with the merge-base of `origin/main`; if this tracking ref is unavailable,
+run `git fetch origin main`, or explicitly pass `--base-ref <commit>`.
+
+Run the identical checks manually or verify a complete release candidate:
+
+```powershell
+python -m scripts.preflight push
+python -m scripts.preflight release
+```
+
+Release mode runs all pytest cases once, with coverage, in place of the fast
+suite. Always additionally verify the actual Windows package, including the
+packaged-world data safety acceptance tests, before publication.
+
+GitHub checks a small `smoke` subset, repository-wide Ruff, and changed-source
+policy contracts on pushes to main and pull requests. Dependency contracts have
+a separate cheap job. Full mypy and full regression are manual-dispatch options,
+and documentation publishes only on manual dispatch or a beta tag. Local hooks
+can be bypassed: do not release or tag unverified commits.
+
+While developing, run focused tests as needed:
+
+```powershell
+python -m pytest -m smoke -q
+python -m pytest -m ci_fast -q
+python -m ruff check
+python -m mypy src
+```
+
 
 Before approving a public beta, also complete the
 [Wiki Editor Beta Release Gate](wiki-editor-beta-release-gate.md). A known
