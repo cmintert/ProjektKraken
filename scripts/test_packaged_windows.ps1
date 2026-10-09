@@ -61,7 +61,7 @@ function Invoke-PackagedSmoke {
     }
     if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
         Stop-Process -Id $process.Id -Force
-        $logPath = Join-Path $packagePath "logs\kraken.log"
+        $logPath = Join-Path $packagePath "logs\kraken.$($process.Id).log"
         if (Test-Path -LiteralPath $logPath -PathType Leaf) {
             Write-Host "Packaged $Phase smoke log tail:"
             Get-Content -LiteralPath $logPath -Tail 100 | Write-Host

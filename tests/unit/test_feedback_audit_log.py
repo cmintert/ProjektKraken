@@ -25,7 +25,9 @@ def test_summary_service_logs_generation_and_automatic_review():
     from src.services.summary_service import SummaryService
 
     db_path = "/worlds/Test/test.kraken"
-    expected_audit_path = os.path.join("/worlds/Test", "ai_audit_log.jsonl")
+    expected_audit_path = os.path.join(
+        "/worlds/Test", f"ai_audit_log.{os.getpid()}.jsonl"
+    )
     mock_db = MagicMock()
     mock_db.db_path = db_path
     service = SummaryService(mock_db)
@@ -45,13 +47,13 @@ def test_summary_service_logs_generation_and_automatic_review():
     mock_provider.metadata.return_value = {"provider_id": "mock-provider"}
     service._llm_provider = mock_provider
 
-    with patch(
-        "src.services.summary_service.log_generation_event"
-    ) as generation_log, patch(
-        "src.services.summary_service.log_review_event"
-    ) as review_log, patch(
-        "src.services.reasoning_filter.filter_reasoning_tags",
-        side_effect=lambda text: text,
+    with (
+        patch("src.services.summary_service.log_generation_event") as generation_log,
+        patch("src.services.summary_service.log_review_event") as review_log,
+        patch(
+            "src.services.reasoning_filter.filter_reasoning_tags",
+            side_effect=lambda text: text,
+        ),
     ):
         service.generate_summary(entity)
 

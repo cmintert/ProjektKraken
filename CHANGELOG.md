@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-09
-**Commit:** 85b2aa1f59a931062325c54f48b21cfabc8b4654
+**Last Updated:** 2026-10-10
+**Commit:** 7c06f4d3f75346b13a8f090044dfd2df185ec522
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-10)* **Logging reliability (KRT-62)**: Close application-owned
+  handlers on reconfiguration, isolate each process's rotating diagnostics and
+  opt-in AI audit files, fall back to the user data directory when portable logs
+  are unwritable, and suspend writes with throttled retries and a direct failure
+  notice when rotation fails. Updated troubleshooting and packaged smoke lookup.
 
 - *(2026-10-09)* **Documentation (KRT-48)**: Registered feature-action
   verification in the published UX index and corrected its screenshot-directory

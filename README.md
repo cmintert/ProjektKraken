@@ -241,8 +241,8 @@ their adapters meet the same reply and cancellation contract.
 ### Startup Crashes
 Confirm that the complete ZIP was extracted and that `_internal` remains beside
 `ProjektKraken.exe`. Normal application diagnostics are written to
-`logs/kraken.log` beside the executable. If the application opens but its layout
-is unusable, choose **Layouts → Reset Layout**. See the
+`logs/kraken.<process ID>.log` beside the executable. If the application opens
+but its layout is unusable, choose **Layouts → Reset Layout**. See the
 [troubleshooting guide](docs/user/troubleshooting.md) for further checks.
 
 ## Testing

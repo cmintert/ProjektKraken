@@ -9,7 +9,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from src.core.logging_config import (
-    AUDIT_LOG_FILENAME,
     get_audit_logger,
     setup_audit_logging,
 )
@@ -90,7 +89,8 @@ def test_disabled_auditing_does_not_create_file(audit_settings):
             )
 
         assert written is False
-        assert not os.path.exists(os.path.join(tmpdir, AUDIT_LOG_FILENAME))
+        name = f"ai_audit_log.{os.getpid()}.jsonl"
+        assert not os.path.exists(os.path.join(tmpdir, name))
 
 
 def test_generation_event_is_one_parseable_json_line(audit_settings):
@@ -116,7 +116,8 @@ def test_generation_event_is_one_parseable_json_line(audit_settings):
             _flush_audit_logger()
 
         with open(
-            os.path.join(tmpdir, AUDIT_LOG_FILENAME), encoding="utf-8"
+            os.path.join(tmpdir, f"ai_audit_log.{os.getpid()}.jsonl"),
+            encoding="utf-8",
         ) as audit_file:
             lines = audit_file.readlines()
         _close_audit_logger()

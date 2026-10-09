@@ -10,9 +10,17 @@
 4. Verify the ZIP against its supplied `.sha256` file. Download it again if the
    hashes differ.
 
-Normal diagnostics are written to `logs/kraken.log` beside the executable.
-Include that file, the package version, and your Windows version when reporting
-a startup problem.
+Normal diagnostics are written to `logs/kraken.<process ID>.log` beside the
+executable. Each running instance has its own log and rotation set; old process
+logs can be removed after those instances exit. If the portable `logs` directory
+is unwritable, look in `%APPDATA%\ProjektKraken\logs` on Windows (or the platform
+user data directory). Log files rotate at 5 MB with five backups per process.
+If rotation fails, writes to that file pause for 30 seconds before another
+attempt; a `*.logging-error.txt` file beside it records the latest failure.
+Logging failures do not stop edits or saves. Include the relevant log and
+failure notice, the package version, and your Windows version when reporting a
+problem. AI audit logging is opt-in, uses separate per-process files, and remains
+isolated from normal diagnostics.
 
 ## A saved layout prevents startup
 

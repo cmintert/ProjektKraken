@@ -7,10 +7,12 @@ rotating file handlers and console output.
 import logging
 import os
 import sys
+import time
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
 from typing import Optional
 
-from src.core.paths import get_log_directory
+from src.core.paths import get_log_directory, get_user_data_path
 
 # Configuration
 # Override hook retained for tests and specialized embeddings. Normal launches resolve
@@ -23,6 +25,59 @@ BACKUP_COUNT = 5
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 AUDIT_LOG_FORMAT = "%(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+ROTATION_RETRY_SECONDS = 30.0
+_owned_handlers: dict[logging.Logger, list[logging.Handler]] = {}
+
+
+def _process_filename(filename: str) -> str:
+    """Give each process its own rotation set without cross-process file locks."""
+    stem, extension = os.path.splitext(filename)
+    return f"{stem}.{os.getpid()}{extension}"
+
+
+def _diagnostic(message: str, path: str | None = None) -> None:
+    """Report a logging failure directly, without entering logging again."""
+    if path is not None:
+        try:
+            Path(path).with_suffix(".logging-error.txt").write_text(
+                message + "\n", encoding="utf-8"
+            )
+        except OSError:
+            pass
+    stream = sys.stderr
+    if stream is not None:
+        try:
+            stream.write(message + "\n")
+        except Exception:
+            pass
+
+
+def _replace_owned_handlers(logger: logging.Logger) -> None:
+    """Detach and close only handlers installed by this module."""
+    for handler in _owned_handlers.pop(logger, []):
+        logger.removeHandler(handler)
+        handler.close()
+
+
+def _add_owned_handler(logger: logging.Logger, handler: logging.Handler) -> None:
+    logger.addHandler(handler)
+    _owned_handlers.setdefault(logger, []).append(handler)
+
+
+def _writable_log_directory() -> str | None:
+    """Prefer portable logs, then the user data directory; never use cwd."""
+    for candidate in (_resolve_log_directory, lambda: get_user_data_path("logs")):
+        try:
+            path = candidate()
+            os.makedirs(path, exist_ok=True)
+            probe = Path(path) / f".logging-write-test-{os.getpid()}"
+            with probe.open("w", encoding="utf-8"):
+                pass
+            probe.unlink()
+            return path
+        except OSError as exc:
+            _diagnostic(f"ProjektKraken log directory unavailable: {exc}")
+    return None
 
 
 def _resolve_log_directory() -> str:
@@ -34,27 +89,45 @@ def _resolve_log_directory() -> str:
 
 
 class SafeRotatingFileHandler(RotatingFileHandler):
-    """A RotatingFileHandler that handles Windows file locking errors gracefully.
+    """Suspend writes after I/O failure and retry without growing a locked file."""
 
-    On Windows, log rotation can fail with PermissionError if the file is still in use
-    by another process or handler. This handler catches those errors and continues
-    logging without crashing.
-    """
+    def __init__(
+        self,
+        filename: str,
+        maxBytes: int,
+        backupCount: int,
+        encoding: str,
+        delay: bool,
+    ) -> None:
+        """Initialize a bounded rotating file with an independent retry clock."""
+        super().__init__(
+            filename,
+            maxBytes=maxBytes,
+            backupCount=backupCount,
+            encoding=encoding,
+            delay=delay,
+        )
+        self._retry_at = 0.0
 
-    def doRollover(self) -> None:
-        """Perform log file rotation, catching Windows file locking errors.
-
-        If rotation fails due to file locking (common on Windows), the handler continues
-        using the current log file instead of crashing.
-        """
+    def emit(self, record: logging.LogRecord) -> None:
+        """Write only when rotation succeeds; logging errors stay best effort."""
+        if time.monotonic() < self._retry_at:
+            return
         try:
-            super().doRollover()
-        except PermissionError:
-            # On Windows, file may still be locked by another process
-            # Just continue with the current file
-            if sys.platform != "win32":
-                raise
-            # On Windows, silently skip rotation - will retry next opportunity
+            if self.shouldRollover(record):
+                self.doRollover()
+            if self.stream is None:
+                self.stream = self._open()
+            self.stream.write(self.format(record) + self.terminator)
+            self.flush()
+            self._retry_at = 0.0
+        except Exception as exc:
+            self._retry_at = time.monotonic() + ROTATION_RETRY_SECONDS
+            _diagnostic(
+                f"ProjektKraken logging suspended for {ROTATION_RETRY_SECONDS:g}s "
+                f"at {self.baseFilename}: {type(exc).__name__}: {exc}",
+                self.baseFilename,
+            )
 
 
 def setup_logging(debug_mode: bool = False, log_to_console: bool = True) -> None:
@@ -68,61 +141,40 @@ def setup_logging(debug_mode: bool = False, log_to_console: bool = True) -> None
         log_to_console (bool): If True, adds a StreamHandler. Defaults to True.
 
     """
-    # 1. Create Log Directory
-    try:
-        log_dir = _resolve_log_directory()
-    except OSError as e:
-        # Fall back to the current directory if the portable log directory is not
-        # writable. The console message remains visible in source launches.
-        print(f"Failed to create log directory: {e}. Logging to current directory.")
-        log_path = LOG_FILENAME
-    else:
-        log_path = os.path.join(log_dir, LOG_FILENAME)
-
-    # 2. Get Root Logger
+    log_dir = _writable_log_directory()
     root_logger = logging.getLogger()
-
-    # Remove existing handlers to avoid duplicates if called multiple times
-    if root_logger.handlers:
-        root_logger.handlers.clear()
+    _replace_owned_handlers(root_logger)
 
     level = logging.DEBUG if debug_mode else logging.INFO
     root_logger.setLevel(level)
 
-    # 3. Formatter
     formatter = logging.Formatter(LOG_FORMAT, datefmt=DATE_FORMAT)
+    if log_dir is not None:
+        log_path = os.path.join(log_dir, _process_filename(LOG_FILENAME))
+        try:
+            file_handler = SafeRotatingFileHandler(
+                log_path,
+                maxBytes=MAX_BYTES,
+                backupCount=BACKUP_COUNT,
+                encoding="utf-8",
+                delay=False,
+            )
+            file_handler.setFormatter(formatter)
+            file_handler.setLevel(level)
+            _add_owned_handler(root_logger, file_handler)
+        except OSError as exc:
+            _diagnostic(f"ProjektKraken file logging unavailable: {exc}")
 
-    # 4. File Handler (Safe Rotating - handles Windows file locking)
-    try:
-        file_handler = SafeRotatingFileHandler(
-            log_path,
-            maxBytes=MAX_BYTES,
-            backupCount=BACKUP_COUNT,
-            encoding="utf-8",
-            delay=False,
-        )
-        file_handler.setFormatter(formatter)
-        file_handler.setLevel(level)
-        root_logger.addHandler(file_handler)
-    except OSError as e:
-        print(f"CRITICAL: Could not set up file logging: {e}")
-
-    # 5. Console Handler
     if log_to_console:
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(formatter)
-        console_handler.setLevel(level)
-        root_logger.addHandler(console_handler)
-
-    # 6. Initial Log
-    # logging.info("=" * 60)
-    # logging.info(f"Project Kraken Session Started at {datetime.now().isoformat()}")
-    # logging.info("=" * 60)
+        if sys.stderr is not None:
+            console_handler = logging.StreamHandler(sys.stderr)
+            console_handler.setFormatter(formatter)
+            console_handler.setLevel(level)
+            _add_owned_handler(root_logger, console_handler)
 
     # Force DEBUG for UnifiedList to troubleshoot focus issue
     logging.getLogger("src.gui.widgets.unified_list").setLevel(logging.DEBUG)
 
-    # 7. Set up AI Audit Logger (separate file)
     setup_audit_logging()
 
 
@@ -157,27 +209,31 @@ def setup_audit_logging() -> None:
     """Configure the dedicated AI audit logger.
 
     Creates a separate rotating file handler that writes structured AI audit
-    events to ``logs/ai_audit_log.jsonl``. The logger does **not**
+    events to a process-specific audit file. The logger does **not**
     propagate to the root logger so audit entries stay in their own file.
     """
     audit_logger = logging.getLogger("ai_audit")
 
-    # Avoid adding duplicate handlers on repeat calls
-    if audit_logger.handlers:
-        return
-
     audit_logger.setLevel(logging.INFO)
     audit_logger.propagate = False  # Don't spam the main log
+    log_dir = _writable_log_directory()
+    if log_dir is None:
+        _replace_owned_handlers(audit_logger)
+        return
+    audit_path = os.path.join(log_dir, _process_filename(AUDIT_LOG_FILENAME))
+    owned = _owned_handlers.get(audit_logger, [])
+    if (
+        len(owned) == 1
+        and owned[0] in audit_logger.handlers
+        and getattr(owned[0], "baseFilename", None) == audit_path
+    ):
+        return
+    _replace_owned_handlers(audit_logger)
 
     try:
-        audit_path = os.path.join(_resolve_log_directory(), AUDIT_LOG_FILENAME)
-    except OSError:
-        audit_path = AUDIT_LOG_FILENAME
-
-    try:
-        audit_logger.addHandler(_make_audit_handler(audit_path))
-    except OSError as e:
-        logging.getLogger(__name__).warning(f"Could not set up AI audit logging: {e}")
+        _add_owned_handler(audit_logger, _make_audit_handler(audit_path))
+    except OSError as exc:
+        _diagnostic(f"Could not set up AI audit logging: {exc}")
 
 
 def get_audit_logger() -> logging.Logger:
@@ -206,8 +262,10 @@ def get_audit_logger_for_path(audit_path: str) -> logging.Logger:
     logger_name = f"ai_audit:{audit_path}"
     audit_logger = logging.getLogger(logger_name)
 
-    # Avoid duplicate handlers on repeated calls
-    if audit_logger.handlers:
+    if any(
+        handler in audit_logger.handlers
+        for handler in _owned_handlers.get(audit_logger, [])
+    ):
         return audit_logger
 
     audit_logger.setLevel(logging.INFO)
@@ -215,11 +273,9 @@ def get_audit_logger_for_path(audit_path: str) -> logging.Logger:
 
     try:
         os.makedirs(os.path.dirname(audit_path), exist_ok=True)
-        audit_logger.addHandler(_make_audit_handler(audit_path))
+        _add_owned_handler(audit_logger, _make_audit_handler(audit_path))
     except OSError as e:
-        logging.getLogger(__name__).warning(
-            f"Could not set up per-world AI audit logging at {audit_path}: {e}"
-        )
+        _diagnostic(f"Could not set up per-world AI audit logging at {audit_path}: {e}")
 
     return audit_logger
 
@@ -232,13 +288,15 @@ def get_world_audit_log_path(db_path: Optional[str]) -> Optional[str]:
             ``None`` / ``":memory:"`` for in-memory databases.
 
     Returns:
-        Optional[str]: Absolute path to ``ai_audit_log.jsonl`` in the same
+        Optional[str]: Absolute path to a process-specific audit file in the same
         directory as the database, or ``None`` when no persistent path is
         available.
 
     """
     if db_path and db_path != ":memory:":
-        return os.path.join(os.path.dirname(db_path), AUDIT_LOG_FILENAME)
+        return os.path.join(
+            os.path.dirname(db_path), _process_filename(AUDIT_LOG_FILENAME)
+        )
     return None
 
 
@@ -257,4 +315,6 @@ def get_logger(name: str) -> logging.Logger:
 
 def shutdown_logging() -> None:
     """Explicitly closes all logging handlers to release file locks."""
+    for logger in list(_owned_handlers):
+        _replace_owned_handlers(logger)
     logging.shutdown()

@@ -24,7 +24,7 @@ record and the automated packaged smoke are both green.
 - Graph opens and renders bundled offline assets:
 - Map opens and renders controls/icons:
 - Longform opens and bundled web assets load:
-- `logs/kraken.log` contains no startup failure:
+- `logs/kraken.<process ID>.log` contains no startup failure:
 - Validator/date/name:
 - Result: PASS / FAIL
 

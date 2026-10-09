@@ -146,9 +146,7 @@ class WindowsPackageContractTests(unittest.TestCase):
                 encoding="utf-8"
             )
         )
-        self.assertIn(
-            '$packageRoot = Join-Path $stagingRoot "ProjektKraken"', script
-        )
+        self.assertIn('$packageRoot = Join-Path $stagingRoot "ProjektKraken"', script)
         self.assertLessEqual(contract["maximum_archive_entry_length"], 200)
         self.assertIn("maximum_archive_entry_length", script)
 
@@ -160,7 +158,10 @@ class WindowsPackageContractTests(unittest.TestCase):
         timeout = re.search(r"\[int\]\$TimeoutSeconds\s*=\s*(\d+)", smoke_script)
         self.assertIsNotNone(timeout)
         self.assertGreaterEqual(int(timeout.group(1)), 300)
-        self.assertIn('Join-Path $packagePath "logs\\kraken.log"', smoke_script)
+        self.assertIn(
+            'Join-Path $packagePath "logs\\kraken.$($process.Id).log"',
+            smoke_script,
+        )
 
     def test_workflow_uploads_failure_diagnostics(self) -> None:
         """Retain actionable logs when the expensive package step fails."""
