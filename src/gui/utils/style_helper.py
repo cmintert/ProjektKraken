@@ -1506,47 +1506,25 @@ class StyleHelper:
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
             }}
-            .now-separator {{
-                display: flex;
-                align-items: center;
+            .timeline-empty {{
+                color: {theme["supporting_text"]};
+                font-style: italic;
+            }}
+            .viewed-marker {{
                 margin: 12px 0;
-                color: {theme["primary"]};
+                padding-top: 4px;
+                border-top: 1px solid {theme["timeline_viewed_time"]};
+                color: {theme["timeline_viewed_time"]};
                 font-size: 10px;
                 font-weight: 600;
-                text-transform: uppercase;
-                letter-spacing: 1px;
             }}
-            .now-separator::before,
-            .now-separator::after {{
-                content: '';
-                flex: 1;
-                height: 1px;
-                background: linear-gradient(
-                    to right, transparent, {theme["primary"]}, transparent
-                );
-            }}
-            .now-separator span {{
-                padding: 0 10px;
-            }}
-            .now-line {{
-                display: flex;
-                align-items: center;
+            .world-marker {{
                 margin: 12px 0;
-                color: {theme["accent_secondary"]};
+                padding-top: 4px;
+                border-top: 1px dashed {theme["timeline_world_time"]};
+                color: {theme["timeline_world_time"]};
                 font-size: 10px;
                 font-weight: 600;
-                text-transform: uppercase;
-                letter-spacing: 1px;
-            }}
-            .now-line::before,
-            .now-line::after {{
-                content: '';
-                flex: 1;
-                height: 2px;
-                background: {theme["accent_secondary"]};
-            }}
-            .now-line span {{
-                padding: 0 10px;
             }}
         """
 

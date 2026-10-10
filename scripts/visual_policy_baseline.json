@@ -2299,13 +2299,6 @@
       "source": "scrollbar_bg = theme.get(\"scrollbar_bg\", theme.get(\"app_bg\", \"#2B2B2B\"))"
     },
     {
-      "key": "src/gui/widgets/timeline_display_widget.py|TimelineDisplayWidget._refresh_display|literal-color|515b87d5b1d2994d",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in TimelineDisplayWidget._refresh_display; migrate this expression when its presentation path is next touched.",
-      "source": "\"<p style='color: gray; font-style: italic;'>\""
-    },
-    {
       "key": "src/gui/widgets/toc_widget.py|TOCWidget._apply_style|literal-color|5056cf128952d12a",
       "count": 1,
       "category": "legacy",

@@ -40,6 +40,15 @@ History & context. Record each writing-panel opening and the shared information
 disclosure. The intermediate `7f723d08` renders are structural comparison
 evidence, not a completed human baseline or a substitute for the final revision.
 
+KRT-77's Linked events repair now places labeled Viewing and World
+Time markers before, between or after event cards, including an empty list.
+Focused offscreen widget checks cover zero, one, two and three events and viewed
+dates before, at, between and after the event dates. This is automated
+presentation evidence. On 2026-10-10 the user reported that KRT-77 looked good
+in human review. This is a separately recorded human pass; no source video,
+route-coaching details or measured inspector widths were supplied. The report
+does not complete KRT-45's matched KA-01–20 comparison.
+
 `NM` below means **not measured**, never zero. The baseline is **not executed**;
 the two partial implementation recordings attempted KA-01–20. B/A are
 baseline/after counts. The after verification cells summarize evidence limits

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-10
-**Commit:** d062dc226484b0b86d6eead36a9f6718ce07ddf6
+**Commit:** 23191155ff6ca74b9cfbe2211836310e7de9bfce
 ---
 
 # Changelog
@@ -10,6 +10,13 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Fixed
+
+- *(2026-10-10)* **Linked events orientation (KRT-77)**: Showed distinct
+  Viewing and World Time markers before, between and after linked events,
+  including empty lists. Added boundary widget coverage, retired the touched
+  legacy color exception, and recorded the user-reported human review pass.
 
 ### Changed
 

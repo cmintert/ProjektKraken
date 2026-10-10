@@ -6,18 +6,8 @@ Tests the chronological event display with payload attributes.
 
 import pytest
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication
 
 from src.gui.widgets.timeline_display_widget import TimelineDisplayWidget
-
-
-@pytest.fixture(scope="module")
-def qapp():
-    """Ensure QApplication exists for widget tests."""
-    app = QApplication.instance()
-    if app is None:
-        app = QApplication([])
-    return app
 
 
 @pytest.fixture
@@ -38,6 +28,72 @@ def test_empty_state(widget):
     # Should show empty state placeholder
     html = widget.get_display_text()
     assert "No timeline events" in html or html == ""
+
+
+@pytest.mark.parametrize(
+    ("event_dates", "viewed", "expected_order"),
+    [
+        ([], 150.0, ["Viewing: 150.0", "No timeline events"]),
+        ([100.0], 50.0, ["Viewing: 50.0", "Event 100"]),
+        ([100.0], 100.0, ["Event 100", "Viewing: 100.0"]),
+        ([100.0], 150.0, ["Event 100", "Viewing: 150.0"]),
+        ([100.0, 200.0], 50.0, ["Viewing: 50.0", "Event 100", "Event 200"]),
+        ([100.0, 200.0], 100.0, ["Event 100", "Viewing: 100.0", "Event 200"]),
+        ([100.0, 200.0], 150.0, ["Event 100", "Viewing: 150.0", "Event 200"]),
+        ([100.0, 200.0], 200.0, ["Event 100", "Event 200", "Viewing: 200.0"]),
+        ([100.0, 200.0], 250.0, ["Event 100", "Event 200", "Viewing: 250.0"]),
+        (
+            [100.0, 200.0, 300.0],
+            250.0,
+            ["Event 100", "Event 200", "Viewing: 250.0", "Event 300"],
+        ),
+    ],
+)
+def test_viewed_date_position_for_sparse_and_outside_lists(
+    widget, monkeypatch, event_dates, viewed, expected_order
+):
+    """Viewing stays visible at every boundary and follows equal-date events."""
+    monkeypatch.setattr(TimelineDisplayWidget, "_calendar_converter", None)
+    widget.set_relations(
+        [
+            {
+                "id": f"relation-{date}",
+                "source_id": f"event-{date}",
+                "source_event_name": f"Event {int(date)}",
+                "source_event_date": date,
+                "attributes": {},
+            }
+            for date in event_dates
+        ]
+    )
+    widget.set_playhead_time(viewed)
+
+    rendered = widget._text_display.toPlainText()
+    assert rendered.count("Viewing:") == 1
+    positions = [rendered.index(item) for item in expected_order]
+    assert positions == sorted(positions)
+
+
+def test_viewing_and_world_time_are_distinct_and_calendar_formatted(
+    widget, monkeypatch
+):
+    """Both time identities remain labeled and ordered even in an empty list."""
+
+    class Calendar:
+        def format_date(self, time):
+            return f"Year {int(time)}"
+
+    monkeypatch.setattr(TimelineDisplayWidget, "_calendar_converter", Calendar())
+    widget.set_playhead_time(10.0)
+    widget.set_current_time(20.0)
+    widget.set_relations([])
+
+    rendered = widget._text_display.toPlainText()
+    assert "Viewing: Year 10" in rendered
+    assert "World Time: Year 20" in rendered
+    assert rendered.index("Viewing: Year 10") < rendered.index("World Time: Year 20")
+    widget.set_current_time(None)
+    assert "World Time:" not in widget._text_display.toPlainText()
 
 
 def test_single_event_display(widget):
@@ -183,9 +239,7 @@ def test_no_op_payload_has_no_state_changes_label(widget):
                 "source_id": "evt1",
                 "source_event_name": "No-op Event",
                 "source_event_date": 1000.0,
-                "attributes": {
-                    "payload": {"attributes": {}, "unset_attributes": []}
-                },
+                "attributes": {"payload": {"attributes": {}, "unset_attributes": []}},
             }
         ]
     )
@@ -240,7 +294,7 @@ def test_card_click_emits_source_event_id(widget, qtbot, monkeypatch):
         ]
     )
 
-    assert "href=\"relation-1\"" in widget.get_display_text()
+    assert 'href="relation-1"' in widget.get_display_text()
     qtbot.addWidget(widget)
     monkeypatch.setattr(
         widget._text_display,

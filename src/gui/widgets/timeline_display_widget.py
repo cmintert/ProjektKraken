@@ -6,6 +6,7 @@ entity, with payload attributes shown inline.
 
 import re
 import textwrap
+from bisect import bisect_right
 from html import escape
 from typing import Any, Optional
 
@@ -112,13 +113,6 @@ class TimelineDisplayWidget(QWidget):
 
     def _refresh_display(self) -> None:
         """Refresh the timeline display based on current relations."""
-        if not self._relations:
-            self._text_display.setHtml(
-                "<p style='color: gray; font-style: italic;'>"
-                "No timeline events for this entity.</p>"
-            )
-            return
-
         # Clear description map for new display
         self._description_map = {}
         self._event_id_map = {}
@@ -128,6 +122,18 @@ class TimelineDisplayWidget(QWidget):
             self._relations,
             key=lambda r: self._get_event_date(r),
         )
+        dates = [self._get_event_date(rel) for rel in sorted_relations]
+        markers: dict[int, list[tuple[float, str]]] = {}
+        for time, label, css_class in (
+            (self._playhead_time, "Viewing", "viewed-marker"),
+            (self._current_time, "World Time", "world-marker"),
+        ):
+            if time is not None:
+                date_text = escape(self._format_date(time))
+                marker = (
+                    f"<div class='{css_class}'><span>{label}: {date_text}</span></div>"
+                )
+                markers.setdefault(bisect_right(dates, time), []).append((time, marker))
 
         # Build HTML content with theme-aware styling
         from src.gui.utils.style_helper import StyleHelper
@@ -138,6 +144,8 @@ class TimelineDisplayWidget(QWidget):
         html_parts.append("</style>")
 
         for i, rel in enumerate(sorted_relations):
+            for _, marker in sorted(markers.get(i, [])):
+                html_parts.append(marker)
             event_date = self._get_event_date(rel)
             event_name = rel.get("source_event_name") or "Event"
             payload = rel.get("attributes", {}).get("payload", {})
@@ -152,12 +160,7 @@ class TimelineDisplayWidget(QWidget):
             self._extract_and_map_description(anchor_id, raw_desc)
 
             # Format date using calendar converter if available
-            if TimelineDisplayWidget._calendar_converter:
-                date_str = TimelineDisplayWidget._calendar_converter.format_date(
-                    event_date
-                )
-            else:
-                date_str = f"{event_date:.1f}"
+            date_str = self._format_date(event_date)
 
             # When the date is 0.0, it may be a genuine epoch event or a failed
             # date parse that defaulted to 0.0.  Show a subtle indicator.
@@ -182,14 +185,10 @@ class TimelineDisplayWidget(QWidget):
             # Anchors support navigation and, when available, description tooltips.
             has_desc = anchor_id in self._description_map
             has_event = anchor_id in self._event_id_map
-            self._wrap_card_with_anchor(
-                html_parts, anchor_id, has_desc or has_event
-            )
+            self._wrap_card_with_anchor(html_parts, anchor_id, has_desc or has_event)
 
             # Header: date + event name
-            html_parts.append(
-                f"<span class='event-date'>{date_html}</span><br>"
-            )
+            html_parts.append(f"<span class='event-date'>{date_html}</span><br>")
             html_parts.append(
                 f"<span class='event-name'>{escape(str(event_name))}</span>"
             )
@@ -202,34 +201,23 @@ class TimelineDisplayWidget(QWidget):
             if self._payload_has_state_changes(payload):
                 self._append_payload_v2(html_parts, payload)
 
-            self._close_card_anchor(
-                html_parts, anchor_id, has_desc or has_event
-            )
+            self._close_card_anchor(html_parts, anchor_id, has_desc or has_event)
 
             html_parts.append("</td></tr></table>")
 
-            # Insert PLAYHEAD separator between past and future events
-            if self._playhead_time is not None:
-                next_idx = i + 1
-                if next_idx < len(sorted_relations):
-                    next_date = self._get_event_date(sorted_relations[next_idx])
-                    # Current is past/present, next is future
-                    if event_date <= self._playhead_time < next_date:
-                        html_parts.append(
-                            "<div class='now-separator'><span>▾ PLAYHEAD ▾</span></div>"
-                        )
-
-            # Insert NOW separator for story's current time
-            if self._current_time is not None:
-                next_idx = i + 1
-                if next_idx < len(sorted_relations):
-                    next_date = self._get_event_date(sorted_relations[next_idx])
-                    if event_date <= self._current_time < next_date:
-                        html_parts.append(
-                            "<div class='now-line'><span>● NOW ●</span></div>"
-                        )
+        for _, marker in sorted(markers.get(len(sorted_relations), [])):
+            html_parts.append(marker)
+        if not sorted_relations:
+            html_parts.append(
+                "<p class='timeline-empty'>No timeline events for this entity.</p>"
+            )
 
         self._text_display.setHtml("\n".join(html_parts))
+
+    def _format_date(self, time: float) -> str:
+        """Format an event or time marker with the active world calendar."""
+        converter = TimelineDisplayWidget._calendar_converter
+        return converter.format_date(time) if converter else f"{time:.1f}"
 
     @staticmethod
     def _payload_has_state_changes(payload: object) -> bool:
@@ -245,9 +233,7 @@ class TimelineDisplayWidget(QWidget):
         return "description" in payload and isinstance(payload["description"], str)
 
     @staticmethod
-    def _append_payload_v2(
-        html_parts: list[str], payload: dict[str, Any]
-    ) -> None:
+    def _append_payload_v2(html_parts: list[str], payload: dict[str, Any]) -> None:
         """Append readable Payload v2 mutations to a timeline card."""
         html_parts.append(
             "<br><span class='state-changes-heading'>State changes</span>"
