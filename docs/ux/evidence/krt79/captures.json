@@ -1,0 +1,136 @@
+{
+  "base_revision": "e4da09740487af3ef444e4674dea5b8849a4b5e5",
+  "method": "isolated component rendering; no database or human metrics",
+  "python": "3.13.14",
+  "qt_binding": "6.10.1",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "source_sha256": {
+    "scripts/capture_inspector_evidence.py": "61ed408533ca4543745630b12edb2193e76be383ae85cc64e25487d0be667334",
+    "src/gui/utils/style_helper.py": "1df14fccfb290d9e94bfbcb64d9eb6190dd68bf0e0f5774aac8abd0d898e00b5",
+    "src/gui/widgets/editor_presentation.py": "74ecf549630fcde985eebec093cc4a938524399b5fe706abb90f829e1d395eaf",
+    "src/gui/widgets/entity_editor.py": "07b6bcb8e9497da04bd2a1609e0564813c1ea0b20df97ed5b09a2ab529947071",
+    "src/gui/widgets/event_editor.py": "1a5bfca4fc540085423bf21fa0b0e9d3c2c475ba5d4d09e9e24011ac379d1a17"
+  },
+  "captures": [
+    {
+      "image": "entity-dark_mode-360-support.png",
+      "width": 360,
+      "height": 720,
+      "state": "support",
+      "horizontal_scroll": 0,
+      "writing_column": {
+        "x": 9,
+        "width": 307,
+        "overview_width": 324,
+        "editor_width": 307
+      },
+      "visible_horizontal_scrollbars": [],
+      "sha256": "74b587d3fc4f8aed2ca9dc4031e536fb9c765772b3730e20cb8ff25a44579460"
+    },
+    {
+      "image": "entity-dark_mode-360-writing_panels.png",
+      "width": 360,
+      "height": 720,
+      "state": "writing_panels",
+      "horizontal_scroll": 0,
+      "writing_column": {
+        "x": 9,
+        "width": 307,
+        "overview_width": 324,
+        "editor_width": 307
+      },
+      "visible_horizontal_scrollbars": [],
+      "sha256": "a07662b02e91d1d5a632c7d48af6bed91baf3d6a7cf2d297703cf2c6e3d6a4c9"
+    },
+    {
+      "image": "event-dark_mode-360-ai_draft.png",
+      "width": 360,
+      "height": 720,
+      "state": "ai_draft",
+      "horizontal_scroll": 0,
+      "writing_column": {
+        "x": 9,
+        "width": 307,
+        "overview_width": 324,
+        "editor_width": 307
+      },
+      "visible_horizontal_scrollbars": [],
+      "sha256": "1d98f36bf7fe6f17ae72ca6f2989e8c4040bc61b46d12fb0d9c91e3ea06487e2"
+    },
+    {
+      "image": "event-dark_mode-871-writing_panels.png",
+      "width": 871,
+      "height": 720,
+      "state": "writing_panels",
+      "horizontal_scroll": 0,
+      "writing_column": {
+        "x": 38,
+        "width": 760,
+        "overview_width": 835,
+        "editor_width": 760
+      },
+      "visible_horizontal_scrollbars": [],
+      "sha256": "0522712024d0c7b8286dc97aa9a9f83736ca20a748959496f149a93e2446eacf"
+    },
+    {
+      "image": "entity-light_mode-360-support.png",
+      "width": 360,
+      "height": 720,
+      "state": "support",
+      "horizontal_scroll": 0,
+      "writing_column": {
+        "x": 9,
+        "width": 307,
+        "overview_width": 324,
+        "editor_width": 307
+      },
+      "visible_horizontal_scrollbars": [],
+      "sha256": "424cc985021a9013acde4b8662cf057c74501f980b748188f7535dd3b962d874"
+    },
+    {
+      "image": "entity-light_mode-360-summary.png",
+      "width": 360,
+      "height": 720,
+      "state": "summary",
+      "horizontal_scroll": 0,
+      "writing_column": {
+        "x": 9,
+        "width": 307,
+        "overview_width": 324,
+        "editor_width": 307
+      },
+      "visible_horizontal_scrollbars": [],
+      "sha256": "1d3deb78843abda849bae68443d74ac35c4f274e0a409e9e7334a49c6a7f1f66"
+    },
+    {
+      "image": "event-light_mode-360-ai_draft.png",
+      "width": 360,
+      "height": 720,
+      "state": "ai_draft",
+      "horizontal_scroll": 0,
+      "writing_column": {
+        "x": 9,
+        "width": 307,
+        "overview_width": 324,
+        "editor_width": 307
+      },
+      "visible_horizontal_scrollbars": [],
+      "sha256": "f2fdba5457b594c199bcbc54a9430bd91b6f0684177dbbc9f7a135c3277e5cc1"
+    },
+    {
+      "image": "event-light_mode-871-writing_panels.png",
+      "width": 871,
+      "height": 720,
+      "state": "writing_panels",
+      "horizontal_scroll": 0,
+      "writing_column": {
+        "x": 38,
+        "width": 760,
+        "overview_width": 835,
+        "editor_width": 760
+      },
+      "visible_horizontal_scrollbars": [],
+      "sha256": "abca40facc9afe9c2c8ad353b4bea9ded4f2b9bbbefe9bc54e3172cd11352f13"
+    }
+  ]
+}

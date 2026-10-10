@@ -59,9 +59,10 @@ class DisclosureButton(QToolButton):
         ThemeManager().theme_changed.connect(self._apply_theme)
 
     def _update_arrow(self, expanded: bool) -> None:
-        if self.objectName() == "InspectorWritingAction":
-            self.setIcon(QIcon())
-            return
+        writing_action = self.objectName() == "InspectorWritingAction"
+        if writing_action:
+            state = "Expanded" if expanded else "Collapsed"
+            self.setAccessibleDescription(f"{state}. {self.toolTip()}")
         theme = ThemeManager().get_theme()
         ratio = self.devicePixelRatioF()
         pixmap = QPixmap(round(16 * ratio), round(16 * ratio))
@@ -69,7 +70,10 @@ class DisclosureButton(QToolButton):
         pixmap.fill(Qt.GlobalColor.transparent)
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        pen = QPen(QColor(theme["text_dim"]), 1.25)
+        arrow_role = "text_dim"
+        if writing_action:
+            arrow_role = "action_quiet_checked_text" if expanded else "supporting_text"
+        pen = QPen(QColor(theme[arrow_role]), 1.25)
         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
         painter.setPen(pen)
@@ -298,9 +302,8 @@ class EditorPresentation(QObject):
             button.setObjectName("InspectorWritingAction")
             button.setText(title)
             button.setAccessibleName(title)
-            button.setAccessibleDescription(explanation)
             button.setToolTip(explanation)
-            button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
+            button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
             button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
             button._apply_theme()
             caption = QLabel(explanation)

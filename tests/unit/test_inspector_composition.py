@@ -658,15 +658,51 @@ def test_quiet_support_styles_survive_theme_changes(editor, qapp):
     for theme in ("light_mode", "dark_mode"):
         manager.set_theme(theme, qapp)
         for button in (editor.summary_checkbox, editor.llm_checkbox):
-            assert button.icon().isNull()
-            assert (
-                manager.get_theme()["action_quiet_normal_text"] in button.styleSheet()
-            )
+            assert not button.icon().isNull()
+            for role in (
+                "action_quiet_normal_text",
+                "action_quiet_hover_bg",
+                "action_quiet_checked_bg",
+                "action_quiet_disabled_text",
+                "focus_ring",
+            ):
+                assert manager.get_theme()[role] in button.styleSheet()
             assert manager.get_theme()["entity_main"] not in button.styleSheet()
             assert manager.get_theme()["event_main"] not in button.styleSheet()
         assert manager.get_theme()["text_dim"] in (
             editor._presentation.composition.history_container.styleSheet()
         )
+
+
+def test_writing_disclosures_expose_state_and_keep_panels_independent(editor, qtbot):
+    """Both quiet actions show direction and announce their expanded state."""
+    summary = editor.summary_checkbox
+    draft = editor.llm_checkbox
+    assert summary.accessibleDescription().startswith("Collapsed. ")
+    assert draft.accessibleDescription().startswith("Collapsed. ")
+    assert summary.toolButtonStyle() == Qt.ToolButtonStyle.ToolButtonTextBesideIcon
+    assert draft.toolButtonStyle() == Qt.ToolButtonStyle.ToolButtonTextBesideIcon
+
+    summary.setFocus()
+    qtbot.keyClick(summary, Qt.Key.Key_Space)
+    assert summary.isChecked()
+    assert summary.accessibleDescription().startswith("Expanded. ")
+    assert editor.summary_container.isVisibleTo(editor)
+    assert not draft.isChecked()
+
+    draft.click()
+    assert draft.accessibleDescription().startswith("Expanded. ")
+    assert editor.llm_container.isVisibleTo(editor)
+    draft.setEnabled(False)
+    draft.click()
+    assert draft.isChecked()
+    assert draft.accessibleDescription().startswith("Expanded. ")
+    draft.setEnabled(True)
+    summary.click()
+    assert summary.accessibleDescription().startswith("Collapsed. ")
+    assert not editor.summary_container.isVisibleTo(editor)
+    assert editor.llm_container.isVisibleTo(editor)
+    assert not editor.has_unsaved_changes()
 
 
 def test_summary_action_retains_generation_and_staged_edit_signals(editor, qtbot):

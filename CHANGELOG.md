@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-10
-**Commit:** 23191155ff6ca74b9cfbe2211836310e7de9bfce
+**Commit:** e4da09740487af3ef444e4674dea5b8849a4b5e5
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-10-10)* **Writing-tool disclosure state (KRT-79)**: Restored themed
+  open/closed arrows for Summary and Draft with AI, exposed expanded state in
+  accessible descriptions, and preserved independent panels and unfinished
+  inputs. Added keyboard/state tests and retained hashed light/dark captures at
+  narrow and normal inspector widths; uncoached human review remains pending.
 
 - *(2026-10-10)* **Linked events orientation (KRT-77)**: Showed distinct
   Viewing and World Time markers before, between and after linked events,

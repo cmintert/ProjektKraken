@@ -30,6 +30,9 @@ for writing-column layout, and
 [KRT-81](https://linear.app/projektkraken/issue/KRT-81/run-matched-ka-01-20-human-comparison-and-close-krt-45-acceptance)
 for the matched human comparison. KRT-80's layout is now implemented in
 `d062dc22`; this list does not claim the broader KRT-45 human acceptance.
+KRT-79's disclosure-state repair is recorded in the
+[writing-tool evidence](../krt79/README.md); its uncoached human recognition
+check remains pending.
 
 The user explicitly authorized preserving the baseline and continuing
 implementation while the complete human v1.2 comparison remains pending.
