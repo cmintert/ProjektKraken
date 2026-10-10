@@ -40,6 +40,21 @@ def test_reconfiguration_closes_owned_files_and_preserves_foreign_handler(tmp_pa
         root.removeHandler(foreign)
 
 
+def test_normal_mode_excludes_debug_and_explicit_mode_includes_it(tmp_path):
+    root = logging.getLogger()
+    with patch.object(logging_config, "LOG_DIR", str(tmp_path)):
+        logging_config.setup_logging(log_to_console=False)
+        root.debug("synthetic-debug-only")
+        root.info("synthetic-lifecycle")
+        log_path = tmp_path / f"kraken.{os.getpid()}.log"
+        normal = log_path.read_text(encoding="utf-8")
+        assert "synthetic-debug-only" not in normal
+        assert "synthetic-lifecycle" in normal
+        logging_config.setup_logging(debug_mode=True, log_to_console=False)
+        root.debug("synthetic-debug-enabled")
+        assert "synthetic-debug-enabled" in log_path.read_text(encoding="utf-8")
+
+
 def test_rotation_suspends_and_retries_without_growing_file(tmp_path, monkeypatch):
     """A persistent rollover lock drops records until a timed retry succeeds."""
     path = tmp_path / "kraken.test.log"

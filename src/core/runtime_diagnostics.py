@@ -8,7 +8,6 @@ import os
 import sys
 import threading
 import traceback
-import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -17,6 +16,7 @@ from types import TracebackType
 from typing import TYPE_CHECKING, BinaryIO, cast
 
 from src.core.logging_config import get_writable_log_directory
+from src.core.operation_trace import SESSION_ID
 
 if TYPE_CHECKING:
     from PySide6.QtCore import QMessageLogContext, QtMsgType
@@ -145,7 +145,7 @@ def install_runtime_diagnostics(directory: Path | None = None) -> Path | None:
     _state = _DiagnosticState(
         fault_file=fault_file,
         path=path,
-        session_id=str(uuid.uuid4()),
+        session_id=SESSION_ID,
         python_hook=sys.excepthook,
         thread_hook=threading.excepthook,
     )

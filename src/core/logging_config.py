@@ -8,6 +8,7 @@ import logging
 import os
 import sys
 import time
+from datetime import datetime, timezone
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Optional
@@ -22,11 +23,24 @@ LOG_FILENAME = "kraken.log"
 AUDIT_LOG_FILENAME = "ai_audit_log.jsonl"
 MAX_BYTES = 5 * 1024 * 1024  # 5 MB
 BACKUP_COUNT = 5
-LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+LOG_FORMAT = (
+    "%(asctime)s pid=%(process)d thread=%(threadName)s "
+    "%(name)s %(levelname)s %(message)s"
+)
 AUDIT_LOG_FORMAT = "%(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 ROTATION_RETRY_SECONDS = 30.0
 _owned_handlers: dict[logging.Logger, list[logging.Handler]] = {}
+
+
+class UTCFormatter(logging.Formatter):
+    """Use timezone-aware millisecond UTC timestamps for support transcripts."""
+
+    def formatTime(self, record: logging.LogRecord, datefmt: str | None = None) -> str:
+        """Format the record creation time in ISO 8601 UTC."""
+        return datetime.fromtimestamp(record.created, timezone.utc).isoformat(
+            timespec="milliseconds"
+        )
 
 
 def _process_filename(filename: str) -> str:
@@ -148,7 +162,7 @@ def setup_logging(debug_mode: bool = False, log_to_console: bool = True) -> None
     level = logging.DEBUG if debug_mode else logging.INFO
     root_logger.setLevel(level)
 
-    formatter = logging.Formatter(LOG_FORMAT, datefmt=DATE_FORMAT)
+    formatter = UTCFormatter(LOG_FORMAT)
     if log_dir is not None:
         log_path = os.path.join(log_dir, _process_filename(LOG_FILENAME))
         try:
@@ -172,8 +186,12 @@ def setup_logging(debug_mode: bool = False, log_to_console: bool = True) -> None
             console_handler.setLevel(level)
             _add_owned_handler(root_logger, console_handler)
 
-    # Force DEBUG for UnifiedList to troubleshoot focus issue
-    logging.getLogger("src.gui.widgets.unified_list").setLevel(logging.DEBUG)
+    # Keep HTTP client internals out of diagnostics even in explicit debug mode.
+    for name in ("urllib3", "httpcore", "httpx", "openai", "anthropic"):
+        logging.getLogger(name).setLevel(logging.WARNING)
+    logging.getLogger("src.gui.widgets.unified_list").setLevel(
+        logging.DEBUG if debug_mode else logging.INFO
+    )
 
     setup_audit_logging()
 

@@ -15,6 +15,7 @@ import numpy as np
 import requests  # type: ignore[import-untyped]  # Package has no py.typed marker.
 
 from src.services.llm_provider import Provider
+from src.services.providers.diagnostic_error import safe_error
 from src.services.resilience import CircuitBreaker
 
 logger = logging.getLogger(__name__)
@@ -82,7 +83,7 @@ class GoogleProvider(Provider):
                 credentials_path,
                 scopes=["https://www.googleapis.com/auth/cloud-platform"],
             )
-            logger.info(f"Using service account credentials from {credentials_path}")
+            logger.debug("Using configured service account credentials")
         else:
             # Use Application Default Credentials
             self.credentials, _ = default(
@@ -137,14 +138,14 @@ class GoogleProvider(Provider):
                 last_exception = e
                 if attempt < self.max_retries - 1:
                     wait_time = 2**attempt
-                    logger.warning(
+                    logger.debug(
                         f"Request failed (attempt {attempt + 1}/{self.max_retries}), "
-                        f"retrying in {wait_time}s: {e}"
+                        f"retrying in {wait_time}s: {safe_error(e)}"
                     )
                     time.sleep(wait_time)
                 else:
-                    logger.error(
-                        f"Request failed after {self.max_retries} attempts: {e}"
+                    logger.debug(
+                        f"Request failed after {self.max_retries} attempts: {safe_error(e)}"
                     )
 
         if last_exception:
@@ -213,11 +214,17 @@ class GoogleProvider(Provider):
         try:
             return self._retry_request(_embed_impl)
         except requests.exceptions.RequestException as e:
-            logger.error(f"Vertex AI embedding request failed: {e}")
-            raise Exception(f"Failed to connect to Vertex AI API. Error: {e}") from e
+            logger.debug(f"Vertex AI embedding request failed: {safe_error(e)}")
+            raise Exception(
+                f"Failed to connect to Vertex AI API. Error: {safe_error(e)}"
+            ) from e
         except (KeyError, ValueError) as e:
-            logger.error(f"Failed to parse Vertex AI embedding response: {e}")
-            raise Exception(f"Invalid response from Vertex AI API: {e}") from e
+            logger.debug(
+                f"Failed to parse Vertex AI embedding response: {safe_error(e)}"
+            )
+            raise Exception(
+                f"Invalid response from Vertex AI API: {safe_error(e)}"
+            ) from e
 
     def generate(
         self,
@@ -302,13 +309,17 @@ class GoogleProvider(Provider):
         try:
             return self._retry_request(_generate_impl)
         except requests.exceptions.RequestException as e:
-            logger.error(f"Vertex AI generation request failed: {e}")
+            logger.debug(f"Vertex AI generation request failed: {safe_error(e)}")
             raise Exception(
-                f"Failed to generate completion from Vertex AI API. Error: {e}"
+                f"Failed to generate completion from Vertex AI API. Error: {safe_error(e)}"
             ) from e
         except (KeyError, ValueError) as e:
-            logger.error(f"Failed to parse Vertex AI generation response: {e}")
-            raise Exception(f"Invalid response from Vertex AI API: {e}") from e
+            logger.debug(
+                f"Failed to parse Vertex AI generation response: {safe_error(e)}"
+            )
+            raise Exception(
+                f"Invalid response from Vertex AI API: {safe_error(e)}"
+            ) from e
 
     async def stream_generate(
         self,
@@ -344,7 +355,7 @@ class GoogleProvider(Provider):
             result = self.generate(prompt, max_tokens, temperature, stop, metadata)
             yield {"delta": result["text"], "finish_reason": result["finish_reason"]}
         except Exception as e:
-            logger.error(f"Vertex AI streaming fallback failed: {e}")
+            logger.debug(f"Vertex AI streaming fallback failed: {safe_error(e)}")
             raise
 
     def health_check(self) -> Dict[str, Any]:
@@ -393,7 +404,7 @@ class GoogleProvider(Provider):
             return {
                 "status": "unhealthy",
                 "latency_ms": 0,
-                "message": f"Cannot connect to Vertex AI API: {e}",
+                "message": f"Cannot connect to Vertex AI API: {safe_error(e)}",
             }
 
     def metadata(self) -> Dict[str, Any]:

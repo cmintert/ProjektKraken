@@ -15,6 +15,7 @@ import numpy as np
 import requests  # type: ignore[import-untyped]  # No bundled typing metadata.
 
 from src.services.llm_provider import Provider
+from src.services.providers.diagnostic_error import safe_error
 from src.services.resilience import CircuitBreaker
 
 logger = logging.getLogger(__name__)
@@ -108,8 +109,7 @@ class LMStudioProvider(Provider):
         self.circuit_breaker = CircuitBreaker(failure_threshold=5, timeout=60.0)
 
         logger.info(f"LMStudioProvider initialized with model: {self.model}")
-        logger.info(f"Embed URL: {self.embed_url}")
-        logger.info(f"Generate URL: {self.generate_url}")
+        logger.debug("LM Studio endpoints configured")
         logger.info(f"Use Chat API: {self.use_chat_api}")
 
     def _make_headers(self) -> Dict[str, str]:
@@ -142,14 +142,14 @@ class LMStudioProvider(Provider):
                 last_exception = e
                 if attempt < self.max_retries - 1:
                     wait_time = 2**attempt  # Exponential backoff
-                    logger.warning(
+                    logger.debug(
                         f"Request failed (attempt {attempt + 1}/{self.max_retries}), "
-                        f"retrying in {wait_time}s: {e}"
+                        f"retrying in {wait_time}s: {safe_error(e)}"
                     )
                     time.sleep(wait_time)
                 else:
-                    logger.error(
-                        f"Request failed after {self.max_retries} attempts: {e}"
+                    logger.debug(
+                        f"Request failed after {self.max_retries} attempts: {safe_error(e)}"
                     )
 
         if last_exception:
@@ -183,10 +183,7 @@ class LMStudioProvider(Provider):
             )
 
             if not response.ok:
-                logger.error(
-                    f"LM Studio API Error (Embed): {response.status_code} - "
-                    f"{response.text}"
-                )
+                logger.debug("LM Studio embedding HTTP status=%s", response.status_code)
 
             response.raise_for_status()
 
@@ -211,15 +208,19 @@ class LMStudioProvider(Provider):
         try:
             return self._retry_request(_embed_impl)
         except requests.exceptions.RequestException as e:
-            logger.error(f"LM Studio embedding request failed: {e}")
+            logger.debug(f"LM Studio embedding request failed: {safe_error(e)}")
             raise Exception(
-                f"Failed to connect to LM Studio at {self.embed_url}. "
+                "Failed to connect to LM Studio. "
                 f"Ensure LM Studio is running and the embedding endpoint "
-                f"is available. Error: {e}"
+                f"is available. Error: {safe_error(e)}"
             ) from e
         except (KeyError, ValueError) as e:
-            logger.error(f"Failed to parse LM Studio embedding response: {e}")
-            raise Exception(f"Invalid response from LM Studio API: {e}") from e
+            logger.debug(
+                f"Failed to parse LM Studio embedding response: {safe_error(e)}"
+            )
+            raise Exception(
+                f"Invalid response from LM Studio API: {safe_error(e)}"
+            ) from e
 
     def _build_messages(self, prompt: Any) -> List[Dict[str, str]]:
         """Build messages array from prompt for chat API.
@@ -314,9 +315,8 @@ class LMStudioProvider(Provider):
             )
 
             if not response.ok:
-                logger.error(
-                    f"LM Studio API Error (Generate): {response.status_code} - "
-                    f"{response.text}"
+                logger.debug(
+                    "LM Studio generation HTTP status=%s", response.status_code
                 )
 
             response.raise_for_status()
@@ -370,15 +370,48 @@ class LMStudioProvider(Provider):
         try:
             return self._retry_request(_generate_impl)
         except requests.exceptions.RequestException as e:
-            logger.error(f"LM Studio generation request failed: {e}")
+            logger.debug(f"LM Studio generation request failed: {safe_error(e)}")
             raise Exception(
-                f"Failed to generate completion from LM Studio at {self.generate_url}. "
+                "Failed to generate completion from LM Studio. "
                 f"Ensure LM Studio is running and the completions endpoint "
-                f"is available. Error: {e}"
+                f"is available. Error: {safe_error(e)}"
             ) from e
         except (KeyError, ValueError) as e:
-            logger.error(f"Failed to parse LM Studio generation response: {e}")
-            raise Exception(f"Invalid response from LM Studio API: {e}") from e
+            logger.debug(
+                f"Failed to parse LM Studio generation response: {safe_error(e)}"
+            )
+            raise Exception(
+                f"Invalid response from LM Studio API: {safe_error(e)}"
+            ) from e
+
+    def _stream_payload(
+        self,
+        prompt: Any,
+        max_tokens: int,
+        temperature: float,
+        stop: Optional[List[str]],
+    ) -> Dict[str, Any]:
+        """Build the same chat or legacy streaming request payload."""
+        if self.use_chat_api:
+            payload: Dict[str, Any] = {
+                "messages": self._build_messages(prompt),
+                "model": self.model,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "stream": True,
+            }
+        else:
+            prompt_text = prompt if isinstance(prompt, str) else str(prompt)
+            payload = {
+                "prompt": prompt_text,
+                "model": self.model,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "stream": True,
+            }
+        if stop:
+            payload["stop"] = stop
+        return payload
 
     async def stream_generate(  # noqa: C901
         self,
@@ -410,28 +443,7 @@ class LMStudioProvider(Provider):
             Exception: If streaming fails.
 
         """
-        if self.use_chat_api:
-            # Chat completions format with messages
-            payload: Dict[str, Any] = {
-                "messages": self._build_messages(prompt),
-                "model": self.model,
-                "max_tokens": max_tokens,
-                "temperature": temperature,
-                "stream": True,
-            }
-        else:
-            # Legacy completions format with raw prompt
-            prompt_text = prompt if isinstance(prompt, str) else str(prompt)
-            payload = {
-                "prompt": prompt_text,
-                "model": self.model,
-                "max_tokens": max_tokens,
-                "temperature": temperature,
-                "stream": True,
-            }
-
-        if stop:
-            payload["stop"] = stop
+        payload = self._stream_payload(prompt, max_tokens, temperature, stop)
 
         try:
             # Use asyncio to run blocking requests in executor
@@ -513,25 +525,20 @@ class LMStudioProvider(Provider):
                             if data.get("model"):
                                 chunk["model"] = data["model"]
                             if data.get("system_fingerprint"):
-                                chunk["system_fingerprint"] = data[
-                                    "system_fingerprint"
-                                ]
+                                chunk["system_fingerprint"] = data["system_fingerprint"]
                             if data.get("stats"):
-                                chunk["provider_metadata"] = {
-                                    "stats": data["stats"]
-                                }
+                                chunk["provider_metadata"] = {"stats": data["stats"]}
 
                             yield chunk
 
                     except json.JSONDecodeError as e:
-                        logger.warning(f"Failed to parse SSE chunk: {e}")
+                        logger.warning(f"Failed to parse SSE chunk: {safe_error(e)}")
                         continue
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"LM Studio streaming request failed: {e}")
+            logger.debug(f"LM Studio streaming request failed: {safe_error(e)}")
             raise Exception(
-                f"Failed to stream completion from LM Studio at {self.generate_url}. "
-                f"Error: {e}"
+                f"Failed to stream completion from LM Studio. Error: {safe_error(e)}"
             ) from e
         finally:
             self._active_response = None
@@ -629,14 +636,14 @@ class LMStudioProvider(Provider):
             except (requests.RequestException, ValueError, KeyError) as fallback_err:
                 # If fallback also fails, log and return original error
                 logger.warning(
-                    f"Health check fallback also failed: {fallback_err}, "
-                    f"original error: {e}"
+                    f"Health check fallback also failed: {safe_error(fallback_err)}, "
+                    f"original error: {safe_error(e)}"
                 )
 
             return {
                 "status": "unhealthy",
                 "latency_ms": 0,
-                "message": f"Cannot connect to LM Studio: {e}",
+                "message": f"Cannot connect to LM Studio: {safe_error(e)}",
             }
 
     def metadata(self) -> Dict[str, Any]:

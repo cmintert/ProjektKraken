@@ -9,6 +9,9 @@ from typing import TYPE_CHECKING, Dict, List, Optional, cast
 
 from PySide6.QtCore import QObject, Signal, Slot
 
+from src.core.operation_trace import event as trace_event
+from src.core.operation_trace import new_trace, safe_id
+
 if TYPE_CHECKING:
     from src.commands.base_command import BaseCommand, CommandResult
     from src.core.protocols import MainWindowProtocol
@@ -58,6 +61,7 @@ class CommandCoordinator(QObject):
         self._undo_redo_in_progress = False
         self._pending_history_action: Optional[tuple[str, "BaseCommand"]] = None
         self._pending_commands: Dict[str, "BaseCommand"] = {}
+        self._history_epoch = 0
         self.mutations_suspended = False
         logger.debug("CommandCoordinator initialized with undo/redo support")
 
@@ -107,14 +111,21 @@ class CommandCoordinator(QObject):
         undo, redo = self._build_snapshots()
         self.history_changed.emit(undo, redo)
 
-    @staticmethod
-    def _serialize_command(command: "BaseCommand") -> dict[str, object]:
+    def _serialize_command(
+        self, command: "BaseCommand", action: str = "save"
+    ) -> dict[str, object]:
         """Create a worker-safe command intent without sharing a live object."""
-        return {
+        world = getattr(self.window, "current_world", None)
+        world_id = getattr(world, "id", "") if world is not None else ""
+        payload: dict[str, object] = {
             "type": command.__class__.__name__,
             "data": command.to_dict(),
             "base": command.base_state_dict(),
         }
+        trace = new_trace(command, action, str(world_id), self._history_epoch)
+        payload["trace"] = trace
+        trace_event(trace, "requested")
+        return payload
 
     @staticmethod
     def _restore_command(
@@ -191,8 +202,9 @@ class CommandCoordinator(QObject):
             return
         logger.debug(f"Executing command: {command.__class__.__name__}")
         self.command_preparing.emit(command)
+        payload = self._serialize_command(command)
         self.track_command(command)
-        self.command_requested.emit(self._serialize_command(command))
+        self.command_requested.emit(payload)
 
     @Slot(object)
     def track_command(self, command: "BaseCommand") -> None:
@@ -222,7 +234,7 @@ class CommandCoordinator(QObject):
         self.command_preparing.emit(command)
         self._pending_history_action = ("undo", command)
         logger.debug(f"Undoing command: {command.__class__.__name__}")
-        self.undo_requested.emit(self._serialize_command(command))
+        self.undo_requested.emit(self._serialize_command(command, "undo"))
 
     @Slot()
     def redo(self) -> None:
@@ -246,7 +258,7 @@ class CommandCoordinator(QObject):
         self.command_preparing.emit(command)
         self._pending_history_action = ("redo", command)
         logger.debug(f"Redoing command: {command.__class__.__name__}")
-        self.redo_requested.emit(self._serialize_command(command))
+        self.redo_requested.emit(self._serialize_command(command, "redo"))
 
     def can_undo(self) -> bool:
         """Check if undo operation is available.
@@ -276,8 +288,33 @@ class CommandCoordinator(QObject):
         self.undo_stack.clear()
         self.redo_stack.clear()
         self._pending_commands.clear()
+        self._pending_history_action = None
+        self._undo_redo_in_progress = False
+        self._history_epoch += 1
         self.clear_persistent_history_requested.emit()
         self._emit_history_changed()
+
+    def _accept_result_trace(self, result: "CommandResult") -> bool:
+        """Reject results from an earlier history or world context."""
+        trace = result.data.get("operation_trace")
+        if not isinstance(trace, dict):
+            return True
+        if trace.get("epoch") != self._history_epoch:
+            trace_event(trace, "discarded", reason="history_reset")
+            return False
+        world = getattr(self.window, "current_world", None)
+        current_world_id = getattr(world, "id", "") if world is not None else ""
+        if trace.get("world_id") != safe_id(current_world_id):
+            trace_event(trace, "discarded", reason="world_changed")
+            self._pending_commands.pop(str(trace.get("command_id", "")), None)
+            if trace.get("action") in {"undo", "redo"}:
+                self._pending_history_action = None
+                self._undo_redo_in_progress = False
+            return False
+        trace_event(
+            trace, "received", outcome="succeeded" if result.success else "failed"
+        )
+        return True
 
     @Slot(object)
     def on_command_result(self, result: "CommandResult") -> None:
@@ -293,6 +330,8 @@ class CommandCoordinator(QObject):
             result: CommandResult object containing execution status.
 
         """
+        if not self._accept_result_trace(result):
+            return
         is_undo_redo = result.command_name.startswith(
             (
                 "Undo_",
@@ -328,7 +367,7 @@ class CommandCoordinator(QObject):
         )
 
         if result.success:
-            logger.info(f"Command succeeded: {result.message}")
+            logger.debug("Command result succeeded: %s", result.command_name)
 
             # Add command to undo stack if it was successful
             # The command object should be in result.data
@@ -375,7 +414,7 @@ class CommandCoordinator(QObject):
                 if retry is not None:
                     self.execute_command(retry)
                 return
-            logger.error(f"Command failed: {result.message}")
+            logger.debug("Command result failed: %s", result.command_name)
             self._show_error(result.message)
 
     def log_stack_state(self) -> None:

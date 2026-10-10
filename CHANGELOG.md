@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-10
-**Commit:** 80f8b2c9cf6d48c14e3de5bf84680207d4c178a0
+**Commit:** f4ca4bb25e90f189cfab802f72a59f014fc57cfb
 ---
 
 # Changelog
@@ -12,6 +12,15 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-10)* **Operation and content-safe diagnostics (KRT-59, KRT-63)**:
+  Traced save, undo and redo from queued request through worker outcome and
+  stale-result handling with stable IDs, world/target context and duration.
+  Defaulted to INFO with an explicit `--diagnostics` mode; summarized Sheet
+  Builder chatter, repaired AnalysisPanel history wiring, and kept prompts,
+  responses and HTTP bodies out of ordinary logs. Added focused regressions
+  and contributor guidance for fields, ownership and retention. Lowered two
+  reviewed complexity ceilings.
 
 - *(2026-10-10)* **Persistent failure diagnostics (KRT-61)**: Record uncaught
   Python and Qt callback tracebacks, background-thread failures, relevant Qt

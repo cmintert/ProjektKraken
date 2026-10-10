@@ -4,6 +4,7 @@
 :maxdepth: 1
 
 development
+logging-diagnostics
 architecture
 commands-and-history
 database-and-storage

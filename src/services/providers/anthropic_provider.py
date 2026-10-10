@@ -16,6 +16,7 @@ import numpy as np
 import requests  # type: ignore[import-untyped]  # No bundled typing metadata.
 
 from src.services.llm_provider import Provider
+from src.services.providers.diagnostic_error import safe_error
 from src.services.resilience import CircuitBreaker
 
 logger = logging.getLogger(__name__)
@@ -81,14 +82,14 @@ class AnthropicProvider(Provider):
                 last_exception = e
                 if attempt < self.max_retries - 1:
                     wait_time = 2**attempt
-                    logger.warning(
+                    logger.debug(
                         f"Request failed (attempt {attempt + 1}/{self.max_retries}), "
-                        f"retrying in {wait_time}s: {e}"
+                        f"retrying in {wait_time}s: {safe_error(e)}"
                     )
                     time.sleep(wait_time)
                 else:
-                    logger.error(
-                        f"Request failed after {self.max_retries} attempts: {e}"
+                    logger.debug(
+                        f"Request failed after {self.max_retries} attempts: {safe_error(e)}"
                     )
 
         if last_exception:
@@ -193,13 +194,17 @@ class AnthropicProvider(Provider):
         try:
             return self._retry_request(_generate_impl)
         except requests.exceptions.RequestException as e:
-            logger.error(f"Anthropic generation request failed: {e}")
+            logger.debug(f"Anthropic generation request failed: {safe_error(e)}")
             raise Exception(
-                f"Failed to generate completion from Anthropic API. Error: {e}"
+                f"Failed to generate completion from Anthropic API. Error: {safe_error(e)}"
             ) from e
         except (KeyError, ValueError) as e:
-            logger.error(f"Failed to parse Anthropic generation response: {e}")
-            raise Exception(f"Invalid response from Anthropic API: {e}") from e
+            logger.debug(
+                f"Failed to parse Anthropic generation response: {safe_error(e)}"
+            )
+            raise Exception(
+                f"Invalid response from Anthropic API: {safe_error(e)}"
+            ) from e
 
     async def stream_generate(
         self,
@@ -286,13 +291,13 @@ class AnthropicProvider(Provider):
                             break
 
                     except json.JSONDecodeError as e:
-                        logger.warning(f"Failed to parse SSE chunk: {e}")
+                        logger.warning(f"Failed to parse SSE chunk: {safe_error(e)}")
                         continue
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"Anthropic streaming request failed: {e}")
+            logger.debug(f"Anthropic streaming request failed: {safe_error(e)}")
             raise Exception(
-                f"Failed to stream completion from Anthropic API. Error: {e}"
+                f"Failed to stream completion from Anthropic API. Error: {safe_error(e)}"
             ) from e
 
     def health_check(self) -> Dict[str, Any]:
@@ -346,7 +351,7 @@ class AnthropicProvider(Provider):
             return {
                 "status": "unhealthy",
                 "latency_ms": 0,
-                "message": f"Cannot connect to Anthropic API: {e}",
+                "message": f"Cannot connect to Anthropic API: {safe_error(e)}",
             }
 
     def metadata(self) -> Dict[str, Any]:

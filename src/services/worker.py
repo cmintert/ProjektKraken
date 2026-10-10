@@ -17,6 +17,10 @@ from PySide6.QtCore import QObject, Signal, SignalInstance, Slot
 from src.core.command import CommandProtocol, CommandResult
 from src.core.entities import Entity
 from src.core.events import Event
+from src.core.operation_trace import event as trace_event
+from src.core.operation_trace import finish as finish_trace
+from src.core.operation_trace import from_request as trace_from_request
+from src.core.operation_trace import safe_stack
 from src.core.semantic_config import (
     SEMANTIC_COMPLETION_ENABLE_EMBEDDING,
     SEMANTIC_COMPLETION_PROBE_ON_WINDOWS,
@@ -282,7 +286,6 @@ class DatabaseWorker(QObject):
             self.error_occurred.emit("Failed to connect to database.")
             self.initialized.emit(False)
 
-
     def _clear_failed_initialization(self) -> None:
         """Ensure queued operations cannot reuse a failed startup connection."""
         if self.db_service is not None:
@@ -367,9 +370,7 @@ class DatabaseWorker(QObject):
                 tag_name: self.db_service.get_tag_color(tag_name)
                 for tag_name in tag_order
             }
-            self.timeline_grouping_loaded.emit(
-                {"config": config, "colors": colors}
-            )
+            self.timeline_grouping_loaded.emit({"config": config, "colors": colors})
         except Exception:
             logger.exception("Failed to load timeline grouping configuration")
             self.timeline_grouping_loaded.emit(None)
@@ -490,9 +491,7 @@ class DatabaseWorker(QObject):
                 "Failed to load feature geometry states: %s",
                 traceback.format_exc(),
             )
-            self.error_occurred.emit(
-                f"Failed to load dated geometry for map {map_id}."
-            )
+            self.error_occurred.emit(f"Failed to load dated geometry for map {map_id}.")
 
     @Slot(str)
     def load_event_details(self, event_id: str) -> None:
@@ -575,9 +574,7 @@ class DatabaseWorker(QObject):
             self.error_occurred.emit(f"Failed to load entity {entity_id}")
 
     @Slot(str, str)
-    def load_entity_authoring_context(
-        self, request_id: str, entity_id: str
-    ) -> None:
+    def load_entity_authoring_context(self, request_id: str, entity_id: str) -> None:
         """Build and emit one serialized Entity authoring-context snapshot."""
         if self.db_service is None:
             self.entity_authoring_context_loaded.emit(request_id, entity_id, {})
@@ -761,29 +758,36 @@ class DatabaseWorker(QObject):
             operation_finished (str): Status update.
 
         """
+        trace = trace_from_request(request)
+        if trace is not None:
+            trace_event(trace, "started")
         try:
             command = self._command_from_request(request)
         except Exception as exc:
-            logger.error("Invalid command request: %s", exc)
+            logger.error("Invalid command request type=%s", type(exc).__name__)
             self.command_finished.emit(
-                CommandResult(
-                    success=False,
-                    message=str(exc),
-                    command_name="InvalidCommand",
+                finish_trace(
+                    trace,
+                    CommandResult(
+                        success=False,
+                        message="Invalid command request.",
+                        command_name="InvalidCommand",
+                    ),
                 )
             )
             return
 
         if not self.db_service:
             cmd_name = command.__class__.__name__
-            logger.error(f"Database not ready when executing {cmd_name}")
-            self.error_occurred.emit(f"Database not ready for {cmd_name}.")
             self.command_finished.emit(
-                CommandResult(
-                    success=False,
-                    message="Database is not ready for editing.",
-                    command_name=cmd_name,
-                    data={"command_id": command.command_id},
+                finish_trace(
+                    trace,
+                    CommandResult(
+                        success=False,
+                        message="Database is not ready for editing.",
+                        command_name=cmd_name,
+                        data={"command_id": command.command_id},
+                    ),
                 )
             )
             return
@@ -831,12 +835,16 @@ class DatabaseWorker(QObject):
             if result_obj.success and self.temporal_manager is not None:
                 self.temporal_manager.clear_all_cache()
             result_obj.data["command_state"] = self._command_state(command)
-            self.command_finished.emit(result_obj)
+            self.command_finished.emit(finish_trace(trace, result_obj))
             self.operation_finished.emit(f"Finished {command_name}.")
 
-        except Exception:
-            logger.error(f"Command {command_name} failed: {traceback.format_exc()}")
-            self.error_occurred.emit(f"Command {command_name} failed.")
+        except Exception as exc:
+            logger.error(
+                "Command execution failed operation_id=%s error_type=%s stack=%s",
+                trace["operation_id"] if trace else "unknown",
+                type(exc).__name__,
+                safe_stack(exc),
+            )
             # Emit failure result
             fail_res = CommandResult(
                 success=False,
@@ -847,7 +855,7 @@ class DatabaseWorker(QObject):
                     "command_state": self._command_state(command),
                 },
             )
-            self.command_finished.emit(fail_res)
+            self.command_finished.emit(finish_trace(trace, fail_res))
 
     @Slot(object)
     def run_undo(self, request: object) -> None:
@@ -860,21 +868,36 @@ class DatabaseWorker(QObject):
             command_finished (CommandResult): Result indicating undo success.
 
         """
+        trace = trace_from_request(request)
+        if trace is not None:
+            trace_event(trace, "started")
         try:
             command = self._command_from_request(request)
-        except Exception as exc:
+        except Exception:
             self.command_finished.emit(
-                CommandResult(
-                    success=False,
-                    message=str(exc),
-                    command_name="Undo_InvalidCommand",
+                finish_trace(
+                    trace,
+                    CommandResult(
+                        success=False,
+                        message="Invalid undo request.",
+                        command_name="Undo_InvalidCommand",
+                    ),
                 )
             )
             return
 
         if not self.db_service:
-            logger.error("Database not ready for undo")
-            self.error_occurred.emit("Database not ready for undo.")
+            self.command_finished.emit(
+                finish_trace(
+                    trace,
+                    CommandResult(
+                        success=False,
+                        message="Database is not ready for editing.",
+                        command_name=f"Undo_{command.__class__.__name__}",
+                        data={"command_id": command.command_id},
+                    ),
+                )
+            )
             return
 
         command_name = command.__class__.__name__
@@ -900,12 +923,16 @@ class DatabaseWorker(QObject):
             if result_obj.success and self.temporal_manager is not None:
                 self.temporal_manager.clear_all_cache()
             result_obj.data["command_state"] = self._command_state(command)
-            self.command_finished.emit(result_obj)
+            self.command_finished.emit(finish_trace(trace, result_obj))
             self.operation_finished.emit(f"Undone {command_name}.")
 
-        except Exception:
-            logger.error(f"Undo {command_name} failed: {traceback.format_exc()}")
-            self.error_occurred.emit(f"Undo {command_name} failed.")
+        except Exception as exc:
+            logger.error(
+                "Undo failed operation_id=%s error_type=%s stack=%s",
+                trace["operation_id"] if trace else "unknown",
+                type(exc).__name__,
+                safe_stack(exc),
+            )
             fail_res = CommandResult(
                 success=False,
                 message="Failed to undo operation.",
@@ -915,7 +942,7 @@ class DatabaseWorker(QObject):
                     "command_state": self._command_state(command),
                 },
             )
-            self.command_finished.emit(fail_res)
+            self.command_finished.emit(finish_trace(trace, fail_res))
 
     @Slot(object)
     def run_redo(self, request: object) -> None:
@@ -928,21 +955,36 @@ class DatabaseWorker(QObject):
             command_finished (CommandResult): Result indicating redo success.
 
         """
+        trace = trace_from_request(request)
+        if trace is not None:
+            trace_event(trace, "started")
         try:
             command = self._command_from_request(request)
-        except Exception as exc:
+        except Exception:
             self.command_finished.emit(
-                CommandResult(
-                    success=False,
-                    message=str(exc),
-                    command_name="Redo_InvalidCommand",
+                finish_trace(
+                    trace,
+                    CommandResult(
+                        success=False,
+                        message="Invalid redo request.",
+                        command_name="Redo_InvalidCommand",
+                    ),
                 )
             )
             return
 
         if not self.db_service:
-            logger.error("Database not ready for redo")
-            self.error_occurred.emit("Database not ready for redo.")
+            self.command_finished.emit(
+                finish_trace(
+                    trace,
+                    CommandResult(
+                        success=False,
+                        message="Database is not ready for editing.",
+                        command_name=f"Redo_{command.__class__.__name__}",
+                        data={"command_id": command.command_id},
+                    ),
+                )
+            )
             return
 
         command_name = command.__class__.__name__
@@ -980,12 +1022,16 @@ class DatabaseWorker(QObject):
             if result_obj.success and self.temporal_manager is not None:
                 self.temporal_manager.clear_all_cache()
             result_obj.data["command_state"] = self._command_state(command)
-            self.command_finished.emit(result_obj)
+            self.command_finished.emit(finish_trace(trace, result_obj))
             self.operation_finished.emit(f"Redone {command_name}.")
 
-        except Exception:
-            logger.error(f"Redo {command_name} failed: {traceback.format_exc()}")
-            self.error_occurred.emit(f"Redo {command_name} failed.")
+        except Exception as exc:
+            logger.error(
+                "Redo failed operation_id=%s error_type=%s stack=%s",
+                trace["operation_id"] if trace else "unknown",
+                type(exc).__name__,
+                safe_stack(exc),
+            )
             fail_res = CommandResult(
                 success=False,
                 message="Failed to redo operation.",
@@ -995,7 +1041,7 @@ class DatabaseWorker(QObject):
                     "command_state": self._command_state(command),
                 },
             )
-            self.command_finished.emit(fail_res)
+            self.command_finished.emit(finish_trace(trace, fail_res))
 
     @Slot()
     def load_current_time(self) -> None:
@@ -1150,7 +1196,11 @@ class DatabaseWorker(QObject):
         # Queue the request if an embedding is already in progress
         if self._embedding_in_progress:
             self._pending_embeddings.add(
-                (object_type, object_id, tuple(excluded_attributes) if excluded_attributes else None)
+                (
+                    object_type,
+                    object_id,
+                    tuple(excluded_attributes) if excluded_attributes else None,
+                )
             )
             logger.debug(
                 f"[Worker] Embedding already in progress, queuing {object_type} {object_id}"
@@ -1265,9 +1315,7 @@ class DatabaseWorker(QObject):
                 self.index_rebuild_finished.emit(0, 0, 1)
                 return
 
-            types = (
-                ["entity", "event"] if object_type == "all" else [object_type]
-            )
+            types = ["entity", "event"] if object_type == "all" else [object_type]
 
             self.operation_started.emit("Rebuilding search index...")
 
@@ -1294,9 +1342,7 @@ class DatabaseWorker(QObject):
             )
 
         except Exception:
-            logger.error(
-                f"Index rebuild failed: {traceback.format_exc()}"
-            )
+            logger.error(f"Index rebuild failed: {traceback.format_exc()}")
             self.error_occurred.emit("Index rebuild failed.")
             self.index_rebuild_finished.emit(0, 0, 1)
 
@@ -1396,7 +1442,6 @@ class DatabaseWorker(QObject):
             return
 
         try:
-
             from src.services.graph_data_service import GraphDataService
             from src.services.graph_lexicon_resolver import resolve_lexicon_images
 
@@ -1484,15 +1529,11 @@ class DatabaseWorker(QObject):
                 return
             results = svc.query(text=prefix, top_k=top_k)
             names = [
-                r["name"]
-                for r in results
-                if r["score"] >= min_score and r["name"]
+                r["name"] for r in results if r["score"] >= min_score and r["name"]
             ]
             self.semantic_suggestions_ready.emit(prefix, names)
         except Exception:
-            logger.debug(
-                "Semantic suggestion query failed", exc_info=True
-            )
+            logger.debug("Semantic suggestion query failed", exc_info=True)
 
     @Slot()
     def load_completer_data(self) -> None:
@@ -1873,7 +1914,7 @@ class DatabaseWorker(QObject):
             return
 
         try:
-            self.operation_started.emit(f"Generating summary for {item.name}...")
+            self.operation_started.emit("Generating summary...")
             # Note: generate_summary logic might perform DB writes if configured?
             # SummaryService.generate_summary calls llm_provider.generate (blocking io)
             # and then *could* save to DB, but typically just returns updated object/summary data.
@@ -1891,9 +1932,14 @@ class DatabaseWorker(QObject):
             self.summary_generated.emit(item.id, summary)
             self.operation_finished.emit("Summary generated.")
         except Exception as e:
-            logger.error(f"Summary generation failed: {e}\n{traceback.format_exc()}")
+            logger.error(
+                "Summary generation failed target_id=%s error_type=%s stack=%s",
+                item.id,
+                type(e).__name__,
+                safe_stack(e),
+            )
             self.summary_generation_failed.emit(item.id)
-            self.error_occurred.emit(f"Summary generation failed: {str(e)}")
+            self.error_occurred.emit("Summary generation failed. Check diagnostics.")
 
     @Slot()
     def refresh_ai_settings(self) -> None:

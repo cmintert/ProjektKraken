@@ -22,6 +22,13 @@ failure notice, the package version, and your Windows version when reporting a
 problem. AI audit logging is opt-in, uses separate per-process files, and remains
 isolated from normal diagnostics.
 
+Normal launches record INFO and higher. For a problem that needs more detail,
+start `ProjektKraken.exe --diagnostics` (or
+`start-kraken.cmd --diagnostics` from source), reproduce it once, then restart
+normally. Diagnostics mode includes DEBUG records for that session; it does not
+enable full-content AI audit logging. When reporting an editing failure, include
+the matching `operation_id` from the log if present.
+
 Uncaught Python failures, Qt warnings and critical messages, and native crash
 tracebacks are written to `logs/faults.<process ID>.log` in the same portable or
 user data log directory. Include this file when reporting a crash. It is held

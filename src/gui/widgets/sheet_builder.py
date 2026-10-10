@@ -1038,7 +1038,7 @@ class SheetBuilderWidget(QWidget):
             return True
         return False
 
-    def load_attributes(  # noqa: C901
+    def load_attributes(
         self,
         attributes: Dict[str, Any],
         layout: Optional[List[List[Any]]] = None,
@@ -1089,10 +1089,6 @@ class SheetBuilderWidget(QWidget):
                                     }
                                 )
                                 placed_keys.add(item)
-                            else:
-                                logger.debug(
-                                    f"Key '{item}' in layout but not in attributes."
-                                )
                         elif isinstance(item, dict):
                             item_type = item.get("type", "")
                             is_spacer = (
@@ -1126,9 +1122,7 @@ class SheetBuilderWidget(QWidget):
                         self._add_row(row_configs)
 
                 # Append any remaining attributes not referenced by the layout
-                for key, value in attributes.items():
-                    if key not in placed_keys:
-                        self._add_row([{"key": key, "value": value, "weight": 1}])
+                self._add_unplaced_attributes(attributes, placed_keys)
             else:
                 # No layout – one attribute per row
                 for key, value in attributes.items():
@@ -1138,7 +1132,15 @@ class SheetBuilderWidget(QWidget):
 
         # Restore focus/scroll state after rebuild
         self._restore_focus_state(focus_state)
-        logger.debug("Attributes loaded successfully.")
+        logger.debug("Attributes loaded count=%d", len(self._pairs))
+
+    def _add_unplaced_attributes(
+        self, attributes: Dict[str, Any], placed_keys: set[str]
+    ) -> None:
+        """Append attributes omitted by the saved layout."""
+        for key, value in attributes.items():
+            if key not in placed_keys:
+                self._add_row([{"key": key, "value": value, "weight": 1}])
 
     def get_attributes(self) -> Dict[str, Any]:
         """Return the current attribute values as a dict.
@@ -1449,8 +1451,7 @@ class SheetBuilderWidget(QWidget):
     def _clear(self) -> None:
         """Remove all rows and pair/spacer widgets."""
         logger.debug(f"Clearing sheet builder. Currently has {len(self._pairs)} pairs.")
-        for key, pair in list(self._pairs.items()):
-            logger.debug(f"Deleting pair widget for key: {key}")
+        for pair in list(self._pairs.values()):
             pair.setParent(None)
             pair.deleteLater()
         self._pairs.clear()
@@ -1463,7 +1464,6 @@ class SheetBuilderWidget(QWidget):
                     child = item.layout().takeAt(0)
                     w = child.widget()
                     if w is not None:
-                        logger.debug(f"Removing widget from layout: {type(w).__name__}")
                         w.setParent(None)
                         w.deleteLater()
 
@@ -1719,7 +1719,7 @@ class SheetBuilderWidget(QWidget):
         Args:
             key: The attribute key of the widget being dragged.
         """
-        logger.debug(f"Child drag started for key '{key}' – suppressing reloads.")
+        logger.debug("Child drag started; suppressing reloads")
         self._drag_active = True
 
     def _on_child_drag_finished(self) -> None:

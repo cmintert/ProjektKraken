@@ -1,3 +1,4 @@
+import logging
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -6,6 +7,7 @@ from src.commands.base_command import CommandResult
 from src.commands.entity_commands import CreateEntityCommand, UpdateEntityCommand
 from src.commands.registry import get_command_types
 from src.core.entities import Entity
+from src.core.operation_trace import new_trace
 from src.core.temporal_state import ResolvedEntityState
 from src.services.worker import DatabaseWorker
 
@@ -193,6 +195,38 @@ def test_run_command_failure(worker, mock_db_service):
     result = finished_spy.call_args[0][0]
     assert result.success is False
     assert "Boom" in result.message
+
+
+def test_serialized_command_result_retains_original_trace(worker, mock_db_service):
+    worker.db_service = mock_db_service
+    command = CreateEntityCommand({"name": "Trace", "type": "Concept"})
+    trace = new_trace(command, "save", "world-one", 0)
+    request = {
+        "type": command.__class__.__name__,
+        "data": command.to_dict(),
+        "base": command.base_state_dict(),
+        "trace": trace,
+    }
+    finished_spy = MagicMock()
+    worker.command_finished.connect(finished_spy)
+    worker.run_command(request)
+    result = finished_spy.call_args.args[0]
+    assert result.data["operation_trace"] == trace
+    assert result.data["command_id"] == command.command_id
+
+
+def test_summary_failure_log_excludes_exception_content(worker, caplog):
+    secret = "synthetic-api-key-and-manuscript-4821"
+    worker.summary_service = MagicMock()
+    worker.summary_service.generate_summary.side_effect = RuntimeError(secret)
+    item = Entity(id="entity-1", name="Synthetic", type="Concept")
+
+    with caplog.at_level(logging.ERROR):
+        worker.generate_summary(item)
+
+    assert "Summary generation failed target_id=entity-1" in caplog.text
+    assert "error_type=RuntimeError" in caplog.text
+    assert secret not in caplog.text
 
 
 def test_load_current_time(worker, mock_db_service):

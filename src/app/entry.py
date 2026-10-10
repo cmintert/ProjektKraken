@@ -36,6 +36,12 @@ from src.core.logging_config import (  # noqa: E402
     setup_logging,
     shutdown_logging,
 )
+from src.core.operation_trace import (  # noqa: E402
+    SESSION_ID,
+)
+from src.core.operation_trace import (  # noqa: E402
+    configure as configure_operation_trace,
+)
 from src.core.paths import get_resource_path  # noqa: E402
 from src.core.runtime_diagnostics import (  # noqa: E402
     install_qt_message_handler,
@@ -72,8 +78,10 @@ def main() -> None:
     package_smoke_options = parse_package_smoke_options(sys.argv)
     performance_probe_options = parse_performance_probe_options(sys.argv)
 
-    setup_logging(debug_mode=True)
-    from datetime import datetime
+    diagnostic_mode = "--diagnostics" in sys.argv
+    setup_logging(debug_mode=diagnostic_mode)
+    configure_operation_trace(VERSION)
+    from datetime import datetime, timezone
 
     # CLI Command Routing
     if len(sys.argv) > 1 and sys.argv[1] == "import":
@@ -84,11 +92,14 @@ def main() -> None:
         cleanup_app()
         sys.exit(exit_code)
 
-    logger.info("=" * 60)
     logger.info(
-        f"Project Kraken v{VERSION} Session Started at {datetime.now().isoformat()}"
+        "Project Kraken v%s Session Started at %s session=%s build=%s mode=%s",
+        VERSION,
+        datetime.now(timezone.utc).isoformat(timespec="milliseconds"),
+        SESSION_ID,
+        "packaged" if getattr(sys, "frozen", False) else "source",
+        "diagnostics" if diagnostic_mode else "normal",
     )
-    logger.info("=" * 60)
 
     try:
         logger.info("Starting Application...")
@@ -101,7 +112,11 @@ def main() -> None:
         internal_mode = (
             package_smoke_options is not None or performance_probe_options is not None
         )
-        qt_argv = [sys.argv[0]] if internal_mode else sys.argv
+        qt_argv = (
+            [sys.argv[0]]
+            if internal_mode
+            else [arg for arg in sys.argv if arg != "--diagnostics"]
+        )
         app = QApplication(qt_argv)
         if internal_mode:
             app.setQuitOnLastWindowClosed(False)

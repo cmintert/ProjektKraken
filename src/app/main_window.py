@@ -454,9 +454,7 @@ class MainWindow(QMainWindow):
     @Slot(dict)
     def _on_context_tag_theme_changed(self, _theme: dict) -> None:
         """Refresh context-tag status styling after a theme change."""
-        self._update_context_tag_status(
-            self.app_coordinator.context_tags.snapshot()
-        )
+        self._update_context_tag_status(self.app_coordinator.context_tags.snapshot())
 
     @Slot(dict)
     def _refresh_map_layer_styles(self, _theme: dict) -> None:
@@ -575,7 +573,9 @@ class MainWindow(QMainWindow):
             db_path_accessor=lambda: self.db_path,
             navigation_set_selection=self.app_coordinator.map_navigation.browse,
             world_root_accessor=lambda: str(
-                self.current_world.path if self.current_world else Path(self.db_path).parent
+                self.current_world.path
+                if self.current_world
+                else Path(self.db_path).parent
             ),
         )
         # Forward MapHandler's command_requested to MainWindow's
@@ -756,6 +756,10 @@ class MainWindow(QMainWindow):
         )
         # Connect history panel to coordinator
         self.command_coordinator.history_changed.connect(self._update_history_panel)
+        # The coordinator is created after ConnectionManager.connect_all().
+        self.command_coordinator.history_changed.connect(
+            lambda _undo, _redo: self.analysis_panel.intelligence_panel.mark_stale()
+        )
         # Connect history panel buttons to coordinator
         self.history_panel.undo_clicked.connect(self.command_coordinator.undo)
         self.history_panel.redo_clicked.connect(self.command_coordinator.redo)
@@ -1089,9 +1093,11 @@ class MainWindow(QMainWindow):
             return
 
         map_edits = self.app_coordinator.map_edits
-        if (self.app_coordinator.trajectory_edit.is_active
-                or self.app_coordinator.feature_geometry.is_active
-                or map_edits.is_waiting):
+        if (
+            self.app_coordinator.trajectory_edit.is_active
+            or self.app_coordinator.feature_geometry.is_active
+            or map_edits.is_waiting
+        ):
             event.ignore()
             map_edits.request_transition(
                 "close Projekt Kraken", lambda: QTimer.singleShot(0, self.close)

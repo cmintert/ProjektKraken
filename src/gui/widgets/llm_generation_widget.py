@@ -39,6 +39,7 @@ from src.core.ai_generation import (
 )
 from src.core.description_date_policy import find_description_dates
 from src.core.logging_config import get_world_audit_log_path
+from src.core.operation_trace import safe_stack
 from src.core.theme_manager import ThemeManager
 from src.gui.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 from src.gui.utils.settings_reader import (
@@ -237,14 +238,16 @@ class GenerationWorker(QThread):
                 )
 
                 if rag_context:
-                    logger.info(
-                        "RAG: Found context (chars=%d)", len(rag_context)
-                    )
+                    logger.info("RAG: Found context (chars=%d)", len(rag_context))
                 else:
                     logger.info("RAG: No context found or returned empty.")
 
             except Exception as e:
-                logger.error(f"RAG Service failure: {e}", exc_info=True)
+                logger.error(
+                    "RAG service failure error_type=%s stack=%s",
+                    type(e).__name__,
+                    safe_stack(e),
+                )
                 rag_context = ""
 
         # Inject logic
@@ -253,14 +256,10 @@ class GenerationWorker(QThread):
                 replacement = (
                     f"[Retrieved Context]\n{rag_context}" if rag_context else ""
                 )
-                prompt["user"] = prompt["user"].replace(
-                    "{{RAG_CONTEXT}}", replacement
-                )
+                prompt["user"] = prompt["user"].replace("{{RAG_CONTEXT}}", replacement)
             elif rag_context:
                 # Prepend if no placeholder but content found
-                prompt["user"] = (
-                    f"[Context]\n{rag_context}\n\n" + prompt["user"]
-                )
+                prompt["user"] = f"[Context]\n{rag_context}\n\n" + prompt["user"]
         else:
             # String prompt
             if "{{RAG_CONTEXT}}" in prompt:
@@ -330,9 +329,7 @@ class GenerationWorker(QThread):
                         item.event.lore_date
                         for item in entity_context.event_appearances
                     ]
-                    values.extend(
-                        item.lore_date for item in entity_context.mentions
-                    )
+                    values.extend(item.lore_date for item in entity_context.mentions)
                     values.extend(
                         event.lore_date
                         for item in entity_context.co_appearances
@@ -351,9 +348,7 @@ class GenerationWorker(QThread):
 
         self.authoring_context_used = context_text
         if isinstance(prompt, dict):
-            prompt["user"] = prompt["user"].replace(
-                placeholder, context_text or ""
-            )
+            prompt["user"] = prompt["user"].replace(placeholder, context_text or "")
         else:
             prompt = prompt.replace(placeholder, context_text or "")
         self.prompt = prompt
@@ -434,7 +429,11 @@ class GenerationWorker(QThread):
                 # Fallback to non-streaming
                 self._run_non_streaming()
         except Exception as e:
-            logger.error(f"Generation failed: {e}", exc_info=True)
+            logger.error(
+                "Generation failed error_type=%s stack=%s",
+                type(e).__name__,
+                safe_stack(e),
+            )
             if not self._cancelled:
                 self.generation_error.emit(str(e))
 
@@ -469,9 +468,7 @@ class GenerationWorker(QThread):
                     system_fingerprint = (
                         chunk.get("system_fingerprint") or system_fingerprint
                     )
-                    provider_metadata.update(
-                        chunk.get("provider_metadata") or {}
-                    )
+                    provider_metadata.update(chunk.get("provider_metadata") or {})
                 return ModelReply(
                     content=full_text,
                     reasoning_content=reasoning_content,
@@ -492,7 +489,11 @@ class GenerationWorker(QThread):
                 self.generation_complete.emit(result)
 
         except Exception as e:
-            logger.error(f"Streaming generation failed: {e}", exc_info=True)
+            logger.error(
+                "Streaming generation failed error_type=%s stack=%s",
+                type(e).__name__,
+                safe_stack(e),
+            )
             if not self._cancelled:
                 self.generation_error.emit(f"Streaming failed: {e}")
 
@@ -512,7 +513,11 @@ class GenerationWorker(QThread):
                 self.generation_complete.emit(reply)
 
         except Exception as e:
-            logger.error(f"Non-streaming generation failed: {e}", exc_info=True)
+            logger.error(
+                "Non-streaming generation failed error_type=%s stack=%s",
+                type(e).__name__,
+                safe_stack(e),
+            )
             if not self._cancelled:
                 self.generation_error.emit(f"Generation failed: {e}")
 
@@ -784,9 +789,7 @@ class LLMGenerationWidget(QWidget):
         self.world_context_show_btn = QPushButton("Show")
         self.world_context_show_btn.setFlat(True)
         self.world_context_show_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.world_context_show_btn.clicked.connect(
-            self._on_show_world_context_clicked
-        )
+        self.world_context_show_btn.clicked.connect(self._on_show_world_context_clicked)
         world_row.addWidget(self.world_context_show_btn)
         world_row.addStretch()
         layout.addLayout(world_row)
@@ -801,14 +804,11 @@ class LLMGenerationWidget(QWidget):
         accent = theme["accent_secondary"]
         self.top_sep.setStyleSheet(f"color: {border}; margin-bottom: 4px;")
         self.lbl_instruction.setStyleSheet(
-            "font-weight: bold; font-size: 10px; "
-            f"color: {text_dim}; margin-top: 4px;"
+            f"font-weight: bold; font-size: 10px; color: {text_dim}; margin-top: 4px;"
         )
         self.sep2.setStyleSheet(f"color: {border}; margin-top: 8px;")
         self.status_label.setStyleSheet(f"color: {text_dim}; font-size: 11px;")
-        self.spatial_used_label.setStyleSheet(
-            f"color: {text_dim}; font-size: 11px;"
-        )
+        self.spatial_used_label.setStyleSheet(f"color: {text_dim}; font-size: 11px;")
         self.world_context_used_label.setStyleSheet(
             f"color: {text_dim}; font-size: 11px;"
         )
@@ -937,11 +937,7 @@ class LLMGenerationWidget(QWidget):
             else "create_complete_description"
         )
         template = next(
-            (
-                item
-                for item in self._task_templates
-                if item.template_id == preferred_id
-            ),
+            (item for item in self._task_templates if item.template_id == preferred_id),
             next(
                 (item for item in self._task_templates if item.intent == intent),
                 None,
@@ -959,9 +955,7 @@ class LLMGenerationWidget(QWidget):
 
             # Load last used provider
             self.provider_combo.blockSignals(True)
-            provider = read_str_setting(
-                settings, "ai_gen_last_provider", "LM Studio"
-            )
+            provider = read_str_setting(settings, "ai_gen_last_provider", "LM Studio")
             if provider != "LM Studio":
                 provider = "LM Studio"
                 settings.setValue("ai_gen_last_provider", provider)
@@ -1019,13 +1013,9 @@ class LLMGenerationWidget(QWidget):
 
             # Load object-specific template selection.
             self.template_combo.blockSignals(True)
-            saved_template_id = settings.value(
-                f"ai_gen_{object_type}_template_id", ""
-            )
+            saved_template_id = settings.value(f"ai_gen_{object_type}_template_id", "")
             saved_index = self.template_combo.findData(saved_template_id)
-            self.template_combo.setCurrentIndex(
-                saved_index if saved_index >= 0 else 0
-            )
+            self.template_combo.setCurrentIndex(saved_index if saved_index >= 0 else 0)
             self.template_combo.blockSignals(False)
 
             if object_type in {"entity", "event"}:
@@ -1047,7 +1037,10 @@ class LLMGenerationWidget(QWidget):
                 self._applied_template_content = None
 
         except Exception as e:
-            logger.warning(f"Failed to load generation settings: {e}")
+            logger.warning(
+                "Failed to load generation settings error_type=%s",
+                type(e).__name__,
+            )
 
     @Slot()
     def _save_settings(self) -> None:
@@ -1094,7 +1087,11 @@ class LLMGenerationWidget(QWidget):
             self.preferences_changed.emit()
 
         except Exception as e:
-            logger.error(f"Failed to save generation settings: {e}", exc_info=True)
+            logger.error(
+                "Failed to save generation settings error_type=%s stack=%s",
+                type(e).__name__,
+                safe_stack(e),
+            )
 
     def _sync_context_controls(self) -> None:
         """Show the context control appropriate for the current object type."""
@@ -1176,9 +1173,7 @@ class LLMGenerationWidget(QWidget):
             self._current_provider = create_provider(provider_id)
 
             # Start generation
-            prompt_length = sum(
-                len(str(value)) for value in prompt.values()
-            )
+            prompt_length = sum(len(str(value)) for value in prompt.values())
             logger.info(
                 "Starting generation: provider=%s prompt_chars=%d",
                 provider_id,
@@ -1193,7 +1188,11 @@ class LLMGenerationWidget(QWidget):
             )
 
         except Exception as e:
-            logger.error(f"Failed to create provider: {e}", exc_info=True)
+            logger.error(
+                "Failed to create provider error_type=%s stack=%s",
+                type(e).__name__,
+                safe_stack(e),
+            )
             self.status_label.setText(f"Error: {str(e)}")
 
     def _get_system_prompt(self) -> str:
@@ -1210,9 +1209,7 @@ class LLMGenerationWidget(QWidget):
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
             # Load from settings (was "Basic Assistant Prompt", now "Persona")
-            custom_prompt = read_str_setting(
-                settings, "ai_gen_system_prompt", ""
-            )
+            custom_prompt = read_str_setting(settings, "ai_gen_system_prompt", "")
 
             if custom_prompt:
                 logger.debug("Using configured Persona from QSettings")
@@ -1223,7 +1220,9 @@ class LLMGenerationWidget(QWidget):
             return DEFAULT_SYSTEM_PROMPT
 
         except Exception as e:
-            logger.warning(f"Failed to load system prompt: {e}")
+            logger.warning(
+                "Failed to load system prompt error_type=%s", type(e).__name__
+            )
             return DEFAULT_SYSTEM_PROMPT
 
     def _get_generation_context(self) -> Optional[dict]:
@@ -1298,9 +1297,7 @@ class LLMGenerationWidget(QWidget):
                 "name": "Custom task",
                 "intent": TaskIntent.GENERAL.value,
                 "source": "custom",
-                "content_hash": hashlib.sha256(
-                    content.encode("utf-8")
-                ).hexdigest(),
+                "content_hash": hashlib.sha256(content.encode("utf-8")).hexdigest(),
             }
 
         return {
@@ -1371,9 +1368,7 @@ class LLMGenerationWidget(QWidget):
         authoring_enabled = current_object_type in {"entity", "event"} and (
             self.world_context_cb.isChecked()
         )
-        spatial_enabled = (
-            current_object_type != "event" and self.spatial_cb.isChecked()
-        )
+        spatial_enabled = current_object_type != "event" and self.spatial_cb.isChecked()
         active_map_id = (
             self._resolve_active_map_id()
             if spatial_enabled or (authoring_enabled and current_object_type == "event")
@@ -1419,9 +1414,7 @@ class LLMGenerationWidget(QWidget):
         # Start worker
         self._worker.start()
 
-    def _preview_spatial_context(
-        self, db_path: str, context: dict
-    ) -> Optional[str]:
+    def _preview_spatial_context(self, db_path: str, context: dict) -> Optional[str]:
         """Run the same spatial lookup the worker performs, for preview use."""
         object_id = context.get("object_id") or ""
         object_type = context.get("object_type") or ""
@@ -1556,7 +1549,9 @@ class LLMGenerationWidget(QWidget):
         )
         return tuple(float(value) for value in values if value is not None)
 
-    def _set_spatial_used_visible(self, visible: bool, *, has_context: bool = False) -> None:
+    def _set_spatial_used_visible(
+        self, visible: bool, *, has_context: bool = False
+    ) -> None:
         """Toggle visibility of the spatial-context transparency row.
 
         Args:
@@ -1620,9 +1615,7 @@ class LLMGenerationWidget(QWidget):
                 "rag_limit": self._worker.rag_limit,
                 "rag_enabled": self._worker.rag_enabled,
                 "spatial_enabled": self._worker.spatial_enabled,
-                "authoring_context_enabled": (
-                    self._worker.authoring_context_enabled
-                ),
+                "authoring_context_enabled": (self._worker.authoring_context_enabled),
             }
             target.update(
                 {
@@ -1640,9 +1633,7 @@ class LLMGenerationWidget(QWidget):
         if worker_prompt is not None:
             duration_ms = None
             if self._audit_started_at is not None:
-                duration_ms = int(
-                    (time.monotonic() - self._audit_started_at) * 1000
-                )
+                duration_ms = int((time.monotonic() - self._audit_started_at) * 1000)
             log_generation_event(
                 interaction_id=interaction_id,
                 prompt=worker_prompt,
@@ -1740,10 +1731,10 @@ class LLMGenerationWidget(QWidget):
         final_text = result.text
         date_policy_blocked = result.action != GenerationApplyMode.DISCARD and bool(
             find_description_dates(
-            final_text,
-            month_names=month_names,
-            era_names=era_names,
-            known_date_values=known_date_values,
+                final_text,
+                month_names=month_names,
+                era_names=era_names,
+                known_date_values=known_date_values,
             )
         )
         if date_policy_blocked:
@@ -1830,7 +1821,7 @@ class LLMGenerationWidget(QWidget):
     def _on_generation_error(self, error: str) -> None:
         """Handle generation error."""
         self._audit_unsuccessful_generation("error", error)
-        logger.error(f"Generation error: {error}")
+        logger.debug("Generation error presented in widget")
         self.status_label.setText(f"Error: {error}")
         self.generate_btn.setEnabled(True)
         self.cancel_btn.setEnabled(False)
@@ -1917,8 +1908,7 @@ class LLMGenerationWidget(QWidget):
         dlg.setStyleSheet(StyleHelper.get_dialog_base_style())
         layout = QVBoxLayout(dlg)
         info = QLabel(
-            "Exact text inserted into the prompt in place of "
-            "{{SPATIAL_CONTEXT}}."
+            "Exact text inserted into the prompt in place of {{SPATIAL_CONTEXT}}."
         )
         info.setStyleSheet(StyleHelper.get_preview_label_style())
         layout.addWidget(info)
@@ -2068,9 +2058,7 @@ class LLMGenerationWidget(QWidget):
                 self._preview_authoring_context(db_path, context),
             )
         elif authoring_enabled:
-            prompt["user"] = prompt["user"].replace(
-                "{{AUTHORING_CONTEXT}}", ""
-            )
+            prompt["user"] = prompt["user"].replace("{{AUTHORING_CONTEXT}}", "")
 
         # Perform RAG search for preview
         rag_context = ""
@@ -2093,7 +2081,11 @@ class LLMGenerationWidget(QWidget):
                     else:
                         logger.info("Preview RAG: No context found.")
             except Exception as e:
-                logger.error(f"RAG Preview failed: {e}")
+                logger.error(
+                    "RAG preview failed error_type=%s stack=%s",
+                    type(e).__name__,
+                    safe_stack(e),
+                )
 
             # Update the user message in the prompt dict
             replacement = (
@@ -2111,9 +2103,7 @@ class LLMGenerationWidget(QWidget):
                 if spatial_text
                 else "[Spatial Context]\n(No spatial context available)"
             )
-            prompt["user"] = prompt["user"].replace(
-                "{{SPATIAL_CONTEXT}}", replacement
-            )
+            prompt["user"] = prompt["user"].replace("{{SPATIAL_CONTEXT}}", replacement)
 
         # Format for display in preview (show keys clearly)
         display_text = (

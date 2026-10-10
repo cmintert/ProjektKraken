@@ -147,7 +147,9 @@ class SummaryService:
             data = item.attributes["_summary_data"]
             return SummaryData.from_dict(data)
         except Exception as e:
-            logger.error(f"Failed to parse summary data: {e}")
+            logger.warning(
+                "Failed to parse summary data error_type=%s", type(e).__name__
+            )
             return None
 
     def generate_summary(self, item: Union[Entity, Event]) -> SummaryData:
@@ -170,7 +172,11 @@ class SummaryService:
             effective_prompt = prompt
             generation_started_at = time.monotonic()
             retry_count = 0
-            logger.info(f"Generating summary for {item.name}. Prompt:\n{prompt}")
+            logger.info(
+                "Generating summary target_id=%s prompt_chars=%d",
+                item.id,
+                len(prompt),
+            )
 
             # Read configured summary max tokens from settings
             from PySide6.QtCore import QSettings
@@ -285,9 +291,7 @@ class SummaryService:
                     "object_type": item.__class__.__name__.lower(),
                     "source_hash": summary.hash,
                 },
-                duration_ms=int(
-                    (time.monotonic() - generation_started_at) * 1000
-                ),
+                duration_ms=int((time.monotonic() - generation_started_at) * 1000),
                 audit_path=audit_path,
             )
             raw_text = str(response.get("text") or response.get("content") or "")
@@ -307,26 +311,23 @@ class SummaryService:
             return summary
 
         except TimeoutError:
-            logger.error("Summary generation timed out.")
             raise RuntimeError(
                 "The AI provider timed out. "
                 "Check your network or increase the timeout setting."
             )
         except ConnectionError:
-            logger.error("Connection to AI provider failed.")
             raise RuntimeError(
                 "Could not connect to the AI provider. "
                 "Is LM Studio (or your provider) running?"
             )
         except Exception as e:
-            logger.error(f"Summary generation failed: {e}")
             # Re-raise with a cleaner message if it's a known provider error
             if "Connection refused" in str(e):
                 raise RuntimeError(
                     "Connection refused. "
                     "Please ensure your local AI server (e.g., LM Studio) is running."
                 )
-            raise RuntimeError(f"Generation failed: {str(e)}")
+            raise RuntimeError(f"Generation failed: {str(e)}") from e
 
     def _build_prompt(self, item: Union[Entity, Event]) -> str:
         """Construct the prompt for the LLM.
@@ -390,13 +391,13 @@ class SummaryService:
     def _extract_visible_text(response: dict[str, Any], settings: Any) -> str:
         """Extract visible response text after optional reasoning-tag filtering."""
         text = response.get("text", "").strip()
-        logger.info(f"Summary generation raw response:\n{text}")
+        logger.debug("Summary generation response_chars=%d", len(text))
 
         if settings.value("ai_gen_filter_reasoning", True, type=bool):
             from src.services.reasoning_filter import filter_reasoning_tags
 
             text = filter_reasoning_tags(text).strip()
-            logger.info(f"Summary after reasoning filter:\n{text}")
+            logger.debug("Summary after reasoning filter chars=%d", len(text))
 
         return text
 

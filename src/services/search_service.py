@@ -38,6 +38,7 @@ if TYPE_CHECKING:
     from src.core.events import Event
 
 from src.core.environment import env_bool
+from src.services.providers.diagnostic_error import safe_error
 
 logger = logging.getLogger(__name__)
 
@@ -404,7 +405,7 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
         self.model_key = os.getenv("LMSTUDIO_MODEL_KEY", "model")
         self.embed_path = os.getenv("LMSTUDIO_EMBED_PATH", "data[].embedding")
 
-        logger.info(f"LMStudioEmbeddingProvider initialized with URL: {self.url}")
+        logger.debug("LM Studio embedding endpoint configured")
         logger.info(f"Model: {self.model}")
 
     def embed(self, texts: List[str]) -> np.ndarray:
@@ -461,15 +462,17 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
             return emb_array
 
         except self.requests.exceptions.RequestException as e:
-            logger.error(f"LM Studio API request failed: {e}")
+            logger.error("LM Studio embedding request failed: %s", safe_error(e))
             raise Exception(
-                f"Failed to connect to LM Studio at {self.url}. "
+                "Failed to connect to LM Studio. "
                 f"Ensure LM Studio is running and the embedding endpoint "
-                f"is available. Error: {e}"
+                f"is available. Error: {safe_error(e)}"
             ) from e
         except (KeyError, ValueError) as e:
-            logger.error(f"Failed to parse LM Studio response: {e}")
-            raise Exception(f"Invalid response from LM Studio API: {e}") from e
+            logger.error("Failed to parse LM Studio response: %s", safe_error(e))
+            raise Exception(
+                f"Invalid response from LM Studio API: {safe_error(e)}"
+            ) from e
 
     def get_dimension(self) -> int:
         """Get the dimensionality of embeddings.
@@ -640,8 +643,7 @@ class SubprocessSentenceTransformersProvider(EmbeddingProvider):
             elif stderr:
                 error_text = stderr[:300]
             raise RuntimeError(
-                "Subprocess embedding failed "
-                f"(code={result.returncode}): {error_text}"
+                f"Subprocess embedding failed (code={result.returncode}): {error_text}"
             )
 
         if not parsed or "embeddings" not in parsed:
@@ -821,7 +823,7 @@ class SearchService:
         )
         self.conn.commit()
 
-        logger.info(f"Indexed entity {entity_id} ({entity.name})")
+        logger.debug("Indexed entity %s", entity_id)
 
     def index_event(
         self, event_id: str, excluded_attributes: Optional[List[str]] = None
@@ -910,7 +912,7 @@ class SearchService:
         )
         self.conn.commit()
 
-        logger.info(f"Indexed event {event_id} ({event.name})")
+        logger.debug("Indexed event %s", event_id)
 
     def _prepare_item_for_batch(
         self,
@@ -942,6 +944,7 @@ class SearchService:
             if entity_data.get("attributes"):
                 entity_data["attributes"] = json.loads(entity_data["attributes"])
             from src.core.entities import Entity
+
             entity = Entity.from_dict(entity_data)
             tags = self._get_tags_for_object("entity", object_id)
             text = build_text_for_entity(entity, tags, excluded_attributes)
@@ -956,6 +959,7 @@ class SearchService:
             if event_data.get("attributes"):
                 event_data["attributes"] = json.loads(event_data["attributes"])
             from src.core.events import Event
+
             event = Event.from_dict(event_data)
             tags = self._get_tags_for_object("event", object_id)
             text = build_text_for_event(event, tags, excluded_attributes)
@@ -998,7 +1002,7 @@ class SearchService:
         try:
             embeddings = self.provider.embed(texts)
         except Exception as e:
-            logger.error(f"Batch embedding failed: {e}")
+            logger.error("Batch embedding failed: %s", safe_error(e))
             return (0, len(items))
 
         succeeded = 0
@@ -1038,7 +1042,10 @@ class SearchService:
                 succeeded += 1
             except Exception as e:
                 logger.error(
-                    f"Failed to upsert {object_type} {object_id}: {e}"
+                    "Failed to upsert %s %s: %s",
+                    object_type,
+                    object_id,
+                    safe_error(e),
                 )
                 failed += 1
 
@@ -1102,7 +1109,12 @@ class SearchService:
                         total,
                     )
             except Exception as e:
-                logger.error(f"Failed to prepare {obj_type} {object_id}: {e}")
+                logger.error(
+                    "Failed to prepare %s %s: %s",
+                    obj_type,
+                    object_id,
+                    safe_error(e),
+                )
                 failed += 1
                 processed += 1
                 self._report_rebuild_progress(
@@ -1440,7 +1452,7 @@ def get_llm_settings_from_qsettings() -> Dict[str, Any]:
             "st_model": str(settings.value("ai_st_model", "")),
         }
     except Exception as e:
-        logger.warning(f"Failed to load LLM settings from QSettings: {e}")
+        logger.warning("Failed to load LLM settings error_type=%s", type(e).__name__)
         return {
             "provider": "sentence-transformers",
             "lm_url": "",

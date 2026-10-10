@@ -419,7 +419,7 @@ class WorkerManager(QObject):
 
     @Slot(str)
     def show_error_message(self, message: str) -> None:
-        """Displays an error message in the status bar and logs it.
+        """Display an error status; the producing operation owns diagnostics.
 
         Args:
             message: The error description.
@@ -427,7 +427,7 @@ class WorkerManager(QObject):
         """
         self.window.status_bar.showMessage(f"{STATUS_ERROR_PREFIX}{message}", 5000)
         QApplication.restoreOverrideCursor()
-        logger.error(message)
+        logger.debug("Worker error status displayed")
 
     @Slot(str, str)
     def _on_index_object_requested(self, object_type: str, object_id: str) -> None:

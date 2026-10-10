@@ -421,7 +421,7 @@ class GalleryWidget(QWidget):
 
         text, ok = QInputDialog.getText(self, "Edit Caption", "Caption:", text=current)
         if ok:
-            logger.info(f"GalleryWidget: Updating caption for {att_id} to '{text}'")
+            logger.debug("GalleryWidget: Updating caption for attachment %s", att_id)
             cmd = UpdateImageCaptionCommand(att_id, text)
             self.main_window.command_requested.emit(cmd)
 

@@ -1,4 +1,5 @@
 import logging
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -6,6 +7,7 @@ from PySide6.QtCore import QObject
 
 from src.app.command_coordinator import CommandCoordinator
 from src.commands.base_command import BaseCommand, CommandResult
+from src.core.operation_trace import safe_id
 from src.services.db_service import DatabaseService
 
 pytestmark = pytest.mark.ci_fast
@@ -83,6 +85,111 @@ def test_execute_command(coordinator):
     assert payload["type"] == "MockCommand"
     assert payload["data"] == {"name": "Serialized"}
     assert payload["base"]["command_id"] == mock_command.command_id
+
+
+def test_operation_trace_survives_request_and_discards_late_result(coordinator):
+    command = MockCommand("Trace")
+    coordinator.window.current_world = SimpleNamespace(id="world-one")
+    request_spy = MagicMock()
+    coordinator.command_requested.connect(request_spy)
+    coordinator.execute_command(command)
+    trace = request_spy.call_args.args[0]["trace"]
+    assert trace["command_id"] == command.command_id
+    assert trace["world_id"] == "world-one"
+    assert trace["action"] == "save"
+    assert trace["operation_id"]
+
+    coordinator.clear_history()
+    coordinator.on_command_result(
+        CommandResult(
+            success=True,
+            command_name="MockCommand",
+            data={"command_id": command.command_id, "operation_trace": trace},
+        )
+    )
+    assert coordinator.undo_stack == []
+
+
+def test_undo_redo_get_distinct_attempt_ids_with_stable_command_id(coordinator):
+    command = MockCommand("History")
+    coordinator.window.current_world = SimpleNamespace(id="world-one")
+    coordinator.undo_stack.append(command)
+    undo_spy = MagicMock()
+    redo_spy = MagicMock()
+    coordinator.undo_requested.connect(undo_spy)
+    coordinator.redo_requested.connect(redo_spy)
+
+    coordinator.undo()
+    undo_trace = undo_spy.call_args.args[0]["trace"]
+    coordinator.on_command_result(
+        CommandResult(
+            success=True,
+            command_name="Undo_MockCommand",
+            data={"command_id": command.command_id, "operation_trace": undo_trace},
+        )
+    )
+    coordinator.redo()
+    redo_trace = redo_spy.call_args.args[0]["trace"]
+
+    assert undo_trace["action"] == "undo"
+    assert redo_trace["action"] == "redo"
+    assert undo_trace["command_id"] == redo_trace["command_id"]
+    assert undo_trace["operation_id"] != redo_trace["operation_id"]
+    assert undo_trace["world_id"] == redo_trace["world_id"] == "world-one"
+
+
+def test_world_switch_discards_late_result_and_releases_pending_command(coordinator):
+    command = MockCommand("Late")
+    coordinator.window.current_world = SimpleNamespace(id="world-one")
+    request_spy = MagicMock()
+    coordinator.command_requested.connect(request_spy)
+    coordinator.execute_command(command)
+    trace = request_spy.call_args.args[0]["trace"]
+
+    coordinator.window.current_world = SimpleNamespace(id="world-two")
+    coordinator.on_command_result(
+        CommandResult(
+            success=True,
+            command_name="MockCommand",
+            data={"command_id": command.command_id, "operation_trace": trace},
+        )
+    )
+    assert coordinator.undo_stack == []
+    assert coordinator._pending_commands == {}
+
+
+def test_trace_ids_exclude_authored_text_and_secret_like_values():
+    assert safe_id("world-one") == "world-one"
+    assert safe_id("full manuscript body with spaces") == ""
+    assert safe_id("sk-synthetic-secret") == ""
+
+
+def test_concurrent_command_results_keep_their_request_context(coordinator):
+    coordinator.window.current_world = SimpleNamespace(id="world-one")
+    requests = []
+    coordinator.command_requested.connect(requests.append)
+    first = MockCommand("First")
+    second = MockCommand("Second")
+    coordinator.execute_command(first)
+    coordinator.execute_command(second)
+    first_trace = requests[0]["trace"]
+    second_trace = requests[1]["trace"]
+    assert first_trace["operation_id"] != second_trace["operation_id"]
+
+    for command, trace in ((second, second_trace), (first, first_trace)):
+        coordinator.on_command_result(
+            CommandResult(
+                success=True,
+                command_name="MockCommand",
+                data={
+                    "command_id": command.command_id,
+                    "command": command,
+                    "operation_trace": trace,
+                },
+            )
+        )
+    assert coordinator.undo_stack == [second, first]
+    assert coordinator._pending_commands == {}
 
 
 def test_on_command_result_success_adds_to_undo_stack(coordinator, main_window):
@@ -179,8 +286,7 @@ def test_stack_state_logging_is_one_compact_debug_record(coordinator, caplog):
     ]
     assert len(records) == 1
     assert records[0].getMessage() == (
-        "Command stacks: undo=2 (next=Mock: Undo), "
-        "redo=1 (next=Mock: Redo)"
+        "Command stacks: undo=2 (next=Mock: Undo), redo=1 (next=Mock: Redo)"
     )
 
 

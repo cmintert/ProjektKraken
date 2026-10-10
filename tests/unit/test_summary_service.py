@@ -1,3 +1,4 @@
+import logging
 import time
 from unittest.mock import MagicMock, patch
 
@@ -137,9 +138,22 @@ def test_generate_summary_calls_llm_and_updates_entity(
     mock_db_service.insert_event.assert_not_called()
 
 
-def test_default_prompt_does_not_require_wiki_links(
-    summary_service, mock_llm_provider
+def test_summary_diagnostics_exclude_prompt_and_response_content(
+    summary_service, mock_llm_provider, caplog
 ):
+    secret = "synthetic-private-manuscript-4821"
+    entity = Entity(name=secret, type="character", description=f"{secret} " * 20)
+    mock_llm_provider.generate.return_value = {
+        "text": secret,
+        "model": "test-model",
+    }
+    with caplog.at_level(logging.DEBUG):
+        summary_service.generate_summary(entity)
+    assert secret not in caplog.text
+    assert "prompt_chars=" in caplog.text
+
+
+def test_default_prompt_does_not_require_wiki_links(summary_service, mock_llm_provider):
     # Ensure QSettings returns the default prompt (not one set by a prior test)
     from PySide6.QtCore import QSettings
 

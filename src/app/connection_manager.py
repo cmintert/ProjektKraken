@@ -1162,12 +1162,6 @@ class ConnectionManager:
                     "AnalysisPanel",
                 ),
                 (
-                    getattr(self.window, "command_coordinator", panel),
-                    "history_changed",
-                    lambda _undo, _redo: panel.intelligence_panel.mark_stale(),
-                    "AnalysisPanel",
-                ),
-                (
                     worker,
                     "initialized",
                     panel.on_world_initialized,
