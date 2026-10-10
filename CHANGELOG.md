@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-10
-**Commit:** f808e1720c347c62a106efa34ca631de201b0403
+**Commit:** 0b4d9024c9ff059b1d8d009d14e21b51617c3fa6
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-10)* **Entity and Event writing layout (KRT-80)**: Centered
+  description, toolbar, source actions and supporting writing controls in a
+  readable column that expands in narrow inspectors. Preserved live editor and
+  Focus writing behavior, added responsive geometry checks, and recorded
+  light/dark native renders with scroll measurements.
 
 - *(2026-10-10)* **Generation retrieval (KRT-68)**: Built retrieval queries
   from the substituted task and selected subject before adding descriptions or

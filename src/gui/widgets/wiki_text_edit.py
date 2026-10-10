@@ -1750,7 +1750,9 @@ class WikiTextEditView(QTextEdit):
         else:
             self.viewport().setCursor(Qt.CursorShape.IBeamCursor)
 
-    def _refresh_modifier_cursor(self, event: QKeyEvent, *, released: bool = False) -> None:
+    def _refresh_modifier_cursor(
+        self, event: QKeyEvent, *, released: bool = False
+    ) -> None:
         """Refresh a stationary link hover when its navigation modifier changes."""
         modifiers_by_key: dict[int, Qt.KeyboardModifier] = {
             Qt.Key.Key_Alt: Qt.KeyboardModifier.AltModifier,
@@ -2808,3 +2810,7 @@ class ResizableWikiTextEditField(QSplitter):
         """Keep the editor at least as wide as its current reading minimum."""
         current_width, spacer_width = self.sizes()
         self.setSizes([max(current_width, minimum_width), spacer_width])
+
+    def set_fill_width(self, enabled: bool) -> None:
+        """Fill a bounded parent column while retaining the splitter child API."""
+        self._spacer.setVisible(not enabled)

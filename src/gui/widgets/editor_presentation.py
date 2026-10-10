@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.constants import EDITOR_FORM_VERTICAL_SPACING
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.editor_inspector_composition import (
     EditorInspectorComposition,
@@ -36,6 +37,7 @@ from src.gui.widgets.overflow_toolbar import OverflowToolBar
 COMPACT_EDITOR_WIDTH = 560
 EDITOR_CONTROL_HEIGHT = 32
 GENERATION_GRID_WIDTH = 960
+WRITING_COLUMN_MAX_WIDTH = 760
 
 
 class DisclosureButton(QToolButton):
@@ -155,6 +157,7 @@ class EditorPresentation(QObject):
         self._install_toolbar_menus()
         self._install_action_rows()
         self._install_writing_support()
+        self._install_writing_column()
         self.context_disclosure = SupportingSectionHeader("History & context")
         self.history_disclosure = self.context_disclosure
         self.composition = EditorInspectorComposition(
@@ -320,6 +323,65 @@ class EditorPresentation(QObject):
         form.insertRow(row + 2, editor.summary_container)
         form.insertRow(row + 3, editor.llm_container)
         editor.summary_widget.presence_changed.connect(self._summary_presence_changed)
+
+    def _install_writing_column(self) -> None:
+        """Center the live writing controls as one responsive Overview block."""
+        editor = self.editor
+        form = editor.form_layout
+        row, _role = form.getWidgetPosition(editor.description_field)
+
+        self.writing_column = QWidget(editor.details_container)
+        column_layout = QVBoxLayout(self.writing_column)
+        column_layout.setContentsMargins(0, 0, 0, 0)
+        column_layout.setSpacing(EDITOR_FORM_VERTICAL_SPACING)
+
+        description_row = form.takeRow(editor.description_field)
+        assert description_row.labelItem is not None
+        description_label = description_row.labelItem.widget()
+        assert isinstance(description_label, QLabel)
+        description_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        column_layout.addWidget(description_label)
+        column_layout.addWidget(editor.description_field)
+
+        if hasattr(editor, "description_source_label"):
+            source_row = form.takeRow(editor.description_source_label)
+            assert source_row.labelItem is not None
+            source_label = source_row.labelItem.widget()
+            assert isinstance(source_label, QLabel)
+            source_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
+            self._source_label = source_label
+            source_label.setHidden(editor.description_source_label.isHidden())
+            editor.description_source_label.installEventFilter(self)
+            column_layout.addWidget(source_label)
+            column_layout.addWidget(editor.description_source_label)
+            form.takeRow(editor.btn_new_description)
+            column_layout.addWidget(editor.btn_new_description)
+
+        for widget in (
+            self.writing_actions,
+            editor.summary_container,
+            editor.llm_container,
+        ):
+            form.takeRow(widget)
+            column_layout.addWidget(widget)
+
+        # The bounded column replaces the splitter's empty width-absorbing pane.
+        # Keep the splitter and its editor child for Focus writing's state restore.
+        editor.description_field.set_fill_width(True)
+        self.writing_column.setMaximumWidth(WRITING_COLUMN_MAX_WIDTH)
+        self.writing_column.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
+        )
+        centered = QWidget(editor.details_container)
+        centered_layout = QHBoxLayout(centered)
+        centered_layout.setContentsMargins(0, 0, 0, 0)
+        centered_layout.setSpacing(0)
+        # Give the column almost all compact width; equal side stretches take
+        # the remaining space once it reaches its maximum readable width.
+        centered_layout.addStretch(1)
+        centered_layout.addWidget(self.writing_column, 100)
+        centered_layout.addStretch(1)
+        form.insertRow(row, centered)
 
     def _summary_presence_changed(self, present: bool) -> None:
         """Indicate available content without promising persistence."""
@@ -516,6 +578,9 @@ class EditorPresentation(QObject):
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:  # noqa: N802
         """Reflow only when the host geometry or visibility changes."""
+        if watched is getattr(self.editor, "description_source_label", None):
+            if event.type() in (QEvent.Type.Show, QEvent.Type.Hide):
+                self._source_label.setVisible(event.type() == QEvent.Type.Show)
         if event.type() in (QEvent.Type.Resize, QEvent.Type.Show):
             self.reflow()
         return super().eventFilter(watched, event)

@@ -140,6 +140,8 @@ def _prepare_state(editor: Editor, app: QApplication, state: str, width: int) ->
     if state in ("summary", "ai_draft", "writing_panels"):
         editor.summary_checkbox.setChecked(state != "ai_draft")
         editor.llm_checkbox.setChecked(state != "summary")
+        if state == "writing_panels":
+            editor.summary_checkbox.setFocus(Qt.FocusReason.OtherFocusReason)
         _settle(app)
         editor.scroll_area.ensureWidgetVisible(editor._presentation.writing_actions)
     if state in ("information", "information_more"):
@@ -172,7 +174,12 @@ def _prepare_state(editor: Editor, app: QApplication, state: str, width: int) ->
     _settle(app)
 
 
-def capture(output: Path) -> None:
+def capture(
+    output: Path,
+    *,
+    widths: tuple[int, ...] = (331, 560, 871),
+    states: tuple[str, ...] | None = None,
+) -> None:
     """Render both themes and width states without connecting a database."""
     output.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="kraken-inspector-settings-") as settings:
@@ -194,7 +201,7 @@ def capture(output: Path) -> None:
         for theme in ("dark_mode", "light_mode"):
             manager.set_theme(theme, app)
             for kind in ("entity", "event"):
-                for width in (331, 560, 871):
+                for width in widths:
                     parent = _EvidenceHost()
                     editor = _make_editor(kind, parent)
                     editor.summary_widget.set_summary(
@@ -243,9 +250,15 @@ def capture(output: Path) -> None:
                     editor.resize(width, 720)
                     editor.show()
                     _settle(app)
-                    states = ["overview", "advanced", "short"]
-                    if hasattr(editor.inspector, "activate_section_id"):
-                        states.extend(
+                    review_states = (
+                        list(states)
+                        if states is not None
+                        else ["overview", "advanced", "short"]
+                    )
+                    if states is None and hasattr(
+                        editor.inspector, "activate_section_id"
+                    ):
+                        review_states.extend(
                             [
                                 "connections",
                                 "media",
@@ -265,7 +278,7 @@ def capture(output: Path) -> None:
                                 "more",
                             ]
                         )
-                    for state in states:
+                    for state in review_states:
                         _prepare_state(editor, app, state, width)
                         if state == "more":
                             tabs = editor.inspector.main_tabs
@@ -282,6 +295,14 @@ def capture(output: Path) -> None:
                                 "height": editor.height(),
                                 "state": state,
                                 "horizontal_scroll": editor.scroll_area.horizontalScrollBar().maximum(),
+                                "writing_column": {
+                                    "x": editor._presentation.writing_column.mapTo(
+                                        editor.details_container, QPoint()
+                                    ).x(),
+                                    "width": editor._presentation.writing_column.width(),
+                                    "overview_width": editor.details_container.width(),
+                                    "editor_width": editor.desc_edit.width(),
+                                },
                                 "visible_horizontal_scrollbars": [
                                     {
                                         "widget": type(area).__name__,
@@ -336,7 +357,14 @@ def main() -> None:
     """Read the output directory and capture the inspector matrix."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
-    capture(parser.parse_args().output)
+    parser.add_argument("--widths", type=int, nargs="+")
+    parser.add_argument("--states", nargs="+")
+    args = parser.parse_args()
+    capture(
+        args.output,
+        widths=tuple(args.widths) if args.widths else (331, 560, 871),
+        states=tuple(args.states) if args.states else None,
+    )
 
 
 if __name__ == "__main__":

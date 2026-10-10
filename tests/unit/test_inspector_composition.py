@@ -472,11 +472,10 @@ def test_narrow_toolbar_menus_reuse_authored_actions(editor, qtbot):
 
 def test_supporting_tools_are_contextual_and_start_closed(editor):
     presentation = editor._presentation
-    row, _role = editor.form_layout.getWidgetPosition(editor.description_field)
-    tools_row, _role = editor.form_layout.getWidgetPosition(
-        presentation.writing_actions
-    )
-    assert tools_row == row + 1
+    assert presentation.writing_column.isAncestorOf(editor.description_field)
+    assert presentation.writing_column.isAncestorOf(presentation.writing_actions)
+    assert presentation.writing_column.isAncestorOf(editor.summary_container)
+    assert presentation.writing_column.isAncestorOf(editor.llm_container)
     assert editor.summary_checkbox.text() == "Summary…"
     assert editor.llm_checkbox.text() == "Draft with AI…"
     assert presentation.writing_actions.isAncestorOf(editor.summary_checkbox)
@@ -496,6 +495,18 @@ def test_supporting_tools_are_contextual_and_start_closed(editor):
             for label in presentation.composition.history_body.findChildren(QWidget)
         )
     assert not editor.has_unsaved_changes()
+
+
+def test_entity_source_caption_tracks_its_field_visibility(editor):
+    if not isinstance(editor, EntityEditorWidget):
+        return
+    label = editor._presentation._source_label
+    assert editor.description_source_label.isHidden()
+    assert label.isHidden()
+    editor.description_source_label.show()
+    assert not label.isHidden()
+    editor.description_source_label.hide()
+    assert label.isHidden()
 
 
 def test_opening_supporting_tools_never_generates_or_mutates(editor, qtbot):
@@ -648,7 +659,9 @@ def test_quiet_support_styles_survive_theme_changes(editor, qapp):
         manager.set_theme(theme, qapp)
         for button in (editor.summary_checkbox, editor.llm_checkbox):
             assert button.icon().isNull()
-            assert manager.get_theme()["action_quiet_normal_text"] in button.styleSheet()
+            assert (
+                manager.get_theme()["action_quiet_normal_text"] in button.styleSheet()
+            )
             assert manager.get_theme()["entity_main"] not in button.styleSheet()
             assert manager.get_theme()["event_main"] not in button.styleSheet()
         assert manager.get_theme()["text_dim"] in (

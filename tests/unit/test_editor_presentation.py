@@ -4,7 +4,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QPoint, Qt
 from PySide6.QtWidgets import QWidget
 
 from src.core.calendar import (
@@ -17,7 +17,10 @@ from src.core.entities import Entity
 from src.core.events import Event
 from src.core.temporal_expression import TemporalPrecision
 from src.core.theme_manager import ThemeManager
-from src.gui.widgets.editor_presentation import DisclosureButton
+from src.gui.widgets.editor_presentation import (
+    WRITING_COLUMN_MAX_WIDTH,
+    DisclosureButton,
+)
 from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.event_editor import EventEditorWidget
 
@@ -319,6 +322,27 @@ def test_editor_tabs_fit_compact_width(qtbot, kind, width, height, calendar):
     editor.inspector.main_tabs.setCurrentIndex(0)
     qtbot.wait(20)
     assert not editor.has_unsaved_changes()
+    column = editor._presentation.writing_column
+    column_left = column.mapTo(editor.details_container, QPoint()).x()
+    column_right = editor.details_container.width() - column_left - column.width()
+    assert column.width() <= WRITING_COLUMN_MAX_WIDTH
+    assert abs(column_left - column_right) <= 24, (
+        width,
+        column.width(),
+        column_left,
+        column_right,
+    )
+    if width == 360:
+        assert column.width() >= editor.details_container.width() - 48
+    assert editor.desc_edit.width() >= column.width() - 16
+    assert editor._presentation.writing_actions.width() == column.width()
+    for widget in (
+        editor.description_field,
+        editor.desc_edit,
+        editor.desc_edit.toolbar,
+        editor._presentation.writing_actions,
+    ):
+        assert abs(widget.mapTo(column, QPoint()).x()) <= 8
     assert editor.scroll_area.horizontalScrollBar().maximum() == 0, [
         (
             type(w).__name__,
