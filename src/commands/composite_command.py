@@ -74,6 +74,10 @@ class CompositeCommand(BaseCommand):
                         success=False,
                         message=f"Sub-command failed: {message}",
                         command_name="CompositeCommand",
+                        data={"diagnostic": result.data["diagnostic"]}
+                        if isinstance(result, CommandResult)
+                        and "diagnostic" in result.data
+                        else {},
                     )
 
                 self._executed_commands.append(cmd)

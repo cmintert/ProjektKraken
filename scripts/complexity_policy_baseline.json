@@ -117,14 +117,14 @@
       "id": "c901-b0bb141a685d",
       "path": "src/commands/temporal_entity_edit_command.py",
       "symbol": "TemporalEntityEditCommand.execute",
-      "ceiling": 28,
+      "ceiling": 24,
       "reason": "Existing production complexity reviewed for KRT-36; untouched debt only, executable edits must strictly improve."
     },
     {
       "id": "c901-b90fc28385bc",
       "path": "src/gui/widgets/entity_editor.py",
       "symbol": "EntityEditorWidget._save_temporal",
-      "ceiling": 29,
+      "ceiling": 23,
       "reason": "Existing production complexity reviewed for KRT-36; untouched debt only, executable edits must strictly improve."
     },
     {

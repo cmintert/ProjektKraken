@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-10
-**Commit:** f4ca4bb25e90f189cfab802f72a59f014fc57cfb
+**Commit:** 72413993e1d9f36a132013ca11e337e453b6aace
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-10)* **Temporal save rejection diagnostics (KRT-60)**: Added
+  correlated, content-free field and source provenance for genuine temporal
+  conflicts, manual/autosave origin, and distinct stale or invalid checkpoint
+  acknowledgements. Kept editor behavior and undo intact, added focused
+  regression coverage, and lowered two reviewed complexity ceilings.
 
 - *(2026-10-10)* **Operation and content-safe diagnostics (KRT-59, KRT-63)**:
   Traced save, undo and redo from queued request through worker outcome and

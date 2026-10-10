@@ -38,6 +38,21 @@ result. Do not query the worker database or a mutable current world to
 reconstruct it later. Empty world/target fields mean that context was not
 available at the request boundary.
 
+Temporal Entity saves add `save_origin=manual|autosave` and keep the entity ID
+as the target even when WikiLink reconciliation wraps the edit in a composite
+command. A rejected comparison emits `stage=temporal_rejection` with a stable
+`reason`, `field`, optional bounded `field_key`, `lore_time`, and expected/actual
+source kind, relation ID and event ID. `value_changed` reports a comparison,
+never either value. The reasons are `visible_value_or_source_changed`,
+`hidden_source_changed`, `metadata_changed`, `validation_rejected`, and
+`unexpected_failure`. A successful command has no rejection record. The main
+thread adds `stage=temporal_ack` with `outcome=accepted|rejected|invalid|stale`.
+`invalid` means the command succeeded but the checkpoint was absent or failed
+validation; `stale` includes a bounded mismatch reason such as
+`generation_mismatch`. Match records by `operation_id` and `command_id` before
+interpreting an acknowledgement. No description body, attribute value, event
+name or resolved manuscript value belongs in these records.
+
 Ordinary diagnostics must not include credentials, authored prose, complete
 prompts, model responses, unrestricted HTTP bodies, or URLs that may contain
 tokens. Log IDs, lengths, provider/error classes and numeric HTTP status
@@ -68,6 +83,8 @@ operation_id=B command_id=C1 action=undo world_id=W target_id=T stage=terminal o
 operation_id=C command_id=C1 action=redo world_id=W target_id=T stage=terminal outcome=succeeded duration_ms=11
 operation_id=D command_id=C2 action=save world_id=W target_id=T stage=terminal outcome=failed duration_ms=4
 operation_id=D error_type=ValueError stack=worker.py:820:run_command
+operation_id=E target_id=T stage=temporal_rejection save_origin=autosave reason=visible_value_or_source_changed field=description expected_source_kind=baseline actual_source_kind=relation actual_relation_id=R lore_time=12.0 value_changed=True
+operation_id=E target_id=T stage=temporal_ack save_origin=autosave outcome=rejected reason=command_rejected
 ```
 
 Each action also has requested and started events; they are omitted from the

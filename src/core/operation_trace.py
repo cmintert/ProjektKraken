@@ -8,6 +8,7 @@ import sys
 import time
 import traceback
 import uuid
+from math import isfinite
 from pathlib import Path
 from typing import Any
 
@@ -37,14 +38,15 @@ def new_trace(
     command: Any, action: str, world_id: str, epoch: int
 ) -> dict[str, str | int | float]:
     """Capture immutable request context without reading the worker database."""
+    children = getattr(command, "commands", ())
+    target = children[0] if children and hasattr(children[0], "entity_id") else command
     target_id = ""
     for field in ("entity_id", "event_id", "marker_id", "target_id", "map_id"):
-        value = getattr(command, field, None)
-        identifier = safe_id(value)
+        identifier = safe_id(getattr(target, field, None))
         if identifier:
             target_id = identifier
             break
-    return {
+    trace = {
         "operation_id": str(uuid.uuid4()),
         "command_id": safe_id(command.command_id),
         "command": command.__class__.__name__,
@@ -54,6 +56,14 @@ def new_trace(
         "epoch": epoch,
         "requested_at": time.monotonic(),
     }
+    origin = getattr(target, "save_origin", "")
+    if origin in {"manual", "autosave"}:
+        trace["save_origin"] = origin
+        lore_time = getattr(target, "lore_time", None)
+        if isinstance(lore_time, (int, float)) and not isinstance(lore_time, bool):
+            if isfinite(lore_time):
+                trace["lore_time"] = lore_time
+    return trace
 
 
 def from_request(request: object) -> dict[str, str | int | float] | None:
@@ -91,6 +101,10 @@ def event(trace: dict[str, str | int | float], stage: str, **fields: object) -> 
         f"command={trace['command']} action={trace['action']} "
         f"world_id={trace['world_id']} target_id={trace['target_id']} stage={stage}"
     )
+    if trace.get("save_origin") in {"manual", "autosave"}:
+        base += f" save_origin={trace['save_origin']}"
+        if "lore_time" in trace:
+            base += f" lore_time={trace['lore_time']}"
     extra = " ".join(f"{key}={value}" for key, value in fields.items())
     logger.info("%s%s", base, f" {extra}" if extra else "")
 
@@ -114,7 +128,35 @@ def finish(
             outcome=outcome or ("succeeded" if result.success else "failed"),
             duration_ms=elapsed,
         )
+        diagnostic = result.data.get("diagnostic")
+        if isinstance(diagnostic, dict) and diagnostic.get("kind") == "temporal_save":
+            details = _temporal_diagnostic(diagnostic)
+            if "lore_time" in trace:
+                details.pop("lore_time", None)
+            event(trace, "temporal_rejection", **details)
     return result
+
+
+def _temporal_diagnostic(diagnostic: dict[str, Any]) -> dict[str, object]:
+    """Whitelist content-free temporal fields before writing the ordinary log."""
+    fields: dict[str, object] = {}
+    for key in (
+        "reason",
+        "entity_id",
+        "field",
+        "field_key",
+        "expected_source_kind",
+        "expected_relation_id",
+        "expected_event_id",
+        "actual_source_kind",
+        "actual_relation_id",
+        "actual_event_id",
+    ):
+        fields[key] = safe_id(diagnostic.get(key))
+    time_value = diagnostic.get("lore_time")
+    fields["lore_time"] = time_value if isinstance(time_value, (int, float)) else ""
+    fields["value_changed"] = diagnostic.get("value_changed") is True
+    return fields
 
 
 def safe_stack(exc: BaseException) -> str:

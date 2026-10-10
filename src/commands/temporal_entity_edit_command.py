@@ -8,10 +8,49 @@ from typing import Any
 
 from src.commands.base_command import BaseCommand, CommandResult
 from src.core.events import Event
+from src.core.operation_trace import safe_id
 from src.core.temporal_state import validate_payload
 from src.core.temporal_window import resolve_temporal_window
 from src.services.db_service import DatabaseService
 from src.services.temporal_entity_snapshot_service import TemporalEntitySnapshotService
+
+
+class TemporalSaveConflict(ValueError):
+    """A rejected comparison with content-free diagnostic provenance."""
+
+    def __init__(
+        self,
+        message: str,
+        reason: str,
+        field: str,
+        key: str = "",
+        expected_source: object = None,
+        actual_source: object = None,
+        value_changed: bool = False,
+    ) -> None:
+        """Keep the existing user message and a sanitized conflict description."""
+        super().__init__(message)
+        self.diagnostic = {
+            "reason": reason,
+            "field": field,
+            "field_key": safe_id(key),
+            "expected_source_kind": _source_part(expected_source, "kind"),
+            "expected_relation_id": _source_part(expected_source, "relation_id"),
+            "expected_event_id": _source_part(expected_source, "event_id"),
+            "actual_source_kind": _source_part(actual_source, "kind"),
+            "actual_relation_id": _source_part(actual_source, "relation_id"),
+            "actual_event_id": _source_part(actual_source, "event_id"),
+            "value_changed": value_changed,
+        }
+
+
+class TemporalSaveValidation(ValueError):
+    """An expected invalid edit whose message remains user facing only."""
+
+
+def _source_part(source: object, part: str) -> str:
+    """Retain only bounded source identifiers, never source labels or values."""
+    return safe_id(source.get(part)) if isinstance(source, dict) else ""
 
 
 class TemporalEntityEditCommand(BaseCommand):
@@ -25,6 +64,7 @@ class TemporalEntityEditCommand(BaseCommand):
         patches: list[dict[str, Any]],
         metadata: dict[str, Any] | None = None,
         expected_metadata: dict[str, Any] | None = None,
+        save_origin: str = "unknown",
     ) -> None:
         """Capture the viewed state, requested field patches, and metadata."""
         super().__init__()
@@ -34,6 +74,9 @@ class TemporalEntityEditCommand(BaseCommand):
         self.patches = deepcopy(patches)
         self.metadata = deepcopy(metadata or {})
         self.expected_metadata = deepcopy(expected_metadata or {})
+        self.save_origin = (
+            save_origin if save_origin in {"manual", "autosave"} else "unknown"
+        )
         self._before_entity: dict[str, Any] | None = None
         self._before_relations: dict[str, dict[str, Any]] = {}
         self._created_event_ids: list[str] = []
@@ -61,10 +104,45 @@ class TemporalEntityEditCommand(BaseCommand):
                     state.get("absent_attribute_sources", {}).get(key)
                     != self.expected.get("absent_attribute_sources", {}).get(key)
                 ):
-                    raise ValueError("The attribute's hidden source changed. Reload first.")
+                    raise TemporalSaveConflict(
+                        "The attribute's hidden source changed. Reload first.",
+                        "hidden_source_changed",
+                        "attribute",
+                        key,
+                        self.expected.get("absent_attribute_sources", {}).get(key),
+                        state.get("absent_attribute_sources", {}).get(key),
+                    )
             if value != previous or source != old_source:
-                raise ValueError(
-                    "The visible value or its source changed. Reload before saving."
+                raise TemporalSaveConflict(
+                    "The visible value or its source changed. Reload before saving.",
+                    "visible_value_or_source_changed",
+                    patch["field"],
+                    patch.get("key", ""),
+                    old_source,
+                    source,
+                    value != previous,
+                )
+
+    def _verify_metadata(self, entity: Any) -> None:
+        """Compare only metadata being edited against its viewed baseline."""
+        for key in ("name", "type"):
+            if key in self.metadata and getattr(
+                entity, key
+            ) != self.expected_metadata.get(key):
+                raise TemporalSaveConflict(
+                    f"Entity {key} changed. Reload before saving.",
+                    "metadata_changed",
+                    key,
+                    value_changed=True,
+                )
+        for key in self.metadata.get("hidden_attributes", {}):
+            if entity.attributes.get(key) != self.expected_metadata.get(key):
+                raise TemporalSaveConflict(
+                    f"Entity {key} changed. Reload before saving.",
+                    "metadata_changed",
+                    "hidden_attribute",
+                    key,
+                    value_changed=True,
                 )
 
     def execute(self, db_service: DatabaseService) -> CommandResult:  # noqa: C901
@@ -73,13 +151,8 @@ class TemporalEntityEditCommand(BaseCommand):
             self._verify(self._current_state(db_service))
             entity = db_service.get_entity(self.entity_id)
             if entity is None:
-                raise ValueError("Entity no longer exists")
-            for key in ("name", "type"):
-                if key in self.metadata and getattr(entity, key) != self.expected_metadata.get(key):
-                    raise ValueError(f"Entity {key} changed. Reload before saving.")
-            for key in self.metadata.get("hidden_attributes", {}):
-                if entity.attributes.get(key) != self.expected_metadata.get(key):
-                    raise ValueError(f"Entity {key} changed. Reload before saving.")
+                raise TemporalSaveValidation("Entity no longer exists")
+            self._verify_metadata(entity)
             self._before_entity = entity.to_dict()
             self._before_relations = {}
             self._created_event_ids = []
@@ -88,7 +161,9 @@ class TemporalEntityEditCommand(BaseCommand):
             base_desc = entity.description
             for key, value in self.metadata.get("hidden_attributes", {}).items():
                 if key not in {"_tags", "_sheet_layout", "_summary_data"}:
-                    raise ValueError(f"Unsupported baseline metadata: {key}")
+                    raise TemporalSaveValidation(
+                        f"Unsupported baseline metadata: {key}"
+                    )
                 if value is None:
                     base_attrs.pop(key, None)
                 else:
@@ -108,7 +183,9 @@ class TemporalEntityEditCommand(BaseCommand):
                 )
                 if scope == "source":
                     if owner is None:
-                        raise ValueError("A new field needs a baseline or dated scope")
+                        raise TemporalSaveValidation(
+                            "A new field needs a baseline or dated scope"
+                        )
                     if owner["kind"] == "baseline":
                         scope = "baseline"
                     else:
@@ -127,7 +204,9 @@ class TemporalEntityEditCommand(BaseCommand):
                     if relation_id not in relation_updates:
                         relation = db_service.get_relation(relation_id)
                         if relation is None or relation["target_id"] != self.entity_id:
-                            raise ValueError("The source relation no longer exists")
+                            raise TemporalSaveValidation(
+                                "The source relation no longer exists"
+                            )
                         self._before_relations[relation_id] = deepcopy(relation)
                         relation_updates[relation_id] = deepcopy(relation)
                     rel_attrs = relation_updates[relation_id]["attributes"]
@@ -137,14 +216,16 @@ class TemporalEntityEditCommand(BaseCommand):
                     event_id = patch.get("event_id", "")
                     event_name = patch.get("event_name", "")
                     if not event_id and not event_name.strip():
-                        raise ValueError("Choose an event or enter a new event name")
+                        raise TemporalSaveValidation(
+                            "Choose an event or enter a new event name"
+                        )
                     bucket = dated_updates.setdefault(
                         (event_id, event_name),
                         {"attributes": {}, "unset_attributes": []},
                     )
                     self._apply_payload_patch(bucket, patch)
                 else:
-                    raise ValueError(f"Unknown edit scope: {scope}")
+                    raise TemporalSaveValidation(f"Unknown edit scope: {scope}")
 
             updates = {"name": entity.name, "type": entity.type}
             updates.update(self.metadata)
@@ -165,11 +246,13 @@ class TemporalEntityEditCommand(BaseCommand):
                 )
                 if "_tags" in self.metadata.get("hidden_attributes", {}):
                     self._sync_tags(
-                        db_service, self.entity_id, set(base_attrs.get("_tags", [])),
+                        db_service,
+                        self.entity_id,
+                        set(base_attrs.get("_tags", [])),
                         "entity",
                     )
             for relation in relation_updates.values():
-                validate_payload(relation["attributes"]["payload"])
+                self._validate_payload(relation["attributes"]["payload"])
                 db_service.update_relation(
                     relation["id"],
                     relation["target_id"],
@@ -177,11 +260,13 @@ class TemporalEntityEditCommand(BaseCommand):
                     relation["attributes"],
                 )
             for (event_id, event_name), payload in dated_updates.items():
-                validate_payload(payload)
+                self._validate_payload(payload)
                 if event_id:
                     event = db_service.get_event(event_id)
                     if event is None or event.lore_date != self.lore_time:
-                        raise ValueError("Selected event is not at the viewed time")
+                        raise TemporalSaveValidation(
+                            "Selected event is not at the viewed time"
+                        )
                 else:
                     event = Event(name=event_name.strip(), lore_date=self.lore_time)
                     db_service.insert_event(event)
@@ -192,7 +277,8 @@ class TemporalEntityEditCommand(BaseCommand):
                     for r in competing
                     if resolve_temporal_window(
                         r["attributes"], r.get("source_event_date")
-                    ).start == self.lore_time
+                    ).start
+                    == self.lore_time
                 ]
                 modified_at = max([0.0, *same_time]) + 1.0
                 relation_id = db_service.insert_relation(
@@ -225,12 +311,40 @@ class TemporalEntityEditCommand(BaseCommand):
                 success=False,
                 message=str(exc),
                 command_name="TemporalEntityEditCommand",
+                data={
+                    "diagnostic": self._rejection_diagnostic(exc),
+                },
             )
 
+    def _rejection_diagnostic(self, exc: Exception) -> dict[str, object]:
+        """Classify a failed save without copying exception text or authored data."""
+        detail = (
+            exc.diagnostic
+            if isinstance(exc, TemporalSaveConflict)
+            else {
+                "reason": "validation_rejected"
+                if isinstance(exc, TemporalSaveValidation)
+                else "unexpected_failure"
+            }
+        )
+        return {
+            "kind": "temporal_save",
+            "entity_id": safe_id(self.entity_id),
+            "lore_time": self.lore_time,
+            "save_origin": self.save_origin,
+            **detail,
+        }
+
     @staticmethod
-    def _apply_payload_patch(
-        payload: dict[str, Any], patch: dict[str, Any]
-    ) -> None:
+    def _validate_payload(payload: dict[str, Any]) -> None:
+        """Classify invalid temporal payloads without exposing their values."""
+        try:
+            validate_payload(payload)
+        except ValueError as exc:
+            raise TemporalSaveValidation(str(exc)) from exc
+
+    @staticmethod
+    def _apply_payload_patch(payload: dict[str, Any], patch: dict[str, Any]) -> None:
         """Change only the requested payload field."""
         if patch["field"] == "description":
             if patch["action"] == "remove_override":
@@ -285,6 +399,7 @@ class TemporalEntityEditCommand(BaseCommand):
             "patches": self.patches,
             "metadata": self.metadata,
             "expected_metadata": self.expected_metadata,
+            "save_origin": self.save_origin,
             "before_entity": self._before_entity,
             "before_relations": self._before_relations,
             "created_event_ids": self._created_event_ids,
@@ -302,6 +417,7 @@ class TemporalEntityEditCommand(BaseCommand):
             data["patches"],
             data.get("metadata"),
             data.get("expected_metadata"),
+            data.get("save_origin", "unknown"),
         )
         command._before_entity = data.get("before_entity")
         command._before_relations = data.get("before_relations", {})

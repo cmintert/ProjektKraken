@@ -42,6 +42,7 @@ from src.commands.relation_commands import (
 from src.commands.temporal_entity_edit_command import TemporalEntityEditCommand
 from src.commands.wiki_commands import ProcessWikiLinksCommand
 from src.core.map import Map
+from src.core.operation_trace import event as trace_event
 from src.core.temporal_entity_checkpoint import parse_temporal_entity_checkpoint
 from src.gui.dialogs.entity_creation_dialog import EntityCreationDialog
 from src.services.marker_icon_catalog import MarkerIconCatalog
@@ -104,6 +105,7 @@ class EditorCoordinator(BaseCoordinator):
             request["patches"],
             request.get("metadata"),
             request.get("expected_metadata"),
+            request.get("__save_origin", "unknown"),
         )
         commands: list[BaseCommand] = [command]
         for patch in request["patches"]:
@@ -182,6 +184,8 @@ class EditorCoordinator(BaseCoordinator):
                 self.main_window.data_coordinator.load_entity_details(entity_id)
             return
         if command_id != self._pending_temporal_command_id:
+            if self._is_temporal_result(result):
+                self._log_temporal_ack(result, "stale", "command_mismatch")
             return
         self._pending_temporal_command_id = None
         temporal_revision = self._pending_temporal_revision
@@ -193,12 +197,27 @@ class EditorCoordinator(BaseCoordinator):
         self._pending_temporal_entity_id = None
         self._pending_temporal_time = None
         temporal_editor = self.main_window.entity_editor
-        if (
-            temporal_editor.current_entity_id != entity_id
-            or temporal_editor.draft_generation != temporal_generation
-            or temporal_editor._temporal_time != lore_time
-            or temporal_editor._pending_save_revision != temporal_revision
-        ):
+        mismatch = next(
+            (
+                reason
+                for reason, differs in (
+                    ("entity_mismatch", temporal_editor.current_entity_id != entity_id),
+                    (
+                        "generation_mismatch",
+                        temporal_editor.draft_generation != temporal_generation,
+                    ),
+                    ("time_mismatch", temporal_editor._temporal_time != lore_time),
+                    (
+                        "revision_mismatch",
+                        temporal_editor._pending_save_revision != temporal_revision,
+                    ),
+                )
+                if differs
+            ),
+            None,
+        )
+        if mismatch:
+            self._log_temporal_ack(result, "stale", mismatch)
             return
         checkpoint = (
             parse_temporal_entity_checkpoint(
@@ -208,6 +227,19 @@ class EditorCoordinator(BaseCoordinator):
             else None
         )
         acknowledged = temporal_editor.finish_temporal_save(result.success, checkpoint)
+        self._log_temporal_ack(
+            result,
+            "accepted"
+            if acknowledged
+            else "rejected"
+            if not result.success
+            else "invalid",
+            "none"
+            if acknowledged
+            else "command_rejected"
+            if not result.success
+            else "missing_or_invalid_checkpoint",
+        )
         if temporal_revision is not None and entity_id is not None:
             self.editor_save_finished.emit(
                 "entity",
@@ -219,6 +251,37 @@ class EditorCoordinator(BaseCoordinator):
             self.main_window.time_coordinator.on_temporal_save_completed()
         else:
             self.main_window.time_coordinator.on_temporal_save_failed()
+
+    @staticmethod
+    def _is_temporal_result(result: CommandResult) -> bool:
+        """Limit stale-ack diagnostics to temporal save responses."""
+        diagnostic = result.data.get("diagnostic")
+        state = result.data.get("command_state")
+        serialized = state.get("data") if isinstance(state, dict) else None
+        children = serialized.get("commands") if isinstance(serialized, dict) else None
+        return any(
+            (
+                (
+                    isinstance(diagnostic, dict)
+                    and diagnostic.get("kind") == "temporal_save"
+                ),
+                result.command_name == "TemporalEntityEditCommand",
+                "temporal_entity_checkpoint" in result.data,
+                isinstance(children, list)
+                and any(
+                    isinstance(child, dict)
+                    and child.get("type") == "TemporalEntityEditCommand"
+                    for child in children
+                ),
+            )
+        )
+
+    @staticmethod
+    def _log_temporal_ack(result: CommandResult, outcome: str, reason: str) -> None:
+        """Record acknowledgement outcome using the worker's operation ID."""
+        trace = result.data.get("operation_trace")
+        if isinstance(trace, dict):
+            trace_event(trace, "temporal_ack", outcome=outcome, reason=reason)
 
     # ------------------------------------------------------------------
     # Create Operations
@@ -262,9 +325,7 @@ class EditorCoordinator(BaseCoordinator):
     def create_entity(self) -> None:
         """Capture a deliberate name/type choice and emit an undoable command."""
         data_coordinator = getattr(self.main_window, "data_coordinator", None)
-        entity_types = (
-            data_coordinator.cached_entity_types if data_coordinator else []
-        )
+        entity_types = data_coordinator.cached_entity_types if data_coordinator else []
         dialog = EntityCreationDialog(self.main_window, entity_types)
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return

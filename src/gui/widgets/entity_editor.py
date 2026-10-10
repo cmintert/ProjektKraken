@@ -1779,6 +1779,35 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
                 )
             else:
                 return
+        metadata = self._temporal_save_metadata(current, original)
+        if not patches and not metadata:
+            self.set_dirty(False)
+            return
+        revision = self.begin_save()
+        if revision is None:
+            return
+        self._temporal_save_pending = True
+        self._pending_temporal_metadata = metadata
+        self._submitted_description_event = deepcopy(new_description_event)
+        self.autosave_manager.stop_timer()
+        self.temporal_save_requested.emit(
+            {
+                "entity_id": self._current_entity_id,
+                "lore_time": self._temporal_time,
+                "expected": state,
+                "patches": patches,
+                "metadata": metadata,
+                "expected_metadata": self._baseline_metadata_snapshot,
+                "__editor_revision": revision,
+                "__editor_generation": self.draft_generation,
+                "__save_origin": "manual" if interactive else "autosave",
+            }
+        )
+
+    def _temporal_save_metadata(
+        self, current: dict[str, Any], original: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Collect baseline metadata changes separately from temporal patches."""
         metadata: dict[str, Any] = {}
         if self.name_edit.text() != getattr(
             self, "_baseline_name", self.name_edit.text()
@@ -1801,28 +1830,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             hidden["_summary_data"] = self._pending_summary_data
         if hidden:
             metadata["hidden_attributes"] = hidden
-        if not patches and not metadata:
-            self.set_dirty(False)
-            return
-        revision = self.begin_save()
-        if revision is None:
-            return
-        self._temporal_save_pending = True
-        self._pending_temporal_metadata = metadata
-        self._submitted_description_event = deepcopy(new_description_event)
-        self.autosave_manager.stop_timer()
-        self.temporal_save_requested.emit(
-            {
-                "entity_id": self._current_entity_id,
-                "lore_time": self._temporal_time,
-                "expected": state,
-                "patches": patches,
-                "metadata": metadata,
-                "expected_metadata": self._baseline_metadata_snapshot,
-                "__editor_revision": revision,
-                "__editor_generation": self.draft_generation,
-            }
-        )
+        return metadata
 
     def finish_temporal_save(self, success: bool, checkpoint: object = None) -> bool:
         """Install saved comparisons before releasing guards; retain newer edits."""

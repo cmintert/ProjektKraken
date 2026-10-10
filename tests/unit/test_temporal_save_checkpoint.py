@@ -1,6 +1,7 @@
 """A save acknowledgement supplies the next draft's authoritative comparisons."""
 
 import json
+import logging
 from copy import deepcopy
 from unittest.mock import MagicMock, patch
 
@@ -15,6 +16,7 @@ from src.core.calendar import CalendarConfig, CalendarConverter
 from src.core.date_parser import DateParser
 from src.core.entities import Entity
 from src.core.events import Event
+from src.core.operation_trace import finish, new_trace
 from src.core.temporal_entity_checkpoint import parse_temporal_entity_checkpoint
 from src.core.temporal_manager import TemporalManager
 from src.services.history_service import HistoryService
@@ -38,6 +40,7 @@ def _command(request):
         request["patches"],
         request["metadata"],
         request["expected_metadata"],
+        request.get("__save_origin", "unknown"),
     )
 
 
@@ -201,6 +204,125 @@ def test_genuine_conflict_does_not_rebase_dirty_draft(editor, db_service, qtbot)
     assert db_service.get_entity(entity.id).description == "External edit"
 
 
+def test_conflict_log_identifies_field_source_and_operation_without_values(
+    editor, db_service, qtbot, caplog
+):
+    entity, state = _setup(editor, db_service, event_owned=True)
+    editor.desc_edit.editor.insertPlainText("PRIVATE_DRAFT ")
+    with qtbot.waitSignal(editor.temporal_save_requested) as request:
+        editor._on_autosave()
+    saved_request = deepcopy(request.args[0])
+    assert saved_request["__save_origin"] == "autosave"
+    event = Event(name="PRIVATE_EVENT", lore_date=12.0)
+    db_service.insert_event(event)
+    replacement_id = db_service.insert_relation(
+        event.id,
+        entity.id,
+        "involved",
+        {
+            "valid_from_event": True,
+            "priority": "manual",
+            "modified_at": 99.0,
+            "payload": {"description": "PRIVATE_EXTERNAL"},
+        },
+    )
+    command = _command(saved_request)
+    with caplog.at_level(logging.INFO, logger="src.operations"):
+        result = finish(
+            new_trace(command, "save", "world-1", 0), command.execute(db_service)
+        )
+    assert not result.success
+    diagnostic = result.data["diagnostic"]
+    assert diagnostic["field"] == "description"
+    assert (
+        diagnostic["expected_relation_id"] == state["description_source"]["relation_id"]
+    )
+    assert diagnostic["actual_relation_id"] == replacement_id
+    assert diagnostic["value_changed"] is True
+    record = next(
+        r.message for r in caplog.records if "stage=temporal_rejection" in r.message
+    )
+    assert f"operation_id={result.data['operation_trace']['operation_id']}" in record
+    assert "save_origin=autosave" in record
+    assert "lore_time=12.0" in record
+    assert "PRIVATE_" not in caplog.text
+
+
+def test_success_and_composite_conflict_keep_diagnostics_separate(db_service, caplog):
+    entity = Entity(name="Harbor", type="Location", description="PRIVATE_OLD")
+    db_service.insert_entity(entity)
+    state = TemporalManager(db_service).get_entity_state_at(entity.id, 12.0).to_dict()
+    edit = TemporalEntityEditCommand(
+        entity.id,
+        12.0,
+        state,
+        [{"field": "description", "action": "set", "value": "PRIVATE_NEW"}],
+        save_origin="manual",
+    )
+    composite = CompositeCommand(
+        [edit, ProcessWikiLinksCommand(entity.id, "PRIVATE_NEW", "entity")]
+    )
+    with caplog.at_level(logging.INFO, logger="src.operations"):
+        success = finish(
+            new_trace(composite, "save", "world-1", 0), composite.execute(db_service)
+        )
+    assert success.success
+    assert "diagnostic" not in success.data
+    assert "stage=temporal_rejection" not in caplog.text
+    assert "save_origin=manual" in caplog.text
+    assert f"target_id={entity.id}" in caplog.text
+    caplog.clear()
+    stale = CompositeCommand(
+        [
+            TemporalEntityEditCommand(
+                entity.id,
+                12.0,
+                state,
+                [{"field": "description", "action": "set", "value": "PRIVATE_OTHER"}],
+                save_origin="manual",
+            )
+        ]
+    )
+    with caplog.at_level(logging.INFO, logger="src.operations"):
+        failure = finish(
+            new_trace(stale, "save", "world-1", 0), stale.execute(db_service)
+        )
+    assert not failure.success
+    assert failure.data["diagnostic"]["reason"] == "visible_value_or_source_changed"
+    assert "stage=temporal_rejection" in caplog.text
+    assert "PRIVATE_" not in caplog.text
+
+
+def test_source_only_conflict_records_provenance_without_description(db_service):
+    entity = Entity(name="Harbor", type="Location", description="PRIVATE_BODY")
+    db_service.insert_entity(entity)
+    expected = (
+        TemporalManager(db_service).get_entity_state_at(entity.id, 12.0).to_dict()
+    )
+    event = Event(name="PRIVATE_EVENT", lore_date=12.0)
+    db_service.insert_event(event)
+    relation_id = db_service.insert_relation(
+        event.id,
+        entity.id,
+        "involved",
+        {"valid_from_event": True, "payload": {"description": "PRIVATE_BODY"}},
+    )
+    result = TemporalEntityEditCommand(
+        entity.id,
+        12.0,
+        expected,
+        [{"field": "description", "action": "set", "value": "PRIVATE_DRAFT"}],
+        save_origin="manual",
+    ).execute(db_service)
+    assert not result.success
+    diagnostic = result.data["diagnostic"]
+    assert diagnostic["value_changed"] is False
+    assert diagnostic["expected_source_kind"] == "baseline"
+    assert diagnostic["actual_source_kind"] == "relation"
+    assert diagnostic["actual_relation_id"] == relation_id
+    assert "PRIVATE_" not in json.dumps(diagnostic)
+
+
 def test_checkpoint_failure_rolls_back_edit(editor, db_service, qtbot):
     entity, _ = _setup(editor, db_service)
     editor.desc_edit.editor.insertPlainText("Changed ")
@@ -221,6 +343,7 @@ def test_checkpoint_failure_rolls_back_edit(editor, db_service, qtbot):
         result = command.execute(db_service)
     assert not result.success
     assert "temporal_entity_checkpoint" not in result.data
+    assert result.data["diagnostic"]["reason"] == "unexpected_failure"
     assert db_service.get_entity(entity.id).description == "Old harbor"
     editor.finish_temporal_save(False)
 
@@ -344,13 +467,14 @@ def _pending_coordinator_save(editor, coordinator, fake_window, qtbot):
 
 
 def test_coordinator_installs_checkpoint_before_completion_signal(
-    editor, db_service, qtbot, coordinator, fake_window
+    editor, db_service, qtbot, coordinator, fake_window, caplog
 ):
     _setup(editor, db_service)
     command = _pending_coordinator_save(editor, coordinator, fake_window, qtbot)
     result = command.execute(db_service)
     assert result.success
     result.data["command_id"] = command.command_id
+    result.data["operation_trace"] = new_trace(command, "save", "world-1", 0)
     observed = []
 
     def on_completion(*args):
@@ -359,20 +483,24 @@ def test_coordinator_installs_checkpoint_before_completion_signal(
         assert not editor._temporal_save_pending
 
     coordinator.editor_save_finished.connect(on_completion)
-    coordinator.on_temporal_command_result(result)
+    with caplog.at_level(logging.INFO, logger="src.operations"):
+        coordinator.on_temporal_command_result(result)
     assert observed == ["Changed Old harbor"]
     fake_window.time_coordinator.on_temporal_save_completed.assert_called_once()
+    assert "stage=temporal_ack save_origin=autosave lore_time=12.0" in caplog.text
+    assert "outcome=accepted" in caplog.text
 
 
 @pytest.mark.parametrize("change", ["discard", "entity", "world", "time", "command"])
 def test_coordinator_ignores_stale_acknowledgements(
-    editor, db_service, qtbot, coordinator, fake_window, change
+    editor, db_service, qtbot, coordinator, fake_window, change, caplog
 ):
     entity, _ = _setup(editor, db_service)
     command = _pending_coordinator_save(editor, coordinator, fake_window, qtbot)
     result = command.execute(db_service)
     assert result.success
     result.data["command_id"] = command.command_id
+    result.data["operation_trace"] = new_trace(command, "save", "world-1", 0)
     if change == "discard":
         editor._on_discard()
     elif change == "entity":
@@ -385,26 +513,34 @@ def test_coordinator_ignores_stale_acknowledgements(
     else:
         result.data["command_id"] = "old-command-id"
     before = deepcopy(editor._temporal_state)
-    with patch.object(editor, "finish_temporal_save") as acknowledge:
-        coordinator.on_temporal_command_result(result)
+    with caplog.at_level(logging.INFO, logger="src.operations"):
+        with patch.object(editor, "finish_temporal_save") as acknowledge:
+            coordinator.on_temporal_command_result(result)
     acknowledge.assert_not_called()
+    assert "stage=temporal_ack save_origin=autosave lore_time=12.0" in caplog.text
+    assert "outcome=stale" in caplog.text
     assert editor._temporal_state == before
     fake_window.time_coordinator.on_temporal_save_completed.assert_not_called()
     editor.autosave_manager.stop_timer()
 
 
 def test_coordinator_handles_missing_checkpoint_as_saved_but_unacknowledged(
-    editor, db_service, qtbot, coordinator, fake_window
+    editor, db_service, qtbot, coordinator, fake_window, caplog
 ):
     _setup(editor, db_service)
     command = _pending_coordinator_save(editor, coordinator, fake_window, qtbot)
     result = command.execute(db_service)
     result.data["command_id"] = command.command_id
+    result.data["operation_trace"] = new_trace(command, "save", "world-1", 0)
     result.data.pop("temporal_entity_checkpoint")
-    with qtbot.waitSignal(coordinator.editor_save_finished) as completion:
-        coordinator.on_temporal_command_result(result)
+    with caplog.at_level(logging.INFO, logger="src.operations"):
+        with qtbot.waitSignal(coordinator.editor_save_finished) as completion:
+            coordinator.on_temporal_command_result(result)
     assert completion.args[-1] is False
     assert editor._temporal_checkpoint_invalid
+    assert "stage=temporal_ack save_origin=autosave lore_time=12.0" in caplog.text
+    assert "outcome=invalid" in caplog.text
+    assert "reason=missing_or_invalid_checkpoint" in caplog.text
     fake_window.time_coordinator.on_temporal_save_completed.assert_not_called()
 
 
