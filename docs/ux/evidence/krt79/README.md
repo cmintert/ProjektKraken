@@ -40,7 +40,10 @@ keyboard state, accessible descriptions and theme token checks for normal,
 hover, focus, checked and disabled control states. The shared quiet role owns
 those states; the arrow does not replace hover, focus or disabled styling.
 
-Offscreen renders show layout and color in the sampled states. They do not prove
-uncoached recognition, native hover/disabled appearance or actual screen-reader
-output. A native uncoached interpretation remains the KRT-79 human acceptance
-step. KRT-45's matched KA-01–20 comparison is separate.
+Offscreen renders show layout and color in the sampled states. On 2026-10-10,
+the user confirmed **human approval of KRT-79** after the implementation commit
+`c13a8232`. This is a reported human review pass, separate from the automated
+checks. No review recording, route-coaching details, measured native dimensions,
+or actual screen-reader output were supplied; the captures and accessibility
+checks above retain their own narrower claims. KRT-45's matched KA-01–20
+comparison is separate and remains pending.

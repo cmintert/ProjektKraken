@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-10
-**Commit:** e4da09740487af3ef444e4674dea5b8849a4b5e5
+**Commit:** c13a8232c8d0b401a0e0b89cd6b7b59e8322e9b5
 ---
 
 # Changelog
@@ -17,7 +17,8 @@ All notable changes to this project will be documented in this file.
   open/closed arrows for Summary and Draft with AI, exposed expanded state in
   accessible descriptions, and preserved independent panels and unfinished
   inputs. Added keyboard/state tests and retained hashed light/dark captures at
-  narrow and normal inspector widths; uncoached human review remains pending.
+  narrow and normal inspector widths. The user reported human approval on
+  2026-10-10; the separate KRT-45 matched comparison remains pending.
 
 - *(2026-10-10)* **Linked events orientation (KRT-77)**: Showed distinct
   Viewing and World Time markers before, between and after linked events,
