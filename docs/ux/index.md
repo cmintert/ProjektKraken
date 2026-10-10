@@ -27,6 +27,7 @@ evidence/krt26/README
 evidence/krt45/README
 evidence/krt45/benchmark-comparison
 evidence/krt45/human-run-1
+evidence/krt45/human-run-2
 evidence/krt45/supporting-refinement
 evidence/krt46/baseline
 evidence/krt46/human-run-1
@@ -39,4 +40,6 @@ evidence/krt53/README
 evidence/krt54/README
 evidence/krt56/README
 evidence/krt64/README
+evidence/krt79/README
+evidence/krt80/README
 ```

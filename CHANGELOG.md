@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-10
-**Commit:** c13a8232c8d0b401a0e0b89cd6b7b59e8322e9b5
+**Commit:** a11f66ca9c5a5ee36ddbbe5e38e1eb20340b5ab4
 ---
 
 # Changelog
@@ -26,6 +26,10 @@ All notable changes to this project will be documented in this file.
   legacy color exception, and recorded the user-reported human review pass.
 
 ### Changed
+
+- *(2026-10-10)* **UX evidence navigation**: Added the KRT-45 second review
+  and KRT-79/KRT-80 evidence pages to the documentation index so strict
+  Sphinx builds include the committed review artifacts.
 
 - *(2026-10-10)* **KRT-45 human review evidence**: Recorded the KA-11–20
   video/subtitle review and read-only persistence cross-check, updated the
