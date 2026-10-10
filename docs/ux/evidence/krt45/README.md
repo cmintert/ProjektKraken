@@ -11,9 +11,25 @@ scroll mutation, missing Linked events orientation, relation-form ambiguity and
 the needed optimizations, with source-video timecodes and the matching SRT.
 The 26 full-frame screenshots were removed from the current worktree at the
 user's request because they included VS Code; their capture metadata is retained.
-Several semantic checks remain partial; KA-11–20 and the baseline comparison
-remain pending. KRT-52/53 track the newly identified dropdown/link-action work;
+Several semantic checks remain partial. The [second human review](human-run-2.md),
+recorded on 2026-10-10, covers attempted KA-11–20 in the same continuing world.
+Read-only database and log checks confirm KA-19 relation persistence and KA-20
+charter/link persistence. The matched baseline comparison remains pending.
+KRT-52/53 track the newly identified dropdown/link-action work;
 KRT-45/22/14 retain their existing scope. Human acceptance is still pending.
+
+The remaining KRT-45 work is now tracked in focused Linear children:
+[KRT-77](https://linear.app/projektkraken/issue/KRT-77/show-viewed-date-position-in-linked-events-for-sparse-and-out-of-range)
+for Linked events orientation,
+[KRT-78](https://linear.app/projektkraken/issue/KRT-78/make-event-date-navigation-and-commit-feedback-predictable)
+for Event date action/commit feedback,
+[KRT-79](https://linear.app/projektkraken/issue/KRT-79/make-inspector-writing-tool-disclosure-state-recognizable)
+for writing-tool state,
+[KRT-80](https://linear.app/projektkraken/issue/KRT-80/center-and-bound-the-entity-and-event-writing-column)
+for writing-column layout, and
+[KRT-81](https://linear.app/projektkraken/issue/KRT-81/run-matched-ka-01-20-human-comparison-and-close-krt-45-acceptance)
+for the matched human comparison. KRT-80's layout is now implemented in
+`d062dc22`; this list does not claim the broader KRT-45 human acceptance.
 
 The user explicitly authorized preserving the baseline and continuing
 implementation while the complete human v1.2 comparison remains pending.

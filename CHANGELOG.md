@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-10
-**Commit:** 0b4d9024c9ff059b1d8d009d14e21b51617c3fa6
+**Commit:** d062dc226484b0b86d6eead36a9f6718ce07ddf6
 ---
 
 # Changelog
@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-10)* **KRT-45 human review evidence**: Recorded the KA-11–20
+  video/subtitle review and read-only persistence cross-check, updated the
+  benchmark comparison's observed outcomes and evidence limits, and linked the
+  focused follow-up issues. Matched human acceptance remains pending.
 
 - *(2026-10-10)* **Entity and Event writing layout (KRT-80)**: Centered
   description, toolbar, source actions and supporting writing controls in a

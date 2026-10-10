@@ -109,7 +109,10 @@ grouping, overload and participant terminology stay in KRT-22; visible link
 creation is KRT-53; deliberate normal creation remains KRT-14. Event action/commit
 feedback and writing-toggle state stay in KRT-45. This run does not establish a
 numeric regression of KRT-49, a parser defect, fewer measured destination changes
-or complete semantic acceptance. KA-11–20 and matched comparison remain pending.
+or complete semantic acceptance. The later
+[KA-11–20 review](evidence/krt45/human-run-2.md) records the second video,
+including confirmed KA-19/20 disk persistence and the limits of the remaining
+interaction checks. The matched comparison remains pending.
 Contract v1 and the v1.2 prompts are unchanged.
 
 KRT-52 F1 implementation (2026-10-05): shared `ScrollSafeComboBox` protects
