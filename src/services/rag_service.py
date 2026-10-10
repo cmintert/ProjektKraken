@@ -50,7 +50,7 @@ class RAGService:
 
         Args:
             query: Raw user query.
-            top_k: Number of semantic results to retrieve.
+            top_k: Maximum additional semantic results after direct mentions.
             object_type: Optional filter ('entity' or 'event').
 
         Returns:
@@ -69,35 +69,49 @@ class RAGService:
                 search_service = create_search_service(conn)
                 cleaned_query = self._clean_query(query)
                 logger.debug(
-                    "Original Prompt: %s... -> Cleaned: %s",
-                    query[:50],
-                    cleaned_query,
-                )
-                semantic_results = search_service.query(
-                    cleaned_query,
-                    top_k=top_k,
-                    object_type=object_type,
+                    "RAG search query_chars=%d cleaned_chars=%d object_type=%s",
+                    len(query),
+                    len(cleaned_query),
+                    object_type or "all",
                 )
                 lexical_results = (
                     search_service.search_by_name(query, object_type=object_type)
                     if hasattr(search_service, "search_by_name")
                     else []
                 )
-                return self._merge_results(
+                # Request enough semantic candidates to replace any that overlap
+                # direct mentions; the merged budget still adds at most top_k.
+                semantic_results = search_service.query(
+                    cleaned_query,
+                    top_k=max(0, top_k) + len(lexical_results),
+                    object_type=object_type,
+                )
+                merged = self._merge_results(
                     lexical_results,
                     semantic_results,
                     top_k,
                 )
+                logger.debug(
+                    "RAG search lexical_hits=%d semantic_hits=%d merged_hits=%d",
+                    len(lexical_results),
+                    len(semantic_results),
+                    len(merged),
+                )
+                return merged
 
-        except Exception as e:
-            logger.error(f"RAG search failed: {e}", exc_info=True)
+        except Exception as error:
+            logger.error("RAG search failed error_type=%s", type(error).__name__)
             return []
 
     # Maximum number of relations to include per entity in RAG context.
     _MAX_RELATIONS_PER_ENTITY: int = 5
 
     def get_context(
-        self, prompt: str, top_k: int = 3, exclude_names: Optional[List[str]] = None
+        self,
+        prompt: str,
+        top_k: int = 3,
+        exclude_names: Optional[List[str]] = None,
+        exclude_object: Optional[tuple[str, str]] = None,
     ) -> str:
         """Retrieve and format context based on the user prompt.
 
@@ -109,14 +123,22 @@ class RAGService:
 
         Args:
             prompt: User's raw prompt/task.
-            top_k: Number of semantic results to retrieve (min).
+            top_k: Maximum additional semantic results after direct mentions.
             exclude_names: Optional list of names to exclude from results (e.g., current entity).
+            exclude_object: Exact world object type and ID to exclude.
 
         Returns:
             str: Formatted context block for the LLM.
 
         """
         results = self.search(prompt, top_k=top_k)
+
+        if exclude_object:
+            results = [
+                r
+                for r in results
+                if (r.get("object_type"), r.get("object_id")) != exclude_object
+            ]
 
         # Filter exclusions
         if exclude_names:
@@ -162,7 +184,9 @@ class RAGService:
             ) as conn:
                 conn.row_factory = sqlite3.Row
                 for r in results:
-                    entity_id = r.get("object_id") or r.get("id", "")
+                    if r.get("object_type") != "entity":
+                        continue
+                    entity_id = r.get("object_id", "")
                     entity_name = r.get("name", entity_id)
                     if not entity_id:
                         continue
@@ -248,39 +272,45 @@ class RAGService:
         semantic: List[Dict[str, Any]],
         target_k: int,
     ) -> List[Dict[str, Any]]:
-        """Merge lexical and semantic results, prioritizing lexical."""
-        seen_ids = set()
-        merged = []
+        """Keep all unique direct mentions, then up to ``target_k`` semantic hits.
 
-        # Prioritize exact name matches
+        Source order is stable within each group. Embedding-row IDs are never
+        used as world object identity.
+        """
+        seen_objects: set[tuple[str, str]] = set()
+        merged: List[Dict[str, Any]] = []
+
         for item in lexical:
-            if item["id"] not in seen_ids:
-                item["_match_type"] = "Direct Mention"
-                merged.append(item)
-                seen_ids.add(item["id"])
-
-        # Fill with semantic results, filtering by similarity threshold
-        for item in semantic:
-            # Skip low-score results to reduce context noise
-            score = item.get("score", 0.0)
-            if score < self.min_score:
-                logger.debug(
-                    f"RAG: Filtering low-score result "
-                    f"'{item.get('name', '?')}' (score={score:.3f} "
-                    f"< threshold={self.min_score})"
-                )
+            object_type = item.get("object_type")
+            object_id = item.get("object_id")
+            if not isinstance(object_type, str) or not object_type:
                 continue
+            if not isinstance(object_id, str) or not object_id:
+                continue
+            key = (object_type, object_id)
+            if key in seen_objects:
+                continue
+            merged.append({**item, "_match_type": "Direct Mention"})
+            seen_objects.add(key)
 
-            unique_key = item.get("object_id")
-            if unique_key and unique_key not in seen_ids:
-                item["_match_type"] = "Semantic"
-                merged.append(item)
-                seen_ids.add(unique_key)
-
-            if len(merged) >= target_k + len(
-                lexical
-            ):  # Allow some overflow for lexical
+        semantic_added = 0
+        for item in semantic:
+            if item.get("score", 0.0) < self.min_score:
+                continue
+            object_type = item.get("object_type")
+            object_id = item.get("object_id")
+            if not isinstance(object_type, str) or not object_type:
+                continue
+            if not isinstance(object_id, str) or not object_id:
+                continue
+            key = (object_type, object_id)
+            if key in seen_objects:
+                continue
+            if semantic_added >= max(0, target_k):
                 break
+            merged.append({**item, "_match_type": "Semantic"})
+            seen_objects.add(key)
+            semantic_added += 1
 
         return merged
 
@@ -340,14 +370,13 @@ class RAGService:
             if description:
                 if len(description) > _MAX_DESCRIPTION_CHARS:
                     description = (
-                        description[: _MAX_DESCRIPTION_CHARS - _ELLIPSIS_CHARS]
-                        + "..."
+                        description[: _MAX_DESCRIPTION_CHARS - _ELLIPSIS_CHARS] + "..."
                     )
                 entry_lines.append(description)
 
             # Append SPO relation lines if available for this entity.
             if relation_map:
-                entity_id = r.get("object_id") or r.get("id", "")
+                entity_id = r.get("object_id", "")
                 rel_lines = relation_map.get(entity_id, [])
                 if rel_lines:
                     entry_lines.append(

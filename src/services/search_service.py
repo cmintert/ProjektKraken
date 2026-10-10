@@ -1324,12 +1324,12 @@ class SearchService:
             # We fetch all names. Warning: Scaling issue if 10k entities.
             # But local app 10k is fine for this loop usually.
             cursor = self.conn.execute(
-                f"SELECT id, name, type, attributes FROM {table_name}"
+                f"SELECT id, name, type, attributes, description FROM {table_name}"
             )
             rows = cursor.fetchall()
 
             for row in rows:
-                obj_id, name, obj_type, attrs = row
+                obj_id, name, obj_type, attrs, description = row
                 # Simple case-insensitive inclusion
                 # Use word boundary to avoid "Jon" matching "Jonathan" if strict?
                 # Let's try simple inclusion first, maybe improved later.
@@ -1339,10 +1339,12 @@ class SearchService:
                     # RAGService expects 'text_content' for formatting attributes.
                     # We can fetch the text_snippet from embeddings table for this item.
 
-                    # Fetch stored embedding data for the text snippet
+                    # Only the active model's index for this world object can
+                    # supply its snippet. Otherwise use the object attributes.
                     emb_row = self.conn.execute(
-                        "SELECT text_snippet, metadata FROM embeddings WHERE object_id = ? LIMIT 1",
-                        (obj_id,),
+                        "SELECT text_snippet, metadata FROM embeddings "
+                        "WHERE object_type = ? AND object_id = ? AND model = ?",
+                        (type_label, obj_id, self.model),
                     ).fetchone()
 
                     text_content = ""
@@ -1360,11 +1362,13 @@ class SearchService:
 
                         # Construct a basic snippet similar to indexer
                         lines = [f"Name: {name}", f"Type: {obj_type}"]
+                        if description:
+                            lines.append(f"Description: {description}")
                         # Add some key attributes
                         for k, v in attr_dict.items():
                             if isinstance(v, (str, int, float, bool)):
                                 lines.append(f"{k}: {v}")
-                        text_content = "\n".join(lines)
+                        text_content = "\n\n".join(lines)
                         meta = attr_dict  # Use attributes as metadata fallback
 
                     found_items.append(

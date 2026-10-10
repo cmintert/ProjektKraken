@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-10
-**Commit:** 72413993e1d9f36a132013ca11e337e453b6aace
+**Commit:** c908c27654f295d73df3e391b6c633e25aa55611
 ---
 
 # Changelog
@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-10)* **Hybrid retrieval (KRT-67)**: Deduplicated lexical and
+  semantic hits by world object identity, retained direct mentions within a
+  deterministic context budget, and restricted lexical snippets to the active
+  model and object type. Excluded the current generation target by ID and
+  removed query content from ordinary retrieval logs. Added focused regression
+  coverage for identity, thresholds, snippet fallback, and log isolation.
 
 - *(2026-10-10)* **Temporal save rejection diagnostics (KRT-60)**: Added
   correlated, content-free field and source provenance for genuine temporal

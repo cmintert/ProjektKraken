@@ -233,9 +233,16 @@ class GenerationWorker(QThread):
                 )
 
                 # Pass full user message; service cleans it.
-                rag_context = rag_service.get_context(
-                    user_msg, top_k=self.rag_limit, exclude_names=self.exclude_names
-                )
+                if self.object_type in {"entity", "event"} and self.object_id:
+                    rag_context = rag_service.get_context(
+                        user_msg,
+                        top_k=self.rag_limit,
+                        exclude_object=(self.object_type, self.object_id),
+                    )
+                else:
+                    rag_context = rag_service.get_context(
+                        user_msg, top_k=self.rag_limit, exclude_names=self.exclude_names
+                    )
 
                 if rag_context:
                     logger.info("RAG: Found context (chars=%d)", len(rag_context))

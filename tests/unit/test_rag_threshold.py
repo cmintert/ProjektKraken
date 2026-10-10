@@ -19,6 +19,7 @@ def mock_search_service_with_scores():
     service.query.return_value = [
         {
             "id": "emb-1",
+            "object_type": "entity",
             "object_id": "uuid-1",
             "name": "Relevant Entity",
             "type": "character",
@@ -27,6 +28,7 @@ def mock_search_service_with_scores():
         },
         {
             "id": "emb-2",
+            "object_type": "entity",
             "object_id": "uuid-2",
             "name": "Marginal Entity",
             "type": "location",
@@ -35,6 +37,7 @@ def mock_search_service_with_scores():
         },
         {
             "id": "emb-3",
+            "object_type": "entity",
             "object_id": "uuid-3",
             "name": "Noise Entity",
             "type": "item",
@@ -158,6 +161,8 @@ def test_rag_lexical_results_bypass_threshold(mock_search_service_with_scores):
     mock_search_service_with_scores.search_by_name.return_value = [
         {
             "id": "uuid-lexical",
+            "object_type": "entity",
+            "object_id": "uuid-lexical",
             "name": "Direct Match",
             "type": "character",
             "text_content": "Name: Direct Match\n\nDescription: Exact name hit.",

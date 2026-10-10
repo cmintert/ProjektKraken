@@ -40,8 +40,7 @@ def test_generation_worker_injects_event_context_without_rag(
         prompt={
             "system": "System",
             "user": (
-                "[Event]\nName: Eclipse\n\n{{AUTHORING_CONTEXT}}\n\n"
-                "[Task]\nRevise"
+                "[Event]\nName: Eclipse\n\n{{AUTHORING_CONTEXT}}\n\n[Task]\nRevise"
             ),
         },
         max_tokens=100,
@@ -221,11 +220,9 @@ def test_generation_flow_custom_prompt(
             "src.gui.dialogs.generation_review_dialog.GenerationReviewDialog"
         ) as MockDialog:
             mock_dlg_instance = MockDialog.return_value
-            mock_dlg_instance.get_review_result.return_value = (
-                GenerationReviewResult(
-                    action=GenerationApplyMode.REPLACE,
-                    text="Generated text",
-                )
+            mock_dlg_instance.get_review_result.return_value = GenerationReviewResult(
+                action=GenerationApplyMode.REPLACE,
+                text="Generated text",
             )
 
             # Watch for the final signal
@@ -293,15 +290,16 @@ def test_generation_review_audit_preserves_raw_and_edited_text(widget):
         rating=-1,
         comment="Missed the requested tone",
     )
-    with patch.object(
-        widget, "_get_generation_context", return_value=context
-    ), patch(
-        "src.gui.dialogs.generation_review_dialog.GenerationReviewDialog"
-    ) as dialog_cls, patch(
-        "src.gui.widgets.llm_generation_widget.log_generation_event"
-    ) as generation_log, patch(
-        "src.gui.widgets.llm_generation_widget.log_review_event"
-    ) as review_log:
+    with (
+        patch.object(widget, "_get_generation_context", return_value=context),
+        patch(
+            "src.gui.dialogs.generation_review_dialog.GenerationReviewDialog"
+        ) as dialog_cls,
+        patch(
+            "src.gui.widgets.llm_generation_widget.log_generation_event"
+        ) as generation_log,
+        patch("src.gui.widgets.llm_generation_widget.log_review_event") as review_log,
+    ):
         dialog = dialog_cls.return_value
         dialog.action = GenerationApplyMode.REPLACE
         dialog.get_review_result.return_value = review_result
@@ -369,6 +367,27 @@ def test_rag_service_called(mock_rag_cls, widget, qtbot):
     # Verify prompt modification
     assert "[Context]" in worker.prompt
     assert "Retrieved Context" in worker.prompt
+
+
+@patch("src.gui.widgets.llm_generation_widget.RAGService")
+def test_generation_worker_excludes_current_object_by_identity(mock_rag_cls):
+    mock_rag_cls.return_value.get_context.return_value = "Other Harbor"
+    worker = GenerationWorker(
+        provider=MagicMock(),
+        prompt="Harbor",
+        max_tokens=100,
+        temperature=0.7,
+        db_path="dummy.db",
+        exclude_names=["Harbor"],
+        object_id="current-id",
+        object_type="entity",
+    )
+
+    worker._apply_rag_to_prompt()
+
+    mock_rag_cls.return_value.get_context.assert_called_once_with(
+        "Harbor", top_k=3, exclude_object=("entity", "current-id")
+    )
 
 
 def test_generation_worker_rejects_malformed_structured_prompt():
@@ -505,9 +524,7 @@ def test_recommends_create_or_update_without_crossing_object_drafts(
             return dict(self.context)
 
     entity = LLMGenerationWidget(
-        context_provider=Provider(
-            {"object_type": "entity", "existing_description": ""}
-        )
+        context_provider=Provider({"object_type": "entity", "existing_description": ""})
     )
     event = LLMGenerationWidget(
         context_provider=Provider(

@@ -641,6 +641,42 @@ def test_query_empty_index(search_service):
     assert results == []
 
 
+def test_lexical_snippet_uses_only_matching_type_and_active_model(
+    search_service, search_db
+):
+    """An unrelated embedding must not replace an explicitly named object's data."""
+    search_db.execute(
+        "INSERT INTO entities (id, type, name, description, attributes, "
+        "created_at, modified_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        ("shared", "place", "Harbor", "Current description", "{}", 0.0, 0.0),
+    )
+    search_db.execute(
+        "INSERT INTO events (id, type, name, lore_date, description, attributes, "
+        "created_at, modified_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        ("shared", "meeting", "Harbor", 1.0, "Event description", "{}", 0.0, 0.0),
+    )
+
+    def add_embedding(row_id, object_type, model, snippet):
+        search_db.execute(
+            "INSERT INTO embeddings (id, object_type, object_id, model, vector, "
+            "vector_dim, text_snippet, metadata, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (row_id, object_type, "shared", model, b"\x00", 1, snippet, "{}", 0.0),
+        )
+
+    add_embedding("wrong-type", "event", search_service.model, "Wrong type")
+    add_embedding("wrong-model", "entity", "old-model", "Wrong model")
+
+    result = search_service.search_by_name("Harbor", object_type="entity")
+    assert len(result) == 1
+    assert "Current description" in result[0]["text_content"]
+    assert "Wrong" not in result[0]["text_content"]
+
+    add_embedding("active", "entity", search_service.model, "Active snippet")
+    result = search_service.search_by_name("Harbor", object_type="entity")
+    assert result[0]["text_content"] == "Active snippet"
+
+
 def test_model_dimension_filtering(search_service, search_db):
     """Test that queries filter by model and dimension."""
     # Insert an entity
