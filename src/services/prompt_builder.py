@@ -28,6 +28,38 @@ DESCRIPTION_DATE_POLICY = (
     "date or using relative chronology when needed."
 )
 
+_MAX_RETRIEVAL_QUERY_CHARS = 300
+_MAX_RETRIEVAL_SUBJECT_CHARS = 100
+_RETRIEVAL_PLACEHOLDERS = (
+    "{{RAG_CONTEXT}}",
+    "{{AUTHORING_CONTEXT}}",
+    "{{SPATIAL_CONTEXT}}",
+)
+
+
+def build_retrieval_query(task: str, context: Dict[str, Any]) -> str:
+    """Build a bounded search query from the task and selected object only.
+
+    The assembled generation prompt and authored description must never become
+    implicit search input. The task comes first so its intent survives the
+    retrieval service's own 300-character limit.
+    """
+    for placeholder in _RETRIEVAL_PLACEHOLDERS:
+        task = task.replace(placeholder, " ")
+    task_text = " ".join(task.split())
+    object_type = str(context.get("object_type") or "").strip()
+    name = str(context.get("name") or "").strip()
+    object_id = str(context.get("object_id") or "").strip()
+    subject_value = name or object_id
+    subject = (
+        "Subject: " + " ".join(part for part in (object_type, subject_value) if part)
+        if subject_value
+        else ""
+    )[:_MAX_RETRIEVAL_SUBJECT_CHARS]
+    task_budget = _MAX_RETRIEVAL_QUERY_CHARS - len(subject) - bool(subject)
+    bounded_task = task_text[:task_budget].rstrip()
+    return "\n".join(part for part in (bounded_task, subject) if part)
+
 
 class PromptBuilder:
     """Builds structured prompts for LLM generation.

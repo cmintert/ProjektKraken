@@ -62,8 +62,12 @@ from src.services.authoring_context_builder import (
     lookup_event_authoring_context,
 )
 from src.services.llm_provider import Provider, create_provider
-from src.services.prompt_builder import DEFAULT_SYSTEM_PROMPT, PromptBuilder
-from src.services.rag_service import RAGService
+from src.services.prompt_builder import (
+    DEFAULT_SYSTEM_PROMPT,
+    PromptBuilder,
+    build_retrieval_query,
+)
+from src.services.rag_service import RAGService, retrieval_exclusion_kwargs
 from src.services.reasoning_filter import filter_reasoning_tags
 from src.services.spatial_context_builder import lookup_spatial_context
 
@@ -170,6 +174,7 @@ class GenerationWorker(QThread):
             self.temperature = request.temperature
             self.db_path = request.db_path
             self.rag_limit = request.rag_limit
+            self.retrieval_query = request.retrieval_query
             self.exclude_names = list(request.exclude_names)
             self.object_id = request.target_id
             self.object_type = request.object_type
@@ -184,6 +189,7 @@ class GenerationWorker(QThread):
             self.temperature = temperature
             self.db_path = db_path
             self.rag_limit = rag_limit
+            self.retrieval_query = ""
             self.exclude_names = exclude_names or []
             self.object_id = object_id
             self.object_type = object_type
@@ -217,32 +223,27 @@ class GenerationWorker(QThread):
         else:
             user_msg = prompt
 
-        # Only perform RAG if placeholder exists OR forced
-        # (though we usually rely on placeholder)
-        # RAGService handles query cleaning, so we pass raw user input
-        should_run = "{{RAG_CONTEXT}}" in user_msg or (self.rag_limit > 0)
+        # A zero limit disables retrieval even when a legacy prompt contains
+        # the placeholder. Empty request queries retain legacy prompt behavior.
+        should_run = self.rag_limit > 0
 
         if should_run:
             try:
                 # Use modular RAGService
                 rag_service = RAGService(self.db_path)
+                retrieval_query = self.retrieval_query or user_msg
                 logger.info(
                     "RAG: Searching context (query_chars=%d limit=%d)",
-                    len(user_msg),
+                    len(retrieval_query),
                     self.rag_limit,
                 )
-
-                # Pass full user message; service cleans it.
-                if self.object_type in {"entity", "event"} and self.object_id:
-                    rag_context = rag_service.get_context(
-                        user_msg,
-                        top_k=self.rag_limit,
-                        exclude_object=(self.object_type, self.object_id),
-                    )
-                else:
-                    rag_context = rag_service.get_context(
-                        user_msg, top_k=self.rag_limit, exclude_names=self.exclude_names
-                    )
+                rag_context = rag_service.get_context(
+                    retrieval_query,
+                    top_k=self.rag_limit,
+                    **retrieval_exclusion_kwargs(
+                        self.object_type, self.object_id, self.exclude_names
+                    ),
+                )
 
                 if rag_context:
                     logger.info("RAG: Found context (chars=%d)", len(rag_context))
@@ -1145,6 +1146,7 @@ class LLMGenerationWidget(QWidget):
         builder = PromptBuilder(system_prompt=self._get_system_prompt())
         context_str = builder.build_context_string(context)
         user_prompt = builder.substitute_variables(user_prompt, context)
+        retrieval_query = build_retrieval_query(user_prompt, context)
         object_type = str(context.get("object_type") or "")
         authoring_enabled = object_type in {"entity", "event"} and (
             self.world_context_cb.isChecked()
@@ -1192,6 +1194,7 @@ class LLMGenerationWidget(QWidget):
                 db_path,
                 object_id=context.get("object_id") or None,
                 object_type=context.get("object_type") or None,
+                retrieval_query=retrieval_query,
             )
 
         except Exception as e:
@@ -1347,6 +1350,7 @@ class LLMGenerationWidget(QWidget):
         db_path: Optional[str] = None,
         object_id: Optional[str] = None,
         object_type: Optional[str] = None,
+        retrieval_query: str = "",
     ) -> None:
         """Start generation in worker thread."""
         self._audit_interaction_id = new_interaction_id()
@@ -1364,13 +1368,11 @@ class LLMGenerationWidget(QWidget):
         self._last_world_context = None
         self._set_world_context_used_visible(False)
 
-        # Prepare exclusion list (current entity name)
-        exclude_names = []
-        current_context = self._get_generation_context()
-        if current_context and "name" in current_context:
-            exclude_names.append(current_context["name"])
-
         current_context = self._get_generation_context() or {}
+        # Exact identity is preferred; names support legacy contexts without IDs.
+        exclude_names = (
+            [str(current_context["name"])] if current_context.get("name") else []
+        )
         current_object_type = str(current_context.get("object_type") or "")
         authoring_enabled = current_object_type in {"entity", "event"} and (
             self.world_context_cb.isChecked()
@@ -1390,6 +1392,7 @@ class LLMGenerationWidget(QWidget):
             temperature=temperature,
             db_path=db_path,
             rag_limit=self._get_rag_limit(),
+            retrieval_query=retrieval_query,
             exclude_names=tuple(exclude_names),
             target_id=object_id,
             source_hash=self._generation_source_hash,
@@ -2028,6 +2031,7 @@ class LLMGenerationWidget(QWidget):
         builder = PromptBuilder(system_prompt=self._get_system_prompt())
         context_str = builder.build_context_string(context)
         user_prompt = builder.substitute_variables(user_prompt, context)
+        retrieval_query = build_retrieval_query(user_prompt, context)
         object_type = str(context.get("object_type") or "")
         authoring_enabled = object_type in {"entity", "event"} and (
             self.world_context_cb.isChecked()
@@ -2078,9 +2082,22 @@ class LLMGenerationWidget(QWidget):
                 if rag_limit > 0:
                     rag_service = RAGService(db_path)
                     logger.info(
-                        f"Preview RAG: Searching context for query len: {len(user_msg)}"
+                        "Preview RAG: Searching context query_chars=%d limit=%d",
+                        len(retrieval_query),
+                        rag_limit,
                     )
-                    rag_context = rag_service.get_context(user_msg, top_k=rag_limit)
+                    exclude_names = (
+                        [str(context["name"])] if context.get("name") else []
+                    )
+                    rag_context = rag_service.get_context(
+                        retrieval_query,
+                        top_k=rag_limit,
+                        **retrieval_exclusion_kwargs(
+                            object_type,
+                            str(context.get("object_id") or ""),
+                            exclude_names,
+                        ),
+                    )
                     if rag_context:
                         logger.info(
                             f"Preview RAG: Found context ({len(rag_context)} chars)."
@@ -2095,11 +2112,7 @@ class LLMGenerationWidget(QWidget):
                 )
 
             # Update the user message in the prompt dict
-            replacement = (
-                f"[Retrieved Context]\n{rag_context}"
-                if rag_context
-                else "[Retrieved Context]\n(No results found for query)"
-            )
+            replacement = f"[Retrieved Context]\n{rag_context}" if rag_context else ""
             prompt["user"] = user_msg.replace("{{RAG_CONTEXT}}", replacement)
 
         # Resolve spatial context for preview, mirroring the worker's path

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-10
-**Commit:** c908c27654f295d73df3e391b6c633e25aa55611
+**Commit:** f808e1720c347c62a106efa34ca631de201b0403
 ---
 
 # Changelog
@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-10)* **Generation retrieval (KRT-68)**: Built retrieval queries
+  from the substituted task and selected subject before adding descriptions or
+  world context. Prompt Preview and generation now use the same query, limit,
+  and identity-aware exclusion; a zero limit skips retrieval. Extended the
+  immutable request contract with a legacy fallback and added focused tests for
+  long descriptions, preview parity, and disabled retrieval.
 
 - *(2026-10-10)* **Hybrid retrieval (KRT-67)**: Deduplicated lexical and
   semantic hits by world object identity, retained direct mentions within a

@@ -46,9 +46,11 @@ def test_custom_prompt_structure(qtbot, widget, monkeypatch):
     widget.custom_prompt_edit.setPlainText("My custom instruction")
 
     captured_prompt = []
+    captured_kwargs = []
 
-    def mock_start(prompt, temp, db, **_kwargs):
+    def mock_start(prompt, temp, db, **kwargs):
         captured_prompt.append(prompt)
+        captured_kwargs.append(kwargs)
 
     monkeypatch.setattr(widget, "_start_generation", mock_start)
     monkeypatch.setattr(widget, "_get_provider_id", lambda: "lmstudio")
@@ -81,6 +83,9 @@ def test_custom_prompt_structure(qtbot, widget, monkeypatch):
     # RAG context is a placeholder at this stage (before worker)
     assert "{{RAG_CONTEXT}}" in prompt_text
     assert "[Task]" in prompt_text
+    assert captured_kwargs[0]["retrieval_query"] == (
+        "My custom instruction\nSubject: entity Test Item"
+    )
 
 
 def test_preview_fetches_rag(qtbot, widget, monkeypatch):  # noqa: C901
@@ -197,10 +202,9 @@ def test_preview_fetches_rag(qtbot, widget, monkeypatch):  # noqa: C901
     assert len(init_calls) == 1
     assert init_calls[0][0] == "test.db"
 
-    # Ensure RAG placeholder is present in the query
-    assert "{{RAG_CONTEXT}}" in context_calls[0][0]
-    # Ensure section marker is present
-    assert "[Event]" in context_calls[0][0]
+    # Retrieval receives the task and subject, not the assembled prompt.
+    assert context_calls[0][0] == "Test Prompt\nSubject: event Test Item"
+    assert "[Event]" not in context_calls[0][0]
 
 
 def test_default_system_prompt_fallback(qtbot, widget, monkeypatch):

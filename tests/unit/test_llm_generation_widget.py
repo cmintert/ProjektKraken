@@ -390,6 +390,68 @@ def test_generation_worker_excludes_current_object_by_identity(mock_rag_cls):
     )
 
 
+@patch("src.gui.widgets.llm_generation_widget.RAGService")
+def test_generation_worker_uses_request_query_and_exact_exclusion(mock_rag_cls):
+    mock_rag_cls.return_value.get_context.return_value = ""
+    request = GenerationRequest(
+        prompt={
+            "system": "System",
+            "user": "[Entity]\n" + ("Long prose " * 60) + "{{RAG_CONTEXT}}",
+        },
+        db_path="dummy.db",
+        rag_limit=2,
+        retrieval_query="Find conflicts\nSubject: entity Northwatch",
+        target_id="northwatch-id",
+        object_type="entity",
+        exclude_names=("Northwatch",),
+    )
+    worker = GenerationWorker(MagicMock(), request.prompt, 100, 0.7, request=request)
+
+    worker._apply_rag_to_prompt()
+
+    mock_rag_cls.return_value.get_context.assert_called_once_with(
+        request.retrieval_query,
+        top_k=2,
+        exclude_object=("entity", "northwatch-id"),
+    )
+    assert worker.prompt["user"].endswith("Long prose " * 60)
+
+
+@patch("src.gui.widgets.llm_generation_widget.RAGService")
+def test_generation_worker_legacy_request_falls_back_to_prompt(mock_rag_cls):
+    request = GenerationRequest(
+        prompt={"system": "System", "user": "Legacy task {{RAG_CONTEXT}}"},
+        db_path="dummy.db",
+    )
+    mock_rag_cls.return_value.get_context.return_value = ""
+    worker = GenerationWorker(MagicMock(), request.prompt, 100, 0.7, request=request)
+
+    worker._apply_rag_to_prompt()
+
+    mock_rag_cls.return_value.get_context.assert_called_once_with(
+        "Legacy task {{RAG_CONTEXT}}", top_k=3, exclude_names=[]
+    )
+
+
+@patch("src.gui.widgets.llm_generation_widget.RAGService")
+@pytest.mark.parametrize("rag_enabled,rag_limit", [(False, 2), (True, 0)])
+def test_generation_worker_skips_retrieval_when_disabled_or_zero(
+    mock_rag_cls, rag_enabled, rag_limit
+):
+    request = GenerationRequest(
+        prompt={"system": "", "user": "Task {{RAG_CONTEXT}}"},
+        db_path="dummy.db",
+        retrieval_query="Find conflicts",
+        rag_enabled=rag_enabled,
+        rag_limit=rag_limit,
+    )
+    worker = GenerationWorker(MagicMock(), request.prompt, 100, 0.7, request=request)
+
+    worker._apply_rag_to_prompt()
+
+    mock_rag_cls.assert_not_called()
+
+
 def test_generation_worker_rejects_malformed_structured_prompt():
     """Malformed structured prompts fail at the worker boundary."""
     with pytest.raises(TypeError, match="string 'system' and 'user' values"):

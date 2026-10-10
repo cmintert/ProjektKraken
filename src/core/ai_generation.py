@@ -86,6 +86,7 @@ class GenerationRequest:
     temperature: float = 0.7
     db_path: str | None = None
     rag_limit: int = 3
+    retrieval_query: str = ""
     exclude_names: tuple[str, ...] = ()
     target_id: str | None = None
     source_hash: str | None = None
@@ -105,6 +106,7 @@ class GenerationRequest:
             "temperature": self.temperature,
             "db_path": self.db_path,
             "rag_limit": self.rag_limit,
+            "retrieval_query": self.retrieval_query,
             "exclude_names": list(self.exclude_names),
             "target_id": self.target_id,
             "source_hash": self.source_hash,

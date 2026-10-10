@@ -4,7 +4,43 @@ Tests prompt construction, variable substitution, context formatting,
 and the data-before-task ordering that reduces recency bias.
 """
 
-from src.services.prompt_builder import DEFAULT_SYSTEM_PROMPT, PromptBuilder
+from src.services.prompt_builder import (
+    DEFAULT_SYSTEM_PROMPT,
+    PromptBuilder,
+    build_retrieval_query,
+)
+
+
+def test_retrieval_query_uses_task_and_subject_without_source_content() -> None:
+    context = {
+        "name": "Northwatch",
+        "object_type": "entity",
+        "object_id": "northwatch-id",
+        "existing_description": "Unrelated manuscript prose. " * 40,
+    }
+    task = "Find past conflicts with {name} {{RAG_CONTEXT}}"
+    builder = PromptBuilder()
+    substituted = builder.substitute_variables(task, context)
+    assembled = builder.construct_prompt(
+        builder.build_context_string(context),
+        substituted,
+        include_rag_placeholder=True,
+    )["user"]
+
+    query = build_retrieval_query(substituted, context)
+
+    assert "Find past conflicts" not in assembled[:300]
+    assert query == "Find past conflicts with Northwatch\nSubject: entity Northwatch"
+    assert "Unrelated manuscript" not in query
+    assert "{{RAG_CONTEXT}}" not in query
+    assert len(query) <= 300
+
+
+def test_retrieval_query_bounds_long_task_and_keeps_subject() -> None:
+    query = build_retrieval_query("A" * 400, {"object_id": "entity-id"})
+
+    assert len(query) == 300
+    assert query.endswith("Subject: entity-id")
 
 
 class TestPromptBuilder:

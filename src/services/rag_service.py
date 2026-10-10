@@ -22,6 +22,15 @@ _MAX_DESCRIPTION_CHARS = 300
 _ELLIPSIS_CHARS = 3
 
 
+def retrieval_exclusion_kwargs(
+    object_type: Optional[str], object_id: Optional[str], exclude_names: List[str]
+) -> Dict[str, Any]:
+    """Prefer exact subject identity, falling back to legacy name exclusions."""
+    if object_type in {"entity", "event"} and object_id:
+        return {"exclude_object": (object_type, object_id)}
+    return {"exclude_names": list(exclude_names)}
+
+
 class RAGService:
     """Service for retrieving and formatting world knowledge for LLM context."""
 

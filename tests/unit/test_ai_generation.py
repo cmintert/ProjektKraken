@@ -3,6 +3,7 @@
 from src.core.ai_generation import (
     AIGenerationPreferences,
     GenerationApplyMode,
+    GenerationRequest,
     GenerationReviewResult,
     ModelReply,
     TaskIntent,
@@ -10,6 +11,18 @@ from src.core.ai_generation import (
     TaskTemplateSource,
     apply_reviewed_generation,
 )
+
+
+def test_generation_request_serializes_task_scoped_retrieval_query() -> None:
+    request = GenerationRequest(
+        prompt={"system": "System", "user": "[Task]\nFind conflicts"},
+        retrieval_query="Find conflicts\nSubject: entity Northwatch",
+    )
+
+    assert request.to_dict()["retrieval_query"] == request.retrieval_query
+    assert (
+        GenerationRequest(prompt={"system": "", "user": "Legacy"}).retrieval_query == ""
+    )
 
 
 def test_model_reply_maps_provider_fields_without_touching_content() -> None:
