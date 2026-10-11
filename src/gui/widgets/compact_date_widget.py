@@ -16,7 +16,6 @@ from typing import Optional
 from PySide6.QtCore import QEvent, QObject, QSize, Qt, Signal, Slot
 from PySide6.QtGui import QIcon, QKeyEvent, QResizeEvent
 from PySide6.QtWidgets import (
-    QComboBox,
     QDialog,
     QFrame,
     QGridLayout,
@@ -24,7 +23,6 @@ from PySide6.QtWidgets import (
     QInputDialog,
     QLabel,
     QLineEdit,
-    QPushButton,
     QSizePolicy,
     QVBoxLayout,
     QWidget,
@@ -42,6 +40,8 @@ from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
+from src.gui.widgets.wrapping_combo_box import WrappingComboBox as QComboBox
 
 logger = logging.getLogger(__name__)
 
@@ -139,7 +139,7 @@ class CompactDateWidget(QWidget):
             field.setMinimumWidth(0)
             field.setMaximumWidth(16777215)
             field.setMinimumHeight(32)
-            field.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            field.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
         self.spin_year.setPrefix("")
         layout_holder = QWidget(self)
         layout_holder.setLayout(chip_layout)
@@ -167,7 +167,9 @@ class CompactDateWidget(QWidget):
         qualification_layout = QVBoxLayout(self._qualification_row)
         qualification_layout.setContentsMargins(0, 0, 0, 0)
         qualification_layout.addWidget(QLabel("Date qualification"))
-        self.qualifier_combo = ScrollSafeComboBox()
+        from src.gui.widgets.wrapping_combo_box import WrappingComboBox
+
+        self.qualifier_combo = WrappingComboBox()
         for label, qualifier in (
             ("Asserted", TemporalQualifier.ASSERTED),
             ("Approximate", TemporalQualifier.APPROXIMATE),
@@ -181,17 +183,21 @@ class CompactDateWidget(QWidget):
         qualification_layout.addWidget(self.qualifier_combo)
         layout.insertWidget(3, self._qualification_row)
         self._qualification_row.hide()
-        self.limits_button = QPushButton("Possible date limits…")
+
+        from src.gui.widgets.wrapping_buttons import WrappingPushButton
+
+        self.limits_button = WrappingPushButton("Possible date limits…")
         layout.insertWidget(4, self.limits_button)
         self.limits_button.hide()
         self.date_fields_button.toggled.connect(self.limits_button.setVisible)
         self.limits_button.clicked.connect(self._edit_limits)
         self.date_fields_button.toggled.connect(self._qualification_row.setVisible)
+        self.date_fields_button.toggled.connect(self._refresh_layout_hint)
         self.qualifier_combo.currentIndexChanged.connect(self._on_qualifier_changed)
         self.btn_time_toggle.setText("Time…")
         self.btn_time_toggle.setIcon(QIcon())
         self.btn_time_toggle.setMinimumSize(0, 32)
-        self.btn_time_toggle.setMaximumSize(16777215, 32)
+        self.btn_time_toggle.setMaximumSize(16777215, 16777215)
         self.btn_time_toggle.setAccessibleName("Show time fields")
         self.feedback = QLabel(self)
         self.feedback.setWordWrap(True)
@@ -202,6 +208,25 @@ class CompactDateWidget(QWidget):
             field.installEventFilter(self)
             field.setToolTip("Choose a component, or press Delete to leave it unknown.")
         self._sync_entry_availability()
+
+    def _refresh_layout_hint(self, _expanded: bool) -> None:
+        """Recalculate the fixed-height card after disclosure changes."""
+        layout = self.layout()
+        if layout is not None:
+            layout.invalidate()
+            required = layout.minimumSize().height()
+            if self.minimumHeight() != required:
+                self.setMinimumHeight(required)
+        self.updateGeometry()
+
+    def event(self, event: QEvent) -> bool:
+        """Propagate child reflow heights through the fixed-height date card."""
+        result = super().event(event)
+        if event.type() == QEvent.Type.LayoutRequest and getattr(
+            self, "_text_first", False
+        ):
+            self._refresh_layout_hint(False)
+        return result
 
     def _reflow_structured_fields(self) -> None:
         """Stack the live date components when their pane cannot fit labels."""
@@ -215,6 +240,7 @@ class CompactDateWidget(QWidget):
         self._date_options_grid.addWidget(
             self.btn_time_toggle, 1 if compact else 0, 0 if compact else 1
         )
+        self._date_options_grid.invalidate()
         for index, (label, field) in enumerate(self._structured_fields):
             self._structured_grid.removeWidget(label)
             self._structured_grid.removeWidget(field)
@@ -515,6 +541,7 @@ class CompactDateWidget(QWidget):
         chip_layout.addWidget(self.spin_year, stretch=0)
 
         self.combo_month = ScrollSafeComboBox()
+        self.combo_month.setProperty("actionLabelDataValue", True)
         self.combo_month.setSizePolicy(
             QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
@@ -522,6 +549,7 @@ class CompactDateWidget(QWidget):
         chip_layout.addWidget(self.combo_month, stretch=0)
 
         self.combo_day = ScrollSafeComboBox()
+        self.combo_day.setProperty("actionLabelDataValue", True)
         self.combo_day.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.combo_day.setFixedWidth(70)
         chip_layout.addWidget(self.combo_day, stretch=0)
@@ -532,7 +560,10 @@ class CompactDateWidget(QWidget):
         date_row.addWidget(self._date_chip, stretch=0)
 
         # Time toggle button (clock icon)
-        self.btn_time_toggle = QPushButton()
+        from src.gui.widgets.standard_buttons import StandardButton
+
+        self.btn_time_toggle = StandardButton("")
+        self.btn_time_toggle.setAccessibleName("Show time fields")
         self.btn_time_toggle.setFixedSize(32, 24)
         self.btn_time_toggle.setCheckable(True)
         self.btn_time_toggle.setToolTip(
@@ -542,6 +573,7 @@ class CompactDateWidget(QWidget):
 
         # Calendar button
         self.btn_calendar = QPushButton()
+        self.btn_calendar.setAccessibleName("Choose date from calendar")
         self.btn_calendar.setFixedSize(32, 24)
         self.btn_calendar.setToolTip("Open calendar picker")
         date_row.addWidget(self.btn_calendar, stretch=0)
@@ -1044,7 +1076,10 @@ class CompactDateWidget(QWidget):
         if self._text_first:
             layout = self.layout()
             assert layout is not None
-            return layout.sizeHint()
+            hint = layout.sizeHint()
+            if layout.hasHeightForWidth():
+                hint.setHeight(max(hint.height(), layout.heightForWidth(self.width())))
+            return hint
         if self._time_container.isVisible():
             return QSize(350, 72)
         return QSize(350, 34)

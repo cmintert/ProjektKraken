@@ -13,16 +13,18 @@ from typing import Any, Dict, List, Optional
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
-    QDialogButtonBox,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
 
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
+from src.gui.widgets.responsive_dialog_buttons import (
+    ResponsiveDialogButtonBox as QDialogButtonBox,
+)
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 logger = logging.getLogger(__name__)
 

@@ -15,7 +15,6 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QListWidget,
     QListWidgetItem,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
@@ -23,6 +22,7 @@ from PySide6.QtWidgets import (
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 
 class SearchResultItem(QWidget):
@@ -87,14 +87,10 @@ class SearchResultItem(QWidget):
     def _apply_theme(self, theme: dict) -> None:
         """Apply current theme tokens to result metadata and hover state."""
         type_color = (
-            theme["event_main"]
-            if self.object_type == "event"
-            else theme["entity_main"]
+            theme["event_main"] if self.object_type == "event" else theme["entity_main"]
         )
         self.type_label.setStyleSheet(f"color: {type_color}; font-size: 10px;")
-        self.score_label.setStyleSheet(
-            f"color: {theme['text_dim']}; font-size: 10px;"
-        )
+        self.score_label.setStyleSheet(f"color: {theme['text_dim']}; font-size: 10px;")
         self.setStyleSheet(
             "#searchResultItem:hover {"
             f"background-color: {theme.get('surface_alt', theme['surface'])};"

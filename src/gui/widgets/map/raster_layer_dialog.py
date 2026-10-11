@@ -12,9 +12,7 @@ from typing import Any, Dict, Optional, Tuple
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QDoubleValidator, QImage, QPixmap
 from PySide6.QtWidgets import (
-    QComboBox,
     QDialog,
-    QDialogButtonBox,
     QFileDialog,
     QFormLayout,
     QFrame,
@@ -22,7 +20,6 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
@@ -30,6 +27,11 @@ from PySide6.QtWidgets import (
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
+from src.gui.widgets.responsive_dialog_buttons import (
+    ResponsiveDialogButtonBox as QDialogButtonBox,
+)
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
+from src.gui.widgets.wrapping_combo_box import WrappingComboBox as QComboBox
 from src.services.raster_image_analysis import ImageAnalysisResult, analyse_image
 
 logger = logging.getLogger(__name__)
@@ -87,7 +89,12 @@ class RasterLayerDialog(QDialog):
         self._import_width: int = 0
         self._import_height: int = 0
 
-        layout = QVBoxLayout(self)
+        from src.gui.widgets.responsive_form import scrollable_form_page
+
+        outer = QVBoxLayout(self)
+        body = QWidget()
+        layout = QVBoxLayout(body)
+        outer.addWidget(scrollable_form_page(body), 1)
         form = QFormLayout()
 
         # Name
@@ -161,7 +168,7 @@ class RasterLayerDialog(QDialog):
         self._browse_btn.clicked.connect(self._on_browse_clicked)
         browse_row.addWidget(self._browse_btn)
         self._clear_btn = QPushButton("✕")
-        self._clear_btn.setFixedSize(24, 24)
+        self._clear_btn.setAccessibleName("Clear selected raster image")
         self._clear_btn.setToolTip("Clear selected file")
         self._clear_btn.clicked.connect(self._on_clear_import)
         self._clear_btn.setVisible(False)
@@ -176,7 +183,9 @@ class RasterLayerDialog(QDialog):
         self._import_dims_label.setVisible(False)
         import_form.addRow("Detected size:", self._import_dims_label)
 
-        self._aspect_warn_label = QLabel("⚠ Aspect ratio mismatch — image will be stretched")
+        self._aspect_warn_label = QLabel(
+            "⚠ Aspect ratio mismatch — image will be stretched"
+        )
         self._aspect_warn_label.setWordWrap(True)
         self._aspect_warn_label.setStyleSheet(StyleHelper.get_preview_label_style())
         self._aspect_warn_label.setVisible(False)
@@ -202,8 +211,7 @@ class RasterLayerDialog(QDialog):
         self._preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         theme = ThemeManager().get_theme()
         self._preview_label.setStyleSheet(
-            f"border: 1px solid {theme.get('border', '#454545')}; "
-            f"background-color: {theme.get('surface_alt', '#222222')};"
+            f"border: 1px solid {theme['border']}; background-color: {theme['app_bg']};"
         )
         self._preview_label.setVisible(False)
         import_form.addRow("Preview:", self._preview_label)
@@ -227,7 +235,7 @@ class RasterLayerDialog(QDialog):
         )
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        outer.addWidget(buttons)
 
         # Apply theme
         self.setStyleSheet(StyleHelper.get_dialog_base_style())
@@ -359,14 +367,11 @@ class RasterLayerDialog(QDialog):
         if self._import_path and self._import_width and self._import_height:
             width, height = self._import_width, self._import_height
         else:
-            _label, width, height = _RESOLUTION_PRESETS[
-                self._res_combo.currentIndex()
-            ]
+            _label, width, height = _RESOLUTION_PRESETS[self._res_combo.currentIndex()]
         bytes_per_pixel = 4 if self._mode_combo.currentData() == "color" else 2
         memory_mib = width * height * bytes_per_pixel / (1024 * 1024)
         self._memory_estimate.setText(
-            f"{width:,} × {height:,} pixels · about {memory_mib:.1f} MiB "
-            "working memory"
+            f"{width:,} × {height:,} pixels · about {memory_mib:.1f} MiB working memory"
         )
 
     # ------------------------------------------------------------------

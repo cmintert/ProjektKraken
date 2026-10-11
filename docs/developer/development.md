@@ -79,6 +79,9 @@ python -m mypy src
 Before approving a public beta, also complete the
 [Wiki Editor Beta Release Gate](wiki-editor-beta-release-gate.md). A known
 authoring-continuity or link-identity failure blocks release even if CI passes.
+The [action label release gate](action-label-release-gate.md) also blocks sign-off
+on clipped wording, coverage gaps or missing native Windows screenshot approval.
+Release preflight runs its full matrix with `--require-native-review`.
 
 On Windows, set `QT_QPA_PLATFORM=offscreen` for GUI tests.
 

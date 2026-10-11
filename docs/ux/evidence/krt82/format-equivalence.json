@@ -1,0 +1,164 @@
+{
+  "schema": 1,
+  "reason": "Required commit-hook formatting after completed matrix; every affected Python syntax tree is identical.",
+  "audited_presentation_fingerprint": "5aa0daeedffc1654d0fe912478711c82077d3f04aa47cce8bb00c3715b48e440",
+  "formatted_presentation_fingerprint": "47dd9f55855ddc11caf8bc0fa1808b07015ad44f202690ab05d358da05d6418c",
+  "files": [
+    {
+      "file": "src/gui/dialogs/analysis_run_dialog.py",
+      "before_sha256": "5837a8f24cfa8e7bdbc980caa0c75b5bd8a75f393201c1097b7cc305cac3803e",
+      "after_sha256": "40b0a957031e8f052c65e449ee93a8738486f6fde7bfcfc44474d65c59896fa6",
+      "unchanged_ast_sha256": "cccbde6ae03411583c81599dd261f0fd9de8cc692d92a4ed6d505faf5815c8bd"
+    },
+    {
+      "file": "src/gui/dialogs/calendar_config_dialog.py",
+      "before_sha256": "ddf53bc61d947c16b7a28254d0ac6de44fa10e83292f81a43c5881d7fbd78250",
+      "after_sha256": "1edd83fc2f56989fc8f9956f6306d6c7a240765c8359d1be60b8b9cd2f81827a",
+      "unchanged_ast_sha256": "21bd6de54bdef814f9d83d1295e6c1c53d3d7e7a93e861ac240f42465c9b1370"
+    },
+    {
+      "file": "src/gui/dialogs/context_tag_dialogs.py",
+      "before_sha256": "c8f8e9841571464acca893a06626037df47ace5775a24a4e8e25badc91303929",
+      "after_sha256": "84135ebd359f90c4b102f2fff5e83528d95f06111a2ab3174c61b79e636f317c",
+      "unchanged_ast_sha256": "44328d7097daed1bfd488bdfd25e82c667fcdc7573b798d5a0bf22c890180e3d"
+    },
+    {
+      "file": "src/gui/dialogs/feature_geometry_states_dialog.py",
+      "before_sha256": "27ae5b40e3be4b77e5b239da730639368538a0016cbe6701f5b2c11f13eaf282",
+      "after_sha256": "478444ab303129392f75442ae6c1e9a5723b6ee75f384629bf22520253028be4",
+      "unchanged_ast_sha256": "5b5dcb2a0d565077a13383bc4c4dcd6c1d886d1c81ddcf6a8283d2c009edf498"
+    },
+    {
+      "file": "src/gui/dialogs/generation_review_dialog.py",
+      "before_sha256": "f74f15db9d8238408780e25b3caa9265997bbe186bc8dfd8845aae7e7d2affad",
+      "after_sha256": "237108965130da7a724264acb537997239525120713f6ac4eac1c432053f41a2",
+      "unchanged_ast_sha256": "a61a2adbed53b5c2c6d23dc16e37717240ae2dabbcc08775f9af7920dfa5ad62"
+    },
+    {
+      "file": "src/gui/dialogs/go_to_date_dialog.py",
+      "before_sha256": "2eacf42d611263cb30c0bdcb1ff0b5ba01e709dcb9ce07610b868747abad723e",
+      "after_sha256": "d9a89daf8d251713471832e79536dcf171973069353dd7ec4b6de36c79a624da",
+      "unchanged_ast_sha256": "e27dbbb5206dc36fd314c4e363f692d4cc840a8d772af7b5cf274cffe3a1c877"
+    },
+    {
+      "file": "src/gui/dialogs/import_preview_dialog.py",
+      "before_sha256": "f1f2ac906c353f8d120ac5f25b1a21a2f3e73b4f5dcb294b3e913df2b8429f71",
+      "after_sha256": "50da13fb3d642880f3f40cbf91f46f91e0b85643c34f98263f7fed31494f93c0",
+      "unchanged_ast_sha256": "3756a3741e79030c952e888a513fad7cf7dd97ad7eca865da48f3fb9e63994f8"
+    },
+    {
+      "file": "src/gui/dialogs/layer_properties_dialog.py",
+      "before_sha256": "56a93cbd2b4882bef137559781dd62215b20d071a5d7f4901768f44e47668848",
+      "after_sha256": "6001c7c954b9a3db1f832ca4f04b79e97f014c9fe5234d6b3aa8bddff9c9daed",
+      "unchanged_ast_sha256": "35e9fbe4e907e7f2afe6a9961525b385fd950d9a29be4b716c9089cdf525814d"
+    },
+    {
+      "file": "src/gui/dialogs/map_object_picker_dialog.py",
+      "before_sha256": "129d9dfaebd180a6e2a9e9cbd6932793718313cbdf864d65bbe2e01b340e2bed",
+      "after_sha256": "e1617ab564b2fd70872eb9218c4ae93c9b36bc23456f543f86cef7f60dfe94bd",
+      "unchanged_ast_sha256": "c5d672a8d6215683a9974ba3fc25209ca15e0a519c408ca67ceda8a14c0ff8e8"
+    },
+    {
+      "file": "src/gui/dialogs/paste_json_import_dialog.py",
+      "before_sha256": "67d3685a1193e3d741d45a0192b73f2e0345798e9f85f407ef9611d74a94d087",
+      "after_sha256": "1d0a14bba363a596c0f1d069ced695450d1e37d934909e816be67e5c6c176164",
+      "unchanged_ast_sha256": "f59a280fd84e4ff614ca91bebc04d70123910ad2e6fbbc8e5ffbed1ed45f490c"
+    },
+    {
+      "file": "src/gui/dialogs/register_detail_map_dialog.py",
+      "before_sha256": "5b03ac22e5d39205ad668af985da2e36a8089820e491552b571b5aff109c5121",
+      "after_sha256": "c934d19e1d81ef9ecc14a91e7a8b79ab23747d49884c0c7f9c731262c51891ad",
+      "unchanged_ast_sha256": "60667ec6a8a453d2ffcee2d9e8fe175e41b4f555e9053e64eb6ce8ac36ddcce0"
+    },
+    {
+      "file": "src/gui/dialogs/temporal_evidence_dialog.py",
+      "before_sha256": "a93f31290f10f66d51cb4bdf5fd6dc1c24fbf096f829c3b1eb83a0f24aa97d5c",
+      "after_sha256": "5e7ed477988d3264f1d730b0e2b9143b83fe696f3c1e7f8357b1a7bfc4a6471d",
+      "unchanged_ast_sha256": "87f4a1e3d98b580dcaf2917431938fed56e81264ec402fd48594da8cbff0c4f4"
+    },
+    {
+      "file": "src/gui/widgets/ai_search_panel.py",
+      "before_sha256": "237d04e183fef74a98e785727218347a6385a6b60717c576c1d84aee7adafcb6",
+      "after_sha256": "1a539bfe88704f1c295a7f4eb44ccf0c0521e641ae0a8b83bfad763962506ab9",
+      "unchanged_ast_sha256": "3f6236ae7e17c582234ae06aef4ab029eef9daf7aaceb7c8ec48178edd9e9f65"
+    },
+    {
+      "file": "src/gui/widgets/analysis/analysis_panel.py",
+      "before_sha256": "7fe295a59605e833a50187cd9ff4432fb24cf7f72b24048d578ad47486648641",
+      "after_sha256": "c484bb67da10285c09ddb2c224c341dbf022ac3a9e9052594e7b4679f1dee07c",
+      "unchanged_ast_sha256": "1598bc44a1246b887552bd62cfccc45abfb21705edc0d4dca29e7d32ad9dd3df"
+    },
+    {
+      "file": "src/gui/widgets/analysis/intelligence_panel.py",
+      "before_sha256": "845f50e1c7ae00908dc4cd209349e4b5e733893dce42062486e4a2599ea8fc8f",
+      "after_sha256": "9eef1edb3c48f9811e9c3d596d84fb56ea5470b7497be767740a6da6e0836162",
+      "unchanged_ast_sha256": "c702e5d43062d8a4cbc590d03ed7b181722bbe833cb9217f3d979db383990dee"
+    },
+    {
+      "file": "src/gui/widgets/analysis/temporal_panel.py",
+      "before_sha256": "8d809de7a95e4bbda46e001ad4f86968a27453ae352068c3d98b3667f416da8c",
+      "after_sha256": "1e22c780a1a5ae34c9e96b1f7176975398a99e53e14225c4aa0671fd64d5b117",
+      "unchanged_ast_sha256": "452b120c9610480e2dc06dfe20f9bda770a3fa35295b292ad2d5df66bd461af2"
+    },
+    {
+      "file": "src/gui/widgets/color_pickers/inline_color_picker.py",
+      "before_sha256": "5cd2d489d534d116cd233f78a576b9b19ec771fbd726e23e788a23bc8ca65e65",
+      "after_sha256": "729372ed52e218744bd2ae2dd14a20873b27eecddf2364b3b9c3ab3c6e5085e7",
+      "unchanged_ast_sha256": "0c53b8a4876ff9c6b6a607c99b887f37739faa67ccdc45a82aa9637417402dfe"
+    },
+    {
+      "file": "src/gui/widgets/graph_view/graph_filter_bar.py",
+      "before_sha256": "25269d1f59d59adc7c19aabf5097fadd4e22fc25ed45e24651893daaa4390932",
+      "after_sha256": "d54e7f904dce1fadd9655a7c551308105de6811e8dcc4c8b5c21650ce17404df",
+      "unchanged_ast_sha256": "c6bc811fba67043735f2bef5b08b952af48fb673f6ab3850caf804b747b776ff"
+    },
+    {
+      "file": "src/gui/widgets/map/map_scale_dialog.py",
+      "before_sha256": "e90feb30b8e28aae1d5da60d2ecb66815dd699a987279e33abf36a8051ab110b",
+      "after_sha256": "0e3cc4d0555eff2464538a93c206747badc78ccc593a41febfd59524aea0848f",
+      "unchanged_ast_sha256": "f0db03ae71d69977cf5203c0b8642be0d628986c7ddaa75edc849292a57b9454"
+    },
+    {
+      "file": "src/gui/widgets/map/marker_size_dialog.py",
+      "before_sha256": "35ef55a256ddb5e8fa6ef029c296aad03efbea0bc768f9c4bea982798ea90873",
+      "after_sha256": "839e09d6a533f7b028df9ffb6615c3d08ff0d71d980197dab3693ac5d27b2da3",
+      "unchanged_ast_sha256": "679fd87b13da0145085fede73cc682898b1142c6d67c6009b0c27814f5b7985f"
+    },
+    {
+      "file": "src/gui/widgets/map/raster_layer_dialog.py",
+      "before_sha256": "584f3d80eaa45167503280c99ff66f4c0e5e8b9f597f7f759bbedcb86cc621f8",
+      "after_sha256": "5f5f3987aadeb781d36c4bbfc2578b847344970ff5fa24b0cde40c0c7857fc19",
+      "unchanged_ast_sha256": "7483748073926f027914083915121207f5fa65159a9045a9a01100a48ff5ffcb"
+    },
+    {
+      "file": "src/gui/widgets/map/raster_palette_editor.py",
+      "before_sha256": "7c32708ada92734955e2ac9bd26ffa08622d615c604384efacb2bc01b8498b78",
+      "after_sha256": "cb6c729ed83eaf7141b2630c97038ab775f74b155ca96586769391a9a3c143ad",
+      "unchanged_ast_sha256": "435b768deab645039eb2a78b1ed617e78935e3f66eb5cf4d7d9ac0af4c9e5e38"
+    },
+    {
+      "file": "src/gui/widgets/wiki_peek_panel.py",
+      "before_sha256": "3ae9c81b0cf668de226c11d16da5919f0e5dcfe309b44e9a7e14635b9de5ed2d",
+      "after_sha256": "9b90b0149158af44aca718488c97f9f6fea381ddaffdaac9e8b6a4a12a52c367",
+      "unchanged_ast_sha256": "3c30e3c498a36ae82c424500125162e43183ecd03d035ce1853fc66d85da85ba"
+    },
+    {
+      "file": "tests/unit/test_action_label_integrity.py",
+      "before_sha256": "c6136d7987afb953c63a3c64452a581bd13616ac252340aa1e51a3d3aadb772e",
+      "after_sha256": "205b25c3c9ac186050b9d8e4d322f09ec4e769cb6927fe29724c397ed8a6bc68",
+      "unchanged_ast_sha256": "6d6db549840b9b41ea23774fe65b5b6b85502681e6868dfb3fd02637f80b85c3"
+    },
+    {
+      "file": "tests/unit/test_overflow_toolbar.py",
+      "before_sha256": "e73432e274e996f4d512d65c969ac47dc9ed6137a2be81c11ae27525294307ba",
+      "after_sha256": "aae283371c6cbe4b11c1965e0dc9b054a3f09c6d52bb8094165ae89bb8e39c42",
+      "unchanged_ast_sha256": "15610a1169caf900fd81047e79cae4f563b5872b8dae240582041157fbdadd34"
+    },
+    {
+      "file": "tests/unit/test_responsive_panel_toolbars.py",
+      "before_sha256": "4c76c81fd714363238e0ff2e3ec809bb74602e22022d223ad5ab00d50a6347dd",
+      "after_sha256": "5743a140bb08bccd191e5b97b8bc05058ceeb561e370c48490bf3e4267442211",
+      "unchanged_ast_sha256": "31c8817372a76a9375dd536b5b4379b2774c6680610f568f950e4f818d8f03ac"
+    }
+  ]
+}

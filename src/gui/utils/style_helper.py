@@ -502,10 +502,9 @@ class StyleHelper:
 
     @staticmethod
     def get_overflow_button_style() -> str:
-        """Render compact overflow access with the secondary control vocabulary."""
+        """Render labeled overflow access with the secondary control vocabulary."""
         selector = "QToolButton#OverflowToolBarMenuButton"
         return StyleHelper.get_action_role_style("secondary", selector) + (
-            f"{selector} {{ padding: 0; font-size: 18px; font-weight: bold; }}"
             f"{selector}::menu-indicator {{ image: none; width: 0; height: 0; }}"
         )
 

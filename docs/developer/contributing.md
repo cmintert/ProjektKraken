@@ -56,6 +56,11 @@ are introduced.
 
 ## Authoring interaction contract
 
+Action labels also satisfy [UI-GATE-01](action-label-release-gate.md), Contract 11.
+Review complete wording, responsive action priority, both text dimensions and
+native Windows/theme/state evidence. Tooltips, cropped names and increased minimum
+windows cannot conceal violations. Missing required coverage blocks release.
+
 All UI presentation changes also follow the
 [visual vocabulary](../ux/visual-interaction-vocabulary.md), including Map,
 Timeline, Graph and Longform. Use shared roles/helpers and run
@@ -67,7 +72,7 @@ Unify/correct legacy styling on the next function/method or stylesheet touch;
 the policy checker expires those exemptions against remote main locally and the
 PR/push baseline in CI. Unrelated paths do not require a whole-app redesign.
 
-Use [UI/UX Contract v1](../ux/authoring-contract.md) for authoring UI changes.
+Use [UI/UX Contract v1.1](../ux/authoring-contract.md) for authoring UI changes.
 Linear remains the design authority; update both copies in the same work batch
 when deliberately revising a rule. In the change description, identify relevant
 contract numbers, visible entry points (including narrow layouts), keyboard

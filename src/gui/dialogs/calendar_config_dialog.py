@@ -11,7 +11,6 @@ from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
@@ -19,7 +18,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMessageBox,
-    QPushButton,
     QTableWidget,
     QTableWidgetItem,
     QTabWidget,
@@ -37,6 +35,10 @@ from src.core.calendar import (
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
+from src.gui.widgets.responsive_dialog_buttons import (
+    ResponsiveDialogButtonBox as QDialogButtonBox,
+)
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 logger = logging.getLogger(__name__)
 
@@ -124,9 +126,7 @@ class CalendarConfigDialog(QDialog):
         self.month_table.horizontalHeader().setSectionResizeMode(
             2, QHeaderView.ResizeMode.ResizeToContents
         )
-        self.month_table.setSelectionBehavior(
-            QTableWidget.SelectionBehavior.SelectRows
-        )
+        self.month_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.month_table.itemChanged.connect(self._on_month_changed)
         month_layout.addWidget(self.month_table)
 
@@ -179,9 +179,7 @@ class CalendarConfigDialog(QDialog):
         self.leap_table.horizontalHeader().setSectionResizeMode(
             QHeaderView.ResizeMode.Stretch
         )
-        self.leap_table.setSelectionBehavior(
-            QTableWidget.SelectionBehavior.SelectRows
-        )
+        self.leap_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.leap_table.itemChanged.connect(self._update_preview)
         leap_layout.addWidget(self.leap_table)
 

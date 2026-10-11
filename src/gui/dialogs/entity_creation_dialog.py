@@ -2,7 +2,6 @@
 
 from PySide6.QtWidgets import (
     QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QLineEdit,
     QVBoxLayout,
@@ -10,6 +9,9 @@ from PySide6.QtWidgets import (
 )
 
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
+from src.gui.widgets.responsive_dialog_buttons import (
+    ResponsiveDialogButtonBox as QDialogButtonBox,
+)
 
 
 class EntityCreationDialog(QDialog):

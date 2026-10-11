@@ -17,7 +17,6 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
     QLabel,
-    QPushButton,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -35,6 +34,7 @@ from src.gui.widgets.analysis._analysis_utils import (
     make_text_cell,
     sync_analysis_cell_styles,
 )
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 logger = logging.getLogger(__name__)
 
@@ -185,9 +185,7 @@ class AnalysisPanel(QWidget):
             name_item = QTableWidgetItem(score.name)
             name_item.setData(Qt.ItemDataRole.UserRole, score.object_id)
             self.completeness_table.setItem(row, 0, name_item)
-            self.completeness_table.setItem(
-                row, 1, QTableWidgetItem(score.object_type)
-            )
+            self.completeness_table.setItem(row, 1, QTableWidgetItem(score.object_type))
             self.completeness_table.setItem(
                 row, 2, QTableWidgetItem(f"{score.completeness_score:.0f}%")
             )

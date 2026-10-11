@@ -108,6 +108,21 @@ def make_steps(mode: str, base_ref: str) -> list[tuple[str, list[str]]]:
     if mode == "release":
         steps.append(
             (
+                "Action label release matrix",
+                [
+                    py,
+                    "-m",
+                    "scripts.check_action_labels",
+                    "--matrix",
+                    "full",
+                    "--require-native-review",
+                    "--report-dir",
+                    "tmp/action-label-release",
+                ],
+            )
+        )
+        steps.append(
+            (
                 "Full regression and coverage",
                 [
                     py,

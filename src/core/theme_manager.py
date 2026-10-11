@@ -10,6 +10,7 @@ import logging
 from typing import Any, Dict, Optional, cast
 
 from PySide6.QtCore import QObject, Signal
+from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QApplication
 
 from src.core.base_theme_manager import BaseThemeManager
@@ -135,4 +136,37 @@ class ThemeManager(QObject, BaseThemeManager):
 
         stylesheet = self.format_stylesheet()
         if stylesheet:
+            self._apply_native_palette(app)
             app.setStyleSheet(stylesheet)
+
+    def _apply_native_palette(self, app: QApplication) -> None:
+        """Keep unstyled panel/viewport backgrounds within the active theme.
+
+        QSS continues to own specific control states. Native auto-filled widgets
+        use these same existing tokens rather than the Windows light palette.
+        """
+        theme = self.get_theme()
+        palette = QPalette(app.palette())
+        roles = {
+            QPalette.ColorRole.Window: "app_bg",
+            QPalette.ColorRole.WindowText: "text_main",
+            QPalette.ColorRole.Base: "surface",
+            QPalette.ColorRole.AlternateBase: "app_bg",
+            QPalette.ColorRole.Text: "text_main",
+            QPalette.ColorRole.Button: "surface",
+            QPalette.ColorRole.ButtonText: "text_main",
+            QPalette.ColorRole.Highlight: "selection_bg",
+            QPalette.ColorRole.HighlightedText: "selection_text",
+        }
+        for role, token in roles.items():
+            palette.setColor(role, QColor(theme[token]))
+        for role in (QPalette.ColorRole.WindowText, QPalette.ColorRole.Text):
+            palette.setColor(
+                QPalette.ColorGroup.Disabled, role, QColor(theme["text_dim"])
+            )
+        palette.setColor(
+            QPalette.ColorGroup.Disabled,
+            QPalette.ColorRole.ButtonText,
+            QColor(theme["action_secondary_disabled_text"]),
+        )
+        app.setPalette(palette)

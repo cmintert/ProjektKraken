@@ -12,14 +12,12 @@ Lock behaviour:
 import logging
 from typing import Any, Optional
 
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import QEvent, QSize, Signal, Slot
 from PySide6.QtWidgets import (
     QButtonGroup,
-    QCheckBox,
     QFrame,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QSizePolicy,
     QVBoxLayout,
     QWidget,
@@ -31,6 +29,8 @@ from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.compact_duration_widget import CompactDurationWidget
 from src.gui.widgets.editor_presentation import DisclosureButton
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
+from src.gui.widgets.wrapping_choices import WrappingCheckBox as QCheckBox
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +75,35 @@ class TemporalRangeWidget(QWidget):
         self._setup_ui()
         self._connect_signals()
 
+    def event(self, event: QEvent) -> bool:
+        """Propagate wrapped date-card height before subsequent rows are placed."""
+        result = super().event(event)
+        if event.type() == QEvent.Type.LayoutRequest and self.layout() is not None:
+            layout = self.layout()
+            assert layout is not None
+            required = max(
+                layout.minimumSize().height(), layout.totalHeightForWidth(self.width())
+            )
+            if self.minimumHeight() != required:
+                self.setMinimumHeight(required)
+                self.updateGeometry()
+        return result
+
+    def hasHeightForWidth(self) -> bool:  # noqa: N802
+        """Include wrapped date fields when the parent allocates this card."""
+        return True
+
+    def heightForWidth(self, width: int) -> int:  # noqa: N802
+        """Reserve the complete responsive card instead of a stale row height."""
+        layout = self.layout()
+        return layout.totalHeightForWidth(width) if layout is not None else 0
+
+    def sizeHint(self) -> QSize:  # noqa: N802
+        """Report the live height at the current narrow-panel allocation."""
+        hint = super().sizeHint()
+        hint.setHeight(max(hint.height(), self.heightForWidth(self.width())))
+        return hint
+
     # ── UI construction ────────────────────────────────────────────────────
 
     def _setup_ui(self) -> None:
@@ -96,7 +125,6 @@ class TemporalRangeWidget(QWidget):
         start_row = QVBoxLayout()
         start_row.setSpacing(6)
         lbl_start = QLabel("Date")
-        lbl_start.setFixedWidth(36)
         start_row.addWidget(lbl_start)
         self.date_start = CompactDateWidget(text_first=True)
         self.date_start.allow_duration_range = True
@@ -173,7 +201,6 @@ class TemporalRangeWidget(QWidget):
         span_row = QVBoxLayout()
         span_row.setSpacing(6)
         lbl_span = QLabel("Span")
-        lbl_span.setFixedWidth(36)
         span_row.addWidget(lbl_span)
         self.duration_widget = CompactDurationWidget()
         for spin in (
@@ -200,7 +227,6 @@ class TemporalRangeWidget(QWidget):
         end_row = QVBoxLayout()
         end_row.setSpacing(6)
         lbl_end = QLabel("End")
-        lbl_end.setFixedWidth(36)
         end_row.addWidget(lbl_end)
         self.date_end = CompactDateWidget(text_first=True)
         self.date_end.txt_date.setAccessibleName("End date")

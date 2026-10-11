@@ -14,13 +14,11 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QColorDialog,
     QDialog,
-    QDialogButtonBox,
     QFrame,
     QHBoxLayout,
     QLabel,
     QListWidget,
     QListWidgetItem,
-    QPushButton,
     QRadioButton,
     QVBoxLayout,
     QWidget,
@@ -30,6 +28,10 @@ from src.commands.timeline_grouping_commands import (
     SetTimelineGroupingCommand,
     UpdateTagColorCommand,
 )
+from src.gui.widgets.responsive_dialog_buttons import (
+    ResponsiveDialogButtonBox as QDialogButtonBox,
+)
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 logger = logging.getLogger(__name__)
 

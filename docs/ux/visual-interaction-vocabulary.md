@@ -50,8 +50,10 @@ Checked disclosures remain checkable and expose their expanded state.
 Keep border thickness, padding and dimensions constant across states. Disabled
 controls remain visibly button-like and explain prerequisites through tooltips.
 Do not hide Open/Peek because the caret leaves a link. Narrow layouts use the
-existing labeled More actions route, including disabled entries. Long return
-labels shorten with the full destination retained in tooltip/accessibility text.
+existing labeled More actions route, including disabled entries.
+Long destination names may shorten when the full value remains accessible;
+action wording must retain complete, unambiguous meaning under UI-GATE-01.
+Tooltips and accessibility text do not justify clipped or truncated action names.
 Availability tied to session history may still hide the Back action.
 
 ## Accessibility and context

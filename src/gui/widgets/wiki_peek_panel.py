@@ -6,13 +6,13 @@ from PySide6.QtWidgets import (
     QLabel,
     QListWidget,
     QPlainTextEdit,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
 
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 
 class WikiPeekPanel(QWidget):
@@ -71,8 +71,7 @@ class WikiPeekPanel(QWidget):
         """Repaint Peek content and actions when the application theme changes."""
         self.setStyleSheet(f"background-color: {theme['surface']};")
         self.title.setStyleSheet(
-            f"color: {theme['text_main']}; background: transparent;"
-            "font-weight: bold;"
+            f"color: {theme['text_main']}; background: transparent;font-weight: bold;"
         )
         self.detail.setStyleSheet(
             f"color: {theme['text_dim']}; background: transparent;"

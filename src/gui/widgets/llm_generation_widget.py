@@ -12,11 +12,9 @@ from dataclasses import replace
 from typing import Any, Dict, Optional, Protocol, cast, runtime_checkable
 
 from PySide6.QtCore import QObject, QSettings, Qt, QThread, Signal, Slot
-from PySide6.QtGui import QCloseEvent, QIntValidator, QStandardItemModel
+from PySide6.QtGui import QCloseEvent, QIntValidator, QResizeEvent, QStandardItemModel
 from PySide6.QtWidgets import (
     QApplication,
-    QCheckBox,
-    QComboBox,
     QDialog,
     QFrame,
     QGridLayout,
@@ -25,7 +23,6 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMessageBox,
     QPlainTextEdit,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
@@ -50,6 +47,9 @@ from src.gui.utils.settings_reader import (
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 from src.gui.widgets.prompt_editor import PromptEditorWidget
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
+from src.gui.widgets.wrapping_choices import WrappingCheckBox as QCheckBox
+from src.gui.widgets.wrapping_combo_box import WrappingComboBox as QComboBox
 from src.services.ai_audit_service import (
     log_generation_event,
     log_review_event,
@@ -72,6 +72,7 @@ from src.services.reasoning_filter import filter_reasoning_tags
 from src.services.spatial_context_builder import lookup_spatial_context
 
 logger = logging.getLogger(__name__)
+GENERATION_COMPACT_WIDTH = 960
 
 GenerationPrompt = str | dict[str, str]
 
@@ -592,7 +593,9 @@ class LLMGenerationWidget(QWidget):
 
         # Controls grid layout (Revised to QGridLayout for alignment)
         # Col 0: Labels, Col 1: Inputs, Col 2: Labels/Checkboxes, Col 3: Inputs
-        grid_layout = QGridLayout()
+        controls = QWidget()
+        grid_layout = QGridLayout(controls)
+        self.controls_grid = grid_layout
         # grid_layout.setVerticalSpacing(8) # Optional: StyleHelper handles spacing?
 
         # Row 0: Task Template
@@ -605,7 +608,9 @@ class LLMGenerationWidget(QWidget):
         self._populate_template_combo()
         self.template_combo.currentIndexChanged.connect(self._on_template_combo_changed)
         grid_layout.addWidget(self.template_combo, 0, 1, 1, 2)
-        self.use_template_btn = QPushButton("Use Template")
+        from src.gui.widgets.wrapping_buttons import WrappingPushButton
+
+        self.use_template_btn = WrappingPushButton("Use Template")
         self.use_template_btn.setEnabled(False)
         self.use_template_btn.setToolTip(
             "Copy the selected task into the editable prompt"
@@ -701,7 +706,9 @@ class LLMGenerationWidget(QWidget):
         self.world_context_cb.toggled.connect(self._save_settings)
         grid_layout.addWidget(self.world_context_cb, 3, 0, 1, 2)
 
-        main_layout.addLayout(grid_layout)
+        main_layout.addWidget(controls)
+        self._control_positions = self._capture_control_positions()
+        self._controls_compact: bool | None = None
 
         # Header for prompt section
         self.lbl_instruction = QLabel("Prompt Instructions")
@@ -717,7 +724,6 @@ class LLMGenerationWidget(QWidget):
         self.custom_prompt_edit.set_variables(
             ["{name}", "{type}", "{description}", "{lore_date}"]
         )
-        self.custom_prompt_edit.setMaximumHeight(120)  # Slightly taller for toolbar
         self.custom_prompt_edit.textChanged.connect(self._on_prompt_text_changed)
         main_layout.addWidget(self.custom_prompt_edit)
 
@@ -728,8 +734,10 @@ class LLMGenerationWidget(QWidget):
         main_layout.addWidget(self.sep2)
 
         # Action Buttons Layout (Below text field)
-        buttons_layout = QHBoxLayout()
-        buttons_layout.addStretch()  # Right align buttons
+        from src.gui.widgets.overflow_toolbar import OverflowToolBar
+        from src.gui.widgets.wrapping_buttons import WrappingPrimaryButton
+
+        self.generation_actions = OverflowToolBar()
 
         # Cancel button (Left of Generate/Preview cluster? Or right aligned?
         # User said Generate Cancel Preview right aligned)
@@ -738,21 +746,20 @@ class LLMGenerationWidget(QWidget):
         self.cancel_btn.setEnabled(False)
         self.cancel_btn.setToolTip("Cancel generation")
         self.cancel_btn.clicked.connect(self._on_cancel_clicked)
-        buttons_layout.addWidget(self.cancel_btn)
 
         # Preview button
         self.preview_btn = QPushButton("Preview")
         self.preview_btn.setToolTip("Preview the prompt before generating")
         self.preview_btn.clicked.connect(self._on_preview_clicked)
-        buttons_layout.addWidget(self.preview_btn)
 
         # Generate button
-        self.generate_btn = QPushButton("Generate")
+        self.generate_btn = WrappingPrimaryButton("Generate")
         self.generate_btn.setToolTip("Generate text and append to description")
         self.generate_btn.clicked.connect(self._on_generate_clicked)
-        buttons_layout.addWidget(self.generate_btn)
-
-        main_layout.addLayout(buttons_layout)
+        self.generation_actions.add_button(self.generate_btn, pinned=True)
+        self.generation_actions.add_button(self.preview_btn)
+        self.generation_actions.add_button(self.cancel_btn)
+        main_layout.addWidget(self.generation_actions)
 
         # Status label
         self.status_label = QLabel("")
@@ -787,6 +794,10 @@ class LLMGenerationWidget(QWidget):
         theme_manager = ThemeManager()
         theme_manager.theme_changed.connect(self._on_theme_changed)
         self._on_theme_changed(theme_manager.get_theme())
+        from src.gui.widgets.responsive_form import scroll_section_contents
+
+        self.controls_scroll = scroll_section_contents(self)
+        self.controls_scroll.setAccessibleName("Writing generation controls")
 
     def _build_world_context_status_row(self, layout: QVBoxLayout) -> None:
         """Create the Event World Context transparency controls."""
@@ -830,6 +841,41 @@ class LLMGenerationWidget(QWidget):
             "padding: 0px 4px; } "
             "QPushButton:hover { text-decoration: underline; }"
         )
+
+    def _capture_control_positions(
+        self,
+    ) -> list[tuple[QWidget, tuple[int, int, int, int]]]:
+        """Retain the original full-width grid placement for responsive reflow."""
+        result: list[tuple[QWidget, tuple[int, int, int, int]]] = []
+        for index in range(self.controls_grid.count()):
+            item = self.controls_grid.itemAt(index)
+            if item is not None:
+                widget = item.widget()
+                if widget is not None:
+                    # PySide returns the native (row, column, row span, column span)
+                    # tuple; its getItemPosition stub exposes only object.
+                    position = cast(
+                        tuple[int, int, int, int],
+                        self.controls_grid.getItemPosition(index),
+                    )
+                    result.append((widget, position))
+        return result
+
+    def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
+        """Stack the same live generation inputs in a constrained allocation."""
+        super().resizeEvent(event)
+        if not hasattr(self, "_control_positions"):
+            return
+        compact = self.width() < GENERATION_COMPACT_WIDTH
+        if compact == self._controls_compact:
+            return
+        self._controls_compact = compact
+        for index, (widget, position) in enumerate(self._control_positions):
+            self.controls_grid.removeWidget(widget)
+            if compact:
+                self.controls_grid.addWidget(widget, index, 0)
+            else:
+                self.controls_grid.addWidget(widget, *position)
 
     def _populate_template_combo(self) -> None:
         """Populate the selector from the coordinator-provided snapshot."""

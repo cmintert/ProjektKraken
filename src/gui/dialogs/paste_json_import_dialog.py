@@ -4,13 +4,15 @@ from typing import Any, Optional
 
 from PySide6.QtWidgets import (
     QDialog,
-    QDialogButtonBox,
     QLabel,
     QPlainTextEdit,
     QVBoxLayout,
 )
 
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.responsive_dialog_buttons import (
+    ResponsiveDialogButtonBox as QDialogButtonBox,
+)
 
 
 class PasteJsonImportDialog(QDialog):
@@ -36,30 +38,27 @@ class PasteJsonImportDialog(QDialog):
         header = QLabel("Paste JSON to import entities, events, and relations.")
         layout.addWidget(header)
 
-        helper = QLabel(
-            "Supported keys: entities, events, relations, tags, and _tags."
-        )
+        helper = QLabel("Supported keys: entities, events, relations, tags, and _tags.")
         layout.addWidget(helper)
 
         self.json_edit = QPlainTextEdit(self)
         self.json_edit.setStyleSheet(StyleHelper.get_input_field_style())
         self.json_edit.setPlaceholderText(
             "{\n"
-            "  \"entities\": [\n"
+            '  "entities": [\n'
             "    {\n"
-            "      \"name\": \"Example Entity\",\n"
-            "      \"type\": \"character\",\n"
-            "      \"tags\": [\"hero\", \"party\"]\n"
+            '      "name": "Example Entity",\n'
+            '      "type": "character",\n'
+            '      "tags": ["hero", "party"]\n'
             "    }\n"
             "  ],\n"
-            "  \"events\": []\n"
+            '  "events": []\n'
             "}"
         )
         layout.addWidget(self.json_edit)
 
         self.buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok
-            | QDialogButtonBox.StandardButton.Cancel,
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel,
             parent=self,
         )
         self.buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Import")

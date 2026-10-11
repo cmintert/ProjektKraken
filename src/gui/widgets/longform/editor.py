@@ -19,7 +19,6 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMenu,
     QMessageBox,
-    QPushButton,
     QSizePolicy,
     QSplitter,
     QTreeWidgetItemIterator,
@@ -36,6 +35,7 @@ from src.gui.widgets.longform.content import LongformContentWidget
 from src.gui.widgets.longform.membership import LongformMembershipWidget
 from src.gui.widgets.longform.outline import LongformOutlineWidget
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 from src.services.web_service_manager import WebServiceManager
 
 logger = logging.getLogger(__name__)

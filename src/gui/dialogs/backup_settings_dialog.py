@@ -11,15 +11,12 @@ from typing import Optional
 
 from PySide6.QtCore import QSettings, Signal, Slot
 from PySide6.QtWidgets import (
-    QCheckBox,
     QDialog,
     QFileDialog,
-    QFormLayout,
     QGroupBox,
-    QHBoxLayout,
     QLabel,
     QLineEdit,
-    QPushButton,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -32,7 +29,11 @@ from src.gui.utils.settings_reader import (
     read_str_setting,
 )
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.action_flow_layout import ActionFlowLayout as QHBoxLayout
 from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
+from src.gui.widgets.responsive_form import ResponsiveFormLayout as QFormLayout
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
+from src.gui.widgets.wrapping_choices import WrappingCheckBox as QCheckBox
 
 logger = logging.getLogger(__name__)
 
@@ -80,13 +81,19 @@ class BackupSettingsDialog(QDialog):
         main_layout = QVBoxLayout(self)
         StyleHelper.apply_standard_list_spacing(main_layout)
 
+        from src.gui.widgets.responsive_form import scrollable_form_page
+
+        body = QWidget()
+        body_layout = QVBoxLayout(body)
+        StyleHelper.apply_standard_list_spacing(body_layout)
+        main_layout.addWidget(scrollable_form_page(body), 1)
+
         # Create sections
-        self._create_general_section(main_layout)
-        self._create_retention_section(main_layout)
-        self._create_location_section(main_layout)
+        self._create_general_section(body_layout)
+        self._create_retention_section(body_layout)
+        self._create_location_section(body_layout)
 
         # Spacer
-        main_layout.addStretch()
 
         # Button box
         self._create_buttons(main_layout)
@@ -179,7 +186,10 @@ class BackupSettingsDialog(QDialog):
         # Current backup path display
         self.lbl_current_path = QLabel()
         self.lbl_current_path.setWordWrap(True)
-        self.lbl_current_path.setStyleSheet("color: #888;")
+        self.lbl_current_path.setSizePolicy(
+            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred
+        )
+        self.lbl_current_path.setStyleSheet(StyleHelper.get_preview_label_style())
         layout.addWidget(self.lbl_current_path)
 
         # Open folder button

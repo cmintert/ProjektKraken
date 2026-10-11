@@ -99,7 +99,7 @@ class RelationItemWidget(QWidget):
 
         # Go to button (compact, icon-style)
         self.btn_go_to = StandardButton("→")
-        self.btn_go_to.setFixedSize(22, 22)
+        self.btn_go_to.setAccessibleName(f"Go to {self._target_name}")
         self.btn_go_to.setToolTip(f"Go to {self._target_name}")
         self.btn_go_to.clicked.connect(self._on_go_to_clicked)
 

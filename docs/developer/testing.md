@@ -2,6 +2,10 @@
 
 ## Test levels
 
+UI-GATE-01 has an [action label release gate](action-label-release-gate.md).
+Run the bounded production-widget matrix before push and the complete matrix
+before release; native Windows screenshot review remains separately mandatory.
+
 - Unit tests cover domain logic, commands, services, and focused widgets.
 - Integration tests cover coordinators, worker delivery, and persistence.
 - GUI tests exercise PySide6 behaviour with an application fixture.

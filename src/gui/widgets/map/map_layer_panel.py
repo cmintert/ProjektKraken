@@ -33,7 +33,6 @@ from PySide6.QtWidgets import (
     QInputDialog,
     QLabel,
     QMenu,
-    QPushButton,
     QSizePolicy,
     QSlider,
     QStackedWidget,
@@ -73,6 +72,7 @@ from src.gui.widgets.numeric_inputs import (
     ScrollSafeDoubleSpinBox,
     ScrollSafeSpinBox,
 )
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 if TYPE_CHECKING:
     from src.gui.dialogs.layer_properties_dialog import LayerPropertiesDialog
@@ -376,6 +376,7 @@ class MapLayerPanel(QWidget):
         _err = self._theme_token("destructive")
 
         self.btn_new_group = QPushButton()
+        self.btn_new_group.setAccessibleName("New layer group")
         self.btn_new_group.setIcon(
             load_icon("default_assets/icons/ui_icons/stack-simple.svg", _dim)
         )
@@ -387,6 +388,7 @@ class MapLayerPanel(QWidget):
         header_layout.addWidget(self.btn_new_group)
 
         self.btn_new_raster = QPushButton()
+        self.btn_new_raster.setAccessibleName("New raster layer")
         self.btn_new_raster.setIcon(
             load_icon("default_assets/icons/ui_icons/paint-brush-broad.svg", _dim)
         )
@@ -402,6 +404,7 @@ class MapLayerPanel(QWidget):
         header_layout.addSpacing(8)
 
         self.btn_delete = QPushButton()
+        self.btn_delete.setAccessibleName("Delete selected layer or feature")
         self.btn_delete.setIcon(
             load_icon("default_assets/icons/ui_icons/trash.svg", _err)
         )

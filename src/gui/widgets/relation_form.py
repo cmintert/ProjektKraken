@@ -12,7 +12,6 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QAbstractButton,
     QButtonGroup,
-    QCheckBox,
     QComboBox,
     QFormLayout,
     QGroupBox,
@@ -22,8 +21,8 @@ from PySide6.QtWidgets import (
     QLayoutItem,
     QListWidget,
     QMessageBox,
-    QRadioButton,
     QScrollArea,
+    QSizePolicy,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -31,12 +30,16 @@ from PySide6.QtWidgets import (
 
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
-from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
 from src.gui.widgets.relation_target import RelationTargetEdit
 from src.gui.widgets.standard_buttons import DestructiveButton, StandardButton
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
+from src.gui.widgets.wrapping_buttons import WrappingPushButton
+from src.gui.widgets.wrapping_choices import WrappingCheckBox as QCheckBox
+from src.gui.widgets.wrapping_choices import WrappingRadioButton as QRadioButton
+from src.gui.widgets.wrapping_combo_box import WrappingComboBox
+from src.gui.widgets.wrapping_combo_box import WrappingComboBox as ScrollSafeComboBox
 
 
 def take_form_row(
@@ -119,36 +122,13 @@ class RelationForm(QWidget):
         )
         self.form_container = QWidget()
         self.form_layout = QFormLayout(self.form_container)
+        self.form_layout.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
 
         self._setup_target_field(target_id, suggestion_items)
 
         # 2. Relation Type
         self.type_edit = ScrollSafeComboBox()
-        default_types = [
-            "birth",
-            "caused",
-            "death",
-            "involved",
-            "located_at",
-            "member_of",
-            "owns",
-            "parent_of",
-            "related",
-        ]
-
-        # Merge with known types
-        if known_types:
-            # Use set to unique, but keep defaults if we want specific order?
-            # Or just sort everything.
-            all_types = sorted(
-                relation_type
-                for relation_type in set(default_types + known_types)
-                if relation_type != "mentions"
-            )
-        else:
-            all_types = default_types
-
-        self.type_edit.addItems(all_types)
+        self.type_edit.addItems(self._relation_type_choices(known_types))
         self.type_edit.setEditable(True)
         self.type_edit.setCurrentText(rel_type)
         self.form_layout.addRow("Type:", self.type_edit)
@@ -168,6 +148,7 @@ class RelationForm(QWidget):
         # Checkboxes removed per user request - always enabled, implicit save
 
         attr_layout = QFormLayout()
+        attr_layout.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
 
         # Weight
         self.weight_spin = ScrollSafeDoubleSpinBox()
@@ -266,6 +247,7 @@ class RelationForm(QWidget):
         # 4b. Temporal Settings (Absolute/Manual Mode)
         self.temporal_group = QGroupBox("Timing")
         temp_layout = QFormLayout()
+        temp_layout.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
 
         # Valid From
         self.check_from = QCheckBox("Valid From:")
@@ -346,6 +328,26 @@ class RelationForm(QWidget):
 
         self._track_changes()
 
+    @staticmethod
+    def _relation_type_choices(known_types: list[str] | None) -> list[str]:
+        """Prepare the existing relation-selector choices independently of layout."""
+        defaults = [
+            "birth",
+            "caused",
+            "death",
+            "involved",
+            "located_at",
+            "member_of",
+            "owns",
+            "parent_of",
+            "related",
+        ]
+        if not known_types:
+            return defaults
+        return sorted(
+            value for value in set(defaults + known_types) if value != "mentions"
+        )
+
     def _group_boundaries(self) -> None:
         """Keep each boundary's intent, input and shortcut in one visual block."""
         from src.gui.widgets.editor_presentation import DisclosureButton
@@ -394,6 +396,9 @@ class RelationForm(QWidget):
             extra.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
             extra.addRow("Relative to event", self._anchor_relations[side])
             extra.addRow("Offset", self._boundary_offsets[side])
+            self._boundary_offsets[side].setSizePolicy(
+                QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed
+            )
             disclosure = DisclosureButton("Event offset…")
             disclosure.toggled.connect(advanced.setVisible)
             fields.addRow(disclosure)
@@ -448,8 +453,8 @@ class RelationForm(QWidget):
         )
         self.now_label.setWordWrap(True)
         row.addWidget(self.now_label, 1)
-        self.starts_now_button = StandardButton("Use viewed date for start")
-        self.ends_now_button = StandardButton("Use viewed date for end")
+        self.starts_now_button = WrappingPushButton("Use viewed date for start")
+        self.ends_now_button = WrappingPushButton("Use viewed date for end")
         for side, button, widget in (
             ("start", self.starts_now_button, self.valid_from),
             ("end", self.ends_now_button, self.valid_to),
@@ -642,7 +647,7 @@ class RelationForm(QWidget):
         margins = layout.contentsMargins()
         editor_height = (
             margins.top()
-            + self.state_attribute_editor.toolbar_layout.sizeHint().height()
+            + self.state_attribute_editor.action_toolbar.sizeHint().height()
             + layout.spacing()
             + table_height
             + margins.bottom()
@@ -795,7 +800,7 @@ class RelationForm(QWidget):
             ("start", self.valid_from, self.check_from),
             ("end", self.valid_to, self.check_to),
         ):
-            choice = ScrollSafeComboBox()
+            choice = WrappingComboBox()
             choice.addItem("Manual date", "manual")
             if self.source_event_date is not None:
                 choice.addItem("At source event (dynamic)", "source_event")

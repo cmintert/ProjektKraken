@@ -4,7 +4,7 @@ Ignored events propagate through Qt to the surrounding scroll surface. Popup
 views retain Qt's normal scrolling and selection behavior.
 """
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QEvent, Qt
 from PySide6.QtGui import QWheelEvent
 from PySide6.QtWidgets import QComboBox, QWidget
 
@@ -16,6 +16,14 @@ class ScrollSafeComboBox(QComboBox):
         """Keep click/Tab focus without acquiring focus through scrolling."""
         super().__init__(parent)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+
+    def changeEvent(self, event: QEvent) -> None:  # noqa: N802
+        """Reserve the native field height when effective font/style changes."""
+        super().changeEvent(event)
+        if event.type() in (QEvent.Type.FontChange, QEvent.Type.StyleChange):
+            if not callable(getattr(self, "label_geometry", None)):
+                self.setMinimumHeight(self.sizeHint().height())
+            self.updateGeometry()
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         """Pass unfocused navigation to the parent; preserve focused editing."""

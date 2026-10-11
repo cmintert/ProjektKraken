@@ -6,10 +6,8 @@ from typing import Any
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,
-    QDialogButtonBox,
     QHeaderView,
     QLabel,
-    QPushButton,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -21,6 +19,10 @@ from src.core.temporal_authoring import author_temporal_evidence
 from src.core.temporal_expression import TemporalExpression
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
+from src.gui.widgets.responsive_dialog_buttons import (
+    ResponsiveDialogButtonBox as QDialogButtonBox,
+)
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 
 class TemporalEvidenceDialog(QDialog):
@@ -113,7 +115,8 @@ class TemporalEvidenceDialog(QDialog):
             source = self.claims.item(row, 0)
             self.preferred.setItemText(
                 row + 1,
-                source.text().strip() if source and source.text().strip()
+                source.text().strip()
+                if source and source.text().strip()
                 else f"Source {row + 1}",
             )
 
@@ -128,7 +131,8 @@ class TemporalEvidenceDialog(QDialog):
         for index in range(self.claims.rowCount()):
             source = self.claims.item(index, 0)
             self.preferred.addItem(
-                source.text().strip() if source and source.text().strip()
+                source.text().strip()
+                if source and source.text().strip()
                 else f"Source {index + 1}",
                 index,
             )

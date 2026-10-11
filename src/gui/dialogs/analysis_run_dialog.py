@@ -6,10 +6,8 @@ from typing import Any
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QCheckBox,
     QComboBox,
     QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QHBoxLayout,
     QLabel,
@@ -19,7 +17,12 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.analysis import AnalysisPreset, AnalysisScope, AnalysisScopeKind
+from src.gui.widgets.action_flow_layout import ActionFlowLayout
 from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
+from src.gui.widgets.responsive_dialog_buttons import (
+    ResponsiveDialogButtonBox as QDialogButtonBox,
+)
+from src.gui.widgets.wrapping_choices import WrappingCheckBox as QCheckBox
 
 _MINIMUM_MULTI_SELECTION_ITEMS = 2
 
@@ -88,7 +91,7 @@ class AnalysisRunDialog(QDialog):
         form.addRow("Preset", self.preset_combo)
         layout.addLayout(form)
 
-        category_layout = QHBoxLayout()
+        category_layout = ActionFlowLayout()
         self.plot_holes = QCheckBox("Plot Holes")
         self.relations = QCheckBox("Relation Gaps")
         self.lore = QCheckBox("Lore Suggestions")
@@ -105,8 +108,7 @@ class AnalysisRunDialog(QDialog):
         layout.addWidget(self.validation_label)
 
         self.buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Cancel
-            | QDialogButtonBox.StandardButton.Ok
+            QDialogButtonBox.StandardButton.Cancel | QDialogButtonBox.StandardButton.Ok
         )
         self.buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Start")
         self.buttons.accepted.connect(self.accept)
@@ -139,9 +141,7 @@ class AnalysisRunDialog(QDialog):
             if value.strip()
         ]
         tags = [
-            value.strip()
-            for value in self.tags_edit.text().split(",")
-            if value.strip()
+            value.strip() for value in self.tags_edit.text().split(",") if value.strip()
         ]
         if kind == AnalysisScopeKind.CURRENT_ITEM:
             ids = [self._current_item_id] if self._current_item_id else []
@@ -180,10 +180,7 @@ class AnalysisRunDialog(QDialog):
         preset = self.preset_combo.currentData(Qt.ItemDataRole.UserRole)
         if not isinstance(preset, AnalysisPreset):
             preset = AnalysisPreset.BALANCED
-        maximum = sum(
-            preset.limits[name]
-            for name in categories
-        )
+        maximum = sum(preset.limits[name] for name in categories)
         self.coverage_label.setText(
             "Eligible coverage is calculated from the captured scope before model "
             f"requests. Estimated initial requests: at most {maximum}; each malformed "

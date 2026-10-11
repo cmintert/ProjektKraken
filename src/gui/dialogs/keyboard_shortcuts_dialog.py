@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QScrollArea,
     QVBoxLayout,
     QWidget,
@@ -17,6 +16,7 @@ from PySide6.QtWidgets import (
 
 from src.gui.utils.shortcut_manager import ShortcutManager
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 
 class KeyboardShortcutsDialog(QDialog):

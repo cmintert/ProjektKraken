@@ -149,7 +149,7 @@ def tabs_count(inspector):
 def test_more_menu_has_visible_layout_and_support_routes(editor):
     tabs = editor.inspector.main_tabs
     assert tabs.overflow_button.isVisible()
-    assert tabs.overflow_button.text() == "More"
+    assert tabs.overflow_button.text() == "More actions"
     assert tabs.overflow_button.geometry().left() >= 0
     assert tabs.overflow_button.geometry().right() <= tabs.rect().right()
     tabs._populate_overflow()

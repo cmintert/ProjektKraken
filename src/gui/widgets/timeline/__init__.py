@@ -18,7 +18,6 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
     QLayout,
-    QPushButton,
     QSizePolicy,
     QVBoxLayout,
     QWidget,
@@ -27,6 +26,7 @@ from PySide6.QtWidgets import (
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 from src.gui.widgets.timeline.event_item import EventItem
 from src.gui.widgets.timeline.time_indicators import TimelineTimeStatus
 from src.gui.widgets.timeline.timeline_scene import (
@@ -77,14 +77,16 @@ class TimelineWidget(QWidget):
         # Playback controls
         self.btn_step_back = QPushButton("◄")
         self.btn_step_back.setToolTip("Step Backward")
-        self.btn_step_back.setMaximumWidth(40)
+        self.btn_step_back.setAccessibleName("Step backward")
+        self.btn_step_back.setProperty("toolbarActionLabel", "Step backward")
         self.btn_step_back.clicked.connect(self.step_backward)
         self.action_toolbar.add_button(self.btn_step_back, priority=80)
 
         self.btn_play_pause = QPushButton("▶")
         self.btn_play_pause.setToolTip("Play/Pause")
         self.btn_play_pause.setCheckable(True)
-        self.btn_play_pause.setMaximumWidth(40)
+        self.btn_play_pause.setAccessibleName("Play or pause timeline")
+        self.btn_play_pause.setProperty("toolbarActionLabel", "Play or pause timeline")
         self.btn_play_pause.clicked.connect(self.toggle_playback)
         self.action_toolbar.add_button(
             self.btn_play_pause,
@@ -94,7 +96,8 @@ class TimelineWidget(QWidget):
 
         self.btn_step_forward = QPushButton("►")
         self.btn_step_forward.setToolTip("Step Forward")
-        self.btn_step_forward.setMaximumWidth(40)
+        self.btn_step_forward.setAccessibleName("Step forward")
+        self.btn_step_forward.setProperty("toolbarActionLabel", "Step forward")
         self.btn_step_forward.clicked.connect(self.step_forward)
         self.action_toolbar.add_button(self.btn_step_forward, priority=80)
 

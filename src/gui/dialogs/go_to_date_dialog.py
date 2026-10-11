@@ -1,12 +1,15 @@
 """Calendar-aware exact-date navigation for the timeline playhead."""
 
-from PySide6.QtWidgets import QDialog, QDialogButtonBox, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QDialog, QLabel, QVBoxLayout, QWidget
 
 from src.core.calendar import CalendarConverter
 from src.core.date_parser import DateParser
 from src.core.temporal_expression import TemporalPrecision, TemporalQualifier
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.compact_date_widget import CompactDateWidget
+from src.gui.widgets.responsive_dialog_buttons import (
+    ResponsiveDialogButtonBox as QDialogButtonBox,
+)
 
 
 class GoToDateDialog(QDialog):
@@ -33,15 +36,13 @@ class GoToDateDialog(QDialog):
         self.date_input.set_value(playhead_time)
         # Qualification and occurrence limits are authoring tools, not navigation.
         self.date_input.date_fields_button.hide()
-        self.date_input.btn_time_toggle.setMaximumWidth(120)
         layout.addWidget(self.date_input)
 
         self.feedback = QLabel(self)
         self.feedback.setWordWrap(True)
         layout.addWidget(self.feedback)
         buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok
-            | QDialogButtonBox.StandardButton.Cancel,
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel,
             parent=self,
         )
         buttons.accepted.connect(self.accept)

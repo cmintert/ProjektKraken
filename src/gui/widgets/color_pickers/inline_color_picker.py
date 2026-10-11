@@ -31,7 +31,6 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QPushButton,
     QSizePolicy,
     QVBoxLayout,
     QWidget,
@@ -39,6 +38,7 @@ from PySide6.QtWidgets import (
 
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.color_pickers.recent_values_strip import RecentValuesStrip
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 _SV_WIDTH = 180
 _SV_HEIGHT = 140
@@ -189,13 +189,13 @@ class InlineColorPickerPopover(QFrame):
     def __init__(
         self,
         parent: Optional[QWidget] = None,
-        initial_color: str = "#808080",
+        initial_color: str | None = None,
         history_context: str = "palette.color",
     ) -> None:
         """Initialize the inline colour-picker popover."""
         super().__init__(parent, Qt.WindowType.Popup)
         self._history_context = history_context
-        self._color = QColor(initial_color)
+        self._color = QColor(initial_color or ThemeManager().get_theme()["text_dim"])
         self.setFrameShape(QFrame.Shape.StyledPanel)
 
         layout = QVBoxLayout(self)
@@ -222,7 +222,6 @@ class InlineColorPickerPopover(QFrame):
         self._hex_edit.setPlaceholderText("#RRGGBB")
         preview_row.addWidget(self._hex_edit, 1)
         self._ok_btn = QPushButton("OK")
-        self._ok_btn.setFixedWidth(48)
         preview_row.addWidget(self._ok_btn)
         layout.addLayout(preview_row)
 
@@ -296,9 +295,7 @@ class InlineColorPickerPopover(QFrame):
         )
 
     def _sync_from_color(self) -> None:
-        h, s, v, _ = cast(
-            tuple[float, float, float, float], self._color.getHsvF()
-        )
+        h, s, v, _ = cast(tuple[float, float, float, float], self._color.getHsvF())
         self._sv.set_hue(h if h >= 0 else 0.0)
         self._sv.set_sv(s, v)
         self._hue.set_hue(h if h >= 0 else 0.0)
@@ -325,18 +322,14 @@ class InlineColorPickerPopover(QFrame):
     # Signal handlers
 
     def _on_sv_changed(self, s: float, v: float) -> None:
-        h, _, _, _ = cast(
-            tuple[float, float, float, float], self._color.getHsvF()
-        )
+        h, _, _, _ = cast(tuple[float, float, float, float], self._color.getHsvF())
         if h < 0:
             h = 0.0
         self._color = QColor.fromHsvF(h, s, v)
         self._emit_live()
 
     def _on_hue_changed(self, h: float) -> None:
-        _, s, v, _ = cast(
-            tuple[float, float, float, float], self._color.getHsvF()
-        )
+        _, s, v, _ = cast(tuple[float, float, float, float], self._color.getHsvF())
         self._color = QColor.fromHsvF(h, s, v)
         self._sv.set_hue(h)
         self._emit_live()

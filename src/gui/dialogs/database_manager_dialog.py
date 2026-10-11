@@ -15,13 +15,11 @@ from PySide6.QtWidgets import (
     QAbstractItemView,
     QDialog,
     QFileDialog,
-    QHBoxLayout,
     QInputDialog,
     QLabel,
     QListWidget,
     QListWidgetItem,
     QMessageBox,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
@@ -31,6 +29,8 @@ from src.core.world import EXTERNAL_DATABASE_STORAGE, World, WorldManager
 from src.gui.constants import SETTINGS_ACTIVE_DB_KEY
 from src.gui.dialogs.external_database_warning import external_database_warning
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.action_flow_layout import ActionFlowLayout
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 from src.services.world_storage_settings import WorldStorageSettings
 
 logger = logging.getLogger(__name__)
@@ -105,7 +105,9 @@ class DatabaseManagerDialog(QDialog):
         main_layout.addWidget(self.db_list)
 
         # Buttons
-        btn_layout = QHBoxLayout()
+        actions = QWidget()
+        btn_layout = ActionFlowLayout(actions)
+        btn_layout.setContentsMargins(0, 0, 0, 0)
         self.btn_create = QPushButton("Create New")
         self.btn_add_folder = QPushButton("Add World Folder")
         self.btn_open_folder = QPushButton("Open Folder")
@@ -146,7 +148,7 @@ class DatabaseManagerDialog(QDialog):
         btn_layout.addStretch()
         btn_layout.addWidget(self.btn_close)
 
-        main_layout.addLayout(btn_layout)
+        main_layout.addWidget(actions)
 
         # Connections
         self.btn_create.clicked.connect(self._create_world)
@@ -530,8 +532,11 @@ class DatabaseManagerDialog(QDialog):
 
     def _activate_world_if_current(self, world: World, generation: int) -> None:
         selected = self._selected_world()
-        if (generation == self._transition_generation and selected is not None
-                and selected.path == world.path):
+        if (
+            generation == self._transition_generation
+            and selected is not None
+            and selected.path == world.path
+        ):
             self._activate_world(world)
 
     def _activate_world(self, world: World) -> None:

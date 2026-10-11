@@ -81,6 +81,7 @@ class SummaryWidget(QWidget):
 
         # Text Display
         self.text_display = WikiTextEdit()
+        self.text_display.set_adaptive_width(True)
         self.text_display.setReadOnly(True)
         self.text_display.setMinimumHeight(100)  # Ensure visible space
         layout.addWidget(self.text_display)

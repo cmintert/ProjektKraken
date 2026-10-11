@@ -9,15 +9,14 @@ from typing import Dict, List, Optional
 
 from PySide6.QtWidgets import (
     QDialog,
-    QHBoxLayout,
     QLabel,
     QListWidget,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
 
 from src.gui.widgets.map.raster_mapping import RasterItemRef
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 
 class RasterOrphanWarningDialog(QDialog):
@@ -78,7 +77,9 @@ class RasterOrphanWarningDialog(QDialog):
         layout.addWidget(ref_list)
 
         # Buttons row
-        btn_row = QHBoxLayout()
+        from src.gui.widgets.action_flow_layout import ActionFlowLayout
+
+        btn_row = ActionFlowLayout()
 
         self._btn_remove_and_delete = QPushButton("Delete + Remove refs")
         self._btn_remove_and_delete.setToolTip(

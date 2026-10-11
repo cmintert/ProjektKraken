@@ -20,7 +20,6 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QLabel,
     QLayout,
-    QPushButton,
     QTabWidget,
     QVBoxLayout,
     QWidget,
@@ -33,6 +32,7 @@ from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
 from src.gui.widgets.analysis.intelligence_panel import IntelligencePanel
 from src.gui.widgets.analysis.temporal_panel import TemporalPanel
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 logger = logging.getLogger(__name__)
 

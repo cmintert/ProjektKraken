@@ -152,7 +152,7 @@
       "id": "c901-ff9a6eff0a3f",
       "path": "src/gui/widgets/relation_form.py",
       "symbol": "RelationForm.__init__",
-      "ceiling": 17,
+      "ceiling": 16,
       "reason": "Existing production complexity reviewed for KRT-36; untouched debt only, executable edits must strictly improve."
     }
   ]

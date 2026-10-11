@@ -5,7 +5,6 @@ from typing import Any
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
-    QDialogButtonBox,
     QLabel,
     QPlainTextEdit,
     QTableWidget,
@@ -16,6 +15,9 @@ from PySide6.QtWidgets import (
 
 from src.core.transfer import LORE_KINDS
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.responsive_dialog_buttons import (
+    ResponsiveDialogButtonBox as QDialogButtonBox,
+)
 
 
 class TransferCsvDialog(QDialog):
@@ -79,6 +81,9 @@ class TransferCsvDialog(QDialog):
             match = choices.findData(header.lower().strip())
             choices.setCurrentIndex(max(match, 0))
             self.table.setCellWidget(index, 1, choices)
+            self.table.setRowHeight(
+                index, max(self.table.rowHeight(index), choices.sizeHint().height())
+            )
 
     def options(self) -> dict[str, Any]:
         """Return the selected table kind and source-to-target mapping."""

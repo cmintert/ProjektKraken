@@ -5,13 +5,13 @@ from PySide6.QtWidgets import (
     QDialog,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
 
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 
 class CalibrationDistanceDialog(QDialog):

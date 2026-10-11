@@ -16,7 +16,6 @@ import logging
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QLabel,
-    QPushButton,
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
@@ -34,6 +33,7 @@ from src.gui.widgets.analysis._analysis_utils import (
     make_text_cell,
     sync_analysis_cell_styles,
 )
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 logger = logging.getLogger(__name__)
 
@@ -223,11 +223,11 @@ class TemporalPanel(QWidget):
             if evidence_text:
                 type_item.setToolTip(evidence_text)
             self.conflicts_table.setItem(row, 0, type_item)
+            self.conflicts_table.setItem(row, 1, QTableWidgetItem(conflict.entity_name))
             self.conflicts_table.setItem(
-                row, 1, QTableWidgetItem(conflict.entity_name)
-            )
-            self.conflicts_table.setItem(
-                row, 2, QTableWidgetItem(fmt_lore_date(conflict.problem_date, converter))
+                row,
+                2,
+                QTableWidgetItem(fmt_lore_date(conflict.problem_date, converter)),
             )
             self.conflicts_table.setCellWidget(row, 3, make_text_cell(conflict.message))
             self.conflicts_table.setCellWidget(
@@ -268,9 +268,7 @@ class TemporalPanel(QWidget):
             )
             valid = "Yes" if lifespan.is_valid() else "No"
 
-            self.lifespans_table.setItem(
-                row, 0, QTableWidgetItem(lifespan.entity_name)
-            )
+            self.lifespans_table.setItem(row, 0, QTableWidgetItem(lifespan.entity_name))
             self.lifespans_table.setItem(
                 row, 1, QTableWidgetItem(fmt_lore_date(lifespan.birth_date, converter))
             )

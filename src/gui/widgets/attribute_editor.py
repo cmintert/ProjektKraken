@@ -9,10 +9,10 @@ from typing import Any, Dict, List, Optional
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QComboBox,
-    QHBoxLayout,
     QHeaderView,
     QInputDialog,
     QMessageBox,
+    QSizePolicy,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
-from src.gui.widgets.standard_buttons import DestructiveButton, StandardButton
+from src.gui.widgets.standard_buttons import DestructiveButton
 
 
 class AttributeEditorWidget(QWidget):
@@ -52,23 +52,29 @@ class AttributeEditorWidget(QWidget):
         StyleHelper.apply_compact_spacing(main_layout)
 
         # Toolbar
-        self.toolbar_layout = QHBoxLayout()
-        self.btn_add = StandardButton("Add Attribute")
-        self.btn_add.setMinimumWidth(
-            self.btn_add.fontMetrics().horizontalAdvance(self.btn_add.text()) + 48
-        )
+        from src.gui.widgets.overflow_toolbar import OverflowToolBar
+
+        self.action_toolbar = OverflowToolBar()
+        from src.gui.widgets.wrapping_buttons import WrappingPushButton
+
+        self.btn_add = WrappingPushButton("Add Attribute")
         self.btn_add.clicked.connect(self._on_add)
         self.btn_remove = DestructiveButton("Remove")
         self.btn_remove.clicked.connect(self._on_remove)
         self.btn_remove.setEnabled(False)
 
-        self.toolbar_layout.addWidget(self.btn_add)
-        self.toolbar_layout.addWidget(self.btn_remove)
-        self.toolbar_layout.addStretch()
-        main_layout.addLayout(self.toolbar_layout)
+        self.action_toolbar.add_button(self.btn_add, priority=10, pinned=True)
+        self.action_toolbar.add_button(self.btn_remove)
+        main_layout.addWidget(self.action_toolbar)
 
         # Table
         self.table = QTableWidget()
+        self.table.setSizePolicy(
+            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding
+        )
+        self.table.verticalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.ResizeToContents
+        )
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(["Name", "Value", "Type", "Source"])
         self.table.horizontalHeader().setSectionResizeMode(
@@ -84,9 +90,7 @@ class AttributeEditorWidget(QWidget):
             3, QHeaderView.ResizeMode.ResizeToContents
         )
         self.table.setColumnHidden(3, True)
-        self.table.setSelectionBehavior(
-            QTableWidget.SelectionBehavior.SelectRows
-        )
+        self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.itemChanged.connect(self._on_item_changed)
         self.table.itemSelectionChanged.connect(self._update_button_states)
 
@@ -120,9 +124,7 @@ class AttributeEditorWidget(QWidget):
             {}
             if show_hidden
             else {
-                key: value
-                for key, value in attributes.items()
-                if key.startswith("_")
+                key: value for key, value in attributes.items() if key.startswith("_")
             }
         )
         display_attributes = (
@@ -148,11 +150,7 @@ class AttributeEditorWidget(QWidget):
             val_item = self.table.item(row, 1)
             type_widget = self.table.cellWidget(row, 2)
 
-            if (
-                not key_item
-                or not val_item
-                or not isinstance(type_widget, QComboBox)
-            ):
+            if not key_item or not val_item or not isinstance(type_widget, QComboBox):
                 continue
 
             key = key_item.text().strip()
@@ -189,9 +187,9 @@ class AttributeEditorWidget(QWidget):
                 if value_item is not None:
                     value_item.setToolTip(label)
                 source_item = QTableWidgetItem(
-                    "Base" if source.get("kind") != "relation" else str(
-                        source.get("event_name") or "Event"
-                    )
+                    "Base"
+                    if source.get("kind") != "relation"
+                    else str(source.get("event_name") or "Event")
                 )
                 source_item.setToolTip(label)
                 source_item.setFlags(source_item.flags() & ~Qt.ItemFlag.ItemIsEditable)

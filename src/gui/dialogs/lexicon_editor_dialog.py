@@ -16,7 +16,6 @@ from PySide6.QtWidgets import (
     QColorDialog,
     QComboBox,
     QDialog,
-    QDialogButtonBox,
     QGridLayout,
     QLabel,
     QPushButton,
@@ -31,6 +30,9 @@ from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.numeric_inputs import (
     ScrollSafeDoubleSpinBox,
     ScrollSafeSpinBox,
+)
+from src.gui.widgets.responsive_dialog_buttons import (
+    ResponsiveDialogButtonBox as QDialogButtonBox,
 )
 
 logger = logging.getLogger(__name__)

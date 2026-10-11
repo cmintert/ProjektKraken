@@ -61,11 +61,21 @@ def test_apply_theme_success(clean_theme_manager):
         def setStyleSheet(self, s):
             self.style = s
 
+        def palette(self):
+            from PySide6.QtGui import QPalette
+
+            return QPalette()
+
+        def setPalette(self, palette):
+            self.applied_palette = palette
+
     app = MockApp()
     template = "QWidget {{ background-color: {app_bg}; }}"
 
     # Mock theme data
-    clean_theme_manager.themes = {"dark_mode": {"app_bg": "#123456"}}
+    clean_theme_manager.themes = {
+        "dark_mode": {**DEFAULT_THEMES["dark_mode"], "app_bg": "#123456"}
+    }
     clean_theme_manager.apply_theme(app, template)
 
     assert "background-color: #123456;" in app.style

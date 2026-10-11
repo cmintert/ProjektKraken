@@ -4,18 +4,19 @@ from __future__ import annotations
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
-    QComboBox,
     QDialog,
-    QDialogButtonBox,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
 
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
+from src.gui.widgets.responsive_dialog_buttons import (
+    ResponsiveDialogButtonBox as QDialogButtonBox,
+)
+from src.gui.widgets.wrapping_combo_box import WrappingComboBox as QComboBox
 
 _METERS_PER_KILOMETER = 1000.0
 
@@ -33,9 +34,7 @@ class MapScaleDialog(QDialog):
     ) -> None:
         """Initialize a scale dialog with the map's current width."""
         super().__init__(parent)
-        self._active_unit = (
-            "km" if current_width >= _METERS_PER_KILOMETER else "m"
-        )
+        self._active_unit = "km" if current_width >= _METERS_PER_KILOMETER else "m"
         self._updating = False
         self.setWindowTitle(f"Map Scale — {map_name}")
         self.setModal(True)
@@ -70,7 +69,9 @@ class MapScaleDialog(QDialog):
         input_row.addWidget(self.unit_selector)
         layout.addLayout(input_row)
 
-        calibrate = QPushButton("Calibrate from Measurement...")
+        from src.gui.widgets.wrapping_buttons import WrappingPushButton
+
+        calibrate = WrappingPushButton("Calibrate from Measurement...")
         calibrate.setToolTip(
             "Measure a known distance on the map to calculate its total width."
         )
@@ -79,8 +80,7 @@ class MapScaleDialog(QDialog):
         layout.addWidget(calibrate)
 
         buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok
-            | QDialogButtonBox.StandardButton.Cancel
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)

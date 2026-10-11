@@ -15,7 +15,6 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QScrollArea,
     QVBoxLayout,
     QWidget,
@@ -23,6 +22,7 @@ from PySide6.QtWidgets import (
 
 from src.core.image_attachment import ImageAttachment
 from src.core.theme_manager import ThemeManager
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 logger = logging.getLogger(__name__)
 

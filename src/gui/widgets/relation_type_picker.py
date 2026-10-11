@@ -10,7 +10,6 @@ from typing import List, Optional
 from PySide6.QtCore import QEvent, QObject, QPoint, Qt, Signal
 from PySide6.QtGui import QKeyEvent
 from PySide6.QtWidgets import (
-    QHBoxLayout,
     QLabel,
     QVBoxLayout,
     QWidget,
@@ -110,7 +109,9 @@ class RelationTypePicker(QWidget):
         layout.addWidget(self.header_label)
 
         # Horizontal row for input and buttons
-        input_layout = QHBoxLayout()
+        from src.gui.widgets.action_flow_layout import ActionFlowLayout
+
+        input_layout = ActionFlowLayout()
         input_layout.setContentsMargins(0, 0, 0, 0)
         input_layout.setSpacing(6)
 
@@ -133,13 +134,11 @@ class RelationTypePicker(QWidget):
 
         # Create OK button
         self.ok_button = PrimaryButton("OK")
-        self.ok_button.setFixedWidth(60)
 
         input_layout.addWidget(self.ok_button)
 
         # Create Cancel button
         self.cancel_button = StandardButton("Cancel")
-        self.cancel_button.setFixedWidth(80)
 
         input_layout.addWidget(self.cancel_button)
 
@@ -152,7 +151,6 @@ class RelationTypePicker(QWidget):
 
         # Set size constraints from constants
         from src.gui.constants import (
-            RELATION_PICKER_MAX_HEIGHT,
             RELATION_PICKER_MAX_WIDTH,
             RELATION_PICKER_MIN_HEIGHT,
             RELATION_PICKER_MIN_WIDTH,
@@ -161,7 +159,6 @@ class RelationTypePicker(QWidget):
         self.setMinimumWidth(RELATION_PICKER_MIN_WIDTH)
         self.setMaximumWidth(RELATION_PICKER_MAX_WIDTH)
         self.setMinimumHeight(RELATION_PICKER_MIN_HEIGHT)
-        self.setMaximumHeight(RELATION_PICKER_MAX_HEIGHT)
 
         # Install event filter for escape key
         self.installEventFilter(self)

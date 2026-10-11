@@ -12,9 +12,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QMenu,
-    QPushButton,
     QSizePolicy,
-    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -22,6 +20,8 @@ from PySide6.QtWidgets import (
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.editor_presentation import COMPACT_EDITOR_WIDTH
+from src.gui.widgets.standard_buttons import LabelSizedToolButton as QToolButton
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 
 class _PaneTint(QWidget):
@@ -209,7 +209,9 @@ class FocusWritingController(QObject):
         title_row.addWidget(title, 1)
         title_row.addWidget(status)
         header.addLayout(title_row)
-        controls = QHBoxLayout()
+        from src.gui.widgets.action_flow_layout import ActionFlowLayout
+
+        controls = ActionFlowLayout()
         controls.setSpacing(8)
         controls.addStretch()
         for widget in (toolbar_button, toc_button, exit_button):
@@ -269,6 +271,7 @@ class FocusWritingController(QObject):
         view.toolbar.hide()
         view.toc_widget.hide()
         editor.header_widget.hide()
+        editor._presentation.header_scroll.hide()
         editor.inspector.hide()
         view.editor.verticalScrollBar().setValue(editor._focus_return_state["scroll"])
         surface.show()
@@ -301,6 +304,7 @@ class FocusWritingController(QObject):
             view.show()
             editor._presentation.focus_button.setText("Focus writing")
             editor.header_widget.show()
+            editor._presentation.header_scroll.show()
             editor.inspector.show()
             editor._content_widget.layout().activate()
             editor.description_field.setSizes(state["splitter_sizes"])

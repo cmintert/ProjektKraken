@@ -82,9 +82,7 @@ def test_attribute_toolbar_keeps_add_action_visible_without_clipping(qtbot) -> N
     toolbar.show()
     qtbot.wait(1)
 
-    text_width = editor.btn_add.fontMetrics().horizontalAdvance(
-        editor.btn_add.text()
-    )
+    text_width = editor.btn_add.fontMetrics().horizontalAdvance(editor.btn_add.text())
     option = QStyleOptionButton()
     option.initFrom(editor.btn_add)
     content_rect = editor.btn_add.style().subElementRect(
@@ -94,7 +92,7 @@ def test_attribute_toolbar_keeps_add_action_visible_without_clipping(qtbot) -> N
     )
     assert not editor.btn_add.isHidden()
     assert content_rect.width() >= text_width
-    assert editor.btn_add.width() >= text_width + 48
+    assert content_rect.height() >= editor.btn_add.fontMetrics().height()
     assert editor.btn_remove in toolbar.overflowed_buttons()
 
 
@@ -200,9 +198,12 @@ def test_overflow_button_is_spacious_and_theme_aware(qtbot, monkeypatch) -> None
     qtbot.addWidget(toolbar)
     theme = ThemeManager().get_theme()
 
-    assert toolbar.overflow_button.text() == "..."
-    assert toolbar.overflow_button.size().width() == 40
-    assert toolbar.overflow_button.size().height() == 32
+    assert toolbar.overflow_button.text() == "More actions"
+    from src.gui.utils.action_label_metrics import intrinsic_action_size
+
+    assert intrinsic_action_size(toolbar.overflow_button).width() >= (
+        toolbar.overflow_button.fontMetrics().horizontalAdvance("More actions")
+    )
     assert theme["surface"] in toolbar.overflow_button.styleSheet()
     assert theme["text_main"] in toolbar.overflow_button.styleSheet()
     assert "::menu-indicator" in toolbar.overflow_button.styleSheet()
@@ -214,6 +215,4 @@ def test_overflow_button_is_spacious_and_theme_aware(qtbot, monkeypatch) -> None
     )
     toolbar._apply_theme({})
 
-    assert toolbar.overflow_button.styleSheet() == (
-        "QToolButton { color: magenta; }"
-    )
+    assert toolbar.overflow_button.styleSheet() == ("QToolButton { color: magenta; }")

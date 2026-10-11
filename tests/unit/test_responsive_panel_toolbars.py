@@ -51,8 +51,7 @@ def test_timeline_keeps_playback_and_overflows_secondary_options(qtbot) -> None:
 
     assert not panel.btn_play_pause.isHidden()
     assert (
-        panel.chk_snap_playhead_to_events
-        in panel.action_toolbar.overflowed_buttons()
+        panel.chk_snap_playhead_to_events in panel.action_toolbar.overflowed_buttons()
     )
 
 
@@ -73,7 +72,9 @@ def test_project_filters_keep_selectors_and_overflow_actions(qtbot) -> None:
     assert not panel.filter_combo.isHidden()
     assert not panel.sort_combo.isHidden()
     assert panel.filter_action_toolbar.overflowed_buttons()
-    assert panel.filter_action_toolbar.geometry().right() <= panel.contentsRect().right()
+    assert (
+        panel.filter_action_toolbar.geometry().right() <= panel.contentsRect().right()
+    )
 
 
 def test_graph_filters_fit_one_compact_row_and_overflow_actions(qtbot) -> None:
@@ -90,7 +91,9 @@ def test_graph_filters_fit_one_compact_row_and_overflow_actions(qtbot) -> None:
     bar.action_toolbar.refresh()
 
     assert bar.width() == 530
-    assert bar.height() == bar.sizeHint().height()
+    from scripts.action_label_audit import audit_widget
+
+    qtbot.waitUntil(lambda: not audit_widget(host))
     assert bar._tag_filter_label.isHidden()
     assert not bar._search_input.isHidden()
     assert not bar._tag_combo.isHidden()
@@ -115,8 +118,7 @@ def test_analysis_tab_scrollers_are_themed_and_aligned(qtbot) -> None:
     _show_narrow(qtbot, panel, width=220)
     tab_bar = panel.tab_widget.tabBar()
     scroll_buttons = {
-        button.objectName(): button
-        for button in tab_bar.findChildren(QToolButton)
+        button.objectName(): button for button in tab_bar.findChildren(QToolButton)
     }
     left = scroll_buttons["ScrollLeftButton"]
     right = scroll_buttons["ScrollRightButton"]

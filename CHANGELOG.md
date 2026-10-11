@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-10
-**Commit:** a11f66ca9c5a5ee36ddbbe5e38e1eb20340b5ab4
+**Last Updated:** 2026-10-11
+**Commit:** f5bed48214050077889964bc5f1aeb32197c3f52
 ---
 
 # Changelog
@@ -12,6 +12,16 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-10-11)* **Action label integrity (KRT-82)**: Added shared font/style
+  sizing, responsive action groups and full wrapping form labels. Labeled
+  overflow retains original commands and check states; native dialog actions
+  stack, and constrained inspectors/settings retain scroll access. Added
+  production-widget measurement/reporting and release enforcement for Contract
+  1.1/UI-GATE-01. Restored theme-owned native panel/viewport backgrounds and
+  selection/pressed colors. Retained the complete simulated matrix and
+  before/after evidence. Native Windows screenshot approval remains pending
+  and blocks beta/release sign-off.
 
 - *(2026-10-10)* **Writing-tool disclosure state (KRT-79)**: Restored themed
   open/closed arrows for Summary and Draft with AI, exposed expanded state in

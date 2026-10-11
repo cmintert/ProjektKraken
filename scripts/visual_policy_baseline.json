@@ -101,13 +101,6 @@
       "source": "MAP_VERTEX_HANDLE_COLOR = \"#e74c3c\""
     },
     {
-      "key": "src/gui/dialogs/backup_settings_dialog.py|BackupSettingsDialog._create_location_section|literal-color|571ccac103b418f2",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in BackupSettingsDialog._create_location_section; migrate this expression when its presentation path is next touched.",
-      "source": "self.lbl_current_path.setStyleSheet(\"color: #888;\")"
-    },
-    {
       "key": "src/gui/dialogs/database_manager_dialog.py|DatabaseManagerDialog._refresh_list|literal-color|468fb5b27ae376c8",
       "count": 1,
       "category": "legacy",
@@ -729,13 +722,6 @@
       "category": "legacy",
       "reason": "KRT-54 legacy presentation in GradientScrubberWidget.paintEvent; migrate this expression when its presentation path is next touched.",
       "source": "painter.setPen(QPen(handle_col.darker(140), 1))"
-    },
-    {
-      "key": "src/gui/widgets/color_pickers/inline_color_picker.py|InlineColorPickerPopover.__init__|literal-color|dad8252028023902",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in InlineColorPickerPopover.__init__; migrate this expression when its presentation path is next touched.",
-      "source": "initial_color: str = \"#808080\","
     },
     {
       "key": "src/gui/widgets/color_pickers/inline_color_picker.py|InlineColorPickerPopover._apply_theme|literal-color|3df34c0c9f786098",
@@ -1485,20 +1471,6 @@
       "category": "legacy",
       "reason": "KRT-54 legacy presentation in RasterEditTool._update_cursor; migrate this expression when its presentation path is next touched.",
       "source": "_fill_color.setAlpha(30)"
-    },
-    {
-      "key": "src/gui/widgets/map/raster_layer_dialog.py|RasterLayerDialog.__init__|literal-color|6611bef5ecb98f65",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in RasterLayerDialog.__init__; migrate this expression when its presentation path is next touched.",
-      "source": "f\"background-color: {theme.get('surface_alt', '#222222')};\""
-    },
-    {
-      "key": "src/gui/widgets/map/raster_layer_dialog.py|RasterLayerDialog.__init__|literal-color|8c34e4c9775a95f0",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in RasterLayerDialog.__init__; migrate this expression when its presentation path is next touched.",
-      "source": "f\"border: 1px solid {theme.get('border', '#454545')}; \""
     },
     {
       "key": "src/gui/widgets/map/raster_legend_widget.py|RasterLegendWidget._add_placeholder|literal-color|673ad5d8a95855d4",
@@ -2327,39 +2299,11 @@
       "source": "text = theme.get(\"text_main\", \"#E0E0E0\")"
     },
     {
-      "key": "src/gui/widgets/unified_list.py|UnifiedListWidget.__init__|literal-color|dad8252028023902",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in UnifiedListWidget.__init__; migrate this expression when its presentation path is next touched.",
-      "source": "text_dim = theme.get(\"text_dim\", \"#808080\")"
-    },
-    {
       "key": "src/gui/widgets/unified_list.py|UnifiedListWidget._toggle_sort_direction|literal-color|dad8252028023902",
       "count": 1,
       "category": "legacy",
       "reason": "KRT-54 legacy presentation in UnifiedListWidget._toggle_sort_direction; migrate this expression when its presentation path is next touched.",
       "source": "text_dim = theme.get(\"text_dim\", \"#808080\")"
-    },
-    {
-      "key": "src/resources/main.qss|stylesheet|literal-color|ad8a15884081c13b",
-      "count": 2,
-      "category": "legacy",
-      "reason": "KRT-54 initial production-QSS inventory: legacy application control/selection foreground; migrate when this presentation rule is next touched.",
-      "source": "color: #121212; /* High contrast on primary */"
-    },
-    {
-      "key": "src/resources/main.qss|stylesheet|literal-color|b58363ef8364d2a6",
-      "count": 2,
-      "category": "legacy",
-      "reason": "KRT-54 initial production-QSS inventory: legacy application control/selection foreground; migrate when this presentation rule is next touched.",
-      "source": "selection-color: black;"
-    },
-    {
-      "key": "src/resources/main.qss|stylesheet|literal-color|c93b8f8709ffa0a8",
-      "count": 2,
-      "category": "legacy",
-      "reason": "KRT-54 initial production-QSS inventory: legacy application control/selection foreground; migrate when this presentation rule is next touched.",
-      "source": "color: black;"
     }
   ]
 }

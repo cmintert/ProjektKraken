@@ -8,7 +8,9 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QAbstractButton,
     QFormLayout,
+    QFrame,
     QLabel,
+    QScrollArea,
     QSizePolicy,
     QTabWidget,
     QTextEdit,
@@ -59,7 +61,13 @@ class EditorInspectorComposition:
             inspector.remove_tab(section)
 
         self.details = QWidget(inspector)
-        layout = QVBoxLayout(self.details)
+        details_layout = QVBoxLayout(self.details)
+        StyleHelper.apply_no_margins(details_layout)
+        self.details_scroll = QScrollArea(self.details)
+        self.details_scroll.setWidgetResizable(True)
+        self.details_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        body = QWidget()
+        layout = QVBoxLayout(body)
         StyleHelper.apply_compact_spacing(layout)
         layout.addWidget(QLabel("Tags"))
         content.tags.setSizePolicy(
@@ -70,8 +78,17 @@ class EditorInspectorComposition:
         self.details_views.setAccessibleName("Custom fields presentation")
         self.details_views.addTab(content.fields, "Fields")
         self.sheet_home = AuxiliarySectionHome(content.sheet, "Sheet")
+        self.sheet_home.setSizePolicy(
+            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred
+        )
+        content.sheet.setSizePolicy(
+            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred
+        )
         self.details_views.addTab(self.sheet_home, "Sheet")
+        content.fields.setMinimumHeight(200)
         layout.addWidget(self.details_views, 1)
+        self.details_scroll.setWidget(body)
+        details_layout.addWidget(self.details_scroll)
         self.context_home = AuxiliarySectionHome(content.context, "World context")
         context_container = QWidget()
         self.history_container = context_container
@@ -121,6 +138,9 @@ class EditorInspectorComposition:
                 1, "Sheet (split)" if detached else "Sheet"
             )
         )
+        from src.gui.widgets.responsive_form import scroll_section_contents
+
+        self.connections_scroll = scroll_section_contents(content.connections)
         for widget, title, section_id, tooltip in (
             (
                 content.overview,

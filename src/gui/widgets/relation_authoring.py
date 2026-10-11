@@ -94,7 +94,9 @@ class RelationAuthoring(QWidget):
         StyleHelper.apply_no_margins(self.footer_layout)
         self._layout.addWidget(self.footer)
         self.footer.hide()
-        menu_button = QToolButton()
+        from src.gui.widgets.wrapping_buttons import WrappingToolButton
+
+        menu_button = WrappingToolButton()
         menu_button.setText("More actions")
         menu_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         from PySide6.QtWidgets import QMenu
@@ -104,7 +106,7 @@ class RelationAuthoring(QWidget):
         menu.addAction("Full relation editor…", self._edit_full)
         menu_button.setMenu(menu)
         menu_button.setStyleSheet(StyleHelper.get_tool_button_style())
-        self._layout.addWidget(menu_button)
+        self._layout.insertWidget(0, menu_button)
         self.status.setText("Choose Connected to… to record a connection.")
 
     def _apply_theme(self, *_args: Any) -> None:

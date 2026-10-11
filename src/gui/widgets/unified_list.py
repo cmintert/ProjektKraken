@@ -12,12 +12,10 @@ from PySide6.QtCore import QMimeData, QSize, QSortFilterProxyModel, Qt, Signal, 
 from PySide6.QtGui import QDrag, QMouseEvent
 from PySide6.QtWidgets import (
     QComboBox,
-    QHBoxLayout,
     QLayout,
     QLineEdit,
     QListView,
     QMenu,
-    QPushButton,
     QToolButton,
     QVBoxLayout,
     QWidget,
@@ -34,6 +32,7 @@ from src.gui.widgets.auto_closing_message_box import AutoClosingMessageBox
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.standard_buttons import DestructiveButton
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 KRAKEN_ITEM_MIME_TYPE = "application/x-kraken-item"
 logger = logging.getLogger(__name__)
@@ -288,7 +287,11 @@ class UnifiedListWidget(QWidget):
         main_layout.addWidget(self.search_bar)
 
         # Filter Row (Dynamic Types and Tags)
-        filter_row = QHBoxLayout()
+        from src.gui.widgets.action_flow_layout import ActionFlowLayout
+
+        filters = QWidget()
+        filter_row = ActionFlowLayout(filters)
+        filter_row.setContentsMargins(0, 0, 0, 0)
 
         # Category filter (Events/Entities)
         self.filter_combo = QComboBox()
@@ -338,9 +341,10 @@ class UnifiedListWidget(QWidget):
         from src.gui.utils.icon_loader import load_icon
 
         self.btn_sort_dir = QToolButton()
+        self.btn_sort_dir.setAccessibleName("Change sort direction")
         self.btn_sort_dir.setToolTip("Switch between Ascending and Descending order")
         theme = ThemeManager().get_theme()
-        text_dim = theme.get("text_dim", "#808080")
+        text_dim = theme["text_dim"]
         self.btn_sort_dir.setIcon(
             load_icon("default_assets/icons/ui_icons/arrow_up.svg", color=text_dim)
         )
@@ -349,6 +353,7 @@ class UnifiedListWidget(QWidget):
 
         # Hashed Colors toggle
         self.btn_hashed_colors = QToolButton()
+        self.btn_hashed_colors.setAccessibleName("Color items by type")
         self.btn_hashed_colors.setToolTip(
             "Color-code items by their unique Type category"
         )
@@ -366,7 +371,7 @@ class UnifiedListWidget(QWidget):
         self.filter_action_toolbar.add_button(self.btn_clear_filters, priority=20)
         filter_row.addWidget(self.filter_action_toolbar)
 
-        main_layout.addLayout(filter_row)
+        main_layout.addWidget(filters)
 
         # Create model and proxy for virtualization
         self._model = ExplorerModel(self)
@@ -406,6 +411,9 @@ class UnifiedListWidget(QWidget):
             "Create Entity", self.create_entity_requested.emit, primary=True
         )
         main_layout.addWidget(self.empty_state)
+        from src.gui.widgets.responsive_form import scroll_section_contents
+
+        self.controls_scroll = scroll_section_contents(self)
 
         # Data Cache
         self._events: List[Event] = []
@@ -936,9 +944,7 @@ class UnifiedListWidget(QWidget):
             if find_and_select():
                 return True
 
-        if reveal_hidden and (
-            self._search_term or self._advanced_filter_config
-        ):
+        if reveal_hidden and (self._search_term or self._advanced_filter_config):
             self.search_bar.clear()
             if self._advanced_filter_config:
                 self.set_advanced_filter({})

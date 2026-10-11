@@ -1,8 +1,8 @@
-# Projekt Kraken UI/UX Contract v1
+# Projekt Kraken UI/UX Contract v1.1
 
-**Version:** 1
+**Version:** 1.1
 **Published:** 2026-10-04
-**Authority:** [Projekt Kraken UI/UX Contract v1](<https://linear.app/projektkraken/document/projekt-kraken-uiux-contract-v1-7354257ff07d>) in Linear.
+**Authority:** [Projekt Kraken UI/UX Contract v1.1](<https://linear.app/projektkraken/document/projekt-kraken-uiux-contract-v1-7354257ff07d>) in Linear.
 **Repository counterpart:** `docs/ux/authoring-contract.md`.
 
 The Linear document is authoritative. Deliberate revisions must update both copies in the same work batch, retain the version history, and state why the rule changed. Repository evidence and tests are linked from the audit; they do not silently redefine this contract.
@@ -181,3 +181,60 @@ draft with **Connect / Cancel**. Dropping does not persist a relation. Self-drop
 are rejected; deliberate advanced self-relations and distinct timed relations
 remain representable. This interpretation applies Contracts 2/5/6/7/8/9 and
 preserves spatial map drops and structural document reordering.
+
+## Contract 11 — UI-GATE-01: Action label integrity
+
+**Added in version 1.1, 2026-10-11 — KRT-82. Release blocking.**
+
+Adapt the layout to the content. Every creator-facing action retains complete,
+intelligible wording directly on its control or in a deliberately designed,
+visibly discoverable overflow destination. Primary task-completion actions retain
+a direct understandable route. Tooltips do not replace basic action meaning.
+
+Apply this ordered policy: intrinsic font/style-aware sizing; reflow or stack the
+group; intentional multiline labels in suitable form/dialog controls; labeled
+overflow for secondary actions; then independently reviewed compact conventions.
+Dense command labels move into secondary overflow rather than wrapping in a
+crowded row. A standalone labeled overflow access control may wrap after reflow
+places it on its own row or reserves its own tab-corner area. Preserve ordering,
+keyboard ownership, focus, selection, drafts, caret, scroll and playhead.
+
+This applies to buttons, split buttons, dialog actions, checkboxes, radios,
+toolbar/menu commands, segmented choices, tabs and command/mode selectors.
+User-authored titles/names may be elided when the complete value is reliably
+accessible; this does not exempt action wording. Recognized compact conventions
+require an accessible action name, a consistent convention and reviewer evidence.
+
+The supported minimum application client area is **1280 × 720 Qt logical pixels**.
+Verify 1600 × 900, 360 px inspectors and narrower allocations permitted by the
+workspace. Windows OS scales 100%, 125%, 150% and 200% and independent text-size
+factors 100%, 125%, 150% and 200% are gate targets. Record requested/actual logical
+sizes, effective fonts, device pixel ratio and physical capture dimensions.
+Configurations below the minimum client area are not release-gate guarantees.
+Do not raise minimum app/dialog dimensions to conceal a failure.
+
+Silent truncation, cut-off wrapped lines, label overlap, unexplained icon
+substitution, ambiguous abbreviation, tooltip-only meaning and shrinking normal
+typography to fit are forbidden. Disabled controls still identify their action.
+Existing dialog-opening ellipses and mnemonic markers are valid complete wording.
+
+Use actual Qt font/style content metrics, including height, indicator/icon/menu
+decoration and ancestor clipping. Pair automated checks with real-widget captures,
+deliberate negative fixtures and native Windows review across shipped themes,
+states and supported scales. Recoverable scrolling and designed overflow must
+preserve the full wording and a visible usable route. Unknown adapters, missing
+required fixtures and incomplete evidence are failures of coverage.
+
+Contracts 2/5/6/7/8 and the visual vocabulary remain applicable. Any unreadable
+in-scope action or incomplete mandatory verification blocks beta/release sign-off.
+A passing automated matrix does not establish native Windows DPI behavior or
+reviewer approval. Record exceptions with a domain justification and explicit
+sign-off; assigned follow-up issues do not convert violations into acceptance.
+
+## Version history
+
+- **1.1 — 2026-10-11:** KRT-82 adds the action-label integrity gate and explicit
+  responsive/scaling verification boundary. Earlier contracts retain their
+  numbering and meaning.
+- **1 — 2026-10-04:** Initial authoring interaction contract; later dated
+  interpretations remain recorded above.

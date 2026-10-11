@@ -8,9 +8,10 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, cast
 
 from PySide6.QtCore import Slot
-from PySide6.QtWidgets import QMessageBox, QPushButton, QWidget
+from PySide6.QtWidgets import QMessageBox, QWidget
 
 from src.core.protocols import SignalProtocol
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 if TYPE_CHECKING:
     from src.gui.widgets.map.map_graphics_view import MapGraphicsView

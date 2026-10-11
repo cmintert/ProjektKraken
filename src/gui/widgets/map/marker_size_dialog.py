@@ -6,9 +6,7 @@ from PySide6.QtGui import QStandardItemModel
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
-    QDialogButtonBox,
     QFormLayout,
-    QHBoxLayout,
     QLabel,
     QVBoxLayout,
     QWidget,
@@ -26,7 +24,11 @@ from src.core.marker_sizing import (
     MarkerSizingSettings,
 )
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.action_flow_layout import ActionFlowLayout as QHBoxLayout
 from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
+from src.gui.widgets.responsive_dialog_buttons import (
+    ResponsiveDialogButtonBox as QDialogButtonBox,
+)
 
 _KM = 1000.0
 _PERCENT = "% map width"
@@ -95,8 +97,7 @@ class MarkerSizeDialog(QDialog):
         layout.addWidget(self.summary)
 
         buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok
-            | QDialogButtonBox.StandardButton.Cancel
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)

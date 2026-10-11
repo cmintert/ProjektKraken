@@ -10,7 +10,6 @@ from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
-    QDialogButtonBox,
     QFileDialog,
     QGridLayout,
     QHBoxLayout,
@@ -18,7 +17,6 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMenu,
     QMessageBox,
-    QPushButton,
     QScrollArea,
     QTabWidget,
     QTextEdit,
@@ -29,6 +27,10 @@ from PySide6.QtWidgets import (
 from src.core.marker_icon import MarkerIconDefinition, MarkerIconSource
 from src.gui.dialogs.icon_metadata_dialog import IconMetadataDialog
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.responsive_dialog_buttons import (
+    ResponsiveDialogButtonBox as QDialogButtonBox,
+)
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 from src.services.marker_icon_catalog import MarkerIconCatalog
 
 

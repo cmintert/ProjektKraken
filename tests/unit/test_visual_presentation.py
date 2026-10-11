@@ -91,7 +91,7 @@ def test_disabled_link_geometry_and_overflow(qtbot):
     assert not button.isHidden()
     assert "Place the cursor" in button.toolTip()
     assert button.focusPolicy() == Qt.FocusPolicy.StrongFocus
-    widget.resize(360, 400)
+    widget.resize(220, 400)
     qtbot.wait(1)
     overflow = [
         item.action

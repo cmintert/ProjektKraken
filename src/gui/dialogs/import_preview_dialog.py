@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDialog,
-    QDialogButtonBox,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -20,6 +19,9 @@ from PySide6.QtWidgets import (
 )
 
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.responsive_dialog_buttons import (
+    ResponsiveDialogButtonBox as QDialogButtonBox,
+)
 
 
 class ImportPreviewDialog(QDialog):
@@ -190,9 +192,7 @@ class ImportPreviewDialog(QDialog):
         )
 
     @staticmethod
-    def _detect_intrafile_conflicts(
-        entities: list, events: list
-    ) -> list:
+    def _detect_intrafile_conflicts(entities: list, events: list) -> list:
         """Detect items with duplicate normalized names within the import data.
 
         Args:

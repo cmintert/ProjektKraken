@@ -9,15 +9,15 @@ from typing import Optional
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QComboBox,
-    QHBoxLayout,
     QLabel,
     QLayout,
-    QPushButton,
     QSizePolicy,
     QWidget,
 )
 
+from src.gui.widgets.action_flow_layout import ActionFlowLayout
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 logger = logging.getLogger(__name__)
 
@@ -53,11 +53,13 @@ class GraphFilterBar(QWidget):
         """Sets up the filter bar UI."""
         from PySide6.QtWidgets import QLineEdit
 
-        self.setSizePolicy(
+        policy = QSizePolicy(
             QSizePolicy.Policy.Expanding,
-            QSizePolicy.Policy.Fixed,
+            QSizePolicy.Policy.Preferred,
         )
-        layout = QHBoxLayout(self)
+        policy.setHeightForWidth(True)
+        self.setSizePolicy(policy)
+        layout = ActionFlowLayout(self)
         layout.setSizeConstraint(QLayout.SizeConstraint.SetNoConstraint)
         layout.setContentsMargins(4, 4, 4, 4)
         layout.setSpacing(4)
@@ -86,9 +88,7 @@ class GraphFilterBar(QWidget):
         )
         self._tag_filter_label.hide()
         self._tag_combo = QComboBox()
-        self._tag_combo.setSizeAdjustPolicy(
-            QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
-        )
+        self._tag_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
         self._tag_combo.setMinimumContentsLength(4)
         self._tag_combo.setSizePolicy(
             QSizePolicy.Policy.Expanding,
@@ -106,7 +106,7 @@ class GraphFilterBar(QWidget):
         # Relation type filter
         self._rel_type_combo = QComboBox()
         self._rel_type_combo.setSizeAdjustPolicy(
-            QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+            QComboBox.SizeAdjustPolicy.AdjustToContents
         )
         self._rel_type_combo.setMinimumContentsLength(4)
         self._rel_type_combo.setSizePolicy(

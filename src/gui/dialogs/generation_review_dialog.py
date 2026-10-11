@@ -14,7 +14,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QPlainTextEdit,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
@@ -26,6 +25,7 @@ from src.core.ai_generation import (
 )
 from src.core.description_date_policy import find_description_dates
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 logger = logging.getLogger(__name__)
 
@@ -111,9 +111,7 @@ class GenerationReviewDialog(QDialog):
                     "The model stopped at the token limit; this reply may be truncated."
                 )
                 truncation_warning.setWordWrap(True)
-                truncation_warning.setStyleSheet(
-                    StyleHelper.get_error_label_style()
-                )
+                truncation_warning.setStyleSheet(StyleHelper.get_error_label_style())
                 main_layout.addWidget(truncation_warning)
 
         # Editable text area
@@ -131,20 +129,18 @@ class GenerationReviewDialog(QDialog):
         # Rating section
         rating_layout = QHBoxLayout()
         rating_label = QLabel("Rate this result:")
-        rating_label.setStyleSheet(
-            f"color: {StyleHelper.get_dim_text_color()};"
-        )
+        rating_label.setStyleSheet(f"color: {StyleHelper.get_dim_text_color()};")
         rating_layout.addWidget(rating_label)
 
         self.thumbs_up_btn = QPushButton("👍")
-        self.thumbs_up_btn.setFixedWidth(50)
+        self.thumbs_up_btn.setAccessibleName("Useful generated result")
         self.thumbs_up_btn.setToolTip("Good result")
         self.thumbs_up_btn.setCheckable(True)
         self.thumbs_up_btn.clicked.connect(self._on_thumbs_up_clicked)
         rating_layout.addWidget(self.thumbs_up_btn)
 
         self.thumbs_down_btn = QPushButton("👎")
-        self.thumbs_down_btn.setFixedWidth(50)
+        self.thumbs_down_btn.setAccessibleName("Unhelpful generated result")
         self.thumbs_down_btn.setToolTip("Poor result")
         self.thumbs_down_btn.setCheckable(True)
         self.thumbs_down_btn.clicked.connect(self._on_thumbs_down_clicked)
@@ -168,9 +164,7 @@ class GenerationReviewDialog(QDialog):
         # Discard button (left)
         self.discard_btn = QPushButton("Discard")
         self.discard_btn.setToolTip("Discard generated content")
-        self.discard_btn.setStyleSheet(
-            StyleHelper.get_ghost_destructive_button_style()
-        )
+        self.discard_btn.setStyleSheet(StyleHelper.get_ghost_destructive_button_style())
         self.discard_btn.clicked.connect(self._on_discard_clicked)
         buttons_layout.addWidget(self.discard_btn)
 
@@ -208,12 +202,9 @@ class GenerationReviewDialog(QDialog):
             self.date_warning.hide()
         else:
             excerpts = ", ".join(
-                f'“{item.text}”'
-                for item in violations[:_DATE_WARNING_EXCERPT_LIMIT]
+                f"“{item.text}”" for item in violations[:_DATE_WARNING_EXCERPT_LIMIT]
             )
-            suffix = (
-                "…" if len(violations) > _DATE_WARNING_EXCERPT_LIMIT else ""
-            )
+            suffix = "…" if len(violations) > _DATE_WARNING_EXCERPT_LIMIT else ""
             self.date_warning.setText(
                 "Descriptions cannot contain explicit dates. Remove "
                 f"{excerpts}{suffix} before applying."

@@ -67,13 +67,13 @@ from src.gui.widgets.sheet_builder import SheetBuilderWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
 from src.gui.widgets.standard_buttons import (
     DestructiveButton,
-    PrimaryButton,
     StandardButton,
 )
 from src.gui.widgets.summary_widget import SummaryWidget
 from src.gui.widgets.tag_editor import TagEditorWidget
 from src.gui.widgets.timeline_display_widget import TimelineDisplayWidget
 from src.gui.widgets.wiki_text_edit import ResizableWikiTextEditField, WikiTextEdit
+from src.gui.widgets.wrapping_buttons import WrappingPrimaryButton as PrimaryButton
 
 logger = logging.getLogger(__name__)
 
@@ -204,13 +204,22 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self.form_layout.addRow("Description:", self.description_field)
         self.description_source_label = QLabel()
         self.form_layout.addRow("Source:", self.description_source_label)
-        self.btn_new_description = StandardButton(
+        from src.gui.widgets.wrapping_buttons import WrappingPushButton
+
+        self.btn_new_description = WrappingPushButton(
             "Start a new description at this time"
         )
         self.btn_new_description.clicked.connect(self._start_new_description)
-        self.form_layout.addRow(self.btn_new_description)
+        from src.gui.widgets.overflow_toolbar import OverflowToolBar
+
+        self.new_description_actions = OverflowToolBar()
+        self.new_description_actions.add_button(self.btn_new_description)
+        self.form_layout.addRow(self.new_description_actions)
         self.description_source_label.hide()
-        self.btn_new_description.hide()
+        self.new_description_actions.set_button_available(
+            self.btn_new_description, False
+        )
+        self.new_description_actions.hide()
         self._build_timeline_section()
         self._build_summary_section()
         self._build_llm_section()
@@ -297,7 +306,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self.header_widget = QWidget()
         header_layout = QVBoxLayout(self.header_widget)
         header_layout.setContentsMargins(0, 0, 0, 0)
-        self.btn_inject = QToolButton()
+        from src.gui.widgets.standard_buttons import LabelSizedToolButton
+
+        self.btn_inject = LabelSizedToolButton()
         self.btn_inject.setText("Fast Inject")
         self.btn_inject.setToolTip("Quickly apply templates or snippets to this entity")
         self.btn_inject.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
@@ -479,7 +490,11 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
     def _build_action_buttons(self, main_layout: QVBoxLayout) -> None:
         """Build persistent discard and save controls."""
-        buttons = QHBoxLayout()
+        from src.gui.widgets.action_flow_layout import ActionFlowLayout
+
+        actions = QWidget()
+        buttons = ActionFlowLayout(actions)
+        buttons.setContentsMargins(0, 0, 0, 0)
         self.btn_save = PrimaryButton("Save Changes")
         self.btn_save.clicked.connect(self._on_save)
         self.btn_discard = StandardButton("Discard")
@@ -488,7 +503,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         buttons.addStretch()
         buttons.addWidget(self.btn_discard)
         buttons.addWidget(self.btn_save)
-        main_layout.addLayout(buttons)
+        main_layout.addWidget(actions)
 
     def _initialize_editor_state(self) -> None:
         """Initialize mutable state and dirty tracking for an empty editor."""
@@ -830,7 +845,10 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             }
             self.temporal_snapshot_banner.hide()
             self.description_source_label.hide()
-            self.btn_new_description.hide()
+            self.new_description_actions.set_button_available(
+                self.btn_new_description, False
+            )
+            self.new_description_actions.hide()
             if focus is not None:
                 focus._update_action()
             self._current_created_at = entity.created_at
@@ -1572,7 +1590,10 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self._source_caption(state.get("description_source"))
         )
         self.description_source_label.show()
-        self.btn_new_description.show()
+        self.new_description_actions.set_button_available(
+            self.btn_new_description, True
+        )
+        self.new_description_actions.show()
         self.temporal_snapshot_label.setText(
             "Editing the visible state; corrections update the source shown below."
         )

@@ -2405,11 +2405,11 @@ class WikiTextEdit(QFrame):
         self.toolbar.addSeparator()
 
         self.toolbar.addAction(self.editor.action_h1)
-        self.editor.action_h1.setText("H1")
+        self.editor.action_h1.setText("Heading 1")
         self.toolbar.addAction(self.editor.action_h2)
-        self.editor.action_h2.setText("H2")
+        self.editor.action_h2.setText("Heading 2")
         self.toolbar.addAction(self.editor.action_h3)
-        self.editor.action_h3.setText("H3")
+        self.editor.action_h3.setText("Heading 3")
 
         self.toolbar.addAction(self.editor.action_body)
         self.editor.action_body.setText("Body")
@@ -2422,19 +2422,19 @@ class WikiTextEdit(QFrame):
         self.toolbar.addWidget(spacer)
 
         # Mode Toggle
-        self.action_toggle_mode = self.toolbar.addAction("MD")
+        self.action_toggle_mode = self.toolbar.addAction("Markdown source")
         self.action_toggle_mode.setToolTip(
             "Toggle between Rendered HTML and Markdown Source"
         )
         self.action_toggle_mode.triggered.connect(self._toggle_view_mode)
 
         # TOC Toggle
-        self.action_toggle_toc = self.toolbar.addAction("TOC")
+        self.action_toggle_toc = self.toolbar.addAction("Table of contents")
         self.action_toggle_toc.setToolTip("Toggle Table of Contents sidebar")
         self.action_toggle_toc.triggered.connect(self._toggle_toc)
 
         # Spell check button — always opens settings dialog; checked = currently enabled
-        self.action_spell_check = self.toolbar.addAction("ABC")
+        self.action_spell_check = self.toolbar.addAction("Spelling settings")
         self.action_spell_check.setCheckable(True)
         self.action_spell_check.setToolTip(
             "Spell & grammar check settings (LanguageTool)"
@@ -2448,6 +2448,29 @@ class WikiTextEdit(QFrame):
         self.action_spell_check.setChecked(
             cast(bool, s.value("SpellCheck/enabled", False, type=bool))
         )
+        from PySide6.QtWidgets import QToolButton, QWidgetAction
+
+        from src.gui.widgets.wrapping_buttons import WrappingToolButton
+
+        self.formatting_more_button = WrappingToolButton(self)
+        self.formatting_more_button.setObjectName("OverflowToolBarMenuButton")
+        self.formatting_more_button.setProperty("actionLabelOverflowRoute", True)
+        self.formatting_more_button.setText("More writing actions")
+        self.formatting_more_button.setAccessibleName("More writing actions")
+        self.formatting_more_button.setPopupMode(
+            QToolButton.ToolButtonPopupMode.InstantPopup
+        )
+        formatting_menu = QMenu(self.formatting_more_button)
+        for action in self.toolbar.actions():
+            if not isinstance(action, QWidgetAction):
+                formatting_menu.addAction(action)
+        self.formatting_more_button.setMenu(formatting_menu)
+        self.formatting_more_button.setStyleSheet(
+            StyleHelper.get_overflow_button_style()
+        )
+        layout = self.layout()
+        assert layout is not None
+        layout.addWidget(self.formatting_more_button)
 
     def _setup_link_controls(self, layout: QVBoxLayout) -> None:
         """Keep writing actions visible when formatting is collapsed."""
@@ -2563,10 +2586,10 @@ class WikiTextEdit(QFrame):
     def _sync_mode_action(self, mode: str) -> None:
         """Explain when source mode protects richer Markdown from conversion."""
         if mode == "rich":
-            self.action_toggle_mode.setText("MD")
+            self.action_toggle_mode.setText("Markdown source")
             self.action_toggle_mode.setToolTip("Switch to Markdown Source View")
         else:
-            self.action_toggle_mode.setText("HTML")
+            self.action_toggle_mode.setText("Rendered view")
             self.action_toggle_mode.setToolTip(
                 "Exact Markdown source. Rich view is available after removing "
                 "unsupported syntax."

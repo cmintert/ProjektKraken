@@ -10,7 +10,6 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QListWidget,
     QListWidgetItem,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
@@ -18,6 +17,7 @@ from PySide6.QtWidgets import (
 from src.core.entities import Entity
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 
 class EntityListWidget(QWidget):

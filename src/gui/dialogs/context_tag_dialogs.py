@@ -16,13 +16,13 @@ from PySide6.QtWidgets import (
     QDialog,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QTableView,
     QVBoxLayout,
     QWidget,
 )
 
 from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 from src.gui.widgets.tag_editor import TagEditorWidget
 
 ModelIndex = QModelIndex | QPersistentModelIndex
@@ -137,9 +137,7 @@ class ContextReviewModel(QAbstractTableModel):
             timestamp = (
                 float(created_at) if isinstance(created_at, (int, float, str)) else 0.0
             )
-            return datetime.fromtimestamp(timestamp).strftime(
-                "%Y-%m-%d %H:%M"
-            )
+            return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M")
         return None
 
     def headerData(
@@ -149,7 +147,10 @@ class ContextReviewModel(QAbstractTableModel):
         role: int = Qt.ItemDataRole.DisplayRole,
     ) -> Any:
         """Return horizontal header text for display roles."""
-        if role == Qt.ItemDataRole.DisplayRole and orientation == Qt.Orientation.Horizontal:
+        if (
+            role == Qt.ItemDataRole.DisplayRole
+            and orientation == Qt.Orientation.Horizontal
+        ):
             return self.HEADERS[section]
         return None
 

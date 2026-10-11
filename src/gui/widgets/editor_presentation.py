@@ -12,7 +12,6 @@ from PySide6.QtWidgets import (
     QAbstractSpinBox,
     QComboBox,
     QFormLayout,
-    QGridLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -33,14 +32,14 @@ from src.gui.widgets.editor_inspector_composition import (
     InspectorContent,
 )
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
+from src.gui.widgets.wrapping_buttons import WrappingToolButton
 
 COMPACT_EDITOR_WIDTH = 560
 EDITOR_CONTROL_HEIGHT = 32
-GENERATION_GRID_WIDTH = 960
 WRITING_COLUMN_MAX_WIDTH = 760
 
 
-class DisclosureButton(QToolButton):
+class DisclosureButton(WrappingToolButton):
     """Named, keyboard accessible disclosure with a full-row hit target."""
 
     def __init__(self, title: str, parent: QWidget | None = None) -> None:
@@ -50,7 +49,6 @@ class DisclosureButton(QToolButton):
         self.setAccessibleName(title)
         self.setCheckable(True)
         self.setMinimumHeight(32)
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.toggled.connect(self._update_arrow)
@@ -137,19 +135,7 @@ class EditorPresentation(QObject):
         editor.summary_widget.text_display.set_adaptive_width(True)
         editor.summary_widget.metadata_label.setWordWrap(True)
         editor.summary_widget.stale_label.setWordWrap(True)
-        self._generation_grid = editor.llm_generator.layout().itemAt(1).layout()
         editor.llm_generator.layout().setContentsMargins(0, 0, 0, 0)
-        assert isinstance(self._generation_grid, QGridLayout)
-        self._generation_items = []
-        for i in range(self._generation_grid.count()):
-            item = self._generation_grid.itemAt(i)
-            assert item is not None
-            widget = item.widget()
-            assert widget is not None
-            self._generation_items.append(
-                (widget, self._generation_grid.getItemPosition(i))
-            )
-        self._generation_compact: bool | None = None
         for combo in editor.llm_generator.findChildren(QComboBox):
             combo.setSizeAdjustPolicy(
                 QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
@@ -206,6 +192,7 @@ class EditorPresentation(QObject):
                 if field.maximumHeight() >= EDITOR_CONTROL_HEIGHT:
                     field.setMinimumHeight(EDITOR_CONTROL_HEIGHT)
         editor.name_edit.setAccessibleName("Name")
+        self._install_header_scroll()
         editor.installEventFilter(self)
         editor.details_container.installEventFilter(self)
         editor.llm_generator.installEventFilter(self)
@@ -217,17 +204,20 @@ class EditorPresentation(QObject):
 
     def _install_focus_button(self) -> None:
         """Put focus writing first in the description formatting toolbar."""
-        self.focus_button = QToolButton(self.editor.desc_edit.toolbar)
+        from src.gui.widgets.action_flow_layout import ActionFlowLayout
+
+        row = QWidget(self.editor.desc_edit)
+        self._writing_command_layout = ActionFlowLayout(row)
+        self._writing_command_layout.setContentsMargins(0, 0, 0, 0)
+        self.editor.desc_edit.layout().insertWidget(0, row)
+        self.focus_button = WrappingToolButton(row)
         self.focus_button.setText("Focus writing")
         self.focus_button.setAccessibleName("Focus writing")
         self.focus_button.setToolTip("Focus writing (F11)")
         self.focus_button.setCheckable(True)
         self.focus_button.setMinimumHeight(32)
         self.focus_button.clicked.connect(self.editor.focus_writing_requested.emit)
-        self._focus_toolbar_action = self.editor.desc_edit.toolbar.insertWidget(
-            self.editor.desc_edit.editor.action_bold,
-            self.focus_button,
-        )
+        self._writing_command_layout.addWidget(self.focus_button)
 
     def _style_controls(self, _theme: dict | None = None) -> None:
         """Keep inspector focus and control boundaries visible in both themes."""
@@ -244,6 +234,16 @@ class EditorPresentation(QObject):
                 if self._focus_suffix:
                     style = style.replace(self._focus_suffix, "")
                 if suffix not in style:
+                    if style.strip() and "{" not in style:
+                        # Inline declarations need a selector before appending
+                        # shared focus rules; otherwise Qt rejects the sheet.
+                        raw_name = widget.metaObject().className()
+                        selector = (
+                            raw_name
+                            if isinstance(raw_name, str)
+                            else bytes(raw_name).decode("utf-8")
+                        )
+                        style = f"{selector} {{ {style} }} "
                     widget.setStyleSheet(style + suffix)
         self._focus_suffix = suffix
         for button in self._toolbar_more_buttons:
@@ -256,6 +256,50 @@ class EditorPresentation(QObject):
         self.editor.summary_container.setStyleSheet(support_style)
         self.editor.llm_container.setStyleSheet(support_style)
         self.composition.history_container.setStyleSheet(support_style)
+
+    def _install_header_scroll(self) -> None:
+        """Retain live object fields while reserving readable inspector space."""
+        layout = self.editor._content_widget.layout()
+        index = layout.indexOf(self.editor.header_widget)
+        layout.removeWidget(self.editor.header_widget)
+        self.header_scroll = QScrollArea()
+        self.header_scroll.setWidgetResizable(True)
+        self.header_scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        self.header_scroll.setAccessibleName("Object details")
+        self.header_scroll.setWidget(self.editor.header_widget)
+        self.header_scroll.viewport().setAutoFillBackground(False)
+        layout.insertWidget(index, self.header_scroll)
+
+    def _fit_header(self) -> None:
+        """Give the longest visible action enough height before capping fields."""
+        editor = self.editor
+        layout = editor._content_widget.layout()
+        width = max(1, editor.details_container.width())
+        required = max(
+            (
+                button.heightForWidth(min(width, button.width()))
+                for button in editor.findChildren(QAbstractButton)
+                if button.isVisibleTo(editor)
+                and not editor.header_widget.isAncestorOf(button)
+                and callable(getattr(button, "label_geometry", None))
+            ),
+            default=EDITOR_CONTROL_HEIGHT,
+        )
+        margins = layout.contentsMargins()
+        details = editor.details_container.layout().contentsMargins()
+        footer = editor.btn_save.parentWidget().sizeHint().height()
+        corner = editor.inspector.main_tabs.overflow_button.heightForWidth(width)
+        chrome = (
+            margins.top()
+            + margins.bottom()
+            + details.top()
+            + details.bottom()
+            + layout.spacing() * max(0, layout.count() - 1)
+        )
+        budget = editor._content_widget.height() - footer - corner - required - chrome
+        self.header_scroll.setMaximumHeight(
+            max(editor.btn_inject.sizeHint().height(), budget)
+        )
 
     def _install_writing_support(self) -> None:
         """Move live writing tools beside the description and retire old bars."""
@@ -273,11 +317,15 @@ class EditorPresentation(QObject):
                 container.hide()
 
         self.writing_actions = QWidget()
-        self._writing_grid = QGridLayout(self.writing_actions)
+        from src.gui.widgets.action_flow_layout import ActionFlowLayout
+
+        self._writing_grid = ActionFlowLayout(self.writing_actions)
         self._writing_grid.setContentsMargins(0, 0, 0, 0)
         self._writing_grid.setSpacing(4)
         self._summary_action_group = QWidget()
-        summary_row = QHBoxLayout(self._summary_action_group)
+        from src.gui.widgets.action_flow_layout import ActionFlowLayout
+
+        summary_row = ActionFlowLayout(self._summary_action_group)
         summary_row.setContentsMargins(0, 0, 0, 0)
         summary_row.setSpacing(4)
         self.summary_availability = QLabel("Available")
@@ -304,7 +352,6 @@ class EditorPresentation(QObject):
             button.setAccessibleName(title)
             button.setToolTip(explanation)
             button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-            button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
             button._apply_theme()
             caption = QLabel(explanation)
             caption.setObjectName("InspectorSupportCaption")
@@ -313,9 +360,8 @@ class EditorPresentation(QObject):
             button.toggled.connect(container.setVisible)
         summary_row.addWidget(editor.summary_checkbox)
         summary_row.addWidget(self.summary_availability)
-        self._writing_grid.addWidget(self._summary_action_group, 0, 0)
-        self._writing_grid.addWidget(editor.llm_checkbox, 0, 1)
-        self._writing_grid.setColumnStretch(2, 1)
+        self._writing_grid.addWidget(self._summary_action_group)
+        self._writing_grid.addWidget(editor.llm_checkbox)
         self._writing_compact: bool | None = None
         row, _role = form.getWidgetPosition(editor.description_field)
         # Keep the actions aligned with the writing field in a wide form.
@@ -357,8 +403,8 @@ class EditorPresentation(QObject):
             editor.description_source_label.installEventFilter(self)
             column_layout.addWidget(source_label)
             column_layout.addWidget(editor.description_source_label)
-            form.takeRow(editor.btn_new_description)
-            column_layout.addWidget(editor.btn_new_description)
+            form.takeRow(editor.new_description_actions)
+            column_layout.addWidget(editor.new_description_actions)
 
         for widget in (
             self.writing_actions,
@@ -390,21 +436,18 @@ class EditorPresentation(QObject):
         """Indicate available content without promising persistence."""
         self.summary_availability.setVisible(present)
         self._reflow_writing_actions()
+        self._fit_header()
 
     def _reflow_writing_actions(self) -> None:
         """Wrap the two live actions only when their actual row cannot fit."""
-        needed = (
-            self._summary_action_group.sizeHint().width()
-            + self.editor.llm_checkbox.sizeHint().width()
-            + self._writing_grid.spacing()
+        self._writing_grid.invalidate()
+        height = max(
+            self._writing_grid.minimumSize().height(),
+            self._writing_grid.heightForWidth(self.writing_actions.width()),
         )
-        compact = self.writing_actions.width() < needed
-        if compact != self._writing_compact:
-            self._writing_compact = compact
-            self._writing_grid.removeWidget(self.editor.llm_checkbox)
-            self._writing_grid.addWidget(
-                self.editor.llm_checkbox, 1 if compact else 0, 0 if compact else 1
-            )
+        if self.writing_actions.minimumHeight() != height:
+            self.writing_actions.setMinimumHeight(height)
+            self.writing_actions.updateGeometry()
 
     def _install_toolbar_menus(self) -> None:
         """Expose existing toolbar actions when native extensions are cramped."""
@@ -413,12 +456,18 @@ class EditorPresentation(QObject):
             (self.editor.sheet_builder._toolbar, "More Sheet actions"),
         ):
             actions = toolbar.actions()
-            button = QToolButton(toolbar)
+            if toolbar is self.editor.desc_edit.toolbar:
+                button = self.editor.desc_edit.formatting_more_button
+                self.editor.desc_edit.layout().removeWidget(button)
+                self._writing_command_layout.addWidget(button)
+                self._toolbar_more_buttons.append(button)
+                continue
+            button = WrappingToolButton(toolbar.parentWidget())
             button.setObjectName("OverflowToolBarMenuButton")
-            button.setText("...")
+            button.setProperty("actionLabelOverflowRoute", True)
+            button.setText(title)
             button.setAccessibleName(title)
             button.setToolTip(title)
-            button.setFixedSize(40, 32)
             button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
             menu = QMenu(button)
             menu.setToolTipsVisible(True)
@@ -426,7 +475,16 @@ class EditorPresentation(QObject):
                 if not isinstance(action, QWidgetAction):
                     menu.addAction(action)
             button.setMenu(menu)
-            toolbar.insertWidget(actions[1], button)
+            if toolbar is self.editor.desc_edit.toolbar:
+                self._writing_command_layout.addWidget(button)
+            else:
+                from src.gui.widgets.action_flow_layout import ActionFlowLayout
+
+                row = QWidget(toolbar.parentWidget())
+                row_layout = ActionFlowLayout(row)
+                row_layout.setContentsMargins(0, 0, 0, 0)
+                row_layout.addWidget(button)
+                toolbar.parentWidget().layout().insertWidget(0, row)
             self._toolbar_more_buttons.append(button)
 
     @staticmethod
@@ -464,20 +522,6 @@ class EditorPresentation(QObject):
 
     def _install_action_rows(self) -> None:
         editor = self.editor
-        generator = editor.llm_generator
-        for index in range(generator.layout().count()):
-            row = generator.layout().itemAt(index).layout()
-            if row is not None and row.indexOf(generator.generate_btn) >= 0:
-                self._overflow_row(
-                    generator,
-                    [
-                        generator.generate_btn,
-                        generator.preview_btn,
-                        generator.cancel_btn,
-                    ],
-                    index,
-                )
-                break
         self._overflow_row(
             editor.gallery,
             [
@@ -485,11 +529,6 @@ class EditorPresentation(QObject):
                 editor.gallery.btn_edit,
                 editor.gallery.btn_remove,
             ],
-        )
-        self._overflow_row(
-            editor.attribute_editor,
-            [editor.attribute_editor.btn_add, editor.attribute_editor.btn_remove],
-            pin_primary=True,
         )
         if not hasattr(editor, "grp_participants"):
             self._overflow_row(
@@ -581,8 +620,19 @@ class EditorPresentation(QObject):
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:  # noqa: N802
         """Reflow only when the host geometry or visibility changes."""
+        if not all(
+            widget is not None and shiboken6.isValid(widget)
+            for widget in (
+                self.editor.details_container,
+                getattr(self, "header_scroll", None),
+            )
+        ):
+            return False
         if watched is getattr(self.editor, "description_source_label", None):
-            if event.type() in (QEvent.Type.Show, QEvent.Type.Hide):
+            if event.type() in (
+                QEvent.Type.Show,
+                QEvent.Type.Hide,
+            ) and shiboken6.isValid(self._source_label):
                 self._source_label.setVisible(event.type() == QEvent.Type.Show)
         if event.type() in (QEvent.Type.Resize, QEvent.Type.Show):
             self.reflow()
@@ -595,15 +645,6 @@ class EditorPresentation(QObject):
             min(self.editor.width(), self.editor.details_container.width())
             < COMPACT_EDITOR_WIDTH
         )
-        generation_compact = self.editor.llm_generator.width() < GENERATION_GRID_WIDTH
-        if generation_compact != self._generation_compact:
-            self._generation_compact = generation_compact
-            for index, (widget, position) in enumerate(self._generation_items):
-                self._generation_grid.removeWidget(widget)
-                if generation_compact:
-                    self._generation_grid.addWidget(widget, index, 0)
-                else:
-                    self._generation_grid.addWidget(widget, *position)
         if compact == self._compact:
             return
         self._compact = compact

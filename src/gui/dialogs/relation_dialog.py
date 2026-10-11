@@ -5,7 +5,6 @@ from typing import Any
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
     QDialog,
-    QDialogButtonBox,
     QVBoxLayout,
     QWidget,
 )
@@ -15,6 +14,9 @@ from PySide6.QtWidgets import (
 
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.relation_form import RelationForm
+from src.gui.widgets.responsive_dialog_buttons import (
+    ResponsiveDialogButtonBox as QDialogButtonBox,
+)
 
 
 class RelationEditDialog(QDialog):

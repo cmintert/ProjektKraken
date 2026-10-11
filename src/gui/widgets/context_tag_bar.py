@@ -9,12 +9,12 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QSizePolicy,
     QWidget,
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 from src.gui.widgets.tag_chip_view import tag_color_for_theme
 
 

@@ -13,6 +13,7 @@ testing
 inspector-ui-verification
 temporal-acceptance
 wiki-editor-beta-release-gate
+action-label-release-gate
 performance-measurement
 contributing
 documentation

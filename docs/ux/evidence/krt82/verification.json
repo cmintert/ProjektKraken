@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "date": "2026-10-11",
+  "branch": "button_gate",
+  "source_revision": "f5bed48214050077889964bc5f1aeb32197c3f52",
+  "revision_note": "Pre-commit HEAD plus the recorded KRT-82 working-tree presentation fingerprint. The delivery commit contains this evidence.",
+  "matrix": {
+    "records": 95808,
+    "failures": 0,
+    "registered_surfaces": 82,
+    "scale_factors": [1.0, 1.25, 1.5, 2.0],
+    "text_factors": [1.0, 1.25, 1.5, 2.0],
+    "themes": 6,
+    "wording_sets": 2,
+    "method": "offscreen-simulated-scale",
+    "manifest": "coverage-manifest.json"
+  },
+  "checks": {
+    "ci_fast": {"passed": 1889, "skipped": 2, "deselected": 4440},
+    "smoke": {"passed": 19, "deselected": 6312},
+    "ruff": "passed",
+    "mypy": {"status": "passed", "source_files": 462},
+    "visual_policy": "passed",
+    "complexity_policy": "passed; RelationForm.__init__ 17 to 16",
+    "test_policy": "passed",
+    "dependencies": "passed",
+    "generated_schema": "passed",
+    "strict_sphinx": "passed",
+    "native_review_enforcement": "verified rejection with pending manifest after successful rendering",
+    "post_matrix_formatting": "26 files; identical Python syntax trees; see format-equivalence.json"
+  },
+  "known_test_warning": "Existing Starlette TestClient httpx deprecation",
+  "native_review": "pending",
+  "release_signoff": "blocked",
+  "windows_package_verification": "not performed",
+  "push": "not authorized"
+}

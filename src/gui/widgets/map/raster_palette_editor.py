@@ -21,7 +21,6 @@ from PySide6.QtWidgets import (
     QComboBox,
     QCompleter,
     QDialog,
-    QDialogButtonBox,
     QFrame,
     QHBoxLayout,
     QHeaderView,
@@ -53,6 +52,9 @@ from src.gui.widgets.map.raster_mapping import (
     validate_no_overlaps,
 )
 from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
+from src.gui.widgets.responsive_dialog_buttons import (
+    ResponsiveDialogButtonBox as QDialogButtonBox,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -611,9 +613,7 @@ class RasterPaletteEditor(QDialog):
             self._display_max_edit.setText(str(self._color_map.display_max))
             self._display_unit_edit.setText(self._color_map.unit or "")
             self._display_format_edit.setText(self._color_map.format_str or "{:.2f}")
-            scale_text = (
-                "Log" if self._color_map.scale == "log" else "Linear"
-            )
+            scale_text = "Log" if self._color_map.scale == "log" else "Linear"
             self._display_scale_combo.setCurrentText(scale_text)
         self._display_mapping_enabled.setChecked(has_mapping)
         self._on_display_mapping_toggled(has_mapping)
@@ -696,7 +696,9 @@ class RasterPaletteEditor(QDialog):
         del_btn.setObjectName("del_btn")
         del_btn.setFixedSize(24, 24)
         del_btn.setToolTip("Remove this stop")
-        del_btn.clicked.connect(lambda _checked=False, rw=row_widget: self._on_remove_stop(rw))
+        del_btn.clicked.connect(
+            lambda _checked=False, rw=row_widget: self._on_remove_stop(rw)
+        )
 
         row_layout.addWidget(pos_spin)
         row_layout.addWidget(color_btn)
@@ -742,7 +744,9 @@ class RasterPaletteEditor(QDialog):
             pos_spin = row.findChild(ScrollSafeSpinBox, "pos_spin")
             color_btn = row.findChild(_ColorButton, "color_btn")
             if pos_spin and color_btn:
-                stops.append(GradientStop(pos_spin.value() / 100.0, color_btn.color_hex))
+                stops.append(
+                    GradientStop(pos_spin.value() / 100.0, color_btn.color_hex)
+                )
         return sorted(stops, key=lambda s: s.position)
 
     def _on_preset_selected(self, index: int) -> None:
@@ -837,11 +841,7 @@ class RasterPaletteEditor(QDialog):
             return
         unit = self._display_unit_edit.text().strip()
         fmt = self._display_format_edit.text().strip() or "{:.2f}"
-        scale = (
-            "log"
-            if self._display_scale_combo.currentText() == "Log"
-            else "linear"
-        )
+        scale = "log" if self._display_scale_combo.currentText() == "Log" else "linear"
         s_min = self._stretch_min_spin.value()
         s_max = self._stretch_max_spin.value()
         sample_raw = (s_min + s_max) // 2
@@ -927,9 +927,9 @@ class RasterPaletteEditor(QDialog):
             comp.setFilterMode(Qt.MatchFlag.MatchContains)
             entity_name_edit.setCompleter(comp)
             comp.activated.connect(
-                lambda name, _e=entity_name_edit, _c=type_combo: self._on_entity_activated(
-                    name, _e, _c
-                )
+                lambda name,
+                _e=entity_name_edit,
+                _c=type_combo: self._on_entity_activated(name, _e, _c)
             )
         entity_name_edit.editingFinished.connect(
             lambda _e=entity_name_edit, _c=type_combo: self._on_entity_editing_finished(
@@ -970,9 +970,7 @@ class RasterPaletteEditor(QDialog):
         elif eid in self._event_id_set:
             combo.setCurrentText("Event")
 
-    def _on_entity_editing_finished(
-        self, edit: QLineEdit, combo: QComboBox
-    ) -> None:
+    def _on_entity_editing_finished(self, edit: QLineEdit, combo: QComboBox) -> None:
         """Called when the entity name field loses focus.
 
         Resolves the typed name to an ID; clears the link if the text does
@@ -1064,7 +1062,9 @@ class RasterPaletteEditor(QDialog):
             label_edit = self._table.cellWidget(r, _COL_LABEL)
             entity_edit = self._table.cellWidget(r, _COL_ENTITY_ID)
             type_combo = self._table.cellWidget(r, _COL_TYPE)
-            if not isinstance(spin, ScrollSafeSpinBox) or not isinstance(btn, _ColorButton):
+            if not isinstance(spin, ScrollSafeSpinBox) or not isinstance(
+                btn, _ColorButton
+            ):
                 continue
             entry: Dict[str, Any] = {
                 "value": spin.value(),
@@ -1176,7 +1176,9 @@ class RasterPaletteEditor(QDialog):
                 spin = self._table.cellWidget(r, _COL_VALUE)
                 btn = self._table.cellWidget(r, _COL_COLOR)
                 entity_edit = self._table.cellWidget(r, _COL_ENTITY_ID)
-                if isinstance(spin, ScrollSafeSpinBox) and isinstance(btn, _ColorButton):
+                if isinstance(spin, ScrollSafeSpinBox) and isinstance(
+                    btn, _ColorButton
+                ):
                     eid: Optional[str] = None
                     if isinstance(entity_edit, QLineEdit):
                         eid = (entity_edit.property("linked_id") or "").strip() or None

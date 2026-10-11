@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 import shiboken6
-from PySide6.QtCore import QMimeData, QPoint, QSize, Qt, QTimer, Signal
+from PySide6.QtCore import QEvent, QMimeData, QPoint, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QDrag, QDragEnterEvent, QDropEvent, QMouseEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QMenu,
@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
 
 from src.core.logging_config import get_logger
 from src.gui.widgets.inspector_section import AuxiliarySectionHome
+from src.gui.widgets.wrapping_buttons import WrappingToolButton
 
 logger = get_logger(__name__)
 
@@ -124,6 +125,20 @@ class DraggableTabBar(QTabBar):
         super().__init__(parent)
         self.setAcceptDrops(True)
         self._drag_start_pos = QPoint()
+
+    def sizeHint(self) -> QSize:  # noqa: N802
+        """Reserve corner-control height in Qt's actual tab-row calculation."""
+        hint = super().sizeHint()
+        corner = getattr(self.parentWidget(), "overflow_button", None)
+        if corner is not None:
+            hint.setHeight(max(hint.height(), corner.sizeHint().height()))
+        return hint
+
+    def minimumSizeHint(self) -> QSize:  # noqa: N802
+        """Retain native scrolling width while reserving the complete row."""
+        hint = super().minimumSizeHint()
+        hint.setHeight(self.sizeHint().height())
+        return hint
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Track drag start position."""
@@ -255,12 +270,20 @@ class DraggableTabBar(QTabBar):
         return None
 
 
-class _InspectorMenuButton(QToolButton):
+class _InspectorMenuButton(WrappingToolButton):
     """Reserve the complete labeled corner action in the tab geometry."""
 
     def sizeHint(self) -> QSize:
-        """Keep Qt's corner placement consistent with the fixed hit target."""
-        return QSize(76, 32)
+        """Reserve actual styled text and menu decoration at every font size."""
+        hint = super().sizeHint()
+        parent = self.parentWidget()
+        width = hint.width()
+        if parent is not None:
+            width = min(
+                width,
+                max(self.minimumSizeHint().width(), parent.contentsRect().width()),
+            )
+        return QSize(width, self.heightForWidth(width))
 
 
 class DraggableTabWidget(QTabWidget):
@@ -269,15 +292,17 @@ class DraggableTabWidget(QTabWidget):
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize with custom tab bar."""
         super().__init__(parent)
+        self._overflow_timer = QTimer(self)
+        self._overflow_timer.setSingleShot(True)
+        self._overflow_timer.timeout.connect(self._update_overflow)
         self.setTabBar(DraggableTabBar(self))
         self.setAcceptDrops(True)
         self.setMovable(True)
         self.currentChanged.connect(self._remember_section)
         self.overflow_button = _InspectorMenuButton(self)
-        self.overflow_button.setText("More")
+        self.overflow_button.setText("More actions")
         self.overflow_button.setToolTip("Inspector sections and layout")
         self.overflow_button.setAccessibleName("Inspector sections and layout")
-        self.overflow_button.setFixedSize(76, 32)
         self.overflow_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.overflow_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.overflow_menu = QMenu(self.overflow_button)
@@ -335,7 +360,18 @@ class DraggableTabWidget(QTabWidget):
     def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
         """Only show tab overflow access when the full tab strip cannot fit."""
         super().resizeEvent(event)
-        self._update_overflow()
+        self._overflow_timer.start(0)
+
+    def event(self, event: QEvent) -> bool:
+        """Reserve updated corner height after dynamic labels and font changes."""
+        result = super().event(event)
+        if hasattr(self, "_overflow_timer") and event.type() in (
+            QEvent.Type.LayoutRequest,
+            QEvent.Type.FontChange,
+            QEvent.Type.StyleChange,
+        ):
+            self._overflow_timer.start(0)
+        return result
 
     def tabInserted(self, index: int) -> None:  # noqa: N802
         """Recheck overflow after drag, split, or initial tab insertion."""
@@ -349,6 +385,10 @@ class DraggableTabWidget(QTabWidget):
 
     def _update_overflow(self) -> None:
         if hasattr(self, "overflow_button"):
+            height = self.overflow_button.sizeHint().height()
+            if self.tabBar().minimumHeight() != height:
+                self.tabBar().setMinimumHeight(height)
+                self.updateGeometry()
             self.overflow_button.show()
 
     def _remember_section(self, index: int) -> None:

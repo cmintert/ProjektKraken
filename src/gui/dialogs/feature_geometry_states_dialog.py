@@ -7,17 +7,18 @@ from typing import Any
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,
-    QDialogButtonBox,
-    QHBoxLayout,
     QLabel,
     QListWidget,
     QListWidgetItem,
     QMessageBox,
-    QPushButton,
     QVBoxLayout,
 )
 
 from src.gui.widgets.compact_date_widget import CompactDateWidget
+from src.gui.widgets.responsive_dialog_buttons import (
+    ResponsiveDialogButtonBox as QDialogButtonBox,
+)
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 
 class FeatureGeometryStatesDialog(QDialog):
@@ -57,7 +58,9 @@ class FeatureGeometryStatesDialog(QDialog):
         self.state_list.setCurrentRow(0)
         layout.addWidget(self.state_list)
 
-        actions = QHBoxLayout()
+        from src.gui.widgets.action_flow_layout import ActionFlowLayout
+
+        actions = ActionFlowLayout()
         edit_button = QPushButton("Edit Geometry", self)
         date_button = QPushButton("Change Date", self)
         delete_button = QPushButton("Delete", self)
@@ -75,9 +78,11 @@ class FeatureGeometryStatesDialog(QDialog):
 
     def _selected_state_id(self) -> str | None:
         item = self.state_list.currentItem()
-        return str(item.data(Qt.ItemDataRole.UserRole)) if item and item.data(
-            Qt.ItemDataRole.UserRole
-        ) is not None else None
+        return (
+            str(item.data(Qt.ItemDataRole.UserRole))
+            if item and item.data(Qt.ItemDataRole.UserRole) is not None
+            else None
+        )
 
     def _edit(self) -> None:
         state_id = self._selected_state_id()
@@ -103,8 +108,7 @@ class FeatureGeometryStatesDialog(QDialog):
         date_input.set_value(float(state["effective_date"]))
         layout.addWidget(date_input)
         buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok
-            | QDialogButtonBox.StandardButton.Cancel,
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel,
             parent=dialog,
         )
         buttons.accepted.connect(dialog.accept)
@@ -121,11 +125,14 @@ class FeatureGeometryStatesDialog(QDialog):
                 self, "Base Geometry", "Base Geometry cannot be deleted."
             )
             return
-        if QMessageBox.question(
-            self,
-            "Delete Geometry State",
-            "Delete this dated geometry state?",
-        ) != QMessageBox.StandardButton.Yes:
+        if (
+            QMessageBox.question(
+                self,
+                "Delete Geometry State",
+                "Delete this dated geometry state?",
+            )
+            != QMessageBox.StandardButton.Yes
+        ):
             return
         self.selected_action = ("delete_state", state_id, None)
         self.accept()

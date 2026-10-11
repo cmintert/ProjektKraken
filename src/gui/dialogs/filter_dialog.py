@@ -7,12 +7,14 @@ from typing import Any, Dict, List, Optional
 
 from PySide6.QtWidgets import (
     QDialog,
-    QDialogButtonBox,
     QVBoxLayout,
     QWidget,
 )
 
 from src.gui.widgets.filter_widget import FilterWidget
+from src.gui.widgets.responsive_dialog_buttons import (
+    ResponsiveDialogButtonBox as QDialogButtonBox,
+)
 
 
 class FilterDialog(QDialog):

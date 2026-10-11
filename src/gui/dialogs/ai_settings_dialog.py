@@ -13,10 +13,8 @@ from PySide6.QtGui import QStandardItemModel
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
-    QCheckBox,
     QComboBox,
     QDialog,
-    QFormLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -24,7 +22,6 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QMessageBox,
-    QPushButton,
     QSplitter,
     QStackedWidget,
     QVBoxLayout,
@@ -50,6 +47,10 @@ from src.gui.utils.settings_reader import (
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 from src.gui.widgets.prompt_editor import PromptEditorWidget
+from src.gui.widgets.responsive_form import ResponsiveFormLayout as QFormLayout
+from src.gui.widgets.responsive_form import scrollable_form_page
+from src.gui.widgets.wrapping_buttons import WrappingPushButton as QPushButton
+from src.gui.widgets.wrapping_choices import WrappingCheckBox as QCheckBox
 from src.services.lmstudio_config import (
     DEFAULT_LMSTUDIO_BASE_URL,
     discover_lmstudio_models,
@@ -148,8 +149,8 @@ class AISettingsDialog(QDialog):
         self.sidebar_list.setStyleSheet(
             f"""
             QListWidget {{
-                background-color: {theme['app_bg']};
-                border: 1px solid {theme['border']};
+                background-color: {theme["app_bg"]};
+                border: 1px solid {theme["border"]};
                 border-radius: 4px;
                 padding: 4px;
                 outline: none;
@@ -157,17 +158,17 @@ class AISettingsDialog(QDialog):
             QListWidget::item {{
                 padding: 12px;
                 border-radius: 4px;
-                color: {theme['text_dim']};
+                color: {theme["text_dim"]};
                 font-size: 13px;
             }}
             QListWidget::item:selected {{
-                background-color: {theme['surface']};
-                color: {theme['text_main']};
+                background-color: {theme["surface"]};
+                color: {theme["text_main"]};
                 font-weight: bold;
-                border-left: 3px solid {theme['primary']};
+                border-left: 3px solid {theme["primary"]};
             }}
             QListWidget::item:hover {{
-                background-color: {theme['surface']};
+                background-color: {theme["surface"]};
             }}
         """
         )
@@ -188,10 +189,14 @@ class AISettingsDialog(QDialog):
         self.sidebar_list.currentRowChanged.connect(self.pages_stack.setCurrentIndex)
 
         # Create Pages
-        self.pages_stack.addWidget(self._create_generative_ai_page())
-        self.pages_stack.addWidget(self._create_knowledge_base_page())
-        self.pages_stack.addWidget(self._create_prompts_page())
-        self.pages_stack.addWidget(self._create_templates_page())
+        self.pages_stack.addWidget(
+            scrollable_form_page(self._create_generative_ai_page())
+        )
+        self.pages_stack.addWidget(
+            scrollable_form_page(self._create_knowledge_base_page())
+        )
+        self.pages_stack.addWidget(scrollable_form_page(self._create_prompts_page()))
+        self.pages_stack.addWidget(scrollable_form_page(self._create_templates_page()))
 
         # Select first item
         self.sidebar_list.setCurrentRow(0)
@@ -304,7 +309,6 @@ class AISettingsDialog(QDialog):
         )
         lm_gen_form.addRow("Server URL:", self.lm_gen_url_input)
         self.btn_test_lm_gen = QPushButton("Refresh Models")
-        self.btn_test_lm_gen.setFixedWidth(120)
         self.btn_test_lm_gen.clicked.connect(
             lambda: self._test_connection("lmstudio", "generate")
         )
@@ -525,7 +529,6 @@ class AISettingsDialog(QDialog):
         self.lm_api_key_input.editingFinished.connect(self.save_settings)
         lm_studio_form.addRow("API Key:", self.lm_api_key_input)
         self.btn_test_lm_embed = QPushButton("Refresh Models")
-        self.btn_test_lm_embed.setFixedWidth(120)
         self.btn_test_lm_embed.clicked.connect(
             lambda: self._test_connection("lmstudio", "embed")
         )
@@ -741,26 +744,24 @@ class AISettingsDialog(QDialog):
         left_layout.setContentsMargins(0, 0, 8, 0)
 
         lbl_list = QLabel("Task Templates")
-        lbl_list.setStyleSheet(
-            f"font-weight: bold; color: {theme['text_dim']};"
-        )
+        lbl_list.setStyleSheet(f"font-weight: bold; color: {theme['text_dim']};")
         left_layout.addWidget(lbl_list)
 
         self.template_list = QListWidget()
         self.template_list.setStyleSheet(
             f"""
             QListWidget {{
-                background-color: {theme['app_bg']};
-                border: 1px solid {theme['border']};
+                background-color: {theme["app_bg"]};
+                border: 1px solid {theme["border"]};
                 border-radius: 4px;
             }}
             QListWidget::item {{
                 padding: 8px;
-                color: {theme['text_main']};
+                color: {theme["text_main"]};
             }}
             QListWidget::item:selected {{
-                background-color: {theme['primary']};
-                color: {theme['app_bg']};
+                background-color: {theme["primary"]};
+                color: {theme["app_bg"]};
             }}
         """
         )
@@ -822,7 +823,11 @@ class AISettingsDialog(QDialog):
         right_layout.addWidget(content_group, stretch=1)
 
         # Editor actions
-        editor_actions = QHBoxLayout()
+        from src.gui.widgets.action_flow_layout import ActionFlowLayout
+
+        actions = QWidget()
+        editor_actions = ActionFlowLayout(actions)
+        editor_actions.setContentsMargins(0, 0, 0, 0)
         self.btn_delete_template = QPushButton("Delete")
         self.btn_delete_template.setStyleSheet(
             StyleHelper.get_destructive_button_style()
@@ -837,13 +842,11 @@ class AISettingsDialog(QDialog):
         editor_actions.addStretch()
 
         self.btn_save_template = QPushButton("Save Template")
-        self.btn_save_template.setStyleSheet(
-            StyleHelper.get_primary_button_style()
-        )
+        self.btn_save_template.setStyleSheet(StyleHelper.get_primary_button_style())
         self.btn_save_template.clicked.connect(self._on_save_template)
         editor_actions.addWidget(self.btn_save_template)
 
-        right_layout.addLayout(editor_actions)
+        right_layout.addWidget(actions)
 
         splitter.addWidget(right_widget)
 
@@ -1268,12 +1271,8 @@ class AISettingsDialog(QDialog):
             min(float(self.lm_timeout_input.value()), 10.0),
             self,
         )
-        self._discovery_worker.models_discovered.connect(
-            self._on_models_discovered
-        )
-        self._discovery_worker.discovery_failed.connect(
-            self._on_model_discovery_failed
-        )
+        self._discovery_worker.models_discovered.connect(self._on_models_discovered)
+        self._discovery_worker.discovery_failed.connect(self._on_model_discovery_failed)
         self._discovery_worker.finished.connect(self._on_discovery_finished)
         self._discovery_worker.start()
 
@@ -1352,9 +1351,7 @@ class AISettingsDialog(QDialog):
         )
 
         # Save auto-index on save setting
-        settings.setValue(
-            "ai_auto_index_on_save", self.chk_auto_index.isChecked()
-        )
+        settings.setValue("ai_auto_index_on_save", self.chk_auto_index.isChecked())
 
         # Save embedding provider settings
         provider = (
@@ -1370,9 +1367,7 @@ class AISettingsDialog(QDialog):
         from src.services.secret_store import set_api_key
 
         try:
-            base_url = normalize_lmstudio_base_url(
-                self.lm_gen_url_input.text()
-            )
+            base_url = normalize_lmstudio_base_url(self.lm_gen_url_input.text())
         except ValueError as exc:
             logger.warning("Invalid LM Studio server URL: %s", exc)
             self._show_save_status("Invalid LM Studio server URL")
@@ -1552,9 +1547,7 @@ class AISettingsDialog(QDialog):
             )
         )
         self.openai_model_input.setText(
-            read_str_setting(
-                settings, "ai_gen_openai_model", "gpt-3.5-turbo"
-            )
+            read_str_setting(settings, "ai_gen_openai_model", "gpt-3.5-turbo")
         )
 
         # Google Vertex AI
@@ -1565,14 +1558,10 @@ class AISettingsDialog(QDialog):
             read_str_setting(settings, "ai_gen_google_project_id", "")
         )
         self.google_location_input.setText(
-            read_str_setting(
-                settings, "ai_gen_google_location", "us-central1"
-            )
+            read_str_setting(settings, "ai_gen_google_location", "us-central1")
         )
         self.google_model_input.setText(
-            read_str_setting(
-                settings, "ai_gen_google_model", "text-bison@001"
-            )
+            read_str_setting(settings, "ai_gen_google_model", "text-bison@001")
         )
         self.google_creds_input.setText(
             read_str_setting(settings, "ai_gen_google_credentials_path", "")
@@ -1663,12 +1652,8 @@ class AISettingsDialog(QDialog):
             selected_event_template_id=str(
                 settings.value("ai_gen_event_template_id", "") or ""
             ),
-            entity_prompt_draft=str(
-                settings.value("ai_gen_entity_prompt", "") or ""
-            ),
-            event_prompt_draft=str(
-                settings.value("ai_gen_event_prompt", "") or ""
-            ),
+            entity_prompt_draft=str(settings.value("ai_gen_entity_prompt", "") or ""),
+            event_prompt_draft=str(settings.value("ai_gen_event_prompt", "") or ""),
             custom_task_templates=self.get_custom_task_templates(),
         )
 
@@ -1689,17 +1674,11 @@ class AISettingsDialog(QDialog):
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
             settings.setValue("ai_gen_system_prompt", preferences.persona)
             settings.setValue("ai_gen_max_tokens", preferences.max_tokens)
-            settings.setValue(
-                "ai_gen_temperature", preferences.temperature_percent
-            )
+            settings.setValue("ai_gen_temperature", preferences.temperature_percent)
             settings.setValue("ai_gen_rag_enabled", preferences.rag_enabled)
             settings.setValue("ai_gen_rag_limit", preferences.rag_limit)
-            settings.setValue(
-                "ai_gen_spatial_enabled", preferences.spatial_enabled
-            )
-            settings.setValue(
-                "ai_gen_filter_reasoning", preferences.filter_reasoning
-            )
+            settings.setValue("ai_gen_spatial_enabled", preferences.spatial_enabled)
+            settings.setValue("ai_gen_filter_reasoning", preferences.filter_reasoning)
             settings.setValue("ai_gen_audit_log", preferences.audit_enabled)
             settings.setValue(
                 "ai_gen_entity_template_id",
@@ -1709,12 +1688,8 @@ class AISettingsDialog(QDialog):
                 "ai_gen_event_template_id",
                 preferences.selected_event_template_id,
             )
-            settings.setValue(
-                "ai_gen_entity_prompt", preferences.entity_prompt_draft
-            )
-            settings.setValue(
-                "ai_gen_event_prompt", preferences.event_prompt_draft
-            )
+            settings.setValue("ai_gen_entity_prompt", preferences.entity_prompt_draft)
+            settings.setValue("ai_gen_event_prompt", preferences.event_prompt_draft)
             built_ins = tuple(
                 template
                 for template in self._task_templates
@@ -1755,6 +1730,4 @@ class AISettingsDialog(QDialog):
 
         """
         self.lbl_rebuild_progress.setVisible(True)
-        self.lbl_rebuild_progress.setText(
-            f"Indexing {done}/{total} ({pct}%)"
-        )
+        self.lbl_rebuild_progress.setText(f"Indexing {done}/{total} ({pct}%)")

@@ -17,7 +17,6 @@ from PySide6.QtWidgets import (
     QDialog,
     QHBoxLayout,
     QMenu,
-    QPushButton,
     QToolButton,
     QWidget,
 )
@@ -47,6 +46,7 @@ from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.marker_item import MarkerItem
 from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 if TYPE_CHECKING:
     from PySide6.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent

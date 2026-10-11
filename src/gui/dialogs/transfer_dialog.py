@@ -9,15 +9,12 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QTextCursor
 from PySide6.QtWidgets import (
     QCheckBox,
-    QComboBox,
     QDialog,
     QFormLayout,
-    QHBoxLayout,
     QLabel,
     QLineEdit,
     QListWidget,
     QPlainTextEdit,
-    QPushButton,
     QSplitter,
     QStackedWidget,
     QTabWidget,
@@ -37,6 +34,10 @@ from src.core.transfer import (
 )
 from src.gui.constants import SUPPORTED_IMAGE_FORMATS
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.action_flow_layout import ActionFlowLayout as QHBoxLayout
+from src.gui.widgets.responsive_form import scrollable_form_page
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
+from src.gui.widgets.wrapping_combo_box import WrappingComboBox as QComboBox
 
 
 class TransferDialog(QDialog):
@@ -114,7 +115,9 @@ class TransferDialog(QDialog):
         layout.addWidget(label)
         self.source_list = QListWidget()
         layout.addWidget(self.source_list, 1)
-        row = QHBoxLayout()
+        actions = QWidget()
+        row = QHBoxLayout(actions)
+        row.setContentsMargins(0, 0, 0, 0)
         for title, callback in (
             ("Add files…", self.files_requested.emit),
             ("Add folder…", self.folder_requested.emit),
@@ -123,7 +126,7 @@ class TransferDialog(QDialog):
             button = QPushButton(title)
             button.clicked.connect(callback)
             row.addWidget(button)
-        layout.addLayout(row)
+        layout.addWidget(actions)
         paste_header = QHBoxLayout()
         paste_header.addWidget(QLabel("Or paste lore JSON:"))
         paste_header.addStretch()
@@ -158,7 +161,7 @@ class TransferDialog(QDialog):
         )
         self.mode_help.setWordWrap(True)
         layout.addWidget(self.mode_help)
-        self.tabs.addTab(page, "Import")
+        self.tabs.addTab(scrollable_form_page(page), "Import")
 
     def _build_export(self) -> None:
         page = QWidget()

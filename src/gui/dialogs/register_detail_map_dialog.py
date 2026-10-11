@@ -17,7 +17,6 @@ from PySide6.QtGui import QImageReader
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
-    QDialogButtonBox,
     QLabel,
     QVBoxLayout,
     QWidget,
@@ -25,6 +24,9 @@ from PySide6.QtWidgets import (
 
 from src.core.map import Map
 from src.gui.constants import MAP_ROLE_DETAIL, MAP_ROLE_MASTER
+from src.gui.widgets.responsive_dialog_buttons import (
+    ResponsiveDialogButtonBox as QDialogButtonBox,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -94,16 +96,14 @@ class RegisterDetailMapDialog(QDialog):
 
         if not candidate_parents:
             warn = QLabel(
-                "No eligible parent maps exist yet.  Designate a master "
-                "map first."
+                "No eligible parent maps exist yet.  Designate a master map first."
             )
             warn.setWordWrap(True)
             warn.setAlignment(Qt.AlignmentFlag.AlignLeft)
             layout.addWidget(warn)
 
         buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok
-            | QDialogButtonBox.StandardButton.Cancel,
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel,
             parent=self,
         )
         buttons.accepted.connect(self._accept)
@@ -209,9 +209,7 @@ class RegisterDetailMapDialog(QDialog):
         return self._registration
 
     @staticmethod
-    def filter_candidate_parents(
-        all_maps: List[Map], detail_map_id: str
-    ) -> List[Map]:
+    def filter_candidate_parents(all_maps: List[Map], detail_map_id: str) -> List[Map]:
         """Return maps eligible to act as a parent.
 
         Args:

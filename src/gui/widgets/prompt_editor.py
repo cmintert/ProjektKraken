@@ -8,13 +8,10 @@ from typing import List, Optional
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QComboBox,
     QDialog,
     QHBoxLayout,
     QPlainTextEdit,
-    QPushButton,
     QSizePolicy,
-    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -22,6 +19,8 @@ from PySide6.QtWidgets import (
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.prompt_syntax_highlighter import PromptSyntaxHighlighter
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
+from src.gui.widgets.wrapping_buttons import WrappingToolButton as QToolButton
 
 
 class PromptEditorWidget(QWidget):
@@ -45,15 +44,20 @@ class PromptEditorWidget(QWidget):
         layout.setSpacing(4)
 
         # Toolbar
-        toolbar_layout = QHBoxLayout()
+        from src.gui.widgets.action_flow_layout import ActionFlowLayout
+
+        actions = QWidget()
+        toolbar_layout = ActionFlowLayout(actions)
         toolbar_layout.setContentsMargins(0, 0, 0, 0)
 
         # Variable insertion
-        self.var_combo = QComboBox()
+        from src.gui.widgets.wrapping_combo_box import WrappingComboBox
+
+        self.var_combo = WrappingComboBox()
         self.var_combo.setPlaceholderText("Insert Variable...")
         self.var_combo.setMinimumWidth(110)
         self.var_combo.setSizePolicy(
-            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
         )
         self.var_combo.activated.connect(self._on_variable_selected)
         toolbar_layout.addWidget(self.var_combo)
@@ -72,13 +76,14 @@ class PromptEditorWidget(QWidget):
 
         # Pop-out button
         self.btn_popout = QToolButton()
-        self.btn_popout.setText("⤢")  # Unicode expand symbol
+        self.btn_popout.setText("Open prompt editor…")
+        self.btn_popout.setAccessibleName("Open prompt editor…")
         self.btn_popout.setToolTip("Open in larger editor")
         self.btn_popout.setStyleSheet(StyleHelper.get_tool_button_style())
         self.btn_popout.clicked.connect(self._open_popout)
         toolbar_layout.addWidget(self.btn_popout)
 
-        layout.addLayout(toolbar_layout)
+        layout.addWidget(actions)
 
         # Editor
         self.editor = QPlainTextEdit()

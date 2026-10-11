@@ -11,9 +11,6 @@ import shiboken6
 from PySide6.QtCore import QEvent, QSize, QTimer, Signal
 from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
-    QCheckBox,
-    QComboBox,
-    QHBoxLayout,
     QLabel,
     QSizePolicy,
     QVBoxLayout,
@@ -130,8 +127,12 @@ class GraphWidget(QWidget):
 
         # Filter bar at top
         layout.addWidget(self._filter_bar)
-        temporal_row = QHBoxLayout()
-        self.temporal_mode = QComboBox()
+        from src.gui.widgets.action_flow_layout import ActionFlowLayout
+        from src.gui.widgets.wrapping_choices import WrappingCheckBox
+        from src.gui.widgets.wrapping_combo_box import WrappingComboBox
+
+        temporal_row = ActionFlowLayout()
+        self.temporal_mode = WrappingComboBox()
         self.temporal_mode.setAccessibleName("Graph temporal view")
         for label, mode in (
             ("At playhead", "at_playhead"),
@@ -142,7 +143,7 @@ class GraphWidget(QWidget):
         self.temporal_mode.currentIndexChanged.connect(
             lambda _index: self.refresh_requested.emit()
         )
-        self.show_possible = QCheckBox("Show possible relations")
+        self.show_possible = WrappingCheckBox("Show possible relations")
         self.show_possible.toggled.connect(
             lambda: self._refresh_display_locally(self._last_focus_node_id)
         )
@@ -382,7 +383,9 @@ class GraphWidget(QWidget):
         from src.services.marker_icon_catalog import MarkerIconCatalog
 
         resolved = resolve_lexicon_images(
-            config, project_root, image_encoder=GraphBuilder.image_to_base64,
+            config,
+            project_root,
+            image_encoder=GraphBuilder.image_to_base64,
             catalog=MarkerIconCatalog.load(project_root, self._icon_metadata),
         )
         self._resolved_lexicon = resolved
@@ -751,6 +754,7 @@ class GraphWidget(QWidget):
         Args:
             event: The show event.
         """
+
         def _refresh() -> None:
             """Refresh the web view content."""
             try:

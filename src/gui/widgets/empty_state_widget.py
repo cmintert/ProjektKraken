@@ -8,14 +8,14 @@ from typing import Callable, Optional
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QHBoxLayout,
     QLabel,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
 
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.action_flow_layout import ActionFlowLayout
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 
 class EmptyStateWidget(QWidget):
@@ -68,7 +68,7 @@ class EmptyStateWidget(QWidget):
         main_layout.addWidget(self._description_label)
 
         # Button container
-        self._button_layout = QHBoxLayout()
+        self._button_layout = ActionFlowLayout()
         self._button_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._button_layout.setSpacing(8)
         main_layout.addLayout(self._button_layout)

@@ -70,13 +70,13 @@ from src.gui.widgets.sheet_builder import SheetBuilderWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
 from src.gui.widgets.standard_buttons import (
     DestructiveButton,
-    PrimaryButton,
     StandardButton,
 )
 from src.gui.widgets.summary_widget import SummaryWidget
 from src.gui.widgets.tag_editor import TagEditorWidget
 from src.gui.widgets.temporal_range_widget import TemporalRangeWidget
 from src.gui.widgets.wiki_text_edit import ResizableWikiTextEditField, WikiTextEdit
+from src.gui.widgets.wrapping_buttons import WrappingPrimaryButton as PrimaryButton
 
 logger = logging.getLogger(__name__)
 
@@ -280,21 +280,23 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         if self._calendar_converter:
             self.temporal_widget.set_calendar_converter(self._calendar_converter)
         self.form_layout.addRow(self.temporal_widget)
-        temporal_actions = QWidget()
-        temporal_actions_layout = QHBoxLayout(temporal_actions)
-        temporal_actions_layout.setContentsMargins(0, 0, 0, 0)
+        from src.gui.widgets.overflow_toolbar import OverflowToolBar
+
+        temporal_actions = OverflowToolBar()
         self.chronology_button = QToolButton()
         self.chronology_button.setText("Chronology…")
         self.chronology_button.setStyleSheet(StyleHelper.get_tool_button_style())
         self.chronology_button.clicked.connect(self._edit_chronology)
-        temporal_actions_layout.addWidget(self.chronology_button)
+        temporal_actions.add_button(self.chronology_button)
         self.temporal_evidence_button = QToolButton()
         self.temporal_evidence_button.setText("Date evidence…")
         self.temporal_evidence_button.setStyleSheet(StyleHelper.get_tool_button_style())
         self.temporal_evidence_button.clicked.connect(self._edit_temporal_evidence)
-        temporal_actions_layout.addWidget(self.temporal_evidence_button)
+        temporal_actions.add_button(self.temporal_evidence_button)
         self.form_layout.addRow(temporal_actions)
-        self.btn_show_world_at_event = QToolButton()
+        from src.gui.widgets.wrapping_buttons import WrappingToolButton
+
+        self.btn_show_world_at_event = WrappingToolButton()
         self.btn_show_world_at_event.setText("Show world at this event")
         self.btn_show_world_at_event.setStyleSheet(StyleHelper.get_tool_button_style())
         self.btn_show_world_at_event.setToolTip(
@@ -391,7 +393,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         )
         self.header_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         self.header_form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
-        self.btn_inject = QToolButton()
+        from src.gui.widgets.standard_buttons import LabelSizedToolButton
+
+        self.btn_inject = LabelSizedToolButton()
         self.btn_inject.setText("Fast Inject")
         self.btn_inject.setToolTip("Quickly apply templates or snippets to this event")
         self.btn_inject.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
@@ -498,7 +502,11 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
     def _build_action_buttons(self, main_layout: QVBoxLayout) -> None:
         """Build persistent discard and save controls."""
-        buttons = QHBoxLayout()
+        from src.gui.widgets.action_flow_layout import ActionFlowLayout
+
+        actions = QWidget()
+        buttons = ActionFlowLayout(actions)
+        buttons.setContentsMargins(0, 0, 0, 0)
         self.btn_save = PrimaryButton("Save Changes")
         self.btn_save.setEnabled(False)
         self.btn_save.clicked.connect(self._on_save)
@@ -508,7 +516,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         buttons.addStretch()
         buttons.addWidget(self.btn_discard)
         buttons.addWidget(self.btn_save)
-        main_layout.addLayout(buttons)
+        main_layout.addWidget(actions)
 
     def _initialize_editor_state(self) -> None:
         """Initialize mutable state and dirty tracking for an empty editor."""

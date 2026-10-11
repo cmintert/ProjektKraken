@@ -30,7 +30,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QMenu,
     QMessageBox,
-    QPushButton,
     QSizePolicy,
     QSplitter,
     QToolBar,
@@ -60,6 +59,7 @@ from src.gui.widgets.map.map_layer_model import MapLayerModel
 from src.gui.widgets.map.map_layer_panel import MapLayerPanel
 from src.gui.widgets.map.marker_item import MarkerItem
 from src.gui.widgets.map.raster_legend_widget import RasterLegendWidget
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 logger = logging.getLogger(__name__)
 
@@ -900,8 +900,7 @@ class MapWidget(
         self.btn_new_map.setToolTip("Create a new map in this world")
         self.btn_new_map.clicked.connect(self._on_create_map_clicked)
         self.toolbar.addWidget(self.btn_new_map)
-        self.btn_map_overflow = QPushButton("⋯")
-        self.btn_map_overflow.setFixedWidth(28)
+        self.btn_map_overflow = QPushButton("Map actions")
         self.btn_map_overflow.setToolTip("Map options (delete, etc.)")
         self.btn_map_overflow.clicked.connect(self._show_map_overflow_menu)
         self.toolbar.addWidget(self.btn_map_overflow)

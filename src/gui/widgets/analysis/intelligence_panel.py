@@ -26,12 +26,11 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFileDialog,
-    QHBoxLayout,
     QInputDialog,
     QLabel,
     QListWidget,
     QListWidgetItem,
-    QPushButton,
+    QScrollArea,
     QTableWidget,
     QTableWidgetItem,
     QTextBrowser,
@@ -47,6 +46,7 @@ from src.core.analysis import (
 )
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.action_flow_layout import ActionFlowLayout
 from src.gui.widgets.analysis._analysis_utils import (
     SEVERITY_COLORS,
     configure_stretch_columns,
@@ -56,6 +56,7 @@ from src.gui.widgets.analysis._analysis_utils import (
     make_text_cell,
     sync_analysis_cell_styles,
 )
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 logger = logging.getLogger(__name__)
 
@@ -115,12 +116,19 @@ class IntelligencePanel(QWidget):
     def _init_ui(self) -> None:
         """Build the widget layout."""
         layout = QVBoxLayout(self)
+        from src.gui.widgets.responsive_form import scrollable_form_page
+
+        body = QWidget()
+        layout.addWidget(scrollable_form_page(body))
+        layout = QVBoxLayout(body)
 
         self.header_label = QLabel("No report loaded.")
         self.header_label.setWordWrap(True)
         layout.addWidget(self.header_label)
 
-        controls = QHBoxLayout()
+        actions = QWidget()
+        controls = ActionFlowLayout(actions)
+        controls.setContentsMargins(0, 0, 0, 0)
         self.category_filter = QComboBox()
         self.category_filter.addItems(
             ["All categories", "Plot Holes", "Relation Gaps", "Lore Suggestions"]
@@ -149,12 +157,21 @@ class IntelligencePanel(QWidget):
             self.export_json_btn,
         ):
             controls.addWidget(widget)
-        layout.addLayout(controls)
+        layout.addWidget(actions)
+
+        report_scroll = QScrollArea()
+        report_scroll.setWidgetResizable(True)
+        report_body = QWidget()
+        report_scroll.setWidget(report_body)
+        layout.addWidget(report_scroll, 1)
+        layout = QVBoxLayout(report_body)
 
         self._holes_label = QLabel("Plot Holes")
         layout.addWidget(self._holes_label)
         self.plot_holes_table = make_analysis_table(_HOLE_HEADERS)
-        configure_stretch_columns(self.plot_holes_table, 2, 3)  # Description, Resolution
+        configure_stretch_columns(
+            self.plot_holes_table, 2, 3
+        )  # Description, Resolution
         layout.addWidget(self.plot_holes_table)
 
         self._proposals_label = QLabel("Relation Proposals")
@@ -319,9 +336,7 @@ class IntelligencePanel(QWidget):
 
                     self._converter = CalendarConverter(calendar_config)
                 except Exception:
-                    logger.debug(
-                        "IntelligencePanel: could not build CalendarConverter"
-                    )
+                    logger.debug("IntelligencePanel: could not build CalendarConverter")
             self._populate_lore_from_list(suggestions)
 
     def finalize_report(self, report: IntelligenceReport) -> None:
@@ -467,9 +482,7 @@ class IntelligencePanel(QWidget):
             source_item = QTableWidgetItem(proposal.source_name)
             source_item.setData(Qt.ItemDataRole.UserRole, proposal)
             self.proposals_table.setItem(row, 0, source_item)
-            self.proposals_table.setItem(
-                row, 1, QTableWidgetItem(proposal.target_name)
-            )
+            self.proposals_table.setItem(row, 1, QTableWidgetItem(proposal.target_name))
             self.proposals_table.setItem(
                 row, 2, QTableWidgetItem(proposal.suggested_relation_type)
             )
@@ -632,7 +645,9 @@ class IntelligencePanel(QWidget):
         self._selected_finding = finding
         self._selected_evidence_id = None
         self._details_label.setText(
-            "Suggestion Details" if isinstance(finding, LoreGapFiller) else "Finding Details"
+            "Suggestion Details"
+            if isinstance(finding, LoreGapFiller)
+            else "Finding Details"
         )
         self.evidence_list.clear()
         evidence = list(getattr(finding, "evidence", []))
@@ -742,9 +757,7 @@ class IntelligencePanel(QWidget):
         return "lore"
 
     @staticmethod
-    def _category_findings(
-        report: IntelligenceReport, category: str
-    ) -> list[Any]:
+    def _category_findings(report: IntelligenceReport, category: str) -> list[Any]:
         if category == "plot_holes":
             return list(report.plot_holes)
         if category == "relations":
@@ -785,7 +798,8 @@ class IntelligencePanel(QWidget):
                     continue
                 finding_status = self._finding_status(finding)
                 dismissed_hidden = (
-                    finding_status == "dismissed" and not self.show_dismissed.isChecked()
+                    finding_status == "dismissed"
+                    and not self.show_dismissed.isChecked()
                 )
                 status_hidden = status != "All statuses" and finding_status != status
                 severity_hidden = (
@@ -824,7 +838,10 @@ class IntelligencePanel(QWidget):
         if isinstance(value, Enum):
             return value.value
         if isinstance(value, dict):
-            return {str(key): IntelligencePanel._json_safe(item) for key, item in value.items()}
+            return {
+                str(key): IntelligencePanel._json_safe(item)
+                for key, item in value.items()
+            }
         if isinstance(value, (list, tuple)):
             return [IntelligencePanel._json_safe(item) for item in value]
         return value

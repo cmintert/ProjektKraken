@@ -9,19 +9,21 @@ from PySide6.QtCore import QEvent, QObject, Qt, QTimer
 from PySide6.QtGui import QKeyEvent, QShowEvent
 from PySide6.QtWidgets import (
     QDialog,
-    QDialogButtonBox,
     QHBoxLayout,
     QInputDialog,
     QLabel,
     QLineEdit,
     QListWidget,
     QListWidgetItem,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
 
 from src.gui.dialogs.entity_creation_dialog import EntityCreationDialog
+from src.gui.widgets.responsive_dialog_buttons import (
+    ResponsiveDialogButtonBox as QDialogButtonBox,
+)
+from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 
 @dataclass(frozen=True)
@@ -94,9 +96,7 @@ class MapObjectPickerDialog(QDialog):
 
         self.results_list = QListWidget(self)
         self.results_list.setObjectName("mapObjectResultsList")
-        self.results_list.setSelectionMode(
-            QListWidget.SelectionMode.SingleSelection
-        )
+        self.results_list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
         layout.addWidget(self.results_list)
 
         self.cancel_buttons = QDialogButtonBox(
@@ -119,9 +119,7 @@ class MapObjectPickerDialog(QDialog):
         super().showEvent(event)
         QTimer.singleShot(
             0,
-            lambda: self.search_edit.setFocus(
-                Qt.FocusReason.PopupFocusReason
-            ),
+            lambda: self.search_edit.setFocus(Qt.FocusReason.PopupFocusReason),
         )
 
     def _populate(self, entities: list[Any], events: list[Any]) -> None:
@@ -164,9 +162,7 @@ class MapObjectPickerDialog(QDialog):
         first_visible = -1
         for row in range(self.results_list.count()):
             item = self.results_list.item(row)
-            hidden = needle not in str(
-                item.data(Qt.ItemDataRole.UserRole + 1)
-            )
+            hidden = needle not in str(item.data(Qt.ItemDataRole.UserRole + 1))
             item.setHidden(hidden)
             if not hidden and first_visible < 0:
                 first_visible = row
@@ -178,7 +174,9 @@ class MapObjectPickerDialog(QDialog):
             key_event = event
             if isinstance(key_event, QKeyEvent):
                 if key_event.key() in (Qt.Key.Key_Down, Qt.Key.Key_Up):
-                    self._move_selection(1 if key_event.key() == Qt.Key.Key_Down else -1)
+                    self._move_selection(
+                        1 if key_event.key() == Qt.Key.Key_Down else -1
+                    )
                     return True
                 if key_event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
                     item = self.results_list.currentItem()

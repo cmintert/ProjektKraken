@@ -40,6 +40,12 @@ QWidget {{
     font-size: 10pt;
 }}
 
+/* Scrollable panels and their content must not inherit a native white window
+   background. Input fields and cards retain their more specific surface roles. */
+QScrollArea, QScrollArea > QWidget, QScrollArea > QWidget > QWidget {{
+    background-color: {app_bg};
+}}
+
 /* Links */
 a {{
     color: {accent_secondary};
@@ -57,8 +63,8 @@ QMenu::item {{
     padding: 5px 20px;
 }}
 QMenu::item:selected {{
-    background-color: {primary};
-    color: black;
+    background-color: {selection_bg};
+    color: {selection_text};
 }}
 
 /* Specific Panel Backgrounds (Fix for Light Mode fallback) */
@@ -168,8 +174,8 @@ QComboBox QAbstractItemView {{
     background-color: {surface};
     color: {text_main};
     border: 1px solid {border};
-    selection-background-color: {primary};
-    selection-color: black;
+    selection-background-color: {selection_bg};
+    selection-color: {selection_text};
     outline: none;
 }}
 
@@ -204,8 +210,9 @@ QPushButton:hover {{
     border-color: {text_dim};
 }}
 QPushButton:pressed {{ 
-    background-color: {primary}; 
-    color: #121212; /* High contrast on primary */
+    background-color: {action_secondary_pressed_bg};
+    color: {action_secondary_pressed_text};
+    border-color: {action_secondary_pressed_border};
 }}
 QPushButton:disabled, QToolButton:disabled {{
     background-color: {app_bg}; 
@@ -234,8 +241,8 @@ QListWidget::item {{
     border-bottom: 1px solid {app_bg};
 }}
 QListWidget::item:selected {{
-    background-color: {primary};
-    color: #121212;
+    background-color: {selection_bg};
+    color: {selection_text};
 }}
 QListWidget::item:hover:!selected {{
     background-color: {border};
@@ -350,16 +357,16 @@ QListView {{
     background-color: {surface};
     color: {text_main};
     border: 1px solid {border};
-    selection-background-color: {primary};
-    selection-color: black;
+    selection-background-color: {selection_bg};
+    selection-color: {selection_text};
     outline: none;
 }}
 QListView::item {{
     padding: 4px;
 }}
 QListView::item:selected {{
-    background-color: {primary};
-    color: black;
+    background-color: {selection_bg};
+    color: {selection_text};
 }}
 QListView::item:hover:!selected {{
     background-color: {border};
