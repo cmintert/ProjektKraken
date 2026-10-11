@@ -1,7 +1,7 @@
 """Render production-widget UI-GATE-01 matrices without changing application data.
 
-Run the fast matrix before push and the full matrix before release. Native
-Windows review is independently mandatory; this offscreen gate cannot supply it.
+Default to the lightweight quick profile while editing. Run fast before push
+and full explicitly before release. Native Windows review remains mandatory.
 """
 
 from __future__ import annotations
@@ -123,7 +123,7 @@ def _long_labels(root: Any) -> None:
 
 def _capture_surface(
     surface: Any, app: Any, directory: Path, configuration: dict, temporary: Path
-) -> list[dict]:
+) -> int:
     from PySide6.QtCore import QCoreApplication, QEvent
     from PySide6.QtWidgets import QAbstractButton, QDialog, QMenu
 
@@ -135,7 +135,8 @@ def _capture_surface(
     )
     from scripts.action_label_fixtures import make_surface, surface_states
 
-    records = []
+    record_count = 0
+    quick = configuration["profile"] == "quick"
     for width in surface.widths:
         root = make_surface(surface, temporary)
         _enlarge_fonts(root, configuration["text_scale"])
@@ -148,7 +149,7 @@ def _capture_surface(
         )
         root.resize(width, height)
         root.show()
-        for state in surface_states(root):
+        for state in surface_states(root, quick=quick):
             _settle(app)
             failures = audit_widget(root)
             menu_records = []
@@ -163,7 +164,7 @@ def _capture_surface(
                     menu_errors = menu_failures(menu)
                     failures.extend(menu_errors)
                     capture = None
-                    if menu_errors or state == "default":
+                    if menu_errors or (state == "default" and not quick):
                         capture = f"{surface.name}-{width}-{state}-{configuration['theme']}-text{configuration['text_scale']}-long{int(configuration['long_labels'])}-menu{number}.png"
                         if not menu.grab().save(str(directory / capture)):
                             raise OSError(f"Cannot save {capture}")
@@ -215,14 +216,14 @@ def _capture_surface(
                         "available": [width, height],
                     }
                 )
-            if record["failures"] or state == "default":
+            if record["failures"] or (state == "default" and not quick):
                 filename = f"{surface.name}-{width}-{state}-{configuration['theme']}-text{configuration['text_scale']}-long{int(configuration['long_labels'])}.png"
                 pixmap = root.grab()
                 if not pixmap.save(str(directory / filename)):
                     raise OSError(f"Cannot save {filename}")
                 record["screenshot"] = filename
                 record["physical_size"] = [pixmap.width(), pixmap.height()]
-            records.append(record)
+            record_count += 1
             with (directory / "records.jsonl").open("a", encoding="utf-8") as stream:
                 stream.write(json.dumps(record) + "\n")
         root.close()
@@ -232,7 +233,7 @@ def _capture_surface(
             host.deleteLater()
         QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
         _settle(app)
-    return records
+    return record_count
 
 
 def run_child(args: argparse.Namespace) -> int:
@@ -244,8 +245,9 @@ def run_child(args: argparse.Namespace) -> int:
     from PySide6.QtGui import QFont, QFontDatabase
     from PySide6.QtWidgets import QApplication
 
+    from scripts.action_label_audit_runtime import write_streamed_report
     from scripts.action_label_coverage import coverage_records
-    from scripts.action_label_fixtures import FAST_KEYS, SURFACES
+    from scripts.action_label_fixtures import FAST_KEYS, QUICK_KEYS, SURFACES
     from scripts.action_label_review import presentation_fingerprint
 
     output = args.report_dir
@@ -255,7 +257,7 @@ def run_child(args: argparse.Namespace) -> int:
     (output / "report.json").write_text(
         json.dumps({"status": "running", "native_review": "pending"}), encoding="utf-8"
     )
-    records: list[dict] = []
+    records_completed = 0
     with tempfile.TemporaryDirectory(prefix="kraken-action-labels-") as temporary:
         temporary_root = Path(temporary)
         native_settings = QtCore.QSettings
@@ -293,6 +295,8 @@ def run_child(args: argparse.Namespace) -> int:
             if args.matrix == "full"
             else ("dark_mode", "light_mode")
         )
+        if args.matrix == "quick":
+            theme_names = ("dark_mode",)
         if args.theme:
             theme_names = (args.theme,)
         text_scales = SCALES if args.matrix == "full" else (1.0, 2.0)
@@ -301,7 +305,8 @@ def run_child(args: argparse.Namespace) -> int:
         surfaces = [
             surface
             for surface in SURFACES
-            if args.matrix == "full" or surface.name in FAST_KEYS
+            if args.matrix == "full"
+            or surface.name in (QUICK_KEYS if args.matrix == "quick" else FAST_KEYS)
         ]
         if args.surface:
             surfaces = [surface for surface in SURFACES if surface.name in args.surface]
@@ -322,6 +327,7 @@ def run_child(args: argparse.Namespace) -> int:
                 )
                 for long_labels in (False, True) if args.matrix == "full" else (False,):
                     configuration = {
+                        "profile": args.matrix,
                         "theme": theme,
                         "qt_scale": args.scale,
                         "text_scale": text_scale,
@@ -334,31 +340,32 @@ def run_child(args: argparse.Namespace) -> int:
                                 {
                                     "surface": surface.key,
                                     "configuration": configuration,
-                                    "records_completed": len(records),
+                                    "records_completed": records_completed,
                                 }
                             ),
                             encoding="utf-8",
                         )
                         try:
-                            records.extend(
-                                _capture_surface(
-                                    surface, app, output, configuration, temporary_root
-                                )
+                            records_completed += _capture_surface(
+                                surface, app, output, configuration, temporary_root
                             )
                         except Exception as error:
                             logger.exception("Fixture failed: %s", surface.key)
-                            records.append(
-                                {
-                                    "surface": surface.key,
-                                    "configuration": configuration,
-                                    "failures": [
-                                        {
-                                            "kind": "fixture_failure",
-                                            "detail": str(error),
-                                        }
-                                    ],
-                                }
-                            )
+                            failed_record = {
+                                "surface": surface.key,
+                                "configuration": configuration,
+                                "failures": [
+                                    {
+                                        "kind": "fixture_failure",
+                                        "detail": str(error),
+                                    }
+                                ],
+                            }
+                            with (output / "records.jsonl").open(
+                                "a", encoding="utf-8"
+                            ) as stream:
+                                stream.write(json.dumps(failed_record) + "\n")
+                            records_completed += 1
     report = {
         "schema": 1,
         "matrix": args.matrix,
@@ -386,15 +393,13 @@ def run_child(args: argparse.Namespace) -> int:
         "native_review": "pending",
         "source_inventory": source_inventory(),
         "coverage": coverage_records(source_inventory(), SURFACES),
-        "records": records,
     }
     report["presentation_changed_during_audit"] = (
         presentation_fingerprint(ROOT) != starting_fingerprint
     )
-    (output / "report.json").write_text(
-        json.dumps(report, indent=2) + "\n", encoding="utf-8"
+    record_count, count = write_streamed_report(
+        output / "report.json", report, output / "records.jsonl"
     )
-    count = sum(len(record["failures"]) for record in records)
     if report["presentation_changed_during_audit"]:
         logger.error("Presentation sources changed during this audit")
         count += 1
@@ -402,7 +407,7 @@ def run_child(args: argparse.Namespace) -> int:
         count += sum(record["status"] != "registered" for record in report["coverage"])
     logger.info(
         "%s records; %s failures; report: %s",
-        len(records),
+        record_count,
         count,
         output / "report.json",
     )
@@ -412,7 +417,7 @@ def run_child(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     """Run each DPI factor in a fresh process and fail on any violation."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--matrix", choices=("fast", "full"), default="fast")
+    parser.add_argument("--matrix", choices=("quick", "fast", "full"), default="quick")
     parser.add_argument("--report-dir", type=Path, required=True)
     parser.add_argument("--surface", nargs="+")
     parser.add_argument("--theme")
@@ -429,6 +434,18 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     if args.child:
         return run_child(args)
+    from scripts.action_label_audit_runtime import audit_slot
+
+    try:
+        with audit_slot(ROOT / "tmp/action-label-audit.lock"):
+            return _run_parent(args)
+    except OSError as error:
+        logger.error("Cannot start audit; check for an active run: %s", error)
+        return 1
+
+
+def _run_parent(args: argparse.Namespace) -> int:
+    """Run serial children below normal Windows priority, never overlapping."""
     args.report_dir.mkdir(parents=True, exist_ok=True)
     scales = (
         (args.scale,) if args.scale else (SCALES if args.matrix == "full" else (1.0,))
@@ -482,7 +499,13 @@ def main(argv: list[str] | None = None) -> int:
         configuration_path = os.path.relpath(screen, ROOT).replace("\\", "/")
         env["QT_QPA_PLATFORM"] = f"offscreen:configfile={configuration_path}"
         start = time.monotonic()
-        status = subprocess.run(command, cwd=ROOT, env=env, check=False).returncode
+        status = subprocess.run(
+            command,
+            cwd=ROOT,
+            env=env,
+            check=False,
+            creationflags=getattr(subprocess, "BELOW_NORMAL_PRIORITY_CLASS", 0),
+        ).returncode
         statuses.append(status)
         children.append(
             {

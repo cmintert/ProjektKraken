@@ -7,14 +7,12 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QCheckBox,
     QPushButton,
-    QStyle,
-    QStyleOptionButton,
 )
 
+from scripts.action_label_audit import button_failures
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
-from src.gui.widgets.editor_presentation import EditorPresentation
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
 
 
@@ -71,29 +69,26 @@ def test_narrow_toolbar_overflows_low_priority_without_clipping(qtbot) -> None:
 def test_attribute_toolbar_keeps_add_action_visible_without_clipping(qtbot) -> None:
     template = Path("src/resources/main.qss").read_text(encoding="utf-8")
     editor = AttributeEditorWidget()
-    toolbar = EditorPresentation._overflow_row(
-        editor,
-        [editor.btn_add, editor.btn_remove],
-        pin_primary=True,
+    toolbar = editor.action_toolbar
+    editor.setStyleSheet(ThemeManager().format_stylesheet(template))
+    qtbot.addWidget(editor)
+    editor.resize(150, 300)
+    editor.show()
+    qtbot.waitUntil(
+        lambda: not button_failures(editor.btn_add, editor)
+        and (
+            not editor.btn_remove.isVisibleTo(editor)
+            or not button_failures(editor.btn_remove, editor)
+        )
     )
-    toolbar.setStyleSheet(ThemeManager().format_stylesheet(template))
-    qtbot.addWidget(toolbar)
-    toolbar.resize(150, toolbar.sizeHint().height())
-    toolbar.show()
-    qtbot.wait(1)
 
-    text_width = editor.btn_add.fontMetrics().horizontalAdvance(editor.btn_add.text())
-    option = QStyleOptionButton()
-    option.initFrom(editor.btn_add)
-    content_rect = editor.btn_add.style().subElementRect(
-        QStyle.SubElement.SE_PushButtonContents,
-        option,
-        editor.btn_add,
-    )
     assert not editor.btn_add.isHidden()
-    assert content_rect.width() >= text_width
-    assert content_rect.height() >= editor.btn_add.fontMetrics().height()
-    assert editor.btn_remove in toolbar.overflowed_buttons()
+    assert editor.btn_add.text() == "Add Attribute"
+    assert editor.btn_add.label_geometry().fits
+    if editor.btn_remove.isVisibleTo(editor):
+        assert not button_failures(editor.btn_remove, editor)
+    else:
+        assert editor.btn_remove in toolbar.overflowed_buttons()
 
 
 def test_wide_toolbar_keeps_actions_packed_left(qtbot) -> None:

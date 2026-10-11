@@ -58,6 +58,26 @@ def test_deliberately_small_geometry_proves_gate_fails(qtbot):
     assert not button_failures(button, root)
 
 
+def test_populated_explorer_keeps_filter_row_compact_and_list_expansive(qtbot):
+    from src.core.events import Event
+    from src.gui.widgets.unified_list import UnifiedListWidget
+
+    root = styled_host(qtbot)
+    layout = QVBoxLayout(root)
+    panel = UnifiedListWidget()
+    layout.addWidget(panel)
+    panel.set_data([Event(id="audit", name="Draft event", lore_date=0)], [])
+    root.resize(480, 1100)
+    root.show()
+    qtbot.wait(10)
+    filters = panel.filter_combo.parentWidget()
+    more = panel.filter_action_toolbar.overflow_button
+    assert more.label_geometry().required.height() == more.fontMetrics().height()
+    assert filters.height() == filters.layout().heightForWidth(filters.width())
+    assert panel.list_widget.height() > panel.height() * 0.7
+    assert not audit_widget(root)
+
+
 def test_gate_catches_ancestor_clipping_and_sibling_overlap(qtbot):
     root = styled_host(qtbot)
     first = QPushButton("First action", root)

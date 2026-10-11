@@ -1,0 +1,281 @@
+[
+  {
+    "surface": "EventEditorWidget",
+    "size": [
+      800,
+      1100
+    ],
+    "widgets": [
+      {
+        "type": "QScrollArea",
+        "rect": [
+          12,
+          12,
+          776,
+          280
+        ],
+        "size_hint": [
+          124,
+          161
+        ],
+        "minimum_hint": [
+          50,
+          50
+        ],
+        "minimum": [
+          0,
+          0
+        ]
+      },
+      {
+        "type": "QWidget",
+        "rect": [
+          0,
+          0,
+          776,
+          280
+        ],
+        "size_hint": [
+          257,
+          65
+        ],
+        "minimum_hint": [
+          181,
+          65
+        ],
+        "minimum": [
+          0,
+          0
+        ]
+      },
+      {
+        "type": "SplitterTabInspector",
+        "rect": [
+          12,
+          300,
+          776,
+          500
+        ],
+        "size_hint": [
+          400,
+          500
+        ],
+        "minimum_hint": [
+          200,
+          150
+        ],
+        "minimum": [
+          0,
+          0
+        ]
+      },
+      {
+        "type": "QWidget",
+        "rect": [
+          12,
+          808,
+          776,
+          280
+        ],
+        "size_hint": [
+          187,
+          34
+        ],
+        "minimum_hint": [
+          78,
+          34
+        ],
+        "minimum": [
+          0,
+          34
+        ]
+      }
+    ]
+  },
+  {
+    "surface": "EntityEditorWidget",
+    "size": [
+      800,
+      1100
+    ],
+    "widgets": [
+      {
+        "type": "QScrollArea",
+        "rect": [
+          12,
+          12,
+          776,
+          280
+        ],
+        "size_hint": [
+          124,
+          161
+        ],
+        "minimum_hint": [
+          50,
+          50
+        ],
+        "minimum": [
+          0,
+          0
+        ]
+      },
+      {
+        "type": "QWidget",
+        "rect": [
+          0,
+          0,
+          776,
+          280
+        ],
+        "size_hint": [
+          257,
+          113
+        ],
+        "minimum_hint": [
+          181,
+          98
+        ],
+        "minimum": [
+          0,
+          0
+        ]
+      },
+      {
+        "type": "SplitterTabInspector",
+        "rect": [
+          12,
+          300,
+          776,
+          500
+        ],
+        "size_hint": [
+          400,
+          500
+        ],
+        "minimum_hint": [
+          200,
+          150
+        ],
+        "minimum": [
+          0,
+          0
+        ]
+      },
+      {
+        "type": "QWidget",
+        "rect": [
+          12,
+          808,
+          776,
+          280
+        ],
+        "size_hint": [
+          201,
+          34
+        ],
+        "minimum_hint": [
+          78,
+          34
+        ],
+        "minimum": [
+          0,
+          34
+        ]
+      }
+    ]
+  },
+  {
+    "surface": "UnifiedListWidget",
+    "size": [
+      480,
+      1100
+    ],
+    "widgets": [
+      {
+        "type": "QWidget",
+        "rect": [
+          16,
+          149,
+          448,
+          464
+        ],
+        "size_hint": [
+          334,
+          151
+        ],
+        "minimum_hint": [
+          117,
+          151
+        ],
+        "minimum": [
+          0,
+          151
+        ]
+      },
+      {
+        "type": "OverflowToolBar",
+        "rect": [
+          226,
+          0,
+          42,
+          151
+        ],
+        "size_hint": [
+          108,
+          151
+        ],
+        "minimum_hint": [
+          42,
+          151
+        ],
+        "minimum": [
+          0,
+          151
+        ]
+      },
+      {
+        "type": "WrappingToolButton",
+        "rect": [
+          0,
+          0,
+          42,
+          151
+        ],
+        "size_hint": [
+          108,
+          151
+        ],
+        "minimum_hint": [
+          42,
+          32
+        ],
+        "minimum": [
+          42,
+          151
+        ]
+      },
+      {
+        "type": "DraggableListView",
+        "rect": [
+          16,
+          621,
+          448,
+          463
+        ],
+        "size_hint": [
+          256,
+          192
+        ],
+        "minimum_hint": [
+          52,
+          52
+        ],
+        "minimum": [
+          0,
+          0
+        ]
+      }
+    ]
+  }
+]

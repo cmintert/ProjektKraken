@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-11
-**Commit:** f5bed48214050077889964bc5f1aeb32197c3f52
+**Commit:** bbc104e33fb8a25cca419577d4b433c8c16e4a3c
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-10-11)* **Compact layouts and local checks (KRT-82)**: Sized inspector
+  headers and action rows to their contents, returning spare height to authoring
+  bodies and Explorer lists. Kept overflow labels readable within available row
+  width. Added a lightweight default audit, streamed reports, exclusive render
+  execution and lower Windows priority. Retained exhaustive release coverage.
 
 - *(2026-10-11)* **Action label integrity (KRT-82)**: Added shared font/style
   sizing, responsive action groups and full wrapping form labels. Labeled

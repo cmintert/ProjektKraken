@@ -18,9 +18,24 @@ Physical monitor resolution must accommodate the selected logical client area;
 ## Automated verification
 
 ```powershell
+.venv\Scripts\python.exe -m scripts.check_action_labels --matrix quick --report-dir tmp/action-labels-quick
 .venv\Scripts\python.exe -m scripts.check_action_labels --matrix fast --report-dir tmp/action-labels-fast
 .venv\Scripts\python.exe -m scripts.check_action_labels --matrix full --report-dir tmp/action-labels-full
 ```
+
+Routine editing defaults to `quick`: four shared/editor/Explorer surfaces,
+normal and enlarged text, dark theme, default/disabled states, one simulated
+scale, and screenshots only for failures. Use `--surface` to narrow a changed
+surface check further. This profile is a local regression check, not release
+coverage. The `fast` and explicit `full` release profiles retain their existing
+coverage. `ci_fast` runs once at the end of a coherent batch rather than after
+each edit.
+
+Only one render audit may run in this checkout at a time. Child processes use
+below-normal priority on Windows. Snapshot records and final reports stream to
+disk, avoiding a full matrix of live Python dictionaries and a giant JSON
+string in memory. Run the exhaustive matrix separately from other test suites,
+preferably while the workstation is idle; do not launch one process per scale.
 
 Each DPI factor runs in a new process. Fixtures use production widgets, application
 QSS, isolated settings and synthetic snapshots. They do not execute commands,

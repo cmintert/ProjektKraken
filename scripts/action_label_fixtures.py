@@ -139,6 +139,12 @@ FAST_KEYS = {
     "MapEditTransitionDialog",
     "EntityCreationDialog",
 }
+QUICK_KEYS = {
+    "OverflowToolBar",
+    "EntityEditorWidget",
+    "EventEditorWidget",
+    "UnifiedListWidget",
+}
 
 
 def _snapshot_arguments(name: str) -> dict:
@@ -335,16 +341,19 @@ def _workspace_surface() -> QWidget:
     return root
 
 
-def surface_states(widget: QWidget) -> Iterator[str]:
+def surface_states(widget: QWidget, *, quick: bool = False) -> Iterator[str]:
     """Visit default and all production tab destinations without authoring clicks."""
     yield "default"
-    yield from _navigation_states(widget)
-    for number, button in enumerate(widget.findChildren(QAbstractButton)):
-        if type(button).__name__ == "DisclosureButton" and button.isVisibleTo(widget):
-            initial = button.isChecked()
-            button.setChecked(True)
-            yield f"disclosure-{number}"
-            button.setChecked(initial)
+    if not quick:
+        yield from _navigation_states(widget)
+        for number, button in enumerate(widget.findChildren(QAbstractButton)):
+            if type(button).__name__ == "DisclosureButton" and button.isVisibleTo(
+                widget
+            ):
+                initial = button.isChecked()
+                button.setChecked(True)
+                yield f"disclosure-{number}"
+                button.setChecked(initial)
     enabled = widget.isEnabled()
     widget.setEnabled(False)
     yield "disabled"

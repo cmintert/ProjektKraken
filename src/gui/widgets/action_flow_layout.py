@@ -3,7 +3,14 @@
 from __future__ import annotations
 
 from PySide6.QtCore import QRect, QSize
-from PySide6.QtWidgets import QLayout, QLayoutItem, QSizePolicy, QSpacerItem, QWidget
+from PySide6.QtWidgets import (
+    QAbstractButton,
+    QLayout,
+    QLayoutItem,
+    QSizePolicy,
+    QSpacerItem,
+    QWidget,
+)
 
 
 class ActionFlowLayout(QLayout):
@@ -14,6 +21,11 @@ class ActionFlowLayout(QLayout):
         super().__init__(parent)
         self._items: list[QLayoutItem] = []
         self.setSpacing(4)
+        if parent is not None:
+            policy = parent.sizePolicy()
+            policy.setVerticalPolicy(QSizePolicy.Policy.Fixed)
+            policy.setHeightForWidth(True)
+            parent.setSizePolicy(policy)
 
     def addItem(self, item: QLayoutItem) -> None:  # noqa: N802
         """Retain an item without changing its widget or signal connections."""
@@ -108,7 +120,23 @@ class ActionFlowLayout(QLayout):
             widget = item.widget()
             hint = item.sizeHint().expandedTo(item.minimumSize())
             if widget is not None and widget.objectName() == "OverflowToolBar":
-                hint = widget.minimumSizeHint()
+                # Reserve a readable menu route, then let the toolbar overflow
+                # secondary commands within the remaining row allocation.
+                from src.gui.utils.action_label_metrics import intrinsic_action_size
+
+                menu = widget.findChild(QAbstractButton, "OverflowToolBarMenuButton")
+                minimum = (
+                    intrinsic_action_size(menu).width()
+                    if menu is not None
+                    else widget.minimumSizeHint().width()
+                )
+                remaining = area.right() + 1 - x
+                if x > area.x() and remaining < min(area.width(), minimum):
+                    x = area.x()
+                    y += row_height + self.spacing()
+                    row_height = 0
+                    remaining = area.width()
+                hint.setWidth(min(hint.width(), remaining))
             if widget is not None and widget.hasHeightForWidth():
                 hint.setWidth(
                     max(item.minimumSize().width(), min(hint.width(), area.width()))
@@ -118,7 +146,11 @@ class ActionFlowLayout(QLayout):
                 y += row_height + self.spacing()
                 row_height = 0
             if widget is not None and widget.hasHeightForWidth():
-                hint.setHeight(widget.heightForWidth(hint.width()))
+                hint.setHeight(
+                    max(
+                        item.minimumSize().height(), widget.heightForWidth(hint.width())
+                    )
+                )
             elif item.hasHeightForWidth():
                 hint.setHeight(item.heightForWidth(hint.width()))
             if apply:

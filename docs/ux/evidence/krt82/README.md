@@ -81,9 +81,10 @@ captures and records at all four OS scales. Follow the
 Automated captures cannot populate native approval. Commit, push and release are
 separately authorized delivery steps.
 
-## Automated results — 2026-10-11
+## Baseline automated results — 2026-10-11
 
-The complete simulated matrix passes **95,808 cases with zero failures**:
+At baseline commit `bbc104e3`, the complete simulated matrix passed
+**95,808 cases with zero failures**:
 23,952 at each of the four Qt scale factors, covering 82 registered production
 surfaces, six themes, four text factors and both wording sets. Every source
 inventory entry has a registered fixture. Registration does not replace the
@@ -134,3 +135,33 @@ identifies its pre-format input fingerprint; the proof also records the formatte
 fingerprint. Formatting did not alter the verified presentation behavior.
 Temporary diagnostic runs remain under `tmp/krt82-*`; fontless early diagnostics
 are not acceptance evidence.
+
+## Compact layout and workstation resource follow-up
+
+The user-reported native screenshot exposed excessive vertical allocation.
+At 800 × 1100 logical pixels, Event header/footer allocations were 280/280 px
+for 65/34 px of content. They now use 65/34 px; inspector body height grows
+from 500 to 961 px. At 480 × 1100, the populated Explorer filter group drops
+from 464 to 34 px and its list grows from 463 to 895 px. Overflow uses remaining
+row width rather than compressing **More actions** into a column of letters.
+
+The default audit is now `quick`: 44 representative records, one renderer,
+normal/enlarged text and no passing screenshots. Its initial measured run
+passed in 16.4 seconds. Per-surface quick checks are smaller still. Reports stream
+to disk, overlapping audits are rejected, and Windows children run at
+below-normal priority. `fast` and explicit `full` release coverage are retained.
+
+The retained exhaustive reports above describe the baseline commit; they are
+not a new complete matrix for this follow-up. Broad `ci_fast` and exhaustive
+rendering are intentionally not repeated while the user is working. Focused
+allocation, label and resource-guard regressions verify this batch; native
+review and release verification remain pending.
+
+[Follow-up verification](compact-followup-verification.json) records the bounded
+checks. Offscreen allocation captures:
+
+| Surface | Before | After |
+| --- | --- | --- |
+| Event inspector | [Wasted header/footer height](compact-followup/before-EventEditorWidget.png) | [Content-sized rows](compact-followup/after-EventEditorWidget.png) |
+| Entity inspector | [Wasted header/footer height](compact-followup/before-EntityEditorWidget.png) | [Content-sized rows](compact-followup/after-EntityEditorWidget.png) |
+| Populated Explorer | [Tall filter group](compact-followup/before-UnifiedListWidget.png) | [Compact filters and larger list](compact-followup/after-UnifiedListWidget.png) |

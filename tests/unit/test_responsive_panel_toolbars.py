@@ -71,7 +71,14 @@ def test_project_filters_keep_selectors_and_overflow_actions(qtbot) -> None:
 
     assert not panel.filter_combo.isHidden()
     assert not panel.sort_combo.isHidden()
-    assert panel.filter_action_toolbar.overflowed_buttons()
+    toolbar = panel.filter_action_toolbar
+    for button in (
+        panel.btn_filter,
+        panel.btn_sort_dir,
+        panel.btn_hashed_colors,
+        panel.btn_clear_filters,
+    ):
+        assert button.isVisibleTo(panel) or button in toolbar.overflowed_buttons()
     assert (
         panel.filter_action_toolbar.geometry().right() <= panel.contentsRect().right()
     )

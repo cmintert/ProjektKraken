@@ -1,12 +1,13 @@
 """Canonical routes and live-state preservation for the four-page inspector."""
 
 from dataclasses import replace
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 from PySide6.QtCore import QCoreApplication, QEvent, Qt, QUrl
-from PySide6.QtGui import QTextCursor
-from PySide6.QtWidgets import QListWidgetItem, QWidget
+from PySide6.QtGui import QFont, QFontDatabase, QTextCursor
+from PySide6.QtWidgets import QAbstractButton, QListWidgetItem, QWidget
 
 from src.core.authoring_context import (
     ContextItem,
@@ -61,6 +62,71 @@ def editor(request, qtbot):
     widget.setWindowFlag(Qt.WindowType.Window, True)
     widget.show()
     return widget
+
+
+def test_large_inspector_allocates_spare_height_to_its_body(editor, qtbot):
+    editor.setStyleSheet(
+        ThemeManager().format_stylesheet(
+            Path("src/resources/main.qss").read_text("utf-8")
+        )
+    )
+    editor.name_edit.setText("Unfinished name draft")
+    editor.name_edit.setFocus()
+    editor.name_edit.setSelection(3, 5)
+    selection = editor.name_edit.selectedText()
+    for width, height in ((800, 1100), (360, 720), (800, 1100)):
+        editor.resize(width, height)
+        header = editor._presentation.header_scroll
+
+        def header_fits_content():
+            natural = editor.header_widget.layout().totalHeightForWidth(
+                header.viewport().width()
+            )
+            if natural < 0:
+                natural = editor.header_widget.sizeHint().height()
+            return header.height() == natural
+
+        qtbot.waitUntil(header_fits_content)
+        footer = editor.btn_save.parentWidget()
+        assert footer.height() == footer.layout().heightForWidth(footer.width())
+        if height == 1100:
+            assert editor.inspector.height() > 800
+        assert editor.name_edit.text() == "Unfinished name draft"
+        assert editor.name_edit.selectedText() == selection
+        assert editor.name_edit.hasFocus()
+
+
+def test_wrapped_footer_reserves_readable_body_space(editor, qtbot):
+    from scripts.check_action_labels import _enlarge_fonts, _long_labels
+
+    font_path = Path("C:/Windows/Fonts/segoeui.ttf")
+    if font_path.exists():
+        QFontDatabase.addApplicationFont(str(font_path))
+    editor.setFont(QFont("Segoe UI", 10))
+    editor.setStyleSheet(
+        ThemeManager().format_stylesheet(
+            Path("src/resources/main.qss").read_text("utf-8")
+        )
+    )
+    _enlarge_fonts(editor, 2)
+    _long_labels(editor)
+    editor.resize(240, 720)
+
+    def readable_body_height():
+        required = max(
+            (
+                button.heightForWidth(button.width())
+                for button in editor.scroll_area.findChildren(QAbstractButton)
+                if button.isVisibleTo(editor)
+                and callable(getattr(button, "label_geometry", None))
+            ),
+            default=0,
+        )
+        return editor.scroll_area.viewport().height() >= required
+
+    qtbot.waitUntil(readable_body_height)
+    footer = editor.btn_save.parentWidget()
+    assert footer.height() == footer.layout().heightForWidth(footer.width())
 
 
 def test_canonical_destinations_and_details_are_live_views(editor):

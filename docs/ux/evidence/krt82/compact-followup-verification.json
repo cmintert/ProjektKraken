@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "date": "2026-10-11",
+  "baseline": "bbc104e33fb8a25cca419577d4b433c8c16e4a3c",
+  "branch": "button_gate",
+  "focused_tests": {"passed": 12, "elapsed_seconds": 3.41},
+  "initial_quick_profile": {
+    "records": 44,
+    "failures": 0,
+    "elapsed_seconds": 16.43,
+    "source_run": "tmp/krt82-quick-resource-check",
+    "note": "Initial quick-profile proof before the final wrapped-footer height correction. Individual narrow Entity and Workspace checks subsequently passed."
+  },
+  "static_checks": {
+    "ruff": "passed",
+    "mypy": "passed; 462 source files",
+    "visual_policy": "passed",
+    "complexity_policy": "passed"
+  },
+  "routine_resource_policy": {
+    "default_profile": "quick",
+    "parallel_audits": "rejected by OS file lock",
+    "windows_child_priority": "below normal",
+    "report_storage": "streamed one record at a time",
+    "passing_quick_screenshots": false
+  },
+  "broad_ci_fast": "not rerun for final follow-up at the user's request to reduce workstation load",
+  "complete_release_matrix": "baseline result retained; not rerun for this follow-up",
+  "native_review": "pending",
+  "release_signoff": "blocked"
+}

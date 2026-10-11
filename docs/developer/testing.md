@@ -3,8 +3,11 @@
 ## Test levels
 
 UI-GATE-01 has an [action label release gate](action-label-release-gate.md).
-Run the bounded production-widget matrix before push and the complete matrix
-before release; native Windows screenshot review remains separately mandatory.
+Use the lightweight `quick` profile during editing, optionally selecting only
+changed surfaces. Run the bounded `fast` production-widget matrix once before
+push and the complete `full` matrix explicitly before release; native Windows
+screenshot review remains separately mandatory. Do not run render matrices in
+parallel with each other or with `ci_fast` on the development workstation.
 
 - Unit tests cover domain logic, commands, services, and focused widgets.
 - Integration tests cover coordinators, worker delivery, and persistence.

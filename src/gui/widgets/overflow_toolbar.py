@@ -170,9 +170,11 @@ class OverflowToolBar(QWidget):
         return QSize(max(widths, default=0), height)
 
     def sizeHint(self) -> QSize:  # noqa: N802
-        """Expose the current reflow height to the containing layout."""
-        hint = super().sizeHint()
-        return QSize(hint.width(), self.heightForWidth(self.width()))
+        """Prefer the complete action row rather than a previous narrow state."""
+        active = [item for item in self._items if item.available]
+        width = sum(self._required_button_width(item.button) for item in active)
+        width += self._layout.spacing() * max(0, len(active) - 1)
+        return QSize(width, self.heightForWidth(self.width()))
 
     def hasHeightForWidth(self) -> bool:  # noqa: N802
         """Advertise pinned-action reflow to the parent layout."""

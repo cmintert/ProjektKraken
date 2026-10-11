@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 import shiboken6
-from PySide6.QtCore import QEvent, QObject, QPointF, QSize, Qt
+from PySide6.QtCore import QEvent, QObject, QPointF, QSize, Qt, QTimer
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QAbstractButton,
@@ -268,7 +268,15 @@ class EditorPresentation(QObject):
         self.header_scroll.setAccessibleName("Object details")
         self.header_scroll.setWidget(self.editor.header_widget)
         self.header_scroll.viewport().setAutoFillBackground(False)
+        self.header_scroll.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         layout.insertWidget(index, self.header_scroll)
+        layout.setStretch(layout.indexOf(self.editor.inspector), 1)
+        self._header_fit_timer = QTimer(self)
+        self._header_fit_timer.setSingleShot(True)
+        self._header_fit_timer.timeout.connect(self._fit_header)
+        self.editor.header_widget.installEventFilter(self)
 
     def _fit_header(self) -> None:
         """Give the longest visible action enough height before capping fields."""
@@ -287,8 +295,18 @@ class EditorPresentation(QObject):
         )
         margins = layout.contentsMargins()
         details = editor.details_container.layout().contentsMargins()
-        footer = editor.btn_save.parentWidget().sizeHint().height()
-        corner = editor.inspector.main_tabs.overflow_button.heightForWidth(width)
+        footer_widget = editor.btn_save.parentWidget()
+        footer = max(
+            footer_widget.minimumHeight(),
+            footer_widget.heightForWidth(footer_widget.width()),
+            footer_widget.sizeHint().height(),
+        )
+        corner = editor.inspector.main_tabs.tabBar().sizeHint().height()
+        if editor.scroll_area.isVisibleTo(editor):
+            corner = max(
+                corner,
+                editor.inspector.height() - editor.scroll_area.viewport().height(),
+            )
         chrome = (
             margins.top()
             + margins.bottom()
@@ -297,9 +315,16 @@ class EditorPresentation(QObject):
             + layout.spacing() * max(0, layout.count() - 1)
         )
         budget = editor._content_widget.height() - footer - corner - required - chrome
-        self.header_scroll.setMaximumHeight(
-            max(editor.btn_inject.sizeHint().height(), budget)
-        )
+        header = editor.header_widget.layout()
+        natural = header.totalHeightForWidth(self.header_scroll.viewport().width())
+        if natural < 0:
+            natural = header.sizeHint().height()
+        height = min(natural, max(editor.btn_inject.sizeHint().height(), budget))
+        if (
+            self.header_scroll.minimumHeight() != height
+            or self.header_scroll.maximumHeight() != height
+        ):
+            self.header_scroll.setFixedHeight(height)
 
     def _install_writing_support(self) -> None:
         """Move live writing tools beside the description and retire old bars."""
@@ -636,6 +661,14 @@ class EditorPresentation(QObject):
                 self._source_label.setVisible(event.type() == QEvent.Type.Show)
         if event.type() in (QEvent.Type.Resize, QEvent.Type.Show):
             self.reflow()
+        if event.type() in (
+            QEvent.Type.Resize,
+            QEvent.Type.Show,
+            QEvent.Type.LayoutRequest,
+            QEvent.Type.FontChange,
+            QEvent.Type.StyleChange,
+        ):
+            self._header_fit_timer.start(0)
         return super().eventFilter(watched, event)
 
     def reflow(self) -> None:
