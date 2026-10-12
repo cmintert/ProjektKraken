@@ -774,9 +774,7 @@ class MapLayerModel(QAbstractItemModel):
         if any("temporal" in node.attributes for node in self._iter_nodes(self._root)):
             self._emit_subtree_opacity(self._root)
 
-    def set_date_formatter(
-        self, formatter: Optional[Callable[[float], str]]
-    ) -> None:
+    def set_date_formatter(self, formatter: Optional[Callable[[float], str]]) -> None:
         """Set the formatter used by temporal layer tooltips."""
         self._date_formatter = formatter
         self._emit_all_data_changed()
@@ -892,9 +890,13 @@ class MapLayerModel(QAbstractItemModel):
             boundary = self._format_date(state.boundary)
             source = state.source_node_name or node.name
             if state.status == TemporalValidityStatus.BEFORE_START:
-                lines.append(f"Not visible at current playhead — {source} starts {boundary}.")
+                lines.append(
+                    f"Not visible at current playhead — {source} starts {boundary}."
+                )
             else:
-                lines.append(f"Not visible at current playhead — {source} ended {boundary}.")
+                lines.append(
+                    f"Not visible at current playhead — {source} ended {boundary}."
+                )
         if not self._effective_visible(node):
             lines.append("Manually hidden by this layer or an ancestor.")
         if self._current_time is not None and lines:
@@ -924,9 +926,22 @@ class MapLayerModel(QAbstractItemModel):
 
     @Slot()
     def _on_theme_changed(self) -> None:
-        """Clear the icon cache when the theme changes."""
+        """Recolor decorations without changing layout or persistent indexes."""
         self._icon_cache.clear()
-        self.layoutChanged.emit()
+        self._refresh_decorations(QModelIndex())
+
+    def _refresh_decorations(self, parent: QModelIndex) -> None:
+        """Notify each sibling range of its updated theme-owned icons."""
+        count = self.rowCount(parent)
+        if count == 0:
+            return
+        self.dataChanged.emit(
+            self.index(0, 0, parent),
+            self.index(count - 1, 0, parent),
+            [Qt.ItemDataRole.DecorationRole],
+        )
+        for row in range(count):
+            self._refresh_decorations(self.index(row, 0, parent))
 
     def _get_icon(self, layer_type: str) -> Any:
         """Return a themed QIcon for the given layer type, using caching."""

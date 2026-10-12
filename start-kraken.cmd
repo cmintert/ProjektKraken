@@ -31,7 +31,9 @@ if "%KRAKEN_EXIT_CODE%"=="0" goto :end
 
 :failed
 echo.
-echo Startup failed. See logs\startup_error.log for details.
+echo ProjektKraken exited with an error ^(code %KRAKEN_EXIT_CODE%^).
+echo Check the newest logs\faults.*.log and logs\kraken.*.log for details.
+echo For startup failures, also check logs\startup_error.log and its timestamp.
 echo.
 pause
 

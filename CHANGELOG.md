@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-12
-**Commit:** 9496ffbe5ff0a97f1f360916d2e966a5d9c7d513
+**Commit:** 92a553018299337044b5fb51409664f1fd239ced
 ---
 
 # Changelog
@@ -32,6 +32,13 @@ All notable changes to this project will be documented in this file.
   release-preflight requirements.
 
 ### Fixed
+
+- *(2026-10-12)* **Map layer theme lifecycle (KRT-84)**: Replaced an unpaired
+  layout-change notification with decoration updates, preventing corrupted layer
+  proxy indexes after theme changes and timeline scrubbing. Added selection
+  preservation regressions across six palettes with temporal filtering on/off.
+  Corrected the source launcher's error message to point runtime crashes to the
+  latest session/fault logs and identify potentially stale startup diagnostics.
 
 - *(2026-10-12)* **Consistent supporting actions (KRT-82)**: Unified ordinary
   buttons, toolbar commands and labeled overflow under shared secondary theme
