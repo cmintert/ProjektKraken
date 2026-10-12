@@ -2,8 +2,11 @@
 
 KRT-82 implements [Contract 11](../../authoring-contract.md), alongside Contracts
 2/5/6/7/8 and the [visual vocabulary](../../visual-interaction-vocabulary.md).
-The implementation is on branch `button_gate`. The issue remains open and native
-Windows screenshot approval is **pending**; beta/release sign-off remains blocked.
+The implementation is on branch `button_gate`, committed through `8046be0c`.
+On 2026-10-12 the product owner accepted the four supplied native Windows
+screenshots and authorized closing KRT-82 with a reduced native review scope.
+See the [acceptance decision](native-acceptance.md). This closes the issue by
+explicit owner acceptance; it does not claim exhaustive native matrix coverage.
 
 ## Evidence boundary
 
@@ -74,7 +77,8 @@ surface/state, full wording and required/available geometry. Native menus are
 opened before measurement and capture. Streaming records and current-fixture
 progress survive an interrupted renderer; process failure cannot count as a pass.
 
-[Native review manifest](native-review.json) is intentionally pending. Release
+[Native review manifest](native-review.json) retains its incomplete matrix status.
+The owner's screenshot acceptance is recorded separately above. Existing release
 preflight requires an approved, current manifest with hashed, decodable native
 captures and records at all four OS scales. Follow the
 [release reviewer checklist](../../../developer/action-label-release-gate.md).

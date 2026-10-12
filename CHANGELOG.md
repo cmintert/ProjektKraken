@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-12
-**Commit:** 75ace9b8d9a034c43d6bf5b3803a554823afe049
+**Commit:** 8046be0c7e5394c9f80eedb0b2fd508a194468e0
 ---
 
 # Changelog
@@ -10,6 +10,13 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Changed
+
+- *(2026-10-12)* **Native review acceptance (KRT-82)**: Recorded the owner's
+  acceptance of the four Windows scale screenshots and issue closure with a
+  reduced native review scope. Retained the evidence limits and separate strict
+  release-preflight requirements.
 
 ### Fixed
 
