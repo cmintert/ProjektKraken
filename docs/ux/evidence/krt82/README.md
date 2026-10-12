@@ -165,3 +165,37 @@ checks. Offscreen allocation captures:
 | Event inspector | [Wasted header/footer height](compact-followup/before-EventEditorWidget.png) | [Content-sized rows](compact-followup/after-EventEditorWidget.png) |
 | Entity inspector | [Wasted header/footer height](compact-followup/before-EntityEditorWidget.png) | [Content-sized rows](compact-followup/after-EntityEditorWidget.png) |
 | Populated Explorer | [Tall filter group](compact-followup/before-UnifiedListWidget.png) | [Compact filters and larger list](compact-followup/after-UnifiedListWidget.png) |
+
+## Shared secondary styling — 2026-10-12
+
+Ordinary buttons, native toolbar commands, local helper controls and labeled
+overflow now use the same secondary theme tokens. Enabled foregrounds use each
+theme's `text_main`; primary, destructive and quiet/disclosure roles remain
+distinct. Formatting-toolbar overrides and action-border overrides were removed.
+Four obsolete toolbar color fallbacks were retired from the exact visual-policy
+baseline. The visual vocabulary clarification is synchronized with Linear.
+
+The activity rail gives all navigation buttons one content-derived size and
+recalculates after text/font/style changes. The Event world-view button now
+refreshes its local style when the theme changes, alongside Chronology and Date
+evidence. Original actions and draft contents are preserved.
+
+Nine focused cases passed in 1.97 seconds, covering six themes, normal/hover/
+pressed/checked/disabled/focus rendering, equal rail sizing after text/font changes,
+and the central action's live theme refresh. Ruff, repository-wide mypy (463
+files), visual/complexity/test policy and the strict incremental docs build passed.
+The exhaustive matrix and broad regression suite were not run for this batch.
+
+Small rendered samples (ordinary/helper/toolbar/overflow, primary, destructive,
+quiet): [dark](secondary-themes/dark_mode.png),
+[light](secondary-themes/light_mode.png),
+[fantasy](secondary-themes/fantasy_mode.png),
+[imperial](secondary-themes/imperial_mode.png),
+[cyberpunk](secondary-themes/cyberpunk_mode.png),
+[muted light](secondary-themes/muted_light_mode.png).
+These offscreen samples do not constitute native Windows approval.
+
+Entity/Event Discard and Save footers now align to the right with one shared
+content-derived height, including when longer labels require stacking. Four
+focused wide/narrow/enlarged-label cases passed, retaining drafts, selection and
+focus. Other flow groups retain their existing alignment and sizing.

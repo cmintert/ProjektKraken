@@ -505,15 +505,15 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         from src.gui.widgets.action_flow_layout import ActionFlowLayout
 
         actions = QWidget()
-        buttons = ActionFlowLayout(actions)
+        buttons = ActionFlowLayout(actions, uniform_height=True)
         buttons.setContentsMargins(0, 0, 0, 0)
+        buttons.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.btn_save = PrimaryButton("Save Changes")
         self.btn_save.setEnabled(False)
         self.btn_save.clicked.connect(self._on_save)
         self.btn_discard = StandardButton("Discard")
         self.btn_discard.setEnabled(False)
         self.btn_discard.clicked.connect(self._on_discard)
-        buttons.addStretch()
         buttons.addWidget(self.btn_discard)
         buttons.addWidget(self.btn_save)
         main_layout.addWidget(actions)
@@ -1497,6 +1497,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         action_style = StyleHelper.get_tool_button_style()
         self.chronology_button.setStyleSheet(action_style)
         self.temporal_evidence_button.setStyleSheet(action_style)
+        self.btn_show_world_at_event.setStyleSheet(action_style)
 
         # Update Checkboxes
         # StandardCheckbox handles its own styling on theme change

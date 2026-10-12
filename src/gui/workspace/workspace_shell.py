@@ -11,11 +11,11 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QSplitter,
     QSplitterHandle,
-    QToolBar,
     QWidget,
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.workspace.activity_bar import ActivityBar
 from src.gui.workspace.layout_state import normalize_layout
 from src.gui.workspace.pane_container import PaneContainer
 from src.gui.workspace.panel_registry import (
@@ -103,7 +103,7 @@ class WorkspaceShell(QWidget):
         root_layout.setContentsMargins(4, 4, 4, 4)
         root_layout.setSpacing(0)
 
-        self.activity_bar = QToolBar("Activity Bar", self)
+        self.activity_bar = ActivityBar("Activity Bar", self)
         self.activity_bar.setObjectName("ActivityBar")
         self.activity_bar.setMovable(False)
         self.activity_bar.setFloatable(False)
@@ -115,9 +115,7 @@ class WorkspaceShell(QWidget):
         )
         root_layout.addWidget(self.activity_bar)
 
-        self.horizontal_splitter = _WorkspaceSplitter(
-            Qt.Orientation.Horizontal, self
-        )
+        self.horizontal_splitter = _WorkspaceSplitter(Qt.Orientation.Horizontal, self)
         self.horizontal_splitter.setObjectName("WorkspaceHorizontalSplitter")
         self.horizontal_splitter.setHandleWidth(4)
         self.horizontal_splitter.addWidget(self.panes["left"])
@@ -334,19 +332,13 @@ class WorkspaceShell(QWidget):
 
             self.horizontal_splitter.setSizes(
                 [
-                    int(zones["left"]["size"])
-                    if zones["left"]["visible"]
-                    else 0,
+                    int(zones["left"]["size"]) if zones["left"]["visible"] else 0,
                     int(zones["center"]["size"]),
-                    int(zones["right"]["size"])
-                    if zones["right"]["visible"]
-                    else 0,
+                    int(zones["right"]["size"]) if zones["right"]["visible"] else 0,
                 ]
             )
             bottom_size = (
-                int(zones["bottom"]["size"])
-                if zones["bottom"]["visible"]
-                else 0
+                int(zones["bottom"]["size"]) if zones["bottom"]["visible"] else 0
             )
             top_size = max(100, self.height() - bottom_size)
             self.vertical_splitter.setSizes([top_size, bottom_size])

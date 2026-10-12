@@ -197,28 +197,38 @@ QComboBox::down-arrow {{
 }}
 
 /* Buttons */
-QPushButton {{
-    background-color: {border};
-    color: {text_main};
-    border: 1px solid {border};
+QPushButton, QToolButton {{
+    background-color: {action_secondary_normal_bg};
+    color: {action_secondary_normal_text};
+    border: 2px solid {action_secondary_normal_border};
     border-radius: 4px;
-    padding: 6px 16px;
+    padding: 4px 8px;
     min-height: 20px;
 }}
-QPushButton:hover {{ 
-    background-color: {surface}; 
-    border-color: {text_dim};
+QPushButton:hover, QToolButton:hover {{
+    background-color: {action_secondary_hover_bg};
+    color: {action_secondary_hover_text};
+    border-color: {action_secondary_hover_border};
 }}
-QPushButton:pressed {{ 
+QPushButton:pressed, QToolButton:pressed {{
     background-color: {action_secondary_pressed_bg};
     color: {action_secondary_pressed_text};
     border-color: {action_secondary_pressed_border};
 }}
+QPushButton:checked, QToolButton:checked {{
+    background-color: {action_secondary_checked_bg};
+    color: {action_secondary_checked_text};
+    border-color: {action_secondary_checked_border};
+}}
+QPushButton:focus:enabled, QToolButton:focus:enabled {{
+    background-color: {action_secondary_normal_bg};
+    color: {action_secondary_normal_text};
+    border-color: {focus_ring};
+}}
 QPushButton:disabled, QToolButton:disabled {{
-    background-color: {app_bg}; 
-    color: {text_dim}; 
-    border: 1px solid {border};
-    border-style: solid;
+    background-color: {action_secondary_disabled_bg};
+    color: {action_secondary_disabled_text};
+    border-color: {action_secondary_disabled_border};
 }}
 
 /* Lists and Tables */

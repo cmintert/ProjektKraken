@@ -275,7 +275,7 @@ def test_editor_toolbar_style_uses_main_text_color_in_light_mode(theme_manager):
         assert f"color: {theme['text_main']};" in style
         hover_style = style.split("QToolButton:hover", maxsplit=1)[1]
         assert f"color: {theme['text_main']};" in hover_style
-        assert f"background-color: {theme['app_bg']};" in hover_style
+        assert f"background-color: {theme['action_secondary_hover_bg']};" in hover_style
     finally:
         theme_manager.current_theme_name = original_theme_name
 

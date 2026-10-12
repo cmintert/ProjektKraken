@@ -234,34 +234,6 @@
       "source": "overlay = f\"rgba({accent.red()}, {accent.green()}, {accent.blue()}, 0.15)\""
     },
     {
-      "key": "src/gui/utils/style_helper.py|StyleHelper.get_editor_toolbar_style|literal-color|217395977d074a07",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in StyleHelper.get_editor_toolbar_style; migrate this expression when its presentation path is next touched.",
-      "source": "surface = theme.get(\"surface\", \"#1A1A1A\")"
-    },
-    {
-      "key": "src/gui/utils/style_helper.py|StyleHelper.get_editor_toolbar_style|literal-color|5e8e3e7489fb069e",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in StyleHelper.get_editor_toolbar_style; migrate this expression when its presentation path is next touched.",
-      "source": "primary = theme.get(\"primary\", \"#5C82FF\")"
-    },
-    {
-      "key": "src/gui/utils/style_helper.py|StyleHelper.get_editor_toolbar_style|literal-color|c1cf462f2c9a8a30",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in StyleHelper.get_editor_toolbar_style; migrate this expression when its presentation path is next touched.",
-      "source": "border = theme.get(\"border\", \"#333333\")"
-    },
-    {
-      "key": "src/gui/utils/style_helper.py|StyleHelper.get_editor_toolbar_style|literal-color|d139cb99d3390891",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in StyleHelper.get_editor_toolbar_style; migrate this expression when its presentation path is next touched.",
-      "source": "text = theme.get(\"text_main\", \"#E0E0E0\")"
-    },
-    {
       "key": "src/gui/utils/style_helper.py|StyleHelper.get_entity_color|literal-color|84f59c038b7f5792",
       "count": 1,
       "category": "legacy",

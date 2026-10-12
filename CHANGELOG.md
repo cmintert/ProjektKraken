@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-11
-**Commit:** bbc104e33fb8a25cca419577d4b433c8c16e4a3c
+**Last Updated:** 2026-10-12
+**Commit:** 75ace9b8d9a034c43d6bf5b3803a554823afe049
 ---
 
 # Changelog
@@ -12,6 +12,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-10-12)* **Consistent supporting actions (KRT-82)**: Unified ordinary
+  buttons, toolbar commands and labeled overflow under shared secondary theme
+  roles. Enabled text now follows each palette; primary, destructive and quiet
+  roles stay distinct. Removed conflicting toolbar/focus styling and synchronized
+  the visual vocabulary with Linear. Made activity-rail buttons share a
+  content-sized footprint, refreshed the world-view action on live theme changes,
+  and right-aligned equal-height inspector Discard/Save controls through narrow reflow.
 
 - *(2026-10-11)* **Compact layouts and local checks (KRT-82)**: Sized inspector
   headers and action rows to their contents, returning spare height to authoring

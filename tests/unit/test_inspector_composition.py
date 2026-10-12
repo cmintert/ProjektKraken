@@ -89,6 +89,9 @@ def test_large_inspector_allocates_spare_height_to_its_body(editor, qtbot):
         qtbot.waitUntil(header_fits_content)
         footer = editor.btn_save.parentWidget()
         assert footer.height() == footer.layout().heightForWidth(footer.width())
+        assert editor.btn_save.geometry().right() == footer.contentsRect().right()
+        assert editor.btn_save.y() >= editor.btn_discard.y()
+        assert editor.btn_save.height() == editor.btn_discard.height()
         if height == 1100:
             assert editor.inspector.height() > 800
         assert editor.name_edit.text() == "Unfinished name draft"
@@ -127,6 +130,32 @@ def test_wrapped_footer_reserves_readable_body_space(editor, qtbot):
     qtbot.waitUntil(readable_body_height)
     footer = editor.btn_save.parentWidget()
     assert footer.height() == footer.layout().heightForWidth(footer.width())
+    assert editor.btn_save.geometry().right() == footer.contentsRect().right()
+    assert editor.btn_discard.geometry().right() == footer.contentsRect().right()
+    assert editor.btn_save.height() == editor.btn_discard.height()
+
+
+@pytest.mark.parametrize("editor", ["event"], indirect=True)
+def test_world_view_button_refreshes_its_theme_without_editing_draft(
+    editor, qtbot, monkeypatch
+):
+    from PySide6.QtGui import QColor, QPalette
+
+    manager = ThemeManager()
+    before = editor.desc_edit.get_wiki_text()
+    for name in ("dark_mode", "fantasy_mode", "light_mode"):
+        monkeypatch.setattr(manager, "current_theme_name", name)
+        theme = manager.get_theme()
+        manager.theme_changed.emit(theme)
+        qtbot.wait(1)
+        button = editor.btn_show_world_at_event
+        assert button.palette().color(QPalette.ColorRole.ButtonText) == QColor(
+            theme["action_secondary_normal_text"]
+        )
+        assert button.grab().toImage().pixelColor(button.width() // 2, 5) == QColor(
+            theme["action_secondary_normal_bg"]
+        )
+        assert editor.desc_edit.get_wiki_text() == before
 
 
 def test_canonical_destinations_and_details_are_live_views(editor):

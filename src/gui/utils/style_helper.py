@@ -123,14 +123,12 @@ class StyleHelper:
 
     @staticmethod
     def get_inspector_focus_style() -> str:
-        """Give inspector controls visible keyboard focus using theme tokens."""
+        """Style inspector inputs; action roles already own their focus borders."""
         theme = ThemeManager().get_theme()
         return (
-            "QLineEdit:enabled, QComboBox:enabled, QSpinBox:enabled, "
-            "QPushButton:enabled, QToolButton:enabled {"
+            "QLineEdit:enabled, QComboBox:enabled, QSpinBox:enabled {"
             f" border-color: {theme['text_dim']}; }}"
-            "QLineEdit:focus, QComboBox:focus, QSpinBox:focus, "
-            "QPushButton:focus, QToolButton:focus {"
+            "QLineEdit:focus, QComboBox:focus, QSpinBox:focus {"
             f" border: 2px solid {theme['focus_ring']}; }}"
         )
 
@@ -383,11 +381,8 @@ class StyleHelper:
             str: QSS stylesheet string.
         """
         theme = ThemeManager().get_theme()
-        surface = theme.get("surface", "#1A1A1A")
-        border = theme.get("border", "#333333")
-        primary = theme.get("primary", "#5C82FF")
-        text = theme.get("text_main", "#E0E0E0")
-        surface_alt = theme.get("surface_alt", theme.get("app_bg", surface))
+        surface = theme["surface"]
+        border = theme["border"]
 
         return f"""
             QToolBar {{
@@ -399,22 +394,7 @@ class StyleHelper:
                 spacing: 4px;
                 padding: 2px;
             }}
-            QToolButton {{
-                background-color: transparent;
-                color: {text};
-                border: 1px solid transparent;
-                border-radius: 4px;
-                padding: 4px 8px;
-            }}
-            QToolButton:hover {{
-                background-color: {surface_alt};
-                border: 1px solid {border};
-                color: {text};
-            }}
-            QToolButton:pressed {{
-                background-color: {primary};
-            }}
-        """
+        """ + StyleHelper.get_action_role_style("secondary", "QToolButton")
 
     @staticmethod
     def get_sheet_resize_handle_style() -> str:

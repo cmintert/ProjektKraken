@@ -33,6 +33,16 @@ Use `StyleHelper.get_action_role_style(role, selector)` or its existing primary,
 secondary, tool and destructive compatibility helpers. Equivalent controls share
 presentation rather than composing their own color scheme.
 
+Ordinary buttons, labeled toolbar commands and overflow access share the secondary
+role. Enabled secondary text uses each palette's `text_main`; backgrounds,
+borders and interaction states use `action_secondary_*` tokens. Global QSS and
+shared StyleHelper controls must agree. Input focus rules must not override action
+borders. Primary, destructive and quiet/disclosure controls retain their own roles.
+
+Vertical activity navigation buttons share an intrinsic width and height derived
+from the largest current label. Recalculate the shared size after label, font or
+style changes so the rail remains aligned and readable.
+
 | Control role | Purpose | Affordance |
 | --- | --- | --- |
 | Primary | Principal apply/create action | Filled; not generic decorative emphasis |

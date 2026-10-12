@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import QRect, QSize
+from PySide6.QtCore import QRect, QSize, Qt
 from PySide6.QtWidgets import (
     QAbstractButton,
     QLayout,
@@ -16,10 +16,13 @@ from PySide6.QtWidgets import (
 class ActionFlowLayout(QLayout):
     """Keep natural label widths, wrapping groups in their existing focus order."""
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(
+        self, parent: QWidget | None = None, *, uniform_height: bool = False
+    ) -> None:
         """Create a standard compact responsive group."""
         super().__init__(parent)
         self._items: list[QLayoutItem] = []
+        self._uniform_height = uniform_height
         self.setSpacing(4)
         if parent is not None:
             policy = parent.sizePolicy()
@@ -34,6 +37,10 @@ class ActionFlowLayout(QLayout):
 
     def addWidget(self, widget: QWidget, stretch: int = 0) -> None:  # noqa: N802
         """Accept ordinary row call sites; flow owns width allocation."""
+        if self._uniform_height:
+            policy = widget.sizePolicy()
+            policy.setVerticalPolicy(QSizePolicy.Policy.Preferred)
+            widget.setSizePolicy(policy)
         super().addWidget(widget)
 
     def addLayout(self, layout: QLayout) -> None:  # noqa: N802
@@ -114,6 +121,10 @@ class ActionFlowLayout(QLayout):
         )
         x, y = area.x(), area.y()
         row_height = 0
+        uniform_height = (
+            self._shared_height(area.width()) if self._uniform_height else 0
+        )
+        placements: list[tuple[QLayoutItem, QRect]] = []
         for item in self._items:
             if item.isEmpty() or item.spacerItem() is not None:
                 continue
@@ -153,8 +164,44 @@ class ActionFlowLayout(QLayout):
                 )
             elif item.hasHeightForWidth():
                 hint.setHeight(item.heightForWidth(hint.width()))
+            hint.setHeight(max(hint.height(), uniform_height))
             if apply:
-                item.setGeometry(QRect(x, y, hint.width(), hint.height()))
+                placements.append((item, QRect(x, y, hint.width(), hint.height())))
             x += hint.width() + self.spacing()
             row_height = max(row_height, hint.height())
+        if apply:
+            self._place_rows(placements, area)
         return y + row_height - rect.y() + margins.bottom()
+
+    def _shared_height(self, width: int) -> int:
+        """Reserve the tallest complete label for every control in this group."""
+        height = 0
+        for item in self._items:
+            if item.isEmpty() or item.spacerItem() is not None:
+                continue
+            hint = item.sizeHint().expandedTo(item.minimumSize())
+            widget = item.widget()
+            if widget is not None and widget.hasHeightForWidth():
+                allocated = max(item.minimumSize().width(), min(hint.width(), width))
+                hint.setHeight(
+                    max(item.minimumSize().height(), widget.heightForWidth(allocated))
+                )
+            height = max(height, hint.height())
+        return height
+
+    def _place_rows(
+        self, placements: list[tuple[QLayoutItem, QRect]], area: QRect
+    ) -> None:
+        """Align each reflowed row without changing control or keyboard order."""
+        right_edges: dict[int, int] = {}
+        for _, rect in placements:
+            right_edges[rect.y()] = max(
+                right_edges.get(rect.y(), rect.right()), rect.right()
+            )
+        for item, rect in placements:
+            offset = (
+                area.right() - right_edges[rect.y()]
+                if self.alignment() & Qt.AlignmentFlag.AlignRight
+                else 0
+            )
+            item.setGeometry(rect.translated(offset, 0))
