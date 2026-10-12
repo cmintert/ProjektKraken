@@ -31,6 +31,7 @@ from src.gui.widgets.editor_inspector_composition import (
     EditorInspectorComposition,
     InspectorContent,
 )
+from src.gui.widgets.menu_caret import PhosphorToolMenuButton
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.wrapping_buttons import WrappingToolButton
 
@@ -203,13 +204,8 @@ class EditorPresentation(QObject):
         self.reflow()
 
     def _install_focus_button(self) -> None:
-        """Put focus writing first in the description formatting toolbar."""
-        from src.gui.widgets.action_flow_layout import ActionFlowLayout
-
-        row = QWidget(self.editor.desc_edit)
-        self._writing_command_layout = ActionFlowLayout(row)
-        self._writing_command_layout.setContentsMargins(0, 0, 0, 0)
-        self.editor.desc_edit.layout().insertWidget(0, row)
+        """Keep focus writing directly available in the secondary command strip."""
+        row = self.editor.desc_edit.link_toolbar
         self.focus_button = WrappingToolButton(row)
         self.focus_button.setText("Focus writing")
         self.focus_button.setAccessibleName("Focus writing")
@@ -217,10 +213,11 @@ class EditorPresentation(QObject):
         self.focus_button.setCheckable(True)
         self.focus_button.setMinimumHeight(32)
         self.focus_button.clicked.connect(self.editor.focus_writing_requested.emit)
-        self._writing_command_layout.addWidget(self.focus_button)
+        row.add_button(self.focus_button, priority=5, pinned=True)
 
     def _style_controls(self, _theme: dict | None = None) -> None:
         """Keep inspector focus and control boundaries visible in both themes."""
+        self.focus_button.setStyleSheet(StyleHelper.get_writing_editor_control_style())
         suffix = StyleHelper.get_inspector_focus_style()
         for widget in self.editor.findChildren(QWidget):
             if isinstance(widget, QLineEdit) and isinstance(
@@ -247,7 +244,11 @@ class EditorPresentation(QObject):
                     widget.setStyleSheet(style + suffix)
         self._focus_suffix = suffix
         for button in self._toolbar_more_buttons:
-            button.setStyleSheet(StyleHelper.get_overflow_button_style() + suffix)
+            button.setStyleSheet(
+                StyleHelper.get_overflow_button_style()
+                + StyleHelper.get_menu_caret_style()
+                + suffix
+            )
         for button in (self.editor.summary_checkbox, self.editor.llm_checkbox):
             button._apply_theme()
         self.context_disclosure._apply_theme()
@@ -477,17 +478,10 @@ class EditorPresentation(QObject):
     def _install_toolbar_menus(self) -> None:
         """Expose existing toolbar actions when native extensions are cramped."""
         for toolbar, title in (
-            (self.editor.desc_edit.toolbar, "More writing actions"),
             (self.editor.sheet_builder._toolbar, "More Sheet actions"),
         ):
             actions = toolbar.actions()
-            if toolbar is self.editor.desc_edit.toolbar:
-                button = self.editor.desc_edit.formatting_more_button
-                self.editor.desc_edit.layout().removeWidget(button)
-                self._writing_command_layout.addWidget(button)
-                self._toolbar_more_buttons.append(button)
-                continue
-            button = WrappingToolButton(toolbar.parentWidget())
+            button = PhosphorToolMenuButton(toolbar.parentWidget())
             button.setObjectName("OverflowToolBarMenuButton")
             button.setProperty("actionLabelOverflowRoute", True)
             button.setText(title)
@@ -500,16 +494,13 @@ class EditorPresentation(QObject):
                 if not isinstance(action, QWidgetAction):
                     menu.addAction(action)
             button.setMenu(menu)
-            if toolbar is self.editor.desc_edit.toolbar:
-                self._writing_command_layout.addWidget(button)
-            else:
-                from src.gui.widgets.action_flow_layout import ActionFlowLayout
+            from src.gui.widgets.action_flow_layout import ActionFlowLayout
 
-                row = QWidget(toolbar.parentWidget())
-                row_layout = ActionFlowLayout(row)
-                row_layout.setContentsMargins(0, 0, 0, 0)
-                row_layout.addWidget(button)
-                toolbar.parentWidget().layout().insertWidget(0, row)
+            row = QWidget(toolbar.parentWidget())
+            row_layout = ActionFlowLayout(row)
+            row_layout.setContentsMargins(0, 0, 0, 0)
+            row_layout.addWidget(button)
+            toolbar.parentWidget().layout().insertWidget(0, row)
             self._toolbar_more_buttons.append(button)
 
     @staticmethod

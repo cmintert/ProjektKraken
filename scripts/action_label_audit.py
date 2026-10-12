@@ -307,6 +307,14 @@ def _reveal_table_cell(table: QTableWidget, widget: QWidget) -> None:
 
 
 def _label_bounds(widget: QWidget) -> QRect:
+    if (
+        isinstance(widget, QToolButton)
+        and widget.toolButtonStyle() == Qt.ToolButtonStyle.ToolButtonIconOnly
+        and not widget.icon().isNull()
+    ):
+        # The full action name belongs to the menu/accessibility route. The
+        # painted control must fit, including its icon and focus decoration.
+        return widget.rect()
     adapter = getattr(widget, "label_geometry", None)
     if callable(adapter):
         geometry = adapter()

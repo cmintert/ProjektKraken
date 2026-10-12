@@ -724,8 +724,7 @@ def test_enter_resets_heading_format(qtbot):
     assert block_fmt.headingLevel() == 0, "New line should not be a heading"
     body_size = EditorTypography.from_theme(ThemeManager().get_theme()).body_size
     assert char_fmt.fontPointSize() == body_size, (
-        f"New line should be body size ({body_size}pt), "
-        f"got {char_fmt.fontPointSize()}"
+        f"New line should be body size ({body_size}pt), got {char_fmt.fontPointSize()}"
     )
 
 
@@ -911,54 +910,27 @@ def test_toc_integration_navigation(qtbot):
 
 
 def test_toolbar_exists_and_contains_formatting_actions(qtbot):
-    """Test that WikiTextEdit has a toolbar with standard formatting actions."""
-    from PySide6.QtWidgets import QToolBar
-
+    """Existing commands remain directly available or in labeled menus."""
     widget = WikiTextEdit()
     qtbot.addWidget(widget)
-
-    # 1. Verify Toolbar exists
-    toolbar = widget.findChild(QToolBar)
-    assert toolbar is not None, "Toolbar should be instantiated in WikiTextEdit"
-
-    # 2. Verify Actions exist on the toolbar
-    actions = toolbar.actions()
-    action_texts = [a.text() for a in actions]
-
-    assert "Bold" in action_texts
-    assert "Italic" in action_texts
-    assert "H1" in action_texts
-    assert "H2" in action_texts
-    assert "H3" in action_texts
+    view = widget.editor
+    assert view.action_bold in widget.toolbar.actions()
+    assert view.action_italic in widget.toolbar.actions()
+    assert view.action_body in widget.toolbar.actions()
+    headings = widget.toolbar_presentation.heading_button.menu().actions()
+    assert headings == [view.action_h1, view.action_h2, view.action_h3]
+    assert view.action_body.text() == "Clear Formatting"
 
 
 def test_toolbar_toggles_mode_and_toc(qtbot):
-    """Test that TOC and View Mode toggles are accessible via the toolbar."""
-    from PySide6.QtWidgets import QToolBar
-
+    """The shared View menu retains the original mode and contents actions."""
     widget = WikiTextEdit()
     qtbot.addWidget(widget)
-
-    toolbar = widget.findChild(QToolBar)
-    assert toolbar is not None
-
-    actions = toolbar.actions()
-    action_texts = [a.text() for a in actions]
-
-    # Verify buttons/actions are present
-    assert "TOC" in action_texts
-    assert "MD" in action_texts
-
-    # Find the specific actions to trigger
-    toc_action = next(a for a in actions if a.text() == "TOC")
-    md_action = next(a for a in actions if a.text() == "MD")
-
-    # Verify TOC Toggle
+    actions = widget.toolbar_presentation._menus["View"].actions()
+    assert actions == [widget.action_toggle_mode, widget.action_toggle_toc]
     assert widget.toc_widget.isHidden()
-    toc_action.trigger()
+    widget.action_toggle_toc.trigger()
     assert not widget.toc_widget.isHidden()
-
-    # Verify Mode Toggle
     assert widget.editor._view_mode == "rich"
-    md_action.trigger()
+    widget.action_toggle_mode.trigger()
     assert widget.editor._view_mode == "source"

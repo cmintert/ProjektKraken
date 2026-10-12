@@ -554,9 +554,10 @@ def test_collapsed_summary_indicates_retained_content(editor):
 
 def test_narrow_toolbar_menus_reuse_authored_actions(editor, qtbot):
     editor.resize(331, 720)
-    writing, sheet = editor._presentation._toolbar_more_buttons
-    qtbot.waitUntil(writing.isVisible)
-    assert editor.desc_edit.action_toggle_mode in writing.menu().actions()
+    (sheet,) = editor._presentation._toolbar_more_buttons
+    writing = editor.desc_edit.toolbar_presentation
+    qtbot.waitUntil(writing.menu_row.isVisible)
+    assert editor.desc_edit.action_toggle_mode in writing._menus["View"].actions()
     editor.inspector.activate_section_id("sheet")
     assert sheet.isVisible()
     assert editor.sheet_builder._act_add_header in sheet.menu().actions()

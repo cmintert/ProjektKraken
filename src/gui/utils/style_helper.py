@@ -397,6 +397,45 @@ class StyleHelper:
         """ + StyleHelper.get_action_role_style("secondary", "QToolButton")
 
     @staticmethod
+    def get_menu_caret_style() -> str:
+        """Reserve text/caret separation without changing button role states."""
+        return """
+            QToolButton[phosphorCaret="true"] { padding: 2px 34px 2px 4px; }
+            QPushButton[phosphorCaret="true"] { padding-right: 26px; }
+            QToolButton[phosphorCaret="true"]::menu-indicator,
+            QPushButton[phosphorCaret="true"]::menu-indicator {
+                image: none; width: 0px;
+            }
+        """
+
+    @staticmethod
+    def get_writing_editor_control_style() -> str:
+        """Use quiet theme states for the compact document-command strips.
+
+        Full command names remain in the adjacent labeled menus. Familiar
+        formatting icons have accessible names; keyboard focus remains visible
+        and disabled commands retain the shared role's readable text.
+        """
+        theme = ThemeManager().get_theme()
+        return (
+            StyleHelper.get_action_role_style("quiet", "QToolButton")
+            + "QToolButton { padding: 2px 6px; border-radius: 2px; }"
+            + StyleHelper.get_menu_caret_style()
+            + "QToolButton:disabled {"
+            + f" border-color: {theme['action_quiet_normal_border']}; }}"
+        )
+
+    @staticmethod
+    def get_writing_editor_row_style() -> str:
+        """Separate command tiers with a theme-owned surface and hairline."""
+        theme = ThemeManager().get_theme()
+        return (
+            "QWidget#WritingMenuRow, QWidget#OverflowToolBar {"
+            f" background-color: {theme['surface']};"
+            f" border-bottom: 1px solid {theme['border']}; }}"
+        )
+
+    @staticmethod
     def get_sheet_resize_handle_style() -> str:
         """Returns QSS for _ResizeHandle in Sheet Builder.
 

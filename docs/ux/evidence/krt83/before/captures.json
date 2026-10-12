@@ -1,0 +1,98 @@
+[
+  {
+    "theme": "dark_mode",
+    "requested_width": 300,
+    "width": 300,
+    "height": 430,
+    "file": "dark_mode-300.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  },
+  {
+    "theme": "dark_mode",
+    "requested_width": 760,
+    "width": 760,
+    "height": 430,
+    "file": "dark_mode-760.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  },
+  {
+    "theme": "light_mode",
+    "requested_width": 300,
+    "width": 300,
+    "height": 430,
+    "file": "light_mode-300.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  },
+  {
+    "theme": "light_mode",
+    "requested_width": 760,
+    "width": 760,
+    "height": 430,
+    "file": "light_mode-760.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  },
+  {
+    "theme": "fantasy_mode",
+    "requested_width": 300,
+    "width": 300,
+    "height": 430,
+    "file": "fantasy_mode-300.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  },
+  {
+    "theme": "fantasy_mode",
+    "requested_width": 760,
+    "width": 760,
+    "height": 430,
+    "file": "fantasy_mode-760.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  },
+  {
+    "theme": "imperial_mode",
+    "requested_width": 300,
+    "width": 300,
+    "height": 430,
+    "file": "imperial_mode-300.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  },
+  {
+    "theme": "imperial_mode",
+    "requested_width": 760,
+    "width": 760,
+    "height": 430,
+    "file": "imperial_mode-760.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  },
+  {
+    "theme": "cyberpunk_mode",
+    "requested_width": 300,
+    "width": 300,
+    "height": 430,
+    "file": "cyberpunk_mode-300.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  },
+  {
+    "theme": "cyberpunk_mode",
+    "requested_width": 760,
+    "width": 760,
+    "height": 430,
+    "file": "cyberpunk_mode-760.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  },
+  {
+    "theme": "muted_light_mode",
+    "requested_width": 300,
+    "width": 300,
+    "height": 430,
+    "file": "muted_light_mode-300.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  },
+  {
+    "theme": "muted_light_mode",
+    "requested_width": 760,
+    "width": 760,
+    "height": 430,
+    "file": "muted_light_mode-760.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  }
+]

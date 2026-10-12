@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
 
 from src.core.logging_config import get_logger
 from src.gui.widgets.inspector_section import AuxiliarySectionHome
-from src.gui.widgets.wrapping_buttons import WrappingToolButton
+from src.gui.widgets.menu_caret import PhosphorToolMenuButton
 
 logger = get_logger(__name__)
 
@@ -270,7 +270,7 @@ class DraggableTabBar(QTabBar):
         return None
 
 
-class _InspectorMenuButton(WrappingToolButton):
+class _InspectorMenuButton(PhosphorToolMenuButton):
     """Reserve the complete labeled corner action in the tab geometry."""
 
     def sizeHint(self) -> QSize:
@@ -322,6 +322,7 @@ class DraggableTabWidget(QTabWidget):
 
         self.overflow_button.setStyleSheet(
             StyleHelper.get_tool_button_style()
+            + StyleHelper.get_menu_caret_style()
             + StyleHelper.get_inspector_focus_style()
         )
 

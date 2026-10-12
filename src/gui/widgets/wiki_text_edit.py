@@ -2292,6 +2292,7 @@ class WikiTextEdit(QFrame):
         self._setup_toolbar()
         main_layout.addWidget(self.toolbar)
         self._setup_link_controls(main_layout)
+        self.toolbar_presentation.install_link_actions()
         self.source_notice = QLabel(
             "Exact Markdown source. Rich view requires the supported syntax only."
         )
@@ -2395,82 +2396,10 @@ class WikiTextEdit(QFrame):
         super().closeEvent(event)
 
     def _setup_toolbar(self) -> None:
-        """Configure the editor toolbar."""
-        # Formatting Actions
-        self.toolbar.addAction(self.editor.action_bold)
-        self.editor.action_bold.setText("Bold")
-        self.toolbar.addAction(self.editor.action_italic)
-        self.editor.action_italic.setText("Italic")
+        """Arrange existing commands without changing editor behavior."""
+        from src.gui.widgets.writing_toolbar import WritingToolbarPresentation
 
-        self.toolbar.addSeparator()
-
-        self.toolbar.addAction(self.editor.action_h1)
-        self.editor.action_h1.setText("Heading 1")
-        self.toolbar.addAction(self.editor.action_h2)
-        self.editor.action_h2.setText("Heading 2")
-        self.toolbar.addAction(self.editor.action_h3)
-        self.editor.action_h3.setText("Heading 3")
-
-        self.toolbar.addAction(self.editor.action_body)
-        self.editor.action_body.setText("Body")
-
-        # Spacer
-        spacer = QWidget()
-        spacer.setSizePolicy(
-            spacer.sizePolicy().Policy.Expanding, spacer.sizePolicy().Policy.Preferred
-        )
-        self.toolbar.addWidget(spacer)
-
-        # Mode Toggle
-        self.action_toggle_mode = self.toolbar.addAction("Markdown source")
-        self.action_toggle_mode.setToolTip(
-            "Toggle between Rendered HTML and Markdown Source"
-        )
-        self.action_toggle_mode.triggered.connect(self._toggle_view_mode)
-
-        # TOC Toggle
-        self.action_toggle_toc = self.toolbar.addAction("Table of contents")
-        self.action_toggle_toc.setToolTip("Toggle Table of Contents sidebar")
-        self.action_toggle_toc.triggered.connect(self._toggle_toc)
-
-        # Spell check button — always opens settings dialog; checked = currently enabled
-        self.action_spell_check = self.toolbar.addAction("Spelling settings")
-        self.action_spell_check.setCheckable(True)
-        self.action_spell_check.setToolTip(
-            "Spell & grammar check settings (LanguageTool)"
-        )
-        self.action_spell_check.triggered.connect(self._open_spell_settings)
-
-        # Sync visual state with persisted settings
-        from PySide6.QtCore import QSettings
-
-        s = QSettings()
-        self.action_spell_check.setChecked(
-            cast(bool, s.value("SpellCheck/enabled", False, type=bool))
-        )
-        from PySide6.QtWidgets import QToolButton, QWidgetAction
-
-        from src.gui.widgets.wrapping_buttons import WrappingToolButton
-
-        self.formatting_more_button = WrappingToolButton(self)
-        self.formatting_more_button.setObjectName("OverflowToolBarMenuButton")
-        self.formatting_more_button.setProperty("actionLabelOverflowRoute", True)
-        self.formatting_more_button.setText("More writing actions")
-        self.formatting_more_button.setAccessibleName("More writing actions")
-        self.formatting_more_button.setPopupMode(
-            QToolButton.ToolButtonPopupMode.InstantPopup
-        )
-        formatting_menu = QMenu(self.formatting_more_button)
-        for action in self.toolbar.actions():
-            if not isinstance(action, QWidgetAction):
-                formatting_menu.addAction(action)
-        self.formatting_more_button.setMenu(formatting_menu)
-        self.formatting_more_button.setStyleSheet(
-            StyleHelper.get_overflow_button_style()
-        )
-        layout = self.layout()
-        assert layout is not None
-        layout.addWidget(self.formatting_more_button)
+        self.toolbar_presentation = WritingToolbarPresentation(self)
 
     def _setup_link_controls(self, layout: QVBoxLayout) -> None:
         """Keep writing actions visible when formatting is collapsed."""
@@ -2478,14 +2407,17 @@ class WikiTextEdit(QFrame):
 
         from src.gui.widgets.overflow_toolbar import OverflowToolBar
         from src.gui.widgets.wiki_link_authoring import WikiLinkAuthoring
+        from src.gui.widgets.writing_toolbar import WritingMenuButton
 
         self.link_notice = QLabel(self)
         self.link_notice.setWordWrap(True)
         self.link_notice.hide()
         self.link_authoring = WikiLinkAuthoring(self.editor, self.link_notice)
         self.editor.link_to_entry_requested.connect(self.link_authoring.open_picker)
-        self.link_toolbar = OverflowToolBar(self)
-        self.link_toolbar.setStyleSheet(StyleHelper.get_action_role_style("secondary"))
+        self.link_toolbar = OverflowToolBar(
+            self, overflow_button_type=WritingMenuButton
+        )
+        self.link_toolbar.setStyleSheet(StyleHelper.get_writing_editor_row_style())
         layout.addWidget(self.link_toolbar)
         layout.addWidget(self.link_notice)
         self.action_link_entry = QAction("Link to entry…", self)
@@ -2616,7 +2548,7 @@ class WikiTextEdit(QFrame):
         """
         self._apply_style()
         self._apply_editor_width_limit()
-        self.link_toolbar.setStyleSheet(StyleHelper.get_action_role_style("secondary"))
+        self.link_toolbar.setStyleSheet(StyleHelper.get_writing_editor_row_style())
 
     @Slot()
     def _toggle_toc(self) -> None:

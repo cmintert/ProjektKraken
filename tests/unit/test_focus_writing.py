@@ -86,13 +86,20 @@ def test_escape_and_local_button_restore_layout(focus_setup, qtbot):
     assert not editor.has_unsaved_changes()
 
 
-def test_focus_action_precedes_bold_in_formatting_toolbar(focus_setup):
+def test_focus_action_uses_secondary_writing_row(focus_setup):
     _window, editor, _controller = focus_setup
-    actions = editor.desc_edit.toolbar.actions()
-    focus_index = actions.index(editor._presentation._focus_toolbar_action)
-    bold_index = actions.index(editor.desc_edit.editor.action_bold)
-    # The visible overflow route may follow Focus writing on narrow toolbars.
-    assert focus_index < bold_index
+    view = editor.desc_edit
+    layout = view.layout()
+    row = editor._presentation.focus_button.parentWidget()
+    assert layout.indexOf(view.toolbar_presentation.menu_row) < layout.indexOf(
+        view.toolbar
+    )
+    assert row is view.link_toolbar
+    assert layout.indexOf(view.toolbar) < layout.indexOf(row)
+    assert any(
+        item.button is editor._presentation.focus_button and item.pinned
+        for item in row._items
+    )
     assert editor._presentation.focus_button.toolTip() == "Focus writing (F11)"
 
 
@@ -156,7 +163,9 @@ def test_focus_dims_every_visible_pane_except_its_own(focus_setup, qtbot, zone):
     controller.enter(editor)
     assert controller.active is editor
     for pane_zone, tint in controller._tints.items():
-        assert tint.isVisible() == (pane_zone != zone and workspace.panes[pane_zone].isVisible())
+        assert tint.isVisible() == (
+            pane_zone != zone and workspace.panes[pane_zone].isVisible()
+        )
 
     qtbot.mouseClick(editor.desc_edit.editor.viewport(), Qt.MouseButton.LeftButton)
     assert controller.active is editor
@@ -174,11 +183,14 @@ def test_focus_tint_changes_rendered_pane(focus_setup, qtbot):
     after = pane.grab().toImage().pixelColor(sample_x, sample_y)
 
     assert controller._tints["left"].isVisible()
-    assert max(
-        abs(before.red() - after.red()),
-        abs(before.green() - after.green()),
-        abs(before.blue() - after.blue()),
-    ) >= 20
+    assert (
+        max(
+            abs(before.red() - after.red()),
+            abs(before.green() - after.green()),
+            abs(before.blue() - after.blue()),
+        )
+        >= 20
+    )
 
 
 def test_same_item_reload_keeps_focus_new_item_exits(focus_setup):

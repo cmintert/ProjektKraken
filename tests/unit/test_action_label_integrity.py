@@ -436,3 +436,21 @@ def test_native_panel_fill_and_live_theme_switch_use_theme_tokens(
     finally:
         qapp.setPalette(old_palette)
         qapp.setStyleSheet(old_stylesheet)
+
+
+def test_icon_only_action_name_is_not_painted_text_but_clipping_still_fails(qtbot):
+    """A long accessible name cannot fabricate or excuse icon clipping."""
+    root = styled_host(qtbot)
+    button = QToolButton(root)
+    button.setText("Clear Formatting with a complete descriptive action name")
+    button.setAccessibleName(button.text())
+    pixmap = QPixmap(18, 18)
+    pixmap.fill(Qt.GlobalColor.black)
+    button.setIcon(QIcon(pixmap))
+    button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+    button.setGeometry(20, 20, 40, 40)
+    root.show()
+    qtbot.wait(20)
+    assert not audit_widget(root)
+    button.move(-20, 20)
+    assert any(failure.kind == "ancestor_clipping" for failure in audit_widget(root))

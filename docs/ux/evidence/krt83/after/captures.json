@@ -1,0 +1,338 @@
+[
+  {
+    "theme": "dark_mode",
+    "requested_width": 300,
+    "width": 300,
+    "height": 430,
+    "file": "dark_mode-300.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  },
+  {
+    "theme": "dark_mode",
+    "requested_width": 760,
+    "width": 760,
+    "height": 430,
+    "file": "dark_mode-760.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  },
+  {
+    "theme": "light_mode",
+    "requested_width": 300,
+    "width": 300,
+    "height": 430,
+    "file": "light_mode-300.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  },
+  {
+    "theme": "light_mode",
+    "requested_width": 760,
+    "width": 760,
+    "height": 430,
+    "file": "light_mode-760.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  },
+  {
+    "theme": "fantasy_mode",
+    "requested_width": 300,
+    "width": 300,
+    "height": 430,
+    "file": "fantasy_mode-300.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  },
+  {
+    "theme": "fantasy_mode",
+    "requested_width": 760,
+    "width": 760,
+    "height": 430,
+    "file": "fantasy_mode-760.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  },
+  {
+    "theme": "imperial_mode",
+    "requested_width": 300,
+    "width": 300,
+    "height": 430,
+    "file": "imperial_mode-300.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  },
+  {
+    "theme": "imperial_mode",
+    "requested_width": 760,
+    "width": 760,
+    "height": 430,
+    "file": "imperial_mode-760.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  },
+  {
+    "theme": "cyberpunk_mode",
+    "requested_width": 300,
+    "width": 300,
+    "height": 430,
+    "file": "cyberpunk_mode-300.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  },
+  {
+    "theme": "cyberpunk_mode",
+    "requested_width": 760,
+    "width": 760,
+    "height": 430,
+    "file": "cyberpunk_mode-760.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  },
+  {
+    "theme": "muted_light_mode",
+    "requested_width": 300,
+    "width": 300,
+    "height": 430,
+    "file": "muted_light_mode-300.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  },
+  {
+    "theme": "muted_light_mode",
+    "requested_width": 760,
+    "width": 760,
+    "height": 430,
+    "file": "muted_light_mode-760.png",
+    "platform": "Qt offscreen, production WikiTextEdit"
+  },
+  {
+    "theme": "dark_mode",
+    "kind": "entity",
+    "file": "dark_mode-entity-360.png",
+    "requested_width": 360,
+    "width": 360,
+    "column_width": 312,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  },
+  {
+    "theme": "dark_mode",
+    "kind": "entity",
+    "file": "dark_mode-entity-1200.png",
+    "requested_width": 1200,
+    "width": 1200,
+    "column_width": 760,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  },
+  {
+    "theme": "dark_mode",
+    "kind": "event",
+    "file": "dark_mode-event-360.png",
+    "requested_width": 360,
+    "width": 360,
+    "column_width": 302,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  },
+  {
+    "theme": "dark_mode",
+    "kind": "event",
+    "file": "dark_mode-event-1200.png",
+    "requested_width": 1200,
+    "width": 1200,
+    "column_width": 760,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  },
+  {
+    "theme": "light_mode",
+    "kind": "entity",
+    "file": "light_mode-entity-360.png",
+    "requested_width": 360,
+    "width": 360,
+    "column_width": 312,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  },
+  {
+    "theme": "light_mode",
+    "kind": "entity",
+    "file": "light_mode-entity-1200.png",
+    "requested_width": 1200,
+    "width": 1200,
+    "column_width": 760,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  },
+  {
+    "theme": "light_mode",
+    "kind": "event",
+    "file": "light_mode-event-360.png",
+    "requested_width": 360,
+    "width": 360,
+    "column_width": 302,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  },
+  {
+    "theme": "light_mode",
+    "kind": "event",
+    "file": "light_mode-event-1200.png",
+    "requested_width": 1200,
+    "width": 1200,
+    "column_width": 760,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  },
+  {
+    "theme": "fantasy_mode",
+    "kind": "entity",
+    "file": "fantasy_mode-entity-360.png",
+    "requested_width": 360,
+    "width": 360,
+    "column_width": 312,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  },
+  {
+    "theme": "fantasy_mode",
+    "kind": "entity",
+    "file": "fantasy_mode-entity-1200.png",
+    "requested_width": 1200,
+    "width": 1200,
+    "column_width": 760,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  },
+  {
+    "theme": "fantasy_mode",
+    "kind": "event",
+    "file": "fantasy_mode-event-360.png",
+    "requested_width": 360,
+    "width": 360,
+    "column_width": 302,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  },
+  {
+    "theme": "fantasy_mode",
+    "kind": "event",
+    "file": "fantasy_mode-event-1200.png",
+    "requested_width": 1200,
+    "width": 1200,
+    "column_width": 760,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  },
+  {
+    "theme": "imperial_mode",
+    "kind": "entity",
+    "file": "imperial_mode-entity-360.png",
+    "requested_width": 360,
+    "width": 360,
+    "column_width": 312,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  },
+  {
+    "theme": "imperial_mode",
+    "kind": "entity",
+    "file": "imperial_mode-entity-1200.png",
+    "requested_width": 1200,
+    "width": 1200,
+    "column_width": 760,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  },
+  {
+    "theme": "imperial_mode",
+    "kind": "event",
+    "file": "imperial_mode-event-360.png",
+    "requested_width": 360,
+    "width": 360,
+    "column_width": 302,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  },
+  {
+    "theme": "imperial_mode",
+    "kind": "event",
+    "file": "imperial_mode-event-1200.png",
+    "requested_width": 1200,
+    "width": 1200,
+    "column_width": 760,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  },
+  {
+    "theme": "cyberpunk_mode",
+    "kind": "entity",
+    "file": "cyberpunk_mode-entity-360.png",
+    "requested_width": 360,
+    "width": 360,
+    "column_width": 312,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  },
+  {
+    "theme": "cyberpunk_mode",
+    "kind": "entity",
+    "file": "cyberpunk_mode-entity-1200.png",
+    "requested_width": 1200,
+    "width": 1200,
+    "column_width": 760,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  },
+  {
+    "theme": "cyberpunk_mode",
+    "kind": "event",
+    "file": "cyberpunk_mode-event-360.png",
+    "requested_width": 360,
+    "width": 360,
+    "column_width": 302,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  },
+  {
+    "theme": "cyberpunk_mode",
+    "kind": "event",
+    "file": "cyberpunk_mode-event-1200.png",
+    "requested_width": 1200,
+    "width": 1200,
+    "column_width": 760,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  },
+  {
+    "theme": "muted_light_mode",
+    "kind": "entity",
+    "file": "muted_light_mode-entity-360.png",
+    "requested_width": 360,
+    "width": 360,
+    "column_width": 312,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  },
+  {
+    "theme": "muted_light_mode",
+    "kind": "entity",
+    "file": "muted_light_mode-entity-1200.png",
+    "requested_width": 1200,
+    "width": 1200,
+    "column_width": 760,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  },
+  {
+    "theme": "muted_light_mode",
+    "kind": "event",
+    "file": "muted_light_mode-event-360.png",
+    "requested_width": 360,
+    "width": 360,
+    "column_width": 302,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  },
+  {
+    "theme": "muted_light_mode",
+    "kind": "event",
+    "file": "muted_light_mode-event-1200.png",
+    "requested_width": 1200,
+    "width": 1200,
+    "column_width": 760,
+    "horizontal_scroll_max": 0,
+    "platform": "Qt offscreen, production inspector"
+  }
+]

@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.action_label_metrics import intrinsic_action_size
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.menu_caret import PhosphorToolMenuButton
 from src.gui.widgets.wrapping_buttons import WrappingToolButton
 
 
@@ -46,7 +47,12 @@ class _ToolbarItem:
 class OverflowToolBar(QWidget):
     """Keep important buttons intact and overflow secondary actions by priority."""
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        parent: QWidget | None = None,
+        *,
+        overflow_button_type: type[WrappingToolButton] = PhosphorToolMenuButton,
+    ) -> None:
         """Create an initially empty responsive action row."""
         super().__init__(parent)
         self.setObjectName("OverflowToolBar")
@@ -73,7 +79,7 @@ class OverflowToolBar(QWidget):
 
         self.overflow_menu = QMenu(self)
         self.overflow_menu.aboutToShow.connect(self._sync_menu_actions)
-        self.overflow_button = WrappingToolButton(self)
+        self.overflow_button = overflow_button_type(self)
         self.overflow_button.setObjectName("OverflowToolBarMenuButton")
         self.overflow_button.setText("More actions")
         self.overflow_button.setAccessibleName("More actions")
@@ -87,7 +93,9 @@ class OverflowToolBar(QWidget):
 
     def _apply_theme(self, _theme: dict | None = None) -> None:
         """Refresh overflow styling from the active application theme."""
-        self.overflow_button.setStyleSheet(StyleHelper.get_overflow_button_style())
+        self.overflow_button.setStyleSheet(
+            StyleHelper.get_overflow_button_style() + StyleHelper.get_menu_caret_style()
+        )
 
     def add_button(
         self,

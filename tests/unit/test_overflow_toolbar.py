@@ -210,4 +210,5 @@ def test_overflow_button_is_spacious_and_theme_aware(qtbot, monkeypatch) -> None
     )
     toolbar._apply_theme({})
 
-    assert toolbar.overflow_button.styleSheet() == ("QToolButton { color: magenta; }")
+    assert "QToolButton { color: magenta; }" in toolbar.overflow_button.styleSheet()
+    assert toolbar.overflow_button.property("phosphorCaret") is True

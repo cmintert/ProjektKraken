@@ -1,0 +1,13 @@
+{
+  "matrix": "quick",
+  "runs": [
+    {
+      "scale": 1.0,
+      "exit_code": 0,
+      "elapsed_seconds": 23.18,
+      "report": "scale-1.0/report.json",
+      "progress": "scale-1.0/progress.json"
+    }
+  ],
+  "native_review": "pending"
+}

@@ -1,0 +1,34 @@
+{
+  "base_revision": "9496ffbe5ff0a97f1f360916d2e966a5d9c7d513",
+  "status": "local uncommitted implementation",
+  "fast_gate": {
+    "passed": 1919,
+    "skipped": 2,
+    "note": "Before final compact-row and icon-bounds refinement; follow-up targeted tests and audit cover those changes."
+  },
+  "final_follow_up": {
+    "passed": 63,
+    "failures": 0
+  },
+  "final_label_audit": {
+    "records": 60,
+    "failures": 0,
+    "matrix": "quick affected surfaces, dark mode",
+    "native_review": "not claimed"
+  },
+  "baseline_failures": {
+    "count": 7,
+    "confirmed_on_original_source": true,
+    "scope": "six stale StyleHelper assertions and Entity repeated Focus splitter sizes (659 -> 673)"
+  },
+  "checks": {
+    "ruff": "passed",
+    "focused_mypy": "passed on all 9 modified/new presentation source files after final refinement",
+    "visual_policy": "passed",
+    "complexity_policy": "passed",
+    "strict_sphinx": "passed; rendered user guide and evidence HTML inspected",
+    "diff_check": "passed"
+  },
+  "editing_syntax_trees": "unchanged; see preservation-and-assets.json",
+  "assets": "three missing official SVGs downloaded and bundled; no runtime network access"
+}

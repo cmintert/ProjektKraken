@@ -30,6 +30,7 @@ from src.gui.models.explorer_model import ExplorerItem, ExplorerModel
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.auto_closing_message_box import AutoClosingMessageBox
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
+from src.gui.widgets.menu_caret import PhosphorPushMenuButton
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.standard_buttons import DestructiveButton
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
@@ -201,7 +202,7 @@ class UnifiedListWidget(QWidget):
         # New Button with Menu
         from src.gui.utils.shortcut_manager import ShortcutManager
 
-        self.btn_new = QPushButton("New...")
+        self.btn_new = PhosphorPushMenuButton("New...")
         self.new_menu = QMenu(self)
 
         # Create Event Action

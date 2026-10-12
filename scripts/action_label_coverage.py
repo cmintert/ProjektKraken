@@ -7,6 +7,8 @@ human approval. New actionable source files must acquire an explicit fixture.
 from typing import Any
 
 COMPOSITE_OWNERS = {
+    "src/gui/widgets/writing_toolbar.py": "WikiTextEdit",
+    "src/gui/widgets/menu_caret.py": "UnifiedListWidget",
     "src/gui/delegates/attribute_delegate.py": "EntityEditorWidget",
     "src/gui/widgets/analysis/analysis_panel.py": "MainAnalysisPanel",
     "src/gui/widgets/analysis/intelligence_panel.py": "MainAnalysisPanel",

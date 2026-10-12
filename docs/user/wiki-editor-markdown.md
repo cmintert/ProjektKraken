@@ -4,6 +4,15 @@ Descriptions are stored as portable Markdown and `[[wiki links]]`. The editor
 opens ordinary paragraphs, headings `#` through `###`, `**bold**`, `*italic*`,
 and wiki links in Rich view. Single line breaks and blank lines are preserved.
 
+The writing controls have three rows: **Edit / Insert / Format / View / Tools**,
+compact formatting controls, and link/Focus writing actions. **Headings** offers
+the existing heading styles. Bold, Italic and Clear Formatting have tooltips with
+their existing shortcuts; full command names also appear in **Format**. The
+previous **Body** command is named **Clear Formatting** to describe its existing
+effect. It still clears heading/bold/italic formatting; no new Body operation was
+added. **View** contains Markdown source/Rendered view and Table of contents;
+**Tools** contains Spelling settings. Narrow rows use labeled **More actions**.
+
 Select words in an Event or Entity description and choose **Link to entry…**.
 Search for an existing entry, select its row, then choose **Link**. Your selected
 words remain the link's label. With no selection, the entry's name is inserted
@@ -37,7 +46,7 @@ When a description contains a construct the Rich serializer cannot safely
 round-trip, the editor opens **exact Markdown Source** instead. Lists,
 blockquotes, tables, code spans and fences, standard Markdown links and images,
 escapes, raw HTML, underscore emphasis, and deeper headings remain editable as
-literal source. The HTML button switches back to Rich only after those constructs
+literal source. The **Rendered view** command in **View** switches back to Rich only after those constructs
 are removed. Source text is saved and reopened exactly as entered. Rich view
 does not claim to edit the larger Markdown vocabulary.
 

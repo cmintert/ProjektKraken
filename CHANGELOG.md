@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-12
-**Commit:** 36d71f988a6e8a53b1af804014b9529ffd60dd31
+**Commit:** 9496ffbe5ff0a97f1f360916d2e966a5d9c7d513
 ---
 
 # Changelog
@@ -12,6 +12,16 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-12)* **Writing-editor presentation (KRT-83)**: Reorganized existing
+  commands into a conventional menu row, flat compact formatting strip and
+  secondary writing actions. Added command/shortcut tooltips, naturally sized
+  Headings and theme-aware, spaced Phosphor carets for Project New and More
+  actions. Removed duplicate More writing actions. Bundled the missing official
+  SVGs with license/provenance. Renamed the existing Body command Clear Formatting
+  without changing its handler, shortcut or editing behavior; preserved the
+  centered 760px writing column. Corrected icon-only bounds in the label detector
+  while retaining real clipping detection. See docs/ux/evidence/krt83/README.md.
 
 - *(2026-10-12)* **Documentation navigation**: Added the KRT-82 acceptance
   record to the UX documentation contents for strict Sphinx builds.

@@ -1,0 +1,55 @@
+{
+  "base_revision": "9496ffbe5ff0a97f1f360916d2e966a5d9c7d513",
+  "editing_code": [
+    {
+      "path": "src/gui/widgets/wiki_text_edit.py",
+      "class": "WikiTextEditView",
+      "syntax_tree_unchanged": true
+    },
+    {
+      "path": "src/gui/widgets/wiki_text_edit.py",
+      "class": "ResizableWikiTextEditField",
+      "syntax_tree_unchanged": true
+    },
+    {
+      "path": "src/gui/widgets/focus_writing.py",
+      "class": "FocusWritingController",
+      "syntax_tree_unchanged": true
+    },
+    {
+      "path": "src/gui/utils/icon_loader.py",
+      "syntax_tree_unchanged": true
+    }
+  ],
+  "assets": {
+    "upstream": "https://github.com/phosphor-icons/core",
+    "revision": "2b75f3ad12b420c9504ef05df8d2564a28f8500e",
+    "weight": "Regular",
+    "license": "MIT",
+    "downloaded_on": "2026-10-12",
+    "transformations": "None; original SVG bytes retained. Runtime currentColor recoloring via icon_loader.py.",
+    "files": [
+      {
+        "file": "text-b.svg",
+        "url": "https://raw.githubusercontent.com/phosphor-icons/core/2b75f3ad12b420c9504ef05df8d2564a28f8500e/assets/regular/text-b.svg",
+        "sha256": "39dc3c7bafeb11d9d6dc982201d60b52e84ffdbf35833d4b1dfaa298c68518b6"
+      },
+      {
+        "file": "text-italic.svg",
+        "url": "https://raw.githubusercontent.com/phosphor-icons/core/2b75f3ad12b420c9504ef05df8d2564a28f8500e/assets/regular/text-italic.svg",
+        "sha256": "189d5093097bb07a2894efb0221ffe5054617163c97eb5f73b79cbee375161c3"
+      },
+      {
+        "file": "LICENSE",
+        "url": "https://raw.githubusercontent.com/phosphor-icons/core/2b75f3ad12b420c9504ef05df8d2564a28f8500e/LICENSE",
+        "sha256": "b5b1f1da112d18ea2147decfd48ddc1bf2b5aeb6c265381579340e95b15a2bb2"
+      },
+      {
+        "file": "caret-down.svg",
+        "url": "https://raw.githubusercontent.com/phosphor-icons/core/2b75f3ad12b420c9504ef05df8d2564a28f8500e/assets/regular/caret-down.svg",
+        "sha256": "53f0cf2d0b144ac3cb07e353e0cd0853ffb3ed432d741460ce288edfcb0924b1"
+      }
+    ],
+    "existing_asset": "eraser.svg reused unchanged from Kraken; no replacement download."
+  }
+}
