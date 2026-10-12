@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-12
-**Commit:** 8046be0c7e5394c9f80eedb0b2fd508a194468e0
+**Commit:** 36d71f988a6e8a53b1af804014b9529ffd60dd31
 ---
 
 # Changelog
@@ -12,6 +12,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-12)* **Documentation navigation**: Added the KRT-82 acceptance
+  record to the UX documentation contents for strict Sphinx builds.
 
 - *(2026-10-12)* **Native review acceptance (KRT-82)**: Recorded the owner's
   acceptance of the four Windows scale screenshots and issue closure with a
