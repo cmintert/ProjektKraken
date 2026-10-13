@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-13
-**Commit:** 587dead5799960a3bab83b4187dbd5898c7c7d38
+**Commit:** a34f6218c9448fc8ba8c2b61bd2faceead362ec3
 ---
 
 # Changelog
@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-13)* **Bug (KRT-78)**: Kept event occurrence anchors selectable
+  beneath the playhead's drag hit area. Verified disputed zero-anchor navigation,
+  uncertainty disclosure and preserved event/playhead dragging across zoom levels.
 
 - *(2026-10-13)* **Testing (KRT-78)**: Bounded presentation-capture event
   processing and explicitly released disposable widgets between probes.

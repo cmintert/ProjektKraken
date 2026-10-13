@@ -238,6 +238,19 @@ class EventItem(QGraphicsItem):
             presentation, self.event.name, self.scale_factor * self._zoom_level
         )
 
+    def contains_occurrence_anchor(self, local_point: QPointF) -> bool:
+        """Identify painted occurrence marks independently of a playhead hit area."""
+        for row in self._layout().rows:
+            if row.measure or row.label == "Possible span":
+                continue
+            half = 8 if row.geometry.mode in {"exact", "unresolved"} else 5
+            distance = abs(local_point.x() - row.geometry.marker_x) + abs(
+                local_point.y() - row.y
+            )
+            if distance <= half + 1:
+                return True
+        return False
+
     def boundingRect(self) -> QRectF:
         """Include all channel marks and measured text without selection resizing."""
         return self._layout().bounds

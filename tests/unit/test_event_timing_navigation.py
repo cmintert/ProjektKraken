@@ -11,6 +11,11 @@ from src.app.coordinators.time_coordinator import TimeCoordinator
 from src.commands.event_commands import UpdateEventCommand
 from src.core.calendar import CalendarConfig, CalendarConverter, CalendarDate
 from src.core.events import Event
+from src.core.temporal_expression import (
+    TemporalExpression,
+    TemporalPrecision,
+    TemporalQualifier,
+)
 from src.gui.dialogs.relation_dialog import RelationEditDialog
 from src.gui.widgets.event_editor import EventEditorWidget
 from src.gui.widgets.timeline import TimelineWidget
@@ -272,3 +277,109 @@ def test_structured_year_edit_preserves_day(timing_editor):
     date.combo_day.setCurrentIndex(0)
     result = converter.from_float(date.get_value())
     assert (result.year, result.month, result.day) == (1187, 1, 1)
+
+
+@pytest.mark.parametrize("initial_playhead", [0.0, 20.0])
+def test_disputed_surrender_navigates_zero_anchor(
+    timing_editor, qtbot, initial_playhead
+):
+    converter = CalendarConverter(CalendarConfig.create_default())
+    expression = TemporalExpression(
+        calendar_id=converter._config.id,
+        year=1,
+        month=1,
+        precision=TemporalPrecision.MONTH,
+        qualifier=TemporalQualifier.UNCERTAIN,
+    )
+    event = Event(
+        id="disputed",
+        name="03 - A disputed surrender report",
+        lore_date=expression.representative_time(converter),
+        attributes={"_temporal_v2": {"schema": 1, "expression": expression.to_dict()}},
+    )
+    assert event.lore_date == 0.0
+    timeline = TimelineWidget()
+    qtbot.addWidget(timeline)
+    timeline.set_calendar_converter(converter)
+    timeline.set_events([event])
+    timeline.set_current_time(100.0)
+    window = timing_editor.parent()
+    window.timeline = timeline
+    window.calendar_converter = converter
+    window.event_editor = timing_editor
+    window.entity_editor = MagicMock()
+    window.entity_editor.current_entity_id = None
+    window.entity_editor.has_unsaved_changes.return_value = False
+    window.data_coordinator = MagicMock()
+    window.data_coordinator.cached_events = [event]
+    window.navigation_coordinator = SimpleNamespace(
+        selected_type="event", selected_id=event.id
+    )
+    coordinator = TimeCoordinator(window)
+    timeline.playhead_time_changed.connect(coordinator.on_playhead_changed)
+    timeline.selected_event_date_requested.connect(coordinator.go_to_selected_event)
+    timeline.set_playhead_time(initial_playhead)
+    coordinator.refresh_selected_event_navigation()
+    timeline.selected_event_date_action.trigger()
+    assert timeline.get_playhead_time() == 0.0
+    assert timeline.get_current_time() == 100.0
+    qtbot.waitUntil(lambda: "uncertain" in timeline.time_status.notice.text())
+    assert timeline.view.time_indicators.context["event_id"] == event.id
+
+
+@pytest.mark.parametrize("zoom", [0.5, 1.0, 2.0])
+@pytest.mark.parametrize("precise", [False, True])
+@pytest.mark.parametrize("duration", [0.0, 3.0])
+def test_event_anchor_remains_selectable_under_playhead(qtbot, zoom, precise, duration):
+    from src.gui.widgets.timeline.event_item import EventItem
+
+    converter = CalendarConverter(CalendarConfig.create_default())
+    expression = TemporalExpression(
+        calendar_id=converter._config.id,
+        year=1,
+        month=1,
+        day=1 if precise else None,
+        hour=0 if precise else None,
+        minute=0 if precise else None,
+        precision=TemporalPrecision.MINUTE if precise else TemporalPrecision.MONTH,
+        qualifier=TemporalQualifier.ASSERTED
+        if precise
+        else TemporalQualifier.UNCERTAIN,
+    )
+    event = Event(
+        id="disputed",
+        name="Disputed surrender",
+        lore_date=0.0,
+        lore_duration=duration,
+        attributes={"_temporal_v2": {"schema": 1, "expression": expression.to_dict()}},
+    )
+    timeline = TimelineWidget()
+    qtbot.addWidget(timeline)
+    timeline.resize(700, 400)
+    timeline.set_calendar_converter(converter)
+    timeline.set_events([event])
+    timeline.show()
+    view = timeline.view
+    qtbot.waitUntil(lambda: any(isinstance(i, EventItem) for i in view.items()))
+    item = next(i for i in view.items() if isinstance(i, EventItem))
+    view._apply_zoom(zoom)
+    item.setY(200)
+    view.centerOn(item.pos())
+    pos = view.mapFromScene(item.pos())
+    requests = []
+    timeline.event_selected.connect(requests.append)
+    qtbot.mouseClick(view.viewport(), Qt.MouseButton.LeftButton, pos=pos)
+    assert requests == [event.id]
+    assert item.isSelected()
+    assert not getattr(view, "_dragging_playhead", False)
+    assert view._playhead.acceptedMouseButtons() != Qt.MouseButton.NoButton
+    assert view.get_playhead_time() == 0.0
+    qtbot.mousePress(view.viewport(), Qt.MouseButton.LeftButton, pos=pos)
+    assert view.graphics_scene.mouseGrabberItem() is item
+    qtbot.mouseRelease(view.viewport(), Qt.MouseButton.LeftButton, pos=pos)
+    from PySide6.QtCore import QPoint
+
+    line_pos = pos + QPoint(0, 50)
+    qtbot.mousePress(view.viewport(), Qt.MouseButton.LeftButton, pos=line_pos)
+    assert view._dragging_playhead
+    qtbot.mouseRelease(view.viewport(), Qt.MouseButton.LeftButton, pos=line_pos)

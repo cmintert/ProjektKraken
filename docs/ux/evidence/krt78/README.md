@@ -91,6 +91,29 @@ has moved into overflow. The manifest records whether focus was actually acquire
 
 ## Remaining closure gates
 
+### Disputed surrender follow-up — 2026-10-13
+
+The owner reported navigation failing for the disputed surrender. Read-only
+inspection of both Northwatch demos confirms that its saved layout anchor is
+`0.0`, also used by The march begins. Direct menu navigation to that anchor works
+from both another date and the already-coincident date, retaining uncertainty
+disclosure and World Time.
+
+A real pointer regression reproduced a selection failure at 0.5×, 1× and 2× zoom:
+the playhead's 30-pixel-wide invisible drag hit area intercepted clicks on the
+event's painted hollow anchor. Consequently the event was not selected for the
+global navigation action. This is a reproduced failure path; it does not establish
+every detail of the owner's original click sequence.
+
+Occurrence marks now receive left presses through that overlapping hit area.
+The hit test uses the painted device-space marker geometry, including uncertain
+and precise starts. Qt still owns event mouse capture and event dragging. Ruler
+scrubbing and playhead-line dragging away from the marker retain their behavior.
+No uncertain date is converted into an exact historical date, and no saved world
+data is changed. Contracts 2/5/6/8 apply; presentation roles and rendering are
+unchanged. 95 focused gesture/presentation/coordinator tests passed; Ruff, mypy,
+visual and complexity policies passed. No reviewed C901 hotspot was touched.
+
 Owner report, 2026-10-13: “It works like a charm in human review.” In response
 to the approximate-event → representative view → exact-date question, including
 unchanged selection and World Time, the owner replied “yes, worked.” This records

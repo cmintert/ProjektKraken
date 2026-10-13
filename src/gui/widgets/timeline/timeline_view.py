@@ -1541,6 +1541,8 @@ class TimelineView(QGraphicsView):
             return
 
         # Handle playhead click specially to prevent scene drag mode
+        if isinstance(item, PlayheadItem) and self._press_overlapping_anchor(event):
+            return
         if isinstance(item, PlayheadItem):
             # Manual drag mode for playhead
             self._dragging_playhead = True
@@ -1559,6 +1561,33 @@ class TimelineView(QGraphicsView):
             self.graphics_scene.clearSelection()
             item.setSelected(True)
             self.event_selected.emit(item.event.id)
+
+    def _press_overlapping_anchor(self, event: QMouseEvent) -> bool:
+        """Let occurrence marks receive clicks through the wide playhead hit area."""
+        if event.button() != Qt.MouseButton.LeftButton:
+            return False
+        pos = event.position().toPoint()
+        for candidate in self.items(pos):
+            if not isinstance(candidate, EventItem):
+                continue
+            inverse, invertible = candidate.deviceTransform(
+                self.viewportTransform()
+            ).inverted()
+            if not invertible or not candidate.contains_occurrence_anchor(
+                inverse.map(QPointF(pos))
+            ):
+                continue
+            buttons = self._playhead.acceptedMouseButtons()
+            self._playhead.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
+            try:
+                super().mousePressEvent(event)
+            finally:
+                self._playhead.setAcceptedMouseButtons(buttons)
+            self.graphics_scene.clearSelection()
+            candidate.setSelected(True)
+            self.event_selected.emit(candidate.event.id)
+            return True
+        return False
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         """Handles mouse movement for playhead dragging and hover states."""
