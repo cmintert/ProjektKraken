@@ -5,7 +5,6 @@ from typing import Any
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QDialog,
     QHeaderView,
     QLabel,
     QTableWidget,
@@ -17,6 +16,7 @@ from PySide6.QtWidgets import (
 from src.core.date_parser import DateParser
 from src.core.temporal_authoring import author_temporal_evidence
 from src.core.temporal_expression import TemporalExpression
+from src.gui.dialogs.help_aware_dialog import HelpAwareDialog
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.responsive_dialog_buttons import (
@@ -25,7 +25,7 @@ from src.gui.widgets.responsive_dialog_buttons import (
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 
-class TemporalEvidenceDialog(QDialog):
+class TemporalEvidenceDialog(HelpAwareDialog):
     """Edit claims and ordering without reading or writing a database."""
 
     def __init__(

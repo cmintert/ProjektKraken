@@ -4,14 +4,14 @@ from typing import Any
 
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
-    QDialog,
+    QMessageBox as QMessageBox,
+)
+from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from PySide6.QtWidgets import (
-    QMessageBox as QMessageBox,
-)
 
+from src.gui.dialogs.help_aware_dialog import HelpAwareDialog
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.relation_form import RelationForm
 from src.gui.widgets.responsive_dialog_buttons import (
@@ -19,7 +19,7 @@ from src.gui.widgets.responsive_dialog_buttons import (
 )
 
 
-class RelationEditDialog(QDialog):
+class RelationEditDialog(HelpAwareDialog):
     """Keep the full relation editor available with shared lossless fields."""
 
     def __init__(self, parent: QWidget | None = None, **kwargs: Any) -> None:

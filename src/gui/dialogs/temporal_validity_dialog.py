@@ -8,7 +8,6 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
-    QDialog,
     QFormLayout,
     QLabel,
     QVBoxLayout,
@@ -20,6 +19,7 @@ from src.core.map import MapLayerNode
 from src.core.map_constants import MAP_LAYER_TYPE_GROUP
 from src.core.temporal_expression import TemporalExpression
 from src.core.temporal_window import resolve_temporal_window
+from src.gui.dialogs.help_aware_dialog import HelpAwareDialog
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.compact_date_widget import CompactDateWidget
@@ -29,7 +29,7 @@ from src.gui.widgets.responsive_dialog_buttons import (
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 
-class TemporalValidityDialog(QDialog):
+class TemporalValidityDialog(HelpAwareDialog):
     """Edit only the optional existence window for one vector layer."""
 
     def __init__(

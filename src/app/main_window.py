@@ -67,6 +67,7 @@ from src.core.logging_config import get_logger
 from src.core.paths import get_worlds_dir
 from src.core.timeline_grouping import build_group_metadata, events_for_group
 from src.gui.dialogs.filter_dialog import FilterDialog
+from src.gui.utils.help_context import owns_help_input
 from src.gui.widgets.ai_search_panel import AISearchPanelWidget
 from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.event_editor import EventEditorWidget
@@ -202,7 +203,7 @@ class GlobalShortcutFilter(QObject):
             True if the event was handled (consumed), False otherwise.
 
         """
-        if event.type() != QEvent.Type.KeyPress:
+        if owns_help_input(obj) or event.type() != QEvent.Type.KeyPress:
             return False
 
         key_event = cast(QKeyEvent, event)

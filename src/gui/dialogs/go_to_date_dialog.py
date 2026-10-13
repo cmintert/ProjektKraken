@@ -1,10 +1,11 @@
 """Calendar-aware exact-date navigation for the timeline playhead."""
 
-from PySide6.QtWidgets import QDialog, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from src.core.calendar import CalendarConverter
 from src.core.date_parser import DateParser
 from src.core.temporal_expression import TemporalPrecision, TemporalQualifier
+from src.gui.dialogs.help_aware_dialog import HelpAwareDialog
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.responsive_dialog_buttons import (
@@ -12,7 +13,7 @@ from src.gui.widgets.responsive_dialog_buttons import (
 )
 
 
-class GoToDateDialog(QDialog):
+class GoToDateDialog(HelpAwareDialog):
     """Collect one complete calendar date without creating temporal evidence."""
 
     def __init__(

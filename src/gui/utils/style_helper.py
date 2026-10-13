@@ -1050,6 +1050,17 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_read_only_companion_style() -> str:
+        """Style neutral companion surfaces independently of modal dialogs."""
+        theme = ThemeManager().get_theme()
+        return (
+            f"QWidget#ReadOnlyCompanion {{ background-color: {theme['app_bg']}; "
+            f"color: {theme['text_main']}; }}"
+            f"QTextBrowser {{ background-color: {theme['surface']}; "
+            f"color: {theme['text_main']}; border: 1px solid {theme['border']}; }}"
+        ) + StyleHelper.get_scrollbar_style()
+
+    @staticmethod
     def get_scrollbar_style() -> str:
         """Returns QSS for custom scrollbars.
 

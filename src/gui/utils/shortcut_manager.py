@@ -67,12 +67,11 @@ class ShortcutManager:
     OUTLINE_DEMOTE = KeyboardShortcut("Demote Item", "Ctrl+]", "Demote item in outline")
 
     # General
+    HELP = KeyboardShortcut("Help", "F1", "Help for current task")
     DESELECT = KeyboardShortcut("Deselect/Cancel", "Esc", "Deselect items or cancel")
 
     # Map
-    MAP_PAN = KeyboardShortcut(
-        "Pan Map", "Space", "Hold Space + drag to pan the map"
-    )
+    MAP_PAN = KeyboardShortcut("Pan Map", "Space", "Hold Space + drag to pan the map")
 
     @classmethod
     def get_tooltip(cls, shortcut: KeyboardShortcut) -> str:

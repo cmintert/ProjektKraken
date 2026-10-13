@@ -335,8 +335,19 @@ class UIManager:
         self._calendar_dialog_pending = False
 
     def create_help_menu(self, menu_bar: QMenuBar) -> None:
-        """Create shortcut and About actions."""
+        """Compose contextual Help and retain shortcut and About actions."""
+        from src.app.help_composition import compose_help
+
+        self.help_coordinator = compose_help(self._window_widget, self.main_window)
         help_menu = menu_bar.addMenu("Help")
+        help_menu.aboutToShow.connect(self.help_coordinator.suspend_origin)
+        current_action = help_menu.addAction("Help for current task")
+        current_action.triggered.connect(self.help_coordinator.request)
+        manual_action = help_menu.addAction("User manual")
+        manual_action.triggered.connect(
+            lambda: self.help_coordinator.open_topic("manual.home")
+        )
+        help_menu.addSeparator()
         shortcuts_action = help_menu.addAction("Keyboard Shortcuts...")
         shortcuts_action.triggered.connect(self._show_keyboard_shortcuts)
         help_menu.addSeparator()

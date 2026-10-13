@@ -9,7 +9,6 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QCompleter,
-    QDialog,
     QHBoxLayout,
     QLabel,
     QScrollArea,
@@ -23,6 +22,7 @@ from src.core.events import Event
 from src.core.temporal_constraints import TemporalConstraintKind
 from src.core.temporal_expression import expression_from_attributes
 from src.core.theme_manager import ThemeManager
+from src.gui.dialogs.help_aware_dialog import HelpAwareDialog
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
@@ -37,7 +37,7 @@ from src.services.chronology_service import (
 )
 
 
-class EventChronologyDialog(QDialog):
+class EventChronologyDialog(HelpAwareDialog):
     """Edit direct rules without exposing storage direction or source claims."""
 
     def __init__(

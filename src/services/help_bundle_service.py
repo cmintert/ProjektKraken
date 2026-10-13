@@ -250,6 +250,11 @@ class HelpBundleService:
         self._ensure_valid()
         return self._topics.get(topic_id, self._topics["manual.home"])
 
+    def find_topic(self, topic_id: str) -> HelpTopic | None:
+        """Look up an exact ID without terminating contextual fallback."""
+        self._ensure_valid()
+        return self._topics.get(topic_id)
+
     def pages(self) -> tuple[HelpPage, ...]:
         """Return the immutable manual page inventory."""
         self._ensure_valid()

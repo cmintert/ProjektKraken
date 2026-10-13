@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-13
-**Commit:** beea8d771364bf5aaaa0cd275b67ca64601ee2db
+**Commit:** 62b2b0ef32944b7dcd3e414a9e50d44ab9818db8
 ---
 
 # Changelog
@@ -12,6 +12,16 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-13)* **Contextual Help (KRT-87)**: F1 and the Help menu open a
+  reusable offline companion for the current control, operation, dialog or panel.
+  Browse the manual and related topics with Back/Forward, Refresh context and
+  Return to work while preserving drafts, map edits and Focus writing. Search
+  and control inspection remain follow-up work in KRT-88.
+
+- *(2026-10-13)* **Help verification (KRT-87)**: Added focused context, draft,
+  modal lifecycle and resource-confinement regressions, canonical Help guidance
+  and reproducible native Windows evidence capture for all six themes.
 
 - *(2026-10-13)* **Testing**: Updated the two renamed Focus writing test IDs in
   the reviewed inventory, preserving suite memberships and unblocking pre-push

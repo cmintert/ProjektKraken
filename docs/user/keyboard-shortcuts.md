@@ -7,6 +7,8 @@ The current shortcuts are also available from
 
 | Action | Shortcut |
 | --- | --- |
+| Help for current task | F1 |
+| Return from Help to work | Escape, while Help has focus |
 | Create event | Ctrl+E |
 | Create entity | Ctrl+I |
 | Create map | Ctrl+M |

@@ -1,0 +1,155 @@
+"""GUI-local semantic Help registrations and keyboard ownership."""
+
+from __future__ import annotations
+
+import weakref
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
+
+import shiboken6
+from PySide6.QtCore import QObject
+from PySide6.QtWidgets import QApplication, QWidget
+
+
+def ancestors(widget: QObject | None) -> Iterator[QObject]:
+    """Walk only live QObject ancestry."""
+    while widget is not None and shiboken6.isValid(widget):
+        yield widget
+        widget = widget.parent()
+
+
+def owns_help_input(widget: QObject | None) -> bool:
+    """Identify the companion independently of its current modal parent."""
+    return any(bool(item.property("krakenHelpWindow")) for item in ancestors(widget))
+
+
+def help_is_activating() -> bool:
+    """Whether focus is transferring to Help rather than accepting an input."""
+    app = QApplication.instance()
+    return bool(app and app.property("krakenHelpFocusTransfer"))
+
+
+def help_suspends_input(widget: QWidget) -> bool:
+    """Include queued focus loss from the current Help origin."""
+    return help_is_activating() or any(
+        bool(item.property("krakenHelpSuspendedOrigin")) for item in ancestors(widget)
+    )
+
+
+@contextmanager
+def help_focus_transfer() -> Iterator[None]:
+    """Keep focus-loss validation from applying an unfinished authoring input."""
+    app = QApplication.instance()
+    previous = app.property("krakenHelpFocusTransfer") if app else None
+    if app:
+        app.setProperty("krakenHelpFocusTransfer", True)
+    try:
+        yield
+    finally:
+        if app:
+            app.setProperty("krakenHelpFocusTransfer", previous)
+
+
+class HelpContextRegistry:
+    """Keep control, surface and dialog meanings separate from presentation."""
+
+    def __init__(self) -> None:
+        """Use weak keys so widget teardown removes registrations."""
+        self.controls: weakref.WeakKeyDictionary[QWidget, str] = (
+            weakref.WeakKeyDictionary()
+        )
+        self.panels: weakref.WeakKeyDictionary[QWidget, str] = (
+            weakref.WeakKeyDictionary()
+        )
+        self.dialogs: weakref.WeakKeyDictionary[QWidget, str] = (
+            weakref.WeakKeyDictionary()
+        )
+        self.owners: weakref.WeakKeyDictionary[
+            QWidget, weakref.ReferenceType[QWidget]
+        ] = weakref.WeakKeyDictionary()
+        self.operations: weakref.WeakKeyDictionary[
+            QWidget, Callable[[], str | None]
+        ] = weakref.WeakKeyDictionary()
+        self._watched: weakref.WeakSet[QWidget] = weakref.WeakSet()
+
+    def _watch(self, widget: QWidget) -> None:
+        if widget not in self._watched:
+            self._watched.add(widget)
+            reference = weakref.ref(widget)
+            widget.destroyed.connect(lambda: self._remove(reference))
+
+    def _remove(self, reference: weakref.ReferenceType[QWidget]) -> None:
+        widget = reference()
+        if widget is not None:
+            for mapping in (
+                self.controls,
+                self.panels,
+                self.dialogs,
+                self.owners,
+                self.operations,
+            ):
+                mapping.pop(widget, None)
+
+    def clear(self) -> None:
+        """Release all registrations and operation dependencies on shutdown."""
+        self.controls.clear()
+        self.panels.clear()
+        self.dialogs.clear()
+        self.owners.clear()
+        self.operations.clear()
+
+    def register_control(
+        self, widget: QWidget, topic: str, owner: QWidget | None = None
+    ) -> None:
+        """Register a control/group and optional persistent semantic owner."""
+        self.controls[widget] = topic
+        self._watch(widget)
+        if owner is not None:
+            self.owners[widget] = weakref.ref(owner)
+
+    def register_panel(self, widget: QWidget, topic: str) -> None:
+        """Register a panel fallback, distinct from a control topic."""
+        self.panels[widget] = topic
+        self._watch(widget)
+
+    def register_dialog(self, widget: QWidget, topic: str) -> None:
+        """Register a dialog boundary and fallback."""
+        self.dialogs[widget] = topic
+        self._watch(widget)
+
+    def register_operation(
+        self, surface: QWidget, provider: Callable[[], str | None]
+    ) -> None:
+        """Register a read-only callback scoped to one surface."""
+        self.operations[surface] = provider
+        self._watch(surface)
+
+    def candidates(self, origin: QWidget | None) -> tuple[list[str], QWidget | None]:
+        """Return ordered candidates without consulting application data."""
+        from PySide6.QtWidgets import QDialog
+
+        controls: list[str] = []
+        boundary: QWidget | None = None
+        semantic: QWidget | None = None
+        for item in ancestors(origin):
+            if not isinstance(item, QWidget):
+                continue
+            if item in self.controls:
+                controls.append(self.controls[item])
+            if item in self.owners:
+                semantic = self.owners[item]()
+            if isinstance(item, QDialog) or item in self.panels:
+                boundary = item
+                break
+        surface = semantic if semantic is not None else boundary
+        if surface is not None and shiboken6.isValid(surface):
+            provider = self.operations.get(surface)
+            operation = provider() if provider else None
+            if operation:
+                controls.append(operation)
+        if boundary is not None and boundary in self.dialogs:
+            controls.append(self.dialogs[boundary])
+        if surface is not None and surface in self.panels:
+            controls.append(self.panels[surface])
+        controls.append("manual.home")
+        return controls, boundary or surface

@@ -846,6 +846,10 @@ class CompactDateWidget(QWidget):
     @Slot()
     def _on_text_edited(self) -> None:
         """Handles manual text input."""
+        from src.gui.utils.help_context import help_suspends_input
+
+        if help_suspends_input(self.txt_date):
+            return
         if self._text_first:
             self.commit_draft()
             return

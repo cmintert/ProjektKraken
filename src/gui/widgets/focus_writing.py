@@ -154,6 +154,10 @@ class FocusWritingController(QObject):
 
     def toggle(self, _checked: bool = False) -> None:
         """Toggle for the active Event or Entity editor."""
+        from src.gui.utils.help_context import owns_help_input
+
+        if owns_help_input(QApplication.focusWidget()):
+            return
         if self.active is not None:
             self.exit()
         else:
@@ -390,6 +394,10 @@ class FocusWritingController(QObject):
         self._update_action()
 
     def _on_focus_changed(self, _old: QWidget | None, now: QWidget | None) -> None:
+        from src.gui.utils.help_context import owns_help_input
+
+        if owns_help_input(now):
+            return
         if now is None or self._restoring or not shiboken6.isValid(self.window):
             return
         if any(
@@ -408,6 +416,10 @@ class FocusWritingController(QObject):
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:  # noqa: N802
         """Exit on outside navigation while letting the event through."""
+        from src.gui.utils.help_context import owns_help_input
+
+        if owns_help_input(watched):
+            return False
         if self.active is None or self._restoring:
             return False
         if not shiboken6.isValid(self.window):
