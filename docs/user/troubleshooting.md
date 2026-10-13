@@ -1,3 +1,5 @@
+(help-manual-troubleshooting)=
+
 # Troubleshooting
 
 ## The app does not start

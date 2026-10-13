@@ -1,4 +1,8 @@
+(help-longform-recovery)=
+
 # Longform Writing
+
+[Back Up and Restore](import-export-and-backups.md#back-up-and-restore)
 
 ## What this does
 

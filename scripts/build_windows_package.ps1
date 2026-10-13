@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
     [string]$PythonExe = ".venv\Scripts\python.exe",
+    [string]$HelpPythonExe = "",
     [string]$BetaLabel = "beta1",
     [string]$OutputDirectory = "artifacts\windows",
     [switch]$SkipBuild,
@@ -79,6 +80,11 @@ try {
     $checksumPath = "$zipPath.sha256"
 
     if (-not $SkipBuild) {
+        $helpPythonPath = $pythonPath
+        if ($HelpPythonExe) {
+            $helpPythonPath = (Resolve-Path -LiteralPath $HelpPythonExe).Path
+        }
+        $env:PK_HELP_PYTHON = $helpPythonPath
         Remove-SafeDirectory $buildRoot
         Remove-SafeDirectory $distRoot
         Remove-SafeDirectory $stagingRoot
@@ -161,6 +167,13 @@ VSVersionInfo(
         throw "SkipBuild requested, but staged package does not exist: $packageRoot"
     }
 
+    if ($SkipBuild) {
+        & $pythonPath -m scripts.build_help --check-package $packageRoot
+        if ($LASTEXITCODE -ne 0) {
+            throw "Existing package Help does not match the requested source. Rebuild without -SkipBuild."
+        }
+    }
+
     # PyInstaller stores data files below _internal in one-directory builds.
     # Keep the project's GPL text readily accessible at the extracted ZIP root.
     Copy-Item -LiteralPath (Join-Path $repoRoot "LICENSE") `
@@ -215,6 +228,12 @@ VSVersionInfo(
     }
 
     $commit = (& git rev-parse HEAD).Trim()
+    $helpManifestPath = Join-Path $packageRoot "_internal\help\manifest.json"
+    $helpManifest = Get-Content -Raw -LiteralPath $helpManifestPath | ConvertFrom-Json
+    if ($helpManifest.version -ne $version -or $helpManifest.revision -ne $commit) {
+        throw "Packaged Help does not match the requested version/revision."
+    }
+    $helpHash = (Get-FileHash -LiteralPath $helpManifestPath -Algorithm SHA256).Hash.ToLowerInvariant()
     $pythonVersion = (& $pythonPath -c "import platform; print(platform.python_version())").Trim()
     $pyInstallerVersion = (& $pythonPath -c "import PyInstaller; print(PyInstaller.__version__)").Trim()
     $payloadFiles = Get-ChildItem -LiteralPath $packageRoot -Recurse -File
@@ -225,6 +244,8 @@ VSVersionInfo(
         beta_label = $BetaLabel
         package_name = $packageName
         commit = $commit
+        source_dirty = $helpManifest.dirty
+        help_manifest_sha256 = $helpHash
         platform = "windows-x64"
         architecture = "x64"
         python_version = $pythonVersion
@@ -233,9 +254,11 @@ VSVersionInfo(
         payload_bytes = $payloadBytes
         unsigned = $true
     }
-    $buildInfo | ConvertTo-Json -Depth 4 | Set-Content `
-        -LiteralPath (Join-Path $packageRoot "build-info.json") `
-        -Encoding utf8
+    if (-not $SkipBuild) {
+        $buildInfo | ConvertTo-Json -Depth 4 | Set-Content `
+            -LiteralPath (Join-Path $packageRoot "build-info.json") `
+            -Encoding utf8
+    }
 
     if (-not $SkipSmoke) {
         Remove-SafeDirectory $reportsRoot
@@ -282,6 +305,7 @@ VSVersionInfo(
     Write-Host "SHA-256: $hash"
     Write-Host "Checksum file: $checksumPath"
 } finally {
+    Remove-Item Env:PK_HELP_PYTHON -ErrorAction SilentlyContinue
     Remove-Item Env:PK_WINDOWS_ICON -ErrorAction SilentlyContinue
     Remove-Item Env:PK_WINDOWS_VERSION_FILE -ErrorAction SilentlyContinue
     Pop-Location

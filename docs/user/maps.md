@@ -12,6 +12,8 @@ temporal trajectories, nested detail maps, and optional editable raster layers.
 3. Choose an image and provide a name.
 4. Select the map in Project or the Map panel.
 
+(help-map-features)=
+
 ## Add markers and features
 
 Click a marker, path, or region to select it without leaving the map. If its
@@ -73,6 +75,8 @@ colour, and line pattern. Available patterns are **Solid**, **Dotted**,
 **Short Dash**, **Long Dash**, and **Dash Dot**. The chosen pattern applies to
 the whole path and is saved as part of its global feature style.
 
+(help-map-historical-geometry)=
+
 ## Dated path and region geometry
 
 Every path and region has Base Geometry and may have dated geometry states.
@@ -98,6 +102,8 @@ the preceding state or Base Geometry at affected dates.
 Feature style, label, and layer assignment remain global. Event-date
 future/past presentation is separate from geometry-state resolution. Point
 markers continue to use their ordinary positions or trajectories.
+
+(help-map-visibility)=
 
 ## Temporal visibility
 
@@ -149,6 +155,8 @@ date.
 When the owner's presence is possible or unknown at the playhead, a normal
 selected route stays visible with reduced opacity and a tooltip explaining the
 uncertainty; `(?)` marks its keyframe labels.
+
+(help-map-trajectories)=
 
 ## Create or edit a trajectory
 

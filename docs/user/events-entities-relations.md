@@ -9,6 +9,8 @@ Events record what happens and when. Entities represent people, places,
 factions, objects, and other things in the world. Relations connect any two
 items with a named direction and optional details.
 
+(help-authoring-create)=
+
 ## Create an event or entity
 
 1. Open the Explorer's **New** menu.
@@ -18,6 +20,8 @@ items with a named direction and optional details.
 
 Event dates and durations use the active world calendar. Descriptions support
 Markdown-style formatting and `[[Wiki Links]]`.
+
+(help-authoring-details)=
 
 ## Add details
 
@@ -32,6 +36,8 @@ Use the inspector to:
 
 Changes are saved after editing. Use **Edit → Undo** when you need to reverse a
 supported content mutation.
+
+(help-authoring-representations)=
 
 ## Attributes, relations, and mentions
 
@@ -83,6 +89,8 @@ For relation timing, see
 For unresolved and stable links, see
 [Wiki editor Markdown and links](wiki-editor-markdown.md).
 
+(help-event-timing)=
+
 ## Set an event date or duration
 
 The Event inspector starts with one clear date field. Type a date in the
@@ -118,6 +126,10 @@ out and regain their calendar width when zoomed in.
 If a typed date is not recognized, it remains unchanged until you correct it,
 choose a date from the calendar, or press **Escape**.
 
+(help-entity-historical-editing)=
+
+(help-entity-value-source)=
+
 ## View and correct an entity at another time
 
 Move the Timeline playhead to see an entity as it appeared at that point in
@@ -141,6 +153,8 @@ should begin with a new dated event rather than changing its current source.
 Select **Return to Current Time** in the Timeline to move back to the world's
 current story time.
 
+(help-writing-focus)=
+
 ## Focus on writing
 
 When an Event or Entity is selected, choose **Focus writing** in the
@@ -151,6 +165,8 @@ Use **Formatting** or **Contents** in the focus surface when you need those
 tools. To leave, select **Exit focus** in the focus surface, choose **Exit
 focus** from the **View** menu, or press **F11** again. Your text, scroll
 position, and normal inspector layout are restored.
+
+(help-relations-create)=
 
 ## Create relations
 
@@ -164,6 +180,8 @@ types remain available through the full relation editor.
 
 Relations are directional. Read the preview in the relation dialog to confirm
 which item is the subject and which is the target.
+
+(help-relations-timing)=
 
 ## Historical validity and uncertainty
 

@@ -1,0 +1,223 @@
+{
+  "schema_version": 1,
+  "topics": [
+    {
+      "id": "authoring.create",
+      "source": "events-entities-relations.md",
+      "target": "help-authoring-create",
+      "level": "task",
+      "related_ids": [
+        "authoring.details"
+      ]
+    },
+    {
+      "id": "authoring.details",
+      "source": "events-entities-relations.md",
+      "target": "help-authoring-details",
+      "level": "task",
+      "related_ids": [
+        "authoring.representations"
+      ]
+    },
+    {
+      "id": "writing.edit",
+      "source": "wiki-editor-markdown.md",
+      "target": "help-writing-edit",
+      "level": "task",
+      "related_ids": [
+        "writing.links",
+        "writing.focus"
+      ]
+    },
+    {
+      "id": "writing.links",
+      "source": "wiki-editor-markdown.md",
+      "target": "help-writing-links",
+      "level": "task",
+      "related_ids": [
+        "writing.edit",
+        "authoring.representations"
+      ]
+    },
+    {
+      "id": "writing.focus",
+      "source": "events-entities-relations.md",
+      "target": "help-writing-focus",
+      "level": "task",
+      "related_ids": [
+        "writing.edit"
+      ]
+    },
+    {
+      "id": "event.timing",
+      "source": "events-entities-relations.md",
+      "target": "help-event-timing",
+      "level": "task",
+      "related_ids": [
+        "date.precision"
+      ]
+    },
+    {
+      "id": "date.precision",
+      "source": "timeline-and-calendars.md",
+      "target": "help-date-precision",
+      "level": "task",
+      "related_ids": [
+        "event.timing",
+        "date.evidence"
+      ]
+    },
+    {
+      "id": "date.evidence",
+      "source": "timeline-and-calendars.md",
+      "target": "help-date-evidence",
+      "level": "task",
+      "related_ids": [
+        "event.chronology"
+      ]
+    },
+    {
+      "id": "event.chronology",
+      "source": "timeline-and-calendars.md",
+      "target": "help-event-chronology",
+      "level": "task",
+      "related_ids": [
+        "date.evidence"
+      ]
+    },
+    {
+      "id": "timeline.viewing",
+      "source": "timeline-and-calendars.md",
+      "target": "help-timeline-viewing",
+      "level": "task",
+      "related_ids": [
+        "event.timing"
+      ]
+    },
+    {
+      "id": "entity.historical-editing",
+      "source": "events-entities-relations.md",
+      "target": "help-entity-historical-editing",
+      "level": "task",
+      "related_ids": [
+        "entity.value-source",
+        "timeline.viewing"
+      ]
+    },
+    {
+      "id": "entity.value-source",
+      "source": "events-entities-relations.md",
+      "target": "help-entity-value-source",
+      "level": "task",
+      "related_ids": [
+        "entity.historical-editing"
+      ]
+    },
+    {
+      "id": "relations.create",
+      "source": "events-entities-relations.md",
+      "target": "help-relations-create",
+      "level": "task",
+      "related_ids": [
+        "relations.timing",
+        "authoring.representations"
+      ]
+    },
+    {
+      "id": "relations.timing",
+      "source": "events-entities-relations.md",
+      "target": "help-relations-timing",
+      "level": "task",
+      "related_ids": [
+        "relations.create",
+        "event.timing"
+      ]
+    },
+    {
+      "id": "authoring.representations",
+      "source": "events-entities-relations.md",
+      "target": "help-authoring-representations",
+      "level": "task",
+      "related_ids": [
+        "relations.create",
+        "writing.links"
+      ]
+    },
+    {
+      "id": "map.features",
+      "source": "maps.md",
+      "target": "help-map-features",
+      "level": "task",
+      "related_ids": [
+        "map.historical-geometry",
+        "map.visibility"
+      ]
+    },
+    {
+      "id": "map.historical-geometry",
+      "source": "maps.md",
+      "target": "help-map-historical-geometry",
+      "level": "task",
+      "related_ids": [
+        "map.visibility",
+        "timeline.viewing"
+      ]
+    },
+    {
+      "id": "map.visibility",
+      "source": "maps.md",
+      "target": "help-map-visibility",
+      "level": "task",
+      "related_ids": [
+        "map.historical-geometry"
+      ]
+    },
+    {
+      "id": "map.trajectories",
+      "source": "maps.md",
+      "target": "help-map-trajectories",
+      "level": "task",
+      "related_ids": [
+        "timeline.viewing",
+        "map.features"
+      ]
+    },
+    {
+      "id": "longform.recovery",
+      "source": "longform.md",
+      "target": "help-longform-recovery",
+      "level": "task",
+      "related_ids": [
+        "manual.troubleshooting"
+      ]
+    },
+    {
+      "id": "manual.home",
+      "source": "index.md",
+      "target": "help-manual-home",
+      "level": "task",
+      "related_ids": [
+        "manual.shortcuts",
+        "manual.troubleshooting"
+      ]
+    },
+    {
+      "id": "manual.shortcuts",
+      "source": "keyboard-shortcuts.md",
+      "target": "help-manual-shortcuts",
+      "level": "task",
+      "related_ids": [
+        "manual.home"
+      ]
+    },
+    {
+      "id": "manual.troubleshooting",
+      "source": "troubleshooting.md",
+      "target": "help-manual-troubleshooting",
+      "level": "task",
+      "related_ids": [
+        "manual.home"
+      ]
+    }
+  ]
+}

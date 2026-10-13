@@ -63,6 +63,12 @@ jobs:
         run: |
           python -m unittest discover -s tests/packaging -p "test_*.py" -v
 
+      - name: Create separate Help build environment
+        shell: pwsh
+        run: |
+          python -m venv build/help-tools
+          build/help-tools/Scripts/python.exe -m pip install -r requirements/docs.txt
+
       - name: Resolve beta label
         shell: pwsh
         env:
@@ -90,6 +96,7 @@ jobs:
         shell: pwsh
         run: |
           ./scripts/build_windows_package.ps1 `
+            -HelpPythonExe "build/help-tools/Scripts/python.exe" `
             -PythonExe (Get-Command python).Source `
             -BetaLabel $env:PK_BETA_LABEL
 

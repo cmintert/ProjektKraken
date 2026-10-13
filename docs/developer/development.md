@@ -129,7 +129,59 @@ dependency declaration. Optional embeddings are checked when used. CI does not
 re-resolve the Windows lock on Linux; release installation still verifies hashes
 and the package workflow audits and smoke-tests the resolved environment.
 
-## Project layout
+## Offline Help generation
+
+The canonical user manual lives in `docs/user/`; `docs/help-topics.json` maps
+stable semantic topic IDs to explicit MyST targets. Edit those sources, never
+the ignored generated bundle. KRT-86 adds structural targets; human review of
+reference prose and control excerpts remains KRT-89. The contextual viewer is
+separate KRT-87/88 work.
+
+```text
+python -m pip install -r requirements/docs.txt
+python -m scripts.build_help
+```
+
+Generation resolves MyST through a dedicated Sphinx builder into Qt-compatible
+HTML, bundled raster images, section search text and `manifest.json` under
+`docs/_build/help`. Unsupported constructs, remote images, missing targets,
+links or assets fail generation with diagnostics. External reference URLs remain
+visible text. A failed generation preserves the previous bundle, but stale
+content is rejected by the reader until regeneration succeeds.
+
+Local push/release preflight rebuilds Help. Website publication triggers remain
+unchanged. Source Help resolves relative to the repository regardless of the
+working directory; reading does not invoke Sphinx or generate files. Source
+freshness includes all manual files and builder inputs. Installed Help is fixed
+to the exact release source and needs neither Python nor Internet to read.
+
+The PyInstaller spec always regenerates Help before analysis. The Windows
+package workflow uses a separate docs environment so Sphinx stays outside the
+hash-pinned packaging environment and executable. For local isolated packaging:
+
+```powershell
+./scripts/build_windows_package.ps1 -PythonExe .venv-package/Scripts/python.exe `
+    -HelpPythonExe .venv/Scripts/python.exe
+```
+
+For direct spec builds, set `PK_HELP_PYTHON` to the docs interpreter; otherwise
+the active interpreter must have the docs requirements. Missing tooling is a
+build error, not permission to reuse old Help. `-SkipBuild` validates the existing
+bundle against both package metadata and current source; it cannot update Help
+inside an older executable. Rebuild without `-SkipBuild` on mismatch.
+
+The bundle records version, exact Git revision, dirty-source status and SHA-256
+input/payload hashes. Package `build-info.json` includes the Help manifest hash.
+Package smoke reports include Qt-rendered manual evidence. Structural/rendering
+checks do not establish human documentation or native viewer acceptance.
+
+For Help-only verification of an extracted executable, use the internal
+`ProjektKraken.exe --help-bundle-smoke-report <absolute-report-path>` probe.
+It validates and renders the installed manual before MainWindow/world startup,
+so it requires no selected world or saved application settings. Run it from a
+different working directory to check resource independence.
+
+## Project directories
 
 - `src/app`: startup, coordinators, worker lifecycle, cross-feature orchestration
 - `src/gui`: presentation and user interaction

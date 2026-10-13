@@ -63,6 +63,12 @@ def main() -> None:
     install_runtime_diagnostics()
     install_qt_message_handler()
 
+    from src.app.help_package_probe import run_help_probe
+
+    help_probe_result = run_help_probe(sys.argv)
+    if help_probe_result is not None:
+        raise SystemExit(help_probe_result)
+
     # Defer MainWindow import to ensure AA_ShareOpenGLContexts is already set
     from src.app.main_window import MainWindow
     from src.app.package_smoke import (

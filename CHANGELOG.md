@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-13
-**Commit:** a34f6218c9448fc8ba8c2b61bd2faceead362ec3
+**Commit:** 0d74316baaa5af102f82d0b4628cbe1f0d00abcb
 ---
 
 # Changelog
@@ -12,6 +12,17 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-13)* **Help infrastructure (KRT-86)**: Generate a version-matched,
+  offline manual from canonical Markdown during local pre-push and package builds.
+  Include stable topic targets, search text, confined local reading and package
+  identity checks. Contextual Help controls and the companion viewer remain
+  separate follow-up work.
+
+- *(2026-10-13)* **Help verification (KRT-86)**: Added generation, integrity,
+  confinement and Qt rendering regressions plus a packaged Help-only probe that
+  runs before world initialization. Documented regeneration and retained Windows
+  ZIP evidence, with native and human acceptance tracked separately.
 
 - *(2026-10-13)* **Bug (KRT-78)**: Kept event occurrence anchors selectable
   beneath the playhead's drag hit area. Verified disputed zero-anchor navigation,

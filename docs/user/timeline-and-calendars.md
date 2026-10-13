@@ -5,6 +5,8 @@
 The Timeline places events along the world's history. The playhead represents
 the current lore time and also controls time-sensitive map content.
 
+(help-timeline-viewing)=
+
 ## Use the timeline
 
 - Scroll or use the zoom controls to change scale.
@@ -34,6 +36,8 @@ the current lore time and also controls time-sensitive map content.
   exactly on a nearby event date. Snapping uses a small on-screen distance, so
   it remains predictable at every zoom level. Playback and scripted jumps do
   not snap.
+
+(help-date-precision)=
 
 ## Dates with incomplete information
 
@@ -95,6 +99,10 @@ the interface.
 The timeline ruler marks actual calendar boundaries. Year and month ticks line
 up with events dated to the first day of that year or month. Week ticks use the
 calendar's week length. Quarter ticks appear in years with twelve months.
+
+(help-date-evidence)=
+
+(help-event-chronology)=
 
 ## Record sources and ordering
 

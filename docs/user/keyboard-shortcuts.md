@@ -1,3 +1,5 @@
+(help-manual-shortcuts)=
+
 # Keyboard Shortcuts
 
 The current shortcuts are also available from

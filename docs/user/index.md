@@ -1,3 +1,5 @@
+(help-manual-home)=
+
 # User Manual
 
 This manual describes the capabilities available in the current ProjektKraken

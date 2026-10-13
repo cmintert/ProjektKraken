@@ -1,3 +1,5 @@
+(help-writing-edit)=
+
 # Wiki editor Markdown and links
 
 Descriptions are stored as portable Markdown and `[[wiki links]]`. The editor
@@ -12,6 +14,8 @@ previous **Body** command is named **Clear Formatting** to describe its existing
 effect. It still clears heading/bold/italic formatting; no new Body operation was
 added. **View** contains Markdown source/Rendered view and Table of contents;
 **Tools** contains Spelling settings. Narrow rows use labeled **More actions**.
+
+(help-writing-links)=
 
 Select words in an Event or Entity description and choose **Link to entry…**.
 Search for an existing entry, select its row, then choose **Link**. Your selected

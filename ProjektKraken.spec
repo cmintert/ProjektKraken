@@ -2,11 +2,20 @@
 """Audited one-directory Windows build for ProjektKraken."""
 
 import os
+import subprocess
+import sys
 from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules, copy_metadata
 
 ROOT = Path(SPECPATH)
+
+# Generate with build-only docs tooling, including for direct spec invocations.
+subprocess.run(
+    [os.environ.get("PK_HELP_PYTHON", sys.executable), "-m", "scripts.build_help"],
+    cwd=ROOT,
+    check=True,
+)
 
 datas = [
     (str(ROOT / "LICENSE"), "."),
@@ -20,6 +29,7 @@ datas = [
     (str(ROOT / "packaging" / "windows" / "package-contract.json"), "."),
 ]
 datas += collect_data_files("pyvis", includes=["templates/**"])
+datas.append((str(ROOT / "docs" / "_build" / "help"), "help"))
 datas += copy_metadata("keyring")
 datas += collect_data_files("docx")
 

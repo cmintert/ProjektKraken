@@ -89,6 +89,7 @@ def make_steps(mode: str, base_ref: str) -> list[tuple[str, list[str]]]:
         ),
         ("Reviewed test inventory", [py, "-m", "scripts.check_test_policy"]),
         ("Generated schema", [py, "docs/generate_schema_docs.py", "--check"]),
+        ("Offline Help bundle", [py, "-m", "scripts.build_help"]),
         (
             "Strict documentation",
             [

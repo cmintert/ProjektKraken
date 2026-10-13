@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import argparse
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PySide6.QtWidgets import QApplication, QLabel
 
+from src.app.help_package_probe import probe_help
 from src.core.logging_config import get_logger
 from src.core.paths import get_executable_dir, get_resource_path
 from src.core.version import VERSION
@@ -44,6 +45,7 @@ class PackageSmokeReport:
     database_path: str
     resources_checked: tuple[str, ...]
     errors: tuple[str, ...]
+    help_evidence: dict[str, object] = field(default_factory=dict)
 
 
 def parse_package_smoke_options(argv: list[str]) -> PackageSmokeOptions | None:
@@ -60,9 +62,10 @@ def parse_package_smoke_options(argv: list[str]) -> PackageSmokeOptions | None:
     parser.add_argument("--package-smoke-report", type=Path, required=True)
     parser.add_argument("--package-smoke-expected-world-id")
     options, _unknown = parser.parse_known_args(argv[1:])
-    if options.package_smoke_phase == "restart" and not (
-        options.package_smoke_expected_world_id or ""
-    ).strip():
+    if (
+        options.package_smoke_phase == "restart"
+        and not (options.package_smoke_expected_world_id or "").strip()
+    ):
         parser.error("restart smoke requires --package-smoke-expected-world-id")
     return PackageSmokeOptions(
         phase=options.package_smoke_phase,
@@ -158,7 +161,9 @@ class PackageSmokeController:
             for relative in resources_checked
             if not Path(get_resource_path(relative)).is_file()
         ]
-        errors.extend(f"Bundled resource is missing: {path}" for path in missing_resources)
+        errors.extend(
+            f"Bundled resource is missing: {path}" for path in missing_resources
+        )
         logger.info("Package smoke resource evidence collected")
 
         build_info_path = get_executable_dir() / "build-info.json"
@@ -176,6 +181,12 @@ class PackageSmokeController:
                         f"{build_info.get('version')!r} != {VERSION!r}."
                     )
         logger.info("Package smoke build metadata evidence collected")
+
+        help_evidence: dict[str, object] = {}
+        try:
+            help_evidence = probe_help()
+        except (OSError, ValueError, RuntimeError) as exc:
+            errors.append(f"Packaged Help validation failed: {exc}")
 
         logger.info("Constructing About dialog for version evidence")
         about = AboutDialog(self._window)
@@ -197,6 +208,7 @@ class PackageSmokeController:
             database_path=str(database_path.resolve()) if world else "",
             resources_checked=resources_checked,
             errors=tuple(errors),
+            help_evidence=help_evidence,
         )
 
     def _finish(self, report: PackageSmokeReport, exit_code: int) -> None:
