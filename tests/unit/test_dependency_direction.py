@@ -153,3 +153,80 @@ def test_dependency_guard_resolves_import_forms(source, module, expected):
 def test_dependency_guard_rejects_import_outside_package():
     with pytest.raises(ValueError, match="escapes source package"):
         _source_imports("from ... import app", "src.core.events")
+
+
+def test_authored_relation_service_stays_below_facade_and_owns_no_sql():
+    """Keep the extracted policy independent of lifecycle and SQL owners."""
+    path = _SOURCE_ROOT / "services/authored_relation_service.py"
+    assert not any(
+        module.startswith("src.services.db_service")
+        for _, module in _imported_modules(path)
+    )
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    forbidden_calls = {
+        "connect",
+        "execute",
+        "executemany",
+        "commit",
+        "rollback",
+        "transaction",
+    }
+    assert not any(
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr in forbidden_calls
+        for node in ast.walk(tree)
+    ), "Authored relation policy must leave SQL, lifecycle and transactions to owners"
+
+
+@pytest.mark.parametrize(
+    "method,capability",
+    [
+        ("_validate_relation_endpoint", "validate_endpoint"),
+        ("insert_relation", "create"),
+        ("update_relation", "update"),
+    ],
+)
+def test_authored_relation_facade_only_delegates(method, capability):
+    """Prevent policy or mutation preparation drifting back into the facade."""
+    tree = ast.parse(
+        (_SOURCE_ROOT / "services/db_service.py").read_text(encoding="utf-8")
+    )
+    cls = next(node for node in tree.body if isinstance(node, ast.ClassDef))
+    function = next(
+        node
+        for node in cls.body
+        if isinstance(node, ast.FunctionDef) and node.name == method
+    )
+    body = function.body[1:]  # Exclude the method docstring.
+    assert len(body) == 1 and isinstance(body[0], (ast.Expr, ast.Return))
+    call = body[0].value
+    assert isinstance(call, ast.Call) and isinstance(call.func, ast.Attribute)
+    assert call.func.attr == capability
+    assert isinstance(call.func.value, ast.Attribute)
+    assert call.func.value.attr == "_authored_relations"
+
+
+def test_relation_commands_use_authored_service_without_parallel_policy():
+    """Commands own intent/history; authored persistence owns endpoint policy."""
+    path = _SOURCE_ROOT / "commands/relation_commands.py"
+    assert not any(
+        module.startswith("src.services.repositories")
+        for _, module in _imported_modules(path)
+    )
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    assert not any(
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr
+        in {"insert", "get_entity", "get_event", "UUID", "update_relation"}
+        for node in ast.walk(tree)
+    )
+    assert not any(
+        isinstance(node, ast.Attribute) and node.attr == "_relation_repo"
+        for node in ast.walk(tree)
+    ), "Commands must not bypass authored policy through the facade repository"
+    assert not any(
+        isinstance(node, ast.Constant) and node.value == "mentions"
+        for node in ast.walk(tree)
+    ), "System-managed type policy belongs to AuthoredRelationService"

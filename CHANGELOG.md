@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-13
-**Commit:** 62b2b0ef32944b7dcd3e414a9e50d44ab9818db8
+**Commit:** 30db1b376654d3ff6139ec197c24c034205f659f
 ---
 
 # Changelog
@@ -12,6 +12,16 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-13)* **Relation persistence (KRT-37)**: Extracted authored relation
+  validation and mutation preparation into a focused service. Commands now require
+  canonical endpoint UUIDs for creation, edits and redo, while exact undo retains
+  captured legacy endpoints, relation IDs, timestamps and attributes. Preserved
+  caller-owned rollback, facade APIs, import adapters and generated wikilinks.
+
+- *(2026-10-13)* **Relation verification (KRT-37)**: Added canonical endpoint,
+  rollback, lifecycle and history regressions plus permanent dependency guards.
+  Documented persistence ownership and legacy replay compatibility.
 
 - *(2026-10-13)* **Contextual Help (KRT-87)**: F1 and the Help menu open a
   reusable offline companion for the current control, operation, dialog or panel.

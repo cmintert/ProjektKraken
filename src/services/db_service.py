@@ -8,8 +8,6 @@ and maintainability.
 import logging
 import sqlite3
 import threading
-import time
-import uuid
 from collections.abc import Iterable
 from contextlib import contextmanager
 from pathlib import Path
@@ -20,6 +18,7 @@ from src.core.entities import Entity
 from src.core.events import Event
 from src.core.map import Map
 from src.core.marker import Marker
+from src.services.authored_relation_service import AuthoredRelationService
 from src.services.migrations import prepare_database
 
 # Import repositories for modular CRUD operations
@@ -112,6 +111,9 @@ class DatabaseService:
         )
         self._tag_repo = tag_repo or TagRepository()
         self._meta_repo = meta_repo or MetaRepository()
+        self._authored_relations = AuthoredRelationService(
+            self._relation_repo, self.get_entity, self.get_event
+        )
         self.attachment_service: Optional["AttachmentService"] = None
 
         logger.info(f"DatabaseService initialized with path: {self.db_path}")
@@ -428,18 +430,7 @@ class DatabaseService:
 
     def _validate_relation_endpoint(self, endpoint_id: str, role: str) -> None:
         """Require a canonical UUID belonging to an entity or event."""
-        try:
-            canonical = str(uuid.UUID(endpoint_id))
-        except (ValueError, AttributeError, TypeError) as exc:
-            raise ValueError(
-                f"Relation {role} must be a canonical UUID: {endpoint_id!r}"
-            ) from exc
-        if endpoint_id != canonical:
-            raise ValueError(
-                f"Relation {role} must be a canonical UUID: {endpoint_id!r}"
-            )
-        if self.get_entity(endpoint_id) is None and self.get_event(endpoint_id) is None:
-            raise ValueError(f"Relation {role} endpoint does not exist: {endpoint_id}")
+        self._authored_relations.validate_endpoint(endpoint_id, role)
 
     def insert_relation(
         self,
@@ -463,26 +454,9 @@ class DatabaseService:
             sqlite3.Error: If DB fails.
 
         """
-        if attributes is None:
-            attributes = {}
-        if rel_type == "mentions":
-            raise ValueError(
-                "The 'mentions' relation type is system-managed by wikilinks."
-            )
-        self._validate_relation_endpoint(source_id, "source")
-        self._validate_relation_endpoint(target_id, "target")
-
-        rel_id = str(uuid.uuid4())
-        created_at = time.time()
-
-        self._relation_repo.insert(
-            rel_id, source_id, target_id, rel_type, attributes, created_at
+        return self._authored_relations.create(
+            source_id, target_id, rel_type, attributes
         )
-
-        logger.info(
-            f"DB: Inserted relation {rel_id}: {source_id} -> {target_id} ({rel_type})"
-        )
-        return rel_id
 
     def reconcile_mentions(
         self,
@@ -613,14 +587,7 @@ class DatabaseService:
                 attributes.  Defaults to an empty dict when omitted.
 
         """
-        if attributes is None:
-            attributes = {}
-        if rel_type == "mentions":
-            raise ValueError(
-                "The 'mentions' relation type is system-managed by wikilinks."
-            )
-        self._validate_relation_endpoint(target_id, "target")
-        self._relation_repo.update(rel_id, rel_type, attributes, target_id=target_id)
+        self._authored_relations.update(rel_id, target_id, rel_type, attributes)
 
     def get_name(self, object_id: str) -> Optional[str]:
         """Retrieves the display name of an entity or event by its ID.

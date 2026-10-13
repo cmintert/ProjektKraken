@@ -14,26 +14,15 @@ import uuid
 from typing import Any, Dict, Optional
 
 from src.commands.base_command import BaseCommand, CommandResult
+from src.services.authored_relation_service import AuthoredRelationService
 from src.services.db_service import DatabaseService
-from src.services.repositories.relation_repository import RelationRepository
 
 logger = logging.getLogger(__name__)
 
 
-def _relation_repository(db_service: DatabaseService) -> RelationRepository:
-    """Use the worker-owned connection for identity-preserving mutations."""
-    repository = RelationRepository()
-    repository.set_connection(db_service.require_connection())
-    return repository
-
-
-def _validate_endpoint(db_service: DatabaseService, endpoint: str) -> None:
-    """Reject missing endpoints before a relation is inserted or reversed."""
-    if (
-        db_service.get_entity(endpoint) is None
-        and db_service.get_event(endpoint) is None
-    ):
-        raise ValueError(f"Relation endpoint does not exist: {endpoint}")
+def _relation_service(db_service: DatabaseService) -> AuthoredRelationService:
+    """Prepare the authored capability on the command's worker-owned connection."""
+    return AuthoredRelationService.from_connection(db_service.require_connection())
 
 
 class AddRelationCommand(BaseCommand):
@@ -79,27 +68,29 @@ class AddRelationCommand(BaseCommand):
                 f"Add rel: {self.source_id}->{self.target_id} ({self.rel_type})"
             )
 
-            if self.rel_type == "mentions":
-                raise ValueError("Mentions are managed from description wikilinks")
-            _validate_endpoint(db_service, self.source_id)
-            _validate_endpoint(db_service, self.target_id)
+            service = _relation_service(db_service)
+            service.require_authored_type(
+                self.rel_type,
+                message="Mentions are managed from description wikilinks",
+            )
+            service.validate_endpoint(self.source_id)
+            service.validate_endpoint(self.target_id)
             count = 2 if self.bidirectional else 1
             if not self._created_rel_ids:
                 self._created_rel_ids = [str(uuid.uuid4()) for _ in range(count)]
             if len(self._created_rel_ids) != count:
                 raise ValueError("Relation history has inconsistent identities")
-            repository = _relation_repository(db_service)
             endpoints = [(self.source_id, self.target_id)]
             if self.bidirectional:
                 endpoints.append((self.target_id, self.source_id))
             for rel_id, (source, target) in zip(self._created_rel_ids, endpoints):
-                repository.insert(
-                    rel_id,
+                service.create(
                     source,
                     target,
                     self.rel_type,
                     self.attributes,
-                    self._created_at,
+                    relation_id=rel_id,
+                    created_at=self._created_at,
                 )
 
             self._is_executed = True
@@ -182,7 +173,7 @@ class RemoveRelationCommand(BaseCommand):
                 message=f"Relation {self.rel_id} not found",
                 command_name="RemoveRelationCommand",
             )
-        if relation["rel_type"] == "mentions":
+        if AuthoredRelationService.is_system_managed_type(relation["rel_type"]):
             return CommandResult(
                 success=False,
                 message="Automatic mentions are managed from description wikilinks",
@@ -272,7 +263,9 @@ class UpdateRelationCommand(BaseCommand):
                 command_name="UpdateRelationCommand",
                 data={"relation_id": self.rel_id},
             )
-        if current["rel_type"] == "mentions" or self.rel_type == "mentions":
+        if AuthoredRelationService.is_system_managed_type(
+            current["rel_type"]
+        ) or AuthoredRelationService.is_system_managed_type(self.rel_type):
             return CommandResult(
                 success=False,
                 message="Automatic mentions are managed from description wikilinks",
@@ -290,20 +283,17 @@ class UpdateRelationCommand(BaseCommand):
 
         try:
             logger.info(f"Updating relation {self.rel_id}")
-            if self.source_id is None:
-                db_service.update_relation(
-                    self.rel_id, self.target_id, self.rel_type, self.attributes
-                )
-            else:
-                _validate_endpoint(db_service, self.source_id)
-                _validate_endpoint(db_service, self.target_id)
-                _relation_repository(db_service).update(
-                    self.rel_id,
-                    self.rel_type,
-                    self.attributes,
-                    target_id=self.target_id,
-                    source_id=self.source_id,
-                )
+            service = _relation_service(db_service)
+            if self.source_id is not None:
+                service.validate_endpoint(self.source_id)
+                service.validate_endpoint(self.target_id)
+            service.update(
+                self.rel_id,
+                self.target_id,
+                self.rel_type,
+                self.attributes,
+                source_id=self.source_id,
+            )
             self._previous_state = current
             self._is_executed = True
             return CommandResult(
@@ -324,12 +314,8 @@ class UpdateRelationCommand(BaseCommand):
         """Reverts the update."""
         if self._is_executed and self._previous_state:
             logger.info(f"Undoing UpdateRelation: {self.rel_id}")
-            _relation_repository(db_service).update(
-                self.rel_id,
-                self._previous_state["rel_type"],
-                self._previous_state["attributes"],
-                target_id=self._previous_state["target_id"],
-                source_id=self._previous_state["source_id"],
+            _relation_service(db_service).restore_snapshot(
+                self.rel_id, self._previous_state
             )
             self._is_executed = False
 

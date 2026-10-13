@@ -95,6 +95,26 @@ internals. An AST regression guard covers all production layers, including alias
 and reflective access. Raw connections remain deliberate inputs to persistence
 services such as search, tag filtering and Longform; they must not cross threads.
 
+`AuthoredRelationService` owns authored relation endpoint validation, protected
+type policy, creation/update preparation and exact undo restoration. It receives
+a relation repository and narrow entity/event lookup callbacks; `DatabaseService`
+keeps delegating compatibility methods and its existing lazy connection behavior.
+Commands bind the service's repositories to their worker-owned
+`require_connection()` result. The service opens no connection and begins no
+transaction: repository writes join the command/import owner's transaction, or
+own a standalone transaction through the existing repository context manager.
+
+Forward relation creation, edits, reversal and redo require canonical UUIDs for
+every supplied endpoint and verify that the entity/event exists. IDs are rejected,
+never normalized. Consequently, history that references existing objects with
+noncanonical IDs can fail forward replay without rewriting its serialized state.
+Undo restores its captured source, target, type and attributes without applying
+forward canonical validation, preserving relation identity and creation time.
+SQLite endpoint-existence constraints still apply to restoration. Commands retain
+identity allocation, stale-edit checks, snapshots and serialization; generated
+wikilink mentions keep their separate repository reconciliation path. The existing
+dependency-direction tests enforce the service/facade/command responsibility seam.
+
 Longform mutation helpers leave commit and rollback to their caller. Commands use
 the `BaseCommand` transaction; CLI indexing/export and worker indexing explicitly
 own service transactions. Nested operations join an existing transaction rather

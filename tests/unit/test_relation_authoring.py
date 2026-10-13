@@ -148,16 +148,19 @@ def test_drop_connect_is_one_undoable_command_with_preserved_direction(
 ):
     kind = "entity" if hasattr(editor, "_current_entity_id") else "event"
     owner = (
-        Entity(id="source", name="Inspector", type="Character")
+        Entity(name="Inspector", type="Character")
         if kind == "entity"
-        else Event(id="source", name="Inspector", lore_date=100)
+        else Event(name="Inspector", lore_date=100)
     )
+    target = Entity(name="House", type="Faction")
     getattr(db_service, f"insert_{kind}")(owner)
-    db_service.insert_entity(Entity(id="target", name="House", type="Faction"))
+    db_service.insert_entity(target)
+    getattr(editor, f"load_{kind}")(owner)
+    editor._suggestion_items = [(target.id, "House Bjornaer", "entity")]
     requests = []
     editor.relation_authoring_requested.connect(requests.append)
-    assert deliver_connection_drop(editor) == (True, True)
-    assert db_service.get_relations("target") == []
+    assert deliver_connection_drop(editor, item_id=target.id) == (True, True)
+    assert db_service.get_relations(target.id) == []
     editor.relation_authoring.apply()
     request = requests[0]
     command = AddRelationCommand(
@@ -167,13 +170,13 @@ def test_drop_connect_is_one_undoable_command_with_preserved_direction(
         request["attributes"],
     )
     assert command.execute(db_service).success
-    rows = db_service.get_relations("target")
-    assert len(rows) == 1 and rows[0]["target_id"] == "source"
+    rows = db_service.get_relations(target.id)
+    assert len(rows) == 1 and rows[0]["target_id"] == owner.id
     saved_id = rows[0]["id"]
     command.undo(db_service)
-    assert db_service.get_relations("target") == []
+    assert db_service.get_relations(target.id) == []
     assert command.execute(db_service).success
-    assert db_service.get_relations("target")[0]["id"] == saved_id
+    assert db_service.get_relations(target.id)[0]["id"] == saved_id
 
 
 def test_whole_inspector_drop_never_stages_or_mutates(editor):
@@ -423,17 +426,19 @@ def test_coordinator_capture_feedback_and_relation_refresh_preserve_prose(
 
     kind = "entity" if hasattr(editor, "_current_entity_id") else "event"
     source = (
-        Entity(id="source", name="Tasgillia", type="Character")
+        Entity(name="Tasgillia", type="Character")
         if kind == "entity"
-        else Event(id="source", name="Council", lore_date=100)
+        else Event(name="Council", lore_date=100)
     )
-    target = Entity(id="target", name="House Bjornaer", type="Faction")
+    target = Entity(name="House Bjornaer", type="Faction")
     db_service.insert_entity(target)
     getattr(db_service, f"insert_{kind}")(source)
+    getattr(editor, f"load_{kind}")(source)
+    editor._suggestion_items = [(target.id, target.name, "entity")]
     window = editor.parentWidget()
     window.event_editor = editor if kind == "event" else MagicMock()
     window.entity_editor = editor if kind == "entity" else MagicMock()
-    window.navigation_coordinator = MagicMock(selected_type=kind, selected_id="source")
+    window.navigation_coordinator = MagicMock(selected_type=kind, selected_id=source.id)
     window.map_widget = MagicMock(maps_data=[])
     window.time_coordinator = None
     commands = []
@@ -453,8 +458,8 @@ def test_coordinator_capture_feedback_and_relation_refresh_preserve_prose(
     result = command.execute(db_service)
     result.data["command_id"] = command.command_id
     coordinator.on_command_finished_check_toast(result)
-    getattr(data, f"load_{kind}_details")("source", relations_only=True)
-    rows = db_service.get_relations("source")
+    getattr(data, f"load_{kind}_details")(source.id, relations_only=True)
+    rows = db_service.get_relations(source.id)
     getattr(data, f"on_{kind}_details_ready")(source, rows, [])
     assert editor.desc_edit.get_wiki_text() == "Unfinished prose"
     assert editor.desc_edit.textCursor().position() == before
