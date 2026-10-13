@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-13
-**Commit:** 9a7759fca93fd05c276363dc015e42d667fea35f
+**Commit:** 587dead5799960a3bab83b4187dbd5898c7c7d38
 ---
 
 # Changelog
@@ -12,6 +12,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-13)* **Testing (KRT-78)**: Bounded presentation-capture event
+  processing and explicitly released disposable widgets between probes.
 
 - *(2026-10-13)* **Authoring UX (KRT-78)**: Grouped selected-event and exact-date
   navigation in the existing timeline menu, added revision-aware Event save

@@ -82,6 +82,12 @@ and the application stylesheet, captures all six themes at 360/760 px requested
 widths and 100/125/150/200% text sizes, and records actual sizes, effective font and
 device pixel ratio. It captures menu enabled/disabled, focus and overflow states.
 These are **offscreen text-size probes**, not Windows OS scaling or native review.
+The completed matrix contains 48 theme/width/text-size probes and 240 PNGs.
+The [presentation manifest](presentation-manifest.json) records actual widths,
+effective root fonts and successful focus acquisition for all 48 probes.
+The capture helper bounds event processing and explicitly releases disposable
+widgets; focus probes target the visible overflow access when the menu button
+has moved into overflow. The manifest records whether focus was actually acquired.
 
 ## Remaining closure gates
 
@@ -92,7 +98,8 @@ successful human task feedback. An uncoached-participant classification and
 specific native scale/configuration evidence have not yet been supplied; no video,
 independent persistence check, or complete native scale matrix is inferred.
 
-Completed automated checks: 121 focused tests passed; 59 Event feedback and
+Completed automated checks: 121 focused tests passed; the final KRT-78-specific
+set passed 14 tests, including a later pending-date caret check. 59 Event feedback and
 presentation tests passed after pinning the status above Save/Discard. `ci_fast`
 passed 1,933 tests with 2 skipped at the implementation checkpoint. Repository
 Ruff, mypy (465 source files), visual policy and complexity policy passed. Sphinx

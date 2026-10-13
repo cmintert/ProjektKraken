@@ -4,7 +4,7 @@ import json
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QSettings, Qt
+from PySide6.QtCore import QEvent, QEventLoop, QSettings, Qt
 from PySide6.QtGui import QFont, QFontDatabase, QFontInfo
 from PySide6.QtWidgets import QApplication, QWidget
 
@@ -60,22 +60,28 @@ def main() -> None:
                 timeline.set_selected_event_navigation("event", "Charter")
                 timeline.resize(width, 320)
                 timeline.show()
-                app.processEvents()
+                app.processEvents(QEventLoop.ProcessEventsFlag.AllEvents, 20)
                 stem = f"{theme}-{scale:g}-{width}"
                 editor.grab().save(str(out / f"{stem}-editor.png"))
                 timeline.grab().save(str(out / f"{stem}-timeline.png"))
                 menu = timeline.date_navigation_menu
                 menu.popup(timeline.mapToGlobal(timeline.rect().topLeft()))
-                app.processEvents()
+                app.processEvents(QEventLoop.ProcessEventsFlag.AllEvents, 20)
                 menu.grab().save(str(out / f"{stem}-menu.png"))
                 menu.close()
                 timeline.set_selected_event_navigation(None, "Select an event")
                 menu.popup(timeline.mapToGlobal(timeline.rect().topLeft()))
-                app.processEvents()
+                app.processEvents(QEventLoop.ProcessEventsFlag.AllEvents, 20)
                 menu.grab().save(str(out / f"{stem}-disabled.png"))
                 menu.close()
-                timeline.btn_go_to_date.setFocus(Qt.FocusReason.TabFocusReason)
-                app.processEvents()
+                timeline.activateWindow()
+                focus_target = (
+                    timeline.action_toolbar.overflow_button
+                    if timeline.btn_go_to_date.isHidden()
+                    else timeline.btn_go_to_date
+                )
+                focus_target.setFocus(Qt.FocusReason.TabFocusReason)
+                app.processEvents(QEventLoop.ProcessEventsFlag.AllEvents, 20)
                 timeline.grab().save(str(out / f"{stem}-focus.png"))
                 records.append(
                     {
@@ -89,6 +95,8 @@ def main() -> None:
                         "effective_font_points": QFontInfo(editor.font()).pointSizeF(),
                         "device_pixel_ratio": timeline.devicePixelRatioF(),
                         "overflowed": timeline.btn_go_to_date.isHidden(),
+                        "focus_target": focus_target.text(),
+                        "focus_acquired": focus_target.hasFocus(),
                     }
                 )
                 editor.close()
@@ -97,7 +105,8 @@ def main() -> None:
                 editor.deleteLater()
                 timeline.deleteLater()
                 parent.deleteLater()
-                app.processEvents()
+                app.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+                app.processEvents(QEventLoop.ProcessEventsFlag.AllEvents, 20)
     (out / "manifest.json").write_text(json.dumps(records, indent=2), encoding="utf-8")
 
 
