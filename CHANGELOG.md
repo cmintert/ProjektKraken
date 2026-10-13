@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-12
-**Commit:** 92a553018299337044b5fb51409664f1fd239ced
+**Last Updated:** 2026-10-13
+**Commit:** 0096f8e3fa0e342c17e816b2b16155671eff5b3c
 ---
 
 # Changelog
@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-13)* **Architecture (KRT-85)**: Documented the task-led Help
+  contract, context and keyboard ownership, offline topic registry and finite
+  coverage. Linked the design from the UX contents and Linear, with scenario
+  review and separate static, human and native acceptance requirements.
 
 - *(2026-10-12)* **Writing-editor presentation (KRT-83)**: Reorganized existing
   commands into a conventional menu row, flat compact formatting strip and

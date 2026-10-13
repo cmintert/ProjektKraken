@@ -6,6 +6,7 @@
 
 authoring-contract
 visual-interaction-vocabulary
+expert-assistance-contract
 authoring-benchmark
 authoring-interaction-audit
 investigations/krt26-map-edit-context
