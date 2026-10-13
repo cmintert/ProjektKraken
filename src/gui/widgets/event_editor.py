@@ -178,6 +178,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             self._date_draft_base_dirty = self._is_dirty
             self._date_draft_other_changes = False
         super().set_dirty(self._is_dirty or pending)
+        self._refresh_save_status()
         if pending:
             self.autosave_manager.stop_timer()
             self.btn_save.setEnabled(False)
@@ -202,9 +203,49 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             # method below to distinguish cancellation from a real edit.
             self._date_draft_other_changes = True
         super().set_dirty(dirty)
+        if dirty:
+            self._save_failed = False
+        self._refresh_save_status()
         if self.temporal_widget.has_pending_draft():
             self.autosave_manager.stop_timer()
             self.btn_save.setEnabled(False)
+
+    def _refresh_save_status(self) -> None:
+        """Render persistence separately from date validation feedback."""
+        if not hasattr(self, "save_status"):
+            return
+        if self.save_pending:
+            text = "Saving…"
+        elif getattr(self, "_save_failed", False):
+            text = "Save failed — changes retained"
+        elif self._is_dirty or self.temporal_widget.has_pending_draft():
+            text = "Unsaved changes"
+        else:
+            text = "Saved"
+        self.save_status.setText(text)
+
+    def begin_save(self) -> int | None:
+        """Show pending delivery only after a revision has been captured."""
+        revision = super().begin_save()
+        if revision is not None:
+            self._save_failed = False
+        self._refresh_save_status()
+        return revision
+
+    def finish_save(self, revision: int, success: bool) -> bool:
+        """Ignore stale acknowledgements and retain newer local drafts."""
+        if getattr(self, "_pending_save_revision", None) != revision:
+            return False
+        complete = super().finish_save(revision, success)
+        self._save_failed = not success
+        self._refresh_save_status()
+        return complete
+
+    def reset_draft_tracking(self) -> None:
+        """Clear delivery feedback when deliberately loading another snapshot."""
+        super().reset_draft_tracking()
+        self._save_failed = False
+        self._refresh_save_status()
 
     def has_unsaved_changes(self) -> bool:
         """Include typed date drafts in navigation and close guards."""
@@ -293,7 +334,6 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.temporal_evidence_button.setStyleSheet(StyleHelper.get_tool_button_style())
         self.temporal_evidence_button.clicked.connect(self._edit_temporal_evidence)
         temporal_actions.add_button(self.temporal_evidence_button)
-        self.form_layout.addRow(temporal_actions)
         from src.gui.widgets.wrapping_buttons import WrappingToolButton
 
         self.btn_show_world_at_event = WrappingToolButton()
@@ -306,6 +346,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.btn_show_world_at_event.setEnabled(False)
         self.btn_show_world_at_event.clicked.connect(self._show_world_at_event)
         self.form_layout.addRow(self.btn_show_world_at_event)
+        self.form_layout.addRow(temporal_actions)
         self.date_edit = self.temporal_widget.date_start
         self.end_date_edit = self.temporal_widget.date_end
         self.duration_widget = self.temporal_widget.duration_widget
@@ -504,6 +545,11 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         """Build persistent discard and save controls."""
         from src.gui.widgets.action_flow_layout import ActionFlowLayout
 
+        self.save_status = QLabel("Saved")
+        self.save_status.setObjectName("InspectorSupportCaption")
+        self.save_status.setWordWrap(True)
+        self.save_status.setStyleSheet(StyleHelper.get_inspector_support_style())
+        main_layout.addWidget(self.save_status)
         actions = QWidget()
         buttons = ActionFlowLayout(actions, uniform_height=True)
         buttons.setContentsMargins(0, 0, 0, 0)
@@ -1498,6 +1544,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.chronology_button.setStyleSheet(action_style)
         self.temporal_evidence_button.setStyleSheet(action_style)
         self.btn_show_world_at_event.setStyleSheet(action_style)
+        self.save_status.setStyleSheet(StyleHelper.get_inspector_support_style())
 
         # Update Checkboxes
         # StandardCheckbox handles its own styling on theme change

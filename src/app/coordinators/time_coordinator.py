@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QDialog, QMessageBox
 from src.app.coordinators.base_coordinator import BaseCoordinator
 from src.app.qt_invocation import invoke_queued
 from src.core.calendar import CalendarConfig, CalendarConverter
+from src.core.events import Event
 from src.core.temporal_presentation import event_navigation_context
 
 if TYPE_CHECKING:
@@ -119,14 +120,75 @@ class TimeCoordinator(BaseCoordinator):
         """Inspect the open event's saved date through guarded time navigation."""
         if self.main_window.event_editor.current_event_id != event_id:
             return
-        event = next(
+        self._navigate_to_saved_event(event_id)
+
+    def bind_date_navigation(self) -> None:
+        """Connect the timeline menu after widgets and selection owners exist."""
+        timeline = self.main_window.timeline
+        timeline.date_navigation_menu_requested.connect(
+            self.refresh_selected_event_navigation
+        )
+        timeline.selected_event_date_requested.connect(self.go_to_selected_event)
+        self.main_window.navigation_coordinator.navigation_result.connect(
+            self._on_navigation_result
+        )
+        self.main_window.data_coordinator.lore_mutation_applied.connect(
+            self._on_navigation_result
+        )
+        self.main_window.data_coordinator.events_cache_changed.connect(
+            self.refresh_selected_event_navigation
+        )
+        self.refresh_selected_event_navigation()
+
+    @Slot(str, str, str)
+    def _on_navigation_result(
+        self, _item_type: str, _item_id: str, _result: str
+    ) -> None:
+        """Refresh from accepted selection, never from pending requests."""
+        self.refresh_selected_event_navigation()
+
+    def _saved_event(self, event_id: str | None) -> Event | None:
+        """Resolve only worker-confirmed cached events."""
+        return next(
             (
-                event
-                for event in self.main_window.data_coordinator.cached_events
-                if event.id == event_id
+                e
+                for e in self.main_window.data_coordinator.cached_events
+                if e.id == event_id
             ),
             None,
         )
+
+    @Slot()
+    def refresh_selected_event_navigation(self) -> None:
+        """Publish the accepted global event and its saved temporal meaning."""
+        navigation = self.main_window.navigation_coordinator
+        event = (
+            self._saved_event(navigation.selected_id)
+            if navigation.selected_type == "event"
+            else None
+        )
+        caption = "Select an event to use its saved date"
+        if event is not None:
+            context = event_navigation_context(
+                event, self.main_window.calendar_converter
+            )
+            qualifier = "Representative date" if context["uncertain"] else "Saved date"
+            caption = f"{event.name} — {qualifier}: {context['caption']}"
+        self.main_window.timeline.set_selected_event_navigation(
+            event.id if event is not None else None, caption
+        )
+
+    @Slot(str)
+    def go_to_selected_event(self, event_id: str) -> None:
+        """Reject stale menu targets without depending on inspector hydration."""
+        navigation = self.main_window.navigation_coordinator
+        if navigation.selected_type != "event" or navigation.selected_id != event_id:
+            return
+        self._navigate_to_saved_event(event_id)
+
+    def _navigate_to_saved_event(self, event_id: str) -> None:
+        """Share saved-date navigation across inspector and toolbar routes."""
+        event = self._saved_event(event_id)
         if event is not None:
             self.go_to_date(
                 event.lore_date,

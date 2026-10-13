@@ -46,4 +46,5 @@ evidence/krt80/README
 evidence/krt82/README
 evidence/krt82/native-acceptance
 evidence/krt83/README
+evidence/krt78/README
 ```

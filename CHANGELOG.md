@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-13
-**Commit:** 0096f8e3fa0e342c17e816b2b16155671eff5b3c
+**Commit:** 9a7759fca93fd05c276363dc015e42d667fea35f
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-13)* **Authoring UX (KRT-78)**: Grouped selected-event and exact-date
+  navigation in the existing timeline menu, added revision-aware Event save
+  feedback, and clarified local date validation. Reproduced the January input
+  mismatch; added persistence/navigation regressions, documentation and visual
+  evidence tooling. Native and uncoached acceptance remain pending.
 
 - *(2026-10-13)* **Architecture (KRT-85)**: Documented the task-led Help
   contract, context and keyboard ownership, offline topic registry and finite

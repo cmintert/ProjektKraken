@@ -44,6 +44,7 @@ class DataCoordinator(BaseCoordinator):
     """
 
     lore_mutation_applied = Signal(str, str, str)
+    events_cache_changed = Signal()
     editor_hydrated = Signal(str, str)
     editor_hydration_failed = Signal(str, str)
     graph_temporal_requested = Signal(object, object, object)
@@ -234,6 +235,7 @@ class DataCoordinator(BaseCoordinator):
 
         """
         self._cached_events = events
+        self.events_cache_changed.emit()
         self.main_window.event_editor.update_chronology_events(events)
         self.main_window.entity_editor.set_dated_events(
             [(event.id, event.name, event.lore_date) for event in events]

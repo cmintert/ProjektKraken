@@ -53,6 +53,7 @@ def test_show_world_uses_saved_date_and_preserves_event_draft(editor, qtbot):
     window = editor.parent()
     window.event_editor = editor
     window.timeline = timeline
+    window.calendar_converter = None
     window.entity_editor = MagicMock()
     window.entity_editor.has_unsaved_changes.return_value = False
     window.entity_editor.current_entity_id = None
@@ -170,7 +171,7 @@ def test_add_relation_flow(editor, qtbot, monkeypatch):
     )
 
     with qtbot.waitSignal(editor.add_relation_requested) as blocker:
-        editor.btn_add_rel.click()
+        editor._on_add_detailed_relation()
 
     # Signal: source, target, type, attributes, bidirectional
     assert blocker.args == ["1", "target_id", "caused", {}, True]
@@ -259,7 +260,7 @@ def test_context_menu_actions(editor, qtbot, monkeypatch):
     )
 
     with qtbot.waitSignal(editor.update_relation_requested) as blocker:
-        editor._on_edit_selected_relation()
+        editor._on_edit_relation_full(item)
 
     # args: rel_id, target_id, new_type, attributes
     assert blocker.args == ["r1", "new_target", "related_to", {}]

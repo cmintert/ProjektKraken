@@ -33,7 +33,7 @@ def test_go_to_date_action_enables_with_calendar(timeline, qtbot):
 
     assert timeline.btn_go_to_date.isEnabled()
     with qtbot.waitSignal(timeline.go_to_date_requested):
-        timeline.btn_go_to_date.click()
+        timeline.enter_date_action.trigger()
 
 
 def test_set_events_creates_items(timeline):
@@ -43,7 +43,9 @@ def test_set_events_creates_items(timeline):
     ]
     timeline.set_events(events)
 
-    items = [i for i in timeline.view.graphics_scene.items() if isinstance(i, EventItem)]
+    items = [
+        i for i in timeline.view.graphics_scene.items() if isinstance(i, EventItem)
+    ]
     # Sort by X to match date order
     items.sort(key=lambda i: i.x())
     assert len(items) == 2
@@ -73,7 +75,9 @@ def test_focus_event(timeline):
     timeline.set_events(events)
 
     timeline.focus_event("1")
-    items = [i for i in timeline.view.graphics_scene.items() if isinstance(i, EventItem)]
+    items = [
+        i for i in timeline.view.graphics_scene.items() if isinstance(i, EventItem)
+    ]
     assert items[0].isSelected()
 
 
@@ -152,7 +156,9 @@ def test_event_drag_date_change(timeline, qtbot):
     timeline.set_events(events)
 
     # 2. Find the event item
-    items = [i for i in timeline.view.graphics_scene.items() if isinstance(i, EventItem)]
+    items = [
+        i for i in timeline.view.graphics_scene.items() if isinstance(i, EventItem)
+    ]
     assert len(items) == 1
     item = items[0]
 
@@ -196,7 +202,9 @@ def test_event_drag_constrained_to_horizontal(timeline):
     events = [Event(id="h-test", name="Horizontal", lore_date=100.0, type="generic")]
     timeline.set_events(events)
 
-    items = [i for i in timeline.view.graphics_scene.items() if isinstance(i, EventItem)]
+    items = [
+        i for i in timeline.view.graphics_scene.items() if isinstance(i, EventItem)
+    ]
     item = items[0]
 
     initial_y = item.y()

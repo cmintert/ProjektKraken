@@ -391,7 +391,10 @@ class CompactDateWidget(QWidget):
 
     def _on_draft_edited(self, _text: str) -> None:
         self._draft_pending = True
-        self.feedback.setText("Date not applied yet. Enter to apply; Esc to restore.")
+        self.feedback.setText(
+            "Date not validated yet. Enter or leave the field to validate; "
+            "Esc to restore. Validation does not save changes."
+        )
         self.draft_changed.emit(True)
 
     def has_pending_draft(self) -> bool:

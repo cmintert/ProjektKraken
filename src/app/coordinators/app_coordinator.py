@@ -115,6 +115,10 @@ class AppCoordinator(QObject):
                 self.main_window.map_widget, self.navigation
             )
 
+    def bind_date_navigation(self) -> None:
+        """Compose selected-event time navigation after widget creation."""
+        self.time.bind_date_navigation()
+
     def bind_longform_navigation(self) -> None:
         """Compose Longform navigation once its view is available."""
         if not hasattr(self, "longform_navigation"):

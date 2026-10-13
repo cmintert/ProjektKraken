@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
     QLayout,
+    QMenu,
     QSizePolicy,
     QVBoxLayout,
     QWidget,
@@ -25,6 +26,7 @@ from PySide6.QtWidgets import (
 
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.menu_caret import PhosphorPushMenuButton
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 from src.gui.widgets.timeline.event_item import EventItem
@@ -46,6 +48,8 @@ class TimelineWidget(QWidget):
     event_date_changed = Signal(str, float)  # (event_id, new_lore_date)
     create_event_requested = Signal()  # Expose empty state action from view
     go_to_date_requested = Signal()
+    selected_event_date_requested = Signal(str)
+    date_navigation_menu_requested = Signal()
     navigation_context_changed = Signal(dict)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
@@ -116,12 +120,27 @@ class TimelineWidget(QWidget):
         self.btn_return_present.clicked.connect(self.return_to_present)
         self.action_toolbar.add_button(self.btn_return_present, priority=70)
 
-        self.btn_go_to_date = QPushButton("Go to date...")
+        self.btn_go_to_date = PhosphorPushMenuButton("Go to date")
         self.btn_go_to_date.setToolTip(
-            "Move the playhead to an exact date in the active calendar"
+            "Move the playhead to the selected event or enter an exact date"
         )
+        self._selected_navigation_event_id: str | None = None
+        self.date_navigation_menu = QMenu(self)
+        self.selected_event_date_action = self.date_navigation_menu.addAction(
+            "Go to selected event"
+        )
+        self.selected_event_date_action.setEnabled(False)
+        self.enter_date_action = self.date_navigation_menu.addAction("Enter a date…")
+        self.enter_date_action.setEnabled(False)
+        self.enter_date_action.triggered.connect(self.go_to_date_requested.emit)
+        self.selected_event_date_action.triggered.connect(
+            self._request_selected_event_date
+        )
+        self.date_navigation_menu.aboutToShow.connect(
+            self.date_navigation_menu_requested.emit
+        )
+        self.btn_go_to_date.setMenu(self.date_navigation_menu)
         self.btn_go_to_date.setEnabled(False)
-        self.btn_go_to_date.clicked.connect(self.go_to_date_requested.emit)
         self.action_toolbar.add_button(self.btn_go_to_date, priority=65)
 
         settings = QSettings()
@@ -312,9 +331,29 @@ class TimelineWidget(QWidget):
         if self.view._band_manager is not None:
             self.view._band_manager.refresh_occurrences(converter)
         self.view.repack_events()
-        self.btn_go_to_date.setEnabled(converter is not None)
+        self.enter_date_action.setEnabled(converter is not None)
+        self._refresh_date_navigation_enabled()
         # Trigger repaint to update existing items
         self.view.viewport().update()
+
+    def set_selected_event_navigation(self, event_id: str | None, caption: str) -> None:
+        """Render a coordinator-prepared saved navigation target."""
+        self._selected_navigation_event_id = event_id
+        self.selected_event_date_action.setEnabled(event_id is not None)
+        self.selected_event_date_action.setToolTip(caption)
+        self._refresh_date_navigation_enabled()
+
+    def _refresh_date_navigation_enabled(self) -> None:
+        """Keep the menu reachable whenever one destination is available."""
+        self.btn_go_to_date.setEnabled(
+            self.selected_event_date_action.isEnabled()
+            or self.enter_date_action.isEnabled()
+        )
+
+    def _request_selected_event_date(self) -> None:
+        """Emit the displayed target for coordinator revalidation."""
+        if self._selected_navigation_event_id is not None:
+            self.selected_event_date_requested.emit(self._selected_navigation_event_id)
 
     def update_event_preview(self, event_data: dict) -> None:
         """Updates the visual representation of an event in real-time.

@@ -12,7 +12,13 @@ the current lore time and also controls time-sensitive map content.
 - Select an event to open its inspector.
 - Move supported event items to update their date.
 - Use the playhead controls to inspect another point in history.
-- Choose **Go to date...** to enter an exact date in the active calendar. Add an
+- Open **Go to date** above the timeline and choose **Go to selected event**
+  to move the playhead to the selected event's saved date and center the view.
+  This option is disabled when the selected object is not an available event.
+  Approximate dates use a representative position, explained in the viewing
+  status after navigation. Selection and World Time stay unchanged.
+- Choose **Go to date → Enter a date…** to enter an exact date in the active
+  calendar. In narrow layouts, the same menu is under **More actions**. Add an
   hour and minute if needed; a date alone goes to the start of that day. The
   playhead moves there and the timeline centers on it, even without an event.
 - In the Event Editor, choose **Show world at this event** to move the playhead

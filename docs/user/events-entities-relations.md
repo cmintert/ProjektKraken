@@ -86,11 +86,16 @@ For unresolved and stable links, see
 ## Set an event date or duration
 
 The Event inspector starts with one clear date field. Type a date in the
-world's calendar format and press **Enter** to apply it. If you change your
+world's calendar format and press **Enter**, or leave the field, to validate it.
+Validation accepts the date locally; it does not confirm that changes are saved.
+The separate status shows **Unsaved changes**, **Saving…**, **Saved**, or
+**Save failed — changes retained**. Autosave follows your existing configuration;
+you can also use **Save Changes**. Invalid or unfinished dates are not saved.
+If you change your
 mind before applying the text, press **Escape** to restore the last accepted
 date. You can also use the calendar button beside the field.
 
-Choose **Date fields…** when you prefer separate year, month, and day
+Choose **Date details & uncertainty…** when you prefer separate year, month, and day
 controls. Choose **Time…** to add a time of day.
 
 For an event that lasts over time:

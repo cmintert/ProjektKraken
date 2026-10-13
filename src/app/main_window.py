@@ -672,6 +672,7 @@ class MainWindow(QMainWindow):
         self.workspace.reset_layout()
         self.navigation_coordinator.bind_peek_panel(self.wiki_peek_panel)
         self.app_coordinator.bind_wiki_links()
+        self.app_coordinator.bind_date_navigation()
 
         self.ui_manager = UIManager(self)
 
