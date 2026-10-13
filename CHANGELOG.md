@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-13
-**Commit:** 0d74316baaa5af102f82d0b4628cbe1f0d00abcb
+**Commit:** beea8d771364bf5aaaa0cd275b67ca64601ee2db
 ---
 
 # Changelog
@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-13)* **Testing**: Updated the two renamed Focus writing test IDs in
+  the reviewed inventory, preserving suite memberships and unblocking pre-push
+  validation after the KRT-83 toolbar redesign.
 
 - *(2026-10-13)* **Help infrastructure (KRT-86)**: Generate a version-matched,
   offline manual from canonical Markdown during local pre-push and package builds.
