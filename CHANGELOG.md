@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-13
-**Commit:** 30db1b376654d3ff6139ec197c24c034205f659f
+**Last Updated:** 2026-10-14
+**Commit:** f36df4416f8f02c580d225f94cfa71edb02a3c5e
 ---
 
 # Changelog
@@ -12,6 +12,17 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-13)* **Help search and inspection (KRT-88)**: Search the packaged
+  manual as you type, with local Ctrl+F, keyboard results and retained queries.
+  Native Shift+F1 and Help > Inspect control explain 20 reviewed control meanings
+  using nine canonical excerpts. Preserve drafts, selections, map operations and
+  Focus writing through popup dismissal and modifier-key chords.
+- *(2026-10-13)* **Help verification (KRT-88)**: Added relevance, native
+  inspection, control-inventory and authoring-state regressions plus six-theme
+  search/explanation capture. Extracted Entity attribute destination choice and
+  lowered its save-method complexity ceiling from 23 to 19 without changing
+  baseline/dated ownership behavior. New excerpt prose awaits human review.
 
 - *(2026-10-13)* **Relation persistence (KRT-37)**: Extracted authored relation
   validation and mutation preparation into a focused service. Commands now require

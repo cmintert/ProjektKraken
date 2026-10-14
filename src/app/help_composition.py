@@ -8,6 +8,7 @@ from PySide6.QtCore import QEvent, QObject
 from PySide6.QtWidgets import QWidget
 
 from src.app.coordinators.help_coordinator import HelpCoordinator
+from src.app.help_control_bindings import HelpControlBindings
 from src.gui.utils.help_context import HelpContextRegistry
 from src.services.help_bundle_service import HelpBundleService
 
@@ -22,16 +23,19 @@ class HelpSurfaceBindings(QObject):
         "TemporalEvidenceDialog": "date.evidence",
         "EventChronologyDialog": "event.chronology",
         "KeyboardShortcutsDialog": "manual.shortcuts",
+        "FeatureGeometryStatesDialog": "map.historical-geometry",
     }
 
     def __init__(self, coordinator: HelpCoordinator) -> None:
         """Retain the feature coordinator, never an application facade."""
         super().__init__(coordinator)
         self.coordinator = coordinator
+        self.inspection = HelpControlBindings(coordinator.registry)
 
     def bind(self, widget: QWidget) -> None:
         """Associate known production types with reviewed topic meanings."""
         registry = self.coordinator.registry
+        self.inspection.bind(widget)
         name = type(widget).__name__
         topic = self.DIALOG_TOPICS.get(name)
         if topic:

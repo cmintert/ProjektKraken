@@ -9,6 +9,10 @@ the current lore time and also controls time-sensitive map content.
 
 ## Use the timeline
 
+(help-control-timeline-viewing)=
+
+> Viewing time is the playhead position used to inspect historical entity state, maps and the graph. World current time is the world's current story time. Moving the playhead, going to a date or showing the world at an event changes Viewing without changing World current time. Set Current Time deliberately makes the viewed position the current story time; Return to Current Time moves Viewing back to it. The two marks can coincide without becoming the same setting. Asking for Help explains these roles without moving either time.
+
 - Scroll or use the zoom controls to change scale.
 - Drag the view to move through time.
 - Select an event to open its inspector.
@@ -40,6 +44,10 @@ the current lore time and also controls time-sensitive map content.
 (help-date-precision)=
 
 ## Dates with incomplete information
+
+(help-control-date-precision)=
+
+> Date qualification describes how a date is known; it does not add a missing month or day. Leave month or day unspecified when the sources give only a year or month. Choosing a component intentionally adds precision. Approximate and uncertain dates do not supply hard limits by themselves: use explicit possible occurrence limits when those bounds are known. For example, `961?` records uncertainty about the year, while `between 959 and 963` supplies a bounded occurrence window. Neither form automatically gives the event a duration.
 
 Type `961`, `May 961`, or a complete calendar date. Saving and reopening keeps
 the precision you entered. **Date fields…** allows month and day to remain

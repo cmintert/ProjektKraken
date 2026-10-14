@@ -1695,6 +1695,37 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         else:
             self._on_save()
 
+    def _new_attribute_destination(
+        self, key: str, state: dict[str, Any]
+    ) -> dict[str, Any] | None:
+        """Choose a new attribute's existing baseline/dated ownership explicitly."""
+        choice = QMessageBox(self)
+        choice.setWindowTitle("New attribute")
+        choice.setText(f"Where should '{key}' begin?")
+        baseline = choice.addButton(
+            "Entity baseline", QMessageBox.ButtonRole.AcceptRole
+        )
+        dated = choice.addButton("At this time", QMessageBox.ButtonRole.ActionRole)
+        baseline.setProperty("krakenHelpMeaning", "entity.baseline")
+        dated.setProperty("krakenHelpMeaning", "entity.at-time")
+        choice.addButton(QMessageBox.StandardButton.Cancel)
+        choice.exec()
+        if choice.clickedButton() == baseline:
+            if key in state.get("absent_attribute_sources", {}):
+                confirmation = QMessageBox.question(
+                    self,
+                    "Hidden baseline value",
+                    "An event currently unsets this attribute. A baseline "
+                    "value will remain hidden at the viewed time. Create it anyway?",
+                )
+                if confirmation != QMessageBox.StandardButton.Yes:
+                    return None
+            return {"scope": "baseline"}
+        if choice.clickedButton() == dated:
+            event = self._choose_dated_event()
+            return {"scope": "dated", **event} if event is not None else None
+        return None
+
     def _save_temporal(self, *, interactive: bool) -> None:  # noqa: C901
         """Emit only changed visible fields and explicit ownership choices."""
         state = self._temporal_state
@@ -1738,36 +1769,10 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             if key not in original:
                 if not interactive:
                     return
-                choice = QMessageBox(self)
-                choice.setWindowTitle("New attribute")
-                choice.setText(f"Where should '{key}' begin?")
-                baseline = choice.addButton(
-                    "Entity baseline", QMessageBox.ButtonRole.AcceptRole
-                )
-                dated = choice.addButton(
-                    "At this time", QMessageBox.ButtonRole.ActionRole
-                )
-                choice.addButton(QMessageBox.StandardButton.Cancel)
-                choice.exec()
-                if choice.clickedButton() == baseline:
-                    if key in state.get("absent_attribute_sources", {}):
-                        confirmation = QMessageBox.question(
-                            self,
-                            "Hidden baseline value",
-                            "An event currently unsets this attribute. A baseline "
-                            "value will remain hidden at the viewed time. "
-                            "Create it anyway?",
-                        )
-                        if confirmation != QMessageBox.StandardButton.Yes:
-                            return
-                    patch["scope"] = "baseline"
-                elif choice.clickedButton() == dated:
-                    event = self._choose_dated_event()
-                    if event is None:
-                        return
-                    patch.update({"scope": "dated", **event})
-                else:
+                destination = self._new_attribute_destination(key, state)
+                if destination is None:
                     return
+                patch.update(destination)
             patches.append(patch)
         for key in original.keys() - current.keys():
             if not interactive:

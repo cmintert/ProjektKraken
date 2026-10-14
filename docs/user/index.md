@@ -24,7 +24,24 @@ cancel an unfinished operation, including while Focus writing is active.
 
 The manual is available offline in the matching release. If Help cannot load,
 follow its local recovery instruction. External references do not automatically
-open a browser. Help search and control inspection are not yet available.
+open a browser.
+
+Choose **Search** in Help, or press **Ctrl+F while Help has focus**, to search
+the complete offline manual. Results update after a short pause while you type.
+Single click selects a result; double-click or Enter opens it. Enter in the query
+opens the selected result, or the first result after a new query. Search keeps
+your query when you open a topic. Escape hides search first, then returns from
+Help to your work.
+
+For the reviewed date, duration, source, relation, geometry, existence and time
+controls, focus the control and press **Shift+F1** to read its explanation.
+Alternatively, choose **Help → Inspect control**, then click the control.
+The inspection click does not activate the control or change a map selection.
+Escape dismisses inspection or its explanation before affecting your work.
+Use **Read the task in Help** in an explanation for the full procedure.
+Other controls inherit ordinary F1 task help; they do not each have a separate
+inspection explanation. Non-focusable labels can also be inspected, and their
+topics remain available through the manual and search.
 
 ```{toctree}
 :maxdepth: 1

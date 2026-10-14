@@ -79,6 +79,10 @@ the whole path and is saved as part of its global feature style.
 
 ## Dated path and region geometry
 
+(help-control-map-historical-geometry)=
+
+> Base Geometry is the undated shape used before a dated geometry state takes effect. A dated state replaces the border or path from its effective date until a later state takes over. Edit the border at the current date to work on the playhead's historical shape; manage historical states to choose Base Geometry or a dated state deliberately. Changing a shape does not set Exists from or Exists until. Those controls govern whether the feature exists, independently of its vertices. Inspecting a state leaves the current selection and unfinished working copy intact.
+
 Every path and region has Base Geometry and may have dated geometry states.
 Before the first dated state, ProjektKraken draws Base Geometry. On a state's
 exact date and until the next state, it draws the latest applicable state.
@@ -106,6 +110,10 @@ markers continue to use their ordinary positions or trajectories.
 (help-map-visibility)=
 
 ## Temporal visibility
+
+(help-control-map-visibility)=
+
+> Exists from and Exists until describe when a map feature is present, independently of its border or path geometry. An unknown boundary records unresolved timing; an unbounded side has no limit. Exists until is an exclusive boundary, so the feature is no longer present at that transition. Choose a date or boundary meaning appropriate to the world instead of changing geometry to hide a feature. A dated geometry state changes its shape, not its existence dates. Inspection does not move the playhead, toggle a layer or apply an unfinished map edit.
 
 Point markers, paths, and regions can exist only during part of the timeline.
 Select a feature on the map or in Layers and choose **Feature actions >

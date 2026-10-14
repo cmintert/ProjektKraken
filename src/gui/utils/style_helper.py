@@ -9,7 +9,7 @@ import logging
 from typing import Any, Optional, Tuple
 
 from PySide6.QtCore import QEvent, QObject, QRect
-from PySide6.QtGui import QColor, QCursor
+from PySide6.QtGui import QColor, QCursor, QPalette
 from PySide6.QtWidgets import (
     QLayout,
     QProxyStyle,
@@ -1056,9 +1056,55 @@ class StyleHelper:
         return (
             f"QWidget#ReadOnlyCompanion {{ background-color: {theme['app_bg']}; "
             f"color: {theme['text_main']}; }}"
-            f"QTextBrowser {{ background-color: {theme['surface']}; "
+            f"QTextBrowser, QListWidget {{ background-color: {theme['surface']}; "
             f"color: {theme['text_main']}; border: 1px solid {theme['border']}; }}"
+            "QListWidget::item { padding: 4px; }"
         ) + StyleHelper.get_scrollbar_style()
+
+    @staticmethod
+    def apply_read_only_palette(widget: QWidget) -> None:
+        """Give native explanation popups the same neutral assistance roles."""
+        theme = ThemeManager().get_theme()
+        palette = widget.palette()
+        for role in (
+            QPalette.ColorRole.Window,
+            QPalette.ColorRole.Base,
+            QPalette.ColorRole.ToolTipBase,
+        ):
+            palette.setColor(role, QColor(theme["surface"]))
+        for role in (
+            QPalette.ColorRole.WindowText,
+            QPalette.ColorRole.Text,
+            QPalette.ColorRole.ToolTipText,
+        ):
+            palette.setColor(role, QColor(theme["text_main"]))
+        palette.setColor(QPalette.ColorRole.Link, QColor(theme["link_neutral"]))
+        widget.setPalette(palette)
+
+    @staticmethod
+    def get_read_only_text_style() -> str:
+        """Use ordinary neutral foreground for native rich-text explanations."""
+        return f"color: {ThemeManager().get_theme()['text_main']};"
+
+    @staticmethod
+    def get_search_field_style() -> str:
+        """Scope shared input declarations before adding keyboard focus rules."""
+        return (
+            "QLineEdit { "
+            + StyleHelper.get_input_field_style()
+            + " }"
+            + StyleHelper.get_inspector_focus_style()
+        )
+
+    @staticmethod
+    def get_read_only_list_style() -> str:
+        """Share neutral reader surfaces and semantic item-view selection."""
+        theme = ThemeManager().get_theme()
+        return (
+            f"QListWidget {{ background-color: {theme['surface']}; "
+            f"color: {theme['text_main']}; border: 1px solid {theme['border']}; }}"
+            "QListWidget::item { padding: 4px; }"
+        ) + StyleHelper.get_item_view_selection_style("QListWidget")
 
     @staticmethod
     def get_scrollbar_style() -> str:

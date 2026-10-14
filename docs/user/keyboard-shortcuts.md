@@ -8,6 +8,8 @@ The current shortcuts are also available from
 | Action | Shortcut |
 | --- | --- |
 | Help for current task | F1 |
+| Explain a reviewed focused control | Shift+F1 |
+| Search the offline manual | Ctrl+F, while Help has focus |
 | Return from Help to work | Escape, while Help has focus |
 | Create event | Ctrl+E |
 | Create entity | Ctrl+I |
@@ -33,5 +35,8 @@ The current shortcuts are also available from
 Some shortcuts apply only when the corresponding editor or map has keyboard
 focus. **Escape** always cancels the most local active operation first. In the
 trajectory editor it cancels an equalization preview, then an active date edit,
-then the complete unsaved trajectory session. Reordering and shifting are
+then the complete unsaved trajectory session. In Help, Escape hides search
+before returning to work. During control inspection it dismisses inspection or
+the explanation first, without canceling a map edit or leaving Focus writing.
+Reordering and shifting are
 controls within the active date edit and do not add separate shortcuts.

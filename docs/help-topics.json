@@ -55,7 +55,8 @@
       "level": "task",
       "related_ids": [
         "date.precision"
-      ]
+      ],
+      "control_excerpt_target": "help-control-event-timing"
     },
     {
       "id": "date.precision",
@@ -65,7 +66,8 @@
       "related_ids": [
         "event.timing",
         "date.evidence"
-      ]
+      ],
+      "control_excerpt_target": "help-control-date-precision"
     },
     {
       "id": "date.evidence",
@@ -92,7 +94,8 @@
       "level": "task",
       "related_ids": [
         "event.timing"
-      ]
+      ],
+      "control_excerpt_target": "help-control-timeline-viewing"
     },
     {
       "id": "entity.historical-editing",
@@ -102,7 +105,8 @@
       "related_ids": [
         "entity.value-source",
         "timeline.viewing"
-      ]
+      ],
+      "control_excerpt_target": "help-control-entity-historical-editing"
     },
     {
       "id": "entity.value-source",
@@ -111,7 +115,8 @@
       "level": "task",
       "related_ids": [
         "entity.historical-editing"
-      ]
+      ],
+      "control_excerpt_target": "help-control-entity-value-source"
     },
     {
       "id": "relations.create",
@@ -121,7 +126,8 @@
       "related_ids": [
         "relations.timing",
         "authoring.representations"
-      ]
+      ],
+      "control_excerpt_target": "help-control-relations-create"
     },
     {
       "id": "relations.timing",
@@ -131,7 +137,8 @@
       "related_ids": [
         "relations.create",
         "event.timing"
-      ]
+      ],
+      "control_excerpt_target": "help-control-relations-timing"
     },
     {
       "id": "authoring.representations",
@@ -161,7 +168,8 @@
       "related_ids": [
         "map.visibility",
         "timeline.viewing"
-      ]
+      ],
+      "control_excerpt_target": "help-control-map-historical-geometry"
     },
     {
       "id": "map.visibility",
@@ -170,7 +178,8 @@
       "level": "task",
       "related_ids": [
         "map.historical-geometry"
-      ]
+      ],
+      "control_excerpt_target": "help-control-map-visibility"
     },
     {
       "id": "map.trajectories",

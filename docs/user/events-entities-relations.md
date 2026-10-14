@@ -93,6 +93,10 @@ For unresolved and stable links, see
 
 ## Set an event date or duration
 
+(help-control-event-timing)=
+
+> Duration records how long an event lasts, independently of how precisely its start is known. Enable Event has duration to enter a duration or a separately known end date. Keep Duration preserves the elapsed length when you change the start; Keep End Date preserves the end and changes the elapsed length. A year-only occurrence does not need a duration merely because its exact day is unknown. Removing a duration retains the start's date precision. Validate the date locally, then check the separate save status before treating an edit as saved.
+
 The Event inspector starts with one clear date field. Type a date in the
 world's calendar format and press **Enter**, or leave the field, to validate it.
 Validation accepts the date locally; it does not confirm that changes are saved.
@@ -132,6 +136,14 @@ choose a date from the calendar, or press **Escape**.
 
 ## View and correct an entity at another time
 
+(help-control-entity-value-source)=
+
+> Source identifies the baseline or dated event supplying the value currently shown in the Entity inspector. It explains which authored source an ordinary correction will change; it is not a command to copy the value into the baseline. Move the playhead to view another time, then check Source before correcting the visible description or attribute. Use a deliberate new dated change when the meaning begins at a later time. A source label does not claim that independent attributes, relations and linked mentions have synchronized.
+
+(help-control-entity-historical-editing)=
+
+> Entity baseline stores an attribute in the entity's ordinary record. At this time starts a dated change using an event at the viewed time, or an event you create for that change. Choose the destination deliberately when adding an attribute: viewing another year does not make every field a new dated fact. Correcting an existing visible value edits its displayed source instead. Starting a new description at this time creates a dated description change. These operations do not automatically create a membership relation or update a similarly worded linked mention.
+
 Move the Timeline playhead to see an entity as it appeared at that point in
 your world's history. The Entity inspector shows the visible description and
 attributes, along with a **Source** label and attribute tooltips that identify
@@ -170,6 +182,10 @@ position, and normal inspector layout are restored.
 
 ## Create relations
 
+(help-control-relations-create)=
+
+> Direction identifies the source and target of a connection. Read the relation preview before saving: the subject and target determine how the relation is understood. In the inspector drop workflow, the dropped entry is the source and the inspected entry is the target. Creating a reverse link is a separate deliberate choice, rather than an automatic consequence of every connection. Changing direction does not synchronize a similarly named attribute or wiki mention. Inspecting the control only explains this choice; it does not connect entries, reverse a relation or save a draft.
+
 Open the item's **Connections** tab and drop an existing Entity or Event onto
 the labeled connection target. Review the preview and choose the meaning, then
 select **Connect** to save or **Cancel** to discard. The dropped entry is the
@@ -184,6 +200,10 @@ which item is the subject and which is the target.
 (help-relations-timing)=
 
 ## Historical validity and uncertainty
+
+(help-control-relations-timing)=
+
+> Meaning distinguishes an active state, a historical fact, an occurrence and a timeless association. Start and end boundaries can use manual dates, named events, unknown dates or unbounded sides. Unknown means unresolved; unbounded means no limit on that side. The end transition is exclusive. Bind an outgoing role's end and a successor's start to the same event to record a shared handover, even when its exact date is uncertain. Copying an event's displayed timeline coordinate into two manual dates does not preserve that shared-event identity.
 
 In a relation's **Temporal Settings**, choose a manual date, a named event,
 **Date not known**, or **Unbounded** for its start and end. Unknown means the

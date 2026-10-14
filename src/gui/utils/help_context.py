@@ -5,10 +5,11 @@ from __future__ import annotations
 import weakref
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
+from dataclasses import dataclass
 
 import shiboken6
-from PySide6.QtCore import QObject
-from PySide6.QtWidgets import QApplication, QWidget
+from PySide6.QtCore import QObject, QPoint
+from PySide6.QtWidgets import QApplication, QWhatsThis, QWidget
 
 
 def ancestors(widget: QObject | None) -> Iterator[QObject]:
@@ -21,6 +22,28 @@ def ancestors(widget: QObject | None) -> Iterator[QObject]:
 def owns_help_input(widget: QObject | None) -> bool:
     """Identify the companion independently of its current modal parent."""
     return any(bool(item.property("krakenHelpWindow")) for item in ancestors(widget))
+
+
+def owns_assistance_input(widget: QObject | None) -> bool:
+    """Include native inspection mode and its tracked explanation popup."""
+    app = QApplication.instance()
+    return (
+        owns_help_input(widget)
+        or any(
+            bool(item.property("krakenHelpInspectionPopup"))
+            for item in ancestors(widget)
+        )
+        or QWhatsThis.inWhatsThisMode()
+        or bool(app and app.property("krakenInspectionPopup"))
+    )
+
+
+@dataclass(frozen=True)
+class ControlHelpRegistration:
+    """A reviewed control meaning, independent of ordinary F1 context."""
+
+    meaning: str
+    topic_id: str
 
 
 def help_is_activating() -> bool:
@@ -71,6 +94,12 @@ class HelpContextRegistry:
             QWidget, Callable[[], str | None]
         ] = weakref.WeakKeyDictionary()
         self._watched: weakref.WeakSet[QWidget] = weakref.WeakSet()
+        self.inspection: weakref.WeakKeyDictionary[QWidget, ControlHelpRegistration] = (
+            weakref.WeakKeyDictionary()
+        )
+        self.inspection_regions: weakref.WeakKeyDictionary[
+            QWidget, Callable[[QPoint | None], ControlHelpRegistration | None]
+        ] = weakref.WeakKeyDictionary()
 
     def _watch(self, widget: QWidget) -> None:
         if widget not in self._watched:
@@ -87,16 +116,78 @@ class HelpContextRegistry:
                 self.dialogs,
                 self.owners,
                 self.operations,
+                self.inspection,
+                self.inspection_regions,
             ):
                 mapping.pop(widget, None)
 
     def clear(self) -> None:
         """Release all registrations and operation dependencies on shutdown."""
+        for widget in QApplication.allWidgets():
+            if widget.property("krakenInspectionRegistry") == id(self):
+                for key in (
+                    "krakenInspectionMeaning",
+                    "krakenInspectionTopic",
+                    "krakenInspectionRegion",
+                    "krakenInspectionRegistry",
+                ):
+                    widget.setProperty(key, None)
+                widget.setWhatsThis("")
         self.controls.clear()
         self.panels.clear()
         self.dialogs.clear()
         self.owners.clear()
         self.operations.clear()
+        self.inspection.clear()
+        self.inspection_regions.clear()
+
+    def register_inspection(self, widget: QWidget, meaning: str, topic: str) -> None:
+        """Register only reviewed control instances or their scoped composites."""
+        self.inspection[widget] = ControlHelpRegistration(meaning, topic)
+        widget.setProperty("krakenInspectionRegistry", id(self))
+        widget.setProperty("krakenInspectionMeaning", meaning)
+        widget.setProperty("krakenInspectionTopic", topic)
+        # Native Shift+F1 eligibility; the controller supplies validated text.
+        widget.setWhatsThis(" ")
+        self._watch(widget)
+
+    def register_inspection_region(
+        self,
+        widget: QWidget,
+        provider: Callable[[QPoint | None], ControlHelpRegistration | None],
+    ) -> None:
+        """Resolve painted/item regions without changing authoring selection."""
+        self.inspection_regions[widget] = provider
+        widget.setProperty("krakenInspectionRegistry", id(self))
+        widget.setProperty("krakenInspectionRegion", provider)
+        widget.setWhatsThis(" ")
+        self._watch(widget)
+
+    def inspection_for(
+        self, origin: QWidget, position: QPoint | None = None
+    ) -> tuple[QWidget, ControlHelpRegistration] | None:
+        """Resolve reviewed nested controls, stopping at a surface boundary."""
+        for item in ancestors(origin):
+            if not isinstance(item, QWidget):
+                continue
+            provider = self.inspection_regions.get(item) or item.property(
+                "krakenInspectionRegion"
+            )
+            if callable(provider):
+                point = item.mapFrom(origin, position) if position is not None else None
+                registration = provider(point)
+                return (item, registration) if registration else None
+            registration = self.inspection.get(item)
+            if registration is None:
+                meaning = item.property("krakenInspectionMeaning")
+                topic = item.property("krakenInspectionTopic")
+                if isinstance(meaning, str) and isinstance(topic, str):
+                    registration = ControlHelpRegistration(meaning, topic)
+            if registration is not None:
+                return item, registration
+            if item in self.panels or item in self.dialogs:
+                break
+        return None
 
     def register_control(
         self, widget: QWidget, topic: str, owner: QWidget | None = None

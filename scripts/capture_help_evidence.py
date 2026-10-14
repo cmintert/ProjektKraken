@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from PySide6.QtCore import Qt, qVersion
+from PySide6.QtCore import QPoint, Qt, qVersion
 from PySide6.QtWidgets import QApplication, QTextEdit, QVBoxLayout, QWidget
 
 from src.app.coordinators.help_coordinator import HelpCoordinator
@@ -15,7 +15,7 @@ from src.gui.utils.help_context import HelpContextRegistry
 from src.services.help_bundle_service import HelpBundleService
 
 
-def capture(output: Path) -> None:
+def capture(output: Path, *, include_assistance: bool = False) -> None:
     """Render six palettes at normal/narrow widths and report label geometry."""
     app = QApplication.instance() or QApplication([])
     root = Path(__file__).resolve().parents[1]
@@ -27,6 +27,13 @@ def capture(output: Path) -> None:
     registry = HelpContextRegistry()
     registry.register_control(text, "writing.edit")
     coordinator = HelpCoordinator(owner, registry, HelpBundleService())
+    source: QWidget | None = None
+    if include_assistance:
+        from src.gui.widgets.compact_duration_widget import CompactDurationWidget
+
+        source = CompactDurationWidget(owner)
+        owner.layout().addWidget(source)
+        registry.register_inspection(source, "event.duration", "event.timing")
     owner.show()
     records = []
     try:
@@ -60,6 +67,10 @@ def capture(output: Path) -> None:
                 if not viewer.grab().save(str(output / filename)):
                     raise OSError(f"Could not save {filename}")
                 records.append({"theme": name, "width": width, "controls": geometry})
+                if include_assistance:
+                    capture_assistance(
+                        coordinator, app, output, name, width, records, source
+                    )
         screen = owner.screen()
         metadata = coordinator.service.validate()
         report = {
@@ -80,12 +91,61 @@ def capture(output: Path) -> None:
         owner.close()
 
 
+def capture_assistance(
+    coordinator: HelpCoordinator,
+    app: QApplication,
+    output: Path,
+    theme_name: str,
+    width: int,
+    records: list[dict],
+    source: QWidget | None,
+) -> None:
+    """Capture populated/empty search and the actual native excerpt popup."""
+    viewer = coordinator.viewer
+    coordinator.show_search()
+    for state, query in (("search", "border"), ("no-results", "xyzzy")):
+        viewer.query.setText(query)
+        coordinator.search()
+        if state == "search":
+            viewer.results.setFocus()
+        else:
+            viewer.query.setFocus()
+        app.processEvents()
+        filename = f"{theme_name}-{width}-{state}.png"
+        if not viewer.grab().save(str(output / filename)):
+            raise OSError(filename)
+        records.append(
+            {"theme": theme_name, "width": width, "state": state, "file": filename}
+        )
+    viewer.hide_search()
+    if source is not None:
+        coordinator.inspection.display(source, None, source.mapToGlobal(QPoint(0, 0)))
+        app.processEvents()
+        popup = QApplication.activePopupWidget()
+        if popup is None:
+            raise ValueError("Missing native explanation popup")
+        filename = f"{theme_name}-{width}-explanation.png"
+        if not popup.grab().save(str(output / filename)):
+            raise OSError(filename)
+        records.append(
+            {
+                "theme": theme_name,
+                "width": width,
+                "state": "explanation",
+                "file": filename,
+            }
+        )
+        coordinator.inspection.dismiss()
+        app.processEvents()
+
+
 def main() -> None:
     """Write presentation artifacts to an explicitly selected directory."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--search-inspection", action="store_true")
     args = parser.parse_args()
-    capture(args.output)
+    capture(args.output, include_assistance=args.search_inspection)
 
 
 if __name__ == "__main__":

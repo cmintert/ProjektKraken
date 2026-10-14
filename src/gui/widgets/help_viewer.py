@@ -6,8 +6,17 @@ import html
 from typing import Any
 
 from PySide6.QtCore import QUrl, Signal
-from PySide6.QtGui import QCloseEvent, QImage
-from PySide6.QtWidgets import QLabel, QPushButton, QTextBrowser, QVBoxLayout, QWidget
+from PySide6.QtGui import QCloseEvent, QImage, QResizeEvent
+from PySide6.QtWidgets import (
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QPushButton,
+    QSizePolicy,
+    QTextBrowser,
+    QVBoxLayout,
+    QWidget,
+)
 
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
@@ -42,6 +51,10 @@ class HelpViewer(QWidget):
     refresh_requested = Signal()
     return_requested = Signal()
     link_requested = Signal(QUrl)
+    search_requested = Signal()
+    query_changed = Signal(str)
+    search_activate_requested = Signal()
+    result_requested = Signal(int)
 
     def __init__(self, parent: QWidget) -> None:
         """Build a wrapping, keyboard-accessible companion."""
@@ -62,6 +75,7 @@ class HelpViewer(QWidget):
             ("Back", self.back_requested),
             ("Forward", self.forward_requested),
             ("Manual", self.manual_requested),
+            ("Search", self.search_requested),
             ("Refresh context", self.refresh_requested),
             ("Return to work", self.return_requested),
         ):
@@ -71,6 +85,33 @@ class HelpViewer(QWidget):
             flow.addWidget(button)
             self.buttons[label] = button
         layout.addWidget(row)
+        self.search_panel = QWidget(self)
+        self.search_panel.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum
+        )
+        search_layout = QVBoxLayout(self.search_panel)
+        search_layout.setContentsMargins(0, 0, 0, 0)
+        self.search_label = QLabel("Search the offline manual", self.search_panel)
+        self.query = QLineEdit(self.search_panel)
+        self.query.setAccessibleName("Search the offline manual")
+        self.search_label.setBuddy(self.query)
+        self.query.textChanged.connect(self.query_changed.emit)
+        self.query.returnPressed.connect(self.search_activate_requested.emit)
+        self.search_status = QLabel(self.search_panel)
+        self.search_status.setWordWrap(True)
+        self.results = QListWidget(self.search_panel)
+        self.results.setAccessibleName("Help search results")
+        self.results.setWordWrap(True)
+        self.results.setTextElideMode(Qt.TextElideMode.ElideNone)
+        self.results.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.results.setMaximumHeight(160)
+        self.results.itemActivated.connect(
+            lambda item: self.result_requested.emit(self.results.row(item))
+        )
+        for widget in (self.search_label, self.query, self.search_status, self.results):
+            search_layout.addWidget(widget)
+        layout.addWidget(self.search_panel)
+        self.search_panel.hide()
         self.title = QLabel(self)
         self.title.setWordWrap(True)
         layout.addWidget(self.title)
@@ -95,6 +136,43 @@ class HelpViewer(QWidget):
         self.buttons["Forward"].setEnabled(forward)
         self.buttons["Back"].setToolTip("Previous Help page")
         self.buttons["Forward"].setToolTip("Next Help page")
+
+    def show_search(self) -> None:
+        """Reveal the retained query and focus it without changing the topic."""
+        self.search_panel.show()
+        self._fit_search()
+        self.query.setFocus()
+        self.query.selectAll()
+
+    def hide_search(self) -> None:
+        """Return to reading without discarding query or results."""
+        self.search_panel.hide()
+        self.browser.setFocus()
+
+    def set_search_results(self, rows: list[str], status: str) -> None:
+        """Present plain-text search snapshots and explicit status."""
+        self.results.clear()
+        self.results.addItems(rows)
+        if rows:
+            self.results.setCurrentRow(0)
+        self.search_status.setText(status)
+        self.results.setVisible(bool(rows))
+        self._fit_search()
+
+    def _fit_search(self) -> None:
+        layout = self.search_panel.layout()
+        if layout is not None:
+            layout.activate()
+            height = layout.totalHeightForWidth(self.search_panel.width())
+            if height < 0:
+                height = layout.sizeHint().height()
+            self.search_panel.setFixedHeight(height)
+
+    def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
+        """Keep the search region compact as labels wrap at narrower widths."""
+        super().resizeEvent(event)
+        if hasattr(self, "search_panel"):
+            self._fit_search()
 
     def set_content(self, content: str) -> None:
         """Retain the original rendered HTML for lossless theme refresh."""
@@ -123,6 +201,10 @@ class HelpViewer(QWidget):
         self.setStyleSheet(StyleHelper.get_read_only_companion_style())
         for button in self.buttons.values():
             button.setStyleSheet(StyleHelper.get_secondary_button_style())
+        self.query.setStyleSheet(StyleHelper.get_search_field_style())
+        self.results.setStyleSheet(StyleHelper.get_read_only_list_style())
+        self.search_status.setStyleSheet(f"color: {theme['supporting_caption']};")
+        self.search_label.setStyleSheet(StyleHelper.get_read_only_text_style())
         self.title.setStyleSheet(f"color: {theme['supporting_caption']};")
         self.related.setStyleSheet(f"color: {theme['link_neutral']};")
         self.set_related(self._related_links)

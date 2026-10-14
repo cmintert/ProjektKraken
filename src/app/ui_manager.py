@@ -347,6 +347,8 @@ class UIManager:
         manual_action.triggered.connect(
             lambda: self.help_coordinator.open_topic("manual.home")
         )
+        inspect_action = help_menu.addAction("Inspect control")
+        inspect_action.triggered.connect(self.help_coordinator.inspection.enter)
         help_menu.addSeparator()
         shortcuts_action = help_menu.addAction("Keyboard Shortcuts...")
         shortcuts_action.triggered.connect(self._show_keyboard_shortcuts)

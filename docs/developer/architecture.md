@@ -1,5 +1,17 @@
 # Architecture and Threading
 
+## Offline Help capability
+
+The Help coordinator owns contextual invocation, read-only navigation, search
+intent and companion ownership. Its inspection controller handles native Qt
+What's This events and transient popup input. Production composition registers
+explicit control meanings and read-only region providers; widgets emit intent
+and render snapshots. HelpSearchService ranks validated HelpSearchDocument
+snapshots without Qt. HelpBundleService confines generated content and assets
+to the version-matched offline bundle. None of these components query world data,
+execute commands or add database-worker slots. GUI-local weak origin references
+and native popup/registration metadata never cross worker boundaries.
+
 ## Dependency direction
 
 ```text
