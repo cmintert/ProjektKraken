@@ -1,8 +1,8 @@
 # KRT-88 offline search and control inspection evidence
 
 Verification date: 2026-10-13. Local commit delivery: 2026-10-14, reusing the
-passed checks below. The delivery hash is recorded in KRT-88, which remains
-In Progress pending human prose approval.
+passed checks below. Delivery hashes are recorded in KRT-88. The relation-test
+follow-up was authorized for local commit on 2026-10-14 after human approval.
 This extends KRT-87 under the [Expert Assistance contract](../../expert-assistance-contract.md),
 authoring Contracts 1–9 and 11, and the shared visual vocabulary. Full package,
 display/text scaling, multi-monitor and independent human acceptance remain KRT-91.
@@ -87,12 +87,15 @@ python -m scripts.capture_help_evidence --output docs/ux/evidence/krt88 --search
 python -m pytest tests/unit/test_help_search_inspection.py tests/unit/test_help_coordinator.py -q
 ```
 
-## Canonical excerpt review — pending human approval
+## Canonical excerpt review — human approval recorded
 
-No new reference prose has been published remotely. Reviewer, review date and
-accepted source revision remain **pending**. Review the nine blocks below against
-their code behavior before publishing; record corrections and approval in KRT-88.
-KRT-89 retains broader manual semantic curation.
+Christian approved the delivered scope and the nine excerpts on 2026-10-14:
+“OTHERWISE HUMAN APPROVAL IS GIVEN”, with the remaining request to fix the two
+Entity relation-dialog tests below. Accepted source revision:
+`32e391d206b0a4681eaf5b6dc930b377f4531a2e`. No prose corrections were requested.
+Approval is recorded in KRT-88. Christian also confirmed Inspect control works,
+while noting sparse coverage and discoverability. KRT-89 retains broader manual
+semantic curation; KRT-91 acceptance limits remain unchanged.
 
 | Topic / explicit excerpt target | Canonical source | Code behavior to review |
 | --- | --- | --- |
@@ -106,16 +109,23 @@ KRT-89 retains broader manual semantic curation.
 | `map.visibility` / `help-control-map-visibility` | {ref}`Existence <help-control-map-visibility>` | TemporalValidityDialog and temporal-window presence; independent geometry |
 | `timeline.viewing` / `help-control-timeline-viewing` | {ref}`Time identities <help-control-timeline-viewing>` | Viewed playhead vs World current time; deliberate Set/Return Current Time actions |
 
-## Existing unrelated failures
+## Relation-dialog test follow-up
 
-A broader Entity editor run returned 54 passed and two failures:
-`test_add_relation_flow` and `test_edit_relation_flow`. Both relation-dialog
-signal timeouts reproduce with the untouched HEAD Entity editor loaded in memory.
-Their mock relation payloads remain outside this Help batch; no baseline was
-relaxed or unrelated relation behavior changed. The destination helper's focused
-choice/confirmation tests pass. Earlier KRT-87 reports retain their separate
-pre-existing Focus-writing and architectural-boundary limitations.
+A broader Entity editor run originally returned 54 passed and two failures:
+`test_add_relation_flow` and `test_edit_relation_flow`. The tests mocked modal
+dialogs but clicked buttons that now open inline capture/refinement. The earlier
+attribution to mock relation payloads was incorrect. The follow-up tests use the
+explicit More actions > Add detailed relation / Full relation editor routes,
+retain signal payload assertions, and verify dialog acceptance and the edit
+direction restriction. Production behavior and policy baselines are unchanged.
+Follow-up verification on 2026-10-14: Entity editor and relation-authoring files
+**58 passed**; focused Ruff and whitespace checks passed.
+Earlier KRT-87 reports retain their separate pre-existing Focus-writing and
+architectural-boundary limitations.
 
-The local commit was authorized without rerunning passed tests. No push was
-authorized. Human prose approval and KRT-91 acceptance are distinct from
-automated structural/presentation evidence.
+The original local commit reused passed tests as authorized. Its subsequent
+authorized push passed all ten pre-push checks, including 2,062 tests with three
+skips. The relation-test/report follow-up is included in the subsequently
+authorized local documentation/test commit. Human prose
+approval and KRT-91 acceptance are distinct from automated structural/presentation
+evidence.

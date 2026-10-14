@@ -24,6 +24,22 @@ Verify UI wording against code rather than copying an older guide. User pages
 should describe outcomes and steps without exposing implementation classes.
 Developer pages may name classes when they explain a current contract.
 
+## Authoring Help checklist for feature changes
+
+- Identify the code behavior and visible routes affected by the change, including
+  keyboard ownership and preserved authoring context (Contracts 1–9 and 11).
+- Update the existing canonical task under `docs/user/`; keep detailed procedures
+  there rather than introducing widget prose or another manual copy. State which
+  independent attributes, relations, mentions, dates or geometry remain unchanged.
+- Check the topic ID, explicit task target, optional control-excerpt target and
+  related-topic links in `docs/help-topics.json`. Preserve stable destinations;
+  adding inspection meanings requires an explicit inventory decision.
+- Build Help with `python -m scripts.build_help`, run strict Sphinx, and inspect
+  the generated task, excerpt, search result and links in the companion.
+- Record human reviewer, source revision, topics/scenarios, corrections and
+  approval before publishing new reference prose. Automated structure checks do
+  not establish semantic accuracy or independent human workflow acceptance.
+
 ## Build locally
 
 ```text

@@ -1,14 +1,44 @@
-(help-longform-recovery)=
-
 # Longform Writing
 
 [Back Up and Restore](import-export-and-backups.md#back-up-and-restore)
 
-## What this does
+(help-longform-recovery)=
 
-The Longform Editor arranges events and entities into a hierarchical narrative
-without duplicating the underlying world content. All entities and events are
-included automatically. New entries append without changing existing hierarchy.
+## Organize Longform and recover safely
+
+Longform arranges Events and Entities into a narrative outline without duplicating their
+underlying content. Entries are included automatically; arranging them changes the
+document’s structure, not the world’s chronology.
+
+1. Open **View → Panels → Longform**.
+2. Use **Outline actions** to reorder, promote or demote sections.
+3. Choose **Open in inspector** to edit an entry’s underlying content.
+4. If an entry was deliberately removed from the document, use **Add content…** to include it again.
+
+**Remove from document** excludes an entry from that document without deleting it from
+the world. Its children move up one level. Refresh and reopening preserve the exclusion;
+Undo restores the removal and hierarchy.
+
+**Delete from world…** is different: it deletes the underlying entry and affects its
+connections and document memberships. Review the confirmation carefully.
+
+If displayed content appears out of date, use **Refresh**, or enable **Settings →
+Auto-Refresh Longform Editor**. Refresh updates the view; it does not recover deleted
+world content.
+
+For recovery, use Undo for supported edits or **File → Backup & Restore** for saved
+database backups. Restoring replaces saved world data, is not ordinarily undoable and
+requires unfinished edits to be resolved. Database backups do not contain assets; use a
+portable world package when images and maps must travel with the world.
+
+**Example:** Remove Ada’s biography from one narrative without deleting Ada. Add it back
+through **Add content…** if you want it in that document again.
+
+**Related:** {ref}`Add details <help-authoring-details>` · {ref}`Writing and links
+<help-writing-links>`
+
+See {ref}`Backup and restore <help-backup-restore>` and {ref}`World transfer
+<help-world-transfer>` for the full recovery and asset-transfer procedures.
 
 ## Build an outline
 

@@ -7,7 +7,9 @@
       "target": "help-authoring-create",
       "level": "task",
       "related_ids": [
-        "authoring.details"
+        "authoring.details",
+        "event.timing",
+        "relations.create"
       ]
     },
     {
@@ -16,7 +18,13 @@
       "target": "help-authoring-details",
       "level": "task",
       "related_ids": [
-        "authoring.representations"
+        "writing.edit",
+        "entity.historical-editing",
+        "entity.value-source",
+        "authoring.representations",
+        "authoring.create",
+        "writing.focus",
+        "longform.recovery"
       ]
     },
     {
@@ -26,7 +34,8 @@
       "level": "task",
       "related_ids": [
         "writing.links",
-        "writing.focus"
+        "writing.focus",
+        "authoring.details"
       ]
     },
     {
@@ -36,7 +45,10 @@
       "level": "task",
       "related_ids": [
         "writing.edit",
-        "authoring.representations"
+        "authoring.representations",
+        "relations.create",
+        "writing.focus",
+        "longform.recovery"
       ]
     },
     {
@@ -45,7 +57,9 @@
       "target": "help-writing-focus",
       "level": "task",
       "related_ids": [
-        "writing.edit"
+        "writing.edit",
+        "writing.links",
+        "authoring.details"
       ]
     },
     {
@@ -54,7 +68,11 @@
       "target": "help-event-timing",
       "level": "task",
       "related_ids": [
-        "date.precision"
+        "date.precision",
+        "date.evidence",
+        "event.chronology",
+        "timeline.viewing",
+        "authoring.create"
       ],
       "control_excerpt_target": "help-control-event-timing"
     },
@@ -65,7 +83,10 @@
       "level": "task",
       "related_ids": [
         "event.timing",
-        "date.evidence"
+        "date.evidence",
+        "event.chronology",
+        "timeline.viewing",
+        "relations.timing"
       ],
       "control_excerpt_target": "help-control-date-precision"
     },
@@ -75,6 +96,8 @@
       "target": "help-date-evidence",
       "level": "task",
       "related_ids": [
+        "date.precision",
+        "event.timing",
         "event.chronology"
       ]
     },
@@ -84,7 +107,10 @@
       "target": "help-event-chronology",
       "level": "task",
       "related_ids": [
-        "date.evidence"
+        "date.precision",
+        "date.evidence",
+        "event.timing",
+        "relations.timing"
       ]
     },
     {
@@ -93,7 +119,14 @@
       "target": "help-timeline-viewing",
       "level": "task",
       "related_ids": [
-        "event.timing"
+        "entity.historical-editing",
+        "date.precision",
+        "map.historical-geometry",
+        "map.trajectories",
+        "event.timing",
+        "entity.value-source",
+        "relations.timing",
+        "map.visibility"
       ],
       "control_excerpt_target": "help-control-timeline-viewing"
     },
@@ -104,7 +137,9 @@
       "level": "task",
       "related_ids": [
         "entity.value-source",
-        "timeline.viewing"
+        "timeline.viewing",
+        "authoring.representations",
+        "authoring.details"
       ],
       "control_excerpt_target": "help-control-entity-historical-editing"
     },
@@ -114,7 +149,10 @@
       "target": "help-entity-value-source",
       "level": "task",
       "related_ids": [
-        "entity.historical-editing"
+        "entity.historical-editing",
+        "timeline.viewing",
+        "authoring.representations",
+        "authoring.details"
       ],
       "control_excerpt_target": "help-control-entity-value-source"
     },
@@ -125,7 +163,9 @@
       "level": "task",
       "related_ids": [
         "relations.timing",
-        "authoring.representations"
+        "authoring.representations",
+        "writing.links",
+        "authoring.create"
       ],
       "control_excerpt_target": "help-control-relations-create"
     },
@@ -135,8 +175,11 @@
       "target": "help-relations-timing",
       "level": "task",
       "related_ids": [
+        "event.chronology",
+        "date.precision",
         "relations.create",
-        "event.timing"
+        "timeline.viewing",
+        "authoring.representations"
       ],
       "control_excerpt_target": "help-control-relations-timing"
     },
@@ -147,7 +190,11 @@
       "level": "task",
       "related_ids": [
         "relations.create",
-        "writing.links"
+        "relations.timing",
+        "entity.historical-editing",
+        "writing.links",
+        "authoring.details",
+        "entity.value-source"
       ]
     },
     {
@@ -157,7 +204,8 @@
       "level": "task",
       "related_ids": [
         "map.historical-geometry",
-        "map.visibility"
+        "map.visibility",
+        "map.trajectories"
       ]
     },
     {
@@ -167,7 +215,8 @@
       "level": "task",
       "related_ids": [
         "map.visibility",
-        "timeline.viewing"
+        "timeline.viewing",
+        "map.features"
       ],
       "control_excerpt_target": "help-control-map-historical-geometry"
     },
@@ -177,7 +226,10 @@
       "target": "help-map-visibility",
       "level": "task",
       "related_ids": [
-        "map.historical-geometry"
+        "map.historical-geometry",
+        "timeline.viewing",
+        "map.features",
+        "map.trajectories"
       ],
       "control_excerpt_target": "help-control-map-visibility"
     },
@@ -187,8 +239,9 @@
       "target": "help-map-trajectories",
       "level": "task",
       "related_ids": [
+        "map.features",
         "timeline.viewing",
-        "map.features"
+        "map.visibility"
       ]
     },
     {
@@ -197,7 +250,8 @@
       "target": "help-longform-recovery",
       "level": "task",
       "related_ids": [
-        "manual.troubleshooting"
+        "authoring.details",
+        "writing.links"
       ]
     },
     {

@@ -1,0 +1,141 @@
+{
+  "reviewer": "Christian",
+  "review_date": "2026-10-14",
+  "source_revision": "32e391d206b0a4681eaf5b6dc930b377f4531a2e",
+  "source_dirty": true,
+  "canonical_source_hashes": {
+    "docs/conf.py": "d8ab7d8299f8bcb58a46832b13b6e6d0fb48e2e491dbd18ee377fafc3f3d9c85",
+    "docs/help-topics.json": "205e55807bc75f825f6f00cf68c21e36d33b38b822d26fd5ce46eb0bffbd88b2",
+    "docs/user/events-entities-relations.md": "4c3460121606a060e657d91f72fb888a7255b60b9c248025188f29654114b530",
+    "docs/user/getting-started.md": "e47eef15743da206cddfd3e7b021cb51e27e690ae04fbe286bf61563fad02d28",
+    "docs/user/import-export-and-backups.md": "adba97072184a292031fcf6a16f5f52083e3dfab37bccf2791dd6fbc475c36ec",
+    "docs/user/index.md": "361fd809facde81434c7e65c1b41742f2da916fa66f5acb214537b5cd5575d73",
+    "docs/user/keyboard-shortcuts.md": "5a1f4512b69b6f8094a6e6809a6911861867714cea768ffc9bead3aed5948f90",
+    "docs/user/longform.md": "33d6bb0dccd11ebbe2bcb60e3e43c943ba91b4bbd03b76acd8a068dabecb7313",
+    "docs/user/maps.md": "a6dfaec7bf43dc38b99743e16b4bf412e2e9f25979e5a5090f4ce93b583a9e74",
+    "docs/user/search-ai-and-analysis.md": "0ea747777b6823b2ceaffab876dfe9ccd6dc0fa2cad04eae45557fb6539d900d",
+    "docs/user/timeline-and-calendars.md": "05a27cf7969d10af057e67fc8630996943e1791c3b3970c165c2b4a05504aca6",
+    "docs/user/troubleshooting.md": "4541e835ea2eabf109904813ade59c746d504876dd55b7395de73a7c88c6bce9",
+    "docs/user/wiki-editor-markdown.md": "c9cbc5ceadca44711cc2b1b06240d13d365cc14a7d7ac356530830ee0b67b819",
+    "docs/user/workspace.md": "13315f2a0c86d2b0ae59b40b95b77be251a26f1a30a5b4ee1ba487929db5949b",
+    "pyproject.toml": "968d8c32e84dc1f3dc615cbbb82b498c6b56f9896d1f4eb701213f185bb0acd5",
+    "requirements/docs.txt": "fe97b3a943e72765d912662033661fd1a9df051866c7d552907266aefe1cfbab",
+    "scripts/build_help.py": "7001a7c2c9d1bb6a0327a58896e65ddd4f5dc42c612c00d972b3003907319032",
+    "scripts/help_builder.py": "135613c561b96ba570fb0c0c81bcad273b5319aafea462d9d69a179f7b055db2",
+    "src/core/help_bundle.py": "c8e19428e9dd99e012a9945b898c87294cb478be7b9f07dc8ea7e936201b1eb8",
+    "src/core/version.py": "4f75a4a093e4764225bdb950f448d4dc6f525b4e3acc27a8e8f24966615c6ec8"
+  },
+  "unchanged_excerpt_sha256": {
+    "help-control-event-timing": "89ba550e960fabb2e01b7ddbffcafe3bc7a80892c9a8b928c141a7f93e892615",
+    "help-control-entity-historical-editing": "5607adb2ebb1dc1f78606fca76a1884d73e074f0324c722cff69330e1ab4dc8f",
+    "help-control-entity-value-source": "18e8f25833bb9272724b74f31dbbb2301147a30f931a6254dbff438fd4b8b915",
+    "help-control-relations-create": "8e40fc3386e94e79d6d2324b4cd2b5e743c1638c2529d27f6688787785559404",
+    "help-control-relations-timing": "8273be5cd5384ebb4e33530188fc50e3a4a9389f352d86b227894f3e249be8ae",
+    "help-control-map-historical-geometry": "38eff2c66d12c2702978dda01e58cbcea3a889d0aebca74ea5f3a8ba30b6b918",
+    "help-control-map-visibility": "0fa10127926e81f4f1fbfe405ce0d4ce9bc59cbd0dcc3ddd795c59f34ea12857",
+    "help-control-timeline-viewing": "3d9227887722b66db909b65b4c77a99023e945496467783c4ad26d333b345af5",
+    "help-control-date-precision": "8c1a2b23c42587b914c2b6f935245ccc57041878358cdd1ca83a24ca92a0f080"
+  },
+  "topics": [
+    {
+      "id": "authoring.create",
+      "fragment": "help-authoring-create",
+      "title": "Create an event or entity"
+    },
+    {
+      "id": "authoring.details",
+      "fragment": "help-authoring-details",
+      "title": "Add details"
+    },
+    {
+      "id": "writing.edit",
+      "fragment": "help-writing-edit",
+      "title": "Write in Rich or Markdown Source view"
+    },
+    {
+      "id": "writing.links",
+      "fragment": "help-writing-links",
+      "title": "Link to an entry without losing your writing"
+    },
+    {
+      "id": "writing.focus",
+      "fragment": "help-writing-focus",
+      "title": "Focus on writing"
+    },
+    {
+      "id": "event.timing",
+      "fragment": "help-event-timing",
+      "title": "Set an event date or duration"
+    },
+    {
+      "id": "date.precision",
+      "fragment": "help-date-precision",
+      "title": "Dates with incomplete information"
+    },
+    {
+      "id": "date.evidence",
+      "fragment": "help-date-evidence",
+      "title": "Record conflicting date evidence"
+    },
+    {
+      "id": "event.chronology",
+      "fragment": "help-event-chronology",
+      "title": "Record event chronology without inventing dates"
+    },
+    {
+      "id": "timeline.viewing",
+      "fragment": "help-timeline-viewing",
+      "title": "Use the timeline"
+    },
+    {
+      "id": "entity.historical-editing",
+      "fragment": "help-entity-historical-editing",
+      "title": "View and correct an entity at another time"
+    },
+    {
+      "id": "entity.value-source",
+      "fragment": "help-entity-value-source",
+      "title": "Understand where a visible value comes from"
+    },
+    {
+      "id": "relations.create",
+      "fragment": "help-relations-create",
+      "title": "Create relations"
+    },
+    {
+      "id": "relations.timing",
+      "fragment": "help-relations-timing",
+      "title": "Historical validity and uncertainty"
+    },
+    {
+      "id": "authoring.representations",
+      "fragment": "help-authoring-representations",
+      "title": "Attributes, relations, and mentions"
+    },
+    {
+      "id": "map.features",
+      "fragment": "help-map-features",
+      "title": "Add markers and features"
+    },
+    {
+      "id": "map.historical-geometry",
+      "fragment": "help-map-historical-geometry",
+      "title": "Dated path and region geometry"
+    },
+    {
+      "id": "map.visibility",
+      "fragment": "help-map-visibility",
+      "title": "Temporal visibility"
+    },
+    {
+      "id": "map.trajectories",
+      "fragment": "help-map-trajectories",
+      "title": "Create or edit a trajectory"
+    },
+    {
+      "id": "longform.recovery",
+      "fragment": "help-longform-recovery",
+      "title": "Organize Longform and recover safely"
+    }
+  ]
+}

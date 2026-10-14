@@ -1,0 +1,126 @@
+{
+  "platform": "windows",
+  "topics": [
+    {
+      "topic": "authoring.create",
+      "related_opened": "authoring.details",
+      "back_destination": "events-entities-relations.html#help-authoring-create",
+      "restored_scroll": 80
+    },
+    {
+      "topic": "authoring.details",
+      "related_opened": "writing.edit",
+      "back_destination": "events-entities-relations.html#help-authoring-details",
+      "restored_scroll": 80
+    },
+    {
+      "topic": "writing.edit",
+      "related_opened": "writing.links",
+      "back_destination": "wiki-editor-markdown.html#help-writing-edit",
+      "restored_scroll": 80
+    },
+    {
+      "topic": "writing.links",
+      "related_opened": "writing.edit",
+      "back_destination": "wiki-editor-markdown.html#help-writing-links",
+      "restored_scroll": 80
+    },
+    {
+      "topic": "writing.focus",
+      "related_opened": "writing.edit",
+      "back_destination": "events-entities-relations.html#help-writing-focus",
+      "restored_scroll": 80
+    },
+    {
+      "topic": "event.timing",
+      "related_opened": "date.precision",
+      "back_destination": "events-entities-relations.html#help-event-timing",
+      "restored_scroll": 80
+    },
+    {
+      "topic": "date.precision",
+      "related_opened": "event.timing",
+      "back_destination": "timeline-and-calendars.html#help-date-precision",
+      "restored_scroll": 80
+    },
+    {
+      "topic": "date.evidence",
+      "related_opened": "date.precision",
+      "back_destination": "timeline-and-calendars.html#help-date-evidence",
+      "restored_scroll": 80
+    },
+    {
+      "topic": "event.chronology",
+      "related_opened": "date.precision",
+      "back_destination": "timeline-and-calendars.html#help-event-chronology",
+      "restored_scroll": 80
+    },
+    {
+      "topic": "timeline.viewing",
+      "related_opened": "entity.historical-editing",
+      "back_destination": "timeline-and-calendars.html#help-timeline-viewing",
+      "restored_scroll": 80
+    },
+    {
+      "topic": "entity.historical-editing",
+      "related_opened": "entity.value-source",
+      "back_destination": "events-entities-relations.html#help-entity-historical-editing",
+      "restored_scroll": 80
+    },
+    {
+      "topic": "entity.value-source",
+      "related_opened": "entity.historical-editing",
+      "back_destination": "events-entities-relations.html#help-entity-value-source",
+      "restored_scroll": 80
+    },
+    {
+      "topic": "relations.create",
+      "related_opened": "relations.timing",
+      "back_destination": "events-entities-relations.html#help-relations-create",
+      "restored_scroll": 80
+    },
+    {
+      "topic": "relations.timing",
+      "related_opened": "event.chronology",
+      "back_destination": "events-entities-relations.html#help-relations-timing",
+      "restored_scroll": 80
+    },
+    {
+      "topic": "authoring.representations",
+      "related_opened": "relations.create",
+      "back_destination": "events-entities-relations.html#help-authoring-representations",
+      "restored_scroll": 80
+    },
+    {
+      "topic": "map.features",
+      "related_opened": "map.historical-geometry",
+      "back_destination": "maps.html#help-map-features",
+      "restored_scroll": 80
+    },
+    {
+      "topic": "map.historical-geometry",
+      "related_opened": "map.visibility",
+      "back_destination": "maps.html#help-map-historical-geometry",
+      "restored_scroll": 80
+    },
+    {
+      "topic": "map.visibility",
+      "related_opened": "map.historical-geometry",
+      "back_destination": "maps.html#help-map-visibility",
+      "restored_scroll": 80
+    },
+    {
+      "topic": "map.trajectories",
+      "related_opened": "map.features",
+      "back_destination": "maps.html#help-map-trajectories",
+      "restored_scroll": 80
+    },
+    {
+      "topic": "longform.recovery",
+      "related_opened": "authoring.details",
+      "back_destination": "longform.html#help-longform-recovery",
+      "restored_scroll": 80
+    }
+  ],
+  "draft_preserved": true
+}

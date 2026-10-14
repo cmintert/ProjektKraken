@@ -117,6 +117,8 @@ Longform Markdown copies referenced local images into a neighboring folder named
 after the output file, such as `Chronicle.md.assets/`. Keep that folder beside the
 Markdown file when moving or sharing it. Disabling images exports their labels.
 
+(help-world-transfer)=
+
 ## Move a Complete World
 
 ### Export a World
@@ -141,6 +143,8 @@ export so the package does not appear complete when it is not.
 Import always creates a new world folder and a new world identity. It never
 overwrites the active world. Internal lore IDs remain intact so relations and
 map connections continue to work.
+
+(help-backup-restore)=
 
 ## Back Up and Restore
 

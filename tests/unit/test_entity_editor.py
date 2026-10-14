@@ -306,6 +306,7 @@ def test_save_clicked(editor, qtbot):
 
 
 def test_add_relation_flow(editor, qtbot, monkeypatch):
+    """The detailed menu route emits the accepted modal relation request."""
     ent = Entity(id="1", name="Source", type="Generic")
     editor.load_entity(ent)
 
@@ -325,11 +326,15 @@ def test_add_relation_flow(editor, qtbot, monkeypatch):
         lambda *args, **kwargs: mock_dialog,
     )
 
+    menu = editor.relation_authoring._more_actions_button.menu()
+    action = next(a for a in menu.actions() if a.text() == "Add detailed relation…")
     with qtbot.waitSignal(editor.add_relation_requested) as blocker:
-        editor.btn_add_rel.click()
+        action.trigger()
 
     # Signal: source, target, type, attributes, bidirectional
     assert blocker.args == ["1", "target_id", "caused", {}, True]
+    mock_dialog.exec.assert_called_once_with()
+    mock_dialog.get_data.assert_called_once_with()
 
 
 def test_remove_relation(editor, qtbot, monkeypatch):
@@ -376,6 +381,7 @@ def test_automatic_mentions_are_read_only(editor):
 
 
 def test_edit_relation_flow(editor, qtbot, monkeypatch):
+    """The full editor menu route updates the selected saved relation."""
     ent = Entity(id="1", name="Source", type="Generic")
     editor.load_entity(
         ent, relations=[{"id": "r1", "target_id": "t1", "rel_type": "caused"}]
@@ -404,11 +410,16 @@ def test_edit_relation_flow(editor, qtbot, monkeypatch):
         lambda *args, **kwargs: mock_dialog,
     )
 
+    menu = editor.relation_authoring._more_actions_button.menu()
+    action = next(a for a in menu.actions() if a.text() == "Full relation editor…")
     with qtbot.waitSignal(editor.update_relation_requested) as blocker:
-        editor.btn_edit_rel.click()
+        action.trigger()
 
     # args: rel_id, target_id, new_type, attributes
     assert blocker.args == ["r1", "new_target", "related_to", {}]
+    mock_dialog.exec.assert_called_once_with()
+    mock_dialog.get_data.assert_called_once_with()
+    mock_dialog.bi_check.setVisible.assert_called_once_with(False)
 
 
 def test_wikilink_insertion_has_no_immediate_relation_writer(editor):

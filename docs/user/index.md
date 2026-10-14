@@ -43,6 +43,31 @@ Other controls inherit ordinary F1 task help; they do not each have a separate
 inspection explanation. Non-focusable labels can also be inspected, and their
 topics remain available through the manual and search.
 
+## Where Inspect control works
+
+Start with the Timeline text **Viewing: … World current time: …**, or open an
+Event and inspect **Duration**. These are examples of the limited set of controls
+with individual explanations. Most navigation and toolbar buttons are outside
+this set and show the forbidden cursor in inspection mode. Use **F1** for their
+ordinary task or panel Help instead.
+
+| Explanation | Where to find the supported controls |
+| --- | --- |
+| {ref}`Date precision <help-date-precision>` | Expand **Date details & uncertainty…**: qualification, month, day and **Possible date limits…**. |
+| {ref}`Event timing <help-event-timing>` | Enable **Event has duration**, then open **End date / duration…**: Duration and the Duration / End Date choices. |
+| {ref}`Historical Entity editing <help-entity-historical-editing>` | The destination prompt when adding an attribute: **Entity baseline** and **At this time**. |
+| {ref}`Value Source <help-entity-value-source>` | The Entity description's **Source** label and the attribute table's Source column. |
+| {ref}`Relation creation <help-relations-create>` | **More actions → Add detailed relation…**: the direction/reverse-connection control. |
+| {ref}`Relation timing <help-relations-timing>` | Relation refinement/full editor: Meaning, start/end boundaries and shared-event binding controls. |
+| {ref}`Historical geometry <help-map-historical-geometry>` | **Manage historical borders… / Manage historical paths…**: dated state and Base Geometry rows. |
+| {ref}`Feature visibility <help-map-visibility>` | **Visibility dates…**: Exists from and Exists until. |
+| {ref}`Timeline viewing <help-timeline-viewing>` | The Viewing / World current time readout and visible time-marker lines. |
+
+Open the relevant surface before entering inspection. Where a control has an
+associated registered label, that label also provides the explanation. Inspecting
+a target explains its meaning without activating it. This guide does not add
+inspection coverage to every control.
+
 ```{toctree}
 :maxdepth: 1
 

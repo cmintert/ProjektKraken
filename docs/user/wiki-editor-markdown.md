@@ -1,10 +1,32 @@
-(help-writing-edit)=
-
 # Wiki editor Markdown and links
 
-Descriptions are stored as portable Markdown and `[[wiki links]]`. The editor
-opens ordinary paragraphs, headings `#` through `###`, `**bold**`, `*italic*`,
-and wiki links in Rich view. Single line breaks and blank lines are preserved.
+(help-writing-edit)=
+
+## Write in Rich or Markdown Source view
+
+Event and Entity descriptions are stored as Markdown. Use **Rich view** for ordinary
+prose and supported formatting, or **Markdown source** to edit the exact stored text.
+
+1. Select an Event or Entity and place the caret in its description.
+2. Use **Headings**, **Bold**, **Italic**, or the **Format** menu to format your writing.
+3. Open **View → Markdown source** when you want to edit Markdown directly.
+4. Choose **View → Rendered view** to return to Rich view when the content supports it.
+
+Rich view supports paragraphs, headings from `#` through `###`, bold, italic and wiki
+links. **Clear Formatting** removes heading, bold and italic formatting from the
+selected text.
+
+Descriptions containing tables, lists, code or other Markdown that Rich view cannot
+safely preserve open in Source view. Those constructs remain editable and are saved
+exactly; switching views does not convert them into supported Rich formatting.
+
+**Example:** Write a character biography in Rich view. If you add a Markdown table of
+titles and dates, continue editing it in Source view.
+
+**Related:** {ref}`Wiki links <help-writing-links>` · {ref}`Focus writing
+<help-writing-focus>` · {ref}`Add details <help-authoring-details>`
+
+### Writing controls
 
 The writing controls have three rows: **Edit / Insert / Format / View / Tools**,
 compact formatting controls, and link/Focus writing actions. **Headings** offers
@@ -17,13 +39,39 @@ added. **View** contains Markdown source/Rendered view and Table of contents;
 
 (help-writing-links)=
 
-Select words in an Event or Entity description and choose **Link to entry…**.
-Search for an existing entry, select its row, then choose **Link**. Your selected
-words remain the link's label. With no selection, the entry's name is inserted
-at the caret. Duplicate names show the entry kind and an ID portion. Cancelling
-keeps your text and selection; Undo reverses acceptance as one writing edit.
-The action also appears in the writing context menu and stays available in
-Focus writing. Narrow controls move secondary actions into **More actions**.
+## Link to an entry without losing your writing
+
+Wiki links connect words in a description to an Event or Entity. Use them to reference
+people, places and events while keeping your prose readable.
+
+1. Select words within one paragraph.
+2. Choose **Link to entry…**.
+3. Find the entry, select it and choose **Link**.
+
+The selected words become the link’s label. With no selection, the entry’s name is
+inserted at the caret. Cancelling preserves your text and selection; Undo reverses the
+accepted link insertion.
+
+Place the caret inside a link and choose **Peek link** to read its description without
+leaving your writing. Choose **Open link** to visit its inspector. **Return to writing**
+brings you back; navigation protects unfinished edits through **Save / Discard /
+Cancel**.
+
+You can also type `[[Name]]` before the entry exists. This preserves an unresolved
+reference without requiring you to create anything.
+
+A wiki link is a textual reference, not a specific relationship such as membership. If
+**Auto-Create Relations from Wikilinks** is enabled, saving a resolved link also records
+a `mentions` relation.
+
+**Example:** Link “Ada’s coronation” to the coronation Event. Add a separate relation if
+you also want to record Ada’s role in it.
+
+**Related:** {ref}`Rich and Source writing <help-writing-edit>` · {ref}`Attributes,
+relations and mentions <help-authoring-representations>` · {ref}`Create relations
+<help-relations-create>`
+
+### Navigation and exact source details
 
 Place the caret inside a link to enable **Open link** or **Peek link**. Opening
 an entry shows **Return to writing** in its inspector and writing controls.

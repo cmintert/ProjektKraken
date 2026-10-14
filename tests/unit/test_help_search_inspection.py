@@ -48,6 +48,9 @@ def test_search_normalization_prefix_deduplication_and_snippets():
         ("change a border in 962", "map.historical-geometry"),
         ("why does a year have uncertain date", "date.precision"),
         ("find relation validity", "relations.timing"),
+        ("visible value source correction", "entity.value-source"),
+        ("attributes relations mentions", "authoring.representations"),
+        ("Longform recover removed document", "longform.recovery"),
     ],
 )
 def test_expert_queries_find_canonical_topics(generated_root, query, topic):

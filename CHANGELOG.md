@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-14
-**Commit:** f36df4416f8f02c580d225f94cfa71edb02a3c5e
+**Commit:** 32e391d206b0a4681eaf5b6dc930b377f4531a2e
 ---
 
 # Changelog
@@ -12,6 +12,17 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-14)* **Expert Help curation (KRT-89)**: Integrated 20 individually
+  approved task texts, separated evidence/chronology and historical/source landing
+  sections, and added reciprocal concept links and an inspection-target guide.
+  Preserved topic IDs and nine control excerpts. Added feature-documentation
+  review guidance, focused relevance checks and selectable-topic theme capture.
+
+- *(2026-10-14)* **Relation tests / Help acceptance (KRT-88)**: Corrected two
+  Entity dialog tests to use the explicit detailed/full editor menu routes;
+  retained signal and dialog assertions. Recorded Christian's approval of the
+  nine Help excerpts at revision `32e391d2` and corrected the failure diagnosis.
 
 - *(2026-10-13)* **Help search and inspection (KRT-88)**: Search the packaged
   manual as you type, with local Ctrl+F, keyboard results and retained queries.

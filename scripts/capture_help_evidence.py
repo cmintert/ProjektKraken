@@ -15,7 +15,12 @@ from src.gui.utils.help_context import HelpContextRegistry
 from src.services.help_bundle_service import HelpBundleService
 
 
-def capture(output: Path, *, include_assistance: bool = False) -> None:
+def capture(
+    output: Path,
+    *,
+    include_assistance: bool = False,
+    topic_id: str = "writing.edit",
+) -> None:
     """Render six palettes at normal/narrow widths and report label geometry."""
     app = QApplication.instance() or QApplication([])
     root = Path(__file__).resolve().parents[1]
@@ -41,7 +46,7 @@ def capture(output: Path, *, include_assistance: bool = False) -> None:
             theme.set_theme(name)
             coordinator.history.clear()
             coordinator.index = -1
-            coordinator.open_topic("writing.edit")
+            coordinator.open_topic(topic_id)
             for width in (640, 360):
                 coordinator.viewer.resize(width, 560)
                 coordinator.viewer.buttons["Return to work"].setFocus(
@@ -79,6 +84,7 @@ def capture(output: Path, *, include_assistance: bool = False) -> None:
             "app_version": metadata.version,
             "source_revision": metadata.revision,
             "source_dirty": metadata.dirty,
+            "topic_id": topic_id,
             "device_pixel_ratio": owner.devicePixelRatioF(),
             "logical_dpi": screen.logicalDotsPerInch(),
             "renders": records,
@@ -144,8 +150,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--search-inspection", action="store_true")
+    parser.add_argument("--topic", default="writing.edit")
     args = parser.parse_args()
-    capture(args.output, include_assistance=args.search_inspection)
+    capture(
+        args.output,
+        include_assistance=args.search_inspection,
+        topic_id=args.topic,
+    )
 
 
 if __name__ == "__main__":

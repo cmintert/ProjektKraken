@@ -134,6 +134,13 @@ def test_all_topics_search_and_navigation(generated_root):
         reader.resolve_topic("date.evidence").page
         == reader.resolve_topic("event.chronology").page
     )
+    # These concepts share a manual page but need distinct task landing sections.
+    for first, second in (
+        ("date.evidence", "event.chronology"),
+        ("entity.historical-editing", "entity.value-source"),
+        ("writing.edit", "writing.links"),
+    ):
+        assert reader.resolve_topic(first).title != reader.resolve_topic(second).title
 
 
 def test_deterministic_rebuild(generated_root):

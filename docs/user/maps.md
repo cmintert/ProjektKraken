@@ -16,26 +16,34 @@ temporal trajectories, nested detail maps, and optional editable raster layers.
 
 ## Add markers and features
 
-Click a marker, path, or region to select it without leaving the map. If its
-Entity or Event inspector is already visible in another workspace zone, that
-inspector updates through the usual draft safeguards. Hidden inspectors and
-inspectors sharing the map's zone stay in place.
+Use markers to place entries on a map, paths to draw routes or lines, and regions to
+draw areas.
 
-Choose **Open in inspector** in the map toolbar to deliberately open the selected
-feature's Entity or Event. On narrow panels, the labeled action is available in
-the toolbar overflow menu. You can also select a feature in Layers before
-opening its inspector. Map selection remains local if you decline navigation.
+1. Open a map.
+2. Choose **Add Marker**, **Draw Path**, or **Draw Region**.
+3. Place the marker preview or draw the vertices.
+4. Choose **Confirm** or press **Enter** to finish. Choose **Cancel** or press **Escape** to discard the draft.
 
-- Select **Add Marker**, click to preview its position, then choose **Confirm**
-  or press **Enter**. Click elsewhere before confirming to move the preview.
-- Use **Draw Path** or **Draw Region** to create a feature.
-- Use **Confirm** or press **Enter** to complete a drawing. **Cancel** or
-  **Esc** discards the draft.
-- Press **Escape** to cancel the current tool.
-- Select a region or path and choose **Feature actions > Edit border at current
-  date** or **Edit path at current date** to move, insert, or remove vertices in
-  a working copy. Feature actions is also below the Layers header and in the
-  toolbar overflow on narrow panels. Right-click offers the same feature actions.
+Before confirming a marker, click elsewhere to move its preview. Paths require at least
+two vertices; regions require at least three.
+
+Click an existing feature to select it on the map. Choose **Open in inspector** when you
+deliberately want to open its linked Event or Entity. Selection can update an inspector
+already visible in another workspace zone, subject to draft safeguards; it does not
+automatically replace a hidden inspector or one sharing the map’s zone.
+
+Use **Feature actions** for appearance changes, historical geometry and other feature
+operations. The actions are also available through Layers and the toolbar overflow at
+narrow widths.
+
+**Example:** Place Ada’s court as a marker and draw the kingdom as a region. Use a
+trajectory for movement over time, historical geometry for changing borders, and
+existence dates for when a feature is present.
+
+**Related:** {ref}`Historical geometry <help-map-historical-geometry>` · {ref}`Feature
+visibility <help-map-visibility>` · {ref}`Map trajectories <help-map-trajectories>`
+
+### Feature appearance and sizing
 
 Select a point marker and choose **Feature actions > Change icon…** to use a bundled icon,
 reuse an icon stored in the world, or import an SVG, PNG, JPG/JPEG, or WebP
@@ -79,64 +87,81 @@ the whole path and is saved as part of its global feature style.
 
 ## Dated path and region geometry
 
+Historical geometry lets one map feature have different shapes at different dates.
+**Base Geometry** supplies its shape before the first dated state.
+
+1. Move the Timeline playhead to the date of the change.
+2. Select the region or path.
+3. Choose **Feature actions → Edit border at current date** or **Edit path at current date**.
+4. Edit the working copy, then choose **Confirm** or press **Enter**. **Cancel** or **Escape** discards the edit.
+
+At an existing state’s exact date, this edits that state. At another date, Kraken
+prepares a new state from the shape currently shown. Confirming saves the change as one
+undoable operation.
+
+The latest applicable state remains in effect until the next state. Shapes switch at
+their dates; they do not gradually morph.
+
+Use **Manage historical borders…** or **Manage historical paths…** to edit Base
+Geometry, change a state’s date or delete a dated state. Deleting a state reveals the
+preceding shape.
+
+**Example:** To record a border change in 962, go to the intended date in 962 and edit
+the border there. Earlier dates keep their earlier shape.
+
+Geometry changes do not change **Exists from / Exists until**. Appearance, labels and
+layer assignment remain global.
+
+**Related:** {ref}`Feature visibility <help-map-visibility>` · {ref}`Timeline viewing
+<help-timeline-viewing>` · {ref}`Map features <help-map-features>`
+
 (help-control-map-historical-geometry)=
 
 > Base Geometry is the undated shape used before a dated geometry state takes effect. A dated state replaces the border or path from its effective date until a later state takes over. Edit the border at the current date to work on the playhead's historical shape; manage historical states to choose Base Geometry or a dated state deliberately. Changing a shape does not set Exists from or Exists until. Those controls govern whether the feature exists, independently of its vertices. Inspecting a state leaves the current selection and unfinished working copy intact.
 
-Every path and region has Base Geometry and may have dated geometry states.
-Before the first dated state, ProjektKraken draws Base Geometry. On a state's
-exact date and until the next state, it draws the latest applicable state.
-Geometry switches immediately; shapes are not interpolated or morphed.
-
-Choose **Feature actions > Edit border at current date** for a region or
-**Edit path at current date** for a path. On the
-exact date of an existing state, this edits that state. At any other date,
-ProjektKraken clones the currently resolved geometry into a new state at the
-playhead, so editing a later border never silently changes earlier history.
-Choose **Confirm** or press **Enter** to save the working copy as one undoable
-operation; **Cancel** or **Escape** restores the geometry appropriate for the
-playhead.
-
-Choose **Feature actions > Manage historical borders…** or **Manage historical
-paths…** to edit Base Geometry explicitly, edit a
-dated state, change its calendar-aware date, or delete it. Base Geometry cannot
-be deleted, and two states cannot share a date. Deleting a dated state reveals
-the preceding state or Base Geometry at affected dates.
-
-Feature style, label, and layer assignment remain global. Event-date
-future/past presentation is separate from geometry-state resolution. Point
-markers continue to use their ordinary positions or trajectories.
+Base Geometry cannot be deleted, and two geometry states cannot share a date. Point
+markers use ordinary positions or trajectories rather than dated border states.
 
 (help-map-visibility)=
 
 ## Temporal visibility
 
+Visibility dates describe when a marker, path or region is present. They are independent
+of its shape and ordinary layer visibility.
+
+1. Select the feature on the map or in **Layers**.
+2. Choose **Feature actions → Visibility dates…**.
+3. Set **Exists from** and **Exists until**, choosing **Manual date**, **Date not known**, or **Unbounded** for each side.
+4. Confirm the changes.
+
+**Date not known** means the boundary is unresolved. **Unbounded** means there is no
+limit on that side. Partial dates retain their precision; uncertain presence is marked
+with reduced opacity and `(?)`.
+
+The start is inclusive and the end is exclusive. With exact boundaries, a feature is
+present at its start but absent at its end transition.
+
+Features outside their dates remain available in Layers with a clock badge and dimmed
+name. Use **Jump to valid time** to inspect one. An eye-slash instead indicates manual
+hiding.
+
+**Example:** An old fortress ceases to exist when its replacement begins. Give the old
+feature an end boundary matching the replacement’s start to avoid an overlap or gap.
+
+Changing existence dates does not redraw a border or path. Use historical geometry for
+shape changes.
+
+**Related:** {ref}`Historical geometry <help-map-historical-geometry>` · {ref}`Timeline
+viewing <help-timeline-viewing>` · {ref}`Map features <help-map-features>`
+
 (help-control-map-visibility)=
 
 > Exists from and Exists until describe when a map feature is present, independently of its border or path geometry. An unknown boundary records unresolved timing; an unbounded side has no limit. Exists until is an exclusive boundary, so the feature is no longer present at that transition. Choose a date or boundary meaning appropriate to the world instead of changing geometry to hide a feature. A dated geometry state changes its shape, not its existence dates. Inspection does not move the playhead, toggle a layer or apply an unfinished map edit.
 
-Point markers, paths, and regions can exist only during part of the timeline.
-Select a feature on the map or in Layers and choose **Feature actions >
-Visibility dates…**, then set
-optional **Exists from** and **Exists until** dates. Temporal validity has its
-own focused editor; ordinary layer properties remain separate. Group dates
-apply to the vector features beneath them. Choose **Manual date**, **Date not
-known**, or **Unbounded** independently for each side. Partial dates such as
-`961` retain their precision. An uncertain layer remains visible with reduced
-opacity and `(?)`; its tooltip explains that presence is not yet established.
+Group dates apply to their vector features. **Use Playhead** copies the active lore date
+into either boundary.
 
-Validity uses an inclusive start and exclusive end. A feature is present when
-the playhead is on or after **Exists from**, but it is absent on the exact
-**Exists until** date. This lets one feature end exactly when its replacement
-begins without an overlap or gap. **Use Playhead** copies the active lore date
-into either endpoint.
-
-The layer tree keeps absent features available for authoring. A clock badge and
-dimmed name mean the feature is outside the current date; an eye-slash means it
-is manually hidden. The panel and map status show how many vector features are
-outside the date. Select that count to filter the tree, then use **Jump to
-valid time** from Feature actions to inspect an absent feature. Groups retain
-their existing Temporal Validity and date-jump context-menu actions.
+### Ghosts, locking and uncertain presence
 
 **Temporal Ghosts** is an optional, session-only authoring view. It shows
 outside-time features as faint dashed shapes while still respecting manual,
@@ -168,27 +193,37 @@ uncertainty; `(?)` marks its keyframe labels.
 
 ## Create or edit a trajectory
 
-Select an entity marker and choose **Feature actions > Create journey**.
-The existing **Create Trajectory** toolbar shortcut remains available.
-ProjektKraken starts
-an unsaved track with one dated location: the marker's current map position at
-the current playhead date. It then guides you to create a second location:
+A trajectory places an Entity marker at different locations over time. It records
+movement or changes of location without changing the Entity’s written description or
+relations.
 
-1. Move the cursor to the next location and click to place the temporary
-   destination marker.
-2. Drag that marker to refine its position if needed, then move the timeline
-   playhead to its later arrival date.
-3. Choose **Accept Second Location**.
+1. Select an Entity marker and choose **Feature actions → Create journey**.
+2. Place the second location, move the Timeline to its later arrival date, then choose **Accept Second Location**.
+3. Add further locations as needed.
+4. Choose **Apply** to save the complete journey as one undoable change, or **Cancel** to discard it.
 
-The instruction strip reports when the selected date is valid. Accepting the
-second location does not save yet: add as many further locations as needed,
-then choose **Apply** to create the complete track as one undoable change.
-Choose **Cancel** to leave the entity unchanged. Existing one-location tracks
-open in the same guided completion flow. Event markers cannot have trajectories.
+For an existing journey, choose **Edit journey**. Changes remain in a working copy until
+you apply them. Event markers cannot have trajectories.
 
-For an entity that already has a track, choose **Feature actions > Edit journey**
-or the existing **Edit Trajectory** shortcut. The map
-shows a working copy while the saved track remains unchanged.
+**Timed locations** carry dates you explicitly record. **Route points** shape the path
+between them, with dates calculated from distance. Moving the Timeline alone does not
+change a location’s date; use **Edit Date** or **Use Playhead** deliberately.
+
+Choose **Travel** for movement along a route. Matching consecutive positions record a
+**Stay**. **Relocation** holds the previous position until the next date, then switches
+immediately without implying a travelled route.
+
+**Example:** Record Ada at her court, travelling to a fortress, then staying there. If
+the evidence establishes only a later location without a known route, use Relocation.
+
+Before the first dated location, the ordinary marker position applies. After the last,
+the final location is retained. Feature visibility dates still determine whether the
+marker is present.
+
+**Related:** {ref}`Map features <help-map-features>` · {ref}`Timeline viewing
+<help-timeline-viewing>` · {ref}`Feature visibility <help-map-visibility>`
+
+### Edit the working copy
 
 - Drag a dated point to change its position.
 - Choose **Add Location** to add a point at the playhead. It begins at the
