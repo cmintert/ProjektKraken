@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
 
@@ -116,7 +117,10 @@ class RelationTypePicker(QWidget):
         input_layout.setSpacing(6)
 
         # Create combo box
-        self.combo_box = ScrollSafeComboBox()
+        self.combo_box = declare_inspection(
+            ScrollSafeComboBox(),
+            "src-gui-widgets-relation-type-picker-relationtypepicker-setup-ui-self-combo-box|relations.create|help-inspect-src-gui-widgets-relation-type-picker-relationtypepicker-setup-ui-self-combo-box",
+        )
         self.combo_box.setEditable(True)
         self.combo_box.addItems(self.relation_types)
 
@@ -133,12 +137,18 @@ class RelationTypePicker(QWidget):
         input_layout.addWidget(self.combo_box, 1)
 
         # Create OK button
-        self.ok_button = PrimaryButton("OK")
+        self.ok_button = declare_inspection(
+            PrimaryButton("OK"),
+            "src-gui-widgets-relation-type-picker-relationtypepicker-setup-ui-self-ok-button|relations.create|help-inspect-src-gui-widgets-relation-type-picker-relationtypepicker-setup-ui-self-ok-button",
+        )
 
         input_layout.addWidget(self.ok_button)
 
         # Create Cancel button
-        self.cancel_button = StandardButton("Cancel")
+        self.cancel_button = declare_inspection(
+            StandardButton("Cancel"),
+            "src-gui-widgets-relation-type-picker-relationtypepicker-setup-ui-self-cancel-button|relations.create|help-inspect-src-gui-widgets-relation-type-picker-relationtypepicker-setup-ui-self-cancel-button",
+        )
 
         input_layout.addWidget(self.cancel_button)
 

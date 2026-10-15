@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 
 from src.core.analysis import ValidationIssue, WorldValidationReport
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.analysis._analysis_utils import (
     SEVERITY_COLORS,
@@ -90,7 +91,10 @@ class AnalysisPanel(QWidget):
         self.completeness_table = make_analysis_table(_COMPLETENESS_HEADERS)
         layout.addWidget(self.completeness_table)
 
-        self.open_source_btn = QPushButton("Open Source")
+        self.open_source_btn = declare_inspection(
+            QPushButton("Open Source"),
+            "src-gui-widgets-analysis-analysis-panel-analysispanel-init-ui-self-open-source-btn|analysis.review|help-inspect-src-gui-widgets-analysis-analysis-panel-analysispanel-init-ui-self-open-source-btn",
+        )
         self.open_source_btn.setEnabled(False)
         layout.addWidget(self.open_source_btn)
 

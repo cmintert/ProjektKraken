@@ -28,6 +28,7 @@ from src.core.paths import ensure_worlds_directory
 from src.core.world import EXTERNAL_DATABASE_STORAGE, World, WorldManager
 from src.gui.constants import SETTINGS_ACTIVE_DB_KEY
 from src.gui.dialogs.external_database_warning import external_database_warning
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.action_flow_layout import ActionFlowLayout
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
@@ -100,7 +101,10 @@ class DatabaseManagerDialog(QDialog):
         main_layout.addWidget(info)
 
         # List
-        self.db_list = QListWidget()
+        self.db_list = declare_inspection(
+            QListWidget(),
+            "src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-db-list|world.manage|help-inspect-src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-db-list",
+        )
         self.db_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         main_layout.addWidget(self.db_list)
 
@@ -108,14 +112,38 @@ class DatabaseManagerDialog(QDialog):
         actions = QWidget()
         btn_layout = ActionFlowLayout(actions)
         btn_layout.setContentsMargins(0, 0, 0, 0)
-        self.btn_create = QPushButton("Create New")
-        self.btn_add_folder = QPushButton("Add World Folder")
-        self.btn_open_folder = QPushButton("Open Folder")
-        self.btn_link_external = QPushButton("Link External DB")
-        self.btn_revoke_external = QPushButton("Revoke External DB")
-        self.btn_delete = QPushButton("Delete")
-        self.btn_select = QPushButton("Select && Restart")  # && escapes to &
-        self.btn_close = QPushButton("Cancel")
+        self.btn_create = declare_inspection(
+            QPushButton("Create New"),
+            "src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-create|world.manage|help-inspect-src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-create",
+        )
+        self.btn_add_folder = declare_inspection(
+            QPushButton("Add World Folder"),
+            "src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-add-folder|world.manage|help-inspect-src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-add-folder",
+        )
+        self.btn_open_folder = declare_inspection(
+            QPushButton("Open Folder"),
+            "src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-open-folder|world.manage|help-inspect-src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-open-folder",
+        )
+        self.btn_link_external = declare_inspection(
+            QPushButton("Link External DB"),
+            "src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-link-external|world.manage|help-inspect-src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-link-external",
+        )
+        self.btn_revoke_external = declare_inspection(
+            QPushButton("Revoke External DB"),
+            "src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-revoke-external|world.manage|help-inspect-src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-revoke-external",
+        )
+        self.btn_delete = declare_inspection(
+            QPushButton("Delete"),
+            "src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-delete|world.manage|help-inspect-src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-delete",
+        )
+        self.btn_select = declare_inspection(
+            QPushButton("Select && Restart"),
+            "src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-select|world.manage|help-inspect-src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-select",
+        )  # && escapes to &
+        self.btn_close = declare_inspection(
+            QPushButton("Cancel"),
+            "src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-close|world.manage|help-inspect-src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-close",
+        )
 
         self.btn_create.setToolTip("Create a new world in the default worlds folder.")
         self.btn_add_folder.setToolTip(

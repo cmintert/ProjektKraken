@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.filter_widget import FilterWidget
 from src.gui.widgets.responsive_dialog_buttons import (
     ResponsiveDialogButtonBox as QDialogButtonBox,
@@ -84,8 +85,12 @@ class GraphFilterDialog(QDialog):
         self.tabs.addTab(self.rel_filter_widget, "Relation Types")
 
         # --- Dialog Buttons ---
-        self.buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        self.buttons = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel
+            ),
+            "src-gui-dialogs-graph-filter-dialog-graphfilterdialog-init-self-buttons|graph.exploring|help-inspect-src-gui-dialogs-graph-filter-dialog-graphfilterdialog-init-self-buttons",
         )
         self.buttons.accepted.connect(self.accept)
         self.buttons.rejected.connect(self.reject)

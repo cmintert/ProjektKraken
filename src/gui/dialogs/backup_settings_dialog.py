@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
 
 from src.core.paths import get_backup_directory
 from src.gui.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.settings_reader import (
     read_bool_setting,
     read_int_setting,
@@ -108,14 +109,20 @@ class BackupSettingsDialog(QDialog):
         StyleHelper.apply_standard_list_spacing(layout)
 
         # Enable backups checkbox
-        self.chk_enabled = QCheckBox("Enable automated backups")
+        self.chk_enabled = declare_inspection(
+            QCheckBox("Enable automated backups"),
+            "src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-general-section-self-chk-enabled|world.backups|help-inspect-src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-general-section-self-chk-enabled",
+        )
         self.chk_enabled.setToolTip(
             "When enabled, backups are created automatically at regular intervals"
         )
         layout.addRow(self.chk_enabled)
 
         # Auto-save interval
-        self.spin_interval = ScrollSafeSpinBox()
+        self.spin_interval = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-general-section-self-spin-interval|world.backups|help-inspect-src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-general-section-self-spin-interval",
+        )
         self.spin_interval.setRange(1, 60)
         self.spin_interval.setValue(5)
         self.spin_interval.setSuffix(" minutes")
@@ -123,14 +130,20 @@ class BackupSettingsDialog(QDialog):
         layout.addRow("Auto-save interval:", self.spin_interval)
 
         # Verify after backup
-        self.chk_verify = QCheckBox("Verify backup integrity after creation")
+        self.chk_verify = declare_inspection(
+            QCheckBox("Verify backup integrity after creation"),
+            "src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-general-section-self-chk-verify|world.backups|help-inspect-src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-general-section-self-chk-verify",
+        )
         self.chk_verify.setToolTip(
             "Ensures backup files are valid by checking their integrity"
         )
         layout.addRow(self.chk_verify)
 
         # Vacuum before backup
-        self.chk_vacuum = QCheckBox("Optimize database before backup")
+        self.chk_vacuum = declare_inspection(
+            QCheckBox("Optimize database before backup"),
+            "src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-general-section-self-chk-vacuum|world.backups|help-inspect-src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-general-section-self-chk-vacuum",
+        )
         self.chk_vacuum.setToolTip(
             "Runs VACUUM to reclaim space before backup (may be slow for large DBs)"
         )
@@ -145,28 +158,40 @@ class BackupSettingsDialog(QDialog):
         StyleHelper.apply_standard_list_spacing(layout)
 
         # Auto-save retention
-        self.spin_auto_retention = ScrollSafeSpinBox()
+        self.spin_auto_retention = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-retention-section-self-spin-auto-retention|world.backups|help-inspect-src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-retention-section-self-spin-auto-retention",
+        )
         self.spin_auto_retention.setRange(1, 100)
         self.spin_auto_retention.setValue(12)
         self.spin_auto_retention.setToolTip("Number of auto-save backups to keep")
         layout.addRow("Auto-save backups:", self.spin_auto_retention)
 
         # Daily retention
-        self.spin_daily_retention = ScrollSafeSpinBox()
+        self.spin_daily_retention = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-retention-section-self-spin-daily-retention|world.backups|help-inspect-src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-retention-section-self-spin-daily-retention",
+        )
         self.spin_daily_retention.setRange(1, 365)
         self.spin_daily_retention.setValue(7)
         self.spin_daily_retention.setToolTip("Number of daily backups to keep")
         layout.addRow("Daily backups:", self.spin_daily_retention)
 
         # Weekly retention
-        self.spin_weekly_retention = ScrollSafeSpinBox()
+        self.spin_weekly_retention = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-retention-section-self-spin-weekly-retention|world.backups|help-inspect-src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-retention-section-self-spin-weekly-retention",
+        )
         self.spin_weekly_retention.setRange(1, 52)
         self.spin_weekly_retention.setValue(4)
         self.spin_weekly_retention.setToolTip("Number of weekly backups to keep")
         layout.addRow("Weekly backups:", self.spin_weekly_retention)
 
         # Manual retention
-        self.spin_manual_retention = ScrollSafeSpinBox()
+        self.spin_manual_retention = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-retention-section-self-spin-manual-retention|world.backups|help-inspect-src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-retention-section-self-spin-manual-retention",
+        )
         self.spin_manual_retention.setRange(-1, 1000)
         self.spin_manual_retention.setValue(-1)
         self.spin_manual_retention.setSpecialValueText("Unlimited")
@@ -193,7 +218,10 @@ class BackupSettingsDialog(QDialog):
         layout.addWidget(self.lbl_current_path)
 
         # Open folder button
-        btn_open = QPushButton("Open Backup Folder")
+        btn_open = declare_inspection(
+            QPushButton("Open Backup Folder"),
+            "src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-location-section-btn-open|world.backups|help-inspect-src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-location-section-btn-open",
+        )
         btn_open.clicked.connect(self._on_open_folder)
         layout.addWidget(btn_open)
 
@@ -203,10 +231,16 @@ class BackupSettingsDialog(QDialog):
         # Custom directory
         custom_layout = QHBoxLayout()
         custom_layout.addWidget(QLabel("Custom directory:"))
-        self.edit_custom_dir = QLineEdit()
+        self.edit_custom_dir = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-location-section-self-edit-custom-dir|world.backups|help-inspect-src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-location-section-self-edit-custom-dir",
+        )
         self.edit_custom_dir.setPlaceholderText("Leave empty to use default")
         custom_layout.addWidget(self.edit_custom_dir, stretch=1)
-        btn_browse_custom = QPushButton("Browse...")
+        btn_browse_custom = declare_inspection(
+            QPushButton("Browse..."),
+            "src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-location-section-btn-browse-custom|world.backups|help-inspect-src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-location-section-btn-browse-custom",
+        )
         btn_browse_custom.clicked.connect(self._on_browse_custom)
         custom_layout.addWidget(btn_browse_custom)
         layout.addLayout(custom_layout)
@@ -214,13 +248,19 @@ class BackupSettingsDialog(QDialog):
         # External backup path
         external_layout = QHBoxLayout()
         external_layout.addWidget(QLabel("External backup:"))
-        self.edit_external_path = QLineEdit()
+        self.edit_external_path = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-location-section-self-edit-external-path|world.backups|help-inspect-src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-location-section-self-edit-external-path",
+        )
         self.edit_external_path.setPlaceholderText("Optional external backup location")
         self.edit_external_path.setToolTip(
             "Backups will also be copied to this location (e.g., network drive)"
         )
         external_layout.addWidget(self.edit_external_path, stretch=1)
-        btn_browse_external = QPushButton("Browse...")
+        btn_browse_external = declare_inspection(
+            QPushButton("Browse..."),
+            "src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-location-section-btn-browse-external|world.backups|help-inspect-src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-location-section-btn-browse-external",
+        )
         btn_browse_external.clicked.connect(self._on_browse_external)
         external_layout.addWidget(btn_browse_external)
         layout.addLayout(external_layout)
@@ -232,11 +272,17 @@ class BackupSettingsDialog(QDialog):
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
 
-        btn_cancel = QPushButton("Cancel")
+        btn_cancel = declare_inspection(
+            QPushButton("Cancel"),
+            "src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-buttons-btn-cancel|world.backups|help-inspect-src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-buttons-btn-cancel",
+        )
         btn_cancel.clicked.connect(self.reject)
         btn_layout.addWidget(btn_cancel)
 
-        btn_ok = QPushButton("OK")
+        btn_ok = declare_inspection(
+            QPushButton("OK"),
+            "src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-buttons-btn-ok|world.backups|help-inspect-src-gui-dialogs-backup-settings-dialog-backupsettingsdialog-create-buttons-btn-ok",
+        )
         btn_ok.setStyleSheet(StyleHelper.get_primary_button_style())
         btn_ok.clicked.connect(self._on_ok_clicked)
         btn_layout.addWidget(btn_ok)

@@ -10,6 +10,7 @@ from PySide6.QtCore import QSize, Signal, Slot
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QWidget
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.standard_buttons import StandardButton
 
 
@@ -98,7 +99,10 @@ class RelationItemWidget(QWidget):
             layout.addWidget(self.state_changes_badge)
 
         # Go to button (compact, icon-style)
-        self.btn_go_to = StandardButton("→")
+        self.btn_go_to = declare_inspection(
+            StandardButton("→"),
+            "src-gui-widgets-relation-item-widget-relationitemwidget-setup-ui-self-btn-go-to|relations.create|help-inspect-src-gui-widgets-relation-item-widget-relationitemwidget-setup-ui-self-btn-go-to",
+        )
         self.btn_go_to.setAccessibleName(f"Go to {self._target_name}")
         self.btn_go_to.setToolTip(f"Go to {self._target_name}")
         self.btn_go_to.clicked.connect(self._on_go_to_clicked)

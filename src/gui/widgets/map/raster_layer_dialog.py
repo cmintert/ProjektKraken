@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 from src.gui.widgets.responsive_dialog_buttons import (
@@ -98,13 +99,19 @@ class RasterLayerDialog(QDialog):
         form = QFormLayout()
 
         # Name
-        self._name_edit = QLineEdit()
+        self._name_edit = declare_inspection(
+            QLineEdit(),
+            "src-gui-widgets-map-raster-layer-dialog-rasterlayerdialog-init-self-name-edit|map.raster|help-inspect-src-gui-widgets-map-raster-layer-dialog-rasterlayerdialog-init-self-name-edit",
+        )
         self._name_edit.setText("Raster Layer")
         self._name_edit.setPlaceholderText("Layer name")
         form.addRow("Name:", self._name_edit)
 
         # Mode
-        self._mode_combo = QComboBox()
+        self._mode_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-map-raster-layer-dialog-rasterlayerdialog-init-self-mode-combo|map.raster|help-inspect-src-gui-widgets-map-raster-layer-dialog-rasterlayerdialog-init-self-mode-combo",
+        )
         self._mode_combo.addItem("Classified world data", "discrete")
         self._mode_combo.addItem("Continuous measured field", "continuous")
         self._mode_combo.addItem("Visual overlay", "color")
@@ -131,7 +138,10 @@ class RasterLayerDialog(QDialog):
         self._on_mode_changed(str(self._mode_combo.currentData()))
 
         # Resolution preset
-        self._res_combo = QComboBox()
+        self._res_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-map-raster-layer-dialog-rasterlayerdialog-init-self-res-combo|map.raster|help-inspect-src-gui-widgets-map-raster-layer-dialog-rasterlayerdialog-init-self-res-combo",
+        )
         for label, _w, _h in _RESOLUTION_PRESETS:
             self._res_combo.addItem(label)
         # Default to 1024×1024
@@ -145,7 +155,10 @@ class RasterLayerDialog(QDialog):
         self._update_memory_estimate()
 
         # Default value
-        self._default_spin = ScrollSafeSpinBox()
+        self._default_spin = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-widgets-map-raster-layer-dialog-rasterlayerdialog-init-self-default-spin|map.raster|help-inspect-src-gui-widgets-map-raster-layer-dialog-rasterlayerdialog-init-self-default-spin",
+        )
         self._default_spin.setRange(0, 65535)
         self._default_spin.setValue(0)
         self._default_spin.setToolTip("Initial value for all pixels (0–65535)")
@@ -163,11 +176,17 @@ class RasterLayerDialog(QDialog):
         import_form = QFormLayout()
 
         browse_row = QHBoxLayout()
-        self._browse_btn = QPushButton("Browse…")
+        self._browse_btn = declare_inspection(
+            QPushButton("Browse…"),
+            "src-gui-widgets-map-raster-layer-dialog-rasterlayerdialog-init-self-browse-btn|map.raster|help-inspect-src-gui-widgets-map-raster-layer-dialog-rasterlayerdialog-init-self-browse-btn",
+        )
         self._browse_btn.setToolTip("Import an existing image as the raster layer data")
         self._browse_btn.clicked.connect(self._on_browse_clicked)
         browse_row.addWidget(self._browse_btn)
-        self._clear_btn = QPushButton("✕")
+        self._clear_btn = declare_inspection(
+            QPushButton("✕"),
+            "src-gui-widgets-map-raster-layer-dialog-rasterlayerdialog-init-self-clear-btn|map.raster|help-inspect-src-gui-widgets-map-raster-layer-dialog-rasterlayerdialog-init-self-clear-btn",
+        )
         self._clear_btn.setAccessibleName("Clear selected raster image")
         self._clear_btn.setToolTip("Clear selected file")
         self._clear_btn.clicked.connect(self._on_clear_import)
@@ -230,8 +249,12 @@ class RasterLayerDialog(QDialog):
         self._update_value_range_visibility(str(self._mode_combo.currentData()))
 
         # Buttons
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        buttons = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel
+            ),
+            "src-gui-widgets-map-raster-layer-dialog-rasterlayerdialog-init-buttons|map.raster|help-inspect-src-gui-widgets-map-raster-layer-dialog-rasterlayerdialog-init-buttons",
         )
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
@@ -405,19 +428,28 @@ class RasterLayerDialog(QDialog):
         row = QHBoxLayout()
         row.setSpacing(6)
         row.addWidget(QLabel("Min:"))
-        self._display_min_edit = QLineEdit()
+        self._display_min_edit = declare_inspection(
+            QLineEdit(),
+            "src-gui-widgets-map-raster-layer-dialog-rasterlayerdialog-build-value-range-group-self-display-min-edit|map.raster|help-inspect-src-gui-widgets-map-raster-layer-dialog-rasterlayerdialog-build-value-range-group-self-display-min-edit",
+        )
         self._display_min_edit.setFixedWidth(80)
         self._display_min_edit.setPlaceholderText("e.g. -4000")
         self._display_min_edit.setValidator(QDoubleValidator())
         row.addWidget(self._display_min_edit)
         row.addWidget(QLabel("Max:"))
-        self._display_max_edit = QLineEdit()
+        self._display_max_edit = declare_inspection(
+            QLineEdit(),
+            "src-gui-widgets-map-raster-layer-dialog-rasterlayerdialog-build-value-range-group-self-display-max-edit|map.raster|help-inspect-src-gui-widgets-map-raster-layer-dialog-rasterlayerdialog-build-value-range-group-self-display-max-edit",
+        )
         self._display_max_edit.setFixedWidth(80)
         self._display_max_edit.setPlaceholderText("e.g. 8000")
         self._display_max_edit.setValidator(QDoubleValidator())
         row.addWidget(self._display_max_edit)
         row.addWidget(QLabel("Unit:"))
-        self._display_unit_edit = QLineEdit()
+        self._display_unit_edit = declare_inspection(
+            QLineEdit(),
+            "src-gui-widgets-map-raster-layer-dialog-rasterlayerdialog-build-value-range-group-self-display-unit-edit|map.raster|help-inspect-src-gui-widgets-map-raster-layer-dialog-rasterlayerdialog-build-value-range-group-self-display-unit-edit",
+        )
         self._display_unit_edit.setFixedWidth(60)
         self._display_unit_edit.setPlaceholderText("e.g. m")
         row.addWidget(self._display_unit_edit)

@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 
 from src.core.marker_icon import MarkerIconDefinition
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
 from src.gui.widgets.responsive_dialog_buttons import (
@@ -71,15 +72,30 @@ class IconMetadataDialog(QDialog):
         self.setStyleSheet(StyleHelper.get_dialog_base_style())
         layout = QVBoxLayout(self)
         form = QFormLayout()
-        self.name_edit = QLineEdit(definition.name)
-        self.category_edit = QLineEdit(definition.category or "")
-        self.diameter = ScrollSafeDoubleSpinBox()
+        self.name_edit = declare_inspection(
+            QLineEdit(definition.name),
+            "src-gui-dialogs-icon-metadata-dialog-iconmetadatadialog-init-self-name-edit|map.icons|help-inspect-src-gui-dialogs-icon-metadata-dialog-iconmetadatadialog-init-self-name-edit",
+        )
+        self.category_edit = declare_inspection(
+            QLineEdit(definition.category or ""),
+            "src-gui-dialogs-icon-metadata-dialog-iconmetadatadialog-init-self-category-edit|map.icons|help-inspect-src-gui-dialogs-icon-metadata-dialog-iconmetadatadialog-init-self-category-edit",
+        )
+        self.diameter = declare_inspection(
+            ScrollSafeDoubleSpinBox(),
+            "src-gui-dialogs-icon-metadata-dialog-iconmetadatadialog-init-self-diameter|map.icons|help-inspect-src-gui-dialogs-icon-metadata-dialog-iconmetadatadialog-init-self-diameter",
+        )
         self.diameter.setDecimals(3)
         self.diameter.setRange(0.001, 1_000_000)
         self.diameter.setSuffix(" px")
         self.diameter.setValue(definition.default_native_diameter_px)
-        self.anchor_x = ScrollSafeDoubleSpinBox()
-        self.anchor_y = ScrollSafeDoubleSpinBox()
+        self.anchor_x = declare_inspection(
+            ScrollSafeDoubleSpinBox(),
+            "src-gui-dialogs-icon-metadata-dialog-iconmetadatadialog-init-self-anchor-x|map.icons|help-inspect-src-gui-dialogs-icon-metadata-dialog-iconmetadatadialog-init-self-anchor-x",
+        )
+        self.anchor_y = declare_inspection(
+            ScrollSafeDoubleSpinBox(),
+            "src-gui-dialogs-icon-metadata-dialog-iconmetadatadialog-init-self-anchor-y|map.icons|help-inspect-src-gui-dialogs-icon-metadata-dialog-iconmetadatadialog-init-self-anchor-y",
+        )
         for control, value in (
             (self.anchor_x, definition.anchor.x),
             (self.anchor_y, definition.anchor.y),
@@ -105,9 +121,12 @@ class IconMetadataDialog(QDialog):
         )
         note.setWordWrap(True)
         layout.addWidget(note)
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Save
-            | QDialogButtonBox.StandardButton.Cancel
+        buttons = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Save
+                | QDialogButtonBox.StandardButton.Cancel
+            ),
+            "src-gui-dialogs-icon-metadata-dialog-iconmetadatadialog-init-buttons|map.icons|help-inspect-src-gui-dialogs-icon-metadata-dialog-iconmetadatadialog-init-buttons",
         )
         save = buttons.button(QDialogButtonBox.StandardButton.Save)
         self.name_edit.textChanged.connect(

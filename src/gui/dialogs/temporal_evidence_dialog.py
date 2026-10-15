@@ -17,6 +17,7 @@ from src.core.date_parser import DateParser
 from src.core.temporal_authoring import author_temporal_evidence
 from src.core.temporal_expression import TemporalExpression
 from src.gui.dialogs.help_aware_dialog import HelpAwareDialog
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.responsive_dialog_buttons import (
@@ -59,7 +60,10 @@ class TemporalEvidenceDialog(HelpAwareDialog):
         )
         intro.setWordWrap(True)
         layout.addWidget(intro)
-        self.claims = QTableWidget(0, 2)
+        self.claims = declare_inspection(
+            QTableWidget(0, 2),
+            "src-gui-dialogs-temporal-evidence-dialog-temporalevidencedialog-init-self-claims|date.evidence|help-inspect-src-gui-dialogs-temporal-evidence-dialog-temporalevidencedialog-init-self-claims",
+        )
         self.claims.setHorizontalHeaderLabels(
             ["Source / citation", "Date given by source"]
         )
@@ -68,7 +72,10 @@ class TemporalEvidenceDialog(HelpAwareDialog):
         )
         self.claims.setStyleSheet(StyleHelper.get_table_widget_style())
         layout.addWidget(self.claims)
-        self.preferred = ScrollSafeComboBox()
+        self.preferred = declare_inspection(
+            ScrollSafeComboBox(),
+            "src-gui-dialogs-temporal-evidence-dialog-temporalevidencedialog-init-self-preferred|date.evidence|help-inspect-src-gui-dialogs-temporal-evidence-dialog-temporalevidencedialog-init-self-preferred",
+        )
         self.preferred.addItem("Keep the current event date", -1)
         for index, claim in enumerate(metadata.get("claims", [])):
             self._add_claim(
@@ -83,10 +90,16 @@ class TemporalEvidenceDialog(HelpAwareDialog):
             if claim.get("id") == metadata.get("preferred_claim_id"):
                 self.preferred.setCurrentIndex(index + 1)
         self.claims.itemChanged.connect(self._update_preferred_labels)
-        add = QPushButton("Add source date")
+        add = declare_inspection(
+            QPushButton("Add source date"),
+            "src-gui-dialogs-temporal-evidence-dialog-temporalevidencedialog-init-add|date.evidence|help-inspect-src-gui-dialogs-temporal-evidence-dialog-temporalevidencedialog-init-add",
+        )
         add.clicked.connect(lambda: self._add_claim())
         layout.addWidget(add)
-        remove = QPushButton("Remove selected source date")
+        remove = declare_inspection(
+            QPushButton("Remove selected source date"),
+            "src-gui-dialogs-temporal-evidence-dialog-temporalevidencedialog-init-remove|date.evidence|help-inspect-src-gui-dialogs-temporal-evidence-dialog-temporalevidencedialog-init-remove",
+        )
         remove.clicked.connect(self._remove_claim)
         layout.addWidget(remove)
         layout.addWidget(QLabel("Use this source as the event date"))
@@ -95,8 +108,12 @@ class TemporalEvidenceDialog(HelpAwareDialog):
         self.error.setWordWrap(True)
         self.error.setStyleSheet(StyleHelper.get_error_label_style())
         layout.addWidget(self.error)
-        actions = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        actions = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel
+            ),
+            "src-gui-dialogs-temporal-evidence-dialog-temporalevidencedialog-init-actions|date.evidence|help-inspect-src-gui-dialogs-temporal-evidence-dialog-temporalevidencedialog-init-actions",
         )
         actions.accepted.connect(self._accept_valid)
         actions.rejected.connect(self.reject)

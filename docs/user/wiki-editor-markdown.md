@@ -129,3 +129,203 @@ entry or an authored connection.
 
 Peek currently shows a read-only text description. Rich media previews and
 advanced Markdown editing are future product work; their source remains intact.
+
+(help-writing-spelling)=
+
+## Configure spelling suggestions
+
+Spelling settings choose the language and optional checking service used for
+suggestions. Reviewing or ignoring a suggestion does not rewrite the description;
+accepting a replacement edits the text. Provider credentials are settings, not world
+content.
+
+## Interface control reference
+
+These explanations describe the software operation. Inspecting a control does not run it or read your entered values.
+
+(help-inspect-src-gui-widgets-toc-widget-tocwidget-init-self-list-widget)=
+
+**Description headings** — Choose a heading to navigate within the current description.
+
+(help-inspect-src-gui-widgets-wiki-link-authoring-entrylinkpicker-init-self-search)=
+
+**Find link target** — Search existing Events and Entities to insert a link into the
+current writing.
+
+(help-inspect-src-gui-widgets-wiki-link-authoring-entrylinkpicker-init-self-results)=
+
+**Link targets** — Select an existing entry as the link target. Creating a link does not
+assert an authored relation such as membership.
+
+(help-inspect-src-gui-widgets-wiki-link-authoring-entrylinkpicker-init-self-link-button)=
+
+**Link** — Insert a link to the selected existing entry, retaining selected prose as its
+label. This does not create an authored relationship such as membership.
+
+(help-inspect-src-gui-widgets-wiki-link-authoring-entrylinkpicker-init-cancel)=
+
+**Cancel** — Cancel this Entry Link Picker operation without accepting its pending
+changes. This is separate from applying or saving them.
+
+(help-inspect-src-gui-widgets-wiki-peek-panel-wikipeekpanel-init-self-description)=
+
+**Peek description** — Read the linked entry's description without leaving the current
+writing. This preview is read-only.
+
+(help-inspect-src-gui-widgets-wiki-peek-panel-wikipeekpanel-init-self-choices)=
+
+**Ambiguous link targets** — Choose among entries that match this reference before
+opening a target.
+
+(help-inspect-src-gui-widgets-wiki-peek-panel-wikipeekpanel-init-self-open-button)=
+
+**Open or edit link target** — Deliberately navigate to the linked entry's inspector.
+Existing unfinished-writing safeguards still apply.
+
+(help-inspect-src-gui-widgets-wiki-peek-panel-wikipeekpanel-init-self-create-entity-button)=
+
+**Create Entity** — Create an Entity for this unresolved reference without leaving the
+current writing. Creation is optional; open the new entry deliberately afterwards.
+
+(help-inspect-src-gui-widgets-wiki-peek-panel-wikipeekpanel-init-self-create-event-button)=
+
+**Create Event** — Create an Event for this unresolved reference without leaving the
+current writing. This is separate from opening its inspector.
+
+(help-inspect-src-gui-widgets-wiki-peek-panel-wikipeekpanel-init-self-close-button)=
+
+**Close Peek** — Close the linked-entry preview and continue the current writing.
+
+(help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-setup-actions-self-action-bold)=
+
+**Bold** — Apply or remove bold emphasis in the selected writing, or for text entered at
+the caret.
+
+(help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-setup-actions-self-action-italic)=
+
+**Italic** — Apply or remove italic emphasis in the selected writing, or for text
+entered at the caret.
+
+(help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-setup-actions-self-action-h1)=
+
+**H1** — Apply heading level 1 to the current writing paragraph. This changes
+formatting, not the entry’s name.
+
+(help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-setup-actions-self-action-h2)=
+
+**H2** — Apply heading level 2 to the current writing paragraph. This changes
+formatting, not the entry’s name.
+
+(help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-setup-actions-self-action-h3)=
+
+**H3** — Apply heading level 3 to the current writing paragraph. This changes
+formatting, not the entry’s name.
+
+(help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-setup-actions-self-action-body)=
+
+**Body** — Clear heading, bold and italic formatting from the selected writing. This
+does not delete the selected words.
+
+(help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-contextmenuevent-menu)=
+
+**Menu** — Open the Menu menu to choose a related operation. Opening the menu does not
+apply any of its actions.
+
+(help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-contextmenuevent-ignore-action)=
+
+**Ignore spelling suggestion** — Ignore this spelling finding without replacing the
+authored words.
+
+(help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-add-link-menu-actions-action)=
+
+**Link to entry…** — Choose an existing entry to link from the selected prose. With no
+selection, its name is inserted at the caret; this does not assert membership or another
+authored relationship.
+
+(help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-add-link-menu-actions-addaction)=
+
+**Open link** — Navigate to the link target through the normal link workflow and its
+unfinished-writing safeguards.
+
+(help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-add-link-menu-actions-addaction-2)=
+
+**Peek link (Alt+Click)** — Read the link target in the side pane without navigating
+away from the current writing.
+
+(help-inspect-src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-self-language-combo)=
+
+**Spelling language** — Choose the language used by LanguageTool for spelling and
+grammar checks.
+
+(help-inspect-src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-self-username-edit)=
+
+**LanguageTool username** — Enter the username for the configured LanguageTool account.
+This is separate from the world author's name.
+
+(help-inspect-src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-self-apikey-edit)=
+
+**API Key:** — Enter the credentials required by the selected service. Help never reads
+or displays the credential value. Saving settings is separate from making a request.
+
+(help-inspect-src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-cancel-btn)=
+
+**Cancel** — Cancel this SpellCheckSettings operation without accepting its pending
+changes. This is separate from applying or saving them.
+
+(help-inspect-src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-save-btn)=
+
+**Save spelling settings** — Save the language and optional LanguageTool account
+credentials.
+
+(help-inspect-src-gui-widgets-wiki-text-edit-wikitextedit-init-self-editor)=
+
+**Description editor** — Edit the current description in Rich or Markdown Source mode.
+Both presentations edit the same entry description.
+
+(help-inspect-src-gui-widgets-wiki-text-edit-wikitextedit-setup-link-controls-self-action-link-entry)=
+
+**Link to entry…** — Choose an existing entry to link from the selected prose. With no
+selection, its name is inserted at the caret; this does not assert membership or another
+authored relationship.
+
+(help-inspect-src-gui-widgets-wiki-text-edit-wikitextedit-setup-link-controls-self-action-open-link)=
+
+**Open link** — Navigate deliberately to the linked entry using the existing unfinished-
+writing safeguards.
+
+(help-inspect-src-gui-widgets-wiki-text-edit-wikitextedit-setup-link-controls-self-action-peek-link)=
+
+**Peek link** — Read the link target in the side pane without navigating away from the
+current writing.
+
+(help-inspect-src-gui-widgets-wiki-text-edit-wikitextedit-setup-link-controls-self-action-return-writing)=
+
+**Back to previous** — Return to the previous writing origin in the temporary link-
+navigation trail. Draft safeguards still apply; discarded writing is not recovered.
+
+(help-inspect-src-gui-widgets-wiki-text-edit-wikitextedit-setup-link-controls-self-return-button)=
+
+**Back to writing** — Return to the previous writing origin in the temporary link-
+navigation trail.
+
+(help-inspect-src-gui-widgets-writing-toolbar-writingtoolbarpresentation-init-self-heading-button)=
+
+**Heading style** — Choose body text or a heading level for the current paragraph.
+
+(help-inspect-src-gui-widgets-writing-toolbar-writingtoolbarpresentation-view-actions-owner-action-toggle-mode)=
+
+**Markdown source** — Toggle between Rendered HTML and Markdown Source.
+
+(help-inspect-src-gui-widgets-writing-toolbar-writingtoolbarpresentation-view-actions-owner-action-toggle-toc)=
+
+**Table of contents** — Show the headings available in the current description and
+navigate within that writing.
+
+(help-inspect-src-gui-widgets-writing-toolbar-writingtoolbarpresentation-view-actions-owner-action-spell-check)=
+
+**Spelling settings** — Spell &amp; grammar check settings (LanguageTool).
+
+(help-inspect-src-gui-widgets-writing-toolbar-writingtoolbarpresentation-build-menus-button)=
+
+**Writing menu** — Open the indicated writing menu and inspect a specific item for its
+effect.

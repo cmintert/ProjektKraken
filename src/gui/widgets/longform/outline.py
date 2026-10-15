@@ -26,6 +26,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.gui.utils.help_context import declare_inspection
+
 logger = logging.getLogger(__name__)
 
 
@@ -387,7 +389,10 @@ class LongformOutlineWidget(QTreeWidget):
         if not item:
             return
         self.setCurrentItem(item)
-        menu = QMenu(self)
+        menu = declare_inspection(
+            QMenu(self),
+            "src-gui-widgets-longform-outline-longformoutlinewidget-show-context-menu-menu|longform.recovery|help-inspect-src-gui-widgets-longform-outline-longformoutlinewidget-show-context-menu-menu",
+        )
         self.populate_actions_menu(menu)
         self._display_context_menu(menu, self.mapToGlobal(pos))
 
@@ -396,7 +401,10 @@ class LongformOutlineWidget(QTreeWidget):
         menu.clear()
         item = self.currentItem()
         if item is None or not item.isSelected():
-            action = menu.addAction("Select an outline item first")
+            action = declare_inspection(
+                menu.addAction("Select an outline item first"),
+                "src-gui-widgets-longform-outline-longformoutlinewidget-populate-actions-menu-action|longform.recovery|help-inspect-src-gui-widgets-longform-outline-longformoutlinewidget-populate-actions-menu-action",
+            )
             action.setEnabled(False)
             return
 
@@ -416,13 +424,19 @@ class LongformOutlineWidget(QTreeWidget):
         can_move_down = index < sibling_count - 1
 
         # Move Up action
-        move_up_action = QAction("Move Up", menu)
+        move_up_action = declare_inspection(
+            QAction("Move Up", menu),
+            "src-gui-widgets-longform-outline-longformoutlinewidget-populate-actions-menu-move-up-action|longform.recovery|help-inspect-src-gui-widgets-longform-outline-longformoutlinewidget-populate-actions-menu-move-up-action",
+        )
         move_up_action.setEnabled(can_move_up)
         move_up_action.triggered.connect(lambda: self._move_up_selected())
         menu.addAction(move_up_action)
 
         # Move Down action
-        move_down_action = QAction("Move Down", menu)
+        move_down_action = declare_inspection(
+            QAction("Move Down", menu),
+            "src-gui-widgets-longform-outline-longformoutlinewidget-populate-actions-menu-move-down-action|longform.recovery|help-inspect-src-gui-widgets-longform-outline-longformoutlinewidget-populate-actions-menu-move-down-action",
+        )
         move_down_action.setEnabled(can_move_down)
         move_down_action.triggered.connect(lambda: self._move_down_selected())
         menu.addAction(move_down_action)
@@ -432,7 +446,10 @@ class LongformOutlineWidget(QTreeWidget):
         # Promote action
         # Note: Context menu disables this for depth 0 as UX improvement,
         # but keyboard shortcut (Ctrl+[) still works and command validates
-        promote_action = QAction("Promote", menu)
+        promote_action = declare_inspection(
+            QAction("Promote", menu),
+            "src-gui-widgets-longform-outline-longformoutlinewidget-populate-actions-menu-promote-action|longform.recovery|help-inspect-src-gui-widgets-longform-outline-longformoutlinewidget-populate-actions-menu-promote-action",
+        )
         promote_action.setToolTip("Lift this section one level")
         current_depth = old_meta.get("depth", 0)
         promote_action.setEnabled(current_depth > 0)
@@ -440,7 +457,10 @@ class LongformOutlineWidget(QTreeWidget):
         menu.addAction(promote_action)
 
         # Demote action (can only demote if there's a previous sibling to become parent)
-        demote_action = QAction("Demote", menu)
+        demote_action = declare_inspection(
+            QAction("Demote", menu),
+            "src-gui-widgets-longform-outline-longformoutlinewidget-populate-actions-menu-demote-action|longform.recovery|help-inspect-src-gui-widgets-longform-outline-longformoutlinewidget-populate-actions-menu-demote-action",
+        )
         demote_action.setToolTip("Nest beneath the preceding sibling")
         can_demote = False
         if parent:
@@ -453,12 +473,18 @@ class LongformOutlineWidget(QTreeWidget):
 
         menu.addSeparator()
 
-        remove_action = menu.addAction("Remove from document")
+        remove_action = declare_inspection(
+            menu.addAction("Remove from document"),
+            "src-gui-widgets-longform-outline-longformoutlinewidget-populate-actions-menu-remove-action|longform.recovery|help-inspect-src-gui-widgets-longform-outline-longformoutlinewidget-populate-actions-menu-remove-action",
+        )
         remove_action.setToolTip("Keep the world entry and lift its child sections")
         remove_action.triggered.connect(self._remove_selected)
 
         # Complete deletion uses the application coordinator's safety guard.
-        delete_action = QAction("Delete from world…", menu)
+        delete_action = declare_inspection(
+            QAction("Delete from world…", menu),
+            "src-gui-widgets-longform-outline-longformoutlinewidget-populate-actions-menu-delete-action|longform.recovery|help-inspect-src-gui-widgets-longform-outline-longformoutlinewidget-populate-actions-menu-delete-action",
+        )
         delete_action.triggered.connect(lambda: self._delete_selected())
         menu.addAction(delete_action)
 

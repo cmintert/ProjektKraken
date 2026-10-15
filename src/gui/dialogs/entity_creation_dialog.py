@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.responsive_dialog_buttons import (
     ResponsiveDialogButtonBox as QDialogButtonBox,
@@ -32,9 +33,15 @@ class EntityCreationDialog(QDialog):
         self.setModal(True)
         layout = QVBoxLayout(self)
         form = QFormLayout()
-        self.name_edit = QLineEdit(self)
+        self.name_edit = declare_inspection(
+            QLineEdit(self),
+            "src-gui-dialogs-entity-creation-dialog-entitycreationdialog-init-self-name-edit|authoring.create|help-inspect-src-gui-dialogs-entity-creation-dialog-entitycreationdialog-init-self-name-edit",
+        )
         self.name_edit.setObjectName("entityNameEdit")
-        self.type_combo = ScrollSafeComboBox(self)
+        self.type_combo = declare_inspection(
+            ScrollSafeComboBox(self),
+            "src-gui-dialogs-entity-creation-dialog-entitycreationdialog-init-self-type-combo|authoring.create|help-inspect-src-gui-dialogs-entity-creation-dialog-entitycreationdialog-init-self-type-combo",
+        )
         self.type_combo.setObjectName("entityTypeCombo")
         self.type_combo.setEditable(True)
         types = list(self.DEFAULT_TYPES)
@@ -55,9 +62,13 @@ class EntityCreationDialog(QDialog):
         form.addRow("&Name:", self.name_edit)
         form.addRow("&Type:", self.type_combo)
         layout.addLayout(form)
-        self.buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel,
-            parent=self,
+        self.buttons = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel,
+                parent=self,
+            ),
+            "src-gui-dialogs-entity-creation-dialog-entitycreationdialog-init-self-buttons|authoring.create|help-inspect-src-gui-dialogs-entity-creation-dialog-entitycreationdialog-init-self-buttons",
         )
         create_button = self.buttons.button(QDialogButtonBox.StandardButton.Ok)
         assert create_button is not None

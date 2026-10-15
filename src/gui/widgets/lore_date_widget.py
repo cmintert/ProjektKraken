@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.calendar import CalendarConverter, CalendarDate
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.numeric_inputs import (
@@ -65,7 +66,10 @@ class LoreDateWidget(QWidget):
         layout.setSpacing(4)
 
         # Year spinbox (allows negative for pre-Epoch)
-        self._year_spin = ScrollSafeSpinBox()
+        self._year_spin = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-widgets-lore-date-widget-loredatewidget-setup-ui-self-year-spin|date.precision|help-inspect-src-gui-widgets-lore-date-widget-loredatewidget-setup-ui-self-year-spin",
+        )
         self._year_spin.setRange(-10000, 10000)
         self._year_spin.setValue(1)
         self._year_spin.setPrefix("Year ")
@@ -73,17 +77,26 @@ class LoreDateWidget(QWidget):
         layout.addWidget(self._year_spin)
 
         # Month combo
-        self._month_combo = ScrollSafeComboBox()
+        self._month_combo = declare_inspection(
+            ScrollSafeComboBox(),
+            "src-gui-widgets-lore-date-widget-loredatewidget-setup-ui-self-month-combo|date.precision|help-inspect-src-gui-widgets-lore-date-widget-loredatewidget-setup-ui-self-month-combo",
+        )
         self._month_combo.currentIndexChanged.connect(self._on_month_changed)
         layout.addWidget(self._month_combo)
 
         # Day combo
-        self._day_combo = ScrollSafeComboBox()
+        self._day_combo = declare_inspection(
+            ScrollSafeComboBox(),
+            "src-gui-widgets-lore-date-widget-loredatewidget-setup-ui-self-day-combo|date.precision|help-inspect-src-gui-widgets-lore-date-widget-loredatewidget-setup-ui-self-day-combo",
+        )
         self._day_combo.currentIndexChanged.connect(self._on_structured_changed)
         layout.addWidget(self._day_combo)
 
         # Hour combo (0-23)
-        self._hour_combo = ScrollSafeComboBox()
+        self._hour_combo = declare_inspection(
+            ScrollSafeComboBox(),
+            "src-gui-widgets-lore-date-widget-loredatewidget-setup-ui-self-hour-combo|date.precision|help-inspect-src-gui-widgets-lore-date-widget-loredatewidget-setup-ui-self-hour-combo",
+        )
         for h in range(24):
             self._hour_combo.addItem(f"{h:02d}h")
         self._hour_combo.setCurrentIndex(0)
@@ -91,7 +104,10 @@ class LoreDateWidget(QWidget):
         layout.addWidget(self._hour_combo)
 
         # Minute combo (0-59, 5-minute intervals)
-        self._minute_combo = ScrollSafeComboBox()
+        self._minute_combo = declare_inspection(
+            ScrollSafeComboBox(),
+            "src-gui-widgets-lore-date-widget-loredatewidget-setup-ui-self-minute-combo|date.precision|help-inspect-src-gui-widgets-lore-date-widget-loredatewidget-setup-ui-self-minute-combo",
+        )
         for m in range(0, 60, 5):
             self._minute_combo.addItem(f"{m:02d}m")
         self._minute_combo.setCurrentIndex(0)
@@ -99,7 +115,10 @@ class LoreDateWidget(QWidget):
         layout.addWidget(self._minute_combo)
 
         # Raw float spinbox (hidden by default)
-        self._raw_spin = ScrollSafeDoubleSpinBox()
+        self._raw_spin = declare_inspection(
+            ScrollSafeDoubleSpinBox(),
+            "src-gui-widgets-lore-date-widget-loredatewidget-setup-ui-self-raw-spin|date.precision|help-inspect-src-gui-widgets-lore-date-widget-loredatewidget-setup-ui-self-raw-spin",
+        )
         self._raw_spin.setRange(-1e12, 1e12)
         self._raw_spin.setDecimals(4)  # More precision for time fractions
         self._raw_spin.setPrefix("Float: ")
@@ -108,7 +127,10 @@ class LoreDateWidget(QWidget):
         layout.addWidget(self._raw_spin)
 
         # Raw mode toggle
-        self._raw_toggle = QCheckBox("Raw")
+        self._raw_toggle = declare_inspection(
+            QCheckBox("Raw"),
+            "src-gui-widgets-lore-date-widget-loredatewidget-setup-ui-self-raw-toggle|date.precision|help-inspect-src-gui-widgets-lore-date-widget-loredatewidget-setup-ui-self-raw-toggle",
+        )
         self._raw_toggle.setToolTip("Toggle raw float input mode")
         self._raw_toggle.toggled.connect(self._on_raw_toggle)
         layout.addWidget(self._raw_toggle)

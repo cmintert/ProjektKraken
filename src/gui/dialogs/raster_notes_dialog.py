@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.responsive_dialog_buttons import (
     ResponsiveDialogButtonBox as QDialogButtonBox,
 )
@@ -45,13 +46,20 @@ class RasterNotesDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.addWidget(QLabel("Layer notes:"))
 
-        self._text_edit = QTextEdit()
+        self._text_edit = declare_inspection(
+            QTextEdit(),
+            "src-gui-dialogs-raster-notes-dialog-rasternotesdialog-init-self-text-edit|map.raster|help-inspect-src-gui-dialogs-raster-notes-dialog-rasternotesdialog-init-self-text-edit",
+        )
         self._text_edit.setPlainText(current_notes)
         self._text_edit.setPlaceholderText("Add notes about this raster layer…")
         layout.addWidget(self._text_edit)
 
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        buttons = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel
+            ),
+            "src-gui-dialogs-raster-notes-dialog-rasternotesdialog-init-buttons|map.raster|help-inspect-src-gui-dialogs-raster-notes-dialog-rasternotesdialog-init-buttons",
         )
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)

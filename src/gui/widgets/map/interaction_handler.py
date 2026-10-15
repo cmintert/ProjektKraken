@@ -42,6 +42,7 @@ from src.core.style_constants import (
 )
 from src.core.theme_manager import ThemeManager
 from src.gui.dialogs.icon_picker_dialog import IconPickerDialog
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.marker_item import MarkerItem
@@ -71,7 +72,10 @@ def _build_compact_stroke_width_control(
     initial_value: float,
 ) -> tuple[QWidget, ScrollSafeDoubleSpinBox]:
     """Build a normal-height width field with full-size decrement buttons."""
-    width_spin = ScrollSafeDoubleSpinBox()
+    width_spin = declare_inspection(
+        ScrollSafeDoubleSpinBox(),
+        "map.stroke-width|map.appearance|help-inspect-map-stroke-width",
+    )
     width_spin.setRange(0.5, 20.0)
     width_spin.setSingleStep(0.5)
     width_spin.setValue(initial_value)
@@ -85,11 +89,17 @@ def _build_compact_stroke_width_control(
     width_layout.setSpacing(2)
     width_layout.addWidget(width_spin, 1)
 
-    decrease_width = QToolButton()
+    decrease_width = declare_inspection(
+        QToolButton(),
+        "map.stroke-decrease|map.appearance|help-inspect-map-stroke-decrease",
+    )
     decrease_width.setObjectName("pathStrokeWidthDecreaseButton")
     decrease_width.setText("−")
     decrease_width.setToolTip("Decrease stroke width")
-    increase_width = QToolButton()
+    increase_width = declare_inspection(
+        QToolButton(),
+        "map.stroke-increase|map.appearance|help-inspect-map-stroke-increase",
+    )
     increase_width.setObjectName("pathStrokeWidthIncreaseButton")
     increase_width.setText("+")
     increase_width.setToolTip("Increase stroke width")
@@ -138,7 +148,10 @@ class InteractionHandler:
         if self.feature_presenter is not None:
             self.feature_presenter.show_canvas_menu(item, global_pos)
             return
-        menu = QMenu(self._view)
+        menu = declare_inspection(
+            QMenu(self._view),
+            "src-gui-widgets-map-interaction-handler-interactionhandler-show-feature-menu-menu|map.features|help-inspect-src-gui-widgets-map-interaction-handler-interactionhandler-show-feature-menu-menu",
+        )
         populate_feature_menu(
             menu,
             feature_actions(item_context(item, self._view)),
@@ -208,8 +221,14 @@ class InteractionHandler:
 
     def show_trajectory_context_menu(self, marker_id: str, global_pos: QPoint) -> None:
         """Show actions for a passive trajectory path."""
-        menu = QMenu(self._view)
-        edit_action = QAction("Edit Trajectory", self._view)
+        menu = declare_inspection(
+            QMenu(self._view),
+            "src-gui-widgets-map-interaction-handler-interactionhandler-show-trajectory-context-menu-menu|map.features|help-inspect-src-gui-widgets-map-interaction-handler-interactionhandler-show-trajectory-context-menu-menu",
+        )
+        edit_action = declare_inspection(
+            QAction("Edit Trajectory", self._view),
+            "src-gui-widgets-map-interaction-handler-interactionhandler-show-trajectory-context-menu-edit-action|map.features|help-inspect-src-gui-widgets-map-interaction-handler-interactionhandler-show-trajectory-context-menu-edit-action",
+        )
         edit_action.triggered.connect(
             lambda: self._view.trajectory_edit_requested.emit(marker_id)
         )
@@ -226,9 +245,15 @@ class InteractionHandler:
             global_pos: Screen position for the menu.
         """
         norm_x, norm_y = self._view.coord_system.to_normalized(scene_pos)
-        menu = QMenu(self._view)
+        menu = declare_inspection(
+            QMenu(self._view),
+            "src-gui-widgets-map-interaction-handler-interactionhandler-show-map-background-context-menu-menu|map.features|help-inspect-src-gui-widgets-map-interaction-handler-interactionhandler-show-map-background-context-menu-menu",
+        )
 
-        add_action = QAction(self._view)
+        add_action = declare_inspection(
+            QAction(self._view),
+            "src-gui-widgets-map-interaction-handler-interactionhandler-show-map-background-context-menu-add-action|map.features|help-inspect-src-gui-widgets-map-interaction-handler-interactionhandler-show-map-background-context-menu-add-action",
+        )
         add_action.setText("Add Marker Here")
         add_action.triggered.connect(
             lambda: self._view.add_marker_requested.emit(norm_x, norm_y)
@@ -237,12 +262,18 @@ class InteractionHandler:
 
         menu.addSeparator()
 
-        draw_path_action = QAction(self._view)
+        draw_path_action = declare_inspection(
+            QAction(self._view),
+            "src-gui-widgets-map-interaction-handler-interactionhandler-show-map-background-context-menu-draw-path-action|map.features|help-inspect-src-gui-widgets-map-interaction-handler-interactionhandler-show-map-background-context-menu-draw-path-action",
+        )
         draw_path_action.setText("Draw Path Here...")
         draw_path_action.triggered.connect(lambda: self._view.start_drawing("path"))
         menu.addAction(draw_path_action)
 
-        draw_region_action = QAction(self._view)
+        draw_region_action = declare_inspection(
+            QAction(self._view),
+            "src-gui-widgets-map-interaction-handler-interactionhandler-show-map-background-context-menu-draw-region-action|map.features|help-inspect-src-gui-widgets-map-interaction-handler-interactionhandler-show-map-background-context-menu-draw-region-action",
+        )
         draw_region_action.setText("Draw Region Here...")
         draw_region_action.triggered.connect(lambda: self._view.start_drawing("region"))
         menu.addAction(draw_region_action)
@@ -429,14 +460,21 @@ class InteractionHandler:
         dialog.setMinimumWidth(250)
         layout = QFormLayout(dialog)
 
-        spin = ScrollSafeSpinBox()
+        spin = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-widgets-map-interaction-handler-interactionhandler-show-border-strength-dialog-spin|map.features|help-inspect-src-gui-widgets-map-interaction-handler-interactionhandler-show-border-strength-dialog-spin",
+        )
         spin.setRange(MIN_BORDER_WIDTH, MAX_BORDER_WIDTH)
         current = marker_item._visual_attributes.get(V_BORDER_WIDTH, 2)
         spin.setValue(int(current))
         layout.addRow("Border Width (px):", spin)
 
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        buttons = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel
+            ),
+            "src-gui-widgets-map-interaction-handler-interactionhandler-show-border-strength-dialog-buttons|map.features|help-inspect-src-gui-widgets-map-interaction-handler-interactionhandler-show-border-strength-dialog-buttons",
         )
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
@@ -536,7 +574,10 @@ class InteractionHandler:
         stroke_init = _safe_color_css(
             item._style.get("stroke_color", DEFAULT_STROKE_COLOR)
         )
-        stroke_btn = QPushButton(stroke_init)
+        stroke_btn = declare_inspection(
+            QPushButton(stroke_init),
+            "src-gui-widgets-map-interaction-handler-interactionhandler-show-feature-style-dialog-stroke-btn|map.features|help-inspect-src-gui-widgets-map-interaction-handler-interactionhandler-show-feature-style-dialog-stroke-btn",
+        )
         self._set_color_swatch(stroke_btn, stroke_init)
         _stroke_color = [stroke_init]
 
@@ -559,7 +600,10 @@ class InteractionHandler:
 
         line_style_combo: ScrollSafeComboBox | None = None
         if isinstance(item, PathItem):
-            line_style_combo = ScrollSafeComboBox()
+            line_style_combo = declare_inspection(
+                ScrollSafeComboBox(),
+                "src-gui-widgets-map-interaction-handler-interactionhandler-show-feature-style-dialog-line-style-combo|map.features|help-inspect-src-gui-widgets-map-interaction-handler-interactionhandler-show-feature-style-dialog-line-style-combo",
+            )
             current_pattern = item._dash_pattern()
             if current_pattern not in [pattern for _, pattern in PATH_LINE_STYLES]:
                 pattern_text = ", ".join(str(value) for value in current_pattern)
@@ -584,7 +628,10 @@ class InteractionHandler:
                 item._style.get("fill_color", DEFAULT_REGION_FILL_COLOR),
                 preserve_alpha=True,
             )
-            fill_btn = QPushButton(fill_init)
+            fill_btn = declare_inspection(
+                QPushButton(fill_init),
+                "src-gui-widgets-map-interaction-handler-interactionhandler-show-feature-style-dialog-fill-btn|map.features|help-inspect-src-gui-widgets-map-interaction-handler-interactionhandler-show-feature-style-dialog-fill-btn",
+            )
             self._set_color_swatch(fill_btn, fill_init)
             _fill_color = [fill_init]
 
@@ -603,8 +650,12 @@ class InteractionHandler:
             fill_btn.clicked.connect(_pick_fill)
             layout.addRow("Fill Color:", fill_btn)
 
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        buttons = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel
+            ),
+            "src-gui-widgets-map-interaction-handler-interactionhandler-show-feature-style-dialog-buttons|map.features|help-inspect-src-gui-widgets-map-interaction-handler-interactionhandler-show-feature-style-dialog-buttons",
         )
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)

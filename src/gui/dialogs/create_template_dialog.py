@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
 
@@ -72,8 +73,14 @@ class CreateTemplateDialog(QDialog):
 
         # Meta Section
         form = QFormLayout()
-        self.name_edit = QLineEdit(default_name)
-        self.desc_edit = QLineEdit()
+        self.name_edit = declare_inspection(
+            QLineEdit(default_name),
+            "src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-self-name-edit|authoring.templates|help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-self-name-edit",
+        )
+        self.desc_edit = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-self-desc-edit|authoring.templates|help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-self-desc-edit",
+        )
         self.desc_edit.setPlaceholderText("Optional description")
 
         # Apply input styles
@@ -105,8 +112,14 @@ class CreateTemplateDialog(QDialog):
 
             # Select All / None
             hbox_tools = QHBoxLayout()
-            btn_all = StandardButton("Select All")
-            btn_none = StandardButton("Select None")
+            btn_all = declare_inspection(
+                StandardButton("Select All"),
+                "src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-btn-all|authoring.templates|help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-btn-all",
+            )
+            btn_none = declare_inspection(
+                StandardButton("Select None"),
+                "src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-btn-none|authoring.templates|help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-btn-none",
+            )
 
             def set_all_tags(checked: bool) -> None:
                 for checkbox in self.tag_checks:
@@ -120,7 +133,10 @@ class CreateTemplateDialog(QDialog):
             vbox_tags.addLayout(hbox_tools)
 
             for tag in self.source_tags:
-                chk = QCheckBox(tag)
+                chk = declare_inspection(
+                    QCheckBox(tag),
+                    "src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-chk|authoring.templates|help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-chk",
+                )
                 chk.setChecked(True)
                 vbox_tags.addWidget(chk)
                 self.tag_checks.append(chk)
@@ -131,7 +147,10 @@ class CreateTemplateDialog(QDialog):
         if self.source_type:
             group_type = QGroupBox("Type to Include")
             vbox_type = QVBoxLayout(group_type)
-            self.chk_type = QCheckBox(f"Type: {self.source_type}")
+            self.chk_type = declare_inspection(
+                QCheckBox(f"Type: {self.source_type}"),
+                "src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-self-chk-type|authoring.templates|help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-self-chk-type",
+            )
             self.chk_type.setChecked(True)
             vbox_type.addWidget(self.chk_type)
             self.content_layout.addWidget(group_type)
@@ -144,8 +163,14 @@ class CreateTemplateDialog(QDialog):
 
             # Tools
             hbox_tools_attr = QHBoxLayout()
-            btn_all_a = StandardButton("Select All")
-            btn_none_a = StandardButton("Select None")
+            btn_all_a = declare_inspection(
+                StandardButton("Select All"),
+                "src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-btn-all-a|authoring.templates|help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-btn-all-a",
+            )
+            btn_none_a = declare_inspection(
+                StandardButton("Select None"),
+                "src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-btn-none-a|authoring.templates|help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-btn-none-a",
+            )
 
             def set_all_attributes(checked: bool) -> None:
                 for checkbox in self.attr_checks.values():
@@ -160,7 +185,10 @@ class CreateTemplateDialog(QDialog):
 
             for key, val in self.source_attributes.items():
                 label = f"{key}: {str(val)[:50]}"  # Truncate long values
-                chk = QCheckBox(label)
+                chk = declare_inspection(
+                    QCheckBox(label),
+                    "src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-chk-2|authoring.templates|help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-chk-2",
+                )
                 chk.setChecked(True)
                 # Store key reference
                 chk.setProperty("attr_key", key)
@@ -173,7 +201,10 @@ class CreateTemplateDialog(QDialog):
         if self.source_layout:
             group_layout = QGroupBox("Layout Options")
             vbox_layout = QVBoxLayout(group_layout)
-            self.chk_layout = QCheckBox("Include Visual Sheet Layout")
+            self.chk_layout = declare_inspection(
+                QCheckBox("Include Visual Sheet Layout"),
+                "src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-self-chk-layout|authoring.templates|help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-self-chk-layout",
+            )
             self.chk_layout.setChecked(True)
             vbox_layout.addWidget(self.chk_layout)
             self.content_layout.addWidget(group_layout)
@@ -184,8 +215,14 @@ class CreateTemplateDialog(QDialog):
 
         # Buttons
         btn_layout = QHBoxLayout()
-        btn_cancel = StandardButton("Cancel")
-        btn_save = PrimaryButton("Save Template")
+        btn_cancel = declare_inspection(
+            StandardButton("Cancel"),
+            "src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-btn-cancel|authoring.templates|help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-btn-cancel",
+        )
+        btn_save = declare_inspection(
+            PrimaryButton("Save Template"),
+            "src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-btn-save|authoring.templates|help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-btn-save",
+        )
 
         btn_cancel.clicked.connect(self.reject)
         btn_save.clicked.connect(self._on_save)

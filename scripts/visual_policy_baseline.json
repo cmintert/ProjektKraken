@@ -108,13 +108,6 @@
       "source": "item.setForeground(Qt.GlobalColor.green)"
     },
     {
-      "key": "src/gui/dialogs/fast_inject_dialog.py|FastInjectDialog._setup_configure_tab|literal-color|30491eb7f9fb8c10",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in FastInjectDialog._setup_configure_tab; migrate this expression when its presentation path is next touched.",
-      "source": "self.lbl_desc.setStyleSheet(\"color: gray;\")"
-    },
-    {
       "key": "src/gui/dialogs/grouping_config_dialog.py|ColorSwatch.__init__|literal-color|008fea238b891932",
       "count": 1,
       "category": "legacy",
@@ -127,20 +120,6 @@
       "category": "legacy",
       "reason": "KRT-54 legacy presentation in ColorSwatch.set_color; migrate this expression when its presentation path is next touched.",
       "source": "f\"background-color: {color}; border: 1px solid #ccc; border-radius: 2px;\""
-    },
-    {
-      "key": "src/gui/dialogs/lexicon_editor_dialog.py|LexiconEditorDialog._add_edge_row|literal-color|673ad5d8a95855d4",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in LexiconEditorDialog._add_edge_row; migrate this expression when its presentation path is next touched.",
-      "source": "color_btn = _ColorButton(QColor(style.get(\"color\", \"#888888\")))"
-    },
-    {
-      "key": "src/gui/dialogs/lexicon_editor_dialog.py|LexiconEditorDialog._add_node_row|literal-color|673ad5d8a95855d4",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in LexiconEditorDialog._add_node_row; migrate this expression when its presentation path is next touched.",
-      "source": "fill_color = style.get(\"color\", \"#888888\")"
     },
     {
       "key": "src/gui/dialogs/lexicon_editor_dialog.py|_ColorButton.__init__|literal-color|673ad5d8a95855d4",
@@ -1317,55 +1296,6 @@
       "category": "legacy",
       "reason": "KRT-54 legacy presentation in MapLabelItem.paint; migrate this expression when its presentation path is next touched.",
       "source": "text_color = QColor(theme.get(\"text_main\", \"#FFFFFF\"))"
-    },
-    {
-      "key": "src/gui/widgets/map/map_layer_panel.py|MapLayerPanel._build_mode_specific_paint_controls|literal-color|78544dbc1adda837",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in MapLayerPanel._build_mode_specific_paint_controls; migrate this expression when its presentation path is next touched.",
-      "source": "self._rgba_color_button = QPushButton(\"#FFFFFFFF\")"
-    },
-    {
-      "key": "src/gui/widgets/map/map_layer_panel.py|MapLayerPanel._build_mode_specific_paint_controls|literal-color|ac3d42d8c7f04bde",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in MapLayerPanel._build_mode_specific_paint_controls; migrate this expression when its presentation path is next touched.",
-      "source": "self._rgba_gradient_from = QColor(0, 0, 0, 0)"
-    },
-    {
-      "key": "src/gui/widgets/map/map_layer_panel.py|MapLayerPanel._build_mode_specific_paint_controls|literal-color|b2c7950c3d1fdf64",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in MapLayerPanel._build_mode_specific_paint_controls; migrate this expression when its presentation path is next touched.",
-      "source": "self._rgba_gradient_from_button = QPushButton(\"From #00000000\")"
-    },
-    {
-      "key": "src/gui/widgets/map/map_layer_panel.py|MapLayerPanel._build_mode_specific_paint_controls|literal-color|ce94bac2f65ca68c",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in MapLayerPanel._build_mode_specific_paint_controls; migrate this expression when its presentation path is next touched.",
-      "source": "self._rgba_gradient_to_button = QPushButton(\"To #FFFFFFFF\")"
-    },
-    {
-      "key": "src/gui/widgets/map/map_layer_panel.py|MapLayerPanel._build_mode_specific_paint_controls|literal-color|f3398309d54ac949",
-      "count": 2,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in MapLayerPanel._build_mode_specific_paint_controls; migrate this expression when its presentation path is next touched.",
-      "source": "self._rgba_color = QColor(255, 255, 255, 255)"
-    },
-    {
-      "key": "src/gui/widgets/map/map_layer_panel.py|MapLayerPanel._build_paint_value_selector|literal-color|673ad5d8a95855d4",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in MapLayerPanel._build_paint_value_selector; migrate this expression when its presentation path is next touched.",
-      "source": "dim_color = ThemeManager().get_theme().get(\"text_dim\", \"#888888\")"
-    },
-    {
-      "key": "src/gui/widgets/map/map_layer_panel.py|MapLayerPanel._make_labeled_slider|literal-color|673ad5d8a95855d4",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in MapLayerPanel._make_labeled_slider; migrate this expression when its presentation path is next touched.",
-      "source": "ThemeManager().get_theme().get(\"text_dim\", \"#888888\"),"
     },
     {
       "key": "src/gui/widgets/map/map_layer_panel.py|MapLayerPanel._on_rgba_alpha_changed|local-color-derivation|9c193a6f1eed90fe",

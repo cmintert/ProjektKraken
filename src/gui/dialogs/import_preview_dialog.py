@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.responsive_dialog_buttons import (
     ResponsiveDialogButtonBox as QDialogButtonBox,
@@ -57,7 +58,10 @@ class ImportPreviewDialog(QDialog):
         layout.addWidget(header_lbl)
 
         # Tree Widget
-        self.tree = QTreeWidget()
+        self.tree = declare_inspection(
+            QTreeWidget(),
+            "src-gui-dialogs-import-preview-dialog-importpreviewdialog-init-ui-self-tree|world.transfer|help-inspect-src-gui-dialogs-import-preview-dialog-importpreviewdialog-init-ui-self-tree",
+        )
         self.tree.setHeaderLabels(["Type", "Name / Details", "Status"])
         self.tree.setColumnWidth(0, 150)
         self.tree.setColumnWidth(1, 300)
@@ -76,13 +80,19 @@ class ImportPreviewDialog(QDialog):
 
         # Source Name
         row1.addWidget(QLabel("Source Name:"))
-        self.source_edit = QLineEdit("manual_import")
+        self.source_edit = declare_inspection(
+            QLineEdit("manual_import"),
+            "src-gui-dialogs-import-preview-dialog-importpreviewdialog-init-ui-self-source-edit|world.transfer|help-inspect-src-gui-dialogs-import-preview-dialog-importpreviewdialog-init-ui-self-source-edit",
+        )
         self.source_edit.setPlaceholderText("e.g. obsidian, world_anvil")
         row1.addWidget(self.source_edit)
 
         # Import Mode
         row1.addWidget(QLabel("Mode:"))
-        self.mode_combo = QComboBox()
+        self.mode_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-dialogs-import-preview-dialog-importpreviewdialog-init-ui-self-mode-combo|world.transfer|help-inspect-src-gui-dialogs-import-preview-dialog-importpreviewdialog-init-ui-self-mode-combo",
+        )
         self.mode_combo.addItems(["Update", "Overwrite", "Skip"])
         self.mode_combo.setToolTip(
             "Update: Merge new data into existing.\n"
@@ -94,7 +104,10 @@ class ImportPreviewDialog(QDialog):
         config_layout.addLayout(row1)
 
         # Row 2: Options
-        self.dry_run_check = QCheckBox("Dry Run (Simulate only)")
+        self.dry_run_check = declare_inspection(
+            QCheckBox("Dry Run (Simulate only)"),
+            "src-gui-dialogs-import-preview-dialog-importpreviewdialog-init-ui-self-dry-run-check|world.transfer|help-inspect-src-gui-dialogs-import-preview-dialog-importpreviewdialog-init-ui-self-dry-run-check",
+        )
         self.dry_run_check.setChecked(False)  # Default to real import? Or safe?
         # Let's verify defaults. Usually real run is expected after "Preview".
         config_layout.addWidget(self.dry_run_check)
@@ -102,8 +115,12 @@ class ImportPreviewDialog(QDialog):
         layout.addWidget(config_group)
 
         # Button Box
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        buttons = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel
+            ),
+            "src-gui-dialogs-import-preview-dialog-importpreviewdialog-init-ui-buttons|world.transfer|help-inspect-src-gui-dialogs-import-preview-dialog-importpreviewdialog-init-ui-buttons",
         )
         buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Import")
         buttons.accepted.connect(self.accept)

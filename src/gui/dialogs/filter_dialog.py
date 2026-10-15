@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.filter_widget import FilterWidget
 from src.gui.widgets.responsive_dialog_buttons import (
     ResponsiveDialogButtonBox as QDialogButtonBox,
@@ -46,8 +47,12 @@ class FilterDialog(QDialog):
         main_layout.addWidget(self.filter_widget)
 
         # --- Dialog Buttons ---
-        self.buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        self.buttons = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel
+            ),
+            "src-gui-dialogs-filter-dialog-filterdialog-init-self-buttons|explorer.browsing|help-inspect-src-gui-dialogs-filter-dialog-filterdialog-init-self-buttons",
         )
         self.buttons.accepted.connect(self.accept)
         self.buttons.rejected.connect(self.reject)

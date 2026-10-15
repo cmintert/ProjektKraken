@@ -3,6 +3,7 @@
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.standard_buttons import StandardButton
@@ -38,10 +39,16 @@ class AuxiliarySectionHome(QWidget):
         label.setWordWrap(True)
         placeholder_layout.addWidget(label)
         actions = OverflowToolBar(self.placeholder)
-        show = StandardButton("Show")
+        show = declare_inspection(
+            StandardButton("Show"),
+            "src-gui-widgets-inspector-section-auxiliarysectionhome-init-show|workspace.navigation|help-inspect-src-gui-widgets-inspector-section-auxiliarysectionhome-init-show",
+        )
         show.setAccessibleName(f"Show {title}")
         show.clicked.connect(self.show_requested.emit)
-        restore = StandardButton("Return here")
+        restore = declare_inspection(
+            StandardButton("Return here"),
+            "src-gui-widgets-inspector-section-auxiliarysectionhome-init-restore|workspace.navigation|help-inspect-src-gui-widgets-inspector-section-auxiliarysectionhome-init-restore",
+        )
         restore.setAccessibleName(f"Return {title} here")
         restore.clicked.connect(self.return_requested.emit)
         actions.add_button(show, priority=10)
@@ -52,7 +59,10 @@ class AuxiliarySectionHome(QWidget):
         self.pane = QWidget(self)
         self._pane_layout = QVBoxLayout(self.pane)
         StyleHelper.apply_no_margins(self._pane_layout)
-        return_button = StandardButton("Return here")
+        return_button = declare_inspection(
+            StandardButton("Return here"),
+            "src-gui-widgets-inspector-section-auxiliarysectionhome-init-return-button|workspace.navigation|help-inspect-src-gui-widgets-inspector-section-auxiliarysectionhome-init-return-button",
+        )
         return_button.setAccessibleName(f"Return {title} to its original section")
         return_button.clicked.connect(self.return_requested.emit)
         self._pane_layout.addWidget(return_button)

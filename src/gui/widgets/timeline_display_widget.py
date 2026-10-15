@@ -14,6 +14,8 @@ from PySide6.QtCore import QEvent, QObject, Qt, Signal
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QTextEdit, QToolTip, QVBoxLayout, QWidget
 
+from src.gui.utils.help_context import declare_inspection
+
 
 class TimelineDisplayWidget(QWidget):
     """Read-only widget displaying chronological events affecting an entity.
@@ -50,7 +52,10 @@ class TimelineDisplayWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self._text_display = QTextEdit()
+        self._text_display = declare_inspection(
+            QTextEdit(),
+            "src-gui-widgets-timeline-display-widget-timelinedisplaywidget-init-self-text-display|timeline.viewing|help-inspect-src-gui-widgets-timeline-display-widget-timelinedisplaywidget-init-self-text-display",
+        )
         self._text_display.setReadOnly(True)
         self._text_display.setMinimumHeight(100)
         self._text_display.setMinimumHeight(100)

@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.compact_date_widget import CompactDateWidget
@@ -62,7 +63,7 @@ class RelationForm(QWidget):
 
     changed = Signal()
 
-    def __init__(  # noqa: C901
+    def __init__(
         self,
         parent: Optional[QWidget] = None,
         target_id: str = "",
@@ -127,7 +128,10 @@ class RelationForm(QWidget):
         self._setup_target_field(target_id, suggestion_items)
 
         # 2. Relation Type
-        self.type_edit = ScrollSafeComboBox()
+        self.type_edit = declare_inspection(
+            ScrollSafeComboBox(),
+            "src-gui-widgets-relation-form-relationform-init-self-type-edit|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-init-self-type-edit",
+        )
         self.type_edit.addItems(self._relation_type_choices(known_types))
         self.type_edit.setEditable(True)
         self.type_edit.setCurrentText(rel_type)
@@ -151,14 +155,20 @@ class RelationForm(QWidget):
         attr_layout.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
 
         # Weight
-        self.weight_spin = ScrollSafeDoubleSpinBox()
+        self.weight_spin = declare_inspection(
+            ScrollSafeDoubleSpinBox(),
+            "src-gui-widgets-relation-form-relationform-init-self-weight-spin|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-init-self-weight-spin",
+        )
         self.weight_spin.setRange(0.0, 10.0)
         self.weight_spin.setSingleStep(0.1)
         self.weight_spin.setValue(self.attributes.get("weight", 1.0))
         attr_layout.addRow("Weight:", self.weight_spin)
 
         # Confidence
-        self.confidence_spin = ScrollSafeDoubleSpinBox()
+        self.confidence_spin = declare_inspection(
+            ScrollSafeDoubleSpinBox(),
+            "src-gui-widgets-relation-form-relationform-init-self-confidence-spin|relations.create|help-inspect-src-gui-widgets-relation-form-relationform-init-self-confidence-spin",
+        )
         self.confidence_spin.setRange(0.0, 1.0)
         self.confidence_spin.setSingleStep(0.1)
         self.confidence_spin.setValue(self.attributes.get("confidence", 1.0))
@@ -167,7 +177,10 @@ class RelationForm(QWidget):
         # Source removed per user request
 
         # Notes
-        self.notes_edit = QTextEdit()
+        self.notes_edit = declare_inspection(
+            QTextEdit(),
+            "src-gui-widgets-relation-form-relationform-init-self-notes-edit|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-init-self-notes-edit",
+        )
         self.notes_edit.setPlaceholderText("Additional context...")
         self.notes_edit.setMinimumHeight(72)
         self.notes_edit.setMaximumHeight(110)
@@ -196,10 +209,22 @@ class RelationForm(QWidget):
 
             self.logic_btn_group = QButtonGroup(self)
 
-            self.rb_absolute = QRadioButton("Absolute Dates (Manual)")
-            self.rb_starts = QRadioButton("Starts at Event")
-            self.rb_ends = QRadioButton("Ends at Event")
-            self.rb_at_event = QRadioButton("Only valid at Event")
+            self.rb_absolute = declare_inspection(
+                QRadioButton("Absolute Dates (Manual)"),
+                "src-gui-widgets-relation-form-relationform-init-self-rb-absolute|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-init-self-rb-absolute",
+            )
+            self.rb_starts = declare_inspection(
+                QRadioButton("Starts at Event"),
+                "src-gui-widgets-relation-form-relationform-init-self-rb-starts|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-init-self-rb-starts",
+            )
+            self.rb_ends = declare_inspection(
+                QRadioButton("Ends at Event"),
+                "src-gui-widgets-relation-form-relationform-init-self-rb-ends|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-init-self-rb-ends",
+            )
+            self.rb_at_event = declare_inspection(
+                QRadioButton("Only valid at Event"),
+                "src-gui-widgets-relation-form-relationform-init-self-rb-at-event|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-init-self-rb-at-event",
+            )
 
             self.logic_btn_group.addButton(self.rb_absolute)
             self.logic_btn_group.addButton(self.rb_starts)
@@ -211,32 +236,7 @@ class RelationForm(QWidget):
             logic_layout.addWidget(self.rb_at_event)
             logic_layout.addWidget(self.rb_absolute)
 
-            # Initial State
-            temporal = self.attributes.get("temporal", {})
-            is_start_event = self.attributes.get("valid_from_event", False) or (
-                temporal.get("start", {}).get("binding") == "source_event"
-            )
-            is_end_event = self.attributes.get("valid_to_event", False) or (
-                temporal.get("end", {}).get("binding") == "source_event"
-            )
-            is_at_event = self.attributes.get("valid_at_event", False) or (
-                is_start_event and is_end_event
-            )
-
-            if temporal:
-                self.rb_absolute.setChecked(True)
-            elif is_at_event:
-                self.rb_at_event.setChecked(True)
-            elif is_start_event:
-                self.rb_starts.setChecked(True)
-            elif is_end_event:
-                self.rb_ends.setChecked(True)
-            elif attributes is not None:
-                self.rb_absolute.setChecked(True)
-            else:
-                # State changes caused by an Event take effect at that Event.
-                # Users can still opt into fixed/manual timing explicitly.
-                self.rb_starts.setChecked(True)
+            self._set_initial_timing_logic()
 
             # Connect Logic
             self.logic_btn_group.buttonToggled.connect(self._on_logic_changed)
@@ -250,7 +250,10 @@ class RelationForm(QWidget):
         temp_layout.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
 
         # Valid From
-        self.check_from = QCheckBox("Valid From:")
+        self.check_from = declare_inspection(
+            QCheckBox("Valid From:"),
+            "src-gui-widgets-relation-form-relationform-init-self-check-from|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-init-self-check-from",
+        )
         self.valid_from = CompactDateWidget(text_first=True)
         self.valid_from.setEnabled(False)  # Default disabled (infinite)
 
@@ -268,7 +271,10 @@ class RelationForm(QWidget):
         temp_layout.addRow(self.check_from, self.valid_from)
 
         # Valid To
-        self.check_to = QCheckBox("Valid To:")
+        self.check_to = declare_inspection(
+            QCheckBox("Valid To:"),
+            "src-gui-widgets-relation-form-relationform-init-self-check-to|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-init-self-check-to",
+        )
         self.valid_to = CompactDateWidget(text_first=True)
         self.valid_to.setEnabled(False)  # Default disabled (infinite)
 
@@ -317,7 +323,10 @@ class RelationForm(QWidget):
             self._setup_state_changes()
 
         # 5. Bidirectional
-        self.bi_check = QCheckBox("Bidirectional (Create reverse link)")
+        self.bi_check = declare_inspection(
+            QCheckBox("Bidirectional (Create reverse link)"),
+            "src-gui-widgets-relation-form-relationform-init-self-bi-check|relations.create|help-inspect-src-gui-widgets-relation-form-relationform-init-self-bi-check",
+        )
         self.bi_check.setChecked(is_bidirectional)
         self.form_layout.addRow("", self.bi_check)
 
@@ -327,6 +336,34 @@ class RelationForm(QWidget):
         main_layout.addWidget(self.form_scroll_area, 1)
 
         self._track_changes()
+
+    def _set_initial_timing_logic(self) -> None:
+        """Restore the source-event/manual choice independently of layout."""
+        temporal = self.attributes.get("temporal", {})
+        is_start_event = self.attributes.get("valid_from_event", False) or (
+            temporal.get("start", {}).get("binding") == "source_event"
+        )
+        is_end_event = self.attributes.get("valid_to_event", False) or (
+            temporal.get("end", {}).get("binding") == "source_event"
+        )
+        is_at_event = self.attributes.get("valid_at_event", False) or (
+            is_start_event and is_end_event
+        )
+
+        if temporal:
+            self.rb_absolute.setChecked(True)
+        elif is_at_event:
+            self.rb_at_event.setChecked(True)
+        elif is_start_event:
+            self.rb_starts.setChecked(True)
+        elif is_end_event:
+            self.rb_ends.setChecked(True)
+        elif self._preserve_original:
+            self.rb_absolute.setChecked(True)
+        else:
+            # State changes caused by an Event take effect at that Event.
+            # Users can still opt into fixed/manual timing explicitly.
+            self.rb_starts.setChecked(True)
 
     @staticmethod
     def _relation_type_choices(known_types: list[str] | None) -> list[str]:
@@ -399,7 +436,10 @@ class RelationForm(QWidget):
             self._boundary_offsets[side].setSizePolicy(
                 QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed
             )
-            disclosure = DisclosureButton("Event offset…")
+            disclosure = declare_inspection(
+                DisclosureButton("Event offset…"),
+                "src-gui-widgets-relation-form-relationform-group-boundaries-disclosure|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-group-boundaries-disclosure",
+            )
             disclosure.toggled.connect(advanced.setVisible)
             fields.addRow(disclosure)
             fields.addRow(advanced)
@@ -453,8 +493,14 @@ class RelationForm(QWidget):
         )
         self.now_label.setWordWrap(True)
         row.addWidget(self.now_label, 1)
-        self.starts_now_button = WrappingPushButton("Use viewed date for start")
-        self.ends_now_button = WrappingPushButton("Use viewed date for end")
+        self.starts_now_button = declare_inspection(
+            WrappingPushButton("Use viewed date for start"),
+            "src-gui-widgets-relation-form-relationform-setup-now-actions-self-starts-now-button|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-setup-now-actions-self-starts-now-button",
+        )
+        self.ends_now_button = declare_inspection(
+            WrappingPushButton("Use viewed date for end"),
+            "src-gui-widgets-relation-form-relationform-setup-now-actions-self-ends-now-button|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-setup-now-actions-self-ends-now-button",
+        )
         for side, button, widget in (
             ("start", self.starts_now_button, self.valid_from),
             ("end", self.ends_now_button, self.valid_to),
@@ -576,7 +622,10 @@ class RelationForm(QWidget):
         state_layout.addWidget(self.state_attribute_editor)
 
         state_layout.addWidget(QLabel("Remove Attributes"))
-        self.unset_attributes_list = QListWidget()
+        self.unset_attributes_list = declare_inspection(
+            QListWidget(),
+            "src-gui-widgets-relation-form-relationform-setup-state-changes-self-unset-attributes-list|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-setup-state-changes-self-unset-attributes-list",
+        )
         self.unset_attributes_list.setMaximumHeight(96)
         unset_attributes = payload_data.get("unset_attributes", [])
         if isinstance(unset_attributes, list):
@@ -593,8 +642,14 @@ class RelationForm(QWidget):
         state_layout.addWidget(self.unset_attributes_list)
 
         unset_buttons = QHBoxLayout()
-        self.btn_add_unset = StandardButton("Add")
-        self.btn_remove_unset = DestructiveButton("Remove")
+        self.btn_add_unset = declare_inspection(
+            StandardButton("Add"),
+            "src-gui-widgets-relation-form-relationform-setup-state-changes-self-btn-add-unset|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-setup-state-changes-self-btn-add-unset",
+        )
+        self.btn_remove_unset = declare_inspection(
+            DestructiveButton("Remove"),
+            "src-gui-widgets-relation-form-relationform-setup-state-changes-self-btn-remove-unset|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-setup-state-changes-self-btn-remove-unset",
+        )
         self.btn_remove_unset.setEnabled(False)
         self.btn_add_unset.clicked.connect(self._add_unset_attribute)
         self.btn_remove_unset.clicked.connect(self._remove_unset_attribute)
@@ -608,8 +663,14 @@ class RelationForm(QWidget):
         unset_buttons.addStretch()
         state_layout.addLayout(unset_buttons)
 
-        self.change_description_check = QCheckBox("Change Description")
-        self.state_description_edit = WikiTextEdit()
+        self.change_description_check = declare_inspection(
+            QCheckBox("Change Description"),
+            "src-gui-widgets-relation-form-relationform-setup-state-changes-self-change-description-check|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-setup-state-changes-self-change-description-check",
+        )
+        self.state_description_edit = declare_inspection(
+            WikiTextEdit(),
+            "src-gui-widgets-relation-form-relationform-setup-state-changes-self-state-description-edit|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-setup-state-changes-self-state-description-edit",
+        )
         self.state_description_edit.setMaximumHeight(180)
         has_description = "description" in payload_data
         self.change_description_check.setChecked(has_description)
@@ -772,7 +833,10 @@ class RelationForm(QWidget):
         suggestions: list[tuple[str, str, str]],
     ) -> None:
         """Expose unknown/open intent and named event anchors without numeric bounds."""
-        self.temporal_behavior = ScrollSafeComboBox()
+        self.temporal_behavior = declare_inspection(
+            ScrollSafeComboBox(),
+            "src-gui-widgets-relation-form-relationform-setup-boundary-choices-self-temporal-behavior|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-setup-boundary-choices-self-temporal-behavior",
+        )
         for label, value in (
             ("Active state", "stateful"),
             ("Historical fact", "historical"),
@@ -800,7 +864,10 @@ class RelationForm(QWidget):
             ("start", self.valid_from, self.check_from),
             ("end", self.valid_to, self.check_to),
         ):
-            choice = WrappingComboBox()
+            choice = declare_inspection(
+                WrappingComboBox(),
+                "src-gui-widgets-relation-form-relationform-setup-boundary-choices-choice|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-setup-boundary-choices-choice",
+            )
             choice.addItem("Manual date", "manual")
             if self.source_event_date is not None:
                 choice.addItem("At source event (dynamic)", "source_event")
@@ -831,7 +898,10 @@ class RelationForm(QWidget):
                 choice,
             )
             self._boundary_choices[side] = choice
-            relative = ScrollSafeComboBox()
+            relative = declare_inspection(
+                ScrollSafeComboBox(),
+                "src-gui-widgets-relation-form-relationform-setup-boundary-choices-relative|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-setup-boundary-choices-relative",
+            )
             for title, value in (
                 ("At event", "at"),
                 ("Before event", "before"),
@@ -853,7 +923,10 @@ class RelationForm(QWidget):
             )
             layout.addRow(f"{side.title()} relative to event", relative)
             self._anchor_relations[side] = relative
-            offset = ScrollSafeDoubleSpinBox()
+            offset = declare_inspection(
+                ScrollSafeDoubleSpinBox(),
+                "src-gui-widgets-relation-form-relationform-setup-boundary-choices-offset|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-setup-boundary-choices-offset",
+            )
             offset.setRange(-1e12, 1e12)
             offset.setDecimals(6)
             offset.setSuffix(" days")

@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.standard_buttons import DestructiveButton, StandardButton
 
@@ -76,7 +77,10 @@ class HistoryPanelWidget(QWidget):
         self.action_toolbar = OverflowToolBar(self)
 
         # Undo button
-        self.undo_btn = StandardButton("⟲ Undo")
+        self.undo_btn = declare_inspection(
+            StandardButton("⟲ Undo"),
+            "src-gui-widgets-history-panel-historypanelwidget-setup-ui-self-undo-btn|history.undo|help-inspect-src-gui-widgets-history-panel-historypanelwidget-setup-ui-self-undo-btn",
+        )
         self.undo_btn.setToolTip("Undo last action (Ctrl+Z)")
         self.undo_btn.clicked.connect(self.undo_clicked.emit)
         self.undo_btn.setEnabled(False)
@@ -87,14 +91,20 @@ class HistoryPanelWidget(QWidget):
         )
 
         # Redo button
-        self.redo_btn = StandardButton("⟳ Redo")
+        self.redo_btn = declare_inspection(
+            StandardButton("⟳ Redo"),
+            "src-gui-widgets-history-panel-historypanelwidget-setup-ui-self-redo-btn|history.undo|help-inspect-src-gui-widgets-history-panel-historypanelwidget-setup-ui-self-redo-btn",
+        )
         self.redo_btn.setToolTip("Redo undone action (Ctrl+Y)")
         self.redo_btn.clicked.connect(self.redo_clicked.emit)
         self.redo_btn.setEnabled(False)
         self.action_toolbar.add_button(self.redo_btn, priority=80)
 
         # Clear button (destructive action)
-        self.clear_btn = DestructiveButton("✕ Clear")
+        self.clear_btn = declare_inspection(
+            DestructiveButton("✕ Clear"),
+            "src-gui-widgets-history-panel-historypanelwidget-setup-ui-self-clear-btn|history.undo|help-inspect-src-gui-widgets-history-panel-historypanelwidget-setup-ui-self-clear-btn",
+        )
         self.clear_btn.setToolTip("Clear all history")
         self.clear_btn.clicked.connect(self.clear_history_clicked.emit)
         self.clear_btn.setEnabled(False)
@@ -111,7 +121,10 @@ class HistoryPanelWidget(QWidget):
         layout.addWidget(self.status_label)
 
         # Command list
-        self.command_list = QListWidget()
+        self.command_list = declare_inspection(
+            QListWidget(),
+            "src-gui-widgets-history-panel-historypanelwidget-setup-ui-self-command-list|history.undo|help-inspect-src-gui-widgets-history-panel-historypanelwidget-setup-ui-self-command-list",
+        )
         self.command_list.setSelectionMode(QListWidget.SelectionMode.NoSelection)
         self.command_list.setAlternatingRowColors(True)
         layout.addWidget(self.command_list)

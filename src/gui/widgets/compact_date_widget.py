@@ -36,6 +36,7 @@ from src.core.temporal_expression import (
     TemporalQualifier,
 )
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
@@ -123,7 +124,10 @@ class CompactDateWidget(QWidget):
         date_row.setStretch(0, 1)
         self.btn_calendar.setFixedSize(32, 32)
         self.btn_calendar.setAccessibleName("Choose date from calendar")
-        self.date_fields_button = DisclosureButton("Date details & uncertainty…", self)
+        self.date_fields_button = declare_inspection(
+            DisclosureButton("Date details & uncertainty…", self),
+            "src-gui-widgets-compact-date-widget-compactdatewidget-setup-text-first-self-date-fields-button|date.precision|help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-setup-text-first-self-date-fields-button",
+        )
         options_row = QGridLayout()
         options_row.setContentsMargins(0, 0, 0, 0)
         self._date_options_grid = options_row
@@ -169,7 +173,10 @@ class CompactDateWidget(QWidget):
         qualification_layout.addWidget(QLabel("Date qualification"))
         from src.gui.widgets.wrapping_combo_box import WrappingComboBox
 
-        self.qualifier_combo = WrappingComboBox()
+        self.qualifier_combo = declare_inspection(
+            WrappingComboBox(),
+            "src-gui-widgets-compact-date-widget-compactdatewidget-setup-text-first-self-qualifier-combo|date.precision|help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-setup-text-first-self-qualifier-combo",
+        )
         for label, qualifier in (
             ("Asserted", TemporalQualifier.ASSERTED),
             ("Approximate", TemporalQualifier.APPROXIMATE),
@@ -186,7 +193,10 @@ class CompactDateWidget(QWidget):
 
         from src.gui.widgets.wrapping_buttons import WrappingPushButton
 
-        self.limits_button = WrappingPushButton("Possible date limits…")
+        self.limits_button = declare_inspection(
+            WrappingPushButton("Possible date limits…"),
+            "src-gui-widgets-compact-date-widget-compactdatewidget-setup-text-first-self-limits-button|date.precision|help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-setup-text-first-self-limits-button",
+        )
         layout.insertWidget(4, self.limits_button)
         self.limits_button.hide()
         self.date_fields_button.toggled.connect(self.limits_button.setVisible)
@@ -305,9 +315,15 @@ class CompactDateWidget(QWidget):
             ("Possible from", expression.explicit_outer_start),
             ("Possible until", expression.explicit_outer_end),
         ):
-            enabled = QCheckBox(label)
+            enabled = declare_inspection(
+                QCheckBox(label),
+                "src-gui-widgets-compact-date-widget-compactdatewidget-edit-limits-enabled|date.precision|help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-edit-limits-enabled",
+            )
             enabled.setChecked(value is not None)
-            field = QLineEdit()
+            field = declare_inspection(
+                QLineEdit(),
+                "src-gui-widgets-compact-date-widget-compactdatewidget-edit-limits-field|date.precision|help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-edit-limits-field",
+            )
             field.setAccessibleName(label)
             # Stored upper limits are exclusive; show the last included period.
             text = (
@@ -327,8 +343,12 @@ class CompactDateWidget(QWidget):
         error.setWordWrap(True)
         error.setStyleSheet(StyleHelper.get_error_label_style())
         layout.addWidget(error)
-        actions = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        actions = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel
+            ),
+            "src-gui-widgets-compact-date-widget-compactdatewidget-edit-limits-actions|date.precision|help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-edit-limits-actions",
         )
         layout.addWidget(actions)
 
@@ -535,7 +555,10 @@ class CompactDateWidget(QWidget):
         chip_layout.setContentsMargins(4, 1, 4, 1)
         chip_layout.setSpacing(0)
 
-        self.spin_year = ScrollSafeSpinBox()
+        self.spin_year = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-spin-year|date.precision|help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-spin-year",
+        )
         self.spin_year.setRange(-999999, 999999)
         self.spin_year.setValue(1)
         self.spin_year.setPrefix("Year ")
@@ -543,7 +566,10 @@ class CompactDateWidget(QWidget):
         self.spin_year.setFixedWidth(130)
         chip_layout.addWidget(self.spin_year, stretch=0)
 
-        self.combo_month = ScrollSafeComboBox()
+        self.combo_month = declare_inspection(
+            ScrollSafeComboBox(),
+            "src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-combo-month|date.precision|help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-combo-month",
+        )
         self.combo_month.setProperty("actionLabelDataValue", True)
         self.combo_month.setSizePolicy(
             QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
@@ -551,7 +577,10 @@ class CompactDateWidget(QWidget):
         self.combo_month.setFixedWidth(100)
         chip_layout.addWidget(self.combo_month, stretch=0)
 
-        self.combo_day = ScrollSafeComboBox()
+        self.combo_day = declare_inspection(
+            ScrollSafeComboBox(),
+            "src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-combo-day|date.precision|help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-combo-day",
+        )
         self.combo_day.setProperty("actionLabelDataValue", True)
         self.combo_day.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.combo_day.setFixedWidth(70)
@@ -565,7 +594,10 @@ class CompactDateWidget(QWidget):
         # Time toggle button (clock icon)
         from src.gui.widgets.standard_buttons import StandardButton
 
-        self.btn_time_toggle = StandardButton("")
+        self.btn_time_toggle = declare_inspection(
+            StandardButton(""),
+            "src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-btn-time-toggle|date.precision|help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-btn-time-toggle",
+        )
         self.btn_time_toggle.setAccessibleName("Show time fields")
         self.btn_time_toggle.setFixedSize(32, 24)
         self.btn_time_toggle.setCheckable(True)
@@ -575,7 +607,10 @@ class CompactDateWidget(QWidget):
         date_row.addWidget(self.btn_time_toggle, stretch=0)
 
         # Calendar button
-        self.btn_calendar = QPushButton()
+        self.btn_calendar = declare_inspection(
+            QPushButton(),
+            "src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-btn-calendar|date.precision|help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-btn-calendar",
+        )
         self.btn_calendar.setAccessibleName("Choose date from calendar")
         self.btn_calendar.setFixedSize(32, 24)
         self.btn_calendar.setToolTip("Open calendar picker")
@@ -596,7 +631,10 @@ class CompactDateWidget(QWidget):
         time_row.setContentsMargins(0, 0, 0, 0)
         time_row.setSpacing(8)
 
-        self.spin_hour = ScrollSafeSpinBox()
+        self.spin_hour = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-spin-hour|date.precision|help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-spin-hour",
+        )
         self.spin_hour.setRange(0, 23)
         self.spin_hour.setValue(0)
         self.spin_hour.setSuffix("h")
@@ -607,7 +645,10 @@ class CompactDateWidget(QWidget):
         self.spin_hour.setFixedWidth(88)
         time_row.addWidget(self.spin_hour, stretch=0)
 
-        self.spin_minute = ScrollSafeSpinBox()
+        self.spin_minute = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-spin-minute|date.precision|help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-spin-minute",
+        )
         self.spin_minute.setRange(0, 59)
         self.spin_minute.setValue(0)
         self.spin_minute.setSuffix("m")
@@ -617,7 +658,10 @@ class CompactDateWidget(QWidget):
         self.spin_minute.setFixedWidth(88)
         time_row.addWidget(self.spin_minute, stretch=0)
 
-        self.txt_date = QLineEdit()
+        self.txt_date = declare_inspection(
+            QLineEdit(),
+            "src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-txt-date|date.precision|help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-txt-date",
+        )
         self.txt_date.setPlaceholderText("Type date...")
         self.txt_date.setToolTip("Enter date text (e.g. '15 Jan 3019')")
         self.txt_date.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
@@ -1142,13 +1186,19 @@ class CalendarPopup(QDialog):
         # Header: Year and Month selectors
         header = QHBoxLayout()
 
-        self.spin_year = ScrollSafeSpinBox()
+        self.spin_year = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-widgets-compact-date-widget-calendarpopup-setup-ui-self-spin-year|date.precision|help-inspect-src-gui-widgets-compact-date-widget-calendarpopup-setup-ui-self-spin-year",
+        )
         self.spin_year.setRange(-999999, 999999)
         self.spin_year.setValue(self._year)
         self.spin_year.valueChanged.connect(self._refresh_grid)
         header.addWidget(self.spin_year)
 
-        self.combo_month = ScrollSafeComboBox()
+        self.combo_month = declare_inspection(
+            ScrollSafeComboBox(),
+            "src-gui-widgets-compact-date-widget-calendarpopup-setup-ui-self-combo-month|date.precision|help-inspect-src-gui-widgets-compact-date-widget-calendarpopup-setup-ui-self-combo-month",
+        )
         months = self._converter._config.get_months_for_year(self._year)
         for m in months:
             self.combo_month.addItem(m.name)
@@ -1168,9 +1218,15 @@ class CalendarPopup(QDialog):
 
         # Buttons
         btn_layout = QHBoxLayout()
-        btn_ok = QPushButton("OK")
+        btn_ok = declare_inspection(
+            QPushButton("OK"),
+            "src-gui-widgets-compact-date-widget-calendarpopup-setup-ui-btn-ok|date.precision|help-inspect-src-gui-widgets-compact-date-widget-calendarpopup-setup-ui-btn-ok",
+        )
         btn_ok.clicked.connect(self.accept)
-        btn_cancel = QPushButton("Cancel")
+        btn_cancel = declare_inspection(
+            QPushButton("Cancel"),
+            "src-gui-widgets-compact-date-widget-calendarpopup-setup-ui-btn-cancel|date.precision|help-inspect-src-gui-widgets-compact-date-widget-calendarpopup-setup-ui-btn-cancel",
+        )
         btn_cancel.clicked.connect(self.reject)
         btn_layout.addWidget(btn_ok)
         btn_layout.addWidget(btn_cancel)
@@ -1195,7 +1251,10 @@ class CalendarPopup(QDialog):
 
         # Create day buttons in 7-column grid
         for d in range(1, days + 1):
-            btn = QPushButton(str(d))
+            btn = declare_inspection(
+                QPushButton(str(d)),
+                "src-gui-widgets-compact-date-widget-calendarpopup-refresh-grid-btn|date.precision|help-inspect-src-gui-widgets-compact-date-widget-calendarpopup-refresh-grid-btn",
+            )
             btn.setFixedSize(32, 32)
             btn.clicked.connect(lambda checked, day=d: self._select_day(day))
 

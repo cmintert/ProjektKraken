@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.standard_buttons import DestructiveButton
 
@@ -57,9 +58,15 @@ class AttributeEditorWidget(QWidget):
         self.action_toolbar = OverflowToolBar()
         from src.gui.widgets.wrapping_buttons import WrappingPushButton
 
-        self.btn_add = WrappingPushButton("Add Attribute")
+        self.btn_add = declare_inspection(
+            WrappingPushButton("Add Attribute"),
+            "src-gui-widgets-attribute-editor-attributeeditorwidget-init-self-btn-add|authoring.details|help-inspect-src-gui-widgets-attribute-editor-attributeeditorwidget-init-self-btn-add",
+        )
         self.btn_add.clicked.connect(self._on_add)
-        self.btn_remove = DestructiveButton("Remove")
+        self.btn_remove = declare_inspection(
+            DestructiveButton("Remove"),
+            "src-gui-widgets-attribute-editor-attributeeditorwidget-init-self-btn-remove|authoring.details|help-inspect-src-gui-widgets-attribute-editor-attributeeditorwidget-init-self-btn-remove",
+        )
         self.btn_remove.clicked.connect(self._on_remove)
         self.btn_remove.setEnabled(False)
 
@@ -68,7 +75,10 @@ class AttributeEditorWidget(QWidget):
         main_layout.addWidget(self.action_toolbar)
 
         # Table
-        self.table = QTableWidget()
+        self.table = declare_inspection(
+            QTableWidget(),
+            "src-gui-widgets-attribute-editor-attributeeditorwidget-init-self-table|authoring.details|help-inspect-src-gui-widgets-attribute-editor-attributeeditorwidget-init-self-table",
+        )
         self.table.setSizePolicy(
             QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding
         )
@@ -249,7 +259,10 @@ class AttributeEditorWidget(QWidget):
         self.table.setItem(row, 1, QTableWidgetItem(str_val))
 
         # Type ComboBox
-        combo = ScrollSafeComboBox()
+        combo = declare_inspection(
+            ScrollSafeComboBox(),
+            "src-gui-widgets-attribute-editor-attributeeditorwidget-add-row-combo|authoring.details|help-inspect-src-gui-widgets-attribute-editor-attributeeditorwidget-add-row-combo",
+        )
         combo.addItems(["String", "Number", "Boolean"])
         if self._allow_null:
             combo.addItem("Null")

@@ -191,7 +191,9 @@ def generate(root: Path, output: Path) -> None:
             and t["fragment"] in record.get("anchors", [])
         ]
         record.pop("anchors", None)
-        record["topic_ids"] = [t["id"] for t in matched]
+        record["topic_ids"] = sorted(
+            set(record.get("topic_ids", [])) | {t["id"] for t in matched}
+        )
         for topic in matched:
             topic["title"] = record["title"]
     write_json(output / "search.json", search)

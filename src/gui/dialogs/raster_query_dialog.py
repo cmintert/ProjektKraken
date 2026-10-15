@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 from src.gui.widgets.responsive_dialog_buttons import (
@@ -61,7 +62,10 @@ class _ConditionRow(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
 
-        self._layer_combo = QComboBox()
+        self._layer_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-dialogs-raster-query-dialog-conditionrow-init-self-layer-combo|workspace.navigation|help-inspect-src-gui-dialogs-raster-query-dialog-conditionrow-init-self-layer-combo",
+        )
         name_counts: dict[str, int] = {}
         for layer in layers:
             name = str(layer["name"])
@@ -74,13 +78,19 @@ class _ConditionRow(QWidget):
             self._layer_combo.addItem(label, layer["node_id"])
         layout.addWidget(self._layer_combo, 2)
 
-        self._op_combo = QComboBox()
+        self._op_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-dialogs-raster-query-dialog-conditionrow-init-self-op-combo|workspace.navigation|help-inspect-src-gui-dialogs-raster-query-dialog-conditionrow-init-self-op-combo",
+        )
         for op_key, op_label in _OPS:
             self._op_combo.addItem(op_label, op_key)
         self._op_combo.currentIndexChanged.connect(self._on_op_changed)
         layout.addWidget(self._op_combo, 2)
 
-        self._value_spin = ScrollSafeSpinBox()
+        self._value_spin = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-dialogs-raster-query-dialog-conditionrow-init-self-value-spin|workspace.navigation|help-inspect-src-gui-dialogs-raster-query-dialog-conditionrow-init-self-value-spin",
+        )
         self._value_spin.setRange(0, 65535)
         self._value_spin.setValue(0)
         layout.addWidget(self._value_spin)
@@ -89,7 +99,10 @@ class _ConditionRow(QWidget):
         self._dash_label.setVisible(False)
         layout.addWidget(self._dash_label)
 
-        self._max_spin = ScrollSafeSpinBox()
+        self._max_spin = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-dialogs-raster-query-dialog-conditionrow-init-self-max-spin|workspace.navigation|help-inspect-src-gui-dialogs-raster-query-dialog-conditionrow-init-self-max-spin",
+        )
         self._max_spin.setRange(0, 65535)
         self._max_spin.setValue(65535)
         self._max_spin.setVisible(False)
@@ -173,17 +186,27 @@ class RasterQueryDialog(QDialog):
 
         # Add / remove row controls
         add_remove_row = QHBoxLayout()
-        btn_add = QPushButton("+ Add condition")
+        btn_add = declare_inspection(
+            QPushButton("+ Add condition"),
+            "src-gui-dialogs-raster-query-dialog-rasterquerydialog-build-ui-btn-add|map.raster|help-inspect-src-gui-dialogs-raster-query-dialog-rasterquerydialog-build-ui-btn-add",
+        )
         btn_add.clicked.connect(self._on_add_row)
         add_remove_row.addWidget(btn_add)
-        self._btn_remove = QPushButton("− Remove last")
+        self._btn_remove = declare_inspection(
+            QPushButton("− Remove last"),
+            "src-gui-dialogs-raster-query-dialog-rasterquerydialog-build-ui-self-btn-remove|map.raster|help-inspect-src-gui-dialogs-raster-query-dialog-rasterquerydialog-build-ui-self-btn-remove",
+        )
         self._btn_remove.clicked.connect(self._on_remove_row)
         add_remove_row.addWidget(self._btn_remove)
         add_remove_row.addStretch()
         layout.addLayout(add_remove_row)
 
-        btn_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        btn_box = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel
+            ),
+            "src-gui-dialogs-raster-query-dialog-rasterquerydialog-build-ui-btn-box|map.raster|help-inspect-src-gui-dialogs-raster-query-dialog-rasterquerydialog-build-ui-btn-box",
         )
         btn_box.button(QDialogButtonBox.StandardButton.Ok).setText("Run Query")
         btn_box.accepted.connect(self.accept)

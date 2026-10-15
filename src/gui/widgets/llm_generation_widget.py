@@ -39,6 +39,7 @@ from src.core.logging_config import get_world_audit_log_path
 from src.core.operation_trace import safe_stack
 from src.core.theme_manager import ThemeManager
 from src.gui.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.settings_reader import (
     read_bool_setting,
     read_int_setting,
@@ -600,7 +601,10 @@ class LLMGenerationWidget(QWidget):
 
         # Row 0: Task Template
         grid_layout.addWidget(QLabel("Task Template:"), 0, 0)
-        self.template_combo = QComboBox()
+        self.template_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-template-combo|writing.ai|help-inspect-src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-template-combo",
+        )
         self.template_combo.setToolTip(
             "Choose a reusable task. It is copied only when you select Use "
             "Template and does not change the configured Persona."
@@ -610,7 +614,10 @@ class LLMGenerationWidget(QWidget):
         grid_layout.addWidget(self.template_combo, 0, 1, 1, 2)
         from src.gui.widgets.wrapping_buttons import WrappingPushButton
 
-        self.use_template_btn = WrappingPushButton("Use Template")
+        self.use_template_btn = declare_inspection(
+            WrappingPushButton("Use Template"),
+            "src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-use-template-btn|writing.ai|help-inspect-src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-use-template-btn",
+        )
         self.use_template_btn.setEnabled(False)
         self.use_template_btn.setToolTip(
             "Copy the selected task into the editable prompt"
@@ -621,7 +628,10 @@ class LLMGenerationWidget(QWidget):
         # Row 1: Provider | Max Tokens
         grid_layout.addWidget(QLabel("Provider:"), 1, 0)
 
-        self.provider_combo = QComboBox()
+        self.provider_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-provider-combo|writing.ai|help-inspect-src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-provider-combo",
+        )
         self.provider_combo.addItems(
             ["LM Studio", "OpenAI", "Google Vertex AI", "Anthropic"]
         )
@@ -645,7 +655,10 @@ class LLMGenerationWidget(QWidget):
 
         grid_layout.addWidget(QLabel("Max Tokens:"), 1, 2)
 
-        self.max_tokens_spin = ScrollSafeSpinBox()
+        self.max_tokens_spin = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-max-tokens-spin|writing.ai|help-inspect-src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-max-tokens-spin",
+        )
         self.max_tokens_spin.setRange(50, 100000)
         self.max_tokens_spin.setValue(512)
         self.max_tokens_spin.setToolTip("Maximum tokens to generate")
@@ -655,7 +668,10 @@ class LLMGenerationWidget(QWidget):
         # Row 2: Temp | RAG
         grid_layout.addWidget(QLabel("Temp:"), 2, 0)
 
-        self.temperature_spin = ScrollSafeSpinBox()
+        self.temperature_spin = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-temperature-spin|writing.ai|help-inspect-src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-temperature-spin",
+        )
         self.temperature_spin.setRange(0, 200)
         self.temperature_spin.setValue(70)
         self.temperature_spin.setSuffix("%")
@@ -664,7 +680,10 @@ class LLMGenerationWidget(QWidget):
         grid_layout.addWidget(self.temperature_spin, 2, 1)
 
         # RAG Checkbox in Col 2 (Label position)
-        self.rag_cb = QCheckBox("Use RAG Context")
+        self.rag_cb = declare_inspection(
+            QCheckBox("Use RAG Context"),
+            "src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-rag-cb|writing.ai|help-inspect-src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-rag-cb",
+        )
         self.rag_cb.setChecked(True)
         self.rag_cb.setToolTip("Include relevant context from database (RAG)")
         grid_layout.addWidget(self.rag_cb, 2, 2)
@@ -672,7 +691,10 @@ class LLMGenerationWidget(QWidget):
         # RAG Limit in Col 3
         # bg_rag_limit container removed as it was unused
 
-        self.rag_limit_input = QLineEdit()
+        self.rag_limit_input = declare_inspection(
+            QLineEdit(),
+            "src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-rag-limit-input|writing.ai|help-inspect-src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-rag-limit-input",
+        )
         self.rag_limit_input.setPlaceholderText("3")
         self.rag_limit_input.setToolTip("Number of context items to retrieve (1-20)")
         self.rag_limit_input.setFixedWidth(50)
@@ -689,7 +711,10 @@ class LLMGenerationWidget(QWidget):
         # Row 3: Spatial Context (opt-in). When enabled and the entity is
         # placed on the currently active map with sufficient data, the
         # worker injects a [Spatial Context] block into the prompt.
-        self.spatial_cb = QCheckBox("Include spatial context")
+        self.spatial_cb = declare_inspection(
+            QCheckBox("Include spatial context"),
+            "src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-spatial-cb|writing.ai|help-inspect-src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-spatial-cb",
+        )
         self.spatial_cb.setChecked(False)
         self.spatial_cb.setToolTip(
             "Include map placement, layer notes, raster classes, and nearby "
@@ -698,7 +723,10 @@ class LLMGenerationWidget(QWidget):
         self.spatial_cb.toggled.connect(self._save_settings)
         grid_layout.addWidget(self.spatial_cb, 3, 2, 1, 2)
 
-        self.world_context_cb = QCheckBox("Use World Context")
+        self.world_context_cb = declare_inspection(
+            QCheckBox("Use World Context"),
+            "src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-world-context-cb|writing.ai|help-inspect-src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-world-context-cb",
+        )
         self.world_context_cb.setChecked(True)
         self.world_context_cb.setToolTip(
             "Include deterministic persisted facts known about this item."
@@ -742,18 +770,27 @@ class LLMGenerationWidget(QWidget):
         # Cancel button (Left of Generate/Preview cluster? Or right aligned?
         # User said Generate Cancel Preview right aligned)
         # Usually Cancel is on the left of affirmative actions.
-        self.cancel_btn = QPushButton("Cancel")
+        self.cancel_btn = declare_inspection(
+            QPushButton("Cancel"),
+            "src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-cancel-btn|writing.ai|help-inspect-src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-cancel-btn",
+        )
         self.cancel_btn.setEnabled(False)
         self.cancel_btn.setToolTip("Cancel generation")
         self.cancel_btn.clicked.connect(self._on_cancel_clicked)
 
         # Preview button
-        self.preview_btn = QPushButton("Preview")
+        self.preview_btn = declare_inspection(
+            QPushButton("Preview"),
+            "src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-preview-btn|writing.ai|help-inspect-src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-preview-btn",
+        )
         self.preview_btn.setToolTip("Preview the prompt before generating")
         self.preview_btn.clicked.connect(self._on_preview_clicked)
 
         # Generate button
-        self.generate_btn = WrappingPrimaryButton("Generate")
+        self.generate_btn = declare_inspection(
+            WrappingPrimaryButton("Generate"),
+            "src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-generate-btn|writing.ai|help-inspect-src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-generate-btn",
+        )
         self.generate_btn.setToolTip("Generate text and append to description")
         self.generate_btn.clicked.connect(self._on_generate_clicked)
         self.generation_actions.add_button(self.generate_btn, pinned=True)
@@ -772,7 +809,10 @@ class LLMGenerationWidget(QWidget):
         spatial_row.setContentsMargins(0, 0, 0, 0)
         self.spatial_used_label = QLabel("")
         spatial_row.addWidget(self.spatial_used_label)
-        self.spatial_show_btn = QPushButton("Show")
+        self.spatial_show_btn = declare_inspection(
+            QPushButton("Show"),
+            "src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-spatial-show-btn|writing.ai|help-inspect-src-gui-widgets-llm-generation-widget-llmgenerationwidget-init-self-spatial-show-btn",
+        )
         self.spatial_show_btn.setFlat(True)
         self.spatial_show_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.spatial_show_btn.clicked.connect(self._on_show_spatial_context_clicked)
@@ -805,7 +845,10 @@ class LLMGenerationWidget(QWidget):
         world_row.setContentsMargins(0, 0, 0, 0)
         self.world_context_used_label = QLabel("")
         world_row.addWidget(self.world_context_used_label)
-        self.world_context_show_btn = QPushButton("Show")
+        self.world_context_show_btn = declare_inspection(
+            QPushButton("Show"),
+            "src-gui-widgets-llm-generation-widget-llmgenerationwidget-build-world-context-status-row-self-world-context-show-btn|writing.ai|help-inspect-src-gui-widgets-llm-generation-widget-llmgenerationwidget-build-world-context-status-row-self-world-context-show-btn",
+        )
         self.world_context_show_btn.setFlat(True)
         self.world_context_show_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.world_context_show_btn.clicked.connect(self._on_show_world_context_clicked)
@@ -1968,7 +2011,10 @@ class LLMGenerationWidget(QWidget):
         )
         info.setStyleSheet(StyleHelper.get_preview_label_style())
         layout.addWidget(info)
-        text_edit = QPlainTextEdit()
+        text_edit = declare_inspection(
+            QPlainTextEdit(),
+            "src-gui-widgets-llm-generation-widget-llmgenerationwidget-on-show-spatial-context-clicked-text-edit|writing.ai|help-inspect-src-gui-widgets-llm-generation-widget-llmgenerationwidget-on-show-spatial-context-clicked-text-edit",
+        )
         text_edit.setPlainText(self._last_spatial_context)
         text_edit.setReadOnly(True)
         text_edit.setStyleSheet(
@@ -1976,7 +2022,10 @@ class LLMGenerationWidget(QWidget):
         )
         layout.addWidget(text_edit)
         btn_row = QHBoxLayout()
-        close_btn = QPushButton("Close")
+        close_btn = declare_inspection(
+            QPushButton("Close"),
+            "src-gui-widgets-llm-generation-widget-llmgenerationwidget-on-show-spatial-context-clicked-close-btn|writing.ai|help-inspect-src-gui-widgets-llm-generation-widget-llmgenerationwidget-on-show-spatial-context-clicked-close-btn",
+        )
         close_btn.clicked.connect(dlg.accept)
         close_btn.setStyleSheet(StyleHelper.get_primary_button_style())
         btn_row.addStretch()
@@ -1997,14 +2046,20 @@ class LLMGenerationWidget(QWidget):
         info = QLabel("Exact authoritative context inserted into the prompt.")
         info.setStyleSheet(StyleHelper.get_preview_label_style())
         layout.addWidget(info)
-        text_edit = QPlainTextEdit()
+        text_edit = declare_inspection(
+            QPlainTextEdit(),
+            "src-gui-widgets-llm-generation-widget-llmgenerationwidget-on-show-world-context-clicked-text-edit|writing.ai|help-inspect-src-gui-widgets-llm-generation-widget-llmgenerationwidget-on-show-world-context-clicked-text-edit",
+        )
         text_edit.setPlainText(self._last_world_context)
         text_edit.setReadOnly(True)
         text_edit.setStyleSheet(
             f"{StyleHelper.get_input_field_style()}font-family: Consolas, monospace;"
         )
         layout.addWidget(text_edit)
-        close_btn = QPushButton("Close")
+        close_btn = declare_inspection(
+            QPushButton("Close"),
+            "src-gui-widgets-llm-generation-widget-llmgenerationwidget-on-show-world-context-clicked-close-btn|writing.ai|help-inspect-src-gui-widgets-llm-generation-widget-llmgenerationwidget-on-show-world-context-clicked-close-btn",
+        )
         close_btn.clicked.connect(dlg.accept)
         close_btn.setStyleSheet(StyleHelper.get_primary_button_style())
         button_row = QHBoxLayout()
@@ -2191,7 +2246,10 @@ class LLMGenerationWidget(QWidget):
         info.setStyleSheet(StyleHelper.get_preview_label_style())
         layout.addWidget(info)
 
-        text_edit = QPlainTextEdit()
+        text_edit = declare_inspection(
+            QPlainTextEdit(),
+            "src-gui-widgets-llm-generation-widget-llmgenerationwidget-on-preview-clicked-text-edit|writing.ai|help-inspect-src-gui-widgets-llm-generation-widget-llmgenerationwidget-on-preview-clicked-text-edit",
+        )
         text_edit.setPlainText(display_text)
         text_edit.setReadOnly(True)
         text_edit.setStyleSheet(
@@ -2200,7 +2258,10 @@ class LLMGenerationWidget(QWidget):
         layout.addWidget(text_edit)
 
         btn_layout = QHBoxLayout()
-        close_btn = QPushButton("Close")
+        close_btn = declare_inspection(
+            QPushButton("Close"),
+            "src-gui-widgets-llm-generation-widget-llmgenerationwidget-on-preview-clicked-close-btn|writing.ai|help-inspect-src-gui-widgets-llm-generation-widget-llmgenerationwidget-on-preview-clicked-close-btn",
+        )
         close_btn.clicked.connect(dlg.accept)
         close_btn.setStyleSheet(StyleHelper.get_primary_button_style())
 

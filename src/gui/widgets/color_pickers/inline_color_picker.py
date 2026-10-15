@@ -217,11 +217,19 @@ class InlineColorPickerPopover(QFrame):
         self._preview.setFrameShape(QFrame.Shape.StyledPanel)
         preview_row.addWidget(self._preview)
         preview_row.addWidget(QLabel("Hex:"))
-        self._hex_edit = QLineEdit()
+        from src.gui.utils.help_context import declare_inspection
+
+        self._hex_edit = declare_inspection(
+            QLineEdit(),
+            "appearance.hex-colour|map.appearance|help-inspect-appearance-hex-colour",
+        )
         self._hex_edit.setFixedWidth(96)
         self._hex_edit.setPlaceholderText("#RRGGBB")
         preview_row.addWidget(self._hex_edit, 1)
-        self._ok_btn = QPushButton("OK")
+        self._ok_btn = declare_inspection(
+            QPushButton("OK"),
+            "appearance.accept-colour|map.appearance|help-inspect-appearance-accept-colour",
+        )
         preview_row.addWidget(self._ok_btn)
         layout.addLayout(preview_row)
 

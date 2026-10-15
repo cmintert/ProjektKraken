@@ -63,6 +63,7 @@ from src.core.wiki_ast import CursorMapper, WikiASTParser, WikiASTSerializer
 from src.core.wiki_markdown_grammar import requires_source_mode
 from src.gui.constants import SEMANTIC_COMPLETION_MIN_PREFIX_LEN
 from src.gui.editor_typography import EditorTypography
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.utils.suggestion_effects import apply_suggestion_effects
@@ -245,39 +246,57 @@ class WikiTextEditView(QTextEdit):
         context = Qt.ShortcutContext.WidgetWithChildrenShortcut
 
         # Bold
-        self.action_bold = QAction(self)
+        self.action_bold = declare_inspection(
+            QAction(self),
+            "src-gui-widgets-wiki-text-edit-wikitexteditview-setup-actions-self-action-bold|writing.edit|help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-setup-actions-self-action-bold",
+        )
         self.action_bold.setShortcut(ShortcutManager.FORMAT_BOLD.key_sequence)
         self.action_bold.setShortcutContext(context)
         self.action_bold.triggered.connect(self._toggle_bold)
         self.addAction(self.action_bold)
 
         # Italic
-        self.action_italic = QAction(self)
+        self.action_italic = declare_inspection(
+            QAction(self),
+            "src-gui-widgets-wiki-text-edit-wikitexteditview-setup-actions-self-action-italic|writing.edit|help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-setup-actions-self-action-italic",
+        )
         self.action_italic.setShortcut(ShortcutManager.FORMAT_ITALIC.key_sequence)
         self.action_italic.setShortcutContext(context)
         self.action_italic.triggered.connect(self._toggle_italic)
         self.addAction(self.action_italic)
 
         # Headings
-        self.action_h1 = QAction(self)
+        self.action_h1 = declare_inspection(
+            QAction(self),
+            "src-gui-widgets-wiki-text-edit-wikitexteditview-setup-actions-self-action-h1|writing.edit|help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-setup-actions-self-action-h1",
+        )
         self.action_h1.setShortcut(ShortcutManager.FORMAT_H1.key_sequence)
         self.action_h1.setShortcutContext(context)
         self.action_h1.triggered.connect(lambda: self._set_heading(1))
         self.addAction(self.action_h1)
 
-        self.action_h2 = QAction(self)
+        self.action_h2 = declare_inspection(
+            QAction(self),
+            "src-gui-widgets-wiki-text-edit-wikitexteditview-setup-actions-self-action-h2|writing.edit|help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-setup-actions-self-action-h2",
+        )
         self.action_h2.setShortcut(ShortcutManager.FORMAT_H2.key_sequence)
         self.action_h2.setShortcutContext(context)
         self.action_h2.triggered.connect(lambda: self._set_heading(2))
         self.addAction(self.action_h2)
 
-        self.action_h3 = QAction(self)
+        self.action_h3 = declare_inspection(
+            QAction(self),
+            "src-gui-widgets-wiki-text-edit-wikitexteditview-setup-actions-self-action-h3|writing.edit|help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-setup-actions-self-action-h3",
+        )
         self.action_h3.setShortcut(ShortcutManager.FORMAT_H3.key_sequence)
         self.action_h3.setShortcutContext(context)
         self.action_h3.triggered.connect(lambda: self._set_heading(3))
         self.addAction(self.action_h3)
 
-        self.action_body = QAction(self)
+        self.action_body = declare_inspection(
+            QAction(self),
+            "src-gui-widgets-wiki-text-edit-wikitexteditview-setup-actions-self-action-body|writing.edit|help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-setup-actions-self-action-body",
+        )
         self.action_body.setShortcut(ShortcutManager.FORMAT_BODY.key_sequence)
         self.action_body.setShortcutContext(context)
         self.action_body.triggered.connect(self._clear_formatting)
@@ -2005,7 +2024,10 @@ class WikiTextEditView(QTextEdit):
         )
 
         if not hit:
-            menu = self.createStandardContextMenu()
+            menu = declare_inspection(
+                self.createStandardContextMenu(),
+                "src-gui-widgets-wiki-text-edit-wikitexteditview-contextmenuevent-menu|writing.edit|help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-contextmenuevent-menu",
+            )
             self._add_link_menu_actions(menu, anchor)
             self._show_context_menu(menu, event.globalPos())
             return
@@ -2027,7 +2049,10 @@ class WikiTextEditView(QTextEdit):
                 )
             menu.addSeparator()
 
-        ignore_action = menu.addAction(f"Ignore ({hit.rule_id})")
+        ignore_action = declare_inspection(
+            menu.addAction(f"Ignore ({hit.rule_id})"),
+            "src-gui-widgets-wiki-text-edit-wikitexteditview-contextmenuevent-ignore-action|writing.edit|help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-contextmenuevent-ignore-action",
+        )
         ignore_action.triggered.connect(lambda _, m=hit: self._ignore_lt_match(m))
         menu.addSeparator()
 
@@ -2039,13 +2064,22 @@ class WikiTextEditView(QTextEdit):
     def _add_link_menu_actions(self, menu: QMenu, anchor: str) -> None:
         """Share link operations between standard and spell-check menus."""
         menu.addSeparator()
-        action = menu.addAction("Link to entry…", self.link_to_entry_requested.emit)
+        action = declare_inspection(
+            menu.addAction("Link to entry…", self.link_to_entry_requested.emit),
+            "src-gui-widgets-wiki-text-edit-wikitexteditview-add-link-menu-actions-action|writing.edit|help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-add-link-menu-actions-action",
+        )
         action.setEnabled(not self.isReadOnly())
         target = anchor or self.link_target_at_cursor()
         if target:
-            menu.addAction("Open link", lambda: self.link_clicked.emit(target))
-            menu.addAction(
-                "Peek link (Alt+Click)", lambda: self.peek_requested.emit(target)
+            declare_inspection(
+                menu.addAction("Open link", lambda: self.link_clicked.emit(target)),
+                "src-gui-widgets-wiki-text-edit-wikitexteditview-add-link-menu-actions-addaction|writing.edit|help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-add-link-menu-actions-addaction",
+            )
+            declare_inspection(
+                menu.addAction(
+                    "Peek link (Alt+Click)", lambda: self.peek_requested.emit(target)
+                ),
+                "src-gui-widgets-wiki-text-edit-wikitexteditview-add-link-menu-actions-addaction-2|writing.edit|help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-add-link-menu-actions-addaction-2",
             )
 
     @staticmethod
@@ -2169,7 +2203,10 @@ class SpellCheckSettingsDialog(QDialog):
         lang_group = QGroupBox("Language")
         lang_form = QFormLayout(lang_group)
         StyleHelper.apply_standard_list_spacing(lang_form)
-        self._language_combo = QComboBox()
+        self._language_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-self-language-combo|writing.spelling|help-inspect-src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-self-language-combo",
+        )
         self._language_combo.setEditable(True)
         self._language_combo.addItems(
             ["auto", "en-US", "en-GB", "de-DE", "fr-FR", "es-ES", "pt-BR", "it-IT"]
@@ -2183,12 +2220,18 @@ class SpellCheckSettingsDialog(QDialog):
         premium_layout = QFormLayout(premium_group)
         StyleHelper.apply_standard_list_spacing(premium_layout)
 
-        self._username_edit = QLineEdit()
+        self._username_edit = declare_inspection(
+            QLineEdit(),
+            "src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-self-username-edit|writing.spelling|help-inspect-src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-self-username-edit",
+        )
         self._username_edit.setPlaceholderText("your@email.com")
         self._username_edit.setStyleSheet(StyleHelper.get_input_field_style())
         premium_layout.addRow("Username:", self._username_edit)
 
-        self._apikey_edit = QLineEdit()
+        self._apikey_edit = declare_inspection(
+            QLineEdit(),
+            "src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-self-apikey-edit|writing.spelling|help-inspect-src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-self-apikey-edit",
+        )
         self._apikey_edit.setEchoMode(QLineEdit.EchoMode.Password)
         self._apikey_edit.setPlaceholderText("API key")
         self._apikey_edit.setStyleSheet(StyleHelper.get_input_field_style())
@@ -2208,9 +2251,15 @@ class SpellCheckSettingsDialog(QDialog):
         # Buttons
         btn_row = QHBoxLayout()
         btn_row.addStretch()
-        cancel_btn = StandardButton("Cancel")
+        cancel_btn = declare_inspection(
+            StandardButton("Cancel"),
+            "src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-cancel-btn|writing.spelling|help-inspect-src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-cancel-btn",
+        )
         cancel_btn.clicked.connect(self.close)
-        save_btn = PrimaryButton("Save")
+        save_btn = declare_inspection(
+            PrimaryButton("Save"),
+            "src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-save-btn|writing.spelling|help-inspect-src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-save-btn",
+        )
         save_btn.clicked.connect(self._save)
         btn_row.addWidget(cancel_btn)
         btn_row.addWidget(save_btn)
@@ -2282,7 +2331,10 @@ class WikiTextEdit(QFrame):
         main_layout.setSpacing(0)
 
         # Editor View (must be created before Toolbar to link actions)
-        self.editor = WikiTextEditView(self)
+        self.editor = declare_inspection(
+            WikiTextEditView(self),
+            "src-gui-widgets-wiki-text-edit-wikitextedit-init-self-editor|writing.edit|help-inspect-src-gui-widgets-wiki-text-edit-wikitextedit-init-self-editor",
+        )
         self._adaptive_width = False
 
         # Toolbar
@@ -2420,12 +2472,27 @@ class WikiTextEdit(QFrame):
         self.link_toolbar.setStyleSheet(StyleHelper.get_writing_editor_row_style())
         layout.addWidget(self.link_toolbar)
         layout.addWidget(self.link_notice)
-        self.action_link_entry = QAction("Link to entry…", self)
-        self.action_open_link = QAction("Open link", self)
-        self.action_peek_link = QAction("Peek link", self)
-        self.action_return_writing = QAction("Back to previous", self)
+        self.action_link_entry = declare_inspection(
+            QAction("Link to entry…", self),
+            "src-gui-widgets-wiki-text-edit-wikitextedit-setup-link-controls-self-action-link-entry|writing.edit|help-inspect-src-gui-widgets-wiki-text-edit-wikitextedit-setup-link-controls-self-action-link-entry",
+        )
+        self.action_open_link = declare_inspection(
+            QAction("Open link", self),
+            "src-gui-widgets-wiki-text-edit-wikitextedit-setup-link-controls-self-action-open-link|writing.edit|help-inspect-src-gui-widgets-wiki-text-edit-wikitextedit-setup-link-controls-self-action-open-link",
+        )
+        self.action_peek_link = declare_inspection(
+            QAction("Peek link", self),
+            "src-gui-widgets-wiki-text-edit-wikitextedit-setup-link-controls-self-action-peek-link|writing.edit|help-inspect-src-gui-widgets-wiki-text-edit-wikitextedit-setup-link-controls-self-action-peek-link",
+        )
+        self.action_return_writing = declare_inspection(
+            QAction("Back to previous", self),
+            "src-gui-widgets-wiki-text-edit-wikitextedit-setup-link-controls-self-action-return-writing|writing.links|help-inspect-src-gui-widgets-wiki-text-edit-wikitextedit-setup-link-controls-self-action-return-writing",
+        )
         self.action_return_writing.setVisible(False)
-        self._return_button = QToolButton(self)
+        self._return_button = declare_inspection(
+            QToolButton(self),
+            "src-gui-widgets-wiki-text-edit-wikitextedit-setup-link-controls-self-return-button|writing.edit|help-inspect-src-gui-widgets-wiki-text-edit-wikitextedit-setup-link-controls-self-return-button",
+        )
         for action, priority in (
             (self.action_link_entry, 3),
             (self.action_open_link, 2),

@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.action_flow_layout import ActionFlowLayout
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
@@ -65,7 +66,10 @@ class GraphFilterBar(QWidget):
         layout.setSpacing(4)
 
         # Search Bar
-        self._search_input = QLineEdit()
+        self._search_input = declare_inspection(
+            QLineEdit(),
+            "src-gui-widgets-graph-view-graph-filter-bar-graphfilterbar-setup-ui-self-search-input|graph.exploring|help-inspect-src-gui-widgets-graph-view-graph-filter-bar-graphfilterbar-setup-ui-self-search-input",
+        )
         self._search_input.setPlaceholderText("Search nodes...")
         self._search_input.setMinimumWidth(90)
         self._search_input.setSizePolicy(
@@ -77,7 +81,10 @@ class GraphFilterBar(QWidget):
         layout.addWidget(self._search_input, stretch=3)
 
         # Advanced Filter Button
-        self._adv_filter_btn = QPushButton("Filter...")
+        self._adv_filter_btn = declare_inspection(
+            QPushButton("Filter..."),
+            "src-gui-widgets-graph-view-graph-filter-bar-graphfilterbar-setup-ui-self-adv-filter-btn|graph.exploring|help-inspect-src-gui-widgets-graph-view-graph-filter-bar-graphfilterbar-setup-ui-self-adv-filter-btn",
+        )
         self._adv_filter_btn.setToolTip("Open advanced graph filters")
         self._adv_filter_btn.clicked.connect(self.show_advanced_filter_requested.emit)
 
@@ -87,7 +94,10 @@ class GraphFilterBar(QWidget):
             "Show only graph nodes with the selected tag. Tags are not changed."
         )
         self._tag_filter_label.hide()
-        self._tag_combo = QComboBox()
+        self._tag_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-graph-view-graph-filter-bar-graphfilterbar-setup-ui-self-tag-combo|graph.exploring|help-inspect-src-gui-widgets-graph-view-graph-filter-bar-graphfilterbar-setup-ui-self-tag-combo",
+        )
         self._tag_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
         self._tag_combo.setMinimumContentsLength(4)
         self._tag_combo.setSizePolicy(
@@ -104,7 +114,10 @@ class GraphFilterBar(QWidget):
         layout.addWidget(self._tag_combo, stretch=2)
 
         # Relation type filter
-        self._rel_type_combo = QComboBox()
+        self._rel_type_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-graph-view-graph-filter-bar-graphfilterbar-setup-ui-self-rel-type-combo|graph.exploring|help-inspect-src-gui-widgets-graph-view-graph-filter-bar-graphfilterbar-setup-ui-self-rel-type-combo",
+        )
         self._rel_type_combo.setSizeAdjustPolicy(
             QComboBox.SizeAdjustPolicy.AdjustToContents
         )
@@ -123,12 +136,18 @@ class GraphFilterBar(QWidget):
         layout.addWidget(self._rel_type_combo, stretch=2)
 
         # Visual Lexicon editor button
-        self._lexicon_btn = QPushButton("Lexicon")
+        self._lexicon_btn = declare_inspection(
+            QPushButton("Lexicon"),
+            "src-gui-widgets-graph-view-graph-filter-bar-graphfilterbar-setup-ui-self-lexicon-btn|graph.exploring|help-inspect-src-gui-widgets-graph-view-graph-filter-bar-graphfilterbar-setup-ui-self-lexicon-btn",
+        )
         self._lexicon_btn.setToolTip("Edit visual styles for entity and relation types")
         self._lexicon_btn.clicked.connect(self.show_lexicon_editor_requested.emit)
 
         # Refresh button
-        self._refresh_btn = QPushButton("Refresh")
+        self._refresh_btn = declare_inspection(
+            QPushButton("Refresh"),
+            "src-gui-widgets-graph-view-graph-filter-bar-graphfilterbar-setup-ui-self-refresh-btn|graph.exploring|help-inspect-src-gui-widgets-graph-view-graph-filter-bar-graphfilterbar-setup-ui-self-refresh-btn",
+        )
         self._refresh_btn.setToolTip("Reload graph data using the selected filters")
         self._refresh_btn.clicked.connect(self.refresh_requested.emit)
 

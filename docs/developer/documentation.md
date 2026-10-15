@@ -42,6 +42,36 @@ Developer pages may name classes when they explain a current contract.
 
 ## Build locally
 
+### Maintaining interface inspection
+
+`docs/help-inspection.json` is the finite inspection inventory. Each declaration
+names its source symbol, semantic control identity, canonical excerpt target and
+task topic. Feature constructors attach only `meaning|topic|excerpt` metadata with
+`declare_inspection`; widgets never contain the explanation prose. Shared menu
+descriptors use operation IDs, and default actions/overflow proxies retain their
+original control meaning. Form labels use field associations, never text matching.
+
+When behavior, a handler, field, action or visible wording changes:
+
+1. Read the affected control and its connected operation. Update its short
+   canonical paragraph and task if the purpose or consequences changed.
+2. Check equivalent instances, labels, menu/overflow routes and intentional
+   exemptions. Add a declaration or a reasoned factory exemption for new controls.
+3. Run `python -m scripts.check_help_inspection`. A changed reviewed symbol must
+   receive a Help-impact review. Record the reviewed source fingerprint and a
+   specific explanation of corrections, or why the existing prose remains true.
+   Do not refresh fingerprints in bulk merely to pass the check.
+4. Build Help and inspect the generated paragraph, direct search destination and
+   task link. Record human prose approval before publishing new reference text.
+
+Fingerprints use normalized Python syntax, ignoring comments and layout. They
+are change prompts, not proof that prose matches behavior. The native-factory
+scan covers the enumerated Qt input constructors; custom widgets, JavaScript
+controls and new domain dependencies still need explicit feature review. The
+checker is read-only and is included in preflight and the static CI gate.
+
+### Commands
+
 ```text
 python docs/generate_schema_docs.py --check
 sphinx-build -n -W --keep-going -b html docs docs/_build/html

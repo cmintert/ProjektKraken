@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
@@ -31,9 +32,15 @@ class WikiPeekPanel(QWidget):
         layout = QVBoxLayout(self)
         self.title = QLabel("Peek")
         self.detail = QLabel("")
-        self.description = QPlainTextEdit()
+        self.description = declare_inspection(
+            QPlainTextEdit(),
+            "src-gui-widgets-wiki-peek-panel-wikipeekpanel-init-self-description|writing.links|help-inspect-src-gui-widgets-wiki-peek-panel-wikipeekpanel-init-self-description",
+        )
         self.description.setReadOnly(True)
-        self.choices = QListWidget()
+        self.choices = declare_inspection(
+            QListWidget(),
+            "src-gui-widgets-wiki-peek-panel-wikipeekpanel-init-self-choices|writing.links|help-inspect-src-gui-widgets-wiki-peek-panel-wikipeekpanel-init-self-choices",
+        )
         self.choices.hide()
         layout.addWidget(self.title)
         layout.addWidget(self.detail)
@@ -41,10 +48,22 @@ class WikiPeekPanel(QWidget):
         layout.addWidget(self.description, 1)
 
         actions = QHBoxLayout()
-        self.open_button = QPushButton("Open / Edit")
-        self.create_entity_button = QPushButton("Create Entity")
-        self.create_event_button = QPushButton("Create Event")
-        self.close_button = QPushButton("Close Peek")
+        self.open_button = declare_inspection(
+            QPushButton("Open / Edit"),
+            "src-gui-widgets-wiki-peek-panel-wikipeekpanel-init-self-open-button|writing.links|help-inspect-src-gui-widgets-wiki-peek-panel-wikipeekpanel-init-self-open-button",
+        )
+        self.create_entity_button = declare_inspection(
+            QPushButton("Create Entity"),
+            "src-gui-widgets-wiki-peek-panel-wikipeekpanel-init-self-create-entity-button|writing.links|help-inspect-src-gui-widgets-wiki-peek-panel-wikipeekpanel-init-self-create-entity-button",
+        )
+        self.create_event_button = declare_inspection(
+            QPushButton("Create Event"),
+            "src-gui-widgets-wiki-peek-panel-wikipeekpanel-init-self-create-event-button|writing.links|help-inspect-src-gui-widgets-wiki-peek-panel-wikipeekpanel-init-self-create-event-button",
+        )
+        self.close_button = declare_inspection(
+            QPushButton("Close Peek"),
+            "src-gui-widgets-wiki-peek-panel-wikipeekpanel-init-self-close-button|writing.links|help-inspect-src-gui-widgets-wiki-peek-panel-wikipeekpanel-init-self-close-button",
+        )
         for button in (
             self.open_button,
             self.create_entity_button,

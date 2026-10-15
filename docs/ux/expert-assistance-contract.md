@@ -13,8 +13,10 @@ verification and human documentation sign-off remain downstream requirements.
 ## Purpose and boundaries
 
 Help answers a question about the software at the current task without changing
-the creator's work. The first pass is finite: 20 substantive topics, three utility
-routes and 20 semantic control explanations. No fifth mandatory workspace zone.
+the creator's work. The initial delivery covered 20 substantive topics, three
+utility routes and 20 specialist control meanings. KRT-89 deliberately expands
+interface inspection using the finite `docs/help-inspection.json` inventory and
+supplemental canonical task destinations. No fifth mandatory workspace zone.
 
 The approved preferences are task-led walkthroughs, followed by consequences,
 examples and related concepts, and F1 moving keyboard focus into Help.
@@ -285,8 +287,8 @@ not claimed to exist yet. Concept explanations share these reviewed sections.
 | `writing.focus` | Enter and leave Focus writing | [Focus on writing](../user/events-entities-relations.md#focus-on-writing) |
 | `event.timing` | Set a date and duration | [Set an event date or duration](../user/events-entities-relations.md#set-an-event-date-or-duration) |
 | `date.precision` | Enter incomplete or qualified dates | [Dates with incomplete information](../user/timeline-and-calendars.md#dates-with-incomplete-information) |
-| `date.evidence` | Record conflicting date sources | [Record sources and ordering](../user/timeline-and-calendars.md#record-sources-and-ordering) |
-| `event.chronology` | Record ordering and shared transitions | [Record sources and ordering](../user/timeline-and-calendars.md#record-sources-and-ordering) |
+| `date.evidence` | Record conflicting date sources | {ref}`Record date evidence <help-date-evidence>` |
+| `event.chronology` | Record ordering and shared transitions | {ref}`Record chronology <help-event-chronology>` |
 | `timeline.viewing` | Explore time without changing world time | [Use the timeline](../user/timeline-and-calendars.md#use-the-timeline) |
 | `entity.historical-editing` | Edit baseline or dated state | [View and correct an entity at another time](../user/events-entities-relations.md#view-and-correct-an-entity-at-another-time) |
 | `entity.value-source` | Identify which source a correction changes | [View and correct an entity at another time](../user/events-entities-relations.md#view-and-correct-an-entity-at-another-time) |
@@ -336,12 +338,32 @@ instances across dialogs/editors; the count is semantic, not widget-instance cou
 | Viewing time | `timeline.viewing` |
 | World time | `timeline.viewing` |
 
-Ordinary text fields, standard buttons, decorative widgets and every formatting
-action do not require individual topics. They inherit a reviewed task/panel
-fallback. Other panels/dialogs can route to existing manual pages or manual home;
-they are exempt from new substantive topics/control snippets, not from safe Help
-invocation and fallback. Expansion requires a deliberate inventory revision or
-a separate backlog issue, not automatic per-widget coverage.
+### KRT-89 approved inspection expansion — 2026-10-15
+
+The original specialist meanings and nine shared excerpts remain compatible.
+Ordinary controls, fields, meaningful groups and menu/overflow actions now have
+explicit construction-site declarations linking a short canonical explanation
+to a task. The finite inventory records source symbol, semantic identity,
+excerpt target and destination across workspace/Explorer, inspectors, writing,
+Timeline, Map/Layers, Connections, Longform, Graph, AI Search, Analysis, settings
+and world-transfer/recovery dialogs. Counts describe declarations, not proof of
+usability or one bespoke article per native widget.
+
+Equivalent instances, default actions and overflow proxies share meanings.
+Form labels use their explicit field association; painted/item regions keep
+specialist hit testing without changing selection. No runtime inference from
+visible text or world data is allowed. Disabled targets expose eligibility and
+explanations without activating their operation. Menu targeting may reveal a
+submenu for inspection but must never trigger a content action.
+
+Decorative labels, OS-owned dialogs/chrome, scrolling mechanics and Help's own
+controls are explicit exemptions. New native input factories require a declared
+meaning or a documented exemption. Code changes affecting a reviewed symbol
+must update canonical prose or record a reasoned Help-impact review. The checker
+never refreshes review fingerprints or generates prose. Structural checks do not
+substitute for semantic review; new explanations still require human review
+before publication. Full extracted-package/scaling/multi-monitor acceptance
+remains KRT-91; broader integrity consolidation remains KRT-90.
 
 ## Scenario review and verification boundaries
 

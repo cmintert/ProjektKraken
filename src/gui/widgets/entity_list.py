@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.entities import Entity
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
@@ -47,13 +48,22 @@ class EntityListWidget(QWidget):
         StyleHelper.apply_standard_list_spacing(main_layout)
 
         # Controls
-        self.btn_create = QPushButton("New Entity")
+        self.btn_create = declare_inspection(
+            QPushButton("New Entity"),
+            "src-gui-widgets-entity-list-entitylistwidget-init-self-btn-create|authoring.create|help-inspect-src-gui-widgets-entity-list-entitylistwidget-init-self-btn-create",
+        )
         self.btn_create.clicked.connect(self.create_requested.emit)
 
-        self.btn_refresh = QPushButton("Refresh")
+        self.btn_refresh = declare_inspection(
+            QPushButton("Refresh"),
+            "src-gui-widgets-entity-list-entitylistwidget-init-self-btn-refresh|explorer.browsing|help-inspect-src-gui-widgets-entity-list-entitylistwidget-init-self-btn-refresh",
+        )
         self.btn_refresh.clicked.connect(self.refresh_requested.emit)
 
-        self.btn_delete = QPushButton("Delete")
+        self.btn_delete = declare_inspection(
+            QPushButton("Delete"),
+            "src-gui-widgets-entity-list-entitylistwidget-init-self-btn-delete|authoring.delete|help-inspect-src-gui-widgets-entity-list-entitylistwidget-init-self-btn-delete",
+        )
         self.btn_delete.clicked.connect(self._on_delete_clicked)
         self.btn_delete.setEnabled(False)
 
@@ -64,7 +74,10 @@ class EntityListWidget(QWidget):
         main_layout.addLayout(top_bar)
 
         # List View
-        self.list_widget = QListWidget()
+        self.list_widget = declare_inspection(
+            QListWidget(),
+            "src-gui-widgets-entity-list-entitylistwidget-init-self-list-widget|explorer.browsing|help-inspect-src-gui-widgets-entity-list-entitylistwidget-init-self-list-widget",
+        )
         self.list_widget.itemSelectionChanged.connect(self._on_selection_changed)
         main_layout.addWidget(self.list_widget)
 
@@ -76,8 +89,11 @@ class EntityListWidget(QWidget):
             ),
             parent=self,
         )
-        self.empty_state.add_action(
-            "Create First Entity", self.create_requested.emit, primary=True
+        declare_inspection(
+            self.empty_state.add_action(
+                "Create First Entity", self.create_requested.emit, primary=True
+            ),
+            "empty.EntityListWidget.__init__.80|authoring.create|help-inspect-empty-entitylistwidget-init-80",
         )
         main_layout.addWidget(self.empty_state)
 

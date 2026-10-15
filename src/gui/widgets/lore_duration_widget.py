@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.calendar import CalendarConverter, CalendarDate
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 
 logger = logging.getLogger(__name__)
@@ -94,7 +95,10 @@ class LoreDurationWidget(QWidget):
             QSpinBox: Configured spinbox widget.
 
         """
-        spin = ScrollSafeSpinBox()
+        spin = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-widgets-lore-duration-widget-loredurationwidget-create-spinbox-spin|event.timing|help-inspect-src-gui-widgets-lore-duration-widget-loredurationwidget-create-spinbox-spin",
+        )
         spin.setRange(0, 999999)
         spin.setValue(0)
         spin.setToolTip(tooltip)
@@ -114,10 +118,7 @@ class LoreDurationWidget(QWidget):
     def set_start_date(self, start_date_float: float) -> None:
         """Sets the context date for duration calculation."""
         # Only update if changed meaningfully to avoid feedback loops if any
-        if (
-            abs(self._start_date_float - start_date_float)
-            > _START_DATE_CHANGE_EPSILON
-        ):
+        if abs(self._start_date_float - start_date_float) > _START_DATE_CHANGE_EPSILON:
             self._start_date_float = start_date_float
             # Recalculate duration float based on new start date + preserved inputs
             self._on_input_changed()

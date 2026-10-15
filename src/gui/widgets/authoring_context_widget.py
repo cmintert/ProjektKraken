@@ -27,6 +27,7 @@ from src.core.authoring_context import (
     SpatialAuthoringContext,
 )
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 
 _PRIMARY_RELATION_LIMIT = 6
@@ -72,7 +73,10 @@ class AuthoringContextWidget(QWidget):
         self.primary_view.hide()
         content_layout.addWidget(self.primary_view)
 
-        self.more_button = QToolButton()
+        self.more_button = declare_inspection(
+            QToolButton(),
+            "src-gui-widgets-authoring-context-widget-authoringcontextwidget-init-self-more-button|authoring.tags|help-inspect-src-gui-widgets-authoring-context-widget-authoringcontextwidget-init-self-more-button",
+        )
         self.more_button.setText("More…")
         self.more_button.setCheckable(True)
         self.more_button.setToolTip("Show additional bounded context")

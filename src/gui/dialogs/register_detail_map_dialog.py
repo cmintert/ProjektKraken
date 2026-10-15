@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
 
 from src.core.map import Map
 from src.gui.constants import MAP_ROLE_DETAIL, MAP_ROLE_MASTER
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.responsive_dialog_buttons import (
     ResponsiveDialogButtonBox as QDialogButtonBox,
 )
@@ -87,7 +88,10 @@ class RegisterDetailMapDialog(QDialog):
         layout.addWidget(intro)
 
         layout.addWidget(QLabel("Parent map:"))
-        self._parent_combo = QComboBox(self)
+        self._parent_combo = declare_inspection(
+            QComboBox(self),
+            "src-gui-dialogs-register-detail-map-dialog-registerdetailmapdialog-init-self-parent-combo|map.features|help-inspect-src-gui-dialogs-register-detail-map-dialog-registerdetailmapdialog-init-self-parent-combo",
+        )
         for m in candidate_parents:
             role = (m.attributes or {}).get("map_role", "")
             label = f"{m.name}  ({role})" if role else m.name
@@ -102,9 +106,13 @@ class RegisterDetailMapDialog(QDialog):
             warn.setAlignment(Qt.AlignmentFlag.AlignLeft)
             layout.addWidget(warn)
 
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel,
-            parent=self,
+        buttons = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel,
+                parent=self,
+            ),
+            "src-gui-dialogs-register-detail-map-dialog-registerdetailmapdialog-init-buttons|map.features|help-inspect-src-gui-dialogs-register-detail-map-dialog-registerdetailmapdialog-init-buttons",
         )
         buttons.accepted.connect(self._accept)
         buttons.rejected.connect(self.reject)

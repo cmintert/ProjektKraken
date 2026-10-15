@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 from src.gui.widgets.tag_editor import TagEditorWidget
@@ -66,16 +67,25 @@ class ContextTagEditorDialog(QDialog):
 
         buttons = QHBoxLayout()
         buttons.addStretch(1)
-        self.btn_cancel = StandardButton("Cancel")
+        self.btn_cancel = declare_inspection(
+            StandardButton("Cancel"),
+            "src-gui-dialogs-context-tag-dialogs-contexttageditordialog-init-self-btn-cancel|authoring.tags|help-inspect-src-gui-dialogs-context-tag-dialogs-contexttageditordialog-init-self-btn-cancel",
+        )
         self.btn_cancel.clicked.connect(self.reject)
         buttons.addWidget(self.btn_cancel)
 
-        self.btn_save = StandardButton("Save")
+        self.btn_save = declare_inspection(
+            StandardButton("Save"),
+            "src-gui-dialogs-context-tag-dialogs-contexttageditordialog-init-self-btn-save|authoring.tags|help-inspect-src-gui-dialogs-context-tag-dialogs-contexttageditordialog-init-self-btn-save",
+        )
         self.btn_save.setVisible(not active)
         self.btn_save.clicked.connect(self._save)
         buttons.addWidget(self.btn_save)
 
-        self.btn_primary = PrimaryButton("Apply" if active else "Save and Enable")
+        self.btn_primary = declare_inspection(
+            PrimaryButton("Apply" if active else "Save and Enable"),
+            "src-gui-dialogs-context-tag-dialogs-contexttageditordialog-init-self-btn-primary|authoring.tags|help-inspect-src-gui-dialogs-context-tag-dialogs-contexttageditordialog-init-self-btn-primary",
+        )
         self.btn_primary.clicked.connect(self._apply)
         buttons.addWidget(self.btn_primary)
         layout.addLayout(buttons)
@@ -219,7 +229,10 @@ class ContextTagReviewDialog(QDialog):
         layout.addWidget(explanation)
 
         self.model = ContextReviewModel(records)
-        self.table = QTableView()
+        self.table = declare_inspection(
+            QTableView(),
+            "view.src-gui-dialogs-context-tag-dialogs-contexttagreviewdialog-init-self-table|authoring.tags|help-inspect-view-src-gui-dialogs-context-tag-dialogs-contexttagreviewdialog-init-self-table",
+        )
         self.table.setModel(self.model)
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
@@ -230,24 +243,39 @@ class ContextTagReviewDialog(QDialog):
         layout.addWidget(self.table)
 
         selection_buttons = QHBoxLayout()
-        self.btn_all = QPushButton("Select All")
+        self.btn_all = declare_inspection(
+            QPushButton("Select All"),
+            "src-gui-dialogs-context-tag-dialogs-contexttagreviewdialog-init-self-btn-all|authoring.tags|help-inspect-src-gui-dialogs-context-tag-dialogs-contexttagreviewdialog-init-self-btn-all",
+        )
         self.btn_all.clicked.connect(lambda: self.model.set_all_checked(True))
         selection_buttons.addWidget(self.btn_all)
-        self.btn_none = QPushButton("Select None")
+        self.btn_none = declare_inspection(
+            QPushButton("Select None"),
+            "src-gui-dialogs-context-tag-dialogs-contexttagreviewdialog-init-self-btn-none|authoring.tags|help-inspect-src-gui-dialogs-context-tag-dialogs-contexttagreviewdialog-init-self-btn-none",
+        )
         self.btn_none.clicked.connect(lambda: self.model.set_all_checked(False))
         selection_buttons.addWidget(self.btn_none)
         selection_buttons.addStretch(1)
         layout.addLayout(selection_buttons)
 
         buttons = QHBoxLayout()
-        self.btn_clear = QPushButton("Clear Review History")
+        self.btn_clear = declare_inspection(
+            QPushButton("Clear Review History"),
+            "src-gui-dialogs-context-tag-dialogs-contexttagreviewdialog-init-self-btn-clear|authoring.tags|help-inspect-src-gui-dialogs-context-tag-dialogs-contexttagreviewdialog-init-self-btn-clear",
+        )
         self.btn_clear.clicked.connect(self._clear)
         buttons.addWidget(self.btn_clear)
         buttons.addStretch(1)
-        self.btn_close = StandardButton("Close")
+        self.btn_close = declare_inspection(
+            StandardButton("Close"),
+            "src-gui-dialogs-context-tag-dialogs-contexttagreviewdialog-init-self-btn-close|authoring.tags|help-inspect-src-gui-dialogs-context-tag-dialogs-contexttagreviewdialog-init-self-btn-close",
+        )
         self.btn_close.clicked.connect(self.reject)
         buttons.addWidget(self.btn_close)
-        self.btn_cleanup = PrimaryButton("Remove Context Tags")
+        self.btn_cleanup = declare_inspection(
+            PrimaryButton("Remove Context Tags"),
+            "src-gui-dialogs-context-tag-dialogs-contexttagreviewdialog-init-self-btn-cleanup|authoring.tags|help-inspect-src-gui-dialogs-context-tag-dialogs-contexttagreviewdialog-init-self-btn-cleanup",
+        )
         self.btn_cleanup.clicked.connect(self._cleanup)
         buttons.addWidget(self.btn_cleanup)
         layout.addLayout(buttons)

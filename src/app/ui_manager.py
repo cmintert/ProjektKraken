@@ -17,6 +17,7 @@ from src.app.constants import (
 )
 from src.app.qt_invocation import invoke_queued
 from src.core.protocols import MainWindowProtocol
+from src.gui.utils.help_context import declare_inspection
 from src.gui.workspace.panel_registry import ZoneName
 
 
@@ -31,10 +32,16 @@ class UIManager:
 
     def create_file_menu(self, menu_bar: QMenuBar) -> None:
         """Create the File menu."""
-        file_menu = menu_bar.addMenu("File")
+        file_menu = declare_inspection(
+            menu_bar.addMenu("File"),
+            "src-app-ui-manager-uimanager-create-file-menu-file-menu|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-file-menu-file-menu",
+        )
         self._file_menu = file_menu
         file_menu.setToolTipsVisible(True)
-        icon_library_action = file_menu.addAction("Icon Library...")
+        icon_library_action = declare_inspection(
+            file_menu.addAction("Icon Library..."),
+            "src-app-ui-manager-uimanager-create-file-menu-icon-library-action|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-file-menu-icon-library-action",
+        )
         icon_library_action.setToolTip(
             "Import and manage project icons without selecting a marker"
         )
@@ -42,37 +49,61 @@ class UIManager:
             self.main_window.app_coordinator.show_icon_library
         )
         file_menu.addSeparator()
-        transfer_action = file_menu.addAction("Import / Export...")
+        transfer_action = declare_inspection(
+            file_menu.addAction("Import / Export..."),
+            "src-app-ui-manager-uimanager-create-file-menu-transfer-action|world.transfer|help-inspect-src-app-ui-manager-uimanager-create-file-menu-transfer-action",
+        )
         transfer_action.triggered.connect(
             self.main_window.import_coordinator.show_transfer
         )
-        db_action = file_menu.addAction("Manage Databases...")
+        db_action = declare_inspection(
+            file_menu.addAction("Manage Databases..."),
+            "src-app-ui-manager-uimanager-create-file-menu-db-action|world.manage|help-inspect-src-app-ui-manager-uimanager-create-file-menu-db-action",
+        )
         db_action.triggered.connect(
             self.main_window.import_coordinator.show_database_manager
         )
 
         file_menu.addSeparator()
-        backup_menu = file_menu.addMenu("Backup && Restore")
-        backup_action = backup_menu.addAction("Create Backup...")
+        backup_menu = declare_inspection(
+            file_menu.addMenu("Backup && Restore"),
+            "src-app-ui-manager-uimanager-create-file-menu-backup-menu|world.backups|help-inspect-src-app-ui-manager-uimanager-create-file-menu-backup-menu",
+        )
+        backup_action = declare_inspection(
+            backup_menu.addAction("Create Backup..."),
+            "src-app-ui-manager-uimanager-create-file-menu-backup-action|world.backups|help-inspect-src-app-ui-manager-uimanager-create-file-menu-backup-action",
+        )
         backup_action.triggered.connect(
             self.main_window.backup_coordinator.create_manual_backup
         )
-        restore_action = backup_menu.addAction("Restore from Backup...")
+        restore_action = declare_inspection(
+            backup_menu.addAction("Restore from Backup..."),
+            "src-app-ui-manager-uimanager-create-file-menu-restore-action|world.backups|help-inspect-src-app-ui-manager-uimanager-create-file-menu-restore-action",
+        )
         restore_action.triggered.connect(
             self.main_window.backup_coordinator.restore_from_backup
         )
         backup_menu.addSeparator()
-        location_action = backup_menu.addAction("Show Backup Location")
+        location_action = declare_inspection(
+            backup_menu.addAction("Show Backup Location"),
+            "src-app-ui-manager-uimanager-create-file-menu-location-action|world.backups|help-inspect-src-app-ui-manager-uimanager-create-file-menu-location-action",
+        )
         location_action.triggered.connect(
             self.main_window.backup_coordinator.show_backup_location
         )
-        settings_action = backup_menu.addAction("Backup Settings...")
+        settings_action = declare_inspection(
+            backup_menu.addAction("Backup Settings..."),
+            "src-app-ui-manager-uimanager-create-file-menu-settings-action|world.backups|help-inspect-src-app-ui-manager-uimanager-create-file-menu-settings-action",
+        )
         settings_action.triggered.connect(
             self.main_window.backup_coordinator.show_backup_settings
         )
 
         file_menu.addSeparator()
-        exit_action = file_menu.addAction("Exit")
+        exit_action = declare_inspection(
+            file_menu.addAction("Exit"),
+            "src-app-ui-manager-uimanager-create-file-menu-exit-action|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-file-menu-exit-action",
+        )
         exit_action.triggered.connect(self.main_window.close)
 
     def create_edit_menu(self, menu_bar: QMenuBar) -> None:
@@ -81,14 +112,23 @@ class UIManager:
 
         from src.gui.utils.shortcut_manager import ShortcutManager
 
-        edit_menu = menu_bar.addMenu("Edit")
-        self.undo_action = edit_menu.addAction("Undo")
+        edit_menu = declare_inspection(
+            menu_bar.addMenu("Edit"),
+            "src-app-ui-manager-uimanager-create-edit-menu-edit-menu|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-edit-menu-edit-menu",
+        )
+        self.undo_action = declare_inspection(
+            edit_menu.addAction("Undo"),
+            "src-app-ui-manager-uimanager-create-edit-menu-self-undo-action|history.undo|help-inspect-src-app-ui-manager-uimanager-create-edit-menu-self-undo-action",
+        )
         self.undo_action.setShortcut(ShortcutManager.UNDO.key_sequence)
         self.undo_action.setShortcutContext(Qt.ShortcutContext.ApplicationShortcut)
         self.undo_action.setEnabled(False)
         self.main_window.addAction(self.undo_action)
 
-        self.redo_action = edit_menu.addAction("Redo")
+        self.redo_action = declare_inspection(
+            edit_menu.addAction("Redo"),
+            "src-app-ui-manager-uimanager-create-edit-menu-self-redo-action|history.undo|help-inspect-src-app-ui-manager-uimanager-create-edit-menu-self-redo-action",
+        )
         self.redo_action.setShortcuts(
             [ShortcutManager.REDO.key_sequence, QKeySequence("Ctrl+Shift+Z")]
         )
@@ -109,11 +149,20 @@ class UIManager:
 
     def create_view_menu(self, menu_bar: QMenuBar) -> None:
         """Create semantic panel, zone, theme, and reset actions."""
-        view_menu = menu_bar.addMenu("View")
-        panels_menu = view_menu.addMenu("Panels")
+        view_menu = declare_inspection(
+            menu_bar.addMenu("View"),
+            "src-app-ui-manager-uimanager-create-view-menu-view-menu|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-view-menu-view-menu",
+        )
+        panels_menu = declare_inspection(
+            view_menu.addMenu("Panels"),
+            "src-app-ui-manager-uimanager-create-view-menu-panels-menu|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-view-menu-panels-menu",
+        )
         workspace = self.main_window.workspace
         for definition in workspace.registry.definitions():
-            action = panels_menu.addAction(definition.title)
+            action = declare_inspection(
+                panels_menu.addAction(definition.title),
+                "workspace.show-panel|workspace.navigation|help-inspect-workspace-show-panel",
+            )
             action.setObjectName(f"ViewPanel_{definition.id}")
             action.triggered.connect(
                 lambda _checked=False, panel_id=definition.id: workspace.show_panel(
@@ -121,10 +170,16 @@ class UIManager:
                 )
             )
 
-        zones_menu = view_menu.addMenu("Zones")
+        zones_menu = declare_inspection(
+            view_menu.addMenu("Zones"),
+            "src-app-ui-manager-uimanager-create-view-menu-zones-menu|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-view-menu-zones-menu",
+        )
         for zone in ("left", "right", "bottom"):
             zone_name = cast(ZoneName, zone)
-            action = zones_menu.addAction(zone.title())
+            action = declare_inspection(
+                zones_menu.addAction(zone.title()),
+                "workspace.show-zone|workspace.navigation|help-inspect-workspace-show-zone",
+            )
             action.setCheckable(True)
             action.setChecked(workspace.zone_visible(zone_name))
             action.triggered.connect(
@@ -142,13 +197,19 @@ class UIManager:
         self.focus_writing = FocusWritingController(self.main_window, view_menu)
 
         view_menu.addSeparator()
-        theme_menu = view_menu.addMenu("Theme")
+        theme_menu = declare_inspection(
+            view_menu.addMenu("Theme"),
+            "src-app-ui-manager-uimanager-create-view-menu-theme-menu|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-view-menu-theme-menu",
+        )
         from src.core.theme_manager import ThemeManager
 
         theme_manager = ThemeManager()
         action_group = QActionGroup(self._window_widget)
         for theme_name in theme_manager.get_available_themes():
-            action = theme_menu.addAction(theme_name.replace("_", " ").title())
+            action = declare_inspection(
+                theme_menu.addAction(theme_name.replace("_", " ").title()),
+                "workspace.theme|workspace.navigation|help-inspect-workspace-theme",
+            )
             action.setCheckable(True)
             action.setChecked(theme_name == theme_manager.current_theme_name)
             action.triggered.connect(
@@ -157,7 +218,10 @@ class UIManager:
             action_group.addAction(action)
 
         view_menu.addSeparator()
-        reset_action = view_menu.addAction("Reset Layout")
+        reset_action = declare_inspection(
+            view_menu.addAction("Reset Layout"),
+            "src-app-ui-manager-uimanager-create-view-menu-reset-action|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-view-menu-reset-action",
+        )
         reset_action.triggered.connect(self.reset_layout)
         self.create_layouts_menu(menu_bar)
 
@@ -167,36 +231,57 @@ class UIManager:
 
     def create_layouts_menu(self, menu_bar: QMenuBar) -> None:
         """Create named workspace layout actions."""
-        self.layouts_menu = menu_bar.addMenu("Layouts")
+        self.layouts_menu = declare_inspection(
+            menu_bar.addMenu("Layouts"),
+            "src-app-ui-manager-uimanager-create-layouts-menu-self-layouts-menu|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-layouts-menu-self-layouts-menu",
+        )
         self._refresh_layouts_menu()
 
     def _refresh_layouts_menu(self) -> None:
         if not hasattr(self, "layouts_menu"):
             return
         self.layouts_menu.clear()
-        save_action = self.layouts_menu.addAction("Save Current Layout...")
+        save_action = declare_inspection(
+            self.layouts_menu.addAction("Save Current Layout..."),
+            "src-app-ui-manager-uimanager-refresh-layouts-menu-save-action|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-refresh-layouts-menu-save-action",
+        )
         save_action.triggered.connect(self.prompt_save_layout)
         self.layouts_menu.addSeparator()
 
         layouts = self.get_saved_layouts()
         if not layouts:
-            no_layouts = self.layouts_menu.addAction("No Saved Layouts")
+            no_layouts = declare_inspection(
+                self.layouts_menu.addAction("No Saved Layouts"),
+                "src-app-ui-manager-uimanager-refresh-layouts-menu-no-layouts|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-refresh-layouts-menu-no-layouts",
+            )
             no_layouts.setEnabled(False)
         for name in layouts:
-            layout_menu = self.layouts_menu.addMenu(name)
-            restore_action = layout_menu.addAction("Restore")
+            layout_menu = declare_inspection(
+                self.layouts_menu.addMenu(name),
+                "workspace.saved-layout|workspace.navigation|help-inspect-workspace-saved-layout",
+            )
+            restore_action = declare_inspection(
+                layout_menu.addAction("Restore"),
+                "src-app-ui-manager-uimanager-refresh-layouts-menu-restore-action|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-refresh-layouts-menu-restore-action",
+            )
             restore_action.triggered.connect(
                 lambda _checked=False, layout_name=name: self.restore_layout(
                     layout_name
                 )
             )
-            delete_action = layout_menu.addAction("Delete")
+            delete_action = declare_inspection(
+                layout_menu.addAction("Delete"),
+                "src-app-ui-manager-uimanager-refresh-layouts-menu-delete-action|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-refresh-layouts-menu-delete-action",
+            )
             delete_action.triggered.connect(
                 lambda _checked=False, layout_name=name: self.delete_layout(layout_name)
             )
 
         self.layouts_menu.addSeparator()
-        reset_action = self.layouts_menu.addAction("Reset Layout")
+        reset_action = declare_inspection(
+            self.layouts_menu.addAction("Reset Layout"),
+            "src-app-ui-manager-uimanager-refresh-layouts-menu-reset-action|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-refresh-layouts-menu-reset-action",
+        )
         reset_action.triggered.connect(self.reset_layout)
 
     def prompt_save_layout(self) -> None:
@@ -277,25 +362,41 @@ class UIManager:
 
     def create_timeline_menu(self, menu_bar: QMenuBar) -> None:
         """Create timeline grouping and calendar actions."""
-        timeline_menu = menu_bar.addMenu("Timeline")
-        self.grouping_config_action = timeline_menu.addAction("Configure Grouping...")
+        timeline_menu = declare_inspection(
+            menu_bar.addMenu("Timeline"),
+            "src-app-ui-manager-uimanager-create-timeline-menu-timeline-menu|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-timeline-menu-timeline-menu",
+        )
+        self.grouping_config_action = declare_inspection(
+            timeline_menu.addAction("Configure Grouping..."),
+            "src-app-ui-manager-uimanager-create-timeline-menu-self-grouping-config-action|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-timeline-menu-self-grouping-config-action",
+        )
         self.grouping_config_action.triggered.connect(
             self.main_window.grouping_manager.on_configure_grouping_requested
         )
-        self.grouping_clear_action = timeline_menu.addAction("Clear Grouping")
+        self.grouping_clear_action = declare_inspection(
+            timeline_menu.addAction("Clear Grouping"),
+            "src-app-ui-manager-uimanager-create-timeline-menu-self-grouping-clear-action|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-timeline-menu-self-grouping-clear-action",
+        )
         self.grouping_clear_action.triggered.connect(
             self.main_window.grouping_manager.on_clear_grouping_requested
         )
         timeline_menu.addSeparator()
-        calendar_action = timeline_menu.addAction("Calendar Configuration...")
+        calendar_action = declare_inspection(
+            timeline_menu.addAction("Calendar Configuration..."),
+            "src-app-ui-manager-uimanager-create-timeline-menu-calendar-action|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-timeline-menu-calendar-action",
+        )
         calendar_action.triggered.connect(self._open_calendar_config)
 
     def create_settings_menu(self, menu_bar: QMenuBar) -> None:
         """Create AI and editing preference actions."""
-        settings_menu = menu_bar.addMenu("Settings")
+        settings_menu = declare_inspection(
+            menu_bar.addMenu("Settings"),
+            "src-app-ui-manager-uimanager-create-settings-menu-settings-menu|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-settings-menu-settings-menu",
+        )
         settings_menu.setToolTipsVisible(True)
-        search_settings_action = settings_menu.addAction(
-            "AI Search Index and Settings..."
+        search_settings_action = declare_inspection(
+            settings_menu.addAction("AI Search Index and Settings..."),
+            "src-app-ui-manager-uimanager-create-settings-menu-search-settings-action|settings.ai|help-inspect-src-app-ui-manager-uimanager-create-settings-menu-search-settings-action",
         )
         search_settings_action.triggered.connect(
             self.main_window.ai_search_manager.show_ai_settings_dialog
@@ -304,8 +405,9 @@ class UIManager:
 
         from src.app.constants import SETTINGS_AUTO_RELATION_KEY
 
-        self.auto_relation_action = settings_menu.addAction(
-            "Auto-Create Relations from Wikilinks"
+        self.auto_relation_action = declare_inspection(
+            settings_menu.addAction("Auto-Create Relations from Wikilinks"),
+            "src-app-ui-manager-uimanager-create-settings-menu-self-auto-relation-action|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-settings-menu-self-auto-relation-action",
         )
         self.auto_relation_action.setCheckable(True)
         self.auto_relation_action.setToolTip(
@@ -322,8 +424,9 @@ class UIManager:
             )
         )
 
-        self.longform_refresh_action = settings_menu.addAction(
-            "Auto-Refresh Longform Editor"
+        self.longform_refresh_action = declare_inspection(
+            settings_menu.addAction("Auto-Refresh Longform Editor"),
+            "src-app-ui-manager-uimanager-create-settings-menu-self-longform-refresh-action|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-settings-menu-self-longform-refresh-action",
         )
         self.longform_refresh_action.setCheckable(True)
         self.longform_refresh_action.triggered.connect(
@@ -339,21 +442,39 @@ class UIManager:
         from src.app.help_composition import compose_help
 
         self.help_coordinator = compose_help(self._window_widget, self.main_window)
-        help_menu = menu_bar.addMenu("Help")
+        help_menu = declare_inspection(
+            menu_bar.addMenu("Help"),
+            "src-app-ui-manager-uimanager-create-help-menu-help-menu|manual.inspect|help-inspect-src-app-ui-manager-uimanager-create-help-menu-help-menu",
+        )
         help_menu.aboutToShow.connect(self.help_coordinator.suspend_origin)
-        current_action = help_menu.addAction("Help for current task")
+        current_action = declare_inspection(
+            help_menu.addAction("Help for current task"),
+            "src-app-ui-manager-uimanager-create-help-menu-current-action|manual.inspect|help-inspect-src-app-ui-manager-uimanager-create-help-menu-current-action",
+        )
         current_action.triggered.connect(self.help_coordinator.request)
-        manual_action = help_menu.addAction("User manual")
+        manual_action = declare_inspection(
+            help_menu.addAction("User manual"),
+            "src-app-ui-manager-uimanager-create-help-menu-manual-action|manual.inspect|help-inspect-src-app-ui-manager-uimanager-create-help-menu-manual-action",
+        )
         manual_action.triggered.connect(
             lambda: self.help_coordinator.open_topic("manual.home")
         )
-        inspect_action = help_menu.addAction("Inspect control")
+        inspect_action = declare_inspection(
+            help_menu.addAction("Inspect control"),
+            "src-app-ui-manager-uimanager-create-help-menu-inspect-action|manual.inspect|help-inspect-src-app-ui-manager-uimanager-create-help-menu-inspect-action",
+        )
         inspect_action.triggered.connect(self.help_coordinator.inspection.enter)
         help_menu.addSeparator()
-        shortcuts_action = help_menu.addAction("Keyboard Shortcuts...")
+        shortcuts_action = declare_inspection(
+            help_menu.addAction("Keyboard Shortcuts..."),
+            "src-app-ui-manager-uimanager-create-help-menu-shortcuts-action|manual.inspect|help-inspect-src-app-ui-manager-uimanager-create-help-menu-shortcuts-action",
+        )
         shortcuts_action.triggered.connect(self._show_keyboard_shortcuts)
         help_menu.addSeparator()
-        about_action = help_menu.addAction("About ProjektKraken")
+        about_action = declare_inspection(
+            help_menu.addAction("About ProjektKraken"),
+            "src-app-ui-manager-uimanager-create-help-menu-about-action|manual.inspect|help-inspect-src-app-ui-manager-uimanager-create-help-menu-about-action",
+        )
         about_action.triggered.connect(self._show_about_dialog)
 
     def _show_keyboard_shortcuts(self) -> None:

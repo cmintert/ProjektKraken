@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QMenu
 from shiboken6 import isValid
 
 from src.core.marker_appearance import MarkerAppearance
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.marker_item import MarkerItem
 
@@ -178,6 +179,31 @@ def _appearance_actions(context: FeatureContext) -> list[FeatureAction]:
     return actions
 
 
+_INSPECTION_ACTIONS = {
+    "lock": "feature.lock|map.features|help-inspect-feature-lock",
+    "unlock": "feature.unlock|map.features|help-inspect-feature-unlock",
+    "jump": "feature.jump|map.visibility|help-inspect-feature-jump",
+    "validity": "feature.validity|map.visibility|help-inspect-feature-validity",
+    "layers": "feature.layers|map.layers|help-inspect-feature-layers",
+    "geometry": "feature.geometry|map.historical-geometry|help-inspect-feature-geometry",
+    "style": "feature.style|map.appearance|help-inspect-feature-style",
+    "history": "feature.history|map.historical-geometry|help-inspect-feature-history",
+    "appearance": "feature.appearance|map.appearance|help-inspect-feature-appearance",
+    "icon": "feature.icon|map.icons|help-inspect-feature-icon",
+    "journey": "feature.journey|map.trajectories|help-inspect-feature-journey",
+    "copy": "feature.copy|map.appearance|help-inspect-feature-copy",
+    "paste": "feature.paste|map.appearance|help-inspect-feature-paste",
+    "anchor": "feature.anchor|map.appearance|help-inspect-feature-anchor",
+    "size": "feature.size|map.appearance|help-inspect-feature-size",
+    "reset_size": "feature.reset_size|map.appearance|help-inspect-feature-reset-size",
+    "border": "feature.border|map.appearance|help-inspect-feature-border",
+    "fill": "feature.fill|map.appearance|help-inspect-feature-fill",
+    "border_color": "feature.border_color|map.appearance|help-inspect-feature-border-color",
+    "no_fill": "feature.no_fill|map.appearance|help-inspect-feature-no-fill",
+    "no_border": "feature.no_border|map.appearance|help-inspect-feature-no-border",
+}
+
+
 def populate_feature_menu(
     menu: QMenu,
     actions: tuple[FeatureAction, ...],
@@ -195,6 +221,9 @@ def populate_feature_menu(
                 groups[descriptor.group].setToolTipsVisible(True)
             parent = groups[descriptor.group]
         action = parent.addAction(descriptor.label)
+        declaration = _INSPECTION_ACTIONS.get(descriptor.action_id)
+        if declaration is not None:
+            declare_inspection(action, declaration)
         action.setData(descriptor.action_id)
         action.setEnabled(descriptor.enabled)
         action.setToolTip(descriptor.reason)
@@ -481,7 +510,10 @@ class FeatureActionPresenter(QObject):
 
     def show_layers_menu(self) -> None:
         """Open the visible Layers entry point at its labeled control."""
-        menu = QMenu(self.panel)
+        menu = declare_inspection(
+            QMenu(self.panel),
+            "src-gui-widgets-map-feature-actions-featureactionpresenter-show-layers-menu-menu|map.features|help-inspect-src-gui-widgets-map-feature-actions-featureactionpresenter-show-layers-menu-menu",
+        )
         self.populate(menu)
         menu.exec(
             self.panel.btn_feature_actions.mapToGlobal(
@@ -498,7 +530,10 @@ class FeatureActionPresenter(QObject):
         """Treat right-click as an explicit target, including locked features."""
         self.ambiguous = False
         self.select(item.marker_id, "canvas")
-        menu = QMenu(self.view)
+        menu = declare_inspection(
+            QMenu(self.view),
+            "src-gui-widgets-map-feature-actions-featureactionpresenter-show-canvas-menu-menu|map.features|help-inspect-src-gui-widgets-map-feature-actions-featureactionpresenter-show-canvas-menu-menu",
+        )
         self.populate(menu)
         menu.exec(global_pos)
 

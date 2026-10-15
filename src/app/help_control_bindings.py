@@ -170,7 +170,7 @@ class HelpControlBindings:
             )
             if column == _SOURCE_COLUMN:
                 return ControlHelpRegistration("entity.source", "entity.value-source")
-            return None
+            return self.registry.inspection.get(live)
 
         self.registry.register_inspection_region(table.viewport(), region)
         self.registry.register_inspection_region(table, region)
@@ -207,8 +207,11 @@ class HelpControlBindings:
 
         def region(point: QPoint | None) -> ControlHelpRegistration | None:
             view: Any = reference()
-            if view is None or point is None:
+            if view is None:
                 return None
+            fallback = self.registry.inspection.get(view)
+            if point is None:
+                return fallback
             for marker, meaning in (
                 (view._playhead, "timeline.viewing"),
                 (view._current_time_line, "timeline.world-time"),
@@ -216,6 +219,6 @@ class HelpControlBindings:
                 x = view.mapFromScene(marker.x(), 0).x()
                 if marker.isVisible() and abs(point.x() - x) <= _TIME_HIT_TOLERANCE:
                     return ControlHelpRegistration(meaning, "timeline.viewing")
-            return None
+            return fallback
 
         self.registry.register_inspection_region(getattr(widget, "viewport")(), region)

@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-14
-**Commit:** 32e391d206b0a4681eaf5b6dc930b377f4531a2e
+**Last Updated:** 2026-10-15
+**Commit:** 52f66fb7ae34b93beeea9859417ce2b500483181
 ---
 
 # Changelog
@@ -12,6 +12,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-15)* **Interface inspection (KRT-89)**: Expanded canonical control
+  explanations across workspace menus, Explorer, inspectors, writing, Timeline,
+  Map/Layers, Connections, Longform, Graph, Search, Analysis and settings/transfer
+  dialogs. Added disabled-target feedback, menu and overflow targeting, associated
+  form labels and direct search destinations. Keep existing specialist meanings,
+  F1 precedence and authoring safeguards. Added explicit source-review drift
+  checks; new prose and manual workflow acceptance remain subject to human review.
 
 - *(2026-10-14)* **Expert Help curation (KRT-89)**: Integrated 20 individually
   approved task texts, separated evidence/chronology and historical/source landing

@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.shortcut_manager import ShortcutManager
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
@@ -148,7 +149,10 @@ class KeyboardShortcutsDialog(QDialog):
         # Close Button
         button_layout = QHBoxLayout()
         button_layout.addStretch()
-        close_btn = QPushButton("Close")
+        close_btn = declare_inspection(
+            QPushButton("Close"),
+            "src-gui-dialogs-keyboard-shortcuts-dialog-keyboardshortcutsdialog-init-close-btn|workspace.navigation|help-inspect-src-gui-dialogs-keyboard-shortcuts-dialog-keyboardshortcutsdialog-init-close-btn",
+        )
         close_btn.setMinimumWidth(100)
         close_btn.setStyleSheet(StyleHelper.get_primary_button_style())
         close_btn.clicked.connect(self.accept)

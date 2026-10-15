@@ -27,6 +27,7 @@ from src.core.entities import Entity
 from src.core.events import Event
 from src.gui.models.explorer_filter_proxy import ExplorerFilterProxyModel
 from src.gui.models.explorer_model import ExplorerItem, ExplorerModel
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.auto_closing_message_box import AutoClosingMessageBox
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
@@ -202,11 +203,20 @@ class UnifiedListWidget(QWidget):
         # New Button with Menu
         from src.gui.utils.shortcut_manager import ShortcutManager
 
-        self.btn_new = PhosphorPushMenuButton("New...")
-        self.new_menu = QMenu(self)
+        self.btn_new = declare_inspection(
+            PhosphorPushMenuButton("New..."),
+            "src-gui-widgets-unified-list-unifiedlistwidget-init-self-btn-new|authoring.create|help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-btn-new",
+        )
+        self.new_menu = declare_inspection(
+            QMenu(self),
+            "src-gui-widgets-unified-list-unifiedlistwidget-init-self-new-menu|authoring.create|help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-new-menu",
+        )
 
         # Create Event Action
-        self.action_create_event = self.new_menu.addAction("Create Event")
+        self.action_create_event = declare_inspection(
+            self.new_menu.addAction("Create Event"),
+            "src-gui-widgets-unified-list-unifiedlistwidget-init-self-action-create-event|authoring.create|help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-action-create-event",
+        )
         self.action_create_event.setShortcut(ShortcutManager.CREATE_EVENT.key_sequence)
         self.action_create_event.setShortcutContext(Qt.ShortcutContext.WindowShortcut)
         self.action_create_event.triggered.connect(self._create_event_trigger)
@@ -215,7 +225,10 @@ class UnifiedListWidget(QWidget):
         )  # IMPORTANT: Add to widget so it works in window
 
         # Create Entity Action
-        self.action_create_entity = self.new_menu.addAction("Create Entity")
+        self.action_create_entity = declare_inspection(
+            self.new_menu.addAction("Create Entity"),
+            "src-gui-widgets-unified-list-unifiedlistwidget-init-self-action-create-entity|authoring.create|help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-action-create-entity",
+        )
         self.action_create_entity.setShortcut(
             ShortcutManager.CREATE_ENTITY.key_sequence
         )
@@ -224,7 +237,10 @@ class UnifiedListWidget(QWidget):
         self.addAction(self.action_create_entity)
 
         # Create Map Action
-        self.action_create_map = self.new_menu.addAction("Create Map")
+        self.action_create_map = declare_inspection(
+            self.new_menu.addAction("Create Map"),
+            "src-gui-widgets-unified-list-unifiedlistwidget-init-self-action-create-map|authoring.create|help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-action-create-map",
+        )
         self.action_create_map.setShortcut(ShortcutManager.CREATE_MAP.key_sequence)
         self.action_create_map.setShortcutContext(Qt.ShortcutContext.WindowShortcut)
         self.action_create_map.triggered.connect(self._create_map_trigger)
@@ -247,12 +263,18 @@ class UnifiedListWidget(QWidget):
             pinned=True,
         )
 
-        self.btn_refresh = QPushButton("Refresh")
+        self.btn_refresh = declare_inspection(
+            QPushButton("Refresh"),
+            "src-gui-widgets-unified-list-unifiedlistwidget-init-self-btn-refresh|explorer.browsing|help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-btn-refresh",
+        )
         self.btn_refresh.setToolTip("Reload the list from the project database")
         self.btn_refresh.clicked.connect(self.refresh_requested.emit)
         self.action_toolbar.add_button(self.btn_refresh, priority=60)
 
-        self.btn_delete = DestructiveButton("Delete")
+        self.btn_delete = declare_inspection(
+            DestructiveButton("Delete"),
+            "src-gui-widgets-unified-list-unifiedlistwidget-init-self-btn-delete|authoring.delete|help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-btn-delete",
+        )
         self.btn_delete.setToolTip("Permanently delete the selected item(s)")
         self.btn_delete.clicked.connect(self._on_delete_clicked)
         self.btn_delete.setEnabled(False)
@@ -278,7 +300,10 @@ class UnifiedListWidget(QWidget):
         main_layout.addWidget(self.context_tag_bar)
 
         # Search Bar (Live filtering)
-        self.search_bar = QLineEdit()
+        self.search_bar = declare_inspection(
+            QLineEdit(),
+            "src-gui-widgets-unified-list-unifiedlistwidget-init-self-search-bar|explorer.browsing|help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-search-bar",
+        )
         self.search_bar.setPlaceholderText("Search...")
         self.search_bar.setToolTip(
             "Type here to instantly filter items by name or type"
@@ -295,7 +320,10 @@ class UnifiedListWidget(QWidget):
         filter_row.setContentsMargins(0, 0, 0, 0)
 
         # Category filter (Events/Entities)
-        self.filter_combo = QComboBox()
+        self.filter_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-unified-list-unifiedlistwidget-init-self-filter-combo|explorer.browsing|help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-filter-combo",
+        )
         self.filter_combo.addItems(["All Items", "Events Only", "Entities Only"])
         self.filter_combo.setSizeAdjustPolicy(
             QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
@@ -310,7 +338,10 @@ class UnifiedListWidget(QWidget):
         filter_row.addWidget(self.filter_combo, stretch=1)
 
         # Advanced Filter Button
-        self.btn_filter = QPushButton("Filter...")
+        self.btn_filter = declare_inspection(
+            QPushButton("Filter..."),
+            "src-gui-widgets-unified-list-unifiedlistwidget-init-self-btn-filter|explorer.browsing|help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-btn-filter",
+        )
         self.btn_filter.setToolTip("Open advanced filtering options (tags, subtypes)")
         self.btn_filter.clicked.connect(self.show_filter_dialog_requested.emit)
 
@@ -318,12 +349,18 @@ class UnifiedListWidget(QWidget):
         # filter. For now, we'll keep it to clear the backend filter via signal
         # Clear Filters button - keeps concept but might need to signal to clear backend
         # filter. For no
-        self.btn_clear_filters = QPushButton("Clear Filters")
+        self.btn_clear_filters = declare_inspection(
+            QPushButton("Clear Filters"),
+            "src-gui-widgets-unified-list-unifiedlistwidget-init-self-btn-clear-filters|explorer.browsing|help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-btn-clear-filters",
+        )
         self.btn_clear_filters.setToolTip("Reset all search terms and active filters")
         self.btn_clear_filters.clicked.connect(self._request_clear_filters)
 
         # Sort dropdown
-        self.sort_combo = QComboBox()
+        self.sort_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-unified-list-unifiedlistwidget-init-self-sort-combo|explorer.browsing|help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-sort-combo",
+        )
         self.sort_combo.addItems(["Name", "Created", "Lore Date", "Type"])
         self.sort_combo.setSizeAdjustPolicy(
             QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
@@ -341,7 +378,10 @@ class UnifiedListWidget(QWidget):
         from src.core.theme_manager import ThemeManager
         from src.gui.utils.icon_loader import load_icon
 
-        self.btn_sort_dir = QToolButton()
+        self.btn_sort_dir = declare_inspection(
+            QToolButton(),
+            "src-gui-widgets-unified-list-unifiedlistwidget-init-self-btn-sort-dir|explorer.browsing|help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-btn-sort-dir",
+        )
         self.btn_sort_dir.setAccessibleName("Change sort direction")
         self.btn_sort_dir.setToolTip("Switch between Ascending and Descending order")
         theme = ThemeManager().get_theme()
@@ -353,7 +393,10 @@ class UnifiedListWidget(QWidget):
         self.btn_sort_dir.clicked.connect(self._toggle_sort_direction)
 
         # Hashed Colors toggle
-        self.btn_hashed_colors = QToolButton()
+        self.btn_hashed_colors = declare_inspection(
+            QToolButton(),
+            "src-gui-widgets-unified-list-unifiedlistwidget-init-self-btn-hashed-colors|explorer.browsing|help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-btn-hashed-colors",
+        )
         self.btn_hashed_colors.setAccessibleName("Color items by type")
         self.btn_hashed_colors.setToolTip(
             "Color-code items by their unique Type category"
@@ -405,11 +448,17 @@ class UnifiedListWidget(QWidget):
             ),
             parent=self,
         )
-        self.empty_state.add_action(
-            "Create Event", self.create_event_requested.emit, primary=True
+        declare_inspection(
+            self.empty_state.add_action(
+                "Create Event", self.create_event_requested.emit, primary=True
+            ),
+            "empty.UnifiedListWidget.__init__.409|authoring.create|help-inspect-empty-unifiedlistwidget-init-409",
         )
-        self.empty_state.add_action(
-            "Create Entity", self.create_entity_requested.emit, primary=True
+        declare_inspection(
+            self.empty_state.add_action(
+                "Create Entity", self.create_entity_requested.emit, primary=True
+            ),
+            "empty.UnifiedListWidget.__init__.412|authoring.create|help-inspect-empty-unifiedlistwidget-init-412",
         )
         main_layout.addWidget(self.empty_state)
         from src.gui.widgets.responsive_form import scroll_section_contents
@@ -754,10 +803,19 @@ class UnifiedListWidget(QWidget):
         if not item_id or not item_type:
             return
 
-        menu = QMenu(self)
-        export_action = menu.addAction("Export to Obsidian (.md)...")
+        menu = declare_inspection(
+            QMenu(self),
+            "src-gui-widgets-unified-list-unifiedlistwidget-show-context-menu-menu|explorer.browsing|help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-show-context-menu-menu",
+        )
+        export_action = declare_inspection(
+            menu.addAction("Export to Obsidian (.md)..."),
+            "src-gui-widgets-unified-list-unifiedlistwidget-show-context-menu-export-action|explorer.browsing|help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-show-context-menu-export-action",
+        )
         menu.addSeparator()
-        delete_action = menu.addAction("Delete")
+        delete_action = declare_inspection(
+            menu.addAction("Delete"),
+            "src-gui-widgets-unified-list-unifiedlistwidget-show-context-menu-delete-action|authoring.delete|help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-show-context-menu-delete-action",
+        )
         action = self._execute_context_menu(
             menu,
             self.list_widget.viewport().mapToGlobal(position),

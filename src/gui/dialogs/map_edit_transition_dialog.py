@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 from shiboken6 import isValid
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 
 
@@ -38,9 +39,18 @@ class MapEditTransitionDialog(QDialog):
         )
         label.setWordWrap(True)
         layout.addWidget(label)
-        self.apply_button = QPushButton("Apply", self)
-        self.keep_button = QPushButton("Keep editing", self)
-        self.discard_button = QPushButton("Discard", self)
+        self.apply_button = declare_inspection(
+            QPushButton("Apply", self),
+            "src-gui-dialogs-map-edit-transition-dialog-mapedittransitiondialog-init-self-apply-button|map.features|help-inspect-src-gui-dialogs-map-edit-transition-dialog-mapedittransitiondialog-init-self-apply-button",
+        )
+        self.keep_button = declare_inspection(
+            QPushButton("Keep editing", self),
+            "src-gui-dialogs-map-edit-transition-dialog-mapedittransitiondialog-init-self-keep-button|map.features|help-inspect-src-gui-dialogs-map-edit-transition-dialog-mapedittransitiondialog-init-self-keep-button",
+        )
+        self.discard_button = declare_inspection(
+            QPushButton("Discard", self),
+            "src-gui-dialogs-map-edit-transition-dialog-mapedittransitiondialog-init-self-discard-button|map.features|help-inspect-src-gui-dialogs-map-edit-transition-dialog-mapedittransitiondialog-init-self-discard-button",
+        )
         for button, role, decision in (
             (self.apply_button, "primary", "apply"),
             (self.keep_button, "secondary", "keep"),

@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.action_label_metrics import intrinsic_action_size
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.menu_caret import PhosphorToolMenuButton
 from src.gui.widgets.wrapping_buttons import WrappingToolButton
@@ -77,7 +78,10 @@ class OverflowToolBar(QWidget):
         self._layout.setContentsMargins(0, 0, 0, 0)
         self._layout.setSpacing(4)
 
-        self.overflow_menu = QMenu(self)
+        self.overflow_menu = declare_inspection(
+            QMenu(self),
+            "src-gui-widgets-overflow-toolbar-overflowtoolbar-init-self-overflow-menu|workspace.navigation|help-inspect-src-gui-widgets-overflow-toolbar-overflowtoolbar-init-self-overflow-menu",
+        )
         self.overflow_menu.aboutToShow.connect(self._sync_menu_actions)
         self.overflow_button = overflow_button_type(self)
         self.overflow_button.setObjectName("OverflowToolBarMenuButton")
@@ -115,8 +119,12 @@ class OverflowToolBar(QWidget):
         button.setMinimumWidth(self._required_button_width(button))
         button.installEventFilter(self)
 
-        action = QAction(self._action_title(button), self.overflow_menu)
+        action = declare_inspection(
+            QAction(self._action_title(button), self.overflow_menu),
+            "src-gui-widgets-overflow-toolbar-overflowtoolbar-add-button-action|workspace.navigation|help-inspect-src-gui-widgets-overflow-toolbar-overflowtoolbar-add-button-action",
+        )
         action.setToolTip(button.toolTip())
+        action.setProperty("krakenHelpEquivalent", button)
         action.setCheckable(button.isCheckable())
         action.setChecked(button.isChecked())
         menu_getter = getattr(button, "menu", None)

@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.gui.utils.help_context import declare_inspection
 from src.gui.workspace.panel_registry import ZONE_NAMES, ZoneName
 from src.gui.workspace.rounded_frame import RoundedWorkspaceFrame
 
@@ -287,9 +288,15 @@ class PaneContainer(QWidget):
         panel_id = self.tabs.tabBar().tabData(index)
         if not isinstance(panel_id, str):
             return
-        menu = QMenu(self)
+        menu = declare_inspection(
+            QMenu(self),
+            "src-gui-workspace-pane-container-panecontainer-show-tab-menu-menu|workspace.navigation|help-inspect-src-gui-workspace-pane-container-panecontainer-show-tab-menu-menu",
+        )
         for zone in ZONE_NAMES:
-            action = menu.addAction(f"Move to {zone.title()}")
+            action = declare_inspection(
+                menu.addAction(f"Move to {zone.title()}"),
+                "src-gui-workspace-pane-container-panecontainer-show-tab-menu-action|workspace.navigation|help-inspect-src-gui-workspace-pane-container-panecontainer-show-tab-menu-action",
+            )
             action.setEnabled(zone != self.zone)
             action.triggered.connect(
                 lambda _checked=False, target=zone: self.panel_move_requested.emit(

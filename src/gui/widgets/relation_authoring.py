@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.editor_presentation import DisclosureButton
@@ -96,15 +97,27 @@ class RelationAuthoring(QWidget):
         self.footer.hide()
         from src.gui.widgets.menu_caret import PhosphorToolMenuButton
 
-        menu_button = PhosphorToolMenuButton()
+        menu_button = declare_inspection(
+            PhosphorToolMenuButton(),
+            "src-gui-widgets-relation-authoring-relationauthoring-init-menu-button|relations.create|help-inspect-src-gui-widgets-relation-authoring-relationauthoring-init-menu-button",
+        )
         self._more_actions_button = menu_button
         menu_button.setText("More actions")
         menu_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         from PySide6.QtWidgets import QMenu
 
-        menu = QMenu(menu_button)
-        menu.addAction("Add detailed relation…", self._add_full)
-        menu.addAction("Full relation editor…", self._edit_full)
+        menu = declare_inspection(
+            QMenu(menu_button),
+            "src-gui-widgets-relation-authoring-relationauthoring-init-menu|relations.create|help-inspect-src-gui-widgets-relation-authoring-relationauthoring-init-menu",
+        )
+        declare_inspection(
+            menu.addAction("Add detailed relation…", self._add_full),
+            "src-gui-widgets-relation-authoring-relationauthoring-init-addaction|relations.create|help-inspect-src-gui-widgets-relation-authoring-relationauthoring-init-addaction",
+        )
+        declare_inspection(
+            menu.addAction("Full relation editor…", self._edit_full),
+            "src-gui-widgets-relation-authoring-relationauthoring-init-addaction-2|relations.create|help-inspect-src-gui-widgets-relation-authoring-relationauthoring-init-addaction-2",
+        )
         menu_button.setMenu(menu)
         menu_button.setStyleSheet(
             StyleHelper.get_tool_button_style() + StyleHelper.get_menu_caret_style()
@@ -237,7 +250,10 @@ class RelationAuthoring(QWidget):
         )
         preview.setWordWrap(True)
         self.body_layout.insertWidget(0, preview)
-        meaning = ScrollSafeComboBox()
+        meaning = declare_inspection(
+            ScrollSafeComboBox(),
+            "src-gui-widgets-relation-authoring-relationauthoring-stage-drop-meaning|relations.create|help-inspect-src-gui-widgets-relation-authoring-relationauthoring-stage-drop-meaning",
+        )
         for value, title in MEANINGS.items():
             meaning.addItem(title, value)
         self.body_layout.insertWidget(1, meaning)
@@ -375,7 +391,10 @@ class RelationAuthoring(QWidget):
             )
         )
 
-        self.meaning = ScrollSafeComboBox()
+        self.meaning = declare_inspection(
+            ScrollSafeComboBox(),
+            "src-gui-widgets-relation-authoring-relationauthoring-progressive-form-self-meaning|relations.create|help-inspect-src-gui-widgets-relation-authoring-relationauthoring-progressive-form-self-meaning",
+        )
         for value, title in MEANINGS.items():
             self.meaning.addItem(title, value)
         if self.meaning.findData(self.relation["rel_type"]) < 0:
@@ -386,7 +405,10 @@ class RelationAuthoring(QWidget):
         fields.addRow("Meaning", self.meaning)
         fields.addRow(form.preview_label)
         form.preview_label.show()
-        self.reverse_button = StandardButton("Reverse direction")
+        self.reverse_button = declare_inspection(
+            StandardButton("Reverse direction"),
+            "src-gui-widgets-relation-authoring-relationauthoring-progressive-form-self-reverse-button|relations.create|help-inspect-src-gui-widgets-relation-authoring-relationauthoring-progressive-form-self-reverse-button",
+        )
         self.reverse_button.clicked.connect(self._reverse)
         fields.addRow(self.reverse_button)
         fields.addRow("Notes", form.notes_edit)
@@ -411,7 +433,10 @@ class RelationAuthoring(QWidget):
         form._changed_fields.clear()
         if hasattr(form, "logic_group"):
             form.logic_group.hide()
-        self.timing_disclosure = DisclosureButton("Timing…")
+        self.timing_disclosure = declare_inspection(
+            DisclosureButton("Timing…"),
+            "src-gui-widgets-relation-authoring-relationauthoring-progressive-form-self-timing-disclosure|relations.create|help-inspect-src-gui-widgets-relation-authoring-relationauthoring-progressive-form-self-timing-disclosure",
+        )
         summary = "Timing: not specified"
         attrs = self.relation.get("attributes", {})
         if any(
@@ -435,8 +460,11 @@ class RelationAuthoring(QWidget):
         fields.addRow(timing)
         timing.hide()
         has_advanced = any(key in attrs for key in ("payload", "confidence", "weight"))
-        self.advanced_disclosure = DisclosureButton(
-            "Advanced details… (recorded)" if has_advanced else "Advanced details…"
+        self.advanced_disclosure = declare_inspection(
+            DisclosureButton(
+                "Advanced details… (recorded)" if has_advanced else "Advanced details…"
+            ),
+            "src-gui-widgets-relation-authoring-relationauthoring-progressive-form-self-advanced-disclosure|relations.create|help-inspect-src-gui-widgets-relation-authoring-relationauthoring-progressive-form-self-advanced-disclosure",
         )
         self.advanced_disclosure.toggled.connect(advanced.setVisible)
         fields.addRow(self.advanced_disclosure)
@@ -508,10 +536,16 @@ class RelationAuthoring(QWidget):
 
     def _actions(self, title: str) -> None:
         actions = OverflowToolBar()
-        self.apply_button = StandardButton(title)
+        self.apply_button = declare_inspection(
+            StandardButton(title),
+            "src-gui-widgets-relation-authoring-relationauthoring-actions-self-apply-button|relations.create|help-inspect-src-gui-widgets-relation-authoring-relationauthoring-actions-self-apply-button",
+        )
         self.apply_button.clicked.connect(self.apply)
         actions.add_button(self.apply_button, priority=10)
-        cancel = StandardButton("Cancel")
+        cancel = declare_inspection(
+            StandardButton("Cancel"),
+            "src-gui-widgets-relation-authoring-relationauthoring-actions-cancel|relations.create|help-inspect-src-gui-widgets-relation-authoring-relationauthoring-actions-cancel",
+        )
         cancel.clicked.connect(self.cancel)
         actions.add_button(cancel)
         self.footer_layout.addWidget(actions)
@@ -538,9 +572,18 @@ class RelationAuthoring(QWidget):
         box = QMessageBox(self)
         box.setWindowTitle("Unfinished connection")
         box.setText("Apply this connection edit before leaving it?")
-        apply = box.addButton("Apply", QMessageBox.ButtonRole.AcceptRole)
-        keep = box.addButton("Keep editing", QMessageBox.ButtonRole.RejectRole)
-        discard = box.addButton("Discard", QMessageBox.ButtonRole.DestructiveRole)
+        apply = declare_inspection(
+            box.addButton("Apply", QMessageBox.ButtonRole.AcceptRole),
+            "src-gui-widgets-relation-authoring-relationauthoring-prepare-to-leave-apply|relations.create|help-inspect-src-gui-widgets-relation-authoring-relationauthoring-prepare-to-leave-apply",
+        )
+        keep = declare_inspection(
+            box.addButton("Keep editing", QMessageBox.ButtonRole.RejectRole),
+            "src-gui-widgets-relation-authoring-relationauthoring-prepare-to-leave-keep|relations.create|help-inspect-src-gui-widgets-relation-authoring-relationauthoring-prepare-to-leave-keep",
+        )
+        discard = declare_inspection(
+            box.addButton("Discard", QMessageBox.ButtonRole.DestructiveRole),
+            "src-gui-widgets-relation-authoring-relationauthoring-prepare-to-leave-discard|relations.create|help-inspect-src-gui-widgets-relation-authoring-relationauthoring-prepare-to-leave-discard",
+        )
         box.setDefaultButton(keep)
         box.exec()
         if box.clickedButton() is apply:

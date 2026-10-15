@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.editor_presentation import COMPACT_EDITOR_WIDTH
 from src.gui.widgets.standard_buttons import LabelSizedToolButton as QToolButton
@@ -101,7 +102,10 @@ class FocusWritingController(QObject):
             zone: _PaneTint(self.workspace.panes[zone])
             for zone in ("left", "center", "right", "bottom")
         }
-        self.action = view_menu.addAction("Focus writing")
+        self.action = declare_inspection(
+            view_menu.addAction("Focus writing"),
+            "src-gui-widgets-focus-writing-focuswritingcontroller-init-self-action|writing.focus|help-inspect-src-gui-widgets-focus-writing-focuswritingcontroller-init-self-action",
+        )
         self.action.setCheckable(True)
         self.action.setShortcut(QKeySequence("F11"))
         self.action.setShortcutContext(Qt.ShortcutContext.WindowShortcut)
@@ -190,13 +194,19 @@ class FocusWritingController(QObject):
         title.setWordWrap(True)
         status = QLabel()
         status.setAccessibleName("Save status")
-        toolbar_button = QToolButton()
+        toolbar_button = declare_inspection(
+            QToolButton(),
+            "src-gui-widgets-focus-writing-focuswritingcontroller-make-surface-toolbar-button|writing.focus|help-inspect-src-gui-widgets-focus-writing-focuswritingcontroller-make-surface-toolbar-button",
+        )
         toolbar_button.setText("Formatting")
         toolbar_button.setCheckable(True)
         toolbar_button.setAccessibleName("Show formatting toolbar")
         toolbar_button.setMinimumHeight(32)
         toolbar_button.toggled.connect(editor.desc_edit.toolbar.setVisible)
-        toc_button = QToolButton()
+        toc_button = declare_inspection(
+            QToolButton(),
+            "src-gui-widgets-focus-writing-focuswritingcontroller-make-surface-toc-button|writing.focus|help-inspect-src-gui-widgets-focus-writing-focuswritingcontroller-make-surface-toc-button",
+        )
         toc_button.setText("Contents")
         toc_button.setCheckable(True)
         toc_button.setAccessibleName("Show table of contents")
@@ -207,7 +217,10 @@ class FocusWritingController(QObject):
             else None
         )
         toc_button.toggled.connect(surface.reflow)
-        exit_button = QPushButton("Exit focus")
+        exit_button = declare_inspection(
+            QPushButton("Exit focus"),
+            "src-gui-widgets-focus-writing-focuswritingcontroller-make-surface-exit-button|writing.focus|help-inspect-src-gui-widgets-focus-writing-focuswritingcontroller-make-surface-exit-button",
+        )
         exit_button.setMinimumHeight(32)
         exit_button.clicked.connect(self.exit)
         title_row.addWidget(title, 1)

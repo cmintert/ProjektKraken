@@ -20,6 +20,7 @@ from src.core.map_constants import MAP_LAYER_TYPE_GROUP
 from src.core.temporal_expression import TemporalExpression
 from src.core.temporal_window import resolve_temporal_window
 from src.gui.dialogs.help_aware_dialog import HelpAwareDialog
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.compact_date_widget import CompactDateWidget
@@ -91,8 +92,12 @@ class TemporalValidityDialog(HelpAwareDialog):
         self._temporal_error.setVisible(False)
         layout.addWidget(self._temporal_error)
 
-        self._buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        self._buttons = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel
+            ),
+            "src-gui-dialogs-temporal-validity-dialog-temporalvaliditydialog-init-self-buttons|map.visibility|help-inspect-src-gui-dialogs-temporal-validity-dialog-temporalvaliditydialog-init-self-buttons",
         )
         self._buttons.accepted.connect(self._accept_if_valid)
         self._buttons.rejected.connect(self.reject)
@@ -112,7 +117,10 @@ class TemporalValidityDialog(HelpAwareDialog):
     def _optional_date(
         self, label: str, value: Optional[float], side: str
     ) -> tuple[QCheckBox, CompactDateWidget, QWidget]:
-        enabled = QCheckBox(label, self)
+        enabled = declare_inspection(
+            QCheckBox(label, self),
+            "src-gui-dialogs-temporal-validity-dialog-temporalvaliditydialog-optional-date-enabled|map.visibility|help-inspect-src-gui-dialogs-temporal-validity-dialog-temporalvaliditydialog-optional-date-enabled",
+        )
         enabled.hide()
         enabled.setChecked(value is not None)
         editor = CompactDateWidget(self, text_first=True)
@@ -131,7 +139,10 @@ class TemporalValidityDialog(HelpAwareDialog):
         row = QWidget(self)
         row_layout = QVBoxLayout(row)
         row_layout.setContentsMargins(0, 0, 0, 0)
-        mode = ScrollSafeComboBox(row)
+        mode = declare_inspection(
+            ScrollSafeComboBox(row),
+            "src-gui-dialogs-temporal-validity-dialog-temporalvaliditydialog-optional-date-mode|map.visibility|help-inspect-src-gui-dialogs-temporal-validity-dialog-temporalvaliditydialog-optional-date-mode",
+        )
         for caption, kind in (
             ("Unbounded", "open"),
             ("Date not known", "unknown"),
@@ -163,7 +174,10 @@ class TemporalValidityDialog(HelpAwareDialog):
         )
         mode.setCurrentIndex(max(0, mode.findData(initial)))
         select_mode()
-        use_playhead = QPushButton("Use Playhead", row)
+        use_playhead = declare_inspection(
+            QPushButton("Use Playhead", row),
+            "src-gui-dialogs-temporal-validity-dialog-temporalvaliditydialog-optional-date-use-playhead|map.visibility|help-inspect-src-gui-dialogs-temporal-validity-dialog-temporalvaliditydialog-optional-date-use-playhead",
+        )
         use_playhead.clicked.connect(lambda: self._copy_playhead(enabled, editor))
         row_layout.addWidget(use_playhead)
         return enabled, editor, row

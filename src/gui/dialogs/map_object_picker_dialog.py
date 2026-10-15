@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.gui.dialogs.entity_creation_dialog import EntityCreationDialog
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.responsive_dialog_buttons import (
     ResponsiveDialogButtonBox as QDialogButtonBox,
 )
@@ -72,7 +73,10 @@ class MapObjectPickerDialog(QDialog):
         heading.setObjectName("mapObjectPickerHeading")
         layout.addWidget(heading)
 
-        self.search_edit = QLineEdit(self)
+        self.search_edit = declare_inspection(
+            QLineEdit(self),
+            "src-gui-dialogs-map-object-picker-dialog-mapobjectpickerdialog-init-self-search-edit|map.features|help-inspect-src-gui-dialogs-map-object-picker-dialog-mapobjectpickerdialog-init-self-search-edit",
+        )
         self.search_edit.setObjectName("mapObjectSearchEdit")
         self.search_edit.setPlaceholderText("Search existing objects…")
         self.search_edit.setClearButtonEnabled(True)
@@ -80,11 +84,20 @@ class MapObjectPickerDialog(QDialog):
         layout.addWidget(self.search_edit)
 
         actions = QHBoxLayout()
-        self.new_location_button = QPushButton("+ New Location", self)
+        self.new_location_button = declare_inspection(
+            QPushButton("+ New Location", self),
+            "src-gui-dialogs-map-object-picker-dialog-mapobjectpickerdialog-init-self-new-location-button|map.features|help-inspect-src-gui-dialogs-map-object-picker-dialog-mapobjectpickerdialog-init-self-new-location-button",
+        )
         self.new_location_button.setObjectName("newLocationButton")
-        self.new_entity_button = QPushButton("+ New Entity…", self)
+        self.new_entity_button = declare_inspection(
+            QPushButton("+ New Entity…", self),
+            "src-gui-dialogs-map-object-picker-dialog-mapobjectpickerdialog-init-self-new-entity-button|map.features|help-inspect-src-gui-dialogs-map-object-picker-dialog-mapobjectpickerdialog-init-self-new-entity-button",
+        )
         self.new_entity_button.setObjectName("newEntityButton")
-        self.new_event_button = QPushButton("+ New Event", self)
+        self.new_event_button = declare_inspection(
+            QPushButton("+ New Event", self),
+            "src-gui-dialogs-map-object-picker-dialog-mapobjectpickerdialog-init-self-new-event-button|map.features|help-inspect-src-gui-dialogs-map-object-picker-dialog-mapobjectpickerdialog-init-self-new-event-button",
+        )
         self.new_event_button.setObjectName("newEventButton")
         for button in (
             self.new_location_button,
@@ -94,13 +107,17 @@ class MapObjectPickerDialog(QDialog):
             actions.addWidget(button)
         layout.addLayout(actions)
 
-        self.results_list = QListWidget(self)
+        self.results_list = declare_inspection(
+            QListWidget(self),
+            "src-gui-dialogs-map-object-picker-dialog-mapobjectpickerdialog-init-self-results-list|map.features|help-inspect-src-gui-dialogs-map-object-picker-dialog-mapobjectpickerdialog-init-self-results-list",
+        )
         self.results_list.setObjectName("mapObjectResultsList")
         self.results_list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
         layout.addWidget(self.results_list)
 
-        self.cancel_buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Cancel, parent=self
+        self.cancel_buttons = declare_inspection(
+            QDialogButtonBox(QDialogButtonBox.StandardButton.Cancel, parent=self),
+            "src-gui-dialogs-map-object-picker-dialog-mapobjectpickerdialog-init-self-cancel-buttons|map.features|help-inspect-src-gui-dialogs-map-object-picker-dialog-mapobjectpickerdialog-init-self-cancel-buttons",
         )
         self.cancel_buttons.rejected.connect(self.reject)
         layout.addWidget(self.cancel_buttons)

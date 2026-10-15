@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.shortcut_manager import ShortcutManager
 from src.gui.utils.style_helper import StyleHelper
@@ -110,44 +111,71 @@ class LongformEditorWidget(QWidget):
 
         # Toolbar
         toolbar = self.action_toolbar = OverflowToolBar(self)
-        self.btn_add = QPushButton("Add content…")
+        self.btn_add = declare_inspection(
+            QPushButton("Add content…"),
+            "src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-btn-add|longform.recovery|help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-btn-add",
+        )
         self.btn_add.clicked.connect(self.show_membership_requested.emit)
         toolbar.add_button(self.btn_add, priority=100)
-        self.btn_outline_actions = QPushButton("Outline actions")
+        self.btn_outline_actions = declare_inspection(
+            QPushButton("Outline actions"),
+            "src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-btn-outline-actions|longform.recovery|help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-btn-outline-actions",
+        )
         self.btn_outline_actions.setToolTip(
             "Select an outline item to arrange or remove it"
         )
-        self.outline_actions_menu = QMenu(self)
+        self.outline_actions_menu = declare_inspection(
+            QMenu(self),
+            "src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-outline-actions-menu|longform.recovery|help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-outline-actions-menu",
+        )
         self.outline_actions_menu.aboutToShow.connect(self._prepare_outline_actions)
         self.btn_outline_actions.setMenu(self.outline_actions_menu)
         toolbar.add_button(self.btn_outline_actions, priority=90)
-        self.btn_open_inspector = QPushButton("Open in inspector")
+        self.btn_open_inspector = declare_inspection(
+            QPushButton("Open in inspector"),
+            "src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-btn-open-inspector|longform.recovery|help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-btn-open-inspector",
+        )
         self.btn_open_inspector.setToolTip("Select an entry to open its inspector")
         self.btn_open_inspector.clicked.connect(self._open_selected)
         toolbar.add_button(self.btn_open_inspector, priority=85)
 
         # Refresh Button
-        self.btn_refresh = QPushButton("Refresh")
+        self.btn_refresh = declare_inspection(
+            QPushButton("Refresh"),
+            "src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-btn-refresh|longform.recovery|help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-btn-refresh",
+        )
         self.btn_refresh.clicked.connect(self.refresh_requested.emit)
         toolbar.add_button(self.btn_refresh)
 
         # Filter Button
-        btn_filter = QPushButton("Filter...")
+        btn_filter = declare_inspection(
+            QPushButton("Filter..."),
+            "src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-btn-filter|longform.recovery|help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-btn-filter",
+        )
         btn_filter.clicked.connect(self.show_filter_dialog_requested.emit)
         toolbar.add_button(btn_filter)
 
         # Clear Filters Button
-        btn_clear_filters = QPushButton("Clear Filters")
+        btn_clear_filters = declare_inspection(
+            QPushButton("Clear Filters"),
+            "src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-btn-clear-filters|longform.recovery|help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-btn-clear-filters",
+        )
         btn_clear_filters.clicked.connect(self.clear_filters_requested.emit)
         toolbar.add_button(btn_clear_filters)
 
         # Export Button
-        btn_export = QPushButton("Export to Markdown")
+        btn_export = declare_inspection(
+            QPushButton("Export to Markdown"),
+            "src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-btn-export|longform.recovery|help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-btn-export",
+        )
         btn_export.clicked.connect(self.export_requested.emit)
         toolbar.add_button(btn_export)
 
         # Export as Vault Button (Obsidian-compatible)
-        btn_export_vault = QPushButton("Export as Vault")
+        btn_export_vault = declare_inspection(
+            QPushButton("Export as Vault"),
+            "src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-btn-export-vault|longform.recovery|help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-btn-export-vault",
+        )
         btn_export_vault.setToolTip(
             "Export each entity and event as separate Obsidian-compatible .md files"
         )
@@ -156,12 +184,18 @@ class LongformEditorWidget(QWidget):
 
         # Local publishing is the safe, frictionless default. LAN sharing is a
         # separate action because it changes the server's network exposure.
-        self.btn_publish = QPushButton("Publish Locally")
+        self.btn_publish = declare_inspection(
+            QPushButton("Publish Locally"),
+            "src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-btn-publish|longform.export|help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-btn-publish",
+        )
         self.btn_publish.setCheckable(True)
         self.btn_publish.clicked.connect(self._toggle_publish)
         toolbar.add_button(self.btn_publish)
 
-        self.btn_share_lan = QPushButton("Share on LAN...")
+        self.btn_share_lan = declare_inspection(
+            QPushButton("Share on LAN..."),
+            "src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-btn-share-lan|longform.export|help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-btn-share-lan",
+        )
         self.btn_share_lan.setCheckable(True)
         self.btn_share_lan.clicked.connect(self._toggle_lan_share)
         toolbar.add_button(self.btn_share_lan)
@@ -175,7 +209,10 @@ class LongformEditorWidget(QWidget):
         self.access_code_label.hide()
 
         # Find Button (Discoverability - Far Right)
-        self.btn_find = QPushButton("Find")
+        self.btn_find = declare_inspection(
+            QPushButton("Find"),
+            "src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-btn-find|longform.recovery|help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-btn-find",
+        )
         self.btn_find.setIcon(
             load_icon(
                 os.path.join("default_assets", "icons", "ui_icons", "search.svg"),
@@ -202,12 +239,18 @@ class LongformEditorWidget(QWidget):
         search_layout.setContentsMargins(10, 5, 10, 5)
 
         search_label = QLabel("Find:")
-        self.search_input = QLineEdit()
+        self.search_input = declare_inspection(
+            QLineEdit(),
+            "src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-search-input|longform.recovery|help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-search-input",
+        )
         self.search_input.setPlaceholderText("Find text...")
         self.search_input.returnPressed.connect(self._perform_search_next)
 
         # Icons
-        btn_prev = QPushButton("Previous")
+        btn_prev = declare_inspection(
+            QPushButton("Previous"),
+            "src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-btn-prev|longform.recovery|help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-btn-prev",
+        )
         btn_prev.setIcon(
             load_icon(
                 os.path.join("default_assets", "icons", "ui_icons", "arrow_up.svg"),
@@ -217,7 +260,10 @@ class LongformEditorWidget(QWidget):
         btn_prev.setToolTip("Find Previous (Shift+Enter)")
         btn_prev.clicked.connect(self._perform_search_prev)
 
-        btn_next = QPushButton("Next")
+        btn_next = declare_inspection(
+            QPushButton("Next"),
+            "src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-btn-next|longform.recovery|help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-btn-next",
+        )
         btn_next.setIcon(
             load_icon(
                 os.path.join("default_assets", "icons", "ui_icons", "arrow_down.svg"),
@@ -227,7 +273,10 @@ class LongformEditorWidget(QWidget):
         btn_next.setToolTip("Find Next (Enter)")
         btn_next.clicked.connect(self._perform_search_next)
 
-        btn_close = QPushButton("Close")
+        btn_close = declare_inspection(
+            QPushButton("Close"),
+            "src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-btn-close|longform.recovery|help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-btn-close",
+        )
         btn_close.setIcon(
             load_icon(
                 os.path.join("default_assets", "icons", "ui_icons", "close.svg"),
@@ -250,7 +299,10 @@ class LongformEditorWidget(QWidget):
         self._splitter = QSplitter(Qt.Orientation.Horizontal)
 
         # Left: Outline
-        self.outline = LongformOutlineWidget()
+        self.outline = declare_inspection(
+            LongformOutlineWidget(),
+            "view.src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-outline|longform.recovery|help-inspect-view-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-outline",
+        )
         self.outline.item_selected.connect(self._on_item_selected)
         self.outline.browse_requested.connect(self.browse_requested)
         self.outline.gesture_started.connect(self.gesture_started)
@@ -285,11 +337,17 @@ class LongformEditorWidget(QWidget):
                 "Add content… restores removed entries."
             ),
         )
-        self.btn_empty_add = self.empty_state.add_action(
-            "Add content…", self.show_membership_requested.emit, primary=True
+        self.btn_empty_add = declare_inspection(
+            self.empty_state.add_action(
+                "Add content…", self.show_membership_requested.emit, primary=True
+            ),
+            "empty.LongformEditorWidget._setup_ui.289|longform.recovery|help-inspect-empty-longformeditorwidget-setup-ui-289",
         )
-        self.btn_empty_clear = self.empty_state.add_action(
-            "Clear Filters", self.clear_filters_requested.emit
+        self.btn_empty_clear = declare_inspection(
+            self.empty_state.add_action(
+                "Clear Filters", self.clear_filters_requested.emit
+            ),
+            "empty.LongformEditorWidget._setup_ui.292|longform.recovery|help-inspect-empty-longformeditorwidget-setup-ui-292",
         )
         layout.addWidget(self.empty_state, 1)
 

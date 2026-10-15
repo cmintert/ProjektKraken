@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.transfer import LORE_KINDS
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.responsive_dialog_buttons import (
     ResponsiveDialogButtonBox as QDialogButtonBox,
@@ -45,25 +46,38 @@ class TransferCsvDialog(QDialog):
         )
         label.setWordWrap(True)
         layout.addWidget(label)
-        self.kind = QComboBox()
+        self.kind = declare_inspection(
+            QComboBox(),
+            "src-gui-dialogs-transfer-csv-dialog-transfercsvdialog-init-self-kind|world.transfer|help-inspect-src-gui-dialogs-transfer-csv-dialog-transfercsvdialog-init-self-kind",
+        )
         self.kind.addItems(list(LORE_KINDS))
         if "source_id" in headers:
             self.kind.setCurrentText("relations")
         elif "lore_date" in headers:
             self.kind.setCurrentText("events")
         layout.addWidget(self.kind)
-        self.table = QTableWidget(len(headers), 2)
+        self.table = declare_inspection(
+            QTableWidget(len(headers), 2),
+            "src-gui-dialogs-transfer-csv-dialog-transfercsvdialog-init-self-table|world.transfer|help-inspect-src-gui-dialogs-transfer-csv-dialog-transfercsvdialog-init-self-table",
+        )
         self.table.setHorizontalHeaderLabels(["Input column", "Import field"])
         self.table.horizontalHeader().setStretchLastSection(True)
         layout.addWidget(self.table)
-        sample = QPlainTextEdit()
+        sample = declare_inspection(
+            QPlainTextEdit(),
+            "src-gui-dialogs-transfer-csv-dialog-transfercsvdialog-init-sample|world.transfer|help-inspect-src-gui-dialogs-transfer-csv-dialog-transfercsvdialog-init-sample",
+        )
         sample.setStyleSheet(StyleHelper.get_input_field_style())
         sample.setReadOnly(True)
         sample.setPlainText("\n".join(str(row) for row in rows[:3]))
         sample.setMaximumHeight(110)
         layout.addWidget(sample)
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        buttons = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel
+            ),
+            "src-gui-dialogs-transfer-csv-dialog-transfercsvdialog-init-buttons|world.transfer|help-inspect-src-gui-dialogs-transfer-csv-dialog-transfercsvdialog-init-buttons",
         )
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
@@ -74,7 +88,10 @@ class TransferCsvDialog(QDialog):
     def _populate(self) -> None:
         for index, header in enumerate(self.headers):
             self.table.setItem(index, 0, QTableWidgetItem(header))
-            choices = QComboBox()
+            choices = declare_inspection(
+                QComboBox(),
+                "src-gui-dialogs-transfer-csv-dialog-transfercsvdialog-populate-choices|world.transfer|help-inspect-src-gui-dialogs-transfer-csv-dialog-transfercsvdialog-populate-choices",
+            )
             choices.addItem("Ignore this column", "")
             for field in self.fields[self.kind.currentText()]:
                 choices.addItem(field, field)

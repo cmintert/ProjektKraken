@@ -41,6 +41,7 @@ from PySide6.QtWidgets import (
 
 from src.core.theme_manager import ThemeManager
 from src.gui.constants import SHEET_VALUE_MAX_LINES
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 
@@ -124,7 +125,10 @@ class AttributePairWidget(QFrame):
         layout.addWidget(self.key_label)
 
         # Value editor — multiline plain-text, autosizes up to SHEET_VALUE_MAX_LINES
-        self.value_edit = QTextEdit()
+        self.value_edit = declare_inspection(
+            QTextEdit(),
+            "src-gui-widgets-sheet-builder-attributepairwidget-init-self-value-edit|authoring.details|help-inspect-src-gui-widgets-sheet-builder-attributepairwidget-init-self-value-edit",
+        )
         self.value_edit.setAcceptRichText(False)
         self.value_edit.setPlaceholderText("Value…")
         self.value_edit.setPlainText(value)
@@ -143,7 +147,10 @@ class AttributePairWidget(QFrame):
         layout.addWidget(self.value_edit)
 
         # Type toggle (compact combo) - Hidden by default
-        self.type_combo = ScrollSafeComboBox()
+        self.type_combo = declare_inspection(
+            ScrollSafeComboBox(),
+            "src-gui-widgets-sheet-builder-attributepairwidget-init-self-type-combo|authoring.details|help-inspect-src-gui-widgets-sheet-builder-attributepairwidget-init-self-type-combo",
+        )
         self.type_combo.addItems(["String", "Number", "Boolean"])
         self.type_combo.setCurrentText(value_type)
         self.type_combo.currentTextChanged.connect(self._on_value_changed)
@@ -340,7 +347,10 @@ class TextBlockWidget(QFrame):
         layout.setContentsMargins(4, 2, 4, 2)
         layout.setSpacing(0)
 
-        self.text_edit = QLineEdit(text)
+        self.text_edit = declare_inspection(
+            QLineEdit(text),
+            "src-gui-widgets-sheet-builder-textblockwidget-init-self-text-edit|authoring.details|help-inspect-src-gui-widgets-sheet-builder-textblockwidget-init-self-text-edit",
+        )
         self.text_edit.setPlaceholderText("Enter flavour text…")
         self.text_edit.textChanged.connect(lambda: self.text_changed.emit())
         self.text_edit.setSizePolicy(
@@ -445,7 +455,10 @@ class HeaderWidget(QFrame):
         layout.setContentsMargins(6, 3, 6, 3)
         layout.setSpacing(0)
 
-        self.text_edit = QLineEdit(text)
+        self.text_edit = declare_inspection(
+            QLineEdit(text),
+            "src-gui-widgets-sheet-builder-headerwidget-init-self-text-edit|authoring.details|help-inspect-src-gui-widgets-sheet-builder-headerwidget-init-self-text-edit",
+        )
         self.text_edit.setPlaceholderText("Section name…")
         self.text_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.text_edit.textChanged.connect(lambda: self.text_changed.emit())
@@ -913,27 +926,42 @@ class SheetBuilderWidget(QWidget):
         self._toolbar.setMovable(False)
         self._toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
 
-        self._act_add_row = QAction("Add Attribute", self)
+        self._act_add_row = declare_inspection(
+            QAction("Add Attribute", self),
+            "src-gui-widgets-sheet-builder-sheetbuilderwidget-init-self-act-add-row|authoring.details|help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-init-self-act-add-row",
+        )
         self._act_add_row.setToolTip("Add a new attribute row")
         self._act_add_row.triggered.connect(self._on_toolbar_add_attribute)
         self._toolbar.addAction(self._act_add_row)
 
-        self._act_add_spacer = QAction("Add Spacer", self)
+        self._act_add_spacer = declare_inspection(
+            QAction("Add Spacer", self),
+            "src-gui-widgets-sheet-builder-sheetbuilderwidget-init-self-act-add-spacer|authoring.details|help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-init-self-act-add-spacer",
+        )
         self._act_add_spacer.setToolTip("Add a spacer to the last row")
         self._act_add_spacer.triggered.connect(self._on_toolbar_add_spacer)
         self._toolbar.addAction(self._act_add_spacer)
 
-        self._act_add_divider = QAction("Add Divider", self)
+        self._act_add_divider = declare_inspection(
+            QAction("Add Divider", self),
+            "src-gui-widgets-sheet-builder-sheetbuilderwidget-init-self-act-add-divider|authoring.details|help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-init-self-act-add-divider",
+        )
         self._act_add_divider.setToolTip("Add a horizontal divider row")
         self._act_add_divider.triggered.connect(self._on_toolbar_add_divider)
         self._toolbar.addAction(self._act_add_divider)
 
-        self._act_add_text = QAction("Add Text", self)
+        self._act_add_text = declare_inspection(
+            QAction("Add Text", self),
+            "src-gui-widgets-sheet-builder-sheetbuilderwidget-init-self-act-add-text|authoring.details|help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-init-self-act-add-text",
+        )
         self._act_add_text.setToolTip("Add a flavour text row")
         self._act_add_text.triggered.connect(self._on_toolbar_add_text)
         self._toolbar.addAction(self._act_add_text)
 
-        self._act_add_header = QAction("Add Header", self)
+        self._act_add_header = declare_inspection(
+            QAction("Add Header", self),
+            "src-gui-widgets-sheet-builder-sheetbuilderwidget-init-self-act-add-header|authoring.details|help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-init-self-act-add-header",
+        )
         self._act_add_header.setToolTip("Add a section header row")
         self._act_add_header.triggered.connect(self._on_toolbar_add_header)
         self._toolbar.addAction(self._act_add_header)
@@ -2074,7 +2102,10 @@ class SheetBuilderWidget(QWidget):
         """Show a context menu for the clicked row/item."""
         clicked_row, clicked_col, clicked_widget = self._find_clicked_item(pos)
 
-        menu = QMenu(self)
+        menu = declare_inspection(
+            QMenu(self),
+            "src-gui-widgets-sheet-builder-sheetbuilderwidget-show-context-menu-menu|authoring.details|help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-show-context-menu-menu",
+        )
 
         if clicked_row >= 0:
             self._build_row_context_menu(menu, clicked_row, clicked_col, clicked_widget)
@@ -2126,57 +2157,99 @@ class SheetBuilderWidget(QWidget):
             else None
         )
 
-        act = menu.addAction("⬆ Insert Row Above")
+        act = declare_inspection(
+            menu.addAction("⬆ Insert Row Above"),
+            "src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act|authoring.details|help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act",
+        )
         act.triggered.connect(lambda: self._ctx_insert_row(row_idx))
 
-        act = menu.addAction("⬇ Insert Row Below")
+        act = declare_inspection(
+            menu.addAction("⬇ Insert Row Below"),
+            "src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-2|authoring.details|help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-2",
+        )
         act.triggered.connect(lambda: self._ctx_insert_row(row_idx + 1))
 
         if hlayout and self._row_accepts_columns(hlayout):
             menu.addSeparator()
 
-            act = menu.addAction("\u2b1c Add Spacer to Row")
+            act = declare_inspection(
+                menu.addAction("\u2b1c Add Spacer to Row"),
+                "src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-3|authoring.details|help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-3",
+            )
             act.triggered.connect(lambda: self._ctx_add_spacer_to_row(row_idx))
 
-            act = menu.addAction("\u2715 Remove Spacers from Row")
+            act = declare_inspection(
+                menu.addAction("\u2715 Remove Spacers from Row"),
+                "src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-4|authoring.details|help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-4",
+            )
             act.triggered.connect(lambda: self._ctx_remove_spacers_from_row(row_idx))
 
         menu.addSeparator()
 
         if widget and isinstance(widget, AttributePairWidget):
-            act = menu.addAction(f"⚖ Set Weight ({widget.weight})…")
+            act = declare_inspection(
+                menu.addAction(f"⚖ Set Weight ({widget.weight})…"),
+                "src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-5|authoring.details|help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-5",
+            )
             act.triggered.connect(
                 lambda: self._ctx_set_weight(widget, hlayout, col_idx)
             )
 
-            act = menu.addAction(f"🔄 Type: {widget.get_type()}")
+            act = declare_inspection(
+                menu.addAction(f"🔄 Type: {widget.get_type()}"),
+                "src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-6|authoring.details|help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-6",
+            )
             act.triggered.connect(lambda: self._ctx_toggle_type(widget))
 
             menu.addSeparator()
 
-        act = menu.addAction("🗑 Delete Row")
+        act = declare_inspection(
+            menu.addAction("🗑 Delete Row"),
+            "src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-7|authoring.details|help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-7",
+        )
         act.triggered.connect(lambda: self._ctx_delete_row(row_idx))
 
         menu.addSeparator()
-        act = menu.addAction("── Add Divider")
+        act = declare_inspection(
+            menu.addAction("── Add Divider"),
+            "src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-8|authoring.details|help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-8",
+        )
         act.triggered.connect(self._on_toolbar_add_divider)
-        act = menu.addAction("𝐓 Add Text")
+        act = declare_inspection(
+            menu.addAction("𝐓 Add Text"),
+            "src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-9|authoring.details|help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-9",
+        )
         act.triggered.connect(self._on_toolbar_add_text)
-        act = menu.addAction("𝐇 Add Header")
+        act = declare_inspection(
+            menu.addAction("𝐇 Add Header"),
+            "src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-10|authoring.details|help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-10",
+        )
         act.triggered.connect(self._on_toolbar_add_header)
 
     def _build_empty_context_menu(self, menu: QMenu) -> None:
         """Build context menu for clicks on empty space."""
-        act = menu.addAction("＋ Add Attribute")
+        act = declare_inspection(
+            menu.addAction("＋ Add Attribute"),
+            "src-gui-widgets-sheet-builder-sheetbuilderwidget-build-empty-context-menu-act|authoring.details|help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-empty-context-menu-act",
+        )
         act.triggered.connect(self._on_toolbar_add_attribute)
 
-        act = menu.addAction("── Add Divider")
+        act = declare_inspection(
+            menu.addAction("── Add Divider"),
+            "src-gui-widgets-sheet-builder-sheetbuilderwidget-build-empty-context-menu-act-2|authoring.details|help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-empty-context-menu-act-2",
+        )
         act.triggered.connect(self._on_toolbar_add_divider)
 
-        act = menu.addAction("𝐓 Add Text")
+        act = declare_inspection(
+            menu.addAction("𝐓 Add Text"),
+            "src-gui-widgets-sheet-builder-sheetbuilderwidget-build-empty-context-menu-act-3|authoring.details|help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-empty-context-menu-act-3",
+        )
         act.triggered.connect(self._on_toolbar_add_text)
 
-        act = menu.addAction("𝐇 Add Header")
+        act = declare_inspection(
+            menu.addAction("𝐇 Add Header"),
+            "src-gui-widgets-sheet-builder-sheetbuilderwidget-build-empty-context-menu-act-4|authoring.details|help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-empty-context-menu-act-4",
+        )
         act.triggered.connect(self._on_toolbar_add_header)
 
     # ------------------------------------------------------------------

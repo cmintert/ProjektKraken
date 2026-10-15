@@ -335,3 +335,1056 @@ wiki link also creates a `mentions` relation.
 4. Create relations to factions, locations, and other characters.
 5. Create dated events for important moments in the character's history.
 6. Use the Graph and Timeline to review the resulting context.
+
+(help-authoring-delete)=
+
+## Delete an entry deliberately
+
+Delete removes the selected entry from the world, rather than merely hiding it or
+removing it from a document. Review any confirmation and dependency warnings. Cancel
+keeps the entry. Supported world deletions can be undone; deleting or restoring a
+complete world is a separate operation.
+
+(help-media-gallery)=
+
+## Manage images and captions
+
+The gallery attaches images and captions to the selected entry. Add imports an image;
+editing changes its gallery details; removing an attachment removes that gallery item.
+Review confirmation before removal and keep a portable world package when assets must
+travel with the world.
+
+(help-authoring-tags)=
+
+## Organize entries with tags
+
+Tags group entries for filtering and discovery. Add or remove a tag deliberately;
+changing a tag does not create a relation. Context-tag controls manage which tags are
+suggested or used in the current authoring context.
+
+(help-authoring-templates)=
+
+## Insert structured content with Fast Inject
+
+Fast Inject applies a selected structured template to an entry. Review the source and
+overwrite choice before applying: accepting can change fields, while cancelling leaves
+the entry unchanged. Saving a template source changes the reusable template rather than
+applying it to the entry.
+
+## Interface control reference
+
+These explanations describe the software operation. Inspecting a control does not run it or read your entered values.
+
+(help-inspect-src-gui-dialogs-context-tag-dialogs-contexttageditordialog-init-self-btn-cancel)=
+
+**Cancel** — Cancel this ContextTagEditor operation without accepting its pending
+changes. This is separate from applying or saving them.
+
+(help-inspect-src-gui-dialogs-context-tag-dialogs-contexttageditordialog-init-self-btn-save)=
+
+**Save** — Accept the current ContextTagEditor choices after validation. Review the
+fields first; opening Help does not accept them.
+
+(help-inspect-src-gui-dialogs-context-tag-dialogs-contexttageditordialog-init-self-btn-primary)=
+
+**Accept context tags** — Accept the selected context tags for this authoring context.
+This does not create a relation.
+
+(help-inspect-src-gui-dialogs-context-tag-dialogs-contexttagreviewdialog-init-self-btn-all)=
+
+**Select All** — Select all available choices in this list. This changes the local
+selection; use the surrounding Apply or Save action to accept it.
+
+(help-inspect-src-gui-dialogs-context-tag-dialogs-contexttagreviewdialog-init-self-btn-none)=
+
+**Select None** — Clear the local selection without deleting the listed items.
+
+(help-inspect-src-gui-dialogs-context-tag-dialogs-contexttagreviewdialog-init-self-btn-clear)=
+
+**Clear Review History** — Clear the context-tag review history. This is separate from
+deleting world entries or removing tags from every entry.
+
+(help-inspect-src-gui-dialogs-context-tag-dialogs-contexttagreviewdialog-init-self-btn-close)=
+
+**Close review** — Close the context-tag review dialog.
+
+(help-inspect-src-gui-dialogs-context-tag-dialogs-contexttagreviewdialog-init-self-btn-cleanup)=
+
+**Remove context tags** — Remove the selected context-tag assignments through the review
+workflow. This is separate from deleting the tagged entries.
+
+(help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-self-name-edit)=
+
+**Template name** — Name the reusable entry template being created from the current
+selection.
+
+(help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-self-desc-edit)=
+
+**Template description** — Describe when this entry template should be used.
+
+(help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-btn-all)=
+
+**Select All** — Select all available choices in this list. This changes the local
+selection; use the surrounding Apply or Save action to accept it.
+
+(help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-btn-none)=
+
+**Select None** — Clear the local selection without deleting the listed items.
+
+(help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-chk)=
+
+**Include field** — Include this field in the entry template. Unchecked fields are
+omitted from the saved template.
+
+(help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-self-chk-type)=
+
+**Include type** — Include the selected entry's type in the template.
+
+(help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-btn-all-a)=
+
+**Select All** — Select all available choices in this list. This changes the local
+selection; use the surrounding Apply or Save action to accept it.
+
+(help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-btn-none-a)=
+
+**Select None** — Clear the local selection without deleting the listed items.
+
+(help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-chk-2)=
+
+**Include attribute** — Include this attribute in the entry template. Unchecked
+attributes are omitted.
+
+(help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-self-chk-layout)=
+
+**Include visual sheet layout** — Include the selected entry's visual sheet arrangement
+in the template, alongside the chosen fields.
+
+(help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-btn-cancel)=
+
+**Cancel** — Cancel this CreateTemplate operation without accepting its pending changes.
+This is separate from applying or saving them.
+
+(help-inspect-src-gui-dialogs-create-template-dialog-createtemplatedialog-setup-ui-btn-save)=
+
+**Save entry template** — Save the selected fields as a reusable template. This does not
+apply the template to another entry.
+
+(help-inspect-src-gui-dialogs-entity-creation-dialog-entitycreationdialog-init-self-name-edit)=
+
+**Entity name** — Name the new Entity. The name can be edited later; it does not itself
+create connections.
+
+(help-inspect-src-gui-dialogs-entity-creation-dialog-entitycreationdialog-init-self-type-combo)=
+
+**Entity type** — Choose or enter a type for the new Entity, such as character or
+location.
+
+(help-inspect-src-gui-dialogs-entity-creation-dialog-entitycreationdialog-init-self-buttons)=
+
+**Buttons** — Review the dialog’s choices, then use its acceptance or cancellation
+action. Inspecting a button never accepts or rejects the dialog.
+
+(help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-setup-ui-self-list-widget)=
+
+**Entry templates** — Select a template to configure its included fields and proposed
+values before applying it to the inspected entry.
+
+(help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-setup-ui-self-btn-import)=
+
+**Import template** — Choose a template file to make available in the Inject dialog.
+
+(help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-setup-ui-self-btn-cancel)=
+
+**Cancel** — Cancel this FastInject operation without accepting its pending changes.
+This is separate from applying or saving them.
+
+(help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-setup-ui-self-btn-apply)=
+
+**Apply template** — Apply the selected template and enabled fields to the current
+entry. Review the overwrite choice first.
+
+(help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-setup-configure-tab-self-chk-overwrite)=
+
+**Overwrite existing values** — Allow included template fields to replace values already
+present on the entry. Leave unchecked to protect existing keys.
+
+(help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-setup-source-tab-self-txt-source)=
+
+**Template source** — Edit the selected template's source. Save Changes writes the
+template; Apply Template is a separate action on the current entry.
+
+(help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-setup-source-tab-self-btn-save-source)=
+
+**Save template changes** — Save the edited template source without applying it to the
+inspected entry.
+
+(help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-add-row-chk)=
+
+**Include template field** — Include this field when applying the template. Unchecked
+fields are left out.
+
+(help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-add-row-input-widget)=
+
+**Template field value** — Choose the proposed value for this included template field
+before applying it.
+
+(help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-add-row-input-widget-2)=
+
+**Template field value** — Edit the proposed text for this included template field
+before applying it.
+
+(help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-add-row-input-widget-3)=
+
+**Template field value** — Edit the proposed text for this included template field
+before applying it.
+
+(help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-add-row-input-widget-4)=
+
+**Template field value** — Edit the proposed text for this included template field
+before applying it.
+
+(help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-add-row-sub-inp)=
+
+**Template detail value** — Choose the proposed value for this template detail before
+applying it.
+
+(help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-add-row-sub-inp-2)=
+
+**Template detail value** — Edit the proposed value for this template detail before
+applying it.
+
+(help-inspect-src-gui-dialogs-image-viewer-dialog-imageviewerdialog-init-ui-self-btn-prev)=
+
+**&lt; Previous** — Show the previous available item in this viewer without deleting or
+editing the current item.
+
+(help-inspect-src-gui-dialogs-image-viewer-dialog-imageviewerdialog-init-ui-self-btn-next)=
+
+**Next image** — Show the next image in this gallery viewer without editing the image or
+caption.
+
+(help-inspect-src-gui-dialogs-relation-dialog-relationeditdialog-init-self-button-box)=
+
+**Button box** — Review the dialog’s choices, then use its acceptance or cancellation
+action. Inspecting a button never accepts or rejects the dialog.
+
+(help-inspect-src-gui-widgets-attribute-editor-attributeeditorwidget-init-self-btn-add)=
+
+**Add attribute** — Add an attribute row to the current entry draft. Historical editing
+asks where a new value belongs.
+
+(help-inspect-src-gui-widgets-attribute-editor-attributeeditorwidget-init-self-btn-remove)=
+
+**Remove attribute** — Remove the selected attribute from the draft. Historical editing
+distinguishes dated absence from removing a source override when saved.
+
+(help-inspect-src-gui-widgets-attribute-editor-attributeeditorwidget-init-self-table)=
+
+**Entry attributes** — Edit attribute keys, values and types. The Source column
+identifies where a historical value comes from.
+
+(help-inspect-src-gui-widgets-attribute-editor-attributeeditorwidget-add-row-combo)=
+
+**Attribute type** — Choose how this attribute value is interpreted, such as text,
+number or true/false.
+
+(help-inspect-src-gui-widgets-compact-duration-widget-compactdurationwidget-setup-ui-self-spin-years)=
+
+**Duration years** — Set the year component of the elapsed duration using the active
+calendar.
+
+(help-inspect-src-gui-widgets-compact-duration-widget-compactdurationwidget-setup-ui-self-spin-months)=
+
+**Duration months** — Set the month component of the elapsed duration using the active
+calendar.
+
+(help-inspect-src-gui-widgets-compact-duration-widget-compactdurationwidget-setup-ui-self-spin-days)=
+
+**Duration days** — Set the day component of the elapsed duration.
+
+(help-inspect-src-gui-widgets-compact-duration-widget-compactdurationwidget-setup-ui-self-spin-hours)=
+
+**Duration hours** — Set the hour component of the elapsed duration.
+
+(help-inspect-src-gui-widgets-compact-duration-widget-compactdurationwidget-setup-ui-self-spin-minutes)=
+
+**Duration minutes** — Set the minute component of the elapsed duration.
+
+(help-inspect-src-gui-widgets-context-tag-bar-contexttagbar-init-self-btn-review)=
+
+**Review** — Review context-tag suggestions before accepting or dismissing them.
+Reviewing does not automatically add the suggestions as authored content.
+
+(help-inspect-src-gui-widgets-context-tag-bar-contexttagbar-init-self-btn-enable)=
+
+**Enable** — Enable this context-tag behavior. Review the active tags; this is separate
+from creating a relation.
+
+(help-inspect-src-gui-widgets-context-tag-bar-contexttagbar-init-self-btn-edit)=
+
+**Set context tags** — Choose the tags used by this authoring context. This is separate
+from creating a connection.
+
+(help-inspect-src-gui-widgets-context-tag-bar-contexttagbar-init-self-btn-disable)=
+
+**Disable** — Disable this context-tag behavior without deleting the underlying world
+entries.
+
+(help-inspect-src-gui-widgets-editor-presentation-editorpresentation-install-focus-button-self-focus-button)=
+
+**Focus button** — Enter or leave the focused writing presentation while retaining the
+same live description, caret and scroll position.
+
+(help-inspect-src-gui-widgets-editor-presentation-editorpresentation-install-toolbar-menus-button)=
+
+**Inspector menu** — Open the inspector's secondary actions without applying one.
+Inspect individual menu items for their effects.
+
+(help-inspect-src-gui-widgets-editor-presentation-editorpresentation-install-toolbar-menus-menu)=
+
+**Inspector actions** — Choose an additional inspector operation. Inspection explains
+the item without running it.
+
+(help-inspect-src-gui-widgets-editor-presentation-editorpresentation-install-action-rows-disclosure)=
+
+**More inspector controls** — Expand or collapse the additional controls in this
+inspector section.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-details-tab-self-desc-edit)=
+
+**Entity description** — Edit the Entity description at the displayed source. To begin a
+new dated description, use Start a new description at this time.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-details-tab-self-description-field)=
+
+**Entity description** — Edit the Entity description at the displayed source. This is
+separate from the summary and linked-entry mentions.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-details-tab-self-btn-new-description)=
+
+**Start a new description at this time** — Start a new dated description change at the
+viewed time, rather than correcting the source currently displayed.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-timeline-section-self-timeline-checkbox)=
+
+**Timeline** — Show or hide the selected Entity’s linked-event Timeline section. This
+changes section visibility without deleting events.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-summary-section-self-summary-checkbox)=
+
+**Summary** — Show or hide the summary section for the selected entry. Hiding the
+section does not delete its saved summary.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-llm-section-self-llm-checkbox)=
+
+**Generation section** — Show or hide the description-generation controls. Opening the
+section does not request generated text.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-raster-appearances-section-self-raster-appearances-checkbox)=
+
+**Raster maps** — Show or hide the selected entry’s raster-map appearances section. This
+does not edit raster data.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-header-self-btn-inject)=
+
+**Inject** — Quickly apply templates or snippets to this entity.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-header-self-inject-menu)=
+
+**Inject actions** — Choose a reusable entry template or open the Inject dialog to
+review its fields.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-header-self-name-edit)=
+
+**Entity name** — Edit this Entity's name. Its identity and existing connections are
+retained.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-header-self-type-edit)=
+
+**Entity type** — Edit this Entity's type. The type helps categorize entries; it is
+separate from tags and relations.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-add-rel)=
+
+**Connected to…** — Choose an existing entry and prepare a connection. Connect saves it;
+Cancel discards the draft. The inspected entry is the source in this chooser workflow.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-edit-rel)=
+
+**Refine relation…** — Open the selected saved connection for refinement. Apply updates
+that same relation rather than creating a replacement entry.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-remove-rel)=
+
+**Remove connection** — Remove the selected connection from this Entity. This does not
+delete either connected entry.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-rel-list)=
+
+**Entity connections** — Review connections involving this Entity, then select one to
+refine or remove.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-action-buttons-self-btn-save)=
+
+**Save Changes** — Save the inspector’s current changes. For historical values,
+corrections go to their displayed source; check the save status for confirmation.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-action-buttons-self-btn-discard)=
+
+**Discard** — Discard unsaved inspector changes and return to the saved content. Discard
+is deliberate and is different from hiding the inspector.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-menu)=
+
+**Menu** — Open the Menu menu to choose a related operation. Opening the menu does not
+apply any of its actions.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-edit-action)=
+
+**Edit connection** — Open the selected connection for editing. The connected entries
+remain separate world entries.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-remove-action)=
+
+**Remove connection** — Remove the selected connection without deleting its source or
+target.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-new-attribute-destination-baseline)=
+
+**Entity baseline** — Store the new attribute in the Entity’s ordinary baseline. A dated
+absence can still hide it at the viewed time; review the warning before accepting.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-new-attribute-destination-dated)=
+
+**At this time** — Start a dated attribute change using an event at the viewed time.
+This is different from changing the Entity baseline.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-save-temporal-absent)=
+
+**Absent from this state** — Record that this attribute is absent at this historical
+state. This does not mean revealing an earlier value.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-save-temporal-override)=
+
+**Remove source override** — Remove this attribute's current override so an earlier or
+baseline value can become visible. This differs from recording dated absence.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-populate-inject-menu-action-dialog)=
+
+**Open Inject dialog** — Review a reusable entry template and its proposed fields before
+applying it to this Entity.
+
+(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-populate-inject-menu-action-save-tmpl)=
+
+**Save entry template** — Create a reusable template from selected fields of this
+Entity. This does not duplicate the Entity itself.
+
+(help-inspect-src-gui-widgets-entity-list-entitylistwidget-init-self-btn-create)=
+
+**New Entity** — Create an Entity, such as a character, location or faction. Connections
+and map placement are separate actions.
+
+(help-inspect-src-gui-widgets-entity-list-entitylistwidget-init-self-btn-delete)=
+
+**Delete Entity** — Delete the selected Entity from the world after confirmation. Review
+dependent connections and raster references.
+
+(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-temporal-description-fields-self-desc-edit)=
+
+**Event description** — Edit this Event's description. Description text is separate from
+its date, duration and chronology constraints.
+
+(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-temporal-description-fields-self-description-field)=
+
+**Event description** — Edit this Event's description. Wiki links can mention entries
+without asserting an authored relationship.
+
+(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-summary-section-self-summary-checkbox)=
+
+**Summary** — Show or hide the summary section for the selected Event without deleting
+its saved summary.
+
+(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-llm-section-self-llm-checkbox)=
+
+**Generation section** — Show or hide description-generation controls. Opening the
+section does not request generated text.
+
+(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-raster-appearances-section-self-raster-appearances-checkbox)=
+
+**Raster maps** — Show or hide the Event’s raster-map appearances section without
+editing the raster data.
+
+(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-header-self-btn-inject)=
+
+**Inject** — Quickly apply templates or snippets to this event.
+
+(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-header-self-inject-menu)=
+
+**Inject actions** — Choose a reusable entry template or open the Inject dialog to
+review its fields.
+
+(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-header-self-name-edit)=
+
+**Event name** — Edit this Event's name. Renaming does not change its date or
+connections.
+
+(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-header-self-type-edit)=
+
+**Event type** — Edit the Event's category. Its type is separate from tags and relation
+meanings.
+
+(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-action-buttons-self-btn-save)=
+
+**Save Changes** — Save the Event’s current changes. Invalid or incomplete dates must be
+corrected before they can be saved; check the save status for confirmation.
+
+(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-action-buttons-self-btn-discard)=
+
+**Discard** — Discard unsaved Event changes and return to the saved content. This
+includes unfinished inspector edits.
+
+(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-add)=
+
+**Add connection** — Prepare a connection involving this Event. Choose the target and
+meaning before accepting it.
+
+(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-edit)=
+
+**Edit connection** — Refine the selected saved connection rather than creating a
+duplicate.
+
+(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-remove)=
+
+**Remove connection** — Remove the selected connection without deleting either connected
+entry.
+
+(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-create-section-lst)=
+
+**Event connections** — Review connections involving this Event and select one for
+refinement or removal.
+
+(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-populate-inject-menu-action-dialog)=
+
+**Open Inject dialog** — Review a reusable entry template before applying its selected
+fields to this Event.
+
+(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-populate-inject-menu-action-save-tmpl)=
+
+**Save entry template** — Create a reusable template from selected Event fields. This
+does not create another Event.
+
+(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-menu)=
+
+**Menu** — Open the Menu menu to choose a related operation. Opening the menu does not
+apply any of its actions.
+
+(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-edit-action)=
+
+**Edit connection** — Open the selected saved connection for refinement.
+
+(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-remove-action)=
+
+**Remove connection** — Remove the selected connection without deleting its source or
+target.
+
+(help-inspect-src-gui-widgets-event-list-eventlistwidget-init-self-btn-delete)=
+
+**Delete Event** — Delete the selected Event from the world after confirmation. Review
+affected connections before accepting.
+
+(help-inspect-src-gui-widgets-gallery-widget-gallerywidget-init-ui-self-btn-add)=
+
+**Add gallery image** — Choose an image to attach to this entry's gallery.
+
+(help-inspect-src-gui-widgets-gallery-widget-gallerywidget-init-ui-self-btn-edit)=
+
+**Edit image caption** — Edit the caption associated with the selected gallery image.
+
+(help-inspect-src-gui-widgets-gallery-widget-gallerywidget-init-ui-self-btn-remove)=
+
+**Remove gallery image** — Remove the selected gallery attachment from this entry after
+confirmation.
+
+(help-inspect-src-gui-widgets-gallery-widget-gallerywidget-init-ui-self-list-widget)=
+
+**Gallery images** — Browse images attached to this entry. Open an image to view it at a
+larger size.
+
+(help-inspect-src-gui-widgets-gallery-widget-gallerywidget-show-context-menu-menu)=
+
+**Menu** — Open the Menu menu to choose a related operation. Opening the menu does not
+apply any of its actions.
+
+(help-inspect-src-gui-widgets-gallery-widget-gallerywidget-show-context-menu-view-action)=
+
+**View image** — Open the selected gallery image in the image viewer.
+
+(help-inspect-src-gui-widgets-gallery-widget-gallerywidget-show-context-menu-edit-caption-action)=
+
+**Edit image caption** — Edit the selected image's gallery caption without replacing the
+image.
+
+(help-inspect-src-gui-widgets-gallery-widget-gallerywidget-show-context-menu-remove-action)=
+
+**Remove gallery image** — Remove this gallery attachment from the entry after
+confirmation.
+
+(help-inspect-src-gui-widgets-graph-view-graph-widget-graphwidget-setup-ui-self-temporal-mode)=
+
+**Temporal mode** — Choose At playhead, History to playhead or All relations. This
+changes the Graph view, not the saved relation meanings or boundaries.
+
+(help-inspect-src-gui-widgets-graph-view-graph-widget-graphwidget-setup-ui-self-show-possible)=
+
+**Show possible relations** — Show or hide relations whose presence at the viewed time
+is possible but not established. Saved relation data is unchanged.
+
+(help-inspect-src-gui-widgets-relation-authoring-relationauthoring-init-menu-button)=
+
+**Menu button** — Open the Menu button menu to choose a related operation. Opening the
+menu does not apply any of its actions.
+
+(help-inspect-src-gui-widgets-relation-authoring-relationauthoring-init-menu)=
+
+**Menu** — Open the Menu menu to choose a related operation. Opening the menu does not
+apply any of its actions.
+
+(help-inspect-src-gui-widgets-relation-authoring-relationauthoring-init-addaction)=
+
+**Add detailed relation** — Open the detailed creation workflow to choose the target,
+relation type and timing before accepting.
+
+(help-inspect-src-gui-widgets-relation-authoring-relationauthoring-init-addaction-2)=
+
+**Full relation editor** — Open the full editor for the selected relation or creation
+workflow, including advanced timing and details.
+
+(help-inspect-src-gui-widgets-relation-authoring-relationauthoring-stage-drop-meaning)=
+
+**Connection type** — Choose the authored connection type for this proposed link. It is
+separate from the connection's temporal meaning.
+
+(help-inspect-src-gui-widgets-relation-authoring-relationauthoring-progressive-form-self-meaning)=
+
+**Connection type** — Choose the authored connection type, such as membership or
+succession. Temporal meaning and boundary dates are configured separately.
+
+(help-inspect-src-gui-widgets-relation-authoring-relationauthoring-progressive-form-self-reverse-button)=
+
+**Reverse direction** — Reverse the proposed connection’s direction. Source-event timing
+and state-change constraints can prevent reversal.
+
+(help-inspect-src-gui-widgets-relation-authoring-relationauthoring-progressive-form-self-timing-disclosure)=
+
+**Timing…** — Expand the connection’s timing controls to review its boundaries and event
+bindings. Opening the section does not apply changes.
+
+(help-inspect-src-gui-widgets-relation-authoring-relationauthoring-progressive-form-self-advanced-disclosure)=
+
+**Advanced disclosure** — Expand advanced connection options, including timing meaning
+and custom details. Apply remains a deliberate separate action.
+
+(help-inspect-src-gui-widgets-relation-authoring-relationauthoring-actions-self-apply-button)=
+
+**Apply button** — Submit the prepared connection or refinement. Review the source,
+target and meaning first; changes wait for the save result.
+
+(help-inspect-src-gui-widgets-relation-authoring-relationauthoring-actions-cancel)=
+
+**Cancel** — Cancel this Connections operation without accepting its pending changes.
+This is separate from applying or saving them.
+
+(help-inspect-src-gui-widgets-relation-authoring-relationauthoring-prepare-to-leave-apply)=
+
+**Apply connection draft** — Save the pending connection draft before continuing the
+requested navigation.
+
+(help-inspect-src-gui-widgets-relation-authoring-relationauthoring-prepare-to-leave-keep)=
+
+**Keep editing connection** — Stay with the unfinished connection draft and cancel the
+requested navigation.
+
+(help-inspect-src-gui-widgets-relation-authoring-relationauthoring-prepare-to-leave-discard)=
+
+**Discard connection draft** — Discard the unsaved connection draft and continue the
+requested navigation. Saved relations are retained.
+
+(help-inspect-src-gui-widgets-relation-form-relationform-init-self-type-edit)=
+
+**Relation type** — Choose or enter the authored connection type. This is independent of
+temporal meaning and boundary dates.
+
+(help-inspect-src-gui-widgets-relation-form-relationform-init-self-weight-spin)=
+
+**Relation weight** — Set the numeric weight recorded on this relation. Weight is
+separate from confidence and temporal validity.
+
+(help-inspect-src-gui-widgets-relation-form-relationform-init-self-confidence-spin)=
+
+**Confidence:** — Record confidence for this relation. Confidence describes the authored
+connection; it does not establish an exact historical date.
+
+(help-inspect-src-gui-widgets-relation-form-relationform-init-self-notes-edit)=
+
+**Relation notes** — Record notes about this connection without changing either
+connected entry's description.
+
+(help-inspect-src-gui-widgets-relation-form-relationform-init-self-rb-absolute)=
+
+**Manual boundaries** — Enter the relation's boundary dates directly instead of binding
+them to the source Event.
+
+(help-inspect-src-gui-widgets-relation-form-relationform-init-self-rb-starts)=
+
+**Starts at Event** — Bind the relation's start to the source Event's transition,
+preserving shared Event uncertainty.
+
+(help-inspect-src-gui-widgets-relation-form-relationform-init-self-rb-ends)=
+
+**Ends at Event** — Bind the relation's end to the source Event's transition rather than
+copying an independent date.
+
+(help-inspect-src-gui-widgets-relation-form-relationform-init-self-rb-at-event)=
+
+**At Event** — Bind both boundaries to the source Event for an occurrence at its
+transition.
+
+(help-inspect-src-gui-widgets-relation-form-relationform-init-self-check-from)=
+
+**Start boundary enabled** — Enable a start boundary for this relation. Its boundary
+mode determines how its date or Event binding is interpreted.
+
+(help-inspect-src-gui-widgets-relation-form-relationform-init-self-check-to)=
+
+**End boundary enabled** — Enable an end boundary for this relation. Its boundary mode
+determines when it stops applying.
+
+(help-inspect-src-gui-widgets-relation-form-relationform-init-self-bi-check)=
+
+**Bidirectional (Create reverse link)** — Also create a reverse connection when
+accepting this new relation. This is a deliberate choice, not automatic synchronization.
+
+(help-inspect-src-gui-widgets-relation-form-relationform-group-boundaries-disclosure)=
+
+**Event offset details** — Expand the Event-relative boundary options, including signed
+lore-day offsets.
+
+(help-inspect-src-gui-widgets-relation-form-relationform-setup-now-actions-self-starts-now-button)=
+
+**Use viewed date for start** — Copy the current viewed date into the relation's start
+draft. This does not change World current time.
+
+(help-inspect-src-gui-widgets-relation-form-relationform-setup-now-actions-self-ends-now-button)=
+
+**Use viewed date for end** — Copy the current viewed date into the relation's end
+draft. This does not change World current time.
+
+(help-inspect-src-gui-widgets-relation-form-relationform-setup-state-changes-self-unset-attributes-list)=
+
+**Absent attributes** — List attributes to mark absent in the Entity state produced by
+this Event relation. This differs from clearing an override to reveal an older value.
+
+(help-inspect-src-gui-widgets-relation-form-relationform-setup-state-changes-self-btn-add-unset)=
+
+**Add absent attribute** — Add an attribute key to mark absent in the dated Entity state
+produced by this relation.
+
+(help-inspect-src-gui-widgets-relation-form-relationform-setup-state-changes-self-btn-remove-unset)=
+
+**Remove absence instruction** — Remove the selected key from this relation's absence
+instructions. This does not directly delete an Entity attribute.
+
+(help-inspect-src-gui-widgets-relation-form-relationform-setup-state-changes-self-change-description-check)=
+
+**Change state description** — Include a new Entity description in the state change
+produced by this Event relation.
+
+(help-inspect-src-gui-widgets-relation-form-relationform-setup-state-changes-self-state-description-edit)=
+
+**Dated state description** — Write the Entity description supplied by this state-
+changing Event relation. This is separate from notes about the relation.
+
+(help-inspect-src-gui-widgets-relation-form-relationform-setup-boundary-choices-self-temporal-behavior)=
+
+**Meaning** — Choose whether the connection is an active state, historical fact,
+occurrence or timeless association. Meaning affects how historical views interpret its
+dates.
+
+(help-inspect-src-gui-widgets-relation-form-relationform-setup-boundary-choices-choice)=
+
+**Boundary mode** — Choose an open boundary, a manual date or a source-Event binding for
+this side of the relation.
+
+(help-inspect-src-gui-widgets-relation-form-relationform-setup-boundary-choices-relative)=
+
+**Event-relative boundary** — Choose how this boundary relates to the source Event's
+transition. A shared binding preserves correlated uncertainty.
+
+(help-inspect-src-gui-widgets-relation-form-relationform-setup-boundary-choices-offset)=
+
+**Offset** — Zero shares the event's exact transition. A signed offset shifts both
+evidence bounds by this many lore days.
+
+(help-inspect-src-gui-widgets-relation-item-widget-relationitemwidget-setup-ui-self-btn-go-to)=
+
+**Open connected entry** — Navigate deliberately to the connected entry in its
+inspector. Existing unfinished-work safeguards still apply.
+
+(help-inspect-src-gui-widgets-relation-type-picker-relationtypepicker-setup-ui-self-combo-box)=
+
+**Relation type** — Choose or enter the type to use for this connection.
+
+(help-inspect-src-gui-widgets-relation-type-picker-relationtypepicker-setup-ui-self-ok-button)=
+
+**OK** — Accept the current Relation Type Picker choices after validation. Review the
+fields first; opening Help does not accept them.
+
+(help-inspect-src-gui-widgets-relation-type-picker-relationtypepicker-setup-ui-self-cancel-button)=
+
+**Cancel** — Cancel this Relation Type Picker operation without accepting its pending
+changes. This is separate from applying or saving them.
+
+(help-inspect-src-gui-widgets-sheet-builder-attributepairwidget-init-self-value-edit)=
+
+**Attribute value** — Edit this sheet attribute's value. Its type determines how the
+value is interpreted.
+
+(help-inspect-src-gui-widgets-sheet-builder-attributepairwidget-init-self-type-combo)=
+
+**Attribute type** — Choose the value type for this sheet attribute, such as text,
+number or true/false.
+
+(help-inspect-src-gui-widgets-sheet-builder-textblockwidget-init-self-text-edit)=
+
+**Sheet text block** — Edit this free-text block in the visual sheet. It is separate
+from the entry's main description.
+
+(help-inspect-src-gui-widgets-sheet-builder-headerwidget-init-self-text-edit)=
+
+**Sheet heading** — Edit this heading in the visual sheet layout.
+
+(help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-init-self-act-add-row)=
+
+**Add sheet attribute** — Add an attribute row to the visual sheet.
+
+(help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-init-self-act-add-spacer)=
+
+**Add Spacer** — Add a spacer to the last row.
+
+(help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-init-self-act-add-divider)=
+
+**Add divider** — Insert a visual divider into the sheet layout.
+
+(help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-init-self-act-add-text)=
+
+**Add text block** — Insert a free-text block into the sheet layout.
+
+(help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-init-self-act-add-header)=
+
+**Add heading** — Insert a heading block into the sheet layout.
+
+(help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-show-context-menu-menu)=
+
+**Menu** — Open the Menu menu to choose a related operation. Opening the menu does not
+apply any of its actions.
+
+(help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act)=
+
+**Insert row above** — Insert a new sheet row above the current row.
+
+(help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-2)=
+
+**Insert row below** — Insert a new sheet row below the current row.
+
+(help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-3)=
+
+**Add row spacer** — Add empty layout space to this sheet row.
+
+(help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-4)=
+
+**Remove row spacers** — Remove empty spacer blocks from this sheet row while retaining
+its content blocks.
+
+(help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-5)=
+
+**Sheet block width** — Set this block's relative width within its sheet row. This
+changes layout rather than the attribute value.
+
+(help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-6)=
+
+**Change attribute type** — Cycle this sheet attribute's value type. Review the existing
+value when changing how it is interpreted.
+
+(help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-7)=
+
+**Delete sheet row** — Remove this row and its blocks from the sheet. Review its
+contents before deleting it.
+
+(help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-8)=
+
+**Add divider** — Insert a divider into this sheet layout.
+
+(help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-9)=
+
+**Add text block** — Insert a free-text block into this sheet layout.
+
+(help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-row-context-menu-act-10)=
+
+**Add heading** — Insert a heading block into this sheet layout.
+
+(help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-empty-context-menu-act)=
+
+**Add sheet attribute** — Add an attribute to the visual sheet.
+
+(help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-empty-context-menu-act-2)=
+
+**Add divider** — Insert a divider into the visual sheet.
+
+(help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-empty-context-menu-act-3)=
+
+**Add text block** — Insert a free-text block into the visual sheet.
+
+(help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-build-empty-context-menu-act-4)=
+
+**Add heading** — Insert a heading block into the visual sheet.
+
+(help-inspect-src-gui-widgets-tag-editor-tageditorwidget-init-self-tag-input)=
+
+**Tag input** — Type a tag and press Enter….
+
+(help-inspect-src-gui-widgets-tag-editor-tageditorwidget-init-self-btn-add)=
+
+**Add tag** — Add the entered tag to this entry. Tags organize entries without creating
+authored connections.
+
+(help-inspect-src-gui-widgets-temporal-range-widget-temporalrangewidget-setup-ui-self-has-duration)=
+
+**Event has duration** — Leave unchecked for a single occurrence, even when its date is
+only known to a year.
+
+(help-inspect-src-gui-widgets-temporal-range-widget-temporalrangewidget-setup-ui-self-range-button)=
+
+**End date and duration** — Expand the Event's elapsed duration and end-date controls.
+Date uncertainty remains a separate setting.
+
+(help-inspect-src-gui-widgets-temporal-range-widget-temporalrangewidget-setup-ui-self-btn-lock-duration)=
+
+**Duration** — Start changes move the end date (span stays fixed).
+
+(help-inspect-src-gui-widgets-temporal-range-widget-temporalrangewidget-setup-ui-self-btn-lock-end)=
+
+**End Date** — Start changes adjust the span (end date stays fixed).
+
+(help-inspect-src-gui-widgets-temporal-range-widget-temporalrangewidget-setup-ui-self-enter-end-button)=
+
+**Specify end date** — Show the Event end-date input as an alternative way to define its
+duration.
+
+(help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-btn-new)=
+
+**New...** — Open the creation menu to add an Event, Entity or map. Creating an entry is
+separate from connecting it to another entry.
+
+(help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-new-menu)=
+
+**New menu** — Open the New menu menu to choose a related operation. Opening the menu
+does not apply any of its actions.
+
+(help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-action-create-event)=
+
+**Create Event** — Create an Event at the viewed time. Naming, connections and map
+placement remain separate choices.
+
+(help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-action-create-entity)=
+
+**Create Entity** — Create an Entity with a chosen name and type, such as a character or
+location.
+
+(help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-action-create-map)=
+
+**Create Map** — Create and name a map from an image. Placing Event or Entity markers is
+a separate action.
+
+(help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-btn-delete)=
+
+**Delete** — Delete the selected entry from the world. This is different from clearing a
+filter or hiding an item; review the confirmation and dependency warnings.
+
+(help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-show-context-menu-delete-action)=
+
+**Delete selected entry** — Delete the selected world entry after confirmation.
+Filtering or removing Longform membership instead retains the entry.
+
+(help-inspect-src-gui-delegates-attribute-delegate-attributedelegate-createeditor-checkbox)=
+
+**Boolean attribute** — Set this attribute to true or false. In historical editing,
+saving corrects the displayed source; use the dated-change route to start a new state.
+
+(help-inspect-src-gui-delegates-attribute-delegate-attributedelegate-createeditor-spinbox)=
+
+**Numeric attribute** — Enter a numeric attribute value. In historical editing, saving
+corrects the displayed source; it does not automatically create a new dated state.
+
+(help-inspect-src-gui-widgets-authoring-context-widget-authoringcontextwidget-init-self-more-button)=
+
+**More actions** — Open the entry's additional authoring actions, including detailed
+relations and context-sensitive options.
+
+(help-inspect-src-gui-widgets-focus-writing-focuswritingcontroller-init-self-action)=
+
+**Focus writing** — Enter or leave the focused writing presentation while retaining the
+same live description, caret and scroll position.
+
+(help-inspect-src-gui-widgets-focus-writing-focuswritingcontroller-make-surface-toolbar-button)=
+
+**Writing toolbar** — Show or hide writing tools while staying in Focus writing.
+
+(help-inspect-src-gui-widgets-focus-writing-focuswritingcontroller-make-surface-toc-button)=
+
+**Writing contents** — Show or hide headings for navigating within the current
+description.
+
+(help-inspect-src-gui-widgets-focus-writing-focuswritingcontroller-make-surface-exit-button)=
+
+**Exit focus** — Enter or leave the focused writing presentation while retaining the
+same live description, caret and scroll position.
+
+(help-inspect-src-gui-widgets-lore-duration-widget-loredurationwidget-create-spinbox-spin)=
+
+**Duration component** — Set the indicated component of this elapsed duration. The
+active calendar determines conversion to lore days.
+
+(help-inspect-empty-eventlistwidget-init-74)=
+
+**Create first Event** — Create an Event at the viewed time to begin building the
+Timeline.
+
+(help-inspect-empty-entityeditorwidget-build-editor-shell-165)=
+
+**New Entity** — Create an Entity with a chosen name and type. Its connections are added
+separately.
+
+(help-inspect-empty-unifiedlistwidget-init-409)=
+
+**Create Event** — Create an Event at the viewed time. Connections and map placement are
+separate actions.
+
+(help-inspect-empty-unifiedlistwidget-init-412)=
+
+**Create Entity** — Create an Entity with a chosen name and type, such as a character,
+location or faction.
+
+(help-inspect-empty-eventeditorwidget-build-editor-shell-269)=
+
+**New Event** — Create an Event at the viewed time, then edit its name, date and other
+details.
+
+(help-inspect-empty-entitylistwidget-init-80)=
+
+**Create first Entity** — Create an Entity, such as a character, location or faction,
+with a chosen name and type.
+
+(help-inspect-view-src-gui-dialogs-context-tag-dialogs-contexttagreviewdialog-init-self-table)=
+
+**Context-tag review** — Review suggested tag assignments, select proposals and choose
+whether to accept or dismiss them.

@@ -192,6 +192,7 @@ class HelpBuilder(Builder):
         self.pages: list[dict[str, Any]] = []
         self.search: list[dict[str, Any]] = []
         self.excerpts: dict[str, str] = {}
+        self.inspection_topics: dict[str, list[str]] = {}
         registry = json.loads(
             (Path(self.confdir) / "help-topics.json").read_text("utf-8")
         )
@@ -200,6 +201,17 @@ class HelpBuilder(Builder):
             for topic in registry["topics"]
             if topic.get("control_excerpt_target")
         }
+        inspection_path = Path(self.confdir) / "help-inspection.json"
+        if inspection_path.is_file():
+            inventory = json.loads(inspection_path.read_text("utf-8"))
+            self.excerpt_targets.update(
+                binding["target"] for binding in inventory["bindings"]
+            )
+            self.excerpt_targets.update(inventory.get("shared_targets", []))
+            for binding in inventory["bindings"]:
+                self.inspection_topics.setdefault(binding["target"], []).append(
+                    binding["topic_id"]
+                )
 
     def get_outdated_docs(self) -> str:
         """Always regenerate from the resolved canonical manual."""
@@ -238,6 +250,7 @@ class HelpBuilder(Builder):
                 self.excerpts[page + "#" + target] = QtRenderer(self, docname).render(
                     element
                 )
+                self._search_excerpt(page, target, element)
         sections = list(doctree.findall(nodes.section))
         for section in sections:
             heading = next(iter(section.findall(nodes.title)), None)
@@ -245,7 +258,9 @@ class HelpBuilder(Builder):
                 child.astext()
                 for child in section.children
                 if not isinstance(child, nodes.section)
+                and not set(child.get("ids", [])).intersection(self.inspection_topics)
             )
+
             anchors = set(section["ids"])
             for child in section.children:
                 if not isinstance(child, nodes.section):
@@ -261,6 +276,23 @@ class HelpBuilder(Builder):
                     "anchors": sorted(anchors),
                 }
             )
+
+    def _search_excerpt(self, page: str, target: str, element: nodes.Element) -> None:
+        """Index each control at its real anchor using its canonical prose."""
+        topic_ids = self.inspection_topics.get(target)
+        if topic_ids is None:
+            return
+        title = next(iter(element.findall(nodes.strong)), None)
+        self.search.append(
+            {
+                "page": page,
+                "fragment": target,
+                "title": title.astext() if title is not None else "Control explanation",
+                "text": element.astext(),
+                "topic_ids": sorted(set(topic_ids)),
+                "anchors": [target],
+            }
+        )
 
     def finish(self) -> None:
         """Persist deterministic intermediate records for bundle validation."""

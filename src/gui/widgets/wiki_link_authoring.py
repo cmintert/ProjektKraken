@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
 from src.core.theme_manager import ThemeManager
 from src.core.wiki_ast import NodeType, WikiASTParser, WikiNode
 from src.core.wiki_markdown_grammar import requires_source_mode
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
@@ -45,10 +46,16 @@ class EntryLinkPicker(QFrame):
         self._cancelled = False
         layout = QVBoxLayout(self)
         layout.addWidget(QLabel("Link to an existing entry"))
-        self.search = QLineEdit(self)
+        self.search = declare_inspection(
+            QLineEdit(self),
+            "src-gui-widgets-wiki-link-authoring-entrylinkpicker-init-self-search|writing.links|help-inspect-src-gui-widgets-wiki-link-authoring-entrylinkpicker-init-self-search",
+        )
         self.search.setPlaceholderText("Search entries…")
         self.search.setAccessibleName("Search existing entries")
-        self.results = QListWidget(self)
+        self.results = declare_inspection(
+            QListWidget(self),
+            "src-gui-widgets-wiki-link-authoring-entrylinkpicker-init-self-results|writing.links|help-inspect-src-gui-widgets-wiki-link-authoring-entrylinkpicker-init-self-results",
+        )
         self.results.setAccessibleName("Existing entries")
         self.notice = QLabel("Select an entry, then Link. No new entry is created.")
         self.notice.setWordWrap(True)
@@ -56,8 +63,14 @@ class EntryLinkPicker(QFrame):
         layout.addWidget(self.results)
         layout.addWidget(self.notice)
         buttons = QHBoxLayout()
-        self.link_button = QPushButton("Link", self)
-        cancel = QPushButton("Cancel", self)
+        self.link_button = declare_inspection(
+            QPushButton("Link", self),
+            "src-gui-widgets-wiki-link-authoring-entrylinkpicker-init-self-link-button|writing.links|help-inspect-src-gui-widgets-wiki-link-authoring-entrylinkpicker-init-self-link-button",
+        )
+        cancel = declare_inspection(
+            QPushButton("Cancel", self),
+            "src-gui-widgets-wiki-link-authoring-entrylinkpicker-init-cancel|writing.links|help-inspect-src-gui-widgets-wiki-link-authoring-entrylinkpicker-init-cancel",
+        )
         buttons.addWidget(self.link_button)
         buttons.addWidget(cancel)
         layout.addLayout(buttons)

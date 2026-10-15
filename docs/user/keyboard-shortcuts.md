@@ -8,7 +8,7 @@ The current shortcuts are also available from
 | Action | Shortcut |
 | --- | --- |
 | Help for current task | F1 |
-| Explain a reviewed focused control | Shift+F1 |
+| Explain the focused supported control | Shift+F1 |
 | Search the offline manual | Ctrl+F, while Help has focus |
 | Return from Help to work | Escape, while Help has focus |
 | Create event | Ctrl+E |
@@ -38,5 +38,8 @@ trajectory editor it cancels an equalization preview, then an active date edit,
 then the complete unsaved trajectory session. In Help, Escape hides search
 before returning to work. During control inspection it dismisses inspection or
 the explanation first, without canceling a map edit or leaving Focus writing.
+**Help → Inspect control** provides the pointer route for supported fields,
+buttons, menu actions and associated labels. Its targeting click explains the
+operation without running it, including when the control is disabled.
 Reordering and shifting are
 controls within the active date edit and do not add separate shortcuts.

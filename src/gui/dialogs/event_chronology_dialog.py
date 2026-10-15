@@ -23,6 +23,7 @@ from src.core.temporal_constraints import TemporalConstraintKind
 from src.core.temporal_expression import expression_from_attributes
 from src.core.theme_manager import ThemeManager
 from src.gui.dialogs.help_aware_dialog import HelpAwareDialog
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
@@ -112,15 +113,22 @@ class EventChronologyDialog(HelpAwareDialog):
             )
             warning.setWordWrap(True)
             layout.addWidget(warning)
-        add = QPushButton("Add ordering")
+        add = declare_inspection(
+            QPushButton("Add ordering"),
+            "src-gui-dialogs-event-chronology-dialog-eventchronologydialog-init-add|event.chronology|help-inspect-src-gui-dialogs-event-chronology-dialog-eventchronologydialog-init-add",
+        )
         add.clicked.connect(self._add_row)
         layout.addWidget(add)
         self.error = QLabel()
         self.error.setWordWrap(True)
         self.error.setStyleSheet(StyleHelper.get_error_label_style())
         layout.addWidget(self.error)
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        buttons = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel
+            ),
+            "src-gui-dialogs-event-chronology-dialog-eventchronologydialog-init-buttons|event.chronology|help-inspect-src-gui-dialogs-event-chronology-dialog-eventchronologydialog-init-buttons",
         )
         buttons.accepted.connect(self._accept_valid)
         buttons.rejected.connect(self.reject)
@@ -138,7 +146,10 @@ class EventChronologyDialog(HelpAwareDialog):
         row.setContentsMargins(0, 3, 0, 9)
         primary = QHBoxLayout()
         primary.addWidget(QLabel("This event"))
-        order = ScrollSafeComboBox()
+        order = declare_inspection(
+            ScrollSafeComboBox(),
+            "src-gui-dialogs-event-chronology-dialog-eventchronologydialog-add-row-order|event.chronology|help-inspect-src-gui-dialogs-event-chronology-dialog-eventchronologydialog-add-row-order",
+        )
         for label, value in (
             ("Before", "before"),
             ("After", "after"),
@@ -151,7 +162,10 @@ class EventChronologyDialog(HelpAwareDialog):
             "not merely overlapping dates."
         )
         primary.addWidget(order)
-        target = ScrollSafeComboBox()
+        target = declare_inspection(
+            ScrollSafeComboBox(),
+            "src-gui-dialogs-event-chronology-dialog-eventchronologydialog-add-row-target|event.chronology|help-inspect-src-gui-dialogs-event-chronology-dialog-eventchronologydialog-add-row-target",
+        )
         target.setEditable(True)
         target.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
         target.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
@@ -178,18 +192,27 @@ class EventChronologyDialog(HelpAwareDialog):
         row.addLayout(primary)
         secondary = QHBoxLayout()
         secondary.addStretch()
-        gap = ScrollSafeDoubleSpinBox()
+        gap = declare_inspection(
+            ScrollSafeDoubleSpinBox(),
+            "src-gui-dialogs-event-chronology-dialog-eventchronologydialog-add-row-gap|event.chronology|help-inspect-src-gui-dialogs-event-chronology-dialog-eventchronologydialog-add-row-gap",
+        )
         gap.setRange(0, 1e12)
         gap.setDecimals(6)
         gap.setSuffix(" days")
         gap.setValue(float((old_data or {}).get("min_offset_days", 0)))
         gap.setToolTip("Minimum separation between event starts")
         gap.setVisible(gap.value() > 0)
-        more = QPushButton("Gap…")
+        more = declare_inspection(
+            QPushButton("Gap…"),
+            "src-gui-dialogs-event-chronology-dialog-eventchronologydialog-add-row-more|event.chronology|help-inspect-src-gui-dialogs-event-chronology-dialog-eventchronologydialog-add-row-more",
+        )
         more.clicked.connect(lambda: gap.setVisible(not gap.isVisible()))
         secondary.addWidget(more)
         secondary.addWidget(gap)
-        remove = QPushButton("Remove")
+        remove = declare_inspection(
+            QPushButton("Remove"),
+            "src-gui-dialogs-event-chronology-dialog-eventchronologydialog-add-row-remove|event.chronology|help-inspect-src-gui-dialogs-event-chronology-dialog-eventchronologydialog-add-row-remove",
+        )
         secondary.addWidget(remove)
         row.addLayout(secondary)
         self.rows_layout.addWidget(container)

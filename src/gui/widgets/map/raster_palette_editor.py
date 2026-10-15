@@ -34,6 +34,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.color_pickers import (
     GradientScrubberWidget,
@@ -332,8 +333,12 @@ class RasterPaletteEditor(QDialog):
         )
         layout.addWidget(self._recent_palette_colors)
 
-        btn_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        btn_box = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel
+            ),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-ui-btn-box|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-ui-btn-box",
         )
         btn_box.accepted.connect(self.accept)
         btn_box.rejected.connect(self.reject)
@@ -345,19 +350,28 @@ class RasterPaletteEditor(QDialog):
         # Auto-color toolbar
         auto_row = QHBoxLayout()
         auto_row.setSpacing(4)
-        btn_auto_color = QPushButton("🎨 Auto-color")
+        btn_auto_color = declare_inspection(
+            QPushButton("🎨 Auto-color"),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-discrete-ui-btn-auto-color|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-discrete-ui-btn-auto-color",
+        )
         btn_auto_color.setToolTip(
             "Assign a qualitative colour palette to each row in sequence"
         )
         btn_auto_color.clicked.connect(self._on_auto_color)
         auto_row.addWidget(btn_auto_color)
 
-        btn_export = QPushButton("⬆ Export…")
+        btn_export = declare_inspection(
+            QPushButton("⬆ Export…"),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-discrete-ui-btn-export|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-discrete-ui-btn-export",
+        )
         btn_export.setToolTip("Export palette to JSON")
         btn_export.clicked.connect(self._on_export_palette)
         auto_row.addWidget(btn_export)
 
-        btn_import = QPushButton("⬇ Import…")
+        btn_import = declare_inspection(
+            QPushButton("⬇ Import…"),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-discrete-ui-btn-import|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-discrete-ui-btn-import",
+        )
         btn_import.setToolTip("Import palette from JSON")
         btn_import.clicked.connect(self._on_import_palette)
         auto_row.addWidget(btn_import)
@@ -365,7 +379,10 @@ class RasterPaletteEditor(QDialog):
         auto_row.addStretch()
         layout.addLayout(auto_row)
 
-        self._table = QTableWidget(0, 6)
+        self._table = declare_inspection(
+            QTableWidget(0, 6),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-discrete-ui-self-table|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-discrete-ui-self-table",
+        )
         self._table.setHorizontalHeaderLabels(
             ["Value", "Colour", "Label", "Linked Item", "Type", ""]
         )
@@ -387,7 +404,10 @@ class RasterPaletteEditor(QDialog):
 
         self._populate_discrete_rows()
 
-        btn_add = QPushButton("+ Add Entry")
+        btn_add = declare_inspection(
+            QPushButton("+ Add Entry"),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-discrete-ui-btn-add|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-discrete-ui-btn-add",
+        )
         btn_add.clicked.connect(lambda: self._add_entry_row(0, "#808080"))
         layout.addWidget(btn_add)
 
@@ -431,7 +451,10 @@ class RasterPaletteEditor(QDialog):
         # Presets row
         preset_row = QHBoxLayout()
         preset_row.addWidget(QLabel("Preset:"))
-        self._preset_combo = QComboBox()
+        self._preset_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-self-preset-combo|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-self-preset-combo",
+        )
         self._preset_combo.setToolTip("Load a built-in gradient preset")
         self._preset_combo.addItem("— custom —")
         for name in _GRADIENT_PRESETS:
@@ -460,7 +483,10 @@ class RasterPaletteEditor(QDialog):
         for stop in sorted(initial_stops, key=lambda s: s.position):
             self._add_stop_row(stop.position, stop.color)
 
-        self._add_stop_btn = QPushButton("+ Add stop")
+        self._add_stop_btn = declare_inspection(
+            QPushButton("+ Add stop"),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-self-add-stop-btn|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-self-add-stop-btn",
+        )
         self._add_stop_btn.setToolTip("Add a new colour stop to the gradient")
         self._add_stop_btn.clicked.connect(self._on_add_stop)
         layout.addWidget(self._add_stop_btn)
@@ -478,7 +504,10 @@ class RasterPaletteEditor(QDialog):
         stretch_row = QHBoxLayout()
         stretch_row.setSpacing(4)
         stretch_row.addWidget(QLabel("Stretch range:"))
-        self._stretch_min_spin = NumericScrubberSpinBox()
+        self._stretch_min_spin = declare_inspection(
+            NumericScrubberSpinBox(),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-self-stretch-min-spin|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-self-stretch-min-spin",
+        )
         self._stretch_min_spin.setRange(0, 65535)
         self._stretch_min_spin.setValue(
             self._color_map.stretch_min
@@ -491,7 +520,10 @@ class RasterPaletteEditor(QDialog):
         )
         stretch_row.addWidget(self._stretch_min_spin)
         stretch_row.addWidget(QLabel("–"))
-        self._stretch_max_spin = NumericScrubberSpinBox()
+        self._stretch_max_spin = declare_inspection(
+            NumericScrubberSpinBox(),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-self-stretch-max-spin|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-self-stretch-max-spin",
+        )
         self._stretch_max_spin.setRange(0, 65535)
         self._stretch_max_spin.setValue(
             self._color_map.stretch_max
@@ -504,12 +536,18 @@ class RasterPaletteEditor(QDialog):
         )
         stretch_row.addWidget(self._stretch_max_spin)
 
-        btn_auto_stretch = QPushButton("Auto-stretch")
+        btn_auto_stretch = declare_inspection(
+            QPushButton("Auto-stretch"),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-btn-auto-stretch|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-btn-auto-stretch",
+        )
         btn_auto_stretch.setToolTip("Set stretch range from actual data range")
         btn_auto_stretch.clicked.connect(self._on_auto_stretch)
         stretch_row.addWidget(btn_auto_stretch)
 
-        btn_reset_stretch = QPushButton("Reset")
+        btn_reset_stretch = declare_inspection(
+            QPushButton("Reset"),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-btn-reset-stretch|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-btn-reset-stretch",
+        )
         btn_reset_stretch.setToolTip("Reset stretch to full 0–65535 range")
         btn_reset_stretch.clicked.connect(self._on_reset_stretch)
         stretch_row.addWidget(btn_reset_stretch)
@@ -518,7 +556,10 @@ class RasterPaletteEditor(QDialog):
         layout.addLayout(stretch_row)
 
         # Visual gradient strip showing the active stretch range.
-        self._stretch_scrubber = GradientScrubberWidget()
+        self._stretch_scrubber = declare_inspection(
+            GradientScrubberWidget(),
+            "view.src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-self-stretch-scrubber|map.raster|help-inspect-view-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-self-stretch-scrubber",
+        )
         self._stretch_scrubber.setToolTip(
             "Visual preview of the stretch range — click/drag to nudge the max end"
         )
@@ -537,7 +578,10 @@ class RasterPaletteEditor(QDialog):
         layout.addWidget(sep)
 
         mapping_hdr = QHBoxLayout()
-        self._display_mapping_enabled = QCheckBox("Map raw values to real-world units")
+        self._display_mapping_enabled = declare_inspection(
+            QCheckBox("Map raw values to real-world units"),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-self-display-mapping-enabled|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-self-display-mapping-enabled",
+        )
         self._display_mapping_enabled.setToolTip(
             "Display values in the legend and probe popup using a real-world scale "
             "(e.g. 0–65535 → -10–40 °C)"
@@ -550,19 +594,28 @@ class RasterPaletteEditor(QDialog):
         range_row = QHBoxLayout()
         range_row.setSpacing(6)
         range_row.addWidget(QLabel("Display min:"))
-        self._display_min_edit = QLineEdit()
+        self._display_min_edit = declare_inspection(
+            QLineEdit(),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-self-display-min-edit|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-self-display-min-edit",
+        )
         self._display_min_edit.setFixedWidth(80)
         self._display_min_edit.setPlaceholderText("e.g. -10.0")
         self._display_min_edit.setValidator(QDoubleValidator())
         range_row.addWidget(self._display_min_edit)
         range_row.addWidget(QLabel("max:"))
-        self._display_max_edit = QLineEdit()
+        self._display_max_edit = declare_inspection(
+            QLineEdit(),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-self-display-max-edit|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-self-display-max-edit",
+        )
         self._display_max_edit.setFixedWidth(80)
         self._display_max_edit.setPlaceholderText("e.g. 40.0")
         self._display_max_edit.setValidator(QDoubleValidator())
         range_row.addWidget(self._display_max_edit)
         range_row.addWidget(QLabel("Unit:"))
-        self._display_unit_edit = QLineEdit()
+        self._display_unit_edit = declare_inspection(
+            QLineEdit(),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-self-display-unit-edit|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-self-display-unit-edit",
+        )
         self._display_unit_edit.setFixedWidth(60)
         self._display_unit_edit.setPlaceholderText("e.g. °C")
         range_row.addWidget(self._display_unit_edit)
@@ -573,14 +626,20 @@ class RasterPaletteEditor(QDialog):
         fmt_row = QHBoxLayout()
         fmt_row.setSpacing(6)
         fmt_row.addWidget(QLabel("Format:"))
-        self._display_format_edit = QLineEdit("{:.2f}")
+        self._display_format_edit = declare_inspection(
+            QLineEdit("{:.2f}"),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-self-display-format-edit|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-self-display-format-edit",
+        )
         self._display_format_edit.setFixedWidth(80)
         self._display_format_edit.setToolTip(
             "Python format string applied to each display value, e.g. {:.1f} or {:.0f}"
         )
         fmt_row.addWidget(self._display_format_edit)
         fmt_row.addWidget(QLabel("Scale:"))
-        self._display_scale_combo = QComboBox()
+        self._display_scale_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-self-display-scale-combo|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-gradient-ui-self-display-scale-combo",
+        )
         self._display_scale_combo.addItems(["Linear", "Log"])
         fmt_row.addWidget(self._display_scale_combo)
         fmt_row.addStretch()
@@ -632,11 +691,17 @@ class RasterPaletteEditor(QDialog):
         layout.addWidget(link_label)
         link_row = QHBoxLayout()
         link_row.setSpacing(6)
-        self._linked_type_combo = QComboBox()
+        self._linked_type_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-linked-item-controls-self-linked-type-combo|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-linked-item-controls-self-linked-type-combo",
+        )
         self._linked_type_combo.addItems(["None", "Entity", "Event"])
         self._linked_type_combo.setFixedWidth(80)
         link_row.addWidget(self._linked_type_combo)
-        self._linked_name_edit = QLineEdit()
+        self._linked_name_edit = declare_inspection(
+            QLineEdit(),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-linked-item-controls-self-linked-name-edit|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-build-linked-item-controls-self-linked-name-edit",
+        )
         self._linked_name_edit.setPlaceholderText("Start typing a name…")
         self._linked_name_edit.setToolTip(
             "Link this colour map to a world entity or event by name"
@@ -677,7 +742,10 @@ class RasterPaletteEditor(QDialog):
         row_layout.setContentsMargins(0, 0, 0, 0)
         row_layout.setSpacing(4)
 
-        pos_spin = NumericScrubberSpinBox()
+        pos_spin = declare_inspection(
+            NumericScrubberSpinBox(),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-add-stop-row-pos-spin|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-add-stop-row-pos-spin",
+        )
         pos_spin.setObjectName("pos_spin")
         pos_spin.setRange(0, 100)
         pos_spin.setValue(round(position * 100))
@@ -688,11 +756,17 @@ class RasterPaletteEditor(QDialog):
         )
         pos_spin.valueChanged.connect(self._refresh_gradient_preview)
 
-        color_btn = _ColorButton(color)
+        color_btn = declare_inspection(
+            _ColorButton(color),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-add-stop-row-color-btn|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-add-stop-row-color-btn",
+        )
         color_btn.setObjectName("color_btn")
         color_btn.color_changed.connect(self._refresh_gradient_preview)
 
-        del_btn = QPushButton("✕")
+        del_btn = declare_inspection(
+            QPushButton("✕"),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-add-stop-row-del-btn|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-add-stop-row-del-btn",
+        )
         del_btn.setObjectName("del_btn")
         del_btn.setFixedSize(24, 24)
         del_btn.setToolTip("Remove this stop")
@@ -882,7 +956,10 @@ class RasterPaletteEditor(QDialog):
         self._table.insertRow(row)
 
         # Col 0: value scrubber; stable mapping_id stored as a property
-        spin = NumericScrubberSpinBox()
+        spin = declare_inspection(
+            NumericScrubberSpinBox(),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-add-entry-row-spin|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-add-entry-row-spin",
+        )
         spin.setRange(0, 65535)
         spin.setValue(value)
         spin.setProperty("mapping_id", mapping_id)
@@ -892,16 +969,25 @@ class RasterPaletteEditor(QDialog):
         self._table.setCellWidget(row, _COL_VALUE, spin)
 
         # Col 1: colour picker
-        btn = _ColorButton(color)
+        btn = declare_inspection(
+            _ColorButton(color),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-add-entry-row-btn|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-add-entry-row-btn",
+        )
         self._table.setCellWidget(row, _COL_COLOR, btn)
 
         # Col 2: human-readable label
-        label_edit = QLineEdit(label)
+        label_edit = declare_inspection(
+            QLineEdit(label),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-add-entry-row-label-edit|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-add-entry-row-label-edit",
+        )
         label_edit.setPlaceholderText("Class label…")
         self._table.setCellWidget(row, _COL_LABEL, label_edit)
 
         # Col 4: item type combo (built before col 3 so completer can reference it)
-        type_combo = QComboBox()
+        type_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-add-entry-row-type-combo|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-add-entry-row-type-combo",
+        )
         type_combo.addItems(_ITEM_TYPES)
         itype = item_type.lower() if item_type else ""
         if itype == "entity":
@@ -918,7 +1004,10 @@ class RasterPaletteEditor(QDialog):
         display_name = self._id_to_choice.get(
             entity_id, self._id_to_name.get(entity_id, entity_id)
         )
-        entity_name_edit = QLineEdit(display_name)
+        entity_name_edit = declare_inspection(
+            QLineEdit(display_name),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-add-entry-row-entity-name-edit|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-add-entry-row-entity-name-edit",
+        )
         entity_name_edit.setPlaceholderText("Link to entity or event…")
         entity_name_edit.setProperty("linked_id", entity_id)
         if self._all_item_names:
@@ -939,7 +1028,10 @@ class RasterPaletteEditor(QDialog):
         self._table.setCellWidget(row, _COL_ENTITY_ID, entity_name_edit)
 
         # Col 5: delete button
-        remove_btn = QPushButton("✕")
+        remove_btn = declare_inspection(
+            QPushButton("✕"),
+            "src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-add-entry-row-remove-btn|map.raster|help-inspect-src-gui-widgets-map-raster-palette-editor-rasterpaletteeditor-add-entry-row-remove-btn",
+        )
         remove_btn.setFixedWidth(36)
         remove_btn.clicked.connect(lambda: self._remove_row_for(remove_btn))
         self._table.setCellWidget(row, _COL_DELETE, remove_btn)

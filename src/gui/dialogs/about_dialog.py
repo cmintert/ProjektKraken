@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.gui.constants import VERSION
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
@@ -68,7 +69,10 @@ class AboutDialog(QDialog):
         button_layout = QHBoxLayout()
         button_layout.addStretch()
 
-        close_btn = QPushButton("Close")
+        close_btn = declare_inspection(
+            QPushButton("Close"),
+            "src-gui-dialogs-about-dialog-aboutdialog-init-close-btn|workspace.navigation|help-inspect-src-gui-dialogs-about-dialog-aboutdialog-init-close-btn",
+        )
         close_btn.setMinimumWidth(100)
         close_btn.setStyleSheet(StyleHelper.get_primary_button_style())
         close_btn.clicked.connect(self.accept)

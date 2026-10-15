@@ -44,6 +44,12 @@ BASE_SCALE: float = 1.0
 DEFAULT_ENTITY_COLOR: str = "#4DA6FF"
 """Fallback fill color for entities (blue)."""
 
+DEFAULT_LEXICON_COLOR: str = "#888888"
+"""Neutral default authored graph-style colour, independent of UI theme."""
+
+DEFAULT_RASTER_PAINT_COLOR: str = "#FFFFFFFF"
+"""Initial authored RGBA raster paint value; not a UI surface colour."""
+
 DEFAULT_EVENT_COLOR: str = "#FF9900"
 """Fallback fill color for events (orange)."""
 

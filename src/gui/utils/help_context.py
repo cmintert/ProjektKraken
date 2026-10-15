@@ -6,10 +6,20 @@ import weakref
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
+from typing import TypeVar
 
 import shiboken6
 from PySide6.QtCore import QObject, QPoint
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QApplication, QWhatsThis, QWidget
+
+_Object = TypeVar("_Object", bound=QObject)
+
+
+def declare_inspection(obj: _Object, declaration: str) -> _Object:
+    """Attach an explicit semantic identity while retaining the original object."""
+    obj.setProperty("krakenHelpBinding", declaration)
+    return obj
 
 
 def ancestors(widget: QObject | None) -> Iterator[QObject]:
@@ -44,6 +54,7 @@ class ControlHelpRegistration:
 
     meaning: str
     topic_id: str
+    excerpt_target: str | None = None
 
 
 def help_is_activating() -> bool:
@@ -100,6 +111,28 @@ class HelpContextRegistry:
         self.inspection_regions: weakref.WeakKeyDictionary[
             QWidget, Callable[[QPoint | None], ControlHelpRegistration | None]
         ] = weakref.WeakKeyDictionary()
+        self.inspection_actions: weakref.WeakKeyDictionary[
+            QAction, tuple[ControlHelpRegistration, weakref.ReferenceType[QWidget]]
+        ] = weakref.WeakKeyDictionary()
+        # Qt owns menu actions. Keep their Python wrappers stable until native
+        # destruction; collecting a transient menuAction wrapper can tear down
+        # its menu on PySide. Semantic owners and origin references remain weak.
+        self._action_handles: dict[int, QAction] = {}
+        self._menu_handles: dict[int, QWidget] = {}
+
+    def retain_inspection_action(self, action: QAction) -> None:
+        """Keep Qt-owned action wrappers stable even for an exempt menu item."""
+        token = id(action)
+        if token not in self._action_handles:
+            self._action_handles[token] = action
+            action.destroyed.connect(lambda: self._action_handles.pop(token, None))
+
+    def retain_inspection_menu(self, menu: QWidget) -> None:
+        """Keep transient menu wrappers until their native owner disposes them."""
+        token = id(menu)
+        if token not in self._menu_handles:
+            self._menu_handles[token] = menu
+            menu.destroyed.connect(lambda: self._menu_handles.pop(token, None))
 
     def _watch(self, widget: QWidget) -> None:
         if widget not in self._watched:
@@ -130,6 +163,7 @@ class HelpContextRegistry:
                     "krakenInspectionTopic",
                     "krakenInspectionRegion",
                     "krakenInspectionRegistry",
+                    "krakenInspectionExcerpt",
                 ):
                     widget.setProperty(key, None)
                 widget.setWhatsThis("")
@@ -140,16 +174,63 @@ class HelpContextRegistry:
         self.operations.clear()
         self.inspection.clear()
         self.inspection_regions.clear()
+        self.inspection_actions.clear()
+        for action in self._action_handles.values():
+            if shiboken6.isValid(action):
+                action.setWhatsThis("")
+        self._action_handles.clear()
+        self._menu_handles.clear()
 
-    def register_inspection(self, widget: QWidget, meaning: str, topic: str) -> None:
+    def register_inspection(
+        self,
+        widget: QWidget,
+        meaning: str,
+        topic: str,
+        excerpt_target: str | None = None,
+    ) -> None:
         """Register only reviewed control instances or their scoped composites."""
-        self.inspection[widget] = ControlHelpRegistration(meaning, topic)
+        self.inspection[widget] = ControlHelpRegistration(
+            meaning, topic, excerpt_target
+        )
         widget.setProperty("krakenInspectionRegistry", id(self))
         widget.setProperty("krakenInspectionMeaning", meaning)
         widget.setProperty("krakenInspectionTopic", topic)
+        widget.setProperty("krakenInspectionExcerpt", excerpt_target)
         # Native Shift+F1 eligibility; the controller supplies validated text.
         widget.setWhatsThis(" ")
         self._watch(widget)
+
+    def register_inspection_action(
+        self,
+        action: QAction,
+        meaning: str,
+        topic: str,
+        owner: QWidget,
+        excerpt_target: str | None = None,
+    ) -> None:
+        """Associate a menu action with its semantic surviving surface."""
+        self.inspection_actions[action] = (
+            ControlHelpRegistration(meaning, topic, excerpt_target),
+            weakref.ref(owner),
+        )
+        self.retain_inspection_action(action)
+        action.setWhatsThis(" ")
+
+    def inspection_action(
+        self,
+        action: QAction,
+    ) -> tuple[QWidget, ControlHelpRegistration] | None:
+        """Resolve a live action without triggering it or reading its label."""
+        if not shiboken6.isValid(action):
+            return None
+        value = self.inspection_actions.get(action)
+        if value is None:
+            return None
+        registration, reference = value
+        owner = reference()
+        if owner is None or not shiboken6.isValid(owner):
+            return None
+        return owner, registration
 
     def register_inspection_region(
         self,
@@ -182,7 +263,9 @@ class HelpContextRegistry:
                 meaning = item.property("krakenInspectionMeaning")
                 topic = item.property("krakenInspectionTopic")
                 if isinstance(meaning, str) and isinstance(topic, str):
-                    registration = ControlHelpRegistration(meaning, topic)
+                    registration = ControlHelpRegistration(
+                        meaning, topic, item.property("krakenInspectionExcerpt")
+                    )
             if registration is not None:
                 return item, registration
             if item in self.panels or item in self.dialogs:

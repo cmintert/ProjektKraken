@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 
 from src.core.image_attachment import ImageAttachment
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 logger = logging.getLogger(__name__)
@@ -104,10 +105,16 @@ class ImageViewerDialog(QDialog):
 
         # Navigation
         nav_layout = QHBoxLayout()
-        self.btn_prev = QPushButton("< Previous")
+        self.btn_prev = declare_inspection(
+            QPushButton("< Previous"),
+            "src-gui-dialogs-image-viewer-dialog-imageviewerdialog-init-ui-self-btn-prev|media.gallery|help-inspect-src-gui-dialogs-image-viewer-dialog-imageviewerdialog-init-ui-self-btn-prev",
+        )
         self.btn_prev.clicked.connect(self.show_prev)
 
-        self.btn_next = QPushButton("Next >")
+        self.btn_next = declare_inspection(
+            QPushButton("Next >"),
+            "src-gui-dialogs-image-viewer-dialog-imageviewerdialog-init-ui-self-btn-next|media.gallery|help-inspect-src-gui-dialogs-image-viewer-dialog-imageviewerdialog-init-ui-self-btn-next",
+        )
         self.btn_next.clicked.connect(self.show_next)
 
         self.lbl_counter = QLabel()

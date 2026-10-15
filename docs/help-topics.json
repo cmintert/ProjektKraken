@@ -281,6 +281,188 @@
       "related_ids": [
         "manual.home"
       ]
+    },
+    {
+      "id": "workspace.navigation",
+      "source": "workspace.md",
+      "target": "help-workspace-navigation",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "explorer.browsing",
+      "source": "workspace.md",
+      "target": "help-explorer-browsing",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "authoring.delete",
+      "source": "events-entities-relations.md",
+      "target": "help-authoring-delete",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "graph.exploring",
+      "source": "search-ai-and-analysis.md",
+      "target": "help-graph-exploring",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "ai.search",
+      "source": "search-ai-and-analysis.md",
+      "target": "help-ai-search",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "analysis.review",
+      "source": "search-ai-and-analysis.md",
+      "target": "help-analysis-review",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "history.undo",
+      "source": "workspace.md",
+      "target": "help-history-undo",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "world.transfer",
+      "source": "import-export-and-backups.md",
+      "target": "help-world-transfer",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "world.backups",
+      "source": "import-export-and-backups.md",
+      "target": "help-world-backups",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "world.manage",
+      "source": "getting-started.md",
+      "target": "help-world-manage",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "settings.ai",
+      "source": "search-ai-and-analysis.md",
+      "target": "help-settings-ai",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "calendar.configure",
+      "source": "timeline-and-calendars.md",
+      "target": "help-calendar-configure",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "map.layers",
+      "source": "maps.md",
+      "target": "help-map-layers",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "map.appearance",
+      "source": "maps.md",
+      "target": "help-map-appearance",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "map.raster",
+      "source": "maps.md",
+      "target": "help-map-raster",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "writing.spelling",
+      "source": "wiki-editor-markdown.md",
+      "target": "help-writing-spelling",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "writing.templates",
+      "source": "search-ai-and-analysis.md",
+      "target": "help-writing-templates",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "writing.ai",
+      "source": "search-ai-and-analysis.md",
+      "target": "help-writing-ai",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "writing.summary",
+      "source": "search-ai-and-analysis.md",
+      "target": "help-writing-summary",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "longform.export",
+      "source": "longform.md",
+      "target": "help-longform-export",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "manual.inspect",
+      "source": "index.md",
+      "target": "help-manual-inspect",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "map.calibration",
+      "source": "maps.md",
+      "target": "help-map-calibration",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "map.icons",
+      "source": "maps.md",
+      "target": "help-map-icons",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "media.gallery",
+      "source": "events-entities-relations.md",
+      "target": "help-media-gallery",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "authoring.tags",
+      "source": "events-entities-relations.md",
+      "target": "help-authoring-tags",
+      "level": "task",
+      "related_ids": []
+    },
+    {
+      "id": "authoring.templates",
+      "source": "events-entities-relations.md",
+      "target": "help-authoring-templates",
+      "level": "task",
+      "related_ids": []
     }
   ]
 }

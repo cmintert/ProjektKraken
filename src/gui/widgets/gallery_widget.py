@@ -43,6 +43,7 @@ from src.core.image_attachment import ImageAttachment
 from src.core.paths import get_user_data_path
 from src.gui.constants import IMAGE_FILE_FILTER
 from src.gui.dialogs.image_viewer_dialog import ImageViewerDialog
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.qt_invocation import invoke_queued
 from src.gui.widgets.standard_buttons import DestructiveButton, StandardButton
 from src.gui.workers.thumbnail_loader import ThumbnailLoader
@@ -122,17 +123,26 @@ class GalleryWidget(QWidget):
 
         # Toolbar / Action buttons
         toolbar = QHBoxLayout()
-        self.btn_add = StandardButton("Add Image")
+        self.btn_add = declare_inspection(
+            StandardButton("Add Image"),
+            "src-gui-widgets-gallery-widget-gallerywidget-init-ui-self-btn-add|media.gallery|help-inspect-src-gui-widgets-gallery-widget-gallerywidget-init-ui-self-btn-add",
+        )
         self.btn_add.setToolTip("Add images to this item")
         self.btn_add.clicked.connect(self.on_add_clicked)
         self.btn_add.setEnabled(False)  # Disabled until owner set
 
-        self.btn_edit = StandardButton("Edit Caption")
+        self.btn_edit = declare_inspection(
+            StandardButton("Edit Caption"),
+            "src-gui-widgets-gallery-widget-gallerywidget-init-ui-self-btn-edit|media.gallery|help-inspect-src-gui-widgets-gallery-widget-gallerywidget-init-ui-self-btn-edit",
+        )
         self.btn_edit.setToolTip("Edit caption for selected image")
         self.btn_edit.clicked.connect(self._on_edit_caption_clicked)
         self.btn_edit.setEnabled(False)
 
-        self.btn_remove = DestructiveButton("Remove")
+        self.btn_remove = declare_inspection(
+            DestructiveButton("Remove"),
+            "src-gui-widgets-gallery-widget-gallerywidget-init-ui-self-btn-remove|media.gallery|help-inspect-src-gui-widgets-gallery-widget-gallerywidget-init-ui-self-btn-remove",
+        )
         self.btn_remove.setToolTip("Remove selected image")
         self.btn_remove.clicked.connect(self._on_remove_clicked)
         self.btn_remove.setEnabled(False)
@@ -145,7 +155,10 @@ class GalleryWidget(QWidget):
         layout.addLayout(toolbar)
 
         # File List (Icon Mode)
-        self.list_widget = QListWidget()
+        self.list_widget = declare_inspection(
+            QListWidget(),
+            "src-gui-widgets-gallery-widget-gallerywidget-init-ui-self-list-widget|media.gallery|help-inspect-src-gui-widgets-gallery-widget-gallerywidget-init-ui-self-list-widget",
+        )
         self.list_widget.setViewMode(QListView.ViewMode.IconMode)
         self.list_widget.setIconSize(QSize(128, 128))
         self.list_widget.setResizeMode(QListView.ResizeMode.Adjust)
@@ -380,11 +393,23 @@ class GalleryWidget(QWidget):
         if not item:
             return
 
-        menu = QMenu()
-        view_action = menu.addAction("View")
-        edit_caption_action = menu.addAction("Edit Caption")
+        menu = declare_inspection(
+            QMenu(self),
+            "src-gui-widgets-gallery-widget-gallerywidget-show-context-menu-menu|media.gallery|help-inspect-src-gui-widgets-gallery-widget-gallerywidget-show-context-menu-menu",
+        )
+        view_action = declare_inspection(
+            menu.addAction("View"),
+            "src-gui-widgets-gallery-widget-gallerywidget-show-context-menu-view-action|media.gallery|help-inspect-src-gui-widgets-gallery-widget-gallerywidget-show-context-menu-view-action",
+        )
+        edit_caption_action = declare_inspection(
+            menu.addAction("Edit Caption"),
+            "src-gui-widgets-gallery-widget-gallerywidget-show-context-menu-edit-caption-action|media.gallery|help-inspect-src-gui-widgets-gallery-widget-gallerywidget-show-context-menu-edit-caption-action",
+        )
         menu.addSeparator()
-        remove_action = menu.addAction("Remove")
+        remove_action = declare_inspection(
+            menu.addAction("Remove"),
+            "src-gui-widgets-gallery-widget-gallerywidget-show-context-menu-remove-action|media.gallery|help-inspect-src-gui-widgets-gallery-widget-gallerywidget-show-context-menu-remove-action",
+        )
 
         action = menu.exec(self.list_widget.mapToGlobal(pos))
 
@@ -394,6 +419,7 @@ class GalleryWidget(QWidget):
             self.edit_caption(item)
         elif action == remove_action:
             self.remove_item(item)
+        menu.deleteLater()
 
     @Slot()
     def _on_edit_caption_clicked(self) -> None:

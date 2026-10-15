@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 
 from src.core.temporal_expression import move_expression
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.compact_duration_widget import CompactDurationWidget
@@ -130,12 +131,18 @@ class TemporalRangeWidget(QWidget):
         self.date_start.allow_duration_range = True
         start_row.addWidget(self.date_start)
         card_layout.addLayout(start_row)
-        self.has_duration = QCheckBox("Event has duration")
+        self.has_duration = declare_inspection(
+            QCheckBox("Event has duration"),
+            "src-gui-widgets-temporal-range-widget-temporalrangewidget-setup-ui-self-has-duration|event.timing|help-inspect-src-gui-widgets-temporal-range-widget-temporalrangewidget-setup-ui-self-has-duration",
+        )
         self.has_duration.setToolTip(
             "Leave unchecked for a single occurrence, even when its date is only known to a year."
         )
         card_layout.addWidget(self.has_duration)
-        self.range_button = DisclosureButton("End date / duration…")
+        self.range_button = declare_inspection(
+            DisclosureButton("End date / duration…"),
+            "src-gui-widgets-temporal-range-widget-temporalrangewidget-setup-ui-self-range-button|event.timing|help-inspect-src-gui-widgets-temporal-range-widget-temporalrangewidget-setup-ui-self-range-button",
+        )
         card_layout.addWidget(self.range_button)
         self.range_button.hide()
         self.range_summary = QLabel()
@@ -161,14 +168,20 @@ class TemporalRangeWidget(QWidget):
         lock_row.addWidget(line_left, stretch=1)
 
         # Segmented control: Duration | End Date
-        self.btn_lock_duration = QPushButton("Duration")
+        self.btn_lock_duration = declare_inspection(
+            QPushButton("Duration"),
+            "src-gui-widgets-temporal-range-widget-temporalrangewidget-setup-ui-self-btn-lock-duration|event.timing|help-inspect-src-gui-widgets-temporal-range-widget-temporalrangewidget-setup-ui-self-btn-lock-duration",
+        )
         self.btn_lock_duration.setCheckable(True)
         self.btn_lock_duration.setChecked(True)
         self.btn_lock_duration.setToolTip(
             "Start changes move the end date (span stays fixed)"
         )
 
-        self.btn_lock_end = QPushButton("End Date")
+        self.btn_lock_end = declare_inspection(
+            QPushButton("End Date"),
+            "src-gui-widgets-temporal-range-widget-temporalrangewidget-setup-ui-self-btn-lock-end|event.timing|help-inspect-src-gui-widgets-temporal-range-widget-temporalrangewidget-setup-ui-self-btn-lock-end",
+        )
         self.btn_lock_end.setCheckable(True)
         self.btn_lock_end.setChecked(False)
         self.btn_lock_end.setToolTip(
@@ -231,7 +244,10 @@ class TemporalRangeWidget(QWidget):
         self.date_end = CompactDateWidget(text_first=True)
         self.date_end.txt_date.setAccessibleName("End date")
         end_row.addWidget(self.date_end)
-        self.enter_end_button = QPushButton("Specify an end date instead…")
+        self.enter_end_button = declare_inspection(
+            QPushButton("Specify an end date instead…"),
+            "src-gui-widgets-temporal-range-widget-temporalrangewidget-setup-ui-self-enter-end-button|event.timing|help-inspect-src-gui-widgets-temporal-range-widget-temporalrangewidget-setup-ui-self-enter-end-button",
+        )
         self.enter_end_button.clicked.connect(self._enter_end_date)
         end_row.addWidget(self.enter_end_button)
         self.enter_end_button.hide()

@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.calendar import CalendarConverter
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 
@@ -71,7 +72,10 @@ class CompactDurationWidget(QWidget):
         # Years - allow expanding with suffix
         from PySide6.QtWidgets import QSizePolicy
 
-        self.spin_years = ScrollSafeSpinBox()
+        self.spin_years = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-widgets-compact-duration-widget-compactdurationwidget-setup-ui-self-spin-years|event.timing|help-inspect-src-gui-widgets-compact-duration-widget-compactdurationwidget-setup-ui-self-spin-years",
+        )
         self.spin_years.setRange(0, 999999)
         self.spin_years.setValue(0)
         self.spin_years.setSuffix(" Y")
@@ -82,7 +86,10 @@ class CompactDurationWidget(QWidget):
         ymd_row.addWidget(self.spin_years, stretch=0)
 
         # Months - allow expanding with suffix
-        self.spin_months = ScrollSafeSpinBox()
+        self.spin_months = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-widgets-compact-duration-widget-compactdurationwidget-setup-ui-self-spin-months|event.timing|help-inspect-src-gui-widgets-compact-duration-widget-compactdurationwidget-setup-ui-self-spin-months",
+        )
         self.spin_months.setRange(0, 99)
         self.spin_months.setValue(0)
         self.spin_months.setSuffix(" M")
@@ -93,13 +100,14 @@ class CompactDurationWidget(QWidget):
         ymd_row.addWidget(self.spin_months, stretch=0)
 
         # Days - allow expanding with suffix
-        self.spin_days = ScrollSafeSpinBox()
+        self.spin_days = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-widgets-compact-duration-widget-compactdurationwidget-setup-ui-self-spin-days|event.timing|help-inspect-src-gui-widgets-compact-duration-widget-compactdurationwidget-setup-ui-self-spin-days",
+        )
         self.spin_days.setRange(0, 999)
         self.spin_days.setValue(0)
         self.spin_days.setSuffix(" D")
-        self.spin_days.setSizePolicy(
-            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
-        )
+        self.spin_days.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.spin_days.setFixedWidth(80)
         ymd_row.addWidget(self.spin_days, stretch=0)
         ymd_row.addStretch(1)
@@ -111,7 +119,10 @@ class CompactDurationWidget(QWidget):
         hm_row.setSpacing(12)
 
         # Hours - allow expanding with suffix
-        self.spin_hours = ScrollSafeSpinBox()
+        self.spin_hours = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-widgets-compact-duration-widget-compactdurationwidget-setup-ui-self-spin-hours|event.timing|help-inspect-src-gui-widgets-compact-duration-widget-compactdurationwidget-setup-ui-self-spin-hours",
+        )
         self.spin_hours.setRange(0, 23)
         self.spin_hours.setValue(0)
         self.spin_hours.setSuffix(" h")
@@ -122,7 +133,10 @@ class CompactDurationWidget(QWidget):
         hm_row.addWidget(self.spin_hours, stretch=0)
 
         # Minutes - allow expanding with suffix
-        self.spin_minutes = ScrollSafeSpinBox()
+        self.spin_minutes = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-widgets-compact-duration-widget-compactdurationwidget-setup-ui-self-spin-minutes|event.timing|help-inspect-src-gui-widgets-compact-duration-widget-compactdurationwidget-setup-ui-self-spin-minutes",
+        )
         self.spin_minutes.setRange(0, 59)
         self.spin_minutes.setValue(0)
         self.spin_minutes.setSuffix(" m")

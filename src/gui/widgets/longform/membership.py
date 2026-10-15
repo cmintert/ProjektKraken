@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
@@ -34,11 +35,17 @@ class LongformMembershipWidget(QWidget):
         caption = QLabel("Restore existing content to this document")
         caption.setWordWrap(True)
         layout.addWidget(caption)
-        self.search = QLineEdit()
+        self.search = declare_inspection(
+            QLineEdit(),
+            "src-gui-widgets-longform-membership-longformmembershipwidget-init-self-search|longform.recovery|help-inspect-src-gui-widgets-longform-membership-longformmembershipwidget-init-self-search",
+        )
         self.search.setPlaceholderText("Search entities and events…")
         self.search.setAccessibleName("Search existing content")
         layout.addWidget(self.search)
-        self.results = QListWidget()
+        self.results = declare_inspection(
+            QListWidget(),
+            "src-gui-widgets-longform-membership-longformmembershipwidget-init-self-results|longform.recovery|help-inspect-src-gui-widgets-longform-membership-longformmembershipwidget-init-self-results",
+        )
         self.results.setAccessibleName("Existing world content")
         self.results.setMaximumHeight(150)
         layout.addWidget(self.results)
@@ -46,9 +53,15 @@ class LongformMembershipWidget(QWidget):
         self.notice.setWordWrap(True)
         layout.addWidget(self.notice)
         buttons = QHBoxLayout()
-        self.add_button = QPushButton("Add to document")
+        self.add_button = declare_inspection(
+            QPushButton("Add to document"),
+            "src-gui-widgets-longform-membership-longformmembershipwidget-init-self-add-button|longform.recovery|help-inspect-src-gui-widgets-longform-membership-longformmembershipwidget-init-self-add-button",
+        )
         self.add_button.setToolTip("Select an existing entity or event first")
-        self.cancel_button = QPushButton("Cancel")
+        self.cancel_button = declare_inspection(
+            QPushButton("Cancel"),
+            "src-gui-widgets-longform-membership-longformmembershipwidget-init-self-cancel-button|longform.recovery|help-inspect-src-gui-widgets-longform-membership-longformmembershipwidget-init-self-cancel-button",
+        )
         buttons.addWidget(self.add_button)
         buttons.addWidget(self.cancel_button)
         buttons.addStretch()

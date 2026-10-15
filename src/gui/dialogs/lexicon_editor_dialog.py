@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core import style_constants as SC
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.numeric_inputs import (
     ScrollSafeDoubleSpinBox,
@@ -217,9 +218,12 @@ class LexiconEditorDialog(QDialog):
         tabs.addTab(edge_tab, "Relation Types")
 
         # Dialog buttons
-        button_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Save
-            | QDialogButtonBox.StandardButton.Cancel
+        button_box = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Save
+                | QDialogButtonBox.StandardButton.Cancel
+            ),
+            "src-gui-dialogs-lexicon-editor-dialog-lexiconeditordialog-setup-ui-button-box|graph.exploring|help-inspect-src-gui-dialogs-lexicon-editor-dialog-lexiconeditordialog-setup-ui-button-box",
         )
         save_btn = button_box.button(QDialogButtonBox.StandardButton.Save)
         if save_btn:
@@ -313,8 +317,11 @@ class LexiconEditorDialog(QDialog):
         col += 1
 
         # Color button (fill) — supports 'none' for transparent
-        fill_color = style.get("color", "#888888")
-        color_btn = _ColorButton(fill_color)
+        fill_color = style.get("color", SC.DEFAULT_LEXICON_COLOR)
+        color_btn = declare_inspection(
+            _ColorButton(fill_color),
+            "src-gui-dialogs-lexicon-editor-dialog-lexiconeditordialog-add-node-row-color-btn|graph.exploring|help-inspect-src-gui-dialogs-lexicon-editor-dialog-lexiconeditordialog-add-node-row-color-btn",
+        )
         color_btn.setFixedSize(28, 28)
         color_btn.color_changed.connect(self._emit_config_changed)
         grid.addWidget(color_btn, row, col, Qt.AlignmentFlag.AlignCenter)
@@ -322,7 +329,10 @@ class LexiconEditorDialog(QDialog):
 
         # Border color button — supports 'none' for no border
         border_color_val = style.get("border_color", SC.DEFAULT_BORDER_COLOR)
-        border_color_btn = _ColorButton(border_color_val)
+        border_color_btn = declare_inspection(
+            _ColorButton(border_color_val),
+            "src-gui-dialogs-lexicon-editor-dialog-lexiconeditordialog-add-node-row-border-color-btn|graph.exploring|help-inspect-src-gui-dialogs-lexicon-editor-dialog-lexiconeditordialog-add-node-row-border-color-btn",
+        )
         border_color_btn.setFixedSize(28, 28)
         border_color_btn.color_changed.connect(self._emit_config_changed)
         grid.addWidget(
@@ -334,7 +344,10 @@ class LexiconEditorDialog(QDialog):
         col += 1
 
         # Border width spinner
-        border_width_spin = ScrollSafeSpinBox()
+        border_width_spin = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-dialogs-lexicon-editor-dialog-lexiconeditordialog-add-node-row-border-width-spin|graph.exploring|help-inspect-src-gui-dialogs-lexicon-editor-dialog-lexiconeditordialog-add-node-row-border-width-spin",
+        )
         border_width_spin.setRange(SC.MIN_BORDER_WIDTH, SC.MAX_BORDER_WIDTH)
         border_width_spin.setValue(style.get("border_width", SC.BASE_BORDER_WIDTH))
         border_width_spin.setStyleSheet(StyleHelper.get_input_field_style())
@@ -343,7 +356,10 @@ class LexiconEditorDialog(QDialog):
         col += 1
 
         # Size scale spinner
-        size_spin = ScrollSafeDoubleSpinBox()
+        size_spin = declare_inspection(
+            ScrollSafeDoubleSpinBox(),
+            "src-gui-dialogs-lexicon-editor-dialog-lexiconeditordialog-add-node-row-size-spin|graph.exploring|help-inspect-src-gui-dialogs-lexicon-editor-dialog-lexiconeditordialog-add-node-row-size-spin",
+        )
         size_spin.setRange(SC.MIN_SCALE, SC.MAX_SCALE)
         size_spin.setSingleStep(0.1)
         size_spin.setDecimals(1)
@@ -354,7 +370,10 @@ class LexiconEditorDialog(QDialog):
         col += 1
 
         # Shape dropdown
-        shape_combo = QComboBox()
+        shape_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-dialogs-lexicon-editor-dialog-lexiconeditordialog-add-node-row-shape-combo|graph.exploring|help-inspect-src-gui-dialogs-lexicon-editor-dialog-lexiconeditordialog-add-node-row-shape-combo",
+        )
         shape_combo.addItems(NODE_SHAPES)
         current_shape = style.get("shape", "dot")
         idx = shape_combo.findText(current_shape)
@@ -367,7 +386,10 @@ class LexiconEditorDialog(QDialog):
 
         # Icon import button
         icon_id = style.get("icon_id", "")
-        icon_btn = QPushButton("📁 Import" if not icon_id else "✅ Change")
+        icon_btn = declare_inspection(
+            QPushButton("📁 Import" if not icon_id else "✅ Change"),
+            "src-gui-dialogs-lexicon-editor-dialog-lexiconeditordialog-add-node-row-icon-btn|graph.exploring|help-inspect-src-gui-dialogs-lexicon-editor-dialog-lexiconeditordialog-add-node-row-icon-btn",
+        )
         icon_btn.setStyleSheet(StyleHelper.get_tool_button_style())
         icon_btn.setToolTip(icon_id or "Import an SVG/PNG icon")
         icon_btn.clicked.connect(
@@ -380,7 +402,10 @@ class LexiconEditorDialog(QDialog):
         col += 1
 
         # Clear icon button
-        clear_btn = QPushButton("✖")
+        clear_btn = declare_inspection(
+            QPushButton("✖"),
+            "src-gui-dialogs-lexicon-editor-dialog-lexiconeditordialog-add-node-row-clear-btn|graph.exploring|help-inspect-src-gui-dialogs-lexicon-editor-dialog-lexiconeditordialog-add-node-row-clear-btn",
+        )
         clear_btn.setFixedSize(28, 28)
         clear_btn.setToolTip("Clear icon")
         clear_btn.setStyleSheet(StyleHelper.get_tool_button_style())
@@ -531,13 +556,19 @@ class LexiconEditorDialog(QDialog):
         grid.addWidget(label, row, 0)
 
         # Color button
-        color_btn = _ColorButton(QColor(style.get("color", "#888888")))
+        color_btn = declare_inspection(
+            _ColorButton(QColor(style.get("color", SC.DEFAULT_LEXICON_COLOR))),
+            "src-gui-dialogs-lexicon-editor-dialog-lexiconeditordialog-add-edge-row-color-btn|graph.exploring|help-inspect-src-gui-dialogs-lexicon-editor-dialog-lexiconeditordialog-add-edge-row-color-btn",
+        )
         color_btn.setFixedSize(28, 28)  # Keep original size
         color_btn.color_changed.connect(self._emit_config_changed)
         grid.addWidget(color_btn, row, 1, Qt.AlignmentFlag.AlignCenter)
 
         # Width spinner
-        width_spin = ScrollSafeSpinBox()
+        width_spin = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-dialogs-lexicon-editor-dialog-lexiconeditordialog-add-edge-row-width-spin|graph.exploring|help-inspect-src-gui-dialogs-lexicon-editor-dialog-lexiconeditordialog-add-edge-row-width-spin",
+        )
         width_spin.setRange(1, 10)
         width_spin.setValue(style.get("width", 1))
         width_spin.setStyleSheet(StyleHelper.get_input_field_style())
@@ -545,7 +576,10 @@ class LexiconEditorDialog(QDialog):
         grid.addWidget(width_spin, row, 2)
 
         # Dashes checkbox
-        dashes_cb = QCheckBox()
+        dashes_cb = declare_inspection(
+            QCheckBox(),
+            "src-gui-dialogs-lexicon-editor-dialog-lexiconeditordialog-add-edge-row-dashes-cb|graph.exploring|help-inspect-src-gui-dialogs-lexicon-editor-dialog-lexiconeditordialog-add-edge-row-dashes-cb",
+        )
         dashes_cb.setChecked(style.get("dashes", False))
         dashes_cb.setStyleSheet(StyleHelper.get_checkbox_style())
         dashes_cb.toggled.connect(self._emit_config_changed)

@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.events import Event
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
@@ -47,10 +48,16 @@ class EventListWidget(QWidget):
         StyleHelper.apply_standard_list_spacing(main_layout)
 
         # Controls
-        self.btn_refresh = QPushButton("Refresh List")
+        self.btn_refresh = declare_inspection(
+            QPushButton("Refresh List"),
+            "src-gui-widgets-event-list-eventlistwidget-init-self-btn-refresh|explorer.browsing|help-inspect-src-gui-widgets-event-list-eventlistwidget-init-self-btn-refresh",
+        )
         self.btn_refresh.clicked.connect(self.refresh_requested.emit)
 
-        self.btn_delete = QPushButton("Delete Selected")
+        self.btn_delete = declare_inspection(
+            QPushButton("Delete Selected"),
+            "src-gui-widgets-event-list-eventlistwidget-init-self-btn-delete|authoring.delete|help-inspect-src-gui-widgets-event-list-eventlistwidget-init-self-btn-delete",
+        )
         self.btn_delete.clicked.connect(self._on_delete_clicked)
         self.btn_delete.setEnabled(False)
 
@@ -60,7 +67,10 @@ class EventListWidget(QWidget):
         main_layout.addLayout(top_bar)
 
         # List View
-        self.list_widget = QListWidget()
+        self.list_widget = declare_inspection(
+            QListWidget(),
+            "src-gui-widgets-event-list-eventlistwidget-init-self-list-widget|explorer.browsing|help-inspect-src-gui-widgets-event-list-eventlistwidget-init-self-list-widget",
+        )
         self.list_widget.itemSelectionChanged.connect(self._on_selection_changed)
         main_layout.addWidget(self.list_widget)
 
@@ -70,8 +80,11 @@ class EventListWidget(QWidget):
             description="Events mark the key moments in your world's history.",
             parent=self,
         )
-        self.empty_state.add_action(
-            "Create First Event", self.create_requested.emit, primary=True
+        declare_inspection(
+            self.empty_state.add_action(
+                "Create First Event", self.create_requested.emit, primary=True
+            ),
+            "empty.EventListWidget.__init__.74|authoring.create|help-inspect-empty-eventlistwidget-init-74",
         )
         main_layout.addWidget(self.empty_state)
 

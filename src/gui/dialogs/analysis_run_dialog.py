@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.analysis import AnalysisPreset, AnalysisScope, AnalysisScopeKind
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.action_flow_layout import ActionFlowLayout
 from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
 from src.gui.widgets.responsive_dialog_buttons import (
@@ -55,7 +56,10 @@ class AnalysisRunDialog(QDialog):
         )
 
         form = QFormLayout()
-        self.scope_combo = QComboBox()
+        self.scope_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-dialogs-analysis-run-dialog-analysisrundialog-build-ui-self-scope-combo|analysis.review|help-inspect-src-gui-dialogs-analysis-run-dialog-analysisrundialog-build-ui-self-scope-combo",
+        )
         self.scope_combo.addItem("Select a scope…", None)
         for label, kind in (
             ("Whole world", AnalysisScopeKind.WHOLE_WORLD),
@@ -67,10 +71,16 @@ class AnalysisRunDialog(QDialog):
             self.scope_combo.addItem(label, kind)
         form.addRow("Scope", self.scope_combo)
 
-        self.selection_edit = QLineEdit(", ".join(self._selection_ids))
+        self.selection_edit = declare_inspection(
+            QLineEdit(", ".join(self._selection_ids)),
+            "src-gui-dialogs-analysis-run-dialog-analysisrundialog-build-ui-self-selection-edit|analysis.review|help-inspect-src-gui-dialogs-analysis-run-dialog-analysisrundialog-build-ui-self-selection-edit",
+        )
         self.selection_edit.setPlaceholderText("Object IDs separated by commas")
         form.addRow("Selection IDs", self.selection_edit)
-        self.tags_edit = QLineEdit()
+        self.tags_edit = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-analysis-run-dialog-analysisrundialog-build-ui-self-tags-edit|analysis.review|help-inspect-src-gui-dialogs-analysis-run-dialog-analysisrundialog-build-ui-self-tags-edit",
+        )
         self.tags_edit.setPlaceholderText("Tags separated by commas")
         form.addRow("Tags", self.tags_edit)
 
@@ -84,7 +94,10 @@ class AnalysisRunDialog(QDialog):
         range_layout.addWidget(self.end_date)
         form.addRow("Lore dates", range_widget)
 
-        self.preset_combo = QComboBox()
+        self.preset_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-dialogs-analysis-run-dialog-analysisrundialog-build-ui-self-preset-combo|analysis.review|help-inspect-src-gui-dialogs-analysis-run-dialog-analysisrundialog-build-ui-self-preset-combo",
+        )
         for preset in AnalysisPreset:
             self.preset_combo.addItem(preset.value.title(), preset)
         self.preset_combo.setCurrentIndex(1)
@@ -92,9 +105,18 @@ class AnalysisRunDialog(QDialog):
         layout.addLayout(form)
 
         category_layout = ActionFlowLayout()
-        self.plot_holes = QCheckBox("Plot Holes")
-        self.relations = QCheckBox("Relation Gaps")
-        self.lore = QCheckBox("Lore Suggestions")
+        self.plot_holes = declare_inspection(
+            QCheckBox("Plot Holes"),
+            "src-gui-dialogs-analysis-run-dialog-analysisrundialog-build-ui-self-plot-holes|analysis.review|help-inspect-src-gui-dialogs-analysis-run-dialog-analysisrundialog-build-ui-self-plot-holes",
+        )
+        self.relations = declare_inspection(
+            QCheckBox("Relation Gaps"),
+            "src-gui-dialogs-analysis-run-dialog-analysisrundialog-build-ui-self-relations|analysis.review|help-inspect-src-gui-dialogs-analysis-run-dialog-analysisrundialog-build-ui-self-relations",
+        )
+        self.lore = declare_inspection(
+            QCheckBox("Lore Suggestions"),
+            "src-gui-dialogs-analysis-run-dialog-analysisrundialog-build-ui-self-lore|analysis.review|help-inspect-src-gui-dialogs-analysis-run-dialog-analysisrundialog-build-ui-self-lore",
+        )
         for checkbox in (self.plot_holes, self.relations, self.lore):
             checkbox.setChecked(True)
             category_layout.addWidget(checkbox)
@@ -107,8 +129,12 @@ class AnalysisRunDialog(QDialog):
         self.validation_label.setWordWrap(True)
         layout.addWidget(self.validation_label)
 
-        self.buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Cancel | QDialogButtonBox.StandardButton.Ok
+        self.buttons = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Cancel
+                | QDialogButtonBox.StandardButton.Ok
+            ),
+            "src-gui-dialogs-analysis-run-dialog-analysisrundialog-build-ui-self-buttons|analysis.review|help-inspect-src-gui-dialogs-analysis-run-dialog-analysisrundialog-build-ui-self-buttons",
         )
         self.buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Start")
         self.buttons.accepted.connect(self.accept)
@@ -126,7 +152,10 @@ class AnalysisRunDialog(QDialog):
 
     @staticmethod
     def _date_spin() -> ScrollSafeDoubleSpinBox:
-        spin = ScrollSafeDoubleSpinBox()
+        spin = declare_inspection(
+            ScrollSafeDoubleSpinBox(),
+            "src-gui-dialogs-analysis-run-dialog-analysisrundialog-date-spin-spin|analysis.review|help-inspect-src-gui-dialogs-analysis-run-dialog-analysisrundialog-date-spin-spin",
+        )
         spin.setRange(-1_000_000_000.0, 1_000_000_000.0)
         spin.setDecimals(6)
         return spin

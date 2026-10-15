@@ -33,6 +33,7 @@ from src.core.calendar import (
     WeekDefinition,
 )
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 from src.gui.widgets.responsive_dialog_buttons import (
@@ -93,11 +94,17 @@ class CalendarConfigDialog(QDialog):
         header_group = QGroupBox("Calendar Details")
         header_layout = QFormLayout()
 
-        self.name_edit = QLineEdit()
+        self.name_edit = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-name-edit|calendar.configure|help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-name-edit",
+        )
         self.name_edit.setPlaceholderText("e.g., Harptos Calendar")
         header_layout.addRow("Calendar Name:", self.name_edit)
 
-        self.epoch_edit = QLineEdit()
+        self.epoch_edit = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-epoch-edit|calendar.configure|help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-epoch-edit",
+        )
         self.epoch_edit.setPlaceholderText("e.g., DR, AD, Year")
         self.epoch_edit.setMaximumWidth(100)
         header_layout.addRow("Epoch Designation:", self.epoch_edit)
@@ -114,7 +121,10 @@ class CalendarConfigDialog(QDialog):
         month_layout = QVBoxLayout(self.month_tab)
 
         # Month table
-        self.month_table = QTableWidget()
+        self.month_table = declare_inspection(
+            QTableWidget(),
+            "src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-month-table|calendar.configure|help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-month-table",
+        )
         self.month_table.setColumnCount(3)
         self.month_table.setHorizontalHeaderLabels(["Name", "Abbreviation", "Days"])
         self.month_table.horizontalHeader().setSectionResizeMode(
@@ -132,9 +142,15 @@ class CalendarConfigDialog(QDialog):
 
         # Month buttons
         month_btn_layout = QHBoxLayout()
-        self.btn_add_month = QPushButton("Add Month")
+        self.btn_add_month = declare_inspection(
+            QPushButton("Add Month"),
+            "src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-btn-add-month|calendar.configure|help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-btn-add-month",
+        )
         self.btn_add_month.clicked.connect(self._on_add_month)
-        self.btn_remove_month = QPushButton("Remove Selected")
+        self.btn_remove_month = declare_inspection(
+            QPushButton("Remove Selected"),
+            "src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-btn-remove-month|calendar.configure|help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-btn-remove-month",
+        )
         self.btn_remove_month.clicked.connect(self._on_remove_month)
         month_btn_layout.addWidget(self.btn_add_month)
         month_btn_layout.addWidget(self.btn_remove_month)
@@ -151,13 +167,19 @@ class CalendarConfigDialog(QDialog):
         week_layout.addWidget(week_info)
 
         form_layout = QFormLayout()
-        self.day_names_edit = QLineEdit()
+        self.day_names_edit = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-day-names-edit|calendar.configure|help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-day-names-edit",
+        )
         self.day_names_edit.setPlaceholderText(
             "e.g., Moonday, Starday, Godsday, Waterday, Earthday, Freeday, Sunday"
         )
         form_layout.addRow("Day Names:", self.day_names_edit)
 
-        self.day_abbrev_edit = QLineEdit()
+        self.day_abbrev_edit = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-day-abbrev-edit|calendar.configure|help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-day-abbrev-edit",
+        )
         self.day_abbrev_edit.setPlaceholderText("e.g., Mo, St, Go, Wa, Ea, Fr, Su")
         form_layout.addRow("Abbreviations:", self.day_abbrev_edit)
 
@@ -171,7 +193,10 @@ class CalendarConfigDialog(QDialog):
         leap_layout = QVBoxLayout(self.leap_tab)
 
         # Leap rules table
-        self.leap_table = QTableWidget()
+        self.leap_table = declare_inspection(
+            QTableWidget(),
+            "src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-leap-table|calendar.configure|help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-leap-table",
+        )
         self.leap_table.setColumnCount(5)
         self.leap_table.setHorizontalHeaderLabels(
             ["Interval", "Skip", "Reset", "Month Idx", "Days"]
@@ -185,9 +210,15 @@ class CalendarConfigDialog(QDialog):
 
         # Leap buttons
         leap_btn_layout = QHBoxLayout()
-        self.btn_add_rule = QPushButton("Add Rule")
+        self.btn_add_rule = declare_inspection(
+            QPushButton("Add Rule"),
+            "src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-btn-add-rule|calendar.configure|help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-btn-add-rule",
+        )
         self.btn_add_rule.clicked.connect(self._on_add_rule)
-        self.btn_remove_rule = QPushButton("Remove Selected")
+        self.btn_remove_rule = declare_inspection(
+            QPushButton("Remove Selected"),
+            "src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-btn-remove-rule|calendar.configure|help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-btn-remove-rule",
+        )
         self.btn_remove_rule.clicked.connect(self._on_remove_rule)
         leap_btn_layout.addWidget(self.btn_add_rule)
         leap_btn_layout.addWidget(self.btn_remove_rule)
@@ -200,7 +231,10 @@ class CalendarConfigDialog(QDialog):
         preview_group = QGroupBox("Date Preview")
         preview_layout = QHBoxLayout()
 
-        self.preview_float = ScrollSafeSpinBox()
+        self.preview_float = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-preview-float|calendar.configure|help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-preview-float",
+        )
         self.preview_float.setRange(-1000000, 1000000)
         self.preview_float.setValue(0)
         self.preview_float.valueChanged.connect(self._update_preview)
@@ -224,9 +258,12 @@ class CalendarConfigDialog(QDialog):
         main_layout.addWidget(self.error_label)
 
         # --- Buttons ---
-        self.button_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Save
-            | QDialogButtonBox.StandardButton.Cancel
+        self.button_box = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Save
+                | QDialogButtonBox.StandardButton.Cancel
+            ),
+            "src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-button-box|calendar.configure|help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-button-box",
         )
         self.button_box.accepted.connect(self._on_save)
         self.button_box.rejected.connect(self.reject)

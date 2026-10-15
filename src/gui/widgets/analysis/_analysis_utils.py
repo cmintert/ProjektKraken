@@ -99,7 +99,6 @@ def fmt_lore_date(value: float | None, converter: Any | None = None) -> str:
     return f"Year {approx_year}"
 
 
-
 class AutoHeightTextEdit(QTextEdit):
     """Read-only, frameless QTextEdit whose height tracks document content.
 
@@ -347,9 +346,7 @@ def get_analysis_table_style() -> str:
 
 def sync_analysis_cell_styles(table: QTableWidget) -> None:
     """Propagate selected-row theme colours to embedded cell widgets."""
-    selected_rows = {
-        index.row() for index in table.selectionModel().selectedRows()
-    }
+    selected_rows = {index.row() for index in table.selectionModel().selectedRows()}
     for row in range(table.rowCount()):
         selected = row in selected_rows
         for column in range(table.columnCount()):
@@ -388,7 +385,12 @@ def make_analysis_table(headers: list[str]) -> QTableWidget:
     Returns:
         QTableWidget: A configured table widget ready to add to a layout.
     """
-    table = QTableWidget(0, len(headers))
+    from src.gui.utils.help_context import declare_inspection
+
+    table = declare_inspection(
+        QTableWidget(0, len(headers)),
+        "analysis.findings|analysis.review|help-inspect-analysis-findings",
+    )
     table.setHorizontalHeaderLabels(headers)
     table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
     table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)

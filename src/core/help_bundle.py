@@ -10,6 +10,7 @@ HELP_SCHEMA = 1
 HELP_BUILD_COMMAND = "python -m scripts.build_help"
 HELP_INPUT_FILES = (
     "docs/help-topics.json",
+    "docs/help-inspection.json",
     "docs/conf.py",
     "pyproject.toml",
     "requirements/docs.txt",

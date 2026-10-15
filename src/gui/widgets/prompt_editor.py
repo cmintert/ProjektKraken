@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.prompt_syntax_highlighter import PromptSyntaxHighlighter
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
@@ -53,7 +54,10 @@ class PromptEditorWidget(QWidget):
         # Variable insertion
         from src.gui.widgets.wrapping_combo_box import WrappingComboBox
 
-        self.var_combo = WrappingComboBox()
+        self.var_combo = declare_inspection(
+            WrappingComboBox(),
+            "src-gui-widgets-prompt-editor-prompteditorwidget-init-self-var-combo|writing.templates|help-inspect-src-gui-widgets-prompt-editor-prompteditorwidget-init-self-var-combo",
+        )
         self.var_combo.setPlaceholderText("Insert Variable...")
         self.var_combo.setMinimumWidth(110)
         self.var_combo.setSizePolicy(
@@ -65,7 +69,10 @@ class PromptEditorWidget(QWidget):
         toolbar_layout.addStretch()
 
         # Restore default button
-        self.btn_restore = QToolButton()
+        self.btn_restore = declare_inspection(
+            QToolButton(),
+            "src-gui-widgets-prompt-editor-prompteditorwidget-init-self-btn-restore|writing.templates|help-inspect-src-gui-widgets-prompt-editor-prompteditorwidget-init-self-btn-restore",
+        )
         self.btn_restore.setText(
             "Restore Default"
         )  # Icon would be better but text for now
@@ -75,7 +82,10 @@ class PromptEditorWidget(QWidget):
         toolbar_layout.addWidget(self.btn_restore)
 
         # Pop-out button
-        self.btn_popout = QToolButton()
+        self.btn_popout = declare_inspection(
+            QToolButton(),
+            "src-gui-widgets-prompt-editor-prompteditorwidget-init-self-btn-popout|writing.templates|help-inspect-src-gui-widgets-prompt-editor-prompteditorwidget-init-self-btn-popout",
+        )
         self.btn_popout.setText("Open prompt editor…")
         self.btn_popout.setAccessibleName("Open prompt editor…")
         self.btn_popout.setToolTip("Open in larger editor")
@@ -86,7 +96,10 @@ class PromptEditorWidget(QWidget):
         layout.addWidget(actions)
 
         # Editor
-        self.editor = QPlainTextEdit()
+        self.editor = declare_inspection(
+            QPlainTextEdit(),
+            "src-gui-widgets-prompt-editor-prompteditorwidget-init-self-editor|writing.templates|help-inspect-src-gui-widgets-prompt-editor-prompteditorwidget-init-self-editor",
+        )
         self.editor.setPlaceholderText("Enter prompt here...")
 
         # Set monospace font
@@ -222,7 +235,10 @@ class PromptEditorWidget(QWidget):
         # but realistically we want the same features.
         # Let's create a temporary editor widget inside the dialog.
 
-        pop_editor = QPlainTextEdit()
+        pop_editor = declare_inspection(
+            QPlainTextEdit(),
+            "src-gui-widgets-prompt-editor-prompteditorwidget-open-popout-pop-editor|writing.templates|help-inspect-src-gui-widgets-prompt-editor-prompteditorwidget-open-popout-pop-editor",
+        )
         pop_editor.setFont(self.editor.font())
         pop_editor.setPlainText(self.toPlainText())
         pop_editor.setStyleSheet(StyleHelper.get_input_field_style())
@@ -235,7 +251,10 @@ class PromptEditorWidget(QWidget):
         btn_box = QHBoxLayout()
         btn_box.addStretch()
 
-        btn_cancel = QPushButton("Cancel")
+        btn_cancel = declare_inspection(
+            QPushButton("Cancel"),
+            "src-gui-widgets-prompt-editor-prompteditorwidget-open-popout-btn-cancel|writing.templates|help-inspect-src-gui-widgets-prompt-editor-prompteditorwidget-open-popout-btn-cancel",
+        )
         btn_cancel.clicked.connect(dialog.reject)
         # Use Standard/Destructive or ToolButton style?
         # Standard buttons don't have a helper yet besides Primary/Destructive class usage.
@@ -245,7 +264,10 @@ class PromptEditorWidget(QWidget):
         btn_cancel.setStyleSheet(StyleHelper.get_tool_button_style())
         btn_box.addWidget(btn_cancel)
 
-        btn_ok = QPushButton("Apply")
+        btn_ok = declare_inspection(
+            QPushButton("Apply"),
+            "src-gui-widgets-prompt-editor-prompteditorwidget-open-popout-btn-ok|writing.templates|help-inspect-src-gui-widgets-prompt-editor-prompteditorwidget-open-popout-btn-ok",
+        )
         btn_ok.clicked.connect(dialog.accept)
         # Use Primary Button Style
         btn_ok.setStyleSheet(StyleHelper.get_primary_button_style())

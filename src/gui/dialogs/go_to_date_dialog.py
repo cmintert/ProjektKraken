@@ -6,6 +6,7 @@ from src.core.calendar import CalendarConverter
 from src.core.date_parser import DateParser
 from src.core.temporal_expression import TemporalPrecision, TemporalQualifier
 from src.gui.dialogs.help_aware_dialog import HelpAwareDialog
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.responsive_dialog_buttons import (
@@ -42,9 +43,13 @@ class GoToDateDialog(HelpAwareDialog):
         self.feedback = QLabel(self)
         self.feedback.setWordWrap(True)
         layout.addWidget(self.feedback)
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel,
-            parent=self,
+        buttons = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel,
+                parent=self,
+            ),
+            "src-gui-dialogs-go-to-date-dialog-gotodatedialog-init-buttons|timeline.viewing|help-inspect-src-gui-dialogs-go-to-date-dialog-gotodatedialog-init-buttons",
         )
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)

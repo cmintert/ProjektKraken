@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
 
 logger = logging.getLogger(__name__)
@@ -81,12 +82,18 @@ class AttributeDelegate(QStyledItemDelegate):
         # Create appropriate editor based on type
         if value_type == "Boolean":
             # Use checkbox for boolean values
-            checkbox = QCheckBox(parent)
+            checkbox = declare_inspection(
+                QCheckBox(parent),
+                "src-gui-delegates-attribute-delegate-attributedelegate-createeditor-checkbox|authoring.details|help-inspect-src-gui-delegates-attribute-delegate-attributedelegate-createeditor-checkbox",
+            )
             return checkbox
 
         elif value_type == "Number":
             # Use double spinbox for numbers
-            spinbox = ScrollSafeDoubleSpinBox(parent)
+            spinbox = declare_inspection(
+                ScrollSafeDoubleSpinBox(parent),
+                "src-gui-delegates-attribute-delegate-attributedelegate-createeditor-spinbox|authoring.details|help-inspect-src-gui-delegates-attribute-delegate-attributedelegate-createeditor-spinbox",
+            )
             spinbox.setRange(-999999999.0, 999999999.0)
             spinbox.setDecimals(6)
             return spinbox

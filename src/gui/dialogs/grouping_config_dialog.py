@@ -28,6 +28,7 @@ from src.commands.timeline_grouping_commands import (
     SetTimelineGroupingCommand,
     UpdateTagColorCommand,
 )
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.responsive_dialog_buttons import (
     ResponsiveDialogButtonBox as QDialogButtonBox,
 )
@@ -110,7 +111,10 @@ class TagListItem(QWidget):
         layout.setContentsMargins(4, 4, 4, 4)
 
         # Checkbox
-        self.checkbox = QCheckBox()
+        self.checkbox = declare_inspection(
+            QCheckBox(),
+            "src-gui-dialogs-grouping-config-dialog-taglistitem-init-self-checkbox|explorer.browsing|help-inspect-src-gui-dialogs-grouping-config-dialog-taglistitem-init-self-checkbox",
+        )
         layout.addWidget(self.checkbox)
 
         # Color button (using ColorSwatch)
@@ -204,17 +208,26 @@ class GroupingConfigDialog(QDialog):
         list_layout = QHBoxLayout()
 
         # List widget
-        self.list_widget = QListWidget()
+        self.list_widget = declare_inspection(
+            QListWidget(),
+            "src-gui-dialogs-grouping-config-dialog-groupingconfigdialog-setup-ui-self-list-widget|timeline.viewing|help-inspect-src-gui-dialogs-grouping-config-dialog-groupingconfigdialog-setup-ui-self-list-widget",
+        )
         list_layout.addWidget(self.list_widget, 1)
 
         # Up/Down buttons
         button_layout = QVBoxLayout()
-        self.btn_up = QPushButton("▲")
+        self.btn_up = declare_inspection(
+            QPushButton("▲"),
+            "src-gui-dialogs-grouping-config-dialog-groupingconfigdialog-setup-ui-self-btn-up|timeline.viewing|help-inspect-src-gui-dialogs-grouping-config-dialog-groupingconfigdialog-setup-ui-self-btn-up",
+        )
         self.btn_up.setToolTip("Move selected tag up")
         self.btn_up.clicked.connect(self._move_up)
         button_layout.addWidget(self.btn_up)
 
-        self.btn_down = QPushButton("▼")
+        self.btn_down = declare_inspection(
+            QPushButton("▼"),
+            "src-gui-dialogs-grouping-config-dialog-groupingconfigdialog-setup-ui-self-btn-down|timeline.viewing|help-inspect-src-gui-dialogs-grouping-config-dialog-groupingconfigdialog-setup-ui-self-btn-down",
+        )
         self.btn_down.setToolTip("Move selected tag down")
         self.btn_down.clicked.connect(self._move_down)
         button_layout.addWidget(self.btn_down)
@@ -229,14 +242,20 @@ class GroupingConfigDialog(QDialog):
         mode_label.setStyleSheet("font-weight: bold; margin-top: 10px;")
         layout.addWidget(mode_label)
 
-        self.radio_duplicate = QRadioButton("Duplicate")
+        self.radio_duplicate = declare_inspection(
+            QRadioButton("Duplicate"),
+            "src-gui-dialogs-grouping-config-dialog-groupingconfigdialog-setup-ui-self-radio-duplicate|timeline.viewing|help-inspect-src-gui-dialogs-grouping-config-dialog-groupingconfigdialog-setup-ui-self-radio-duplicate",
+        )
         self.radio_duplicate.setToolTip(
             "Events with multiple tags appear in all matching groups"
         )
         self.radio_duplicate.setChecked(True)
         layout.addWidget(self.radio_duplicate)
 
-        self.radio_first_match = QRadioButton("First Match")
+        self.radio_first_match = declare_inspection(
+            QRadioButton("First Match"),
+            "src-gui-dialogs-grouping-config-dialog-groupingconfigdialog-setup-ui-self-radio-first-match|timeline.viewing|help-inspect-src-gui-dialogs-grouping-config-dialog-groupingconfigdialog-setup-ui-self-radio-first-match",
+        )
         self.radio_first_match.setToolTip(
             "Events appear only in the first matching group"
         )
@@ -248,10 +267,13 @@ class GroupingConfigDialog(QDialog):
         self.mode_group.addButton(self.radio_first_match)
 
         # Dialog buttons
-        self.button_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok
-            | QDialogButtonBox.StandardButton.Apply
-            | QDialogButtonBox.StandardButton.Cancel
+        self.button_box = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Apply
+                | QDialogButtonBox.StandardButton.Cancel
+            ),
+            "src-gui-dialogs-grouping-config-dialog-groupingconfigdialog-setup-ui-self-button-box|timeline.viewing|help-inspect-src-gui-dialogs-grouping-config-dialog-groupingconfigdialog-setup-ui-self-button-box",
         )
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)

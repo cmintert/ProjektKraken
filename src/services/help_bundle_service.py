@@ -286,6 +286,30 @@ class HelpBundleService:
         except KeyError as exc:
             raise self._error("invalid", "Missing generated control excerpt.") from exc
 
+    def load_inspection_excerpt(
+        self, topic_id: str, target: str | None = None
+    ) -> str | None:
+        """Load a confined generated control paragraph, preserving legacy lookup."""
+        if target is None:
+            return self.load_control_excerpt(topic_id)
+        self._ensure_valid()
+        topic = self._topics.get(topic_id)
+        if topic is None:
+            return None
+        excerpts = _string_map(
+            json.loads(self.resource_path("excerpts.json").read_text("utf-8"))
+        )
+        key = topic.page + "#" + target
+        if key not in excerpts:
+            matches = [name for name in excerpts if name.endswith("#" + target)]
+            if len(matches) != 1:
+                raise self._error(
+                    "invalid", "Missing generated inspection explanation."
+                )
+            key = matches[0]
+        self.resource_path(key)
+        return excerpts[key]
+
     def _validate_search(self) -> tuple[HelpSearchDocument, ...]:
         values = json.loads(self._resource_path("search.json").read_text("utf-8"))
         result = []

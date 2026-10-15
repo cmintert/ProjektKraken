@@ -73,6 +73,8 @@ Choose **Find** (or Ctrl+F) to search document text. Enter finds the next result
 Shift+Enter finds the previous result; Escape closes the local search or content
 chooser. Adding and arranging membership do not select another inspector entry.
 
+(help-longform-export)=
+
 ## Export
 
 Use **File → Export → Export Longform to Markdown…** for one document. Use
@@ -85,3 +87,155 @@ an Obsidian workspace.
   appear immediately.
 - Very large documents may be easier to maintain as several top-level sections.
 - Wiki links remain useful after Markdown or Obsidian export.
+
+## Interface control reference
+
+These explanations describe the software operation. Inspecting a control does not run it or read your entered values.
+
+(help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-btn-add)=
+
+**Add content…** — Choose existing entries to include in this document. Re-adding an
+excluded entry does not create a duplicate world entry.
+
+(help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-btn-outline-actions)=
+
+**Outline actions** — Select an outline item to arrange or remove it.
+
+(help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-outline-actions-menu)=
+
+**Outline actions menu** — Open the Outline actions menu menu to choose a related
+operation. Opening the menu does not apply any of its actions.
+
+(help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-btn-open-inspector)=
+
+**Open in inspector** — Open the selected section’s underlying Event or Entity in its
+inspector. This deliberately navigates away from reading and protects unfinished edits.
+
+(help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-btn-refresh)=
+
+**Refresh** — Refresh the displayed document from current world content. Deliberately
+excluded entries stay excluded; refresh does not recover deleted world entries.
+
+(help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-btn-filter)=
+
+**Filter...** — Choose which items are shown in Longform. Filtering leaves the saved
+world entries and connections unchanged.
+
+(help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-btn-clear-filters)=
+
+**Clear document filters** — Remove the active Longform filters so included sections are
+visible again. Document membership is retained.
+
+(help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-btn-export)=
+
+**Export Markdown** — Save this Longform document as Markdown without deleting or moving
+its world entries.
+
+(help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-btn-export-vault)=
+
+**Export as Vault** — Export each entity and event as separate Obsidian-compatible .md
+files.
+
+(help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-btn-publish)=
+
+**Publish Locally** — Start or stop local publishing for this document. Local publishing
+is separate from LAN sharing; inspecting this control does not start a server.
+
+(help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-btn-share-lan)=
+
+**Share on LAN...** — Start or stop sharing this document on the local network. This
+changes network exposure; review the sharing controls before enabling it.
+
+(help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-btn-find)=
+
+**Find in document** — Show the text-search controls for this Longform document.
+
+(help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-search-input)=
+
+**Search input** — Find matching items in Longform. Searching changes the displayed
+matches without editing their content.
+
+(help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-btn-prev)=
+
+**Previous match** — Move to the previous text match in this Longform document.
+
+(help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-btn-next)=
+
+**Next match** — Move to the next text match in this Longform document.
+
+(help-inspect-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-btn-close)=
+
+**Close find** — Hide the document's text-search controls and return to reading.
+
+(help-inspect-src-gui-widgets-longform-membership-longformmembershipwidget-init-self-search)=
+
+**Find document content** — Search existing Events and Entities to add to this Longform
+document.
+
+(help-inspect-src-gui-widgets-longform-membership-longformmembershipwidget-init-self-results)=
+
+**Available entries** — Select an existing Event or Entity to add to the document.
+Adding membership does not duplicate the entry.
+
+(help-inspect-src-gui-widgets-longform-membership-longformmembershipwidget-init-self-add-button)=
+
+**Add to document** — Select an existing entity or event first.
+
+(help-inspect-src-gui-widgets-longform-membership-longformmembershipwidget-init-self-cancel-button)=
+
+**Cancel** — Cancel this LongformMembership operation without accepting its pending
+changes. This is separate from applying or saving them.
+
+(help-inspect-src-gui-widgets-longform-outline-longformoutlinewidget-show-context-menu-menu)=
+
+**Menu** — Open the Menu menu to choose a related operation. Opening the menu does not
+apply any of its actions.
+
+(help-inspect-src-gui-widgets-longform-outline-longformoutlinewidget-populate-actions-menu-action)=
+
+**Outline action unavailable** — Select an outline item before arranging it or changing
+its membership.
+
+(help-inspect-src-gui-widgets-longform-outline-longformoutlinewidget-populate-actions-menu-move-up-action)=
+
+**Move Up** — Move the selected item earlier in the displayed order. This changes
+arrangement rather than its date.
+
+(help-inspect-src-gui-widgets-longform-outline-longformoutlinewidget-populate-actions-menu-move-down-action)=
+
+**Move Down** — Move the selected item later in the displayed order. This changes
+arrangement rather than its date.
+
+(help-inspect-src-gui-widgets-longform-outline-longformoutlinewidget-populate-actions-menu-promote-action)=
+
+**Promote** — Lift the selected outline section one level while retaining its underlying
+world entry.
+
+(help-inspect-src-gui-widgets-longform-outline-longformoutlinewidget-populate-actions-menu-demote-action)=
+
+**Demote** — Nest the selected outline section beneath its preceding sibling without
+creating a new world entry.
+
+(help-inspect-src-gui-widgets-longform-outline-longformoutlinewidget-populate-actions-menu-remove-action)=
+
+**Remove from document** — Keep the world entry and lift its child sections.
+
+(help-inspect-src-gui-widgets-longform-outline-longformoutlinewidget-populate-actions-menu-delete-action)=
+
+**Delete from world** — Delete the selected section's underlying world entry after
+confirmation. Remove from document instead keeps the world entry.
+
+(help-inspect-empty-longformeditorwidget-setup-ui-289)=
+
+Choose existing entries to include in this document without creating duplicate world
+entries.
+
+(help-inspect-empty-longformeditorwidget-setup-ui-292)=
+
+Clear the active document filters so its included sections are visible again. This does
+not delete document membership or world entries.
+
+(help-inspect-view-src-gui-widgets-longform-editor-longformeditorwidget-setup-ui-self-outline)=
+
+**Longform outline** — Choose a section to read, or arrange its document membership with
+Outline actions. Removing membership differs from deleting the world entry.

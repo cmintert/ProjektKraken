@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.map.raster_mapping import RasterItemRef
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
@@ -62,7 +63,10 @@ class RasterOrphanWarningDialog(QDialog):
         layout.addWidget(msg)
 
         # Reference list
-        ref_list = QListWidget(self)
+        ref_list = declare_inspection(
+            QListWidget(self),
+            "src-gui-dialogs-raster-orphan-warning-dialog-rasterorphanwarningdialog-init-ref-list|map.raster|help-inspect-src-gui-dialogs-raster-orphan-warning-dialog-rasterorphanwarningdialog-init-ref-list",
+        )
         for ref in refs:
             map_name = map_names.get(ref.map_id, ref.map_id)
             if ref.value is not None:
@@ -81,21 +85,30 @@ class RasterOrphanWarningDialog(QDialog):
 
         btn_row = ActionFlowLayout()
 
-        self._btn_remove_and_delete = QPushButton("Delete + Remove refs")
+        self._btn_remove_and_delete = declare_inspection(
+            QPushButton("Delete + Remove refs"),
+            "src-gui-dialogs-raster-orphan-warning-dialog-rasterorphanwarningdialog-init-self-btn-remove-and-delete|map.raster|help-inspect-src-gui-dialogs-raster-orphan-warning-dialog-rasterorphanwarningdialog-init-self-btn-remove-and-delete",
+        )
         self._btn_remove_and_delete.setToolTip(
             "Delete the entity and remove its mapping from all raster layers"
         )
         self._btn_remove_and_delete.clicked.connect(self._on_remove_and_delete)
         btn_row.addWidget(self._btn_remove_and_delete)
 
-        self._btn_delete_anyway = QPushButton("Delete anyway")
+        self._btn_delete_anyway = declare_inspection(
+            QPushButton("Delete anyway"),
+            "src-gui-dialogs-raster-orphan-warning-dialog-rasterorphanwarningdialog-init-self-btn-delete-anyway|map.raster|help-inspect-src-gui-dialogs-raster-orphan-warning-dialog-rasterorphanwarningdialog-init-self-btn-delete-anyway",
+        )
         self._btn_delete_anyway.setToolTip(
             "Delete the entity but leave the raster mappings as orphaned entries"
         )
         self._btn_delete_anyway.clicked.connect(self._on_delete_anyway)
         btn_row.addWidget(self._btn_delete_anyway)
 
-        self._btn_cancel = QPushButton("Cancel")
+        self._btn_cancel = declare_inspection(
+            QPushButton("Cancel"),
+            "src-gui-dialogs-raster-orphan-warning-dialog-rasterorphanwarningdialog-init-self-btn-cancel|map.raster|help-inspect-src-gui-dialogs-raster-orphan-warning-dialog-rasterorphanwarningdialog-init-self-btn-cancel",
+        )
         self._btn_cancel.clicked.connect(self._on_cancel)
         btn_row.addWidget(self._btn_cancel)
 

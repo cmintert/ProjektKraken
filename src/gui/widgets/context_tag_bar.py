@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 from src.gui.widgets.tag_chip_view import tag_color_for_theme
 
@@ -61,19 +62,31 @@ class ContextTagBar(QFrame):
         self.lbl_count = QLabel()
         layout.addWidget(self.lbl_count)
 
-        self.btn_review = QPushButton("Review")
+        self.btn_review = declare_inspection(
+            QPushButton("Review"),
+            "src-gui-widgets-context-tag-bar-contexttagbar-init-self-btn-review|authoring.tags|help-inspect-src-gui-widgets-context-tag-bar-contexttagbar-init-self-btn-review",
+        )
         self.btn_review.clicked.connect(self.review_requested.emit)
         layout.addWidget(self.btn_review)
 
-        self.btn_enable = QPushButton("Enable")
+        self.btn_enable = declare_inspection(
+            QPushButton("Enable"),
+            "src-gui-widgets-context-tag-bar-contexttagbar-init-self-btn-enable|authoring.tags|help-inspect-src-gui-widgets-context-tag-bar-contexttagbar-init-self-btn-enable",
+        )
         self.btn_enable.clicked.connect(self.enable_requested.emit)
         layout.addWidget(self.btn_enable)
 
-        self.btn_edit = QPushButton("Set…")
+        self.btn_edit = declare_inspection(
+            QPushButton("Set…"),
+            "src-gui-widgets-context-tag-bar-contexttagbar-init-self-btn-edit|authoring.tags|help-inspect-src-gui-widgets-context-tag-bar-contexttagbar-init-self-btn-edit",
+        )
         self.btn_edit.clicked.connect(self.edit_requested.emit)
         layout.addWidget(self.btn_edit)
 
-        self.btn_disable = QPushButton("Disable")
+        self.btn_disable = declare_inspection(
+            QPushButton("Disable"),
+            "src-gui-widgets-context-tag-bar-contexttagbar-init-self-btn-disable|authoring.tags|help-inspect-src-gui-widgets-context-tag-bar-contexttagbar-init-self-btn-disable",
+        )
         self.btn_disable.clicked.connect(self.disable_requested.emit)
         layout.addWidget(self.btn_disable)
 

@@ -33,6 +33,7 @@ from src.core.transfer import (
     REFERENCE_TAB,
 )
 from src.gui.constants import SUPPORTED_IMAGE_FORMATS
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.action_flow_layout import ActionFlowLayout as QHBoxLayout
 from src.gui.widgets.responsive_form import scrollable_form_page
@@ -89,14 +90,23 @@ class TransferDialog(QDialog):
         self.status.setWordWrap(True)
         layout.addWidget(self.status)
         buttons = QHBoxLayout()
-        self.back = QPushButton("Back")
+        self.back = declare_inspection(
+            QPushButton("Back"),
+            "src-gui-dialogs-transfer-dialog-transferdialog-init-self-back|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-init-self-back",
+        )
         self.back.clicked.connect(self._back)
         buttons.addWidget(self.back)
         buttons.addStretch()
-        self.cancel = QPushButton("Close")
+        self.cancel = declare_inspection(
+            QPushButton("Close"),
+            "src-gui-dialogs-transfer-dialog-transferdialog-init-self-cancel|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-init-self-cancel",
+        )
         self.cancel.clicked.connect(self._cancel_clicked)
         buttons.addWidget(self.cancel)
-        self.next = QPushButton("Review…")
+        self.next = declare_inspection(
+            QPushButton("Review…"),
+            "src-gui-dialogs-transfer-dialog-transferdialog-init-self-next|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-init-self-next",
+        )
         self.next.clicked.connect(self._next)
         buttons.addWidget(self.next)
         layout.addLayout(buttons)
@@ -113,7 +123,10 @@ class TransferDialog(QDialog):
         )
         label.setWordWrap(True)
         layout.addWidget(label)
-        self.source_list = QListWidget()
+        self.source_list = declare_inspection(
+            QListWidget(),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-import-self-source-list|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-import-self-source-list",
+        )
         layout.addWidget(self.source_list, 1)
         actions = QWidget()
         row = QHBoxLayout(actions)
@@ -123,21 +136,30 @@ class TransferDialog(QDialog):
             ("Add folder…", self.folder_requested.emit),
             ("Remove selected", self._remove_sources),
         ):
-            button = QPushButton(title)
+            button = declare_inspection(
+                QPushButton(title),
+                "src-gui-dialogs-transfer-dialog-transferdialog-build-import-button|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-import-button",
+            )
             button.clicked.connect(callback)
             row.addWidget(button)
         layout.addWidget(actions)
         paste_header = QHBoxLayout()
         paste_header.addWidget(QLabel("Or paste lore JSON:"))
         paste_header.addStretch()
-        self.pasted_example = QPushButton("Insert complete example")
+        self.pasted_example = declare_inspection(
+            QPushButton("Insert complete example"),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-import-self-pasted-example|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-import-self-pasted-example",
+        )
         self.pasted_example.setToolTip(
             "Load a complete, valid entity/event/relation example for editing."
         )
         self.pasted_example.clicked.connect(self._insert_json_example)
         paste_header.addWidget(self.pasted_example)
         layout.addLayout(paste_header)
-        self.pasted = QPlainTextEdit()
+        self.pasted = declare_inspection(
+            QPlainTextEdit(),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-import-self-pasted|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-import-self-pasted",
+        )
         self.pasted.setStyleSheet(StyleHelper.get_input_field_style())
         self.pasted.setPlaceholderText("Paste a lore JSON object here.")
         self.pasted.textChanged.connect(self._update_example_button)
@@ -145,7 +167,10 @@ class TransferDialog(QDialog):
         layout.addWidget(self.pasted)
         row = QHBoxLayout()
         row.addWidget(QLabel("When an existing record matches:"))
-        self.mode = QComboBox()
+        self.mode = declare_inspection(
+            QComboBox(),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-import-self-mode|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-import-self-mode",
+        )
         for title, key in (
             ("Skip existing records", "skip"),
             ("Merge fields", "update"),
@@ -167,7 +192,10 @@ class TransferDialog(QDialog):
         page = QWidget()
         layout = QVBoxLayout(page)
         form = QFormLayout()
-        self.export_format = QComboBox()
+        self.export_format = declare_inspection(
+            QComboBox(),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-export-self-export-format|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-export-self-export-format",
+        )
         for item in FORMATS:
             if item.exports and item.key != "world":
                 self.export_format.addItem(item.title, item.key)
@@ -175,29 +203,53 @@ class TransferDialog(QDialog):
         self.format_help = QLabel()
         self.format_help.setWordWrap(True)
         form.addRow(self.format_help)
-        self.scope = QComboBox()
+        self.scope = declare_inspection(
+            QComboBox(),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-export-self-scope|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-export-self-scope",
+        )
         self.scope.addItem("All lore", "all")
         self.scope.addItem("Explorer selection", "selected")
         form.addRow("Include:", self.scope)
-        self.endpoints = QCheckBox("Include missing relationship endpoints")
+        self.endpoints = declare_inspection(
+            QCheckBox("Include missing relationship endpoints"),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-export-self-endpoints|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-export-self-endpoints",
+        )
         form.addRow(self.endpoints)
-        self.title_edit = QLineEdit("Longform document")
+        self.title_edit = declare_inspection(
+            QLineEdit("Longform document"),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-export-self-title-edit|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-export-self-title-edit",
+        )
         form.addRow("Document title:", self.title_edit)
-        self.page_size = QComboBox()
+        self.page_size = declare_inspection(
+            QComboBox(),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-export-self-page-size|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-export-self-page-size",
+        )
         self.page_size.addItems(["A4", "Letter"])
         form.addRow("Page size:", self.page_size)
-        self.contents = QCheckBox("Include contents list")
-        self.images = QCheckBox("Include referenced images")
+        self.contents = declare_inspection(
+            QCheckBox("Include contents list"),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-export-self-contents|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-export-self-contents",
+        )
+        self.images = declare_inspection(
+            QCheckBox("Include referenced images"),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-export-self-images|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-export-self-images",
+        )
         self.images.setChecked(True)
         form.addRow(self.contents)
         form.addRow(self.images)
         layout.addLayout(form)
         row = QHBoxLayout()
-        self.destination = QLineEdit()
+        self.destination = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-export-self-destination|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-export-self-destination",
+        )
         self.destination.setReadOnly(True)
         self.destination.setPlaceholderText("Choose where the output will be saved")
         row.addWidget(self.destination, 1)
-        choose = QPushButton("Choose destination…")
+        choose = declare_inspection(
+            QPushButton("Choose destination…"),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-export-choose|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-export-choose",
+        )
         choose.clicked.connect(
             lambda: self.destination_requested.emit(self.export_format.currentData())
         )
@@ -211,7 +263,10 @@ class TransferDialog(QDialog):
     def _build_world(self) -> None:
         page = QWidget()
         layout = QVBoxLayout(page)
-        self.world_mode = QComboBox()
+        self.world_mode = declare_inspection(
+            QComboBox(),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-world-self-world-mode|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-world-self-world-mode",
+        )
         self.world_mode.addItem(
             "Import a portable world as a new world", "import_world"
         )
@@ -225,14 +280,23 @@ class TransferDialog(QDialog):
         label.setWordWrap(True)
         layout.addWidget(label)
         row = QHBoxLayout()
-        self.package_path = QLineEdit()
+        self.package_path = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-world-self-package-path|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-world-self-package-path",
+        )
         self.package_path.setReadOnly(True)
         row.addWidget(self.package_path, 1)
-        self.package_button = QPushButton("Choose package…")
+        self.package_button = declare_inspection(
+            QPushButton("Choose package…"),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-world-self-package-button|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-world-self-package-button",
+        )
         self.package_button.clicked.connect(self.package_requested.emit)
         row.addWidget(self.package_button)
         layout.addLayout(row)
-        self.world_name = QLineEdit()
+        self.world_name = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-world-self-world-name|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-world-self-world-name",
+        )
         self.world_name.setPlaceholderText(
             "New world folder name (required for import)"
         )
@@ -251,7 +315,10 @@ class TransferDialog(QDialog):
             ("Restore backup…", "restore"),
             ("Manage worlds…", "worlds"),
         ):
-            button = QPushButton(title)
+            button = declare_inspection(
+                QPushButton(title),
+                "src-gui-dialogs-transfer-dialog-transferdialog-build-world-button|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-world-button",
+            )
             button.clicked.connect(
                 lambda _=False, k=key: self.specialist_requested.emit(k)
             )
@@ -287,14 +354,20 @@ class TransferDialog(QDialog):
         browser.setHtml("".join(rows))
         layout.addWidget(browser, 1)
         row = QHBoxLayout()
-        self.template_kind = QComboBox()
+        self.template_kind = declare_inspection(
+            QComboBox(),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-reference-self-template-kind|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-reference-self-template-kind",
+        )
         self.template_kind.addItems(list(LORE_KINDS))
         row.addWidget(self.template_kind)
         for title, key in (
             ("Save CSV template…", "csv"),
             ("Save JSON example…", "json"),
         ):
-            button = QPushButton(title)
+            button = declare_inspection(
+                QPushButton(title),
+                "src-gui-dialogs-transfer-dialog-transferdialog-build-reference-button|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-reference-button",
+            )
             button.clicked.connect(
                 lambda _=False, k=key: self.template_requested.emit(
                     self.template_kind.currentText(), k
@@ -309,7 +382,10 @@ class TransferDialog(QDialog):
             ("Gallery…", "gallery"),
             ("Analysis reports…", "analysis"),
         ):
-            button = QPushButton(title)
+            button = declare_inspection(
+                QPushButton(title),
+                "src-gui-dialogs-transfer-dialog-transferdialog-build-reference-button-2|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-reference-button-2",
+            )
             button.clicked.connect(
                 lambda _=False, k=key: self.specialist_requested.emit(k)
             )
@@ -324,10 +400,16 @@ class TransferDialog(QDialog):
         self.review_summary.setWordWrap(True)
         layout.addWidget(self.review_summary)
         splitter = QSplitter()
-        self.tree = QTreeWidget()
+        self.tree = declare_inspection(
+            QTreeWidget(),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-review-self-tree|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-review-self-tree",
+        )
         self.tree.setHeaderLabels(["Use / type", "Name", "Source", "Action", "Match"])
         splitter.addWidget(self.tree)
-        self.details = QPlainTextEdit()
+        self.details = declare_inspection(
+            QPlainTextEdit(),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-review-self-details|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-review-self-details",
+        )
         self.details.setStyleSheet(StyleHelper.get_input_field_style())
         self.details.setPlaceholderText(
             "Select a record to inspect or correct its JSON fields."
@@ -337,12 +419,18 @@ class TransferDialog(QDialog):
         self.document_preview = QTextBrowser()
         self.document_preview.setStyleSheet(StyleHelper.get_input_field_style())
         layout.addWidget(self.document_preview, 1)
-        self.diagnostics = QPlainTextEdit()
+        self.diagnostics = declare_inspection(
+            QPlainTextEdit(),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-review-self-diagnostics|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-review-self-diagnostics",
+        )
         self.diagnostics.setStyleSheet(StyleHelper.get_input_field_style())
         self.diagnostics.setReadOnly(True)
         self.diagnostics.setMaximumHeight(150)
         layout.addWidget(self.diagnostics)
-        self.recheck = QPushButton("Apply edits and recheck")
+        self.recheck = declare_inspection(
+            QPushButton("Apply edits and recheck"),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-review-self-recheck|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-review-self-recheck",
+        )
         self.recheck.clicked.connect(self._recheck)
         layout.addWidget(self.recheck)
         self.tree.currentItemChanged.connect(self._select_record)
@@ -353,18 +441,30 @@ class TransferDialog(QDialog):
     def _build_results(self) -> None:
         page = QWidget()
         layout = QVBoxLayout(page)
-        self.results = QPlainTextEdit()
+        self.results = declare_inspection(
+            QPlainTextEdit(),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-results-self-results|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-results-self-results",
+        )
         self.results.setStyleSheet(StyleHelper.get_input_field_style())
         self.results.setReadOnly(True)
         layout.addWidget(self.results, 1)
         row = QHBoxLayout()
-        self.open_file = QPushButton("Open file")
-        self.open_folder = QPushButton("Open folder")
+        self.open_file = declare_inspection(
+            QPushButton("Open file"),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-results-self-open-file|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-results-self-open-file",
+        )
+        self.open_folder = declare_inspection(
+            QPushButton("Open folder"),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-results-self-open-folder|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-results-self-open-folder",
+        )
         self.open_file.clicked.connect(lambda: self.open_requested.emit(False))
         self.open_folder.clicked.connect(lambda: self.open_requested.emit(True))
         row.addWidget(self.open_file)
         row.addWidget(self.open_folder)
-        save = QPushButton("Save report…")
+        save = declare_inspection(
+            QPushButton("Save report…"),
+            "src-gui-dialogs-transfer-dialog-transferdialog-build-results-save|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-build-results-save",
+        )
         save.clicked.connect(self.report_requested.emit)
         row.addWidget(save)
         layout.addLayout(row)
@@ -495,7 +595,10 @@ class TransferDialog(QDialog):
                 )
                 row.setCheckState(0, state)
                 self.tree.addTopLevelItem(row)
-                action = QComboBox()
+                action = declare_inspection(
+                    QComboBox(),
+                    "src-gui-dialogs-transfer-dialog-transferdialog-show-import-review-action|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-show-import-review-action",
+                )
                 for label, key in (
                     ("Default", ""),
                     ("Skip", "skip"),
@@ -507,7 +610,10 @@ class TransferDialog(QDialog):
                     max(0, action.findData(options.get("actions", {}).get(token, "")))
                 )
                 self.tree.setItemWidget(row, 3, action)
-                match = QComboBox()
+                match = declare_inspection(
+                    QComboBox(),
+                    "src-gui-dialogs-transfer-dialog-transferdialog-show-import-review-match|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-show-import-review-match",
+                )
                 match.addItem("Automatic", "")
                 for ambiguity in preview.get("ambiguous", []):
                     if (

@@ -12,12 +12,15 @@ from PySide6.QtGui import (
     QHelpEvent,
     QKeyEvent,
     QKeySequence,
+    QMouseEvent,
     QWhatsThisClickedEvent,
 )
-from PySide6.QtWidgets import QApplication, QWhatsThis, QWidget
+from PySide6.QtWidgets import QApplication, QMenu, QMenuBar, QWhatsThis, QWidget
 
+from src.app.help_declared_bindings import bind_declared_action, bind_declared_widget
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import (
+    ControlHelpRegistration,
     HelpContextRegistry,
     ancestors,
     help_focus_transfer,
@@ -53,6 +56,8 @@ class HelpInspectionController(QObject):
         self._popup_token = 0
         self._next_popup_token = 0
         self._topic_id: str | None = None
+        self._excerpt_target: str | None = None
+        self._swallow_release = False
         ThemeManager().theme_changed.connect(self._theme_changed)
         app = QApplication.instance()
         if isinstance(app, QApplication):
@@ -82,23 +87,35 @@ class HelpInspectionController(QObject):
         registration = self.registry.inspection_for(widget, point)
         if registration is None:
             return False
+        return self._display_registration(registration, global_point)
+
+    def _display_registration(
+        self,
+        registration: tuple[QWidget, ControlHelpRegistration],
+        point: QPoint,
+    ) -> bool:
+        """Show validated content after resolving a control or menu action."""
         target, meaning = registration
         self.help.suspend_origin()
         self._allow_restore = True
         self.target = weakref.ref(target)
         self._topic_id = meaning.topic_id
-        text = self._explanation(meaning.topic_id)
+        self._excerpt_target = meaning.excerpt_target
+        text = self._explanation(meaning.topic_id, meaning.excerpt_target)
         with help_focus_transfer():
             QWhatsThis.leaveWhatsThisMode()
-            QWhatsThis.showText(global_point, text, target)
+            for widget in QApplication.allWidgets():
+                if isinstance(widget, QMenu) and widget.isVisible():
+                    widget.hide()
+            QWhatsThis.showText(point, text, target)
         self._track_popup()
         self._pointer_request = False
         return True
 
-    def _explanation(self, topic_id: str) -> str:
+    def _explanation(self, topic_id: str, target: str | None = None) -> str:
         try:
             self.service.validate()
-            excerpt = self.service.load_control_excerpt(topic_id)
+            excerpt = self.service.load_inspection_excerpt(topic_id, target)
             if not excerpt or not excerpt.strip():
                 raise HelpBundleError(
                     "topic",
@@ -161,7 +178,9 @@ class HelpInspectionController(QObject):
             return
         point = popup.pos()
         with help_focus_transfer():
-            QWhatsThis.showText(point, self._explanation(self._topic_id), target)
+            QWhatsThis.showText(
+                point, self._explanation(self._topic_id, self._excerpt_target), target
+            )
         self._track_popup()
 
     def _popup_closed(self, token: int | None = None) -> None:
@@ -232,6 +251,15 @@ class HelpInspectionController(QObject):
         """Use native What's This events rather than a Shift+F1 shortcut."""
         if self._stopped:
             return False
+        if QWhatsThis.inWhatsThisMode() and event.type() in {
+            QEvent.Type.Wheel,
+            QEvent.Type.ContextMenu,
+        }:
+            return True
+        if isinstance(event, QMouseEvent):
+            handled = self._pointer_event(watched, event)
+            if handled:
+                return True
         popup = self._active_popup()
         if (
             popup is not None
@@ -257,24 +285,90 @@ class HelpInspectionController(QObject):
             QTimer.singleShot(0, self._restore_origin)
         elif event.type() == QEvent.Type.QueryWhatsThis:
             point = (
-                watched.mapFromGlobal(QCursor.pos()) if self._pointer_request else None
+                event.globalPos() if isinstance(event, QHelpEvent) else QCursor.pos()
             )
-            registration = self.registry.inspection_for(watched, point)
+            registration = self._at_pointer(watched, point)
             event.setAccepted(registration is not None)
             return True
         elif isinstance(event, QHelpEvent) and event.type() == QEvent.Type.WhatsThis:
-            point = (
+            local_point = (
                 event.pos()
                 if self._pointer_request or QWhatsThis.inWhatsThisMode()
                 else None
             )
-            event.setAccepted(self.display(watched, point, event.globalPos()))
+            registration = (
+                self._at_pointer(watched, event.globalPos())
+                if self._pointer_request or QWhatsThis.inWhatsThisMode()
+                else None
+            )
+            event.setAccepted(
+                self._display_registration(registration, event.globalPos())
+                if registration
+                else self.display(watched, local_point, event.globalPos())
+            )
             return True
         elif isinstance(event, QWhatsThisClickedEvent):
             self._follow_task(event.href())
             return True
         elif isinstance(event, QKeyEvent):
             return self._native_key(watched, event)
+        return False
+
+    def _at_pointer(
+        self,
+        watched: QObject,
+        point: QPoint,
+    ) -> tuple[QWidget, ControlHelpRegistration] | None:
+        """Resolve actual native hit targets, including disabled and menu items."""
+        widget = QApplication.widgetAt(point)
+        if widget is None and isinstance(watched, QWidget):
+            widget = watched
+        if widget is None or not self.help.belongs(widget):
+            return None
+        if isinstance(widget, (QMenu, QMenuBar)):
+            action = widget.actionAt(widget.mapFromGlobal(point))
+            if action is not None and not action.isSeparator():
+                bind_declared_action(self.registry, action, widget)
+                return self.registry.inspection_action(action)
+            return None
+        bind_declared_widget(self.registry, widget)
+        return self.registry.inspection_for(widget, widget.mapFromGlobal(point))
+
+    def _pointer_event(self, watched: QObject, event: QMouseEvent) -> bool:
+        if self._swallow_release and event.type() == QEvent.Type.MouseButtonRelease:
+            self._swallow_release = False
+            return True
+        if not QWhatsThis.inWhatsThisMode():
+            return False
+        point = event.globalPosition().toPoint()
+        registration = self._at_pointer(watched, point)
+        if event.type() == QEvent.Type.MouseMove:
+            cursor = (
+                Qt.CursorShape.WhatsThisCursor
+                if registration
+                else Qt.CursorShape.ForbiddenCursor
+            )
+            QApplication.changeOverrideCursor(QCursor(cursor))
+            widget = QApplication.widgetAt(point)
+            if isinstance(widget, (QMenu, QMenuBar)):
+                action = widget.actionAt(widget.mapFromGlobal(point))
+                if action is not None and action.menu() is not None:
+                    menu = action.menu()
+                    if isinstance(menu, QMenu) and not menu.isVisible():
+                        menu.popup(
+                            widget.mapToGlobal(
+                                widget.actionGeometry(action).bottomLeft()
+                            )
+                        )
+                return True
+        if event.type() in {
+            QEvent.Type.MouseButtonPress,
+            QEvent.Type.MouseButtonDblClick,
+        }:
+            self._swallow_release = True
+            if registration is not None and event.button() == Qt.MouseButton.LeftButton:
+                self._display_registration(registration, point)
+            return True
         return False
 
     def _follow_task(self, href: str) -> None:
@@ -317,7 +411,10 @@ class HelpInspectionController(QObject):
                 self._allow_restore = True
                 self.target = weakref.ref(target)
                 self._topic_id = meaning.topic_id
-                target.setWhatsThis(self._explanation(meaning.topic_id))
+                self._excerpt_target = meaning.excerpt_target
+                target.setWhatsThis(
+                    self._explanation(meaning.topic_id, meaning.excerpt_target)
+                )
                 app = QApplication.instance()
                 if app:
                     app.setProperty("krakenInspectionPopup", True)

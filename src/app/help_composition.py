@@ -4,11 +4,14 @@ from __future__ import annotations
 
 from typing import Any
 
+import shiboken6
 from PySide6.QtCore import QEvent, QObject
+from PySide6.QtGui import QActionEvent
 from PySide6.QtWidgets import QWidget
 
 from src.app.coordinators.help_coordinator import HelpCoordinator
 from src.app.help_control_bindings import HelpControlBindings
+from src.app.help_declared_bindings import bind_declared_action, bind_declared_widget
 from src.gui.utils.help_context import HelpContextRegistry
 from src.services.help_bundle_service import HelpBundleService
 
@@ -34,8 +37,13 @@ class HelpSurfaceBindings(QObject):
 
     def bind(self, widget: QWidget) -> None:
         """Associate known production types with reviewed topic meanings."""
+        if not shiboken6.isValid(widget):
+            return
         registry = self.coordinator.registry
         self.inspection.bind(widget)
+        bind_declared_widget(registry, widget)
+        for action in widget.actions():
+            bind_declared_action(registry, action, widget)
         name = type(widget).__name__
         topic = self.DIALOG_TOPICS.get(name)
         if topic:
@@ -59,11 +67,18 @@ class HelpSurfaceBindings(QObject):
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:  # noqa: N802
         """Register completed widgets before first focus or Help invocation."""
         if (
-            event.type() == QEvent.Type.Show
+            event.type() in {QEvent.Type.Show, QEvent.Type.Polish}
             and isinstance(watched, QWidget)
             and self.coordinator.belongs(watched)
         ):
             self.bind(watched)
+        if (
+            isinstance(event, QActionEvent)
+            and event.type() == QEvent.Type.ActionAdded
+            and isinstance(watched, QWidget)
+            and self.coordinator.belongs(watched)
+        ):
+            bind_declared_action(self.coordinator.registry, event.action(), watched)
         return False
 
 

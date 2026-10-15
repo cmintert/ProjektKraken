@@ -29,6 +29,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.fast_inject import FastInjectManager, FastInjectTemplate
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
 
@@ -87,7 +88,10 @@ class FastInjectDialog(QDialog):
         left_layout.setContentsMargins(0, 0, 0, 0)
 
         left_layout.addWidget(QLabel("Available Templates:"))
-        self.list_widget = QListWidget()
+        self.list_widget = declare_inspection(
+            QListWidget(),
+            "src-gui-dialogs-fast-inject-dialog-fastinjectdialog-setup-ui-self-list-widget|authoring.templates|help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-setup-ui-self-list-widget",
+        )
         self.list_widget.setStyleSheet(StyleHelper.get_input_field_style())
         self.list_widget.currentItemChanged.connect(self._on_template_selected)
         left_layout.addWidget(self.list_widget)
@@ -115,16 +119,25 @@ class FastInjectDialog(QDialog):
 
         # Bottom Buttons
         btn_layout = QHBoxLayout()
-        self.btn_import = StandardButton("Import...")
+        self.btn_import = declare_inspection(
+            StandardButton("Import..."),
+            "src-gui-dialogs-fast-inject-dialog-fastinjectdialog-setup-ui-self-btn-import|authoring.templates|help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-setup-ui-self-btn-import",
+        )
         self.btn_import.clicked.connect(self._on_import_clicked)
         btn_layout.addWidget(self.btn_import)
 
         btn_layout.addStretch()
 
-        self.btn_cancel = StandardButton("Cancel")
+        self.btn_cancel = declare_inspection(
+            StandardButton("Cancel"),
+            "src-gui-dialogs-fast-inject-dialog-fastinjectdialog-setup-ui-self-btn-cancel|authoring.templates|help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-setup-ui-self-btn-cancel",
+        )
         self.btn_cancel.clicked.connect(self.reject)
 
-        self.btn_apply = PrimaryButton("Apply Template")
+        self.btn_apply = declare_inspection(
+            PrimaryButton("Apply Template"),
+            "src-gui-dialogs-fast-inject-dialog-fastinjectdialog-setup-ui-self-btn-apply|authoring.templates|help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-setup-ui-self-btn-apply",
+        )
         self.btn_apply.setEnabled(False)
         self.btn_apply.clicked.connect(self._on_apply)
 
@@ -142,7 +155,7 @@ class FastInjectDialog(QDialog):
         self.lbl_name.setStyleSheet("font-size: 16px; font-weight: bold;")
         self.lbl_desc = QLabel("")
         self.lbl_desc.setWordWrap(True)
-        self.lbl_desc.setStyleSheet("color: gray;")
+        self.lbl_desc.setStyleSheet(StyleHelper.get_supporting_caption_style())
         layout.addWidget(self.lbl_name)
         layout.addWidget(self.lbl_desc)
         layout.addSpacing(10)
@@ -162,7 +175,10 @@ class FastInjectDialog(QDialog):
         layout.addWidget(scroll)
 
         # Options
-        self.chk_overwrite = QCheckBox("Overwrite existing values if keys exist")
+        self.chk_overwrite = declare_inspection(
+            QCheckBox("Overwrite existing values if keys exist"),
+            "src-gui-dialogs-fast-inject-dialog-fastinjectdialog-setup-configure-tab-self-chk-overwrite|authoring.templates|help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-setup-configure-tab-self-chk-overwrite",
+        )
         self.chk_overwrite.setChecked(True)
         layout.addWidget(self.chk_overwrite)
 
@@ -173,14 +189,20 @@ class FastInjectDialog(QDialog):
 
         layout.addWidget(QLabel("Edit Template JSON (Strict Format):"))
 
-        self.txt_source = QTextEdit()
+        self.txt_source = declare_inspection(
+            QTextEdit(),
+            "src-gui-dialogs-fast-inject-dialog-fastinjectdialog-setup-source-tab-self-txt-source|authoring.templates|help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-setup-source-tab-self-txt-source",
+        )
         self.txt_source.setStyleSheet(
             StyleHelper.get_input_field_style() + "font-family: Consolas, monospace;"
         )
         layout.addWidget(self.txt_source)
 
         btn_bar = QHBoxLayout()
-        self.btn_save_source = PrimaryButton("Save Changes")
+        self.btn_save_source = declare_inspection(
+            PrimaryButton("Save Changes"),
+            "src-gui-dialogs-fast-inject-dialog-fastinjectdialog-setup-source-tab-self-btn-save-source|authoring.templates|help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-setup-source-tab-self-btn-save-source",
+        )
         self.btn_save_source.clicked.connect(self._on_save_source)
         self.btn_save_source.setEnabled(False)
         btn_bar.addStretch()
@@ -379,7 +401,10 @@ class FastInjectDialog(QDialog):
         match = pure_var_pattern.match(display_value)
 
         # UI Elements
-        chk = QCheckBox()
+        chk = declare_inspection(
+            QCheckBox(),
+            "src-gui-dialogs-fast-inject-dialog-fastinjectdialog-add-row-chk|authoring.templates|help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-add-row-chk",
+        )
         chk.setChecked(True)
         lbl = QLabel(f"{key}:")
 
@@ -393,13 +418,19 @@ class FastInjectDialog(QDialog):
 
             if options:
                 # Variable with choices -> Dropdown
-                input_widget = QComboBox()
+                input_widget = declare_inspection(
+                    QComboBox(),
+                    "src-gui-dialogs-fast-inject-dialog-fastinjectdialog-add-row-input-widget|authoring.templates|help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-add-row-input-widget",
+                )
                 input_widget.setStyleSheet(StyleHelper.get_input_field_style())
                 choice_items = [o.strip() for o in options.split("|")]
                 input_widget.addItems(choice_items)
             else:
                 # Variable without choices -> Text input with placeholder
-                input_widget = QLineEdit()
+                input_widget = declare_inspection(
+                    QLineEdit(),
+                    "src-gui-dialogs-fast-inject-dialog-fastinjectdialog-add-row-input-widget-2|authoring.templates|help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-add-row-input-widget-2",
+                )
                 input_widget.setStyleSheet(StyleHelper.get_input_field_style())
                 input_widget.setPlaceholderText(display_value)
         else:
@@ -410,13 +441,19 @@ class FastInjectDialog(QDialog):
             if matches:
                 # Mixed content with variables - show result + sub-controls
                 has_sub_controls = True
-                input_widget = QLineEdit()
+                input_widget = declare_inspection(
+                    QLineEdit(),
+                    "src-gui-dialogs-fast-inject-dialog-fastinjectdialog-add-row-input-widget-3|authoring.templates|help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-add-row-input-widget-3",
+                )
                 input_widget.setStyleSheet(StyleHelper.get_input_field_style())
                 input_widget.setReadOnly(True)  # Make read-only for mixed content
                 # Will set text after creating sub-controls
             else:
                 # Fixed value -> Text input
-                input_widget = QLineEdit(display_value)
+                input_widget = declare_inspection(
+                    QLineEdit(display_value),
+                    "src-gui-dialogs-fast-inject-dialog-fastinjectdialog-add-row-input-widget-4|authoring.templates|help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-add-row-input-widget-4",
+                )
                 input_widget.setStyleSheet(StyleHelper.get_input_field_style())
 
         self.form_layout.addWidget(lbl, row, 0)
@@ -446,19 +483,22 @@ class FastInjectDialog(QDialog):
 
                 sub_lbl = QLabel(f"  ↳ {v_name}:")
                 sub_lbl.setStyleSheet(
-                    f"color: {StyleHelper.get_dim_text_color()}; "
-                    "font-style: italic;"
+                    f"color: {StyleHelper.get_dim_text_color()}; font-style: italic;"
                 )
 
                 sub_inp: QComboBox | QLineEdit
                 if option_text:
-                    sub_inp = QComboBox()
-                    sub_inp.setStyleSheet(StyleHelper.get_input_field_style())
-                    sub_inp.addItems(
-                        [o.strip() for o in option_text.split("|")]
+                    sub_inp = declare_inspection(
+                        QComboBox(),
+                        "src-gui-dialogs-fast-inject-dialog-fastinjectdialog-add-row-sub-inp|authoring.templates|help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-add-row-sub-inp",
                     )
+                    sub_inp.setStyleSheet(StyleHelper.get_input_field_style())
+                    sub_inp.addItems([o.strip() for o in option_text.split("|")])
                 else:
-                    sub_inp = QLineEdit()
+                    sub_inp = declare_inspection(
+                        QLineEdit(),
+                        "src-gui-dialogs-fast-inject-dialog-fastinjectdialog-add-row-sub-inp-2|authoring.templates|help-inspect-src-gui-dialogs-fast-inject-dialog-fastinjectdialog-add-row-sub-inp-2",
+                    )
                     sub_inp.setPlaceholderText(f"Value for {v_name}")
                     sub_inp.setStyleSheet(StyleHelper.get_input_field_style())
 

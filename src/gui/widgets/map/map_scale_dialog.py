@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
 from src.gui.widgets.responsive_dialog_buttons import (
@@ -51,12 +52,18 @@ class MapScaleDialog(QDialog):
 
         input_row = QHBoxLayout()
         input_row.addWidget(QLabel("Total width:"))
-        self.width_input = ScrollSafeDoubleSpinBox()
+        self.width_input = declare_inspection(
+            ScrollSafeDoubleSpinBox(),
+            "src-gui-widgets-map-map-scale-dialog-mapscaledialog-init-self-width-input|map.calibration|help-inspect-src-gui-widgets-map-map-scale-dialog-mapscaledialog-init-self-width-input",
+        )
         self.width_input.setRange(0.0, 1_000_000_000.0)
         self.width_input.setDecimals(2)
         self.width_input.setSpecialValueText("Not calibrated")
         self.width_input.setStyleSheet(StyleHelper.get_spinbox_style())
-        self.unit_selector = QComboBox()
+        self.unit_selector = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-map-map-scale-dialog-mapscaledialog-init-self-unit-selector|map.calibration|help-inspect-src-gui-widgets-map-map-scale-dialog-mapscaledialog-init-self-unit-selector",
+        )
         self.unit_selector.addItems(["m", "km"])
         self.unit_selector.setStyleSheet(StyleHelper.get_input_field_style())
         if self._active_unit == "km":
@@ -71,7 +78,10 @@ class MapScaleDialog(QDialog):
 
         from src.gui.widgets.wrapping_buttons import WrappingPushButton
 
-        calibrate = WrappingPushButton("Calibrate from Measurement...")
+        calibrate = declare_inspection(
+            WrappingPushButton("Calibrate from Measurement..."),
+            "src-gui-widgets-map-map-scale-dialog-mapscaledialog-init-calibrate|map.calibration|help-inspect-src-gui-widgets-map-map-scale-dialog-mapscaledialog-init-calibrate",
+        )
         calibrate.setToolTip(
             "Measure a known distance on the map to calculate its total width."
         )
@@ -79,8 +89,12 @@ class MapScaleDialog(QDialog):
         calibrate.clicked.connect(self._request_calibration)
         layout.addWidget(calibrate)
 
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        buttons = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel
+            ),
+            "src-gui-widgets-map-map-scale-dialog-mapscaledialog-init-buttons|map.calibration|help-inspect-src-gui-widgets-map-map-scale-dialog-mapscaledialog-init-buttons",
         )
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)

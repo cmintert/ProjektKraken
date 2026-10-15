@@ -1,0 +1,325 @@
+"""Expanded inspection resolves real controls without running their actions."""
+
+from __future__ import annotations
+
+import ast
+import gc
+import json
+from pathlib import Path
+
+import pytest
+import shiboken6
+from PySide6.QtCore import QCoreApplication, QEvent, QPoint, Qt
+from PySide6.QtGui import QHelpEvent
+from PySide6.QtTest import QTest
+from PySide6.QtWidgets import (
+    QApplication,
+    QDialogButtonBox,
+    QFormLayout,
+    QLineEdit,
+    QMenu,
+    QPushButton,
+    QToolButton,
+    QWidget,
+)
+
+from src.app.help_composition import HelpSurfaceBindings
+from src.app.help_declared_bindings import bind_declared_action, bind_declared_widget
+from src.core.help_inspection_inventory import check_inventory, symbol_fingerprint
+from src.gui.utils.help_context import declare_inspection
+from src.services.help_bundle_service import HelpBundleService
+from src.services.help_search_service import HelpSearchService
+from tests.unit import test_help_coordinator as existing
+from tests.unit import test_unified_list as explorer_tests
+
+help_setup = existing.help_setup
+generated_root = existing.generated_root
+unified_list = explorer_tests.unified_list
+pytestmark = pytest.mark.ci_fast
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_every_declared_explanation_is_generated_and_bounded(generated_root):
+    inventory = json.loads((ROOT / "docs/help-inspection.json").read_text("utf-8"))
+    service = HelpBundleService(root=generated_root / "docs/_build/help")
+    service.validate()
+    for record in inventory["bindings"]:
+        content = service.load_inspection_excerpt(record["topic_id"], record["target"])
+        assert content and content.strip(), record["id"]
+        assert "<script" not in content
+    assert check_inventory(ROOT) == []
+
+
+def test_control_search_lands_on_concise_explanation(generated_root):
+    service = HelpBundleService(root=generated_root / "docs/_build/help")
+    results = HelpSearchService(service.search_documents()).search("brush hardness")
+    assert any(
+        result.fragment == "help-inspect-raster-hardness" for result in results[:5]
+    )
+
+
+def test_explorer_buttons_and_creation_actions_have_specific_help(
+    help_setup, unified_list, qapp
+):
+    coordinator, registry, owner, _, _ = help_setup
+    owner.layout().addWidget(unified_list)
+    bindings = HelpSurfaceBindings(coordinator)
+    for widget in [unified_list, *unified_list.findChildren(QPushButton)]:
+        bindings.bind(widget)
+    create = registry.inspection_for(unified_list.btn_new)
+    delete = registry.inspection_for(unified_list.btn_delete)
+    assert create[1].topic_id == "authoring.create"
+    assert delete[1].topic_id == "authoring.delete"
+    for action in (
+        unified_list.action_create_event,
+        unified_list.action_create_entity,
+        unified_list.action_create_map,
+    ):
+        bind_declared_action(registry, action, unified_list)
+        assert registry.inspection_action(action) is not None
+    gc.collect()
+    assert shiboken6.isValid(unified_list.action_create_event)
+    assert shiboken6.isValid(unified_list.new_menu)
+
+
+def test_menu_inspection_never_triggers_action(help_setup, qapp):
+    coordinator, registry, owner, _, _ = help_setup
+    record = next(
+        r
+        for r in json.loads((ROOT / "docs/help-inspection.json").read_text("utf-8"))[
+            "bindings"
+        ]
+        if r["id"] == "feature.geometry"
+    )
+    menu = QMenu(owner)
+    action = declare_inspection(
+        menu.addAction("Edit border"),
+        "|".join((record["id"], record["topic_id"], record["target"])),
+    )
+    calls = []
+    action.triggered.connect(lambda: calls.append(True))
+    bind_declared_action(registry, action, menu)
+    coordinator.inspection.enter()
+    menu.popup(owner.mapToGlobal(QPoint(20, 20)))
+    qapp.processEvents()
+    QTest.mouseClick(
+        menu.windowHandle(),
+        Qt.MouseButton.LeftButton,
+        pos=menu.actionGeometry(action).center(),
+    )
+    qapp.processEvents()
+    assert calls == []
+    assert QApplication.activePopupWidget() is not None
+    assert coordinator.inspection._topic_id == "map.historical-geometry"
+    coordinator.inspection.dismiss()
+
+
+def test_disabled_hover_uses_event_position_not_stale_cursor(help_setup, qapp):
+    coordinator, registry, owner, panel, _ = help_setup
+    button = QPushButton("Mapped", panel)
+    panel.layout().addWidget(button)
+    registry.register_inspection(button, "event.duration", "event.timing")
+    button.setEnabled(False)
+    button.show()
+    qapp.processEvents()
+    coordinator.inspection.enter()
+    point = button.mapToGlobal(button.rect().center())
+    query = QHelpEvent(QEvent.Type.QueryWhatsThis, button.rect().center(), point)
+    QApplication.sendEvent(button, query)
+    assert query.isAccepted()
+    QTest.mouseMove(owner.windowHandle(), owner.mapFromGlobal(point))
+    qapp.processEvents()
+    assert QApplication.overrideCursor().shape() == Qt.CursorShape.WhatsThisCursor
+    coordinator.inspection.dismiss()
+
+
+def test_standard_dialog_buttons_use_roles_and_task_destination(help_setup):
+    coordinator, registry, _, panel, _ = help_setup
+    record = next(
+        r
+        for r in json.loads((ROOT / "docs/help-inspection.json").read_text("utf-8"))[
+            "bindings"
+        ]
+        if r["kind"] == "QDialogButtonBox"
+    )
+    box = declare_inspection(
+        QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel,
+            panel,
+        ),
+        "|".join((record["id"], record["topic_id"], record["target"])),
+    )
+    bind_declared_widget(registry, box)
+    accept = registry.inspection_for(box.button(QDialogButtonBox.StandardButton.Ok))[1]
+    cancel = registry.inspection_for(
+        box.button(QDialogButtonBox.StandardButton.Cancel)
+    )[1]
+    assert accept.excerpt_target == "help-inspect-dialog-accept"
+    assert cancel.excerpt_target == "help-inspect-dialog-cancel"
+    assert coordinator.service.load_inspection_excerpt(
+        accept.topic_id, accept.excerpt_target
+    )
+
+
+def test_review_fingerprint_ignores_format_but_detects_behavior():
+    original = symbol_fingerprint(ast.parse("def act():\n    return 1\n"), "act")
+    assert (
+        symbol_fingerprint(
+            ast.parse("def act():\n    # layout\n    return (1)\n"), "act"
+        )
+        == original
+    )
+    assert (
+        symbol_fingerprint(ast.parse("def act():\n    return 2\n"), "act") != original
+    )
+
+
+def test_action_owner_teardown_releases_cached_native_handles(help_setup, qapp):
+    _, registry, owner, _, _ = help_setup
+    menu = QMenu(owner)
+    action = declare_inspection(
+        menu.addAction("Create"),
+        "test.create|authoring.create|help-authoring-create",
+    )
+    bind_declared_action(registry, action, menu)
+    token = id(action)
+    assert token in registry._action_handles
+    menu.deleteLater()
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    assert token not in registry._action_handles
+    assert registry.inspection_action(action) is None
+
+
+def test_exempt_menu_wrappers_survive_binding_scan_until_native_teardown(help_setup):
+    _, registry, owner, _, _ = help_setup
+    menu = QMenu(owner)
+    submenu = menu.addMenu("No declaration")
+    action = submenu.menuAction()
+    bind_declared_action(registry, action, menu)
+    gc.collect()
+    assert shiboken6.isValid(submenu)
+    assert registry.inspection_action(action) is None
+
+
+def test_form_label_and_default_action_reuse_exact_meaning(help_setup):
+    _, registry, owner, _, _ = help_setup
+    page = QWidget(owner)
+    form = QFormLayout(page)
+    field = declare_inspection(
+        QLineEdit(page), "test.field|authoring.create|help-authoring-create"
+    )
+    form.addRow("Displayed label", field)
+    bind_declared_widget(registry, field)
+    assert registry.inspection_for(form.labelForField(field))[1].meaning == "test.field"
+    menu = QMenu(page)
+    action = declare_inspection(
+        menu.addAction("Displayed action"),
+        "test.action|writing.links|help-writing-links",
+    )
+    button = QToolButton(page)
+    button.setDefaultAction(action)
+    bind_declared_widget(registry, button)
+    assert registry.inspection_for(button)[1].meaning == "test.action"
+
+
+def test_overflow_equivalent_wins_over_generic_proxy_declaration(help_setup):
+    _, registry, owner, _, _ = help_setup
+    button = declare_inspection(
+        QPushButton("Original", owner),
+        "test.original|writing.links|help-writing-links",
+    )
+    bind_declared_widget(registry, button)
+    menu = QMenu(owner)
+    proxy = declare_inspection(
+        menu.addAction("Proxy"), "test.generic|manual.home|help-manual-home"
+    )
+    proxy.setProperty("krakenHelpEquivalent", button)
+    bind_declared_action(registry, proxy, menu)
+    assert registry.inspection_action(proxy)[0] is owner
+    assert registry.inspection_action(proxy)[1].meaning == "test.original"
+
+
+def test_new_input_factory_requires_declaration_or_reason(tmp_path):
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs/help-topics.json").write_text('{"topics": []}')
+    (tmp_path / "docs/help-inspection.json").write_text(
+        '{"bindings": [], "source_reviews": []}'
+    )
+    source = tmp_path / "src/gui/new_panel.py"
+    source.parent.mkdir(parents=True)
+    source.write_text("def build():\n    return QPushButton('New operation')\n")
+    assert any("declare inspection" in error for error in check_inventory(tmp_path))
+
+
+def test_inspection_resolves_nested_graph_child_input(help_setup, qapp):
+    from src.gui.widgets.graph_view.graph_widget import GraphWidget
+
+    coordinator, registry, owner, _, _ = help_setup
+    graph = GraphWidget(owner)
+    owner.layout().addWidget(graph)
+    bindings = HelpSurfaceBindings(coordinator)
+    for widget in [graph, *graph.findChildren(QWidget)]:
+        bindings.bind(widget)
+    engine = graph._web_view._web_view
+    graph.show()
+    owner.resize(700, 650)
+    qapp.processEvents()
+    coordinator.inspection.enter()
+    point = engine.mapToGlobal(engine.rect().center())
+    QTest.mouseClick(
+        owner.windowHandle(),
+        Qt.MouseButton.LeftButton,
+        pos=owner.mapFromGlobal(point),
+    )
+    qapp.processEvents()
+    assert QApplication.activePopupWidget() is not None
+    assert coordinator.inspection._topic_id == "graph.exploring"
+    assert registry.inspection_for(engine)[1].topic_id == "graph.exploring"
+    coordinator.inspection.dismiss()
+    graph.close()
+
+
+def test_drift_missing_target_and_binding_fail_with_actionable_diagnostics(tmp_path):
+    (tmp_path / "docs/user").mkdir(parents=True)
+    (tmp_path / "src").mkdir()
+    source = "def act():\n    return 'control|task|excerpt'\n"
+    (tmp_path / "src/control.py").write_text(source)
+    (tmp_path / "docs/user/task.md").write_text("(excerpt)=\n\nMeaning\n")
+    (tmp_path / "docs/help-topics.json").write_text(
+        json.dumps({"topics": [{"id": "task", "source": "task.md"}]})
+    )
+    catalog = {
+        "bindings": [
+            {
+                "id": "control",
+                "topic_id": "task",
+                "target": "excerpt",
+                "source": "src/control.py",
+                "symbol": "act",
+            }
+        ],
+        "source_reviews": [
+            {
+                "source": "src/control.py",
+                "symbol": "act",
+                "sha256": symbol_fingerprint(ast.parse(source), "act"),
+            }
+        ],
+    }
+    (tmp_path / "docs/help-inspection.json").write_text(json.dumps(catalog))
+    assert check_inventory(tmp_path) == []
+    (tmp_path / "src/control.py").write_text(
+        source.replace("return", "print('changed'); return")
+    )
+    assert any(
+        "Help impact review required" in error for error in check_inventory(tmp_path)
+    )
+    (tmp_path / "docs/user/task.md").write_text("No target")
+    assert any(
+        "missing canonical explanation" in error for error in check_inventory(tmp_path)
+    )
+    (tmp_path / "src/control.py").write_text("def act():\n    return 0\n")
+    assert any(
+        "missing construction declaration" in error
+        for error in check_inventory(tmp_path)
+    )

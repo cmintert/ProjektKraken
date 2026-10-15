@@ -9,6 +9,7 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMenu, QSizePolicy, QToolButton
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.menu_caret import PhosphorToolMenuButton as WritingMenuButton
@@ -32,7 +33,10 @@ class WritingToolbarPresentation(QObject):
         self._view_actions()
         self._build_menus()
 
-        self.heading_button = WritingMenuButton(owner.toolbar)
+        self.heading_button = declare_inspection(
+            WritingMenuButton(owner.toolbar),
+            "src-gui-widgets-writing-toolbar-writingtoolbarpresentation-init-self-heading-button|writing.edit|help-inspect-src-gui-widgets-writing-toolbar-writingtoolbarpresentation-init-self-heading-button",
+        )
         self.heading_button.setSizePolicy(
             QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
@@ -83,15 +87,24 @@ class WritingToolbarPresentation(QObject):
     def _view_actions(self) -> None:
         """Keep the wrapper's mode, contents and spelling commands intact."""
         owner = self.owner
-        owner.action_toggle_mode = QAction("Markdown source", owner)
+        owner.action_toggle_mode = declare_inspection(
+            QAction("Markdown source", owner),
+            "src-gui-widgets-writing-toolbar-writingtoolbarpresentation-view-actions-owner-action-toggle-mode|writing.edit|help-inspect-src-gui-widgets-writing-toolbar-writingtoolbarpresentation-view-actions-owner-action-toggle-mode",
+        )
         owner.action_toggle_mode.setToolTip(
             "Toggle between Rendered HTML and Markdown Source"
         )
         owner.action_toggle_mode.triggered.connect(owner._toggle_view_mode)
-        owner.action_toggle_toc = QAction("Table of contents", owner)
+        owner.action_toggle_toc = declare_inspection(
+            QAction("Table of contents", owner),
+            "src-gui-widgets-writing-toolbar-writingtoolbarpresentation-view-actions-owner-action-toggle-toc|writing.edit|help-inspect-src-gui-widgets-writing-toolbar-writingtoolbarpresentation-view-actions-owner-action-toggle-toc",
+        )
         owner.action_toggle_toc.setToolTip("Toggle Table of Contents sidebar")
         owner.action_toggle_toc.triggered.connect(owner._toggle_toc)
-        owner.action_spell_check = QAction("Spelling settings", owner)
+        owner.action_spell_check = declare_inspection(
+            QAction("Spelling settings", owner),
+            "src-gui-widgets-writing-toolbar-writingtoolbarpresentation-view-actions-owner-action-spell-check|writing.edit|help-inspect-src-gui-widgets-writing-toolbar-writingtoolbarpresentation-view-actions-owner-action-spell-check",
+        )
         owner.action_spell_check.setCheckable(True)
         owner.action_spell_check.setToolTip(
             "Spell & grammar check settings (LanguageTool)"
@@ -118,7 +131,10 @@ class WritingToolbarPresentation(QObject):
         self._menus["View"].addAction(owner.action_toggle_toc)
         self._menus["Tools"].addAction(owner.action_spell_check)
         for title in ("Edit", "Insert", "Format", "View", "Tools"):
-            button = WritingMenuButton(owner)
+            button = declare_inspection(
+                WritingMenuButton(owner),
+                "src-gui-widgets-writing-toolbar-writingtoolbarpresentation-build-menus-button|writing.edit|help-inspect-src-gui-widgets-writing-toolbar-writingtoolbarpresentation-build-menus-button",
+            )
             button.setText(title)
             button.setAccessibleName(title)
             button.setToolTip(f"{title} menu")

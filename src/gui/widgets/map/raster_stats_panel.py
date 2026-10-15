@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.map.map_data_buffer import CoverageStats
 
 
@@ -147,7 +148,10 @@ class RasterStatsPanel(QDialog):
         btn_row.addStretch()
         from PySide6.QtWidgets import QPushButton
 
-        close_btn = QPushButton("Close")
+        close_btn = declare_inspection(
+            QPushButton("Close"),
+            "src-gui-widgets-map-raster-stats-panel-rasterstatspanel-init-close-btn|map.raster|help-inspect-src-gui-widgets-map-raster-stats-panel-rasterstatspanel-init-close-btn",
+        )
         close_btn.setDefault(True)
         close_btn.setToolTip("Close the statistics panel")
         close_btn.clicked.connect(self.accept)
@@ -165,7 +169,10 @@ class RasterStatsPanel(QDialog):
             layout: Parent layout to add the table into.
             stats: Coverage statistics to display.
         """
-        table = QTableWidget(self)
+        table = declare_inspection(
+            QTableWidget(self),
+            "src-gui-widgets-map-raster-stats-panel-rasterstatspanel-build-discrete-view-table|map.raster|help-inspect-src-gui-widgets-map-raster-stats-panel-rasterstatspanel-build-discrete-view-table",
+        )
         table.setObjectName("RasterStatsTable")
         headers = ["Class", "Value", "Pixels", "Coverage %"]
         table.setColumnCount(len(headers))
@@ -221,7 +228,11 @@ class RasterStatsPanel(QDialog):
         stat_labels = [
             ("Min", stats.min_val, "Lowest raw pixel value in this layer"),
             ("Max", stats.max_val, "Highest raw pixel value in this layer"),
-            ("Mean", stats.mean_val, "Average raw pixel value across all non-zero pixels"),
+            (
+                "Mean",
+                stats.mean_val,
+                "Average raw pixel value across all non-zero pixels",
+            ),
             ("Median", stats.median_val, "Median raw pixel value (50th percentile)"),
         ]
         for name, val, tip in stat_labels:

@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
 
 from src.core.marker_icon import MarkerIconDefinition, MarkerIconSource
 from src.gui.dialogs.icon_metadata_dialog import IconMetadataDialog
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.responsive_dialog_buttons import (
     ResponsiveDialogButtonBox as QDialogButtonBox,
@@ -62,12 +63,21 @@ class ProjectIconCard(QWidget):
         layout.addWidget(label)
 
     def _show_context_menu(self, position: QPoint) -> None:
-        menu = QMenu(self)
+        menu = declare_inspection(
+            QMenu(self),
+            "src-gui-dialogs-icon-picker-dialog-projecticoncard-show-context-menu-menu|map.icons|help-inspect-src-gui-dialogs-icon-picker-dialog-projecticoncard-show-context-menu-menu",
+        )
         menu.setToolTipsVisible(True)
-        edit = menu.addAction("Edit Icon…")
+        edit = declare_inspection(
+            menu.addAction("Edit Icon…"),
+            "src-gui-dialogs-icon-picker-dialog-projecticoncard-show-context-menu-edit|map.icons|help-inspect-src-gui-dialogs-icon-picker-dialog-projecticoncard-show-context-menu-edit",
+        )
         edit.setToolTip("Edit the name, category, size and anchor")
         edit.triggered.connect(self.edit_requested.emit)
-        delete = menu.addAction("Delete Icon…")
+        delete = declare_inspection(
+            menu.addAction("Delete Icon…"),
+            "src-gui-dialogs-icon-picker-dialog-projecticoncard-show-context-menu-delete|map.icons|help-inspect-src-gui-dialogs-icon-picker-dialog-projecticoncard-show-context-menu-delete",
+        )
         delete.setToolTip("Remove an unused icon; restore it with Undo")
         delete.triggered.connect(self.delete_requested.emit)
         menu.exec(self._icon_btn.mapToGlobal(position))
@@ -113,10 +123,16 @@ class IconPickerDialog(QDialog):
             project = QWidget()
             project_layout = QVBoxLayout(project)
             filters = QHBoxLayout()
-            self._search = QLineEdit()
+            self._search = declare_inspection(
+                QLineEdit(),
+                "src-gui-dialogs-icon-picker-dialog-iconpickerdialog-setup-ui-self-search|map.icons|help-inspect-src-gui-dialogs-icon-picker-dialog-iconpickerdialog-setup-ui-self-search",
+            )
             self._search.setPlaceholderText("Search project icons…")
             self._search.setClearButtonEnabled(True)
-            self._category = QComboBox()
+            self._category = declare_inspection(
+                QComboBox(),
+                "src-gui-dialogs-icon-picker-dialog-iconpickerdialog-setup-ui-self-category|map.icons|help-inspect-src-gui-dialogs-icon-picker-dialog-iconpickerdialog-setup-ui-self-category",
+            )
             self._category.addItem("All categories", "")
             filters.addWidget(self._search, 1)
             filters.addWidget(self._category)
@@ -129,22 +145,31 @@ class IconPickerDialog(QDialog):
             self._search.textChanged.connect(self._rebuild_project_icons_tab)
             self._category.currentIndexChanged.connect(self._rebuild_project_icons_tab)
             self._rebuild_project_icons_tab()
-            self._import_btn = QPushButton("Import Icons…")
+            self._import_btn = declare_inspection(
+                QPushButton("Import Icons…"),
+                "src-gui-dialogs-icon-picker-dialog-iconpickerdialog-setup-ui-self-import-btn|map.icons|help-inspect-src-gui-dialogs-icon-picker-dialog-iconpickerdialog-setup-ui-self-import-btn",
+            )
             self._import_btn.setToolTip(
                 "Add one or several SVG, PNG, JPEG or WebP icons"
             )
             self._import_btn.setStyleSheet(StyleHelper.get_tool_button_style())
             self._import_btn.clicked.connect(self._on_import_clicked)
             layout.addWidget(self._import_btn, 0, Qt.AlignmentFlag.AlignLeft)
-        self._status = QTextEdit()
+        self._status = declare_inspection(
+            QTextEdit(),
+            "src-gui-dialogs-icon-picker-dialog-iconpickerdialog-setup-ui-self-status|map.icons|help-inspect-src-gui-dialogs-icon-picker-dialog-iconpickerdialog-setup-ui-self-status",
+        )
         self._status.setReadOnly(True)
         self._status.setMaximumHeight(110)
         self._status.hide()
         layout.addWidget(self._status)
-        close = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Close
-            if self._manage_only
-            else QDialogButtonBox.StandardButton.Cancel
+        close = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Close
+                if self._manage_only
+                else QDialogButtonBox.StandardButton.Cancel
+            ),
+            "src-gui-dialogs-icon-picker-dialog-iconpickerdialog-setup-ui-close|map.icons|help-inspect-src-gui-dialogs-icon-picker-dialog-iconpickerdialog-setup-ui-close",
         )
         if self._manage_only:
             hint = QLabel(
@@ -159,7 +184,10 @@ class IconPickerDialog(QDialog):
     @staticmethod
     def _make_icon_button(icon_path: str, tooltip: str) -> QPushButton:
         """Render a theme-aware artwork preview button."""
-        button = QPushButton()
+        button = declare_inspection(
+            QPushButton(),
+            "src-gui-dialogs-icon-picker-dialog-iconpickerdialog-make-icon-button-button|map.icons|help-inspect-src-gui-dialogs-icon-picker-dialog-iconpickerdialog-make-icon-button-button",
+        )
         button.setFixedSize(64, 64)
         button.setToolTip(tooltip)
         button.setAccessibleName(tooltip)

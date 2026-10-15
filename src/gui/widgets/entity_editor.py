@@ -49,6 +49,7 @@ from src.gui.constants import (
 )
 from src.gui.mixins.autosave_mixin import AutoSaveManager
 from src.gui.mixins.editor_mixin import BaseEditorMixin
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.utils.suggestion_effects import apply_suggestion_effects
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
@@ -161,8 +162,11 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             "No Entity Selected",
             "Select an entity from the list to view and edit its details.",
         )
-        self._empty_state.add_action(
-            "New Entity", self.create_new_requested.emit, primary=True
+        declare_inspection(
+            self._empty_state.add_action(
+                "New Entity", self.create_new_requested.emit, primary=True
+            ),
+            "empty.EntityEditorWidget._build_editor_shell.165|authoring.create|help-inspect-empty-entityeditorwidget-build-editor-shell-165",
         )
         outer_layout.addWidget(self._empty_state)
         self._empty_state.show()
@@ -194,20 +198,27 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         )
         self.form_layout.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         self.form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
-        self.desc_edit = WikiTextEdit()
+        self.desc_edit = declare_inspection(
+            WikiTextEdit(),
+            "src-gui-widgets-entity-editor-entityeditorwidget-build-details-tab-self-desc-edit|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-details-tab-self-desc-edit",
+        )
         self.desc_edit.link_clicked.connect(self.link_clicked.emit)
         self.desc_edit.peek_requested.connect(self.peek_requested.emit)
         self.desc_edit.completion_prefix_changed.connect(
             self.completion_prefix_changed.emit
         )
-        self.description_field = ResizableWikiTextEditField(self.desc_edit)
+        self.description_field = declare_inspection(
+            ResizableWikiTextEditField(self.desc_edit),
+            "src-gui-widgets-entity-editor-entityeditorwidget-build-details-tab-self-description-field|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-details-tab-self-description-field",
+        )
         self.form_layout.addRow("Description:", self.description_field)
         self.description_source_label = QLabel()
         self.form_layout.addRow("Source:", self.description_source_label)
         from src.gui.widgets.wrapping_buttons import WrappingPushButton
 
-        self.btn_new_description = WrappingPushButton(
-            "Start a new description at this time"
+        self.btn_new_description = declare_inspection(
+            WrappingPushButton("Start a new description at this time"),
+            "src-gui-widgets-entity-editor-entityeditorwidget-build-details-tab-self-btn-new-description|entity.historical-editing|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-details-tab-self-btn-new-description",
         )
         self.btn_new_description.clicked.connect(self._start_new_description)
         from src.gui.widgets.overflow_toolbar import OverflowToolBar
@@ -237,7 +248,10 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         section_layout = QVBoxLayout(self.timeline_container)
         section_layout.setContentsMargins(0, 0, 0, 0)
         section_layout.setSpacing(EDITOR_SECTION_SPACING)
-        self.timeline_checkbox = DisclosureButton("Timeline")
+        self.timeline_checkbox = declare_inspection(
+            DisclosureButton("Timeline"),
+            "src-gui-widgets-entity-editor-entityeditorwidget-build-timeline-section-self-timeline-checkbox|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-timeline-section-self-timeline-checkbox",
+        )
         section_layout.addWidget(self.timeline_checkbox)
         self.timeline_display = TimelineDisplayWidget()
         self.timeline_display.setMinimumWidth(self.desc_edit.minimumWidth())
@@ -256,7 +270,10 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         section_layout = QVBoxLayout(self.summary_container)
         section_layout.setContentsMargins(0, 0, 0, 0)
         section_layout.setSpacing(EDITOR_SECTION_SPACING)
-        self.summary_checkbox = DisclosureButton("Summary")
+        self.summary_checkbox = declare_inspection(
+            DisclosureButton("Summary"),
+            "src-gui-widgets-entity-editor-entityeditorwidget-build-summary-section-self-summary-checkbox|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-summary-section-self-summary-checkbox",
+        )
         section_layout.addWidget(self.summary_checkbox)
         self.summary_widget = SummaryWidget()
         self.summary_widget.setVisible(False)
@@ -275,7 +292,10 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         section_layout = QVBoxLayout(self.llm_container)
         section_layout.setContentsMargins(0, 0, 0, 0)
         section_layout.setSpacing(EDITOR_SECTION_SPACING)
-        self.llm_checkbox = DisclosureButton("Generate description")
+        self.llm_checkbox = declare_inspection(
+            DisclosureButton("Generate description"),
+            "src-gui-widgets-entity-editor-entityeditorwidget-build-llm-section-self-llm-checkbox|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-llm-section-self-llm-checkbox",
+        )
         section_layout.addWidget(self.llm_checkbox)
         self.llm_generator = LLMGenerationWidget(self, context_provider=self)
         self.llm_generator.setVisible(False)
@@ -290,7 +310,10 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         section_layout = QVBoxLayout(self.raster_appearances_container)
         section_layout.setContentsMargins(0, 0, 0, 0)
         section_layout.setSpacing(EDITOR_SECTION_SPACING)
-        self.raster_appearances_checkbox = DisclosureButton("Raster maps")
+        self.raster_appearances_checkbox = declare_inspection(
+            DisclosureButton("Raster maps"),
+            "src-gui-widgets-entity-editor-entityeditorwidget-build-raster-appearances-section-self-raster-appearances-checkbox|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-raster-appearances-section-self-raster-appearances-checkbox",
+        )
         section_layout.addWidget(self.raster_appearances_checkbox)
         self.raster_appearances_label = QLabel("Not linked to any raster map.")
         self.raster_appearances_label.setWordWrap(True)
@@ -308,7 +331,10 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         header_layout.setContentsMargins(0, 0, 0, 0)
         from src.gui.widgets.standard_buttons import LabelSizedToolButton
 
-        self.btn_inject = LabelSizedToolButton()
+        self.btn_inject = declare_inspection(
+            LabelSizedToolButton(),
+            "src-gui-widgets-entity-editor-entityeditorwidget-build-header-self-btn-inject|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-header-self-btn-inject",
+        )
         self.btn_inject.setText("Fast Inject")
         self.btn_inject.setToolTip("Quickly apply templates or snippets to this entity")
         self.btn_inject.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
@@ -317,7 +343,10 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             StyleHelper.get_tool_button_style()
             + " QToolButton::menu-indicator { image: none; }"
         )
-        self.inject_menu = QMenu(self.btn_inject)
+        self.inject_menu = declare_inspection(
+            QMenu(self.btn_inject),
+            "src-gui-widgets-entity-editor-entityeditorwidget-build-header-self-inject-menu|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-header-self-inject-menu",
+        )
         self.btn_inject.setMenu(self.inject_menu)
         self.inject_menu.aboutToShow.connect(self._populate_inject_menu)
         ThemeManager().theme_changed.connect(self._on_theme_changed)
@@ -328,8 +357,14 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         )
         self.header_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         self.header_form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
-        self.name_edit = QLineEdit()
-        self.type_edit = ScrollSafeComboBox()
+        self.name_edit = declare_inspection(
+            QLineEdit(),
+            "src-gui-widgets-entity-editor-entityeditorwidget-build-header-self-name-edit|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-header-self-name-edit",
+        )
+        self.type_edit = declare_inspection(
+            ScrollSafeComboBox(),
+            "src-gui-widgets-entity-editor-entityeditorwidget-build-header-self-type-edit|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-header-self-type-edit",
+        )
         self.type_edit.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
@@ -420,14 +455,23 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         rel_layout = QVBoxLayout(self.tab_relations)
         StyleHelper.apply_compact_spacing(rel_layout)
         buttons = QHBoxLayout()
-        self.btn_add_rel = StandardButton("Connected to…")
+        self.btn_add_rel = declare_inspection(
+            StandardButton("Connected to…"),
+            "src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-add-rel|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-add-rel",
+        )
         self.btn_add_rel.clicked.connect(self._on_add_relation)
         buttons.addWidget(self.btn_add_rel)
-        self.btn_edit_rel = StandardButton("Refine relation…")
+        self.btn_edit_rel = declare_inspection(
+            StandardButton("Refine relation…"),
+            "src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-edit-rel|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-edit-rel",
+        )
         self.btn_edit_rel.clicked.connect(self._on_edit_selected_relation)
         self.btn_edit_rel.setEnabled(False)
         buttons.addWidget(self.btn_edit_rel)
-        self.btn_remove_rel = DestructiveButton("Remove")
+        self.btn_remove_rel = declare_inspection(
+            DestructiveButton("Remove"),
+            "src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-remove-rel|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-remove-rel",
+        )
         self.btn_remove_rel.clicked.connect(self._on_remove_selected_relation)
         self.btn_remove_rel.setEnabled(False)
         buttons.addWidget(self.btn_remove_rel)
@@ -438,7 +482,10 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self.relation_authoring = RelationAuthoring(self)
         rel_layout.addWidget(self.relation_authoring)
 
-        self.rel_list = QListWidget()
+        self.rel_list = declare_inspection(
+            QListWidget(),
+            "src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-rel-list|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-rel-list",
+        )
         self.rel_list.setSpacing(EDITOR_LIST_SPACING)
         self.rel_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.rel_list.customContextMenuRequested.connect(self._show_rel_menu)
@@ -496,9 +543,15 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         buttons = ActionFlowLayout(actions, uniform_height=True)
         buttons.setContentsMargins(0, 0, 0, 0)
         buttons.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.btn_save = PrimaryButton("Save Changes")
+        self.btn_save = declare_inspection(
+            PrimaryButton("Save Changes"),
+            "src-gui-widgets-entity-editor-entityeditorwidget-build-action-buttons-self-btn-save|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-action-buttons-self-btn-save",
+        )
         self.btn_save.clicked.connect(self._on_save)
-        self.btn_discard = StandardButton("Discard")
+        self.btn_discard = declare_inspection(
+            StandardButton("Discard"),
+            "src-gui-widgets-entity-editor-entityeditorwidget-build-action-buttons-self-btn-discard|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-action-buttons-self-btn-discard",
+        )
         self.btn_discard.setEnabled(False)
         self.btn_discard.clicked.connect(self._on_discard)
         buttons.addWidget(self.btn_discard)
@@ -1322,9 +1375,18 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         item = self.rel_list.itemAt(pos)
         if not item:
             return
-        menu = QMenu()
-        edit_action = menu.addAction("Edit")
-        remove_action = menu.addAction("Remove")
+        menu = declare_inspection(
+            QMenu(self),
+            "src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-menu|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-menu",
+        )
+        edit_action = declare_inspection(
+            menu.addAction("Edit"),
+            "src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-edit-action|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-edit-action",
+        )
+        remove_action = declare_inspection(
+            menu.addAction("Remove"),
+            "src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-remove-action|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-remove-action",
+        )
         rel_data = item.data(Qt.ItemDataRole.UserRole) or {}
         is_automatic = rel_data.get("rel_type") == "mentions"
         edit_action.setEnabled(not is_automatic)
@@ -1334,6 +1396,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self._on_remove_relation_item(item)
         elif action == edit_action:
             self._on_edit_relation(item)
+        menu.deleteLater()
 
     def _on_remove_relation_item(self, item: QListWidgetItem) -> None:
         """Handles removing a relation item.
@@ -1702,10 +1765,14 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         choice = QMessageBox(self)
         choice.setWindowTitle("New attribute")
         choice.setText(f"Where should '{key}' begin?")
-        baseline = choice.addButton(
-            "Entity baseline", QMessageBox.ButtonRole.AcceptRole
+        baseline = declare_inspection(
+            choice.addButton("Entity baseline", QMessageBox.ButtonRole.AcceptRole),
+            "src-gui-widgets-entity-editor-entityeditorwidget-new-attribute-destination-baseline|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-new-attribute-destination-baseline",
         )
-        dated = choice.addButton("At this time", QMessageBox.ButtonRole.ActionRole)
+        dated = declare_inspection(
+            choice.addButton("At this time", QMessageBox.ButtonRole.ActionRole),
+            "src-gui-widgets-entity-editor-entityeditorwidget-new-attribute-destination-dated|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-new-attribute-destination-dated",
+        )
         baseline.setProperty("krakenHelpMeaning", "entity.baseline")
         dated.setProperty("krakenHelpMeaning", "entity.at-time")
         choice.addButton(QMessageBox.StandardButton.Cancel)
@@ -1725,6 +1792,43 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             event = self._choose_dated_event()
             return {"scope": "dated", **event} if event is not None else None
         return None
+
+    def _removed_attribute_patch(
+        self, key: str, state: dict[str, Any]
+    ) -> dict[str, Any] | None:
+        """Capture absence/override removal without saving or mutating state."""
+        choice = QMessageBox(self)
+        choice.setWindowTitle("Remove visible attribute")
+        choice.setText(f"What should removing '{key}' mean?")
+        absent = declare_inspection(
+            choice.addButton(
+                "Absent from this state", QMessageBox.ButtonRole.AcceptRole
+            ),
+            "src-gui-widgets-entity-editor-entityeditorwidget-save-temporal-absent|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-save-temporal-absent",
+        )
+        override = declare_inspection(
+            choice.addButton(
+                "Remove source override", QMessageBox.ButtonRole.ActionRole
+            ),
+            "src-gui-widgets-entity-editor-entityeditorwidget-save-temporal-override|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-save-temporal-override",
+        )
+        choice.addButton(QMessageBox.StandardButton.Cancel)
+        choice.setInformativeText(
+            "Removing an override can reveal an earlier or baseline value."
+        )
+        choice.exec()
+        if choice.clickedButton() == absent:
+            patch = {"field": "attribute", "key": key, "action": "unset"}
+            if state["attribute_sources"][key]["kind"] == "baseline":
+                event = self._choose_dated_event()
+                if event is None:
+                    return None
+                patch.update({"scope": "dated", **event})
+            return patch
+        elif choice.clickedButton() == override:
+            return {"field": "attribute", "key": key, "action": "remove_override"}
+        else:
+            return None
 
     def _save_temporal(self, *, interactive: bool) -> None:  # noqa: C901
         """Emit only changed visible fields and explicit ownership choices."""
@@ -1777,34 +1881,10 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         for key in original.keys() - current.keys():
             if not interactive:
                 return
-            choice = QMessageBox(self)
-            choice.setWindowTitle("Remove visible attribute")
-            choice.setText(f"What should removing '{key}' mean?")
-            absent = choice.addButton(
-                "Absent from this state", QMessageBox.ButtonRole.AcceptRole
-            )
-            override = choice.addButton(
-                "Remove source override", QMessageBox.ButtonRole.ActionRole
-            )
-            choice.addButton(QMessageBox.StandardButton.Cancel)
-            choice.setInformativeText(
-                "Removing an override can reveal an earlier or baseline value."
-            )
-            choice.exec()
-            if choice.clickedButton() == absent:
-                patch = {"field": "attribute", "key": key, "action": "unset"}
-                if state["attribute_sources"][key]["kind"] == "baseline":
-                    event = self._choose_dated_event()
-                    if event is None:
-                        return
-                    patch.update({"scope": "dated", **event})
-                patches.append(patch)
-            elif choice.clickedButton() == override:
-                patches.append(
-                    {"field": "attribute", "key": key, "action": "remove_override"}
-                )
-            else:
+            removal_patch = self._removed_attribute_patch(key, state)
+            if removal_patch is None:
                 return
+            patches.append(removal_patch)
         metadata = self._temporal_save_metadata(current, original)
         if not patches and not metadata:
             self.set_dirty(False)
@@ -1933,12 +2013,18 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         # Quick Slots (Top 3 - Placeholder logic for now, or just basic "Open Dialog")
         # In a real app we'd query usage stats.
 
-        action_dialog = self.inject_menu.addAction("Open Inject Dialog...")
+        action_dialog = declare_inspection(
+            self.inject_menu.addAction("Open Inject Dialog..."),
+            "src-gui-widgets-entity-editor-entityeditorwidget-populate-inject-menu-action-dialog|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-populate-inject-menu-action-dialog",
+        )
         action_dialog.triggered.connect(self._open_inject_dialog)
 
         self.inject_menu.addSeparator()
 
-        action_save_tmpl = self.inject_menu.addAction("Save Selection as Template...")
+        action_save_tmpl = declare_inspection(
+            self.inject_menu.addAction("Save Selection as Template..."),
+            "src-gui-widgets-entity-editor-entityeditorwidget-populate-inject-menu-action-save-tmpl|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-populate-inject-menu-action-save-tmpl",
+        )
         action_save_tmpl.triggered.connect(self._open_create_template_dialog)
 
     def _open_inject_dialog(self) -> None:

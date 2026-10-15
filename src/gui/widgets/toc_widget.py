@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,10 @@ class TOCWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self.list_widget = QListWidget()
+        self.list_widget = declare_inspection(
+            QListWidget(),
+            "src-gui-widgets-toc-widget-tocwidget-init-self-list-widget|writing.edit|help-inspect-src-gui-widgets-toc-widget-tocwidget-init-self-list-widget",
+        )
         self.list_widget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.list_widget.setCursor(Qt.CursorShape.PointingHandCursor)
         self.list_widget.itemClicked.connect(self._on_item_clicked)

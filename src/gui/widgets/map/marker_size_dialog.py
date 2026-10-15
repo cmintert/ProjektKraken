@@ -23,6 +23,7 @@ from src.core.marker_sizing import (
     MarkerSizingMode,
     MarkerSizingSettings,
 )
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.action_flow_layout import ActionFlowLayout as QHBoxLayout
 from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
@@ -70,7 +71,10 @@ class MarkerSizeDialog(QDialog):
         layout.addWidget(intro)
 
         form = QFormLayout()
-        self.mode_selector = QComboBox()
+        self.mode_selector = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-map-marker-size-dialog-markersizedialog-init-self-mode-selector|map.appearance|help-inspect-src-gui-widgets-map-marker-size-dialog-markersizedialog-init-self-mode-selector",
+        )
         self.mode_selector.addItem("Scale with map", "map_relative")
         self.mode_selector.addItem("Fixed on screen", "screen_fixed")
         self.mode_selector.setCurrentIndex(
@@ -80,9 +84,15 @@ class MarkerSizeDialog(QDialog):
         form.addRow("Behavior:", self.mode_selector)
 
         size_row = QHBoxLayout()
-        self.size_input = ScrollSafeDoubleSpinBox()
+        self.size_input = declare_inspection(
+            ScrollSafeDoubleSpinBox(),
+            "src-gui-widgets-map-marker-size-dialog-markersizedialog-init-self-size-input|map.appearance|help-inspect-src-gui-widgets-map-marker-size-dialog-markersizedialog-init-self-size-input",
+        )
         self.size_input.valueChanged.connect(self._value_changed)
-        self.unit_selector = QComboBox()
+        self.unit_selector = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-map-marker-size-dialog-markersizedialog-init-self-unit-selector|map.appearance|help-inspect-src-gui-widgets-map-marker-size-dialog-markersizedialog-init-self-unit-selector",
+        )
         self.unit_selector.currentTextChanged.connect(self._unit_changed)
         size_row.addWidget(self.size_input, 1)
         size_row.addWidget(self.unit_selector)
@@ -96,8 +106,12 @@ class MarkerSizeDialog(QDialog):
         self.summary.setWordWrap(True)
         layout.addWidget(self.summary)
 
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        buttons = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel
+            ),
+            "src-gui-widgets-map-marker-size-dialog-markersizedialog-init-buttons|map.appearance|help-inspect-src-gui-widgets-map-marker-size-dialog-markersizedialog-init-buttons",
         )
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)

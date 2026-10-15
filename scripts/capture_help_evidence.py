@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import tempfile
 from pathlib import Path
 
-from PySide6.QtCore import QPoint, Qt, qVersion
+from PySide6.QtCore import QPoint, QSettings, Qt, qVersion
 from PySide6.QtWidgets import QApplication, QTextEdit, QVBoxLayout, QWidget
 
 from src.app.coordinators.help_coordinator import HelpCoordinator
@@ -20,6 +21,7 @@ def capture(
     *,
     include_assistance: bool = False,
     topic_id: str = "writing.edit",
+    inspection_example: str = "duration",
 ) -> None:
     """Render six palettes at normal/narrow widths and report label geometry."""
     app = QApplication.instance() or QApplication([])
@@ -33,7 +35,17 @@ def capture(
     registry.register_control(text, "writing.edit")
     coordinator = HelpCoordinator(owner, registry, HelpBundleService())
     source: QWidget | None = None
-    if include_assistance:
+    if include_assistance and inspection_example == "explorer":
+        from src.app.help_composition import HelpSurfaceBindings
+        from src.gui.widgets.unified_list import UnifiedListWidget
+
+        explorer = UnifiedListWidget(owner)
+        owner.layout().addWidget(explorer)
+        bindings = HelpSurfaceBindings(coordinator)
+        for widget in [explorer, *explorer.findChildren(QWidget)]:
+            bindings.bind(widget)
+        source = explorer.btn_new
+    elif include_assistance:
         from src.gui.widgets.compact_duration_widget import CompactDurationWidget
 
         source = CompactDurationWidget(owner)
@@ -76,6 +88,22 @@ def capture(
                     capture_assistance(
                         coordinator, app, output, name, width, records, source
                     )
+                    if inspection_example == "explorer" and source is not None:
+                        owner.resize(width, 420)
+                        source.setEnabled(False)
+                        app.processEvents()
+                        filename = f"{name}-{width}-disabled-explorer.png"
+                        if not owner.grab().save(str(output / filename)):
+                            raise OSError(filename)
+                        records.append(
+                            {
+                                "theme": name,
+                                "width": width,
+                                "state": "disabled-explorer",
+                                "file": filename,
+                            }
+                        )
+                        source.setEnabled(True)
         screen = owner.screen()
         metadata = coordinator.service.validate()
         report = {
@@ -85,6 +113,7 @@ def capture(
             "source_revision": metadata.revision,
             "source_dirty": metadata.dirty,
             "topic_id": topic_id,
+            "inspection_example": inspection_example,
             "device_pixel_ratio": owner.devicePixelRatioF(),
             "logical_dpi": screen.logicalDotsPerInch(),
             "renders": records,
@@ -151,12 +180,21 @@ def main() -> None:
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--search-inspection", action="store_true")
     parser.add_argument("--topic", default="writing.edit")
-    args = parser.parse_args()
-    capture(
-        args.output,
-        include_assistance=args.search_inspection,
-        topic_id=args.topic,
+    parser.add_argument(
+        "--inspection-example", choices=("duration", "explorer"), default="duration"
     )
+    args = parser.parse_args()
+    with tempfile.TemporaryDirectory(prefix="kraken-help-capture-") as settings:
+        QSettings.setDefaultFormat(QSettings.Format.IniFormat)
+        QSettings.setPath(
+            QSettings.Format.IniFormat, QSettings.Scope.UserScope, settings
+        )
+        capture(
+            args.output,
+            include_assistance=args.search_inspection,
+            topic_id=args.topic,
+            inspection_example=args.inspection_example,
+        )
 
 
 if __name__ == "__main__":

@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.responsive_dialog_buttons import (
     ResponsiveDialogButtonBox as QDialogButtonBox,
@@ -41,7 +42,10 @@ class FeatureGeometryStatesDialog(QDialog):
 
         layout = QVBoxLayout(self)
         layout.addWidget(QLabel(feature_label))
-        self.state_list = QListWidget(self)
+        self.state_list = declare_inspection(
+            QListWidget(self),
+            "src-gui-dialogs-feature-geometry-states-dialog-featuregeometrystatesdialog-init-self-state-list|map.historical-geometry|help-inspect-src-gui-dialogs-feature-geometry-states-dialog-featuregeometrystatesdialog-init-self-state-list",
+        )
         base_item = QListWidgetItem("Base Geometry")
         base_item.setData(Qt.ItemDataRole.UserRole, None)
         self.state_list.addItem(base_item)
@@ -61,10 +65,22 @@ class FeatureGeometryStatesDialog(QDialog):
         from src.gui.widgets.action_flow_layout import ActionFlowLayout
 
         actions = ActionFlowLayout()
-        edit_button = QPushButton("Edit Geometry", self)
-        date_button = QPushButton("Change Date", self)
-        delete_button = QPushButton("Delete", self)
-        close_button = QPushButton("Close", self)
+        edit_button = declare_inspection(
+            QPushButton("Edit Geometry", self),
+            "src-gui-dialogs-feature-geometry-states-dialog-featuregeometrystatesdialog-init-edit-button|map.historical-geometry|help-inspect-src-gui-dialogs-feature-geometry-states-dialog-featuregeometrystatesdialog-init-edit-button",
+        )
+        date_button = declare_inspection(
+            QPushButton("Change Date", self),
+            "src-gui-dialogs-feature-geometry-states-dialog-featuregeometrystatesdialog-init-date-button|map.historical-geometry|help-inspect-src-gui-dialogs-feature-geometry-states-dialog-featuregeometrystatesdialog-init-date-button",
+        )
+        delete_button = declare_inspection(
+            QPushButton("Delete", self),
+            "src-gui-dialogs-feature-geometry-states-dialog-featuregeometrystatesdialog-init-delete-button|map.historical-geometry|help-inspect-src-gui-dialogs-feature-geometry-states-dialog-featuregeometrystatesdialog-init-delete-button",
+        )
+        close_button = declare_inspection(
+            QPushButton("Close", self),
+            "src-gui-dialogs-feature-geometry-states-dialog-featuregeometrystatesdialog-init-close-button|map.historical-geometry|help-inspect-src-gui-dialogs-feature-geometry-states-dialog-featuregeometrystatesdialog-init-close-button",
+        )
         edit_button.clicked.connect(self._edit)
         date_button.clicked.connect(self._change_date)
         delete_button.clicked.connect(self._delete)
@@ -107,9 +123,13 @@ class FeatureGeometryStatesDialog(QDialog):
             date_input.set_calendar_converter(self._calendar_converter)
         date_input.set_value(float(state["effective_date"]))
         layout.addWidget(date_input)
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel,
-            parent=dialog,
+        buttons = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel,
+                parent=dialog,
+            ),
+            "src-gui-dialogs-feature-geometry-states-dialog-featuregeometrystatesdialog-change-date-buttons|map.historical-geometry|help-inspect-src-gui-dialogs-feature-geometry-states-dialog-featuregeometrystatesdialog-change-date-buttons",
         )
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)

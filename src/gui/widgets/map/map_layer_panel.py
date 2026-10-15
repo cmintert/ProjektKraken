@@ -46,6 +46,7 @@ from PySide6.QtWidgets import (
 
 from src.core.calendar import CalendarConverter
 from src.core.map import VECTOR_LAYER_TYPES, MapLayerNode
+from src.core.style_constants import DEFAULT_RASTER_PAINT_COLOR
 from src.core.theme_manager import ThemeManager
 from src.gui.constants import (
     MAP_LAYER_BASEMAP_NODE_ID,
@@ -53,6 +54,7 @@ from src.gui.constants import (
     MAP_LAYER_TYPE_SNAPSHOT,
 )
 from src.gui.ui_constants import Spacing
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.color_pickers import (
@@ -362,7 +364,10 @@ class MapLayerPanel(QWidget):
 
         self._title_label = QLabel("Layers")
         header_layout.addWidget(self._title_label)
-        self._temporal_count_button = QPushButton("0 in date · 0 outside")
+        self._temporal_count_button = declare_inspection(
+            QPushButton("0 in date · 0 outside"),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-header-self-temporal-count-button|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-header-self-temporal-count-button",
+        )
         self._temporal_count_button.setCheckable(True)
         self._temporal_count_button.setToolTip(
             "Show only vector features outside the current playhead date"
@@ -375,7 +380,10 @@ class MapLayerPanel(QWidget):
         _dim = self._theme_token("text_dim")
         _err = self._theme_token("destructive")
 
-        self.btn_new_group = QPushButton()
+        self.btn_new_group = declare_inspection(
+            QPushButton(),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-header-self-btn-new-group|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-header-self-btn-new-group",
+        )
         self.btn_new_group.setAccessibleName("New layer group")
         self.btn_new_group.setIcon(
             load_icon("default_assets/icons/ui_icons/stack-simple.svg", _dim)
@@ -387,7 +395,10 @@ class MapLayerPanel(QWidget):
         self.btn_new_group.clicked.connect(self._on_new_group)
         header_layout.addWidget(self.btn_new_group)
 
-        self.btn_new_raster = QPushButton()
+        self.btn_new_raster = declare_inspection(
+            QPushButton(),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-header-self-btn-new-raster|map.raster|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-header-self-btn-new-raster",
+        )
         self.btn_new_raster.setAccessibleName("New raster layer")
         self.btn_new_raster.setIcon(
             load_icon("default_assets/icons/ui_icons/paint-brush-broad.svg", _dim)
@@ -403,7 +414,10 @@ class MapLayerPanel(QWidget):
 
         header_layout.addSpacing(8)
 
-        self.btn_delete = QPushButton()
+        self.btn_delete = declare_inspection(
+            QPushButton(),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-header-self-btn-delete|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-header-self-btn-delete",
+        )
         self.btn_delete.setAccessibleName("Delete selected layer or feature")
         self.btn_delete.setIcon(
             load_icon("default_assets/icons/ui_icons/trash.svg", _err)
@@ -421,7 +435,10 @@ class MapLayerPanel(QWidget):
     def _build_feature_actions_row(self, parent_layout: QVBoxLayout) -> None:
         """Keep selection-specific actions readable below the busy header."""
         row = QHBoxLayout()
-        self.btn_feature_actions = QToolButton(self)
+        self.btn_feature_actions = declare_inspection(
+            QToolButton(self),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-feature-actions-row-self-btn-feature-actions|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-feature-actions-row-self-btn-feature-actions",
+        )
         self.btn_feature_actions.setText("Feature actions")
         self.btn_feature_actions.setEnabled(False)
         self.btn_feature_actions.setToolTip("Select a map feature")
@@ -469,7 +486,10 @@ class MapLayerPanel(QWidget):
         Args:
             parent_layout: Layout to append the tree into.
         """
-        self._tree = QTreeView(self)
+        self._tree = declare_inspection(
+            QTreeView(self),
+            "view.src-gui-widgets-map-map-layer-panel-maplayerpanel-build-tree-view-self-tree|map.layers|help-inspect-view-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-tree-view-self-tree",
+        )
         self._tree.setHeaderHidden(True)
         self._tree.setDragEnabled(True)
         self._tree.setAcceptDrops(True)
@@ -502,7 +522,10 @@ class MapLayerPanel(QWidget):
             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
         )
 
-        self._opacity_slider = QSlider(Qt.Orientation.Horizontal)
+        self._opacity_slider = declare_inspection(
+            QSlider(Qt.Orientation.Horizontal),
+            "view.src-gui-widgets-map-map-layer-panel-maplayerpanel-build-opacity-bar-self-opacity-slider|map.features|help-inspect-view-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-opacity-bar-self-opacity-slider",
+        )
         self._opacity_slider.setRange(0, 100)
         self._opacity_slider.setValue(100)
         self._opacity_slider.setToolTip("Layer opacity (0–100 %)")
@@ -611,7 +634,15 @@ class MapLayerPanel(QWidget):
             ),
         ]
         for attr, label, checked, tooltip, icon_path in tool_defs:
-            btn = QPushButton(label)
+            btn = declare_inspection(
+                QPushButton(label),
+                {
+                    "_btn_brush": "raster.brush|map.raster|help-inspect-raster-brush",
+                    "_btn_fill": "raster.fill|map.raster|help-inspect-raster-fill",
+                    "_btn_gradient": "raster.gradient|map.raster|help-inspect-raster-gradient",
+                    "_btn_sample": "raster.sample|map.raster|help-inspect-raster-sample",
+                }[attr],
+            )
             btn.setCheckable(True)
             btn.setChecked(checked)
             btn.setAutoExclusive(True)
@@ -666,6 +697,10 @@ class MapLayerPanel(QWidget):
             icon_path="default_assets/icons/ui_icons/drop.svg",
         )
         self._hardness_row = cast(QWidget, self._falloff_slider.parentWidget())
+        declare_inspection(
+            self._falloff_slider,
+            "raster.hardness|map.raster|help-inspect-raster-hardness",
+        )
 
         self._brush_opacity_slider, self._brush_opacity_label = (
             self._make_labeled_slider(
@@ -682,13 +717,20 @@ class MapLayerPanel(QWidget):
         self._brush_opacity_row = cast(
             QWidget, self._brush_opacity_slider.parentWidget()
         )
+        declare_inspection(
+            self._brush_opacity_slider,
+            "raster.brush-opacity|map.raster|help-inspect-raster-brush-opacity",
+        )
 
         self._build_falloff_curve_combo(rt)
         self._build_gradient_sub_combo(rt)
 
     def _build_mode_specific_paint_controls(self, rt: QVBoxLayout) -> None:
         """Build target, tolerance, colour, and explicit endpoint controls."""
-        self._advanced_paint_toggle = QCheckBox("Advanced")
+        self._advanced_paint_toggle = declare_inspection(
+            QCheckBox("Advanced"),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-mode-specific-paint-controls-self-advanced-paint-toggle|map.raster|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-mode-specific-paint-controls-self-advanced-paint-toggle",
+        )
         self._advanced_paint_toggle.setToolTip(
             "Show raw raster values for specialist workflows"
         )
@@ -699,7 +741,10 @@ class MapLayerPanel(QWidget):
         display_layout = QHBoxLayout(self._display_value_row)
         display_layout.setContentsMargins(0, 0, 0, 0)
         display_layout.addWidget(QLabel("Target:"))
-        self._display_value_spin = ScrollSafeDoubleSpinBox()
+        self._display_value_spin = declare_inspection(
+            ScrollSafeDoubleSpinBox(),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-mode-specific-paint-controls-self-display-value-spin|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-mode-specific-paint-controls-self-display-value-spin",
+        )
         self._display_value_spin.setDecimals(3)
         self._display_value_spin.setRange(0.0, 65535.0)
         self._display_value_spin.valueChanged.connect(self._on_display_value_changed)
@@ -712,7 +757,10 @@ class MapLayerPanel(QWidget):
         tolerance_layout = QHBoxLayout(self._fill_tolerance_row)
         tolerance_layout.setContentsMargins(0, 0, 0, 0)
         tolerance_layout.addWidget(QLabel("Tolerance:"))
-        self._fill_tolerance_slider = QSlider(Qt.Orientation.Horizontal)
+        self._fill_tolerance_slider = declare_inspection(
+            QSlider(Qt.Orientation.Horizontal),
+            "view.src-gui-widgets-map-map-layer-panel-maplayerpanel-build-mode-specific-paint-controls-self-fill-tolerance-slider|map.features|help-inspect-view-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-mode-specific-paint-controls-self-fill-tolerance-slider",
+        )
         self._fill_tolerance_slider.setRange(0, 100)
         self._fill_tolerance_slider.valueChanged.connect(
             lambda _: self._on_raster_setting_changed()
@@ -729,13 +777,19 @@ class MapLayerPanel(QWidget):
         color_layout = QHBoxLayout(self._rgba_color_row)
         color_layout.setContentsMargins(0, 0, 0, 0)
         color_layout.addWidget(QLabel("Colour:"))
-        self._rgba_color = QColor(255, 255, 255, 255)
-        self._rgba_color_button = QPushButton("#FFFFFFFF")
+        self._rgba_color = QColor(DEFAULT_RASTER_PAINT_COLOR)
+        self._rgba_color_button = declare_inspection(
+            QPushButton(self._rgba_color.name(QColor.NameFormat.HexArgb).upper()),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-mode-specific-paint-controls-self-rgba-color-button|map.raster|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-mode-specific-paint-controls-self-rgba-color-button",
+        )
         self._rgba_color_button.setAccessibleName("Paint colour")
         self._rgba_color_button.clicked.connect(self._choose_rgba_color)
         color_layout.addWidget(self._rgba_color_button, 1)
         color_layout.addWidget(QLabel("Alpha:"))
-        self._rgba_alpha_spin = ScrollSafeSpinBox()
+        self._rgba_alpha_spin = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-mode-specific-paint-controls-self-rgba-alpha-spin|map.raster|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-mode-specific-paint-controls-self-rgba-alpha-spin",
+        )
         self._rgba_alpha_spin.setRange(0, 255)
         self._rgba_alpha_spin.setValue(255)
         self._rgba_alpha_spin.valueChanged.connect(self._on_rgba_alpha_changed)
@@ -746,14 +800,20 @@ class MapLayerPanel(QWidget):
         endpoint_layout = QHBoxLayout(self._gradient_endpoints_row)
         endpoint_layout.setContentsMargins(0, 0, 0, 0)
         endpoint_layout.addWidget(QLabel("From:"))
-        self._gradient_from_spin = ScrollSafeSpinBox()
+        self._gradient_from_spin = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-mode-specific-paint-controls-self-gradient-from-spin|map.raster|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-mode-specific-paint-controls-self-gradient-from-spin",
+        )
         self._gradient_from_spin.setRange(0, 65535)
         self._gradient_from_spin.valueChanged.connect(
             lambda _: self._on_raster_setting_changed()
         )
         endpoint_layout.addWidget(self._gradient_from_spin)
         endpoint_layout.addWidget(QLabel("To:"))
-        self._gradient_to_spin = ScrollSafeSpinBox()
+        self._gradient_to_spin = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-mode-specific-paint-controls-self-gradient-to-spin|map.raster|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-mode-specific-paint-controls-self-gradient-to-spin",
+        )
         self._gradient_to_spin.setRange(0, 65535)
         self._gradient_to_spin.setValue(1)
         self._gradient_to_spin.valueChanged.connect(
@@ -765,10 +825,21 @@ class MapLayerPanel(QWidget):
         self._rgba_gradient_row = QWidget()
         rgba_gradient_layout = QHBoxLayout(self._rgba_gradient_row)
         rgba_gradient_layout.setContentsMargins(0, 0, 0, 0)
-        self._rgba_gradient_from = QColor(0, 0, 0, 0)
-        self._rgba_gradient_to = QColor(255, 255, 255, 255)
-        self._rgba_gradient_from_button = QPushButton("From #00000000")
-        self._rgba_gradient_to_button = QPushButton("To #FFFFFFFF")
+        self._rgba_gradient_from = QColor(Qt.GlobalColor.transparent)
+        self._rgba_gradient_to = QColor(DEFAULT_RASTER_PAINT_COLOR)
+        self._rgba_gradient_from_button = declare_inspection(
+            QPushButton(
+                "From "
+                + self._rgba_gradient_from.name(QColor.NameFormat.HexArgb).upper()
+            ),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-mode-specific-paint-controls-self-rgba-gradient-from-button|map.raster|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-mode-specific-paint-controls-self-rgba-gradient-from-button",
+        )
+        self._rgba_gradient_to_button = declare_inspection(
+            QPushButton(
+                "To " + self._rgba_gradient_to.name(QColor.NameFormat.HexArgb).upper()
+            ),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-mode-specific-paint-controls-self-rgba-gradient-to-button|map.raster|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-mode-specific-paint-controls-self-rgba-gradient-to-button",
+        )
         self._rgba_gradient_from_button.clicked.connect(
             lambda: self._choose_gradient_color(True)
         )
@@ -800,7 +871,10 @@ class MapLayerPanel(QWidget):
         lbl.setFixedWidth(_LABEL_WIDTH)
         scrub_row.addWidget(lbl)
 
-        self._paint_value_spin = NumericScrubberSpinBox()
+        self._paint_value_spin = declare_inspection(
+            NumericScrubberSpinBox(),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-paint-value-selector-self-paint-value-spin|map.raster|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-paint-value-selector-self-paint-value-spin",
+        )
         self._paint_value_spin.setRange(0, 65535)
         self._paint_value_spin.setValue(1)
         self._paint_value_spin.setFixedWidth(96)
@@ -811,20 +885,25 @@ class MapLayerPanel(QWidget):
         scrub_row.addWidget(self._paint_value_spin)
 
         self._paint_value_display_label = QLabel("")
-        dim_color = ThemeManager().get_theme().get("text_dim", "#888888")
         self._paint_value_display_label.setStyleSheet(
-            f"color: {dim_color}; font-style: italic;"
+            StyleHelper.get_supporting_caption_style(italic=True)
         )
         scrub_row.addWidget(self._paint_value_display_label, 1)
         rt.addWidget(self._raw_value_row)
 
         # Mode-dependent picker: swatch grid (discrete) vs gradient scrubber (continuous)
         self._paint_value_stack = QStackedWidget()
-        self._swatch_grid = SwatchGridWidget()
+        self._swatch_grid = declare_inspection(
+            SwatchGridWidget(),
+            "view.src-gui-widgets-map-map-layer-panel-maplayerpanel-build-paint-value-selector-self-swatch-grid|map.raster|help-inspect-view-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-paint-value-selector-self-swatch-grid",
+        )
         self._swatch_grid.swatch_clicked.connect(self._on_swatch_clicked)
         self._paint_value_stack.addWidget(self._swatch_grid)
 
-        self._gradient_scrubber = GradientScrubberWidget()
+        self._gradient_scrubber = declare_inspection(
+            GradientScrubberWidget(),
+            "view.src-gui-widgets-map-map-layer-panel-maplayerpanel-build-paint-value-selector-self-gradient-scrubber|map.raster|help-inspect-view-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-paint-value-selector-self-gradient-scrubber",
+        )
         self._gradient_scrubber.value_changed.connect(
             self._on_gradient_scrubber_changed
         )
@@ -863,7 +942,10 @@ class MapLayerPanel(QWidget):
         ep_layout.setContentsMargins(0, 0, 0, 0)
         ep_layout.setSpacing(Spacing.COMPACT)
         ep_layout.addWidget(QLabel("Paint as:"))
-        self._entity_picker_combo = QComboBox()
+        self._entity_picker_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-entity-picker-self-entity-picker-combo|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-entity-picker-self-entity-picker-combo",
+        )
         self._entity_picker_combo.setToolTip(
             "Shows the mapped class for the current paint value.  "
             "Select a class here to jump to its value, or type a value above to "
@@ -891,7 +973,10 @@ class MapLayerPanel(QWidget):
         curve_lbl.setFixedWidth(_LABEL_WIDTH)
         curve_lbl.setToolTip("Shape of the brush feather ramp")
         curve_row.addWidget(curve_lbl)
-        self._falloff_curve_combo = QComboBox()
+        self._falloff_curve_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-falloff-curve-combo-self-falloff-curve-combo|map.raster|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-falloff-curve-combo-self-falloff-curve-combo",
+        )
         self._falloff_curve_combo.addItems(["Cosine", "Linear", "Gaussian"])
         self._falloff_curve_combo.setToolTip(
             "Cosine: smooth S-curve (default)  |  "
@@ -924,7 +1009,10 @@ class MapLayerPanel(QWidget):
         grad_lbl.setFixedWidth(22)
         grad_lbl.setToolTip("Gradient style")
         gradient_row.addWidget(grad_lbl)
-        self._gradient_sub_combo = QComboBox()
+        self._gradient_sub_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-gradient-sub-combo-self-gradient-sub-combo|map.raster|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-gradient-sub-combo-self-gradient-sub-combo",
+        )
         self._gradient_sub_combo.addItems(["Linear", "Radial", "Reflected"])
         self._gradient_sub_combo.setToolTip(
             "Select gradient style (only applies when Gradient tool is active)"
@@ -944,7 +1032,10 @@ class MapLayerPanel(QWidget):
         _dim = self._theme_token("text_dim")
         action_row = QHBoxLayout()
         action_row.setSpacing(Spacing.COMPACT)
-        self._btn_edit_toggle = QPushButton("Paint")
+        self._btn_edit_toggle = declare_inspection(
+            QPushButton("Paint"),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-edit-action-row-self-btn-edit-toggle|map.raster|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-edit-action-row-self-btn-edit-toggle",
+        )
         self._btn_edit_toggle.setCheckable(True)
         self._btn_edit_toggle.setEnabled(False)
         self._btn_edit_toggle.setToolTip(
@@ -953,7 +1044,10 @@ class MapLayerPanel(QWidget):
         self._btn_edit_toggle.toggled.connect(self._on_edit_toggled)
         action_row.addWidget(self._btn_edit_toggle)
 
-        self._btn_palette = QPushButton("Palette")
+        self._btn_palette = declare_inspection(
+            QPushButton("Palette"),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-edit-action-row-self-btn-palette|map.raster|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-edit-action-row-self-btn-palette",
+        )
         self._btn_palette.setIcon(
             load_icon("default_assets/icons/ui_icons/palette.svg", _dim)
         )
@@ -966,7 +1060,10 @@ class MapLayerPanel(QWidget):
         self._btn_palette.clicked.connect(self._on_palette_clicked)
         action_row.addWidget(self._btn_palette)
 
-        self._btn_stats = QPushButton("Analyze")
+        self._btn_stats = declare_inspection(
+            QPushButton("Analyze"),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-edit-action-row-self-btn-stats|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-edit-action-row-self-btn-stats",
+        )
         self._btn_stats.setIcon(
             load_icon("default_assets/icons/ui_icons/chart-bar.svg", _dim)
         )
@@ -990,7 +1087,10 @@ class MapLayerPanel(QWidget):
         _dim = self._theme_token("text_dim")
         snapshot_row = QHBoxLayout()
         snapshot_row.setSpacing(Spacing.COMPACT)
-        self._btn_snapshot = QPushButton("Create state")
+        self._btn_snapshot = declare_inspection(
+            QPushButton("Create state"),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-snapshot-row-self-btn-snapshot|map.raster|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-snapshot-row-self-btn-snapshot",
+        )
         self._btn_snapshot.setIcon(
             load_icon("default_assets/icons/ui_icons/camera.svg", _dim)
         )
@@ -1003,13 +1103,19 @@ class MapLayerPanel(QWidget):
         self._btn_snapshot.setStyleSheet(StyleHelper.get_icon_button_style())
         self._btn_snapshot.clicked.connect(self._on_snapshot_clicked)
         snapshot_row.addWidget(self._btn_snapshot)
-        self._btn_edit_base = QPushButton("Edit base")
+        self._btn_edit_base = declare_inspection(
+            QPushButton("Edit base"),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-snapshot-row-self-btn-edit-base|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-snapshot-row-self-btn-edit-base",
+        )
         self._btn_edit_base.setToolTip(
             "Explicitly display and edit the undated base raster"
         )
         self._btn_edit_base.clicked.connect(self._on_edit_base_clicked)
         snapshot_row.addWidget(self._btn_edit_base)
-        self._btn_edit_state = QPushButton("Edit this state")
+        self._btn_edit_state = declare_inspection(
+            QPushButton("Edit this state"),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-snapshot-row-self-btn-edit-state|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-snapshot-row-self-btn-edit-state",
+        )
         self._btn_edit_state.setAccessibleName("Edit this raster state")
         self._btn_edit_state.setToolTip(
             "Select the dated raster state shown in the layer tree as the edit target"
@@ -1044,7 +1150,10 @@ class MapLayerPanel(QWidget):
         _blend_lbl.setFixedWidth(22)
         _blend_lbl.setToolTip("Blend mode")
         blend_row.addWidget(_blend_lbl)
-        self._blend_combo = QComboBox()
+        self._blend_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-layer-settings-self-blend-combo|map.raster|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-layer-settings-self-blend-combo",
+        )
         self._blend_combo.addItems(BLEND_MODE_NAMES)
         self._blend_combo.setToolTip("How this layer blends with layers below it")
         self._blend_combo.currentTextChanged.connect(self._on_blend_mode_changed)
@@ -1055,7 +1164,10 @@ class MapLayerPanel(QWidget):
         # Notes
         notes_row = QHBoxLayout()
         notes_row.setSpacing(Spacing.COMPACT)
-        self._btn_notes = QPushButton()
+        self._btn_notes = declare_inspection(
+            QPushButton(),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-layer-settings-self-btn-notes|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-layer-settings-self-btn-notes",
+        )
         self._btn_notes.setIcon(
             load_icon("default_assets/icons/ui_icons/note-pencil.svg", _dim)
         )
@@ -1079,7 +1191,10 @@ class MapLayerPanel(QWidget):
         preset_layout.setContentsMargins(0, 0, 0, 0)
         preset_layout.setSpacing(Spacing.COMPACT)
         preset_layout.addWidget(QLabel("Preset:"))
-        self._preset_combo = QComboBox()
+        self._preset_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-layer-settings-self-preset-combo|map.raster|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-layer-settings-self-preset-combo",
+        )
         self._preset_combo.setSizeAdjustPolicy(
             QComboBox.SizeAdjustPolicy.AdjustToContents
         )
@@ -1095,7 +1210,10 @@ class MapLayerPanel(QWidget):
         query_layout = QHBoxLayout(self._query_row)
         query_layout.setContentsMargins(0, 0, 0, 0)
         query_layout.setSpacing(Spacing.COMPACT)
-        self._btn_query = QPushButton()
+        self._btn_query = declare_inspection(
+            QPushButton(),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-layer-settings-self-btn-query|map.raster|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-layer-settings-self-btn-query",
+        )
         self._btn_query.setIcon(
             load_icon("default_assets/icons/ui_icons/funnel.svg", _dim)
         )
@@ -1106,7 +1224,10 @@ class MapLayerPanel(QWidget):
         self._btn_query.clicked.connect(lambda: self.raster_query_requested.emit())
         query_layout.addWidget(self._btn_query)
 
-        self._btn_clear_query = QPushButton()
+        self._btn_clear_query = declare_inspection(
+            QPushButton(),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-build-layer-settings-self-btn-clear-query|map.raster|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-layer-settings-self-btn-clear-query",
+        )
         self._btn_clear_query.setIcon(
             load_icon("default_assets/icons/ui_icons/funnel-x.svg", _dim)
         )
@@ -1148,7 +1269,10 @@ class MapLayerPanel(QWidget):
         Returns:
             The configured ``QPushButton``.
         """
-        btn = QPushButton(text)
+        btn = declare_inspection(
+            QPushButton(text),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-make-button-btn|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-make-button-btn",
+        )
         if tooltip:
             btn.setToolTip(tooltip)
         btn.clicked.connect(on_click)
@@ -1187,7 +1311,10 @@ class MapLayerPanel(QWidget):
         lbl = QLabel(label)
         lbl.setFixedWidth(_LABEL_WIDTH)
         row.addWidget(lbl)
-        spin = ScrollSafeSpinBox()
+        spin = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-make-labeled-spinbox-spin|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-make-labeled-spinbox-spin",
+        )
         spin.setRange(min_val, max_val)
         spin.setValue(default)
         spin.setButtonSymbols(ScrollSafeSpinBox.ButtonSymbols.UpDownArrows)
@@ -1233,14 +1360,20 @@ class MapLayerPanel(QWidget):
         lbl.setFixedWidth(_LABEL_WIDTH)
         row.addWidget(lbl)
 
-        slider = QSlider(Qt.Orientation.Horizontal)
+        slider = declare_inspection(
+            QSlider(Qt.Orientation.Horizontal),
+            "view.src-gui-widgets-map-map-layer-panel-maplayerpanel-make-slider-scrubber-row-slider|map.features|help-inspect-view-src-gui-widgets-map-map-layer-panel-maplayerpanel-make-slider-scrubber-row-slider",
+        )
         slider.setRange(min_val, max_val)
         slider.setValue(default)
         slider.setToolTip(tooltip)
         slider.valueChanged.connect(on_slider_changed)
         row.addWidget(slider, 1)
 
-        spin = NumericScrubberSpinBox()
+        spin = declare_inspection(
+            NumericScrubberSpinBox(),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-make-slider-scrubber-row-spin|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-make-slider-scrubber-row-spin",
+        )
         spin.setRange(min_val, max_val)
         spin.setValue(default)
         spin.setFixedWidth(64)
@@ -1291,7 +1424,7 @@ class MapLayerPanel(QWidget):
             lbl.setPixmap(
                 load_icon(
                     icon_path,
-                    ThemeManager().get_theme().get("text_dim", "#888888"),
+                    ThemeManager().get_theme()["text_dim"],
                 ).pixmap(QSize(16, 16))
             )
             lbl.setFixedWidth(22)
@@ -1301,7 +1434,10 @@ class MapLayerPanel(QWidget):
             lbl.setFixedWidth(_LABEL_WIDTH)
         row.addWidget(lbl)
 
-        slider = QSlider(Qt.Orientation.Horizontal)
+        slider = declare_inspection(
+            QSlider(Qt.Orientation.Horizontal),
+            "view.src-gui-widgets-map-map-layer-panel-maplayerpanel-make-labeled-slider-slider|map.features|help-inspect-view-src-gui-widgets-map-map-layer-panel-maplayerpanel-make-labeled-slider-slider",
+        )
         slider.setRange(min_val, max_val)
         slider.setValue(default)
         slider.setToolTip(tooltip)
@@ -1767,7 +1903,10 @@ class MapLayerPanel(QWidget):
         if self._model is None:
             return
 
-        menu = QMenu(self)
+        menu = declare_inspection(
+            QMenu(self),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-menu|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-menu",
+        )
 
         if index.isValid():
             source_index = self.source_index(index)
@@ -1778,20 +1917,29 @@ class MapLayerPanel(QWidget):
             if node.layer_type == MAP_LAYER_TYPE_SNAPSHOT:
                 lore_date = float(node.attributes.get("lore_date", 0.0))
                 parent_id = str(node.attributes.get("parent_node_id", ""))
-                action_jump = menu.addAction("↰ Jump Playhead Here")
+                action_jump = declare_inspection(
+                    menu.addAction("↰ Jump Playhead Here"),
+                    "src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-jump|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-jump",
+                )
                 action_jump.triggered.connect(
                     lambda _=False, pid=parent_id, ld=lore_date: (
                         self.raster_snapshot_selected.emit(pid, ld)
                     )
                 )
-                action_edit = menu.addAction("Edit This State")
+                action_edit = declare_inspection(
+                    menu.addAction("Edit This State"),
+                    "src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-edit|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-edit",
+                )
                 action_edit.triggered.connect(
                     lambda _=False, pid=parent_id, ld=lore_date: (
                         self.raster_snapshot_edit_requested.emit(pid, ld)
                     )
                 )
                 menu.addSeparator()
-                action_del = menu.addAction("🗑 Delete Snapshot")
+                action_del = declare_inspection(
+                    menu.addAction("🗑 Delete Snapshot"),
+                    "src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-del|map.raster|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-del",
+                )
                 action_del.triggered.connect(
                     lambda _=False,
                     pid=parent_id,
@@ -1813,7 +1961,10 @@ class MapLayerPanel(QWidget):
                 return
 
             if node.layer_type in VECTOR_LAYER_TYPES and node.locked:
-                action_unlock = menu.addAction("Unlock")
+                action_unlock = declare_inspection(
+                    menu.addAction("Unlock"),
+                    "src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-unlock|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-unlock",
+                )
                 action_unlock.triggered.connect(
                     lambda _=False, source=source_index: self._toggle_lock_at_index(
                         source
@@ -1828,7 +1979,10 @@ class MapLayerPanel(QWidget):
 
             # Toggle visibility
             vis_text = "Hide" if node.visible else "Show"
-            action_toggle = menu.addAction(f"{vis_text} Layer")
+            action_toggle = declare_inspection(
+                menu.addAction(f"{vis_text} Layer"),
+                "src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-toggle|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-toggle",
+            )
             action_toggle.triggered.connect(lambda: self._toggle_visibility(node))
 
             # Rename (not allowed for the pinned basemap node)
@@ -1841,15 +1995,24 @@ class MapLayerPanel(QWidget):
                             source
                         )
                     )
-                action_rename = menu.addAction("Rename…")
+                action_rename = declare_inspection(
+                    menu.addAction("Rename…"),
+                    "src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-rename|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-rename",
+                )
                 action_rename.triggered.connect(
                     lambda: self._on_item_double_clicked(index)
                 )
-                action_properties = menu.addAction("Properties…")
+                action_properties = declare_inspection(
+                    menu.addAction("Properties…"),
+                    "src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-properties|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-properties",
+                )
                 action_properties.triggered.connect(lambda: self._edit_properties(node))
 
                 if node.layer_type in VECTOR_LAYER_TYPES or node.layer_type == "group":
-                    temporal_action = menu.addAction("Temporal Validity…")
+                    temporal_action = declare_inspection(
+                        menu.addAction("Temporal Validity…"),
+                        "src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-temporal-action|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-temporal-action",
+                    )
                     temporal_action.triggered.connect(
                         lambda: self._edit_temporal_validity(node)
                     )
@@ -1868,13 +2031,22 @@ class MapLayerPanel(QWidget):
                 menu.addSeparator()
 
                 # Delete
-                action_delete = menu.addAction("Delete")
+                action_delete = declare_inspection(
+                    menu.addAction("Delete"),
+                    "src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-delete|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-delete",
+                )
                 action_delete.triggered.connect(self._on_delete)
         else:
             # Click on empty area — offer to create
-            action_group = menu.addAction("New Group…")
+            action_group = declare_inspection(
+                menu.addAction("New Group…"),
+                "src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-group|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-group",
+            )
             action_group.triggered.connect(self._on_new_group)
-            action_raster = menu.addAction("New Raster Layer…")
+            action_raster = declare_inspection(
+                menu.addAction("New Raster Layer…"),
+                "src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-raster|map.raster|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-raster",
+            )
             action_raster.triggered.connect(self._on_new_raster)
 
         menu.exec(self._tree.viewport().mapToGlobal(pos))
@@ -1889,11 +2061,17 @@ class MapLayerPanel(QWidget):
         action.triggered.connect(
             lambda: self._toggle_feature_visibility(node_id) if guard() else None
         )
-        properties = menu.addAction("Layer properties…")
+        properties = declare_inspection(
+            menu.addAction("Layer properties…"),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-populate-feature-layer-actions-properties|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-populate-feature-layer-actions-properties",
+        )
         properties.triggered.connect(
             lambda: self.edit_properties(node_id) if guard() else None
         )
-        rename = menu.addAction("Rename…")
+        rename = declare_inspection(
+            menu.addAction("Rename…"),
+            "src-gui-widgets-map-map-layer-panel-maplayerpanel-populate-feature-layer-actions-rename|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-populate-feature-layer-actions-rename",
+        )
         rename.triggered.connect(
             lambda: self._rename_feature(node_id) if guard() else None
         )

@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.responsive_dialog_buttons import (
     ResponsiveDialogButtonBox as QDialogButtonBox,
@@ -41,7 +42,10 @@ class PasteJsonImportDialog(QDialog):
         helper = QLabel("Supported keys: entities, events, relations, tags, and _tags.")
         layout.addWidget(helper)
 
-        self.json_edit = QPlainTextEdit(self)
+        self.json_edit = declare_inspection(
+            QPlainTextEdit(self),
+            "src-gui-dialogs-paste-json-import-dialog-pastejsonimportdialog-init-ui-self-json-edit|world.transfer|help-inspect-src-gui-dialogs-paste-json-import-dialog-pastejsonimportdialog-init-ui-self-json-edit",
+        )
         self.json_edit.setStyleSheet(StyleHelper.get_input_field_style())
         self.json_edit.setPlaceholderText(
             "{\n"
@@ -57,9 +61,13 @@ class PasteJsonImportDialog(QDialog):
         )
         layout.addWidget(self.json_edit)
 
-        self.buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel,
-            parent=self,
+        self.buttons = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel,
+                parent=self,
+            ),
+            "src-gui-dialogs-paste-json-import-dialog-pastejsonimportdialog-init-ui-self-buttons|world.transfer|help-inspect-src-gui-dialogs-paste-json-import-dialog-pastejsonimportdialog-init-ui-self-buttons",
         )
         self.buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Import")
         self.buttons.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)

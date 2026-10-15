@@ -39,6 +39,7 @@ from src.core.summary_data import (
     normalize_summary_prompt_template,
 )
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.settings_reader import (
     read_bool_setting,
     read_int_setting,
@@ -140,7 +141,10 @@ class AISettingsDialog(QDialog):
 
         # Sidebar (Left)
         theme = ThemeManager().get_theme()
-        self.sidebar_list = QListWidget()
+        self.sidebar_list = declare_inspection(
+            QListWidget(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-init-self-sidebar-list|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-init-self-sidebar-list",
+        )
         self.sidebar_list.setFixedWidth(200)
         self.sidebar_list.setSpacing(4)
         self.sidebar_list.setSelectionMode(
@@ -205,11 +209,17 @@ class AISettingsDialog(QDialog):
         btn_box = QHBoxLayout()
         btn_box.addStretch()
 
-        cancel_btn = QPushButton("Cancel")
+        cancel_btn = declare_inspection(
+            QPushButton("Cancel"),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-init-cancel-btn|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-init-cancel-btn",
+        )
         cancel_btn.clicked.connect(self.reject)
         btn_box.addWidget(cancel_btn)
 
-        ok_btn = QPushButton("OK")
+        ok_btn = declare_inspection(
+            QPushButton("OK"),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-init-ok-btn|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-init-ok-btn",
+        )
         ok_btn.setObjectName("primary_btn")  # For styling if needed
         ok_btn.setStyleSheet(StyleHelper.get_primary_button_style())
         ok_btn.clicked.connect(self._on_ok_clicked)
@@ -263,7 +273,10 @@ class AISettingsDialog(QDialog):
         # Gen Provider selection
         gen_provider_layout = QHBoxLayout()
         gen_provider_layout.addWidget(QLabel("Provider:"))
-        self.gen_provider_combo = QComboBox()
+        self.gen_provider_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-gen-provider-combo|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-gen-provider-combo",
+        )
         self.gen_provider_combo.addItems(
             ["LM Studio", "OpenAI", "Google Vertex AI", "Anthropic Claude"]
         )
@@ -287,11 +300,17 @@ class AISettingsDialog(QDialog):
         lm_gen_page = QGroupBox()
         lm_gen_form = QFormLayout(lm_gen_page)
         StyleHelper.apply_standard_list_spacing(lm_gen_form)
-        self.lm_gen_enabled = QCheckBox("Enable for this world")
+        self.lm_gen_enabled = declare_inspection(
+            QCheckBox("Enable for this world"),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-lm-gen-enabled|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-lm-gen-enabled",
+        )
         self.lm_gen_enabled.setChecked(True)
         self.lm_gen_enabled.toggled.connect(self.save_settings)
         lm_gen_form.addRow("Enabled:", self.lm_gen_enabled)
-        self.lm_gen_use_chat_api = QCheckBox("Use Chat API (recommended)")
+        self.lm_gen_use_chat_api = declare_inspection(
+            QCheckBox("Use Chat API (recommended)"),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-lm-gen-use-chat-api|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-lm-gen-use-chat-api",
+        )
         self.lm_gen_use_chat_api.setChecked(True)
         self.lm_gen_use_chat_api.setToolTip(
             "Use /v1/chat/completions with messages format. "
@@ -299,7 +318,10 @@ class AISettingsDialog(QDialog):
         )
         self.lm_gen_use_chat_api.toggled.connect(self.save_settings)
         lm_gen_form.addRow("Chat Mode:", self.lm_gen_use_chat_api)
-        self.lm_gen_url_input = QLineEdit()
+        self.lm_gen_url_input = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-lm-gen-url-input|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-lm-gen-url-input",
+        )
         self.lm_gen_url_input.setPlaceholderText(DEFAULT_LMSTUDIO_BASE_URL)
         self.lm_gen_url_input.setToolTip(
             "LM Studio server address. Kraken derives /v1/models and API endpoints."
@@ -308,12 +330,18 @@ class AISettingsDialog(QDialog):
             lambda: self._sync_lmstudio_base_url(self.lm_gen_url_input)
         )
         lm_gen_form.addRow("Server URL:", self.lm_gen_url_input)
-        self.btn_test_lm_gen = QPushButton("Refresh Models")
+        self.btn_test_lm_gen = declare_inspection(
+            QPushButton("Refresh Models"),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-btn-test-lm-gen|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-btn-test-lm-gen",
+        )
         self.btn_test_lm_gen.clicked.connect(
             lambda: self._test_connection("lmstudio", "generate")
         )
         lm_gen_form.addRow("", self.btn_test_lm_gen)
-        self.lm_gen_model_input = QComboBox()
+        self.lm_gen_model_input = declare_inspection(
+            QComboBox(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-lm-gen-model-input|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-lm-gen-model-input",
+        )
         self.lm_gen_model_input.setEditable(True)
         self.lm_gen_model_input.setPlaceholderText("e.g. mistral-7b-instruct")
         lm_gen_model_edit = self.lm_gen_model_input.lineEdit()
@@ -335,15 +363,24 @@ class AISettingsDialog(QDialog):
         openai_notice = QLabel("Cloud providers are visible for future support only.")
         openai_notice.setWordWrap(True)
         openai_gen_form.addRow(openai_notice)
-        self.openai_gen_enabled = QCheckBox("Enable for this world")
+        self.openai_gen_enabled = declare_inspection(
+            QCheckBox("Enable for this world"),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-openai-gen-enabled|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-openai-gen-enabled",
+        )
         self.openai_gen_enabled.toggled.connect(self.save_settings)
         openai_gen_form.addRow("Enabled:", self.openai_gen_enabled)
-        self.openai_api_key_input = QLineEdit()
+        self.openai_api_key_input = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-openai-api-key-input|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-openai-api-key-input",
+        )
         self.openai_api_key_input.setPlaceholderText("sk-...")
         self.openai_api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.openai_api_key_input.editingFinished.connect(self.save_settings)
         openai_gen_form.addRow("API Key:", self.openai_api_key_input)
-        self.openai_model_input = QLineEdit()
+        self.openai_model_input = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-openai-model-input|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-openai-model-input",
+        )
         self.openai_model_input.setPlaceholderText("gpt-3.5-turbo")
         self.openai_model_input.editingFinished.connect(self.save_settings)
         openai_gen_form.addRow("Model:", self.openai_model_input)
@@ -357,20 +394,35 @@ class AISettingsDialog(QDialog):
         google_notice = QLabel("Cloud providers are visible for future support only.")
         google_notice.setWordWrap(True)
         google_gen_form.addRow(google_notice)
-        self.google_gen_enabled = QCheckBox("Enable for this world")
+        self.google_gen_enabled = declare_inspection(
+            QCheckBox("Enable for this world"),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-google-gen-enabled|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-google-gen-enabled",
+        )
         self.google_gen_enabled.toggled.connect(self.save_settings)
         google_gen_form.addRow("Enabled:", self.google_gen_enabled)
-        self.google_project_input = QLineEdit()
+        self.google_project_input = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-google-project-input|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-google-project-input",
+        )
         self.google_project_input.setPlaceholderText("your-project-id")
         google_gen_form.addRow("Project ID:", self.google_project_input)
-        self.google_location_input = QLineEdit()
+        self.google_location_input = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-google-location-input|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-google-location-input",
+        )
         self.google_location_input.setPlaceholderText("us-central1")
         google_gen_form.addRow("Location:", self.google_location_input)
-        self.google_model_input = QLineEdit()
+        self.google_model_input = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-google-model-input|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-google-model-input",
+        )
         self.google_model_input.setPlaceholderText("text-bison@001")
         self.google_model_input.editingFinished.connect(self.save_settings)
         google_gen_form.addRow("Model:", self.google_model_input)
-        self.google_creds_input = QLineEdit()
+        self.google_creds_input = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-google-creds-input|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-google-creds-input",
+        )
         self.google_creds_input.setPlaceholderText("/path/to/credentials.json")
         self.google_creds_input.editingFinished.connect(self.save_settings)
         google_gen_form.addRow("Credentials Path:", self.google_creds_input)
@@ -386,14 +438,23 @@ class AISettingsDialog(QDialog):
         )
         anthropic_notice.setWordWrap(True)
         anthropic_gen_form.addRow(anthropic_notice)
-        self.anthropic_gen_enabled = QCheckBox("Enable for this world")
+        self.anthropic_gen_enabled = declare_inspection(
+            QCheckBox("Enable for this world"),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-anthropic-gen-enabled|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-anthropic-gen-enabled",
+        )
         self.anthropic_gen_enabled.toggled.connect(self.save_settings)
         anthropic_gen_form.addRow("Enabled:", self.anthropic_gen_enabled)
-        self.anthropic_api_key_input = QLineEdit()
+        self.anthropic_api_key_input = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-anthropic-api-key-input|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-anthropic-api-key-input",
+        )
         self.anthropic_api_key_input.setPlaceholderText("sk-ant-...")
         self.anthropic_api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
         anthropic_gen_form.addRow("API Key:", self.anthropic_api_key_input)
-        self.anthropic_model_input = QLineEdit()
+        self.anthropic_model_input = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-anthropic-model-input|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-anthropic-model-input",
+        )
         self.anthropic_model_input.setPlaceholderText("claude-3-haiku-20240307")
         self.anthropic_model_input.editingFinished.connect(self.save_settings)
         anthropic_gen_form.addRow("Model:", self.anthropic_model_input)
@@ -408,14 +469,20 @@ class AISettingsDialog(QDialog):
         params_layout = QFormLayout(params_group)
         StyleHelper.apply_standard_list_spacing(params_layout)
 
-        self.max_tokens_input = ScrollSafeSpinBox()
+        self.max_tokens_input = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-max-tokens-input|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-max-tokens-input",
+        )
         self.max_tokens_input.setRange(100, 100000)
         self.max_tokens_input.setValue(512)
         self.max_tokens_input.setToolTip("Maximum tokens to generate per request")
         self.max_tokens_input.valueChanged.connect(self.save_settings)
         params_layout.addRow("Max Tokens:", self.max_tokens_input)
 
-        self.temperature_input = ScrollSafeSpinBox()
+        self.temperature_input = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-temperature-input|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-temperature-input",
+        )
         self.temperature_input.setRange(0, 200)
         self.temperature_input.setValue(70)
         self.temperature_input.setSuffix("%")
@@ -423,7 +490,10 @@ class AISettingsDialog(QDialog):
         self.temperature_input.valueChanged.connect(self.save_settings)
         params_layout.addRow("Temperature:", self.temperature_input)
 
-        self.enable_audit_log = QCheckBox("Enable audit logging")
+        self.enable_audit_log = declare_inspection(
+            QCheckBox("Enable audit logging"),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-enable-audit-log|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-enable-audit-log",
+        )
         self.enable_audit_log.setToolTip(
             "Store structured prompts, raw responses, review decisions, feedback, "
             "and edits in the active world folder"
@@ -435,7 +505,10 @@ class AISettingsDialog(QDialog):
 
         # Clear settings button (Local to Generative AI?)
         # Let's keep it global-ish but on the relevant pages or just here
-        clear_btn = QPushButton("Clear All AI Settings")
+        clear_btn = declare_inspection(
+            QPushButton("Clear All AI Settings"),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-clear-btn|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-clear-btn",
+        )
         clear_btn.setStyleSheet(StyleHelper.get_ghost_destructive_button_style())
         clear_btn.clicked.connect(self._on_clear_generation_settings)
         clear_btn.setToolTip("Clear all stored API keys and settings")
@@ -459,7 +532,10 @@ class AISettingsDialog(QDialog):
         # Provider selection
         provider_layout = QHBoxLayout()
         provider_layout.addWidget(QLabel("Provider:"))
-        self.provider_combo = QComboBox()
+        self.provider_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-provider-combo|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-provider-combo",
+        )
         self.provider_combo.addItems(
             ["Sentence Transformers (default)", "LM Studio (optional upgrade)"]
         )
@@ -484,7 +560,10 @@ class AISettingsDialog(QDialog):
             f"color: {ThemeManager().get_theme()['entity_main']}; font-size: 11px;"
         )
         st_form.addRow(st_info_label)
-        self.st_model_input = QLineEdit()
+        self.st_model_input = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-st-model-input|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-st-model-input",
+        )
         self.st_model_input.setPlaceholderText("all-MiniLM-L6-v2")
         self.st_model_input.editingFinished.connect(self.save_settings)
         st_form.addRow("Model:", self.st_model_input)
@@ -501,7 +580,10 @@ class AISettingsDialog(QDialog):
         lm_info_label.setWordWrap(True)
         lm_info_label.setStyleSheet("font-size: 11px;")
         lm_studio_form.addRow(lm_info_label)
-        self.lm_url_input = QLineEdit()
+        self.lm_url_input = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-lm-url-input|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-lm-url-input",
+        )
         self.lm_url_input.setPlaceholderText(DEFAULT_LMSTUDIO_BASE_URL)
         self.lm_url_input.setToolTip(
             "Uses the same LM Studio server as text generation."
@@ -510,7 +592,10 @@ class AISettingsDialog(QDialog):
             lambda: self._sync_lmstudio_base_url(self.lm_url_input)
         )
         lm_studio_form.addRow("Server URL:", self.lm_url_input)
-        self.lm_model_input = QComboBox()
+        self.lm_model_input = declare_inspection(
+            QComboBox(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-lm-model-input|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-lm-model-input",
+        )
         self.lm_model_input.setEditable(True)
         self.lm_model_input.setPlaceholderText("e.g. nomic-embed-text-v1.5")
         lm_model_edit = self.lm_model_input.lineEdit()
@@ -523,17 +608,26 @@ class AISettingsDialog(QDialog):
         )
         lm_model_help.setWordWrap(True)
         lm_studio_form.addRow("", lm_model_help)
-        self.lm_api_key_input = QLineEdit()
+        self.lm_api_key_input = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-lm-api-key-input|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-lm-api-key-input",
+        )
         self.lm_api_key_input.setPlaceholderText("Optional")
         self.lm_api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.lm_api_key_input.editingFinished.connect(self.save_settings)
         lm_studio_form.addRow("API Key:", self.lm_api_key_input)
-        self.btn_test_lm_embed = QPushButton("Refresh Models")
+        self.btn_test_lm_embed = declare_inspection(
+            QPushButton("Refresh Models"),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-btn-test-lm-embed|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-btn-test-lm-embed",
+        )
         self.btn_test_lm_embed.clicked.connect(
             lambda: self._test_connection("lmstudio", "embed")
         )
         lm_studio_form.addRow("", self.btn_test_lm_embed)
-        self.lm_timeout_input = ScrollSafeSpinBox()
+        self.lm_timeout_input = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-lm-timeout-input|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-lm-timeout-input",
+        )
         self.lm_timeout_input.setRange(5, 300)
         self.lm_timeout_input.setValue(30)
         self.lm_timeout_input.setSuffix(" seconds")
@@ -561,10 +655,16 @@ class AISettingsDialog(QDialog):
 
         # Rebuild controls
         rebuild_layout = QHBoxLayout()
-        self.rebuild_combo = QComboBox()
+        self.rebuild_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-rebuild-combo|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-rebuild-combo",
+        )
         self.rebuild_combo.addItems(["All", "Entities", "Events"])
         rebuild_layout.addWidget(self.rebuild_combo, stretch=1)
-        self.btn_rebuild = QPushButton("Rebuild Index")
+        self.btn_rebuild = declare_inspection(
+            QPushButton("Rebuild Index"),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-btn-rebuild|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-btn-rebuild",
+        )
         self.btn_rebuild.clicked.connect(self._on_rebuild_clicked)
         rebuild_layout.addWidget(self.btn_rebuild, stretch=1)
         index_layout.addLayout(rebuild_layout)
@@ -574,7 +674,10 @@ class AISettingsDialog(QDialog):
         self.lbl_rebuild_progress.setVisible(False)
         index_layout.addWidget(self.lbl_rebuild_progress)
 
-        self.btn_refresh_status = QPushButton("Refresh Status")
+        self.btn_refresh_status = declare_inspection(
+            QPushButton("Refresh Status"),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-btn-refresh-status|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-btn-refresh-status",
+        )
         self.btn_refresh_status.clicked.connect(self.index_status_requested.emit)
         index_layout.addWidget(self.btn_refresh_status)
         main_layout.addWidget(index_group)
@@ -583,7 +686,10 @@ class AISettingsDialog(QDialog):
         auto_group = QGroupBox("Automatic Indexing")
         auto_layout = QVBoxLayout(auto_group)
         StyleHelper.apply_standard_list_spacing(auto_layout)
-        self.chk_auto_index = QCheckBox("Auto-index on save")
+        self.chk_auto_index = declare_inspection(
+            QCheckBox("Auto-index on save"),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-chk-auto-index|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-chk-auto-index",
+        )
         self.chk_auto_index.setToolTip(
             "Re-embed entities and events immediately after each save."
         )
@@ -597,7 +703,10 @@ class AISettingsDialog(QDialog):
         StyleHelper.apply_standard_list_spacing(settings_layout)
 
         settings_layout.addWidget(QLabel("Excluded Attributes (comma-separated):"))
-        self.excluded_attrs_input = QLineEdit()
+        self.excluded_attrs_input = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-excluded-attrs-input|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-excluded-attrs-input",
+        )
         self.excluded_attrs_input.setPlaceholderText("e.g. secret_notes, internal_id")
         self.excluded_attrs_input.setToolTip(
             "Attributes starting with '_' are automatically excluded."
@@ -674,7 +783,10 @@ class AISettingsDialog(QDialog):
         summary_params_layout = QFormLayout(summary_params_group)
         StyleHelper.apply_compact_spacing(summary_params_layout)
 
-        self.summary_max_tokens_input = ScrollSafeSpinBox()
+        self.summary_max_tokens_input = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-prompts-page-self-summary-max-tokens-input|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-prompts-page-self-summary-max-tokens-input",
+        )
         self.summary_max_tokens_input.setRange(100, 100000)
         self.summary_max_tokens_input.setValue(2048)
         self.summary_max_tokens_input.setToolTip(
@@ -690,7 +802,10 @@ class AISettingsDialog(QDialog):
             "Summary Max Tokens:", self.summary_max_tokens_input
         )
 
-        self.summary_temperature_input = ScrollSafeSpinBox()
+        self.summary_temperature_input = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-prompts-page-self-summary-temperature-input|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-prompts-page-self-summary-temperature-input",
+        )
         self.summary_temperature_input.setRange(0, 200)
         self.summary_temperature_input.setValue(0)  # Default to 0 for determinism
         self.summary_temperature_input.setToolTip(
@@ -710,8 +825,9 @@ class AISettingsDialog(QDialog):
         StyleHelper.apply_compact_spacing(filters_layout)
 
         # Filter reasoning tags checkbox
-        self.filter_reasoning_cb = QCheckBox(
-            "Filter reasoning tags (<think>, <reasoning>)"
+        self.filter_reasoning_cb = declare_inspection(
+            QCheckBox("Filter reasoning tags (<think>, <reasoning>)"),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-prompts-page-self-filter-reasoning-cb|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-prompts-page-self-filter-reasoning-cb",
         )
         self.filter_reasoning_cb.setChecked(True)
         self.filter_reasoning_cb.setToolTip(
@@ -747,7 +863,10 @@ class AISettingsDialog(QDialog):
         lbl_list.setStyleSheet(f"font-weight: bold; color: {theme['text_dim']};")
         left_layout.addWidget(lbl_list)
 
-        self.template_list = QListWidget()
+        self.template_list = declare_inspection(
+            QListWidget(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-templates-page-self-template-list|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-templates-page-self-template-list",
+        )
         self.template_list.setStyleSheet(
             f"""
             QListWidget {{
@@ -770,10 +889,16 @@ class AISettingsDialog(QDialog):
 
         # Actions below list
         list_actions = QHBoxLayout()
-        self.btn_new_template = QPushButton("New")
+        self.btn_new_template = declare_inspection(
+            QPushButton("New"),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-templates-page-self-btn-new-template|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-templates-page-self-btn-new-template",
+        )
         self.btn_new_template.clicked.connect(self._on_new_template)
         list_actions.addWidget(self.btn_new_template)
-        self.btn_refresh_templates = QPushButton("Refresh")
+        self.btn_refresh_templates = declare_inspection(
+            QPushButton("Refresh"),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-templates-page-self-btn-refresh-templates|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-templates-page-self-btn-refresh-templates",
+        )
         self.btn_refresh_templates.clicked.connect(self._refresh_templates_list)
         list_actions.addWidget(self.btn_refresh_templates)
         left_layout.addLayout(list_actions)
@@ -791,17 +916,26 @@ class AISettingsDialog(QDialog):
         meta_form = QFormLayout(meta_group)
         StyleHelper.apply_compact_spacing(meta_form)
 
-        self.template_name_edit = QLineEdit()
+        self.template_name_edit = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-templates-page-self-template-name-edit|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-templates-page-self-template-name-edit",
+        )
         self.template_name_edit.setPlaceholderText("e.g. Revise — Preserve Tone")
         meta_form.addRow("Name:", self.template_name_edit)
 
-        self.template_description_edit = QLineEdit()
+        self.template_description_edit = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-templates-page-self-template-description-edit|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-templates-page-self-template-description-edit",
+        )
         self.template_description_edit.setPlaceholderText(
             "Explain when this task is useful"
         )
         meta_form.addRow("Description:", self.template_description_edit)
 
-        self.template_intent_combo = QComboBox()
+        self.template_intent_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-templates-page-self-template-intent-combo|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-templates-page-self-template-intent-combo",
+        )
         self.template_intent_combo.addItem("Create", TaskIntent.CREATE.value)
         self.template_intent_combo.addItem("Update", TaskIntent.UPDATE.value)
         self.template_intent_combo.addItem("General", TaskIntent.GENERAL.value)
@@ -828,20 +962,29 @@ class AISettingsDialog(QDialog):
         actions = QWidget()
         editor_actions = ActionFlowLayout(actions)
         editor_actions.setContentsMargins(0, 0, 0, 0)
-        self.btn_delete_template = QPushButton("Delete")
+        self.btn_delete_template = declare_inspection(
+            QPushButton("Delete"),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-templates-page-self-btn-delete-template|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-templates-page-self-btn-delete-template",
+        )
         self.btn_delete_template.setStyleSheet(
             StyleHelper.get_destructive_button_style()
         )
         self.btn_delete_template.clicked.connect(self._on_delete_template)
         editor_actions.addWidget(self.btn_delete_template)
 
-        self.btn_duplicate_template = QPushButton("Duplicate to World")
+        self.btn_duplicate_template = declare_inspection(
+            QPushButton("Duplicate to World"),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-templates-page-self-btn-duplicate-template|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-templates-page-self-btn-duplicate-template",
+        )
         self.btn_duplicate_template.clicked.connect(self._on_duplicate_template)
         editor_actions.addWidget(self.btn_duplicate_template)
 
         editor_actions.addStretch()
 
-        self.btn_save_template = QPushButton("Save Template")
+        self.btn_save_template = declare_inspection(
+            QPushButton("Save Template"),
+            "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-templates-page-self-btn-save-template|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-templates-page-self-btn-save-template",
+        )
         self.btn_save_template.setStyleSheet(StyleHelper.get_primary_button_style())
         self.btn_save_template.clicked.connect(self._on_save_template)
         editor_actions.addWidget(self.btn_save_template)

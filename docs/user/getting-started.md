@@ -31,6 +31,8 @@ No Python installation, command prompt, or `start-kraken.cmd` is required.
 Keep the `_internal` folder beside `ProjektKraken.exe`; it contains the files
 the application needs.
 
+(help-world-manage)=
+
 ## Create or open a world
 
 1. Open **File → Manage Databases…**.
@@ -69,3 +71,50 @@ worlds/
 - Use **File → Backup & Restore** before imports or large restructuring work.
 - Use **Layouts → Reset Layout** if saved panels make the workspace difficult
   to use. This resets interface preferences, not the contents of your world.
+
+## Interface control reference
+
+These explanations describe the software operation. Inspecting a control does not run it or read your entered values.
+
+(help-inspect-src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-db-list)=
+
+**Worlds** — Choose the managed world for the adjacent world-management actions. Select
+and Restart deliberately switches to it.
+
+(help-inspect-src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-create)=
+
+**Create New** — Create a new world in the default worlds folder.
+
+(help-inspect-src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-add-folder)=
+
+**Add World Folder** — Register an existing complete world folder without moving it.
+
+(help-inspect-src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-open-folder)=
+
+**Open Folder** — Open the selected world's folder, or the default worlds folder.
+
+(help-inspect-src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-link-external)=
+
+**Link External DB** — Use a selected external .kraken database for the selected world.
+
+(help-inspect-src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-revoke-external)=
+
+**Revoke External DB** — Remove approval for the selected world's external database.
+
+(help-inspect-src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-delete)=
+
+**Delete** — Delete the selected managed world after confirmation. This is world
+management, not an ordinary undoable entry deletion; keep a recovery copy first.
+
+(help-inspect-src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-select)=
+
+**Select &amp;&amp; Restart** — Make the selected world active, then restart to open it.
+
+(help-inspect-src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-close)=
+
+**Cancel** — Close World Manager without changing worlds.
+
+(help-inspect-src-app-ui-manager-uimanager-create-file-menu-db-action)=
+
+**Manage worlds** — Create, register, delete or choose a world. Switching worlds is
+deliberate and separate from ordinary content undo.

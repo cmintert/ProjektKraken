@@ -19,6 +19,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.gui.utils.help_context import declare_inspection
+
 
 class FilterWidget(QWidget):
     """Reusable widget for configuring include/exclude filters."""
@@ -57,14 +59,23 @@ class FilterWidget(QWidget):
 
         # --- Include Section ---
         main_layout.addWidget(QLabel(f"<b>{self.title_include}</b>"))
-        self.list_include = QListWidget()
+        self.list_include = declare_inspection(
+            QListWidget(),
+            "src-gui-widgets-filter-widget-filterwidget-setup-ui-self-list-include|explorer.browsing|help-inspect-src-gui-widgets-filter-widget-filterwidget-setup-ui-self-list-include",
+        )
         self._populate_list(self.list_include)
         main_layout.addWidget(self.list_include)
 
         # Include Mode
         mode_layout_in = QHBoxLayout()
-        self.radio_include_any = QRadioButton("Any (OR)")
-        self.radio_include_all = QRadioButton("All (AND)")
+        self.radio_include_any = declare_inspection(
+            QRadioButton("Any (OR)"),
+            "src-gui-widgets-filter-widget-filterwidget-setup-ui-self-radio-include-any|explorer.browsing|help-inspect-src-gui-widgets-filter-widget-filterwidget-setup-ui-self-radio-include-any",
+        )
+        self.radio_include_all = declare_inspection(
+            QRadioButton("All (AND)"),
+            "src-gui-widgets-filter-widget-filterwidget-setup-ui-self-radio-include-all|explorer.browsing|help-inspect-src-gui-widgets-filter-widget-filterwidget-setup-ui-self-radio-include-all",
+        )
         self.radio_include_any.setChecked(True)
 
         self.group_include = QButtonGroup(self)
@@ -81,14 +92,23 @@ class FilterWidget(QWidget):
 
         # --- Exclude Section ---
         main_layout.addWidget(QLabel(f"<b>{self.title_exclude}</b>"))
-        self.list_exclude = QListWidget()
+        self.list_exclude = declare_inspection(
+            QListWidget(),
+            "src-gui-widgets-filter-widget-filterwidget-setup-ui-self-list-exclude|explorer.browsing|help-inspect-src-gui-widgets-filter-widget-filterwidget-setup-ui-self-list-exclude",
+        )
         self._populate_list(self.list_exclude)
         main_layout.addWidget(self.list_exclude)
 
         # Exclude Mode
         mode_layout_ex = QHBoxLayout()
-        self.radio_exclude_any = QRadioButton("Any (OR)")
-        self.radio_exclude_all = QRadioButton("All (AND)")
+        self.radio_exclude_any = declare_inspection(
+            QRadioButton("Any (OR)"),
+            "src-gui-widgets-filter-widget-filterwidget-setup-ui-self-radio-exclude-any|explorer.browsing|help-inspect-src-gui-widgets-filter-widget-filterwidget-setup-ui-self-radio-exclude-any",
+        )
+        self.radio_exclude_all = declare_inspection(
+            QRadioButton("All (AND)"),
+            "src-gui-widgets-filter-widget-filterwidget-setup-ui-self-radio-exclude-all|explorer.browsing|help-inspect-src-gui-widgets-filter-widget-filterwidget-setup-ui-self-radio-exclude-all",
+        )
         self.radio_exclude_any.setChecked(True)  # Default
 
         self.group_exclude = QButtonGroup(self)
@@ -104,7 +124,10 @@ class FilterWidget(QWidget):
         main_layout.addSpacing(10)
 
         # --- Options (Case Sensitivity) ---
-        self.check_case = QCheckBox("Case Sensitive")
+        self.check_case = declare_inspection(
+            QCheckBox("Case Sensitive"),
+            "src-gui-widgets-filter-widget-filterwidget-setup-ui-self-check-case|explorer.browsing|help-inspect-src-gui-widgets-filter-widget-filterwidget-setup-ui-self-check-case",
+        )
         main_layout.addWidget(self.check_case)
 
     def _load_config(self) -> None:

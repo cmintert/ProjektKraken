@@ -45,6 +45,7 @@ from src.core.analysis import (
     RelationProposal,
 )
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.action_flow_layout import ActionFlowLayout
 from src.gui.widgets.analysis._analysis_utils import (
@@ -129,22 +130,49 @@ class IntelligencePanel(QWidget):
         actions = QWidget()
         controls = ActionFlowLayout(actions)
         controls.setContentsMargins(0, 0, 0, 0)
-        self.category_filter = QComboBox()
+        self.category_filter = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-analysis-intelligence-panel-intelligencepanel-init-ui-self-category-filter|analysis.review|help-inspect-src-gui-widgets-analysis-intelligence-panel-intelligencepanel-init-ui-self-category-filter",
+        )
         self.category_filter.addItems(
             ["All categories", "Plot Holes", "Relation Gaps", "Lore Suggestions"]
         )
-        self.severity_filter = QComboBox()
+        self.severity_filter = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-analysis-intelligence-panel-intelligencepanel-init-ui-self-severity-filter|analysis.review|help-inspect-src-gui-widgets-analysis-intelligence-panel-intelligencepanel-init-ui-self-severity-filter",
+        )
         self.severity_filter.addItems(["All severities", "critical", "warning", "info"])
-        self.status_filter = QComboBox()
+        self.status_filter = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-analysis-intelligence-panel-intelligencepanel-init-ui-self-status-filter|analysis.review|help-inspect-src-gui-widgets-analysis-intelligence-panel-intelligencepanel-init-ui-self-status-filter",
+        )
         self.status_filter.addItems(["All statuses", "new", "unchanged", "dismissed"])
-        self.show_dismissed = QCheckBox("Show dismissed")
-        self.dismiss_btn = QPushButton("Dismiss")
-        self.open_source_btn = QPushButton("Open Source")
+        self.show_dismissed = declare_inspection(
+            QCheckBox("Show dismissed"),
+            "src-gui-widgets-analysis-intelligence-panel-intelligencepanel-init-ui-self-show-dismissed|analysis.review|help-inspect-src-gui-widgets-analysis-intelligence-panel-intelligencepanel-init-ui-self-show-dismissed",
+        )
+        self.dismiss_btn = declare_inspection(
+            QPushButton("Dismiss"),
+            "src-gui-widgets-analysis-intelligence-panel-intelligencepanel-init-ui-self-dismiss-btn|analysis.review|help-inspect-src-gui-widgets-analysis-intelligence-panel-intelligencepanel-init-ui-self-dismiss-btn",
+        )
+        self.open_source_btn = declare_inspection(
+            QPushButton("Open Source"),
+            "src-gui-widgets-analysis-intelligence-panel-intelligencepanel-init-ui-self-open-source-btn|analysis.review|help-inspect-src-gui-widgets-analysis-intelligence-panel-intelligencepanel-init-ui-self-open-source-btn",
+        )
         self.open_source_btn.setEnabled(False)
-        self.export_scope = QComboBox()
+        self.export_scope = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-analysis-intelligence-panel-intelligencepanel-init-ui-self-export-scope|analysis.review|help-inspect-src-gui-widgets-analysis-intelligence-panel-intelligencepanel-init-ui-self-export-scope",
+        )
         self.export_scope.addItems(["Visible results", "Complete report"])
-        self.export_markdown_btn = QPushButton("Export Markdown")
-        self.export_json_btn = QPushButton("Export JSON")
+        self.export_markdown_btn = declare_inspection(
+            QPushButton("Export Markdown"),
+            "src-gui-widgets-analysis-intelligence-panel-intelligencepanel-init-ui-self-export-markdown-btn|analysis.review|help-inspect-src-gui-widgets-analysis-intelligence-panel-intelligencepanel-init-ui-self-export-markdown-btn",
+        )
+        self.export_json_btn = declare_inspection(
+            QPushButton("Export JSON"),
+            "src-gui-widgets-analysis-intelligence-panel-intelligencepanel-init-ui-self-export-json-btn|analysis.review|help-inspect-src-gui-widgets-analysis-intelligence-panel-intelligencepanel-init-ui-self-export-json-btn",
+        )
         for widget in (
             self.category_filter,
             self.severity_filter,
@@ -192,7 +220,10 @@ class IntelligencePanel(QWidget):
         layout.addWidget(self.details)
         self._sources_label = QLabel("Sources")
         layout.addWidget(self._sources_label)
-        self.evidence_list = QListWidget()
+        self.evidence_list = declare_inspection(
+            QListWidget(),
+            "src-gui-widgets-analysis-intelligence-panel-intelligencepanel-init-ui-self-evidence-list|analysis.review|help-inspect-src-gui-widgets-analysis-intelligence-panel-intelligencepanel-init-ui-self-evidence-list",
+        )
         self.evidence_list.setMaximumHeight(130)
         layout.addWidget(self.evidence_list)
 

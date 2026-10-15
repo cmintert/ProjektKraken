@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
 
 from src.core.analysis import IntelligenceReport
 from src.gui.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
 from src.gui.widgets.analysis.intelligence_panel import IntelligencePanel
@@ -86,12 +87,27 @@ class MainAnalysisPanel(QWidget):
 
         # --- Trigger buttons ---
         self.action_toolbar = OverflowToolBar(self)
-        self.validate_btn = QPushButton("Validate World")
-        self.temporal_btn = QPushButton("Analyze Timeline")
-        self.intelligence_btn = QPushButton("Run AI Analysis")
-        self.cancel_intelligence_btn = QPushButton("Cancel AI Analysis")
+        self.validate_btn = declare_inspection(
+            QPushButton("Validate World"),
+            "src-gui-widgets-analysis-main-analysis-panel-mainanalysispanel-init-ui-self-validate-btn|analysis.review|help-inspect-src-gui-widgets-analysis-main-analysis-panel-mainanalysispanel-init-ui-self-validate-btn",
+        )
+        self.temporal_btn = declare_inspection(
+            QPushButton("Analyze Timeline"),
+            "src-gui-widgets-analysis-main-analysis-panel-mainanalysispanel-init-ui-self-temporal-btn|analysis.review|help-inspect-src-gui-widgets-analysis-main-analysis-panel-mainanalysispanel-init-ui-self-temporal-btn",
+        )
+        self.intelligence_btn = declare_inspection(
+            QPushButton("Run AI Analysis"),
+            "src-gui-widgets-analysis-main-analysis-panel-mainanalysispanel-init-ui-self-intelligence-btn|analysis.review|help-inspect-src-gui-widgets-analysis-main-analysis-panel-mainanalysispanel-init-ui-self-intelligence-btn",
+        )
+        self.cancel_intelligence_btn = declare_inspection(
+            QPushButton("Cancel AI Analysis"),
+            "src-gui-widgets-analysis-main-analysis-panel-mainanalysispanel-init-ui-self-cancel-intelligence-btn|analysis.review|help-inspect-src-gui-widgets-analysis-main-analysis-panel-mainanalysispanel-init-ui-self-cancel-intelligence-btn",
+        )
         self.cancel_intelligence_btn.setEnabled(False)
-        self.editorial_checks = QCheckBox("Editorial checks")
+        self.editorial_checks = declare_inspection(
+            QCheckBox("Editorial checks"),
+            "src-gui-widgets-analysis-main-analysis-panel-mainanalysispanel-init-ui-self-editorial-checks|analysis.review|help-inspect-src-gui-widgets-analysis-main-analysis-panel-mainanalysispanel-init-ui-self-editorial-checks",
+        )
         self.editorial_checks.setToolTip(
             "Include completeness, sparse-description, isolation, and tag-use advice."
         )

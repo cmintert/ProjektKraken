@@ -49,6 +49,7 @@ from src.gui.mixins.map_drawing_mixin import MapDrawingMixin
 from src.gui.mixins.map_layer_mixin import MapLayerMixin
 from src.gui.mixins.map_nesting_mixin import MapNestingMixin
 from src.gui.mixins.map_trajectory_mixin import MapTrajectoryMixin
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
@@ -268,7 +269,10 @@ class MapWidget(
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         # Create view
-        self.view = MapGraphicsView(self)
+        self.view = declare_inspection(
+            MapGraphicsView(self),
+            "view.src-gui-widgets-map-widget-mapwidget-init-self-view|map.features|help-inspect-view-src-gui-widgets-map-widget-mapwidget-init-self-view",
+        )
         self._feature_geometry_edit_pending = False
         self._feature_geometry_apply_available = True
         self._accepted_map_id: str | None = None
@@ -347,8 +351,11 @@ class MapWidget(
             description="Create or select a map to start exploring.",
             parent=self,
         )
-        self.empty_state.add_action(
-            "Create Map", self._on_create_map_clicked, primary=True
+        declare_inspection(
+            self.empty_state.add_action(
+                "Create Map", self._on_create_map_clicked, primary=True
+            ),
+            "empty.MapWidget._build_map_content.351|map.features|help-inspect-empty-mapwidget-build-map-content-351",
         )
         layout.addWidget(self.empty_state)
         self._layer_model: Optional[MapLayerModel] = None
@@ -364,11 +371,17 @@ class MapWidget(
         action_layout = QHBoxLayout(self.map_edit_action_bar)
         action_layout.setContentsMargins(6, 4, 6, 4)
         action_layout.setSpacing(6)
-        self.btn_confirm_map_edit = QPushButton("Confirm")
+        self.btn_confirm_map_edit = declare_inspection(
+            QPushButton("Confirm"),
+            "src-gui-widgets-map-widget-mapwidget-build-map-content-self-btn-confirm-map-edit|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-build-map-content-self-btn-confirm-map-edit",
+        )
         self.btn_confirm_map_edit.setToolTip("Confirm this map edit (Enter)")
         self.btn_confirm_map_edit.clicked.connect(self.confirm_active_session)
         action_layout.addWidget(self.btn_confirm_map_edit)
-        self.btn_cancel_map_edit = QPushButton("Cancel")
+        self.btn_cancel_map_edit = declare_inspection(
+            QPushButton("Cancel"),
+            "src-gui-widgets-map-widget-mapwidget-build-map-content-self-btn-cancel-map-edit|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-build-map-content-self-btn-cancel-map-edit",
+        )
         self.btn_cancel_map_edit.setToolTip("Discard this map edit (Esc)")
         self.btn_cancel_map_edit.clicked.connect(self.cancel_active_session)
         action_layout.addWidget(self.btn_cancel_map_edit)
@@ -389,7 +402,10 @@ class MapWidget(
         self.zoom_label = QLabel("Zoom: 1.00×")
         self.zoom_label.setToolTip("Zoom relative to Fit to View")
         status_layout.addWidget(self.zoom_label)
-        self.temporal_outside_button = QPushButton("0 features outside this date")
+        self.temporal_outside_button = declare_inspection(
+            QPushButton("0 features outside this date"),
+            "src-gui-widgets-map-widget-mapwidget-build-map-status-row-self-temporal-outside-button|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-build-map-status-row-self-temporal-outside-button",
+        )
         self.temporal_outside_button.setCheckable(True)
         self.temporal_outside_button.setVisible(False)
         self.temporal_outside_button.setToolTip(
@@ -428,7 +444,10 @@ class MapWidget(
 
     def _build_inspector_control(self) -> None:
         """Expose deliberate opening, including in the toolbar overflow menu."""
-        self.open_inspector_action = QAction("Open in inspector", self)
+        self.open_inspector_action = declare_inspection(
+            QAction("Open in inspector", self),
+            "src-gui-widgets-map-widget-mapwidget-build-inspector-control-self-open-inspector-action|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-build-inspector-control-self-open-inspector-action",
+        )
         self.open_inspector_action.setToolTip(
             "Select a map feature to open its entity or event in the inspector"
         )
@@ -444,8 +463,14 @@ class MapWidget(
 
     def _build_feature_actions_control(self) -> None:
         """Expose labeled feature actions through native toolbar overflow."""
-        self.feature_actions_menu = QMenu(self)
-        self.feature_actions_action = QAction("Feature actions", self)
+        self.feature_actions_menu = declare_inspection(
+            QMenu(self),
+            "src-gui-widgets-map-widget-mapwidget-build-feature-actions-control-self-feature-actions-menu|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-build-feature-actions-control-self-feature-actions-menu",
+        )
+        self.feature_actions_action = declare_inspection(
+            QAction("Feature actions", self),
+            "src-gui-widgets-map-widget-mapwidget-build-feature-actions-control-self-feature-actions-action|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-build-feature-actions-control-self-feature-actions-action",
+        )
         self.feature_actions_action.setMenu(self.feature_actions_menu)
         self.feature_actions_action.setEnabled(False)
         self.feature_actions_action.setToolTip("Select a map feature")
@@ -501,7 +526,10 @@ class MapWidget(
         breadcrumb_layout = QHBoxLayout(breadcrumb_row)
         breadcrumb_layout.setContentsMargins(8, 2, 8, 2)
         breadcrumb_layout.setSpacing(6)
-        self.btn_parent = QPushButton("↑")
+        self.btn_parent = declare_inspection(
+            QPushButton("↑"),
+            "src-gui-widgets-map-widget-mapwidget-build-breadcrumb-self-btn-parent|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-build-breadcrumb-self-btn-parent",
+        )
         self.btn_parent.setFixedWidth(24)
         self.btn_parent.setToolTip("Navigate to parent map")
         self.btn_parent.clicked.connect(self._on_navigate_to_parent)
@@ -539,7 +567,10 @@ class MapWidget(
         edit_layout.addWidget(self.trajectory_edit_label)
         edit_layout.addWidget(self.trajectory_keyframe_label)
         edit_layout.addWidget(self.trajectory_validation_label, 1)
-        self.btn_delete_trajectory_keyframe = QPushButton("Delete")
+        self.btn_delete_trajectory_keyframe = declare_inspection(
+            QPushButton("Delete"),
+            "src-gui-widgets-map-widget-mapwidget-build-trajectory-edit-strip-self-btn-delete-trajectory-keyframe|map.trajectories|help-inspect-src-gui-widgets-map-widget-mapwidget-build-trajectory-edit-strip-self-btn-delete-trajectory-keyframe",
+        )
         self.btn_delete_trajectory_keyframe.setStyleSheet(
             StyleHelper.get_ghost_destructive_button_style()
         )
@@ -547,7 +578,10 @@ class MapWidget(
             self._request_trajectory_keyframe_deletion
         )
         edit_layout.addWidget(self.btn_delete_trajectory_keyframe)
-        self.btn_add_trajectory_location = QPushButton("Add Location")
+        self.btn_add_trajectory_location = declare_inspection(
+            QPushButton("Add Location"),
+            "src-gui-widgets-map-widget-mapwidget-build-trajectory-edit-strip-self-btn-add-trajectory-location|map.trajectories|help-inspect-src-gui-widgets-map-widget-mapwidget-build-trajectory-edit-strip-self-btn-add-trajectory-location",
+        )
         self.btn_add_trajectory_location.setToolTip(
             "Add a dated location at the current playhead."
         )
@@ -555,8 +589,9 @@ class MapWidget(
             self.trajectory_add_location_requested.emit
         )
         edit_layout.addWidget(self.btn_add_trajectory_location)
-        self.btn_accept_second_trajectory_location = QPushButton(
-            "Accept Second Location"
+        self.btn_accept_second_trajectory_location = declare_inspection(
+            QPushButton("Accept Second Location"),
+            "src-gui-widgets-map-widget-mapwidget-build-trajectory-edit-strip-self-btn-accept-second-trajectory-location|map.trajectories|help-inspect-src-gui-widgets-map-widget-mapwidget-build-trajectory-edit-strip-self-btn-accept-second-trajectory-location",
         )
         self.btn_accept_second_trajectory_location.setToolTip(
             "Add the destination marker at the current later playhead date."
@@ -575,7 +610,10 @@ class MapWidget(
 
     def _build_trajectory_commit_buttons(self, edit_layout: QHBoxLayout) -> None:
         """Build reload, apply, and cancel buttons for trajectory edits."""
-        self.btn_reload_trajectory = QPushButton("Discard & Reload")
+        self.btn_reload_trajectory = declare_inspection(
+            QPushButton("Discard & Reload"),
+            "src-gui-widgets-map-widget-mapwidget-build-trajectory-commit-buttons-self-btn-reload-trajectory|map.trajectories|help-inspect-src-gui-widgets-map-widget-mapwidget-build-trajectory-commit-buttons-self-btn-reload-trajectory",
+        )
         self.btn_reload_trajectory.setStyleSheet(
             StyleHelper.get_secondary_button_style()
         )
@@ -584,11 +622,17 @@ class MapWidget(
         )
         self.btn_reload_trajectory.hide()
         edit_layout.addWidget(self.btn_reload_trajectory)
-        self.btn_apply_trajectory = QPushButton("Apply")
+        self.btn_apply_trajectory = declare_inspection(
+            QPushButton("Apply"),
+            "src-gui-widgets-map-widget-mapwidget-build-trajectory-commit-buttons-self-btn-apply-trajectory|map.trajectories|help-inspect-src-gui-widgets-map-widget-mapwidget-build-trajectory-commit-buttons-self-btn-apply-trajectory",
+        )
         self.btn_apply_trajectory.setStyleSheet(StyleHelper.get_primary_button_style())
         self.btn_apply_trajectory.clicked.connect(self.trajectory_apply_requested.emit)
         edit_layout.addWidget(self.btn_apply_trajectory)
-        self.btn_cancel_trajectory = QPushButton("Cancel")
+        self.btn_cancel_trajectory = declare_inspection(
+            QPushButton("Cancel"),
+            "src-gui-widgets-map-widget-mapwidget-build-trajectory-commit-buttons-self-btn-cancel-trajectory|map.trajectories|help-inspect-src-gui-widgets-map-widget-mapwidget-build-trajectory-commit-buttons-self-btn-cancel-trajectory",
+        )
         self.btn_cancel_trajectory.setStyleSheet(
             StyleHelper.get_secondary_button_style()
         )
@@ -627,7 +671,10 @@ class MapWidget(
         self.feature_geometry_edit_source.setWordWrap(True)
         heading.addWidget(self.feature_geometry_edit_source, 1)
         geometry_layout.addLayout(heading)
-        self.btn_geometry_discard_reload = QPushButton("Discard and reload", self)
+        self.btn_geometry_discard_reload = declare_inspection(
+            QPushButton("Discard and reload", self),
+            "src-gui-widgets-map-widget-mapwidget-build-feature-geometry-edit-strip-self-btn-geometry-discard-reload|map.historical-geometry|help-inspect-src-gui-widgets-map-widget-mapwidget-build-feature-geometry-edit-strip-self-btn-geometry-discard-reload",
+        )
         self.btn_geometry_discard_reload.setStyleSheet(
             StyleHelper.get_action_role_style("destructive")
         )
@@ -651,7 +698,10 @@ class MapWidget(
         segment_layout.setContentsMargins(8, 4, 8, 4)
         segment_layout.setSpacing(8)
         segment_layout.addWidget(QLabel("Arrival from previous:"))
-        self.trajectory_arrival_mode = QComboBox()
+        self.trajectory_arrival_mode = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-map-widget-mapwidget-build-trajectory-segment-panel-self-trajectory-arrival-mode|map.trajectories|help-inspect-src-gui-widgets-map-widget-mapwidget-build-trajectory-segment-panel-self-trajectory-arrival-mode",
+        )
         self.trajectory_arrival_mode.addItem("Travel", "linear")
         self.trajectory_arrival_mode.addItem("Relocation", "step")
         self.trajectory_arrival_mode.currentIndexChanged.connect(
@@ -702,17 +752,26 @@ class MapWidget(
             self.trajectory_date_value_changed.emit
         )
         controls.addWidget(self.trajectory_date_input, 1)
-        self.btn_trajectory_date_previous = QPushButton("−1 day")
+        self.btn_trajectory_date_previous = declare_inspection(
+            QPushButton("−1 day"),
+            "src-gui-widgets-map-widget-mapwidget-build-trajectory-date-controls-self-btn-trajectory-date-previous|map.trajectories|help-inspect-src-gui-widgets-map-widget-mapwidget-build-trajectory-date-controls-self-btn-trajectory-date-previous",
+        )
         self.btn_trajectory_date_previous.clicked.connect(
             lambda: self.trajectory_date_step_requested.emit(-1.0)
         )
         controls.addWidget(self.btn_trajectory_date_previous)
-        self.btn_trajectory_date_next = QPushButton("+1 day")
+        self.btn_trajectory_date_next = declare_inspection(
+            QPushButton("+1 day"),
+            "src-gui-widgets-map-widget-mapwidget-build-trajectory-date-controls-self-btn-trajectory-date-next|map.trajectories|help-inspect-src-gui-widgets-map-widget-mapwidget-build-trajectory-date-controls-self-btn-trajectory-date-next",
+        )
         self.btn_trajectory_date_next.clicked.connect(
             lambda: self.trajectory_date_step_requested.emit(1.0)
         )
         controls.addWidget(self.btn_trajectory_date_next)
-        self.btn_shift_trajectory_later = QPushButton("Shift Later")
+        self.btn_shift_trajectory_later = declare_inspection(
+            QPushButton("Shift Later"),
+            "src-gui-widgets-map-widget-mapwidget-build-trajectory-date-controls-self-btn-shift-trajectory-later|map.trajectories|help-inspect-src-gui-widgets-map-widget-mapwidget-build-trajectory-date-controls-self-btn-shift-trajectory-later",
+        )
         self.btn_shift_trajectory_later.setToolTip(
             "Apply this date change to all later locations."
         )
@@ -720,7 +779,10 @@ class MapWidget(
             self.trajectory_shift_later_requested.emit
         )
         controls.addWidget(self.btn_shift_trajectory_later)
-        self.btn_edit_trajectory_date = QPushButton("Edit Date")
+        self.btn_edit_trajectory_date = declare_inspection(
+            QPushButton("Edit Date"),
+            "src-gui-widgets-map-widget-mapwidget-build-trajectory-date-controls-self-btn-edit-trajectory-date|map.trajectories|help-inspect-src-gui-widgets-map-widget-mapwidget-build-trajectory-date-controls-self-btn-edit-trajectory-date",
+        )
         self.btn_edit_trajectory_date.setStyleSheet(
             StyleHelper.get_primary_button_style()
         )
@@ -738,7 +800,10 @@ class MapWidget(
             "The current date represented by the timeline playhead."
         )
         controls.addWidget(self.trajectory_playhead_value)
-        self.btn_trajectory_date_use_playhead = QPushButton("Use Playhead")
+        self.btn_trajectory_date_use_playhead = declare_inspection(
+            QPushButton("Use Playhead"),
+            "src-gui-widgets-map-widget-mapwidget-build-trajectory-date-mode-controls-self-btn-trajectory-date-use-playhead|map.trajectories|help-inspect-src-gui-widgets-map-widget-mapwidget-build-trajectory-date-mode-controls-self-btn-trajectory-date-use-playhead",
+        )
         self.btn_trajectory_date_use_playhead.setToolTip(
             "Set this keyframe's date to the current timeline playhead"
         )
@@ -749,7 +814,10 @@ class MapWidget(
             self.trajectory_date_use_playhead_requested.emit
         )
         controls.addWidget(self.btn_trajectory_date_use_playhead)
-        self.btn_finish_trajectory_date = QPushButton("Done")
+        self.btn_finish_trajectory_date = declare_inspection(
+            QPushButton("Done"),
+            "src-gui-widgets-map-widget-mapwidget-build-trajectory-date-mode-controls-self-btn-finish-trajectory-date|map.trajectories|help-inspect-src-gui-widgets-map-widget-mapwidget-build-trajectory-date-mode-controls-self-btn-finish-trajectory-date",
+        )
         self.btn_finish_trajectory_date.setStyleSheet(
             StyleHelper.get_primary_button_style()
         )
@@ -757,7 +825,10 @@ class MapWidget(
             self.trajectory_date_edit_done_requested.emit
         )
         controls.addWidget(self.btn_finish_trajectory_date)
-        self.btn_cancel_trajectory_date = QPushButton("Cancel Date")
+        self.btn_cancel_trajectory_date = declare_inspection(
+            QPushButton("Cancel Date"),
+            "src-gui-widgets-map-widget-mapwidget-build-trajectory-date-mode-controls-self-btn-cancel-trajectory-date|map.trajectories|help-inspect-src-gui-widgets-map-widget-mapwidget-build-trajectory-date-mode-controls-self-btn-cancel-trajectory-date",
+        )
         self.btn_cancel_trajectory_date.setStyleSheet(
             StyleHelper.get_secondary_button_style()
         )
@@ -765,7 +836,10 @@ class MapWidget(
             self.trajectory_date_edit_cancel_requested.emit
         )
         controls.addWidget(self.btn_cancel_trajectory_date)
-        self.btn_make_trajectory_route_point = QPushButton("Make Route Point")
+        self.btn_make_trajectory_route_point = declare_inspection(
+            QPushButton("Make Route Point"),
+            "src-gui-widgets-map-widget-mapwidget-build-trajectory-date-mode-controls-self-btn-make-trajectory-route-point|map.trajectories|help-inspect-src-gui-widgets-map-widget-mapwidget-build-trajectory-date-mode-controls-self-btn-make-trajectory-route-point",
+        )
         self.btn_make_trajectory_route_point.setToolTip(
             "Calculate this point's date automatically from its travel leg."
         )
@@ -773,7 +847,10 @@ class MapWidget(
             self.trajectory_make_route_point_requested.emit
         )
         controls.addWidget(self.btn_make_trajectory_route_point)
-        self.btn_make_trajectory_timed_location = QPushButton("Make Timed Location")
+        self.btn_make_trajectory_timed_location = declare_inspection(
+            QPushButton("Make Timed Location"),
+            "src-gui-widgets-map-widget-mapwidget-build-trajectory-date-mode-controls-self-btn-make-trajectory-timed-location|map.trajectories|help-inspect-src-gui-widgets-map-widget-mapwidget-build-trajectory-date-mode-controls-self-btn-make-trajectory-timed-location",
+        )
         self.btn_make_trajectory_timed_location.setToolTip(
             "Keep this point's calculated date as an independently editable date."
         )
@@ -808,7 +885,10 @@ class MapWidget(
 
     def _build_speed_anchor_controls(self, controls: QHBoxLayout) -> None:
         """Build anchor and equalization-range controls."""
-        self.btn_set_trajectory_speed_anchor = QPushButton("Set Start Anchor")
+        self.btn_set_trajectory_speed_anchor = declare_inspection(
+            QPushButton("Set Start Anchor"),
+            "src-gui-widgets-map-widget-mapwidget-build-speed-anchor-controls-self-btn-set-trajectory-speed-anchor|map.trajectories|help-inspect-src-gui-widgets-map-widget-mapwidget-build-speed-anchor-controls-self-btn-set-trajectory-speed-anchor",
+        )
         self.btn_set_trajectory_speed_anchor.setToolTip(
             "Keep this keyframe fixed as the start of a speed-equalization range."
         )
@@ -819,7 +899,10 @@ class MapWidget(
             self._request_selected_trajectory_speed_anchor
         )
         controls.addWidget(self.btn_set_trajectory_speed_anchor)
-        self.btn_equalize_trajectory_speed = QPushButton("Equalize Speed to Here")
+        self.btn_equalize_trajectory_speed = declare_inspection(
+            QPushButton("Equalize Speed to Here"),
+            "src-gui-widgets-map-widget-mapwidget-build-speed-anchor-controls-self-btn-equalize-trajectory-speed|map.trajectories|help-inspect-src-gui-widgets-map-widget-mapwidget-build-speed-anchor-controls-self-btn-equalize-trajectory-speed",
+        )
         self.btn_equalize_trajectory_speed.setToolTip(
             "Preview constant speed between the fixed start and this keyframe."
         )
@@ -830,8 +913,9 @@ class MapWidget(
             self._request_equalize_trajectory_speed_to_selected
         )
         controls.addWidget(self.btn_equalize_trajectory_speed)
-        self.btn_make_intermediate_automatic = QPushButton(
-            "Make Intermediate Automatic"
+        self.btn_make_intermediate_automatic = declare_inspection(
+            QPushButton("Make Intermediate Automatic"),
+            "src-gui-widgets-map-widget-mapwidget-build-speed-anchor-controls-self-btn-make-intermediate-automatic|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-build-speed-anchor-controls-self-btn-make-intermediate-automatic",
         )
         self.btn_make_intermediate_automatic.setToolTip(
             "Keep the timed endpoints and calculate every point between them."
@@ -840,7 +924,10 @@ class MapWidget(
             self._request_make_intermediate_automatic
         )
         controls.addWidget(self.btn_make_intermediate_automatic)
-        self.btn_equalize_whole_trajectory = QPushButton("Equalize Whole")
+        self.btn_equalize_whole_trajectory = declare_inspection(
+            QPushButton("Equalize Whole"),
+            "src-gui-widgets-map-widget-mapwidget-build-speed-anchor-controls-self-btn-equalize-whole-trajectory|map.trajectories|help-inspect-src-gui-widgets-map-widget-mapwidget-build-speed-anchor-controls-self-btn-equalize-whole-trajectory",
+        )
         self.btn_equalize_whole_trajectory.setToolTip(
             "Preview constant speed between the trajectory endpoints."
         )
@@ -854,7 +941,10 @@ class MapWidget(
 
     def _build_speed_preview_controls(self, controls: QHBoxLayout) -> None:
         """Build controls for clearing, applying, or cancelling speed previews."""
-        self.btn_clear_trajectory_speed_anchor = QPushButton("Clear Anchor")
+        self.btn_clear_trajectory_speed_anchor = declare_inspection(
+            QPushButton("Clear Anchor"),
+            "src-gui-widgets-map-widget-mapwidget-build-speed-preview-controls-self-btn-clear-trajectory-speed-anchor|map.trajectories|help-inspect-src-gui-widgets-map-widget-mapwidget-build-speed-preview-controls-self-btn-clear-trajectory-speed-anchor",
+        )
         self.btn_clear_trajectory_speed_anchor.setToolTip(
             "Remove the selected speed start anchor without changing dates."
         )
@@ -865,7 +955,10 @@ class MapWidget(
             self.trajectory_speed_anchor_clear_requested.emit
         )
         controls.addWidget(self.btn_clear_trajectory_speed_anchor)
-        self.btn_apply_speed_equalization = QPushButton("Apply Equalization")
+        self.btn_apply_speed_equalization = declare_inspection(
+            QPushButton("Apply Equalization"),
+            "src-gui-widgets-map-widget-mapwidget-build-speed-preview-controls-self-btn-apply-speed-equalization|map.trajectories|help-inspect-src-gui-widgets-map-widget-mapwidget-build-speed-preview-controls-self-btn-apply-speed-equalization",
+        )
         self.btn_apply_speed_equalization.setToolTip(
             "Keep these previewed dates in the working trajectory. "
             "Use trajectory Apply to save them."
@@ -877,7 +970,10 @@ class MapWidget(
             self.trajectory_speed_equalization_apply_requested.emit
         )
         controls.addWidget(self.btn_apply_speed_equalization)
-        self.btn_cancel_speed_equalization = QPushButton("Cancel Equalization")
+        self.btn_cancel_speed_equalization = declare_inspection(
+            QPushButton("Cancel Equalization"),
+            "src-gui-widgets-map-widget-mapwidget-build-speed-preview-controls-self-btn-cancel-speed-equalization|map.trajectories|help-inspect-src-gui-widgets-map-widget-mapwidget-build-speed-preview-controls-self-btn-cancel-speed-equalization",
+        )
         self.btn_cancel_speed_equalization.setToolTip(
             "Restore the working dates from before this preview."
         )
@@ -891,48 +987,72 @@ class MapWidget(
 
     def _build_map_management_controls(self) -> None:
         """Build map selection and lifecycle controls."""
-        self.map_selector = QComboBox()
+        self.map_selector = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-map-widget-mapwidget-build-map-management-controls-self-map-selector|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-build-map-management-controls-self-map-selector",
+        )
         self.map_selector.setMinimumWidth(200)
         self.map_selector.setToolTip("Switch between maps in this world")
         self.map_selector.currentIndexChanged.connect(self._on_map_selected)
         self.toolbar.addWidget(self.map_selector)
-        self.btn_new_map = QPushButton("New Map")
+        self.btn_new_map = declare_inspection(
+            QPushButton("New Map"),
+            "src-gui-widgets-map-widget-mapwidget-build-map-management-controls-self-btn-new-map|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-build-map-management-controls-self-btn-new-map",
+        )
         self.btn_new_map.setToolTip("Create a new map in this world")
         self.btn_new_map.clicked.connect(self._on_create_map_clicked)
         self.toolbar.addWidget(self.btn_new_map)
-        self.btn_map_overflow = QPushButton("Map actions")
+        self.btn_map_overflow = declare_inspection(
+            QPushButton("Map actions"),
+            "src-gui-widgets-map-widget-mapwidget-build-map-management-controls-self-btn-map-overflow|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-build-map-management-controls-self-btn-map-overflow",
+        )
         self.btn_map_overflow.setToolTip("Map options (delete, etc.)")
         self.btn_map_overflow.clicked.connect(self._show_map_overflow_menu)
         self.toolbar.addWidget(self.btn_map_overflow)
 
     def _build_viewport_controls(self) -> None:
         """Build viewport fitting and settings controls."""
-        self.btn_fit_view = QPushButton("Fit to View")
+        self.btn_fit_view = declare_inspection(
+            QPushButton("Fit to View"),
+            "src-gui-widgets-map-widget-mapwidget-build-viewport-controls-self-btn-fit-view|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-build-viewport-controls-self-btn-fit-view",
+        )
         self.btn_fit_view.setToolTip("Zoom and pan to fit all content in view")
         self.btn_fit_view.clicked.connect(self.view.fit_to_view)
         self.toolbar.addWidget(self.btn_fit_view)
-        self.btn_settings = QPushButton("Settings")
+        self.btn_settings = declare_inspection(
+            QPushButton("Settings"),
+            "src-gui-widgets-map-widget-mapwidget-build-viewport-controls-self-btn-settings|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-build-viewport-controls-self-btn-settings",
+        )
         self.btn_settings.setToolTip("Configure map scale and distance calibration")
         self.btn_settings.clicked.connect(self._configure_map_width)
         self.toolbar.addWidget(self.btn_settings)
 
     def _build_drawing_controls(self) -> None:
         """Build mutually exclusive marker and geometry drawing controls."""
-        self.btn_add_marker = QPushButton("Add Marker")
+        self.btn_add_marker = declare_inspection(
+            QPushButton("Add Marker"),
+            "src-gui-widgets-map-widget-mapwidget-build-drawing-controls-self-btn-add-marker|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-build-drawing-controls-self-btn-add-marker",
+        )
         self.btn_add_marker.setToolTip(
             "Add a marker to the map (click the map to choose its position)"
         )
         self.btn_add_marker.setCheckable(True)
         self.btn_add_marker.clicked.connect(self._on_add_marker_clicked)
         self.toolbar.addWidget(self.btn_add_marker)
-        self.btn_draw_path = QPushButton("Draw Path")
+        self.btn_draw_path = declare_inspection(
+            QPushButton("Draw Path"),
+            "src-gui-widgets-map-widget-mapwidget-build-drawing-controls-self-btn-draw-path|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-build-drawing-controls-self-btn-draw-path",
+        )
         self.btn_draw_path.setToolTip(
             "Draw a polyline path (click vertices, then Confirm or press Enter)"
         )
         self.btn_draw_path.setCheckable(True)
         self.btn_draw_path.clicked.connect(self._on_draw_path_clicked)
         self.toolbar.addWidget(self.btn_draw_path)
-        self.btn_draw_region = QPushButton("Draw Region")
+        self.btn_draw_region = declare_inspection(
+            QPushButton("Draw Region"),
+            "src-gui-widgets-map-widget-mapwidget-build-drawing-controls-self-btn-draw-region|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-build-drawing-controls-self-btn-draw-region",
+        )
         self.btn_draw_region.setToolTip(
             "Draw a polygon region (click vertices, then Confirm or press Enter)"
         )
@@ -942,19 +1062,28 @@ class MapWidget(
 
     def _build_view_toggle_controls(self) -> None:
         """Build persistent map-view toggle controls."""
-        self.btn_snap = QPushButton("Snap")
+        self.btn_snap = declare_inspection(
+            QPushButton("Snap"),
+            "src-gui-widgets-map-widget-mapwidget-build-view-toggle-controls-self-btn-snap|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-build-view-toggle-controls-self-btn-snap",
+        )
         self.btn_snap.setToolTip("Toggle snapping to nearby feature vertices and edges")
         self.btn_snap.setCheckable(True)
         self.btn_snap.setChecked(True)
         self.btn_snap.clicked.connect(self._on_snap_toggled)
         self.toolbar.addWidget(self.btn_snap)
-        self.btn_legend_toggle = QPushButton("Legend")
+        self.btn_legend_toggle = declare_inspection(
+            QPushButton("Legend"),
+            "src-gui-widgets-map-widget-mapwidget-build-view-toggle-controls-self-btn-legend-toggle|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-build-view-toggle-controls-self-btn-legend-toggle",
+        )
         self.btn_legend_toggle.setToolTip("Show / hide the raster layer legend overlay")
         self.btn_legend_toggle.setCheckable(True)
         self.btn_legend_toggle.setChecked(False)
         self.btn_legend_toggle.toggled.connect(self._on_legend_toggle)
         self.toolbar.addWidget(self.btn_legend_toggle)
-        self.btn_temporal_ghosts = QPushButton("Temporal Ghosts")
+        self.btn_temporal_ghosts = declare_inspection(
+            QPushButton("Temporal Ghosts"),
+            "src-gui-widgets-map-widget-mapwidget-build-view-toggle-controls-self-btn-temporal-ghosts|map.visibility|help-inspect-src-gui-widgets-map-widget-mapwidget-build-view-toggle-controls-self-btn-temporal-ghosts",
+        )
         self.btn_temporal_ghosts.setCheckable(True)
         self.btn_temporal_ghosts.setChecked(False)
         self.btn_temporal_ghosts.setToolTip(
@@ -966,7 +1095,10 @@ class MapWidget(
 
     def _build_mode_controls(self) -> None:
         """Build trajectory-edit access and the active-mode indicator."""
-        self.btn_edit_trajectory = QPushButton("Edit Trajectory")
+        self.btn_edit_trajectory = declare_inspection(
+            QPushButton("Edit Trajectory"),
+            "src-gui-widgets-map-widget-mapwidget-build-mode-controls-self-btn-edit-trajectory|map.trajectories|help-inspect-src-gui-widgets-map-widget-mapwidget-build-mode-controls-self-btn-edit-trajectory",
+        )
         self.btn_edit_trajectory.setToolTip(
             "Edit this entity's trajectory directly on the map"
         )
@@ -977,7 +1109,10 @@ class MapWidget(
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.toolbar.addWidget(spacer)
-        self.mode_indicator = QPushButton("● Normal")
+        self.mode_indicator = declare_inspection(
+            QPushButton("● Normal"),
+            "src-gui-widgets-map-widget-mapwidget-build-mode-controls-self-mode-indicator|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-build-mode-controls-self-mode-indicator",
+        )
         self.mode_indicator.setToolTip("Current editing mode — click to exit")
         self.mode_indicator.clicked.connect(self._on_mode_indicator_clicked)
         self._mode_indicator_mode = "normal"
@@ -1338,16 +1473,25 @@ class MapWidget(
         master state, plus the destructive Delete action.
 
         """
-        menu = QMenu(self)
+        menu = declare_inspection(
+            QMenu(self),
+            "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-menu|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-menu",
+        )
         active_role = self._active_map_role()
         has_master = self._world_has_master_map()
 
-        master_action = menu.addAction("Set as Master Map")
+        master_action = declare_inspection(
+            menu.addAction("Set as Master Map"),
+            "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-master-action|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-master-action",
+        )
         master_action.setCheckable(True)
         master_action.setChecked(active_role == "master")
         master_action.triggered.connect(self._on_set_master_map_clicked)
 
-        register_action = menu.addAction("Register as Detail Map…")
+        register_action = declare_inspection(
+            menu.addAction("Register as Detail Map…"),
+            "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-register-action|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-register-action",
+        )
         register_action.setEnabled(has_master and active_role != "master")
         if not has_master:
             register_action.setToolTip(
@@ -1355,7 +1499,10 @@ class MapWidget(
             )
         register_action.triggered.connect(self._on_register_detail_map_clicked)
 
-        show_footprints_action = menu.addAction("Show Footprints")
+        show_footprints_action = declare_inspection(
+            menu.addAction("Show Footprints"),
+            "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-show-footprints-action|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-show-footprints-action",
+        )
         show_footprints_action.setCheckable(True)
         show_footprints_action.setChecked(self.view.footprints_visible)
 
@@ -1365,7 +1512,10 @@ class MapWidget(
 
         show_footprints_action.toggled.connect(_on_show_footprints_toggled)
 
-        edit_footprint_action = menu.addAction("Edit Footprint…")
+        edit_footprint_action = declare_inspection(
+            menu.addAction("Edit Footprint…"),
+            "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-edit-footprint-action|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-edit-footprint-action",
+        )
         edit_footprint_action.setEnabled(
             self.view.footprints_visible
             and (bool(self.view._footprint_items) or active_role == "detail")
@@ -1373,7 +1523,10 @@ class MapWidget(
         edit_footprint_action.triggered.connect(self._on_edit_footprint_clicked)
 
         menu.addSeparator()
-        delete_action = menu.addAction("Delete Map...")
+        delete_action = declare_inspection(
+            menu.addAction("Delete Map..."),
+            "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-delete-action|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-delete-action",
+        )
         delete_action.triggered.connect(self._on_delete_map_clicked)
         pos = self.btn_map_overflow.mapToGlobal(
             self.btn_map_overflow.rect().bottomLeft()

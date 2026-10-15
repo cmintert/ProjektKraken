@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
 
 from src.core.theme_manager import ThemeManager
 from src.gui.constants import EDITOR_FORM_VERTICAL_SPACING
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.editor_inspector_composition import (
     EditorInspectorComposition,
@@ -206,7 +207,10 @@ class EditorPresentation(QObject):
     def _install_focus_button(self) -> None:
         """Keep focus writing directly available in the secondary command strip."""
         row = self.editor.desc_edit.link_toolbar
-        self.focus_button = WrappingToolButton(row)
+        self.focus_button = declare_inspection(
+            WrappingToolButton(row),
+            "src-gui-widgets-editor-presentation-editorpresentation-install-focus-button-self-focus-button|writing.focus|help-inspect-src-gui-widgets-editor-presentation-editorpresentation-install-focus-button-self-focus-button",
+        )
         self.focus_button.setText("Focus writing")
         self.focus_button.setAccessibleName("Focus writing")
         self.focus_button.setToolTip("Focus writing (F11)")
@@ -481,14 +485,20 @@ class EditorPresentation(QObject):
             (self.editor.sheet_builder._toolbar, "More Sheet actions"),
         ):
             actions = toolbar.actions()
-            button = PhosphorToolMenuButton(toolbar.parentWidget())
+            button = declare_inspection(
+                PhosphorToolMenuButton(toolbar.parentWidget()),
+                "src-gui-widgets-editor-presentation-editorpresentation-install-toolbar-menus-button|writing.focus|help-inspect-src-gui-widgets-editor-presentation-editorpresentation-install-toolbar-menus-button",
+            )
             button.setObjectName("OverflowToolBarMenuButton")
             button.setProperty("actionLabelOverflowRoute", True)
             button.setText(title)
             button.setAccessibleName(title)
             button.setToolTip(title)
             button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
-            menu = QMenu(button)
+            menu = declare_inspection(
+                QMenu(button),
+                "src-gui-widgets-editor-presentation-editorpresentation-install-toolbar-menus-menu|writing.focus|help-inspect-src-gui-widgets-editor-presentation-editorpresentation-install-toolbar-menus-menu",
+            )
             menu.setToolTipsVisible(True)
             for action in actions:
                 if not isinstance(action, QWidgetAction):
@@ -593,7 +603,10 @@ class EditorPresentation(QObject):
             add.setMinimumSize(0, 32)
             add.setMaximumSize(16777215, 16777215)
             toolbar = self._overflow_row(group, [add, edit, remove])
-            disclosure = DisclosureButton(title)
+            disclosure = declare_inspection(
+                DisclosureButton(title),
+                "src-gui-widgets-editor-presentation-editorpresentation-install-action-rows-disclosure|writing.focus|help-inspect-src-gui-widgets-editor-presentation-editorpresentation-install-action-rows-disclosure",
+            )
             group.layout().insertWidget(0, disclosure)
             empty = QLabel(items.property("placeholderText"))
             empty.setWordWrap(True)

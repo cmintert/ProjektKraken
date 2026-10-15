@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.action_flow_layout import ActionFlowLayout
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
@@ -121,7 +122,10 @@ class EmptyStateWidget(QWidget):
             QPushButton: The created button instance.
 
         """
-        button = QPushButton(text)
+        button = declare_inspection(
+            QPushButton(text),
+            "src-gui-widgets-empty-state-widget-emptystatewidget-add-action-button|workspace.navigation|help-inspect-src-gui-widgets-empty-state-widget-emptystatewidget-add-action-button",
+        )
         if primary:
             button.setStyleSheet(StyleHelper.get_primary_button_style())
         else:

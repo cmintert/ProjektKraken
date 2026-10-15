@@ -51,6 +51,7 @@ from src.gui.constants import (
 )
 from src.gui.mixins.autosave_mixin import AutoSaveManager
 from src.gui.mixins.editor_mixin import BaseEditorMixin
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.utils.suggestion_effects import apply_suggestion_effects
@@ -265,8 +266,11 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             "No Event Selected",
             "Select an event from the list to view and edit its details.",
         )
-        self._empty_state.add_action(
-            "New Event", self.create_new_requested.emit, primary=True
+        declare_inspection(
+            self._empty_state.add_action(
+                "New Event", self.create_new_requested.emit, primary=True
+            ),
+            "empty.EventEditorWidget._build_editor_shell.269|authoring.create|help-inspect-empty-eventeditorwidget-build-editor-shell-269",
         )
         outer_layout.addWidget(self._empty_state)
         self._empty_state.show()
@@ -310,13 +314,19 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
     def _build_temporal_description_fields(self) -> None:
         """Build the temporal range and event description fields."""
-        self.desc_edit = WikiTextEdit()
+        self.desc_edit = declare_inspection(
+            WikiTextEdit(),
+            "src-gui-widgets-event-editor-eventeditorwidget-build-temporal-description-fields-self-desc-edit|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-temporal-description-fields-self-desc-edit",
+        )
         self.desc_edit.link_clicked.connect(self.link_clicked.emit)
         self.desc_edit.peek_requested.connect(self.peek_requested.emit)
         self.desc_edit.completion_prefix_changed.connect(
             self.completion_prefix_changed.emit
         )
-        self.description_field = ResizableWikiTextEditField(self.desc_edit)
+        self.description_field = declare_inspection(
+            ResizableWikiTextEditField(self.desc_edit),
+            "src-gui-widgets-event-editor-eventeditorwidget-build-temporal-description-fields-self-description-field|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-temporal-description-fields-self-description-field",
+        )
         self.temporal_widget = TemporalRangeWidget()
         if self._calendar_converter:
             self.temporal_widget.set_calendar_converter(self._calendar_converter)
@@ -324,19 +334,28 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         from src.gui.widgets.overflow_toolbar import OverflowToolBar
 
         temporal_actions = OverflowToolBar()
-        self.chronology_button = QToolButton()
+        self.chronology_button = declare_inspection(
+            QToolButton(),
+            "src-gui-widgets-event-editor-eventeditorwidget-build-temporal-description-fields-self-chronology-button|event.chronology|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-temporal-description-fields-self-chronology-button",
+        )
         self.chronology_button.setText("Chronology…")
         self.chronology_button.setStyleSheet(StyleHelper.get_tool_button_style())
         self.chronology_button.clicked.connect(self._edit_chronology)
         temporal_actions.add_button(self.chronology_button)
-        self.temporal_evidence_button = QToolButton()
+        self.temporal_evidence_button = declare_inspection(
+            QToolButton(),
+            "src-gui-widgets-event-editor-eventeditorwidget-build-temporal-description-fields-self-temporal-evidence-button|date.evidence|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-temporal-description-fields-self-temporal-evidence-button",
+        )
         self.temporal_evidence_button.setText("Date evidence…")
         self.temporal_evidence_button.setStyleSheet(StyleHelper.get_tool_button_style())
         self.temporal_evidence_button.clicked.connect(self._edit_temporal_evidence)
         temporal_actions.add_button(self.temporal_evidence_button)
         from src.gui.widgets.wrapping_buttons import WrappingToolButton
 
-        self.btn_show_world_at_event = WrappingToolButton()
+        self.btn_show_world_at_event = declare_inspection(
+            WrappingToolButton(),
+            "src-gui-widgets-event-editor-eventeditorwidget-build-temporal-description-fields-self-btn-show-world-at-event|timeline.viewing|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-temporal-description-fields-self-btn-show-world-at-event",
+        )
         self.btn_show_world_at_event.setText("Show world at this event")
         self.btn_show_world_at_event.setStyleSheet(StyleHelper.get_tool_button_style())
         self.btn_show_world_at_event.setToolTip(
@@ -358,7 +377,10 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         section_layout = QVBoxLayout(self.summary_container)
         section_layout.setContentsMargins(0, 0, 0, 0)
         section_layout.setSpacing(EDITOR_SECTION_SPACING)
-        self.summary_checkbox = DisclosureButton("Summary")
+        self.summary_checkbox = declare_inspection(
+            DisclosureButton("Summary"),
+            "src-gui-widgets-event-editor-eventeditorwidget-build-summary-section-self-summary-checkbox|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-summary-section-self-summary-checkbox",
+        )
         section_layout.addWidget(self.summary_checkbox)
         self.summary_widget = SummaryWidget()
         self.summary_widget.setVisible(False)
@@ -377,7 +399,10 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         section_layout = QVBoxLayout(self.llm_container)
         section_layout.setContentsMargins(0, 0, 0, 0)
         section_layout.setSpacing(EDITOR_SECTION_SPACING)
-        self.llm_checkbox = DisclosureButton("Generate description")
+        self.llm_checkbox = declare_inspection(
+            DisclosureButton("Generate description"),
+            "src-gui-widgets-event-editor-eventeditorwidget-build-llm-section-self-llm-checkbox|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-llm-section-self-llm-checkbox",
+        )
         section_layout.addWidget(self.llm_checkbox)
         self.llm_generator = LLMGenerationWidget(self, context_provider=self)
         self.llm_generator.setVisible(False)
@@ -392,7 +417,10 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         section_layout = QVBoxLayout(self.raster_appearances_container)
         section_layout.setContentsMargins(0, 0, 0, 0)
         section_layout.setSpacing(EDITOR_SECTION_SPACING)
-        self.raster_appearances_checkbox = DisclosureButton("Raster maps")
+        self.raster_appearances_checkbox = declare_inspection(
+            DisclosureButton("Raster maps"),
+            "src-gui-widgets-event-editor-eventeditorwidget-build-raster-appearances-section-self-raster-appearances-checkbox|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-raster-appearances-section-self-raster-appearances-checkbox",
+        )
         section_layout.addWidget(self.raster_appearances_checkbox)
         self.raster_appearances_label = QLabel("Not linked to any raster map.")
         self.raster_appearances_label.setWordWrap(True)
@@ -436,7 +464,10 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.header_form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
         from src.gui.widgets.standard_buttons import LabelSizedToolButton
 
-        self.btn_inject = LabelSizedToolButton()
+        self.btn_inject = declare_inspection(
+            LabelSizedToolButton(),
+            "src-gui-widgets-event-editor-eventeditorwidget-build-header-self-btn-inject|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-header-self-btn-inject",
+        )
         self.btn_inject.setText("Fast Inject")
         self.btn_inject.setToolTip("Quickly apply templates or snippets to this event")
         self.btn_inject.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
@@ -446,14 +477,23 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             + " QToolButton::menu-indicator { image: none; }"
         )
         ThemeManager().theme_changed.connect(self._on_theme_changed)
-        self.inject_menu = QMenu(self.btn_inject)
+        self.inject_menu = declare_inspection(
+            QMenu(self.btn_inject),
+            "src-gui-widgets-event-editor-eventeditorwidget-build-header-self-inject-menu|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-header-self-inject-menu",
+        )
         self.btn_inject.setMenu(self.inject_menu)
         self.inject_menu.aboutToShow.connect(self._populate_inject_menu)
-        self.name_edit = QLineEdit()
+        self.name_edit = declare_inspection(
+            QLineEdit(),
+            "src-gui-widgets-event-editor-eventeditorwidget-build-header-self-name-edit|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-header-self-name-edit",
+        )
         name_layout = QHBoxLayout()
         name_layout.addWidget(self.name_edit)
         name_layout.addWidget(self.btn_inject)
-        self.type_edit = ScrollSafeComboBox()
+        self.type_edit = declare_inspection(
+            ScrollSafeComboBox(),
+            "src-gui-widgets-event-editor-eventeditorwidget-build-header-self-type-edit|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-header-self-type-edit",
+        )
         self.type_edit.addItems(
             ["generic", "cosmic", "historical", "personal", "session", "combat"]
         )
@@ -554,10 +594,16 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         buttons = ActionFlowLayout(actions, uniform_height=True)
         buttons.setContentsMargins(0, 0, 0, 0)
         buttons.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.btn_save = PrimaryButton("Save Changes")
+        self.btn_save = declare_inspection(
+            PrimaryButton("Save Changes"),
+            "src-gui-widgets-event-editor-eventeditorwidget-build-action-buttons-self-btn-save|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-action-buttons-self-btn-save",
+        )
         self.btn_save.setEnabled(False)
         self.btn_save.clicked.connect(self._on_save)
-        self.btn_discard = StandardButton("Discard")
+        self.btn_discard = declare_inspection(
+            StandardButton("Discard"),
+            "src-gui-widgets-event-editor-eventeditorwidget-build-action-buttons-self-btn-discard|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-action-buttons-self-btn-discard",
+        )
         self.btn_discard.setEnabled(False)
         self.btn_discard.clicked.connect(self._on_discard)
         buttons.addWidget(self.btn_discard)
@@ -683,7 +729,10 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             hbox.addStretch()
 
             # Add button
-            btn_add = StandardButton("+")
+            btn_add = declare_inspection(
+                StandardButton("+"),
+                "src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-add|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-add",
+            )
             btn_add.setFixedSize(
                 EDITOR_ICON_BUTTON_SIZE, EDITOR_ICON_BUTTON_SIZE
             )  # Increased from 24x24 for better touch targets
@@ -704,13 +753,19 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             hbox.addWidget(btn_add)
 
             # Edit button
-            btn_edit = StandardButton("Edit")
+            btn_edit = declare_inspection(
+                StandardButton("Edit"),
+                "src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-edit|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-edit",
+            )
             btn_edit.setEnabled(False)
             btn_edit.clicked.connect(edit_slot)
             hbox.addWidget(btn_edit)
 
             # Remove button
-            btn_remove = DestructiveButton("Remove")
+            btn_remove = declare_inspection(
+                DestructiveButton("Remove"),
+                "src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-remove|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-remove",
+            )
             btn_remove.setEnabled(False)
             btn_remove.clicked.connect(remove_slot)
             hbox.addWidget(btn_remove)
@@ -718,7 +773,10 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             vbox.addLayout(hbox)
 
             # List
-            lst = QListWidget()
+            lst = declare_inspection(
+                QListWidget(),
+                "src-gui-widgets-event-editor-eventeditorwidget-create-section-lst|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-create-section-lst",
+            )
             lst.setSpacing(EDITOR_LIST_SPACING)
             lst.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
             lst.customContextMenuRequested.connect(
@@ -1675,13 +1733,19 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         """
         self.inject_menu.clear()
 
-        action_dialog = self.inject_menu.addAction("Open Inject Dialog...")
+        action_dialog = declare_inspection(
+            self.inject_menu.addAction("Open Inject Dialog..."),
+            "src-gui-widgets-event-editor-eventeditorwidget-populate-inject-menu-action-dialog|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-populate-inject-menu-action-dialog",
+        )
         if action_dialog is not None:
             action_dialog.triggered.connect(self._open_inject_dialog)
 
         self.inject_menu.addSeparator()
 
-        action_save_tmpl = self.inject_menu.addAction("Save Selection as Template...")
+        action_save_tmpl = declare_inspection(
+            self.inject_menu.addAction("Save Selection as Template..."),
+            "src-gui-widgets-event-editor-eventeditorwidget-populate-inject-menu-action-save-tmpl|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-populate-inject-menu-action-save-tmpl",
+        )
         if action_save_tmpl is not None:
             action_save_tmpl.triggered.connect(self._open_create_template_dialog)
 
@@ -1796,9 +1860,18 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         if not item:
             return
 
-        menu = QMenu()
-        edit_action = menu.addAction("Edit")
-        remove_action = menu.addAction("Remove")
+        menu = declare_inspection(
+            QMenu(self),
+            "src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-menu|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-menu",
+        )
+        edit_action = declare_inspection(
+            menu.addAction("Edit"),
+            "src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-edit-action|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-edit-action",
+        )
+        remove_action = declare_inspection(
+            menu.addAction("Remove"),
+            "src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-remove-action|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-remove-action",
+        )
         rel_data = item.data(Qt.ItemDataRole.UserRole) or {}
         is_automatic = rel_data.get("rel_type") == "mentions"
         if edit_action is not None:
@@ -1811,6 +1884,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             self._on_remove_relation_item(item)
         elif action == edit_action:
             self._on_edit_relation(item)
+        menu.deleteLater()
 
     def _on_remove_relation_item(self, item: QListWidgetItem) -> None:
         """Emits remove signal."""

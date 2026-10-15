@@ -263,6 +263,20 @@ undo restores the event anchor. See [temporal acceptance](temporal-acceptance.md
 - Use fully qualified Qt enum names.
 - Guard delayed widget access during teardown with `shiboken6.isValid`.
 
+### Interface Help
+
+Feature constructors attach semantic inspection metadata with the GUI-local
+`declare_inspection` helper. `HelpSurfaceBindings` connects those declarations,
+associated form labels, default actions and overflow equivalents to
+`HelpContextRegistry`. This registration is independent of ordinary F1 context
+precedence. The application-layer `HelpInspectionController` resolves native
+targets and loads validated canonical excerpts through `HelpBundleService`;
+widgets do not load documentation or infer meaning from displayed labels.
+
+The build-only `docs/help-inspection.json` inventory supplies canonical targets
+and source-review fingerprints. `src/core/help_inspection_inventory.py` checks
+declarations and review drift without Qt, database or worker dependencies.
+
 ### Workspace shell
 
 The production `src/app/main_window.py` owns one central `WorkspaceShell`.

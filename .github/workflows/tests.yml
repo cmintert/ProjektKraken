@@ -54,6 +54,8 @@ jobs:
         run: |
           python -m scripts.check_complexity_policy --base-ref "$BASE_REF"
           python -m scripts.check_visual_policy --base-ref "$BASE_REF"
+      - name: Inspection Help review
+        run: python -m scripts.check_help_inspection
       - name: Small smoke suite
         run: python -m pytest -m smoke -q --maxfail=1
 

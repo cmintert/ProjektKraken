@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.gui.dialogs.help_aware_dialog import HelpAwareDialog
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.relation_form import RelationForm
 from src.gui.widgets.responsive_dialog_buttons import (
@@ -36,8 +37,12 @@ class RelationEditDialog(HelpAwareDialog):
         layout = QVBoxLayout(self)
         self.form = RelationForm(self, **kwargs)
         layout.addWidget(self.form, 1)
-        self.button_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        self.button_box = declare_inspection(
+            QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel
+            ),
+            "src-gui-dialogs-relation-dialog-relationeditdialog-init-self-button-box|relations.create|help-inspect-src-gui-dialogs-relation-dialog-relationeditdialog-init-self-button-box",
         )
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)

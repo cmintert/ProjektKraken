@@ -1,0 +1,10 @@
+{
+  "platform": "windows",
+  "revision": "52f66fb7ae34b93beeea9859417ce2b500483181",
+  "dirty": true,
+  "input": "QTest window-level pointer click on real Chromium child",
+  "topic": "graph.exploring",
+  "dom_click_received": false,
+  "world_loaded": false,
+  "limits": "Synthetic local HTML; no real graph node, world or human workflow acceptance."
+}

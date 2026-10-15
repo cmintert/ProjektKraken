@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
@@ -135,12 +136,18 @@ class AISearchPanelWidget(QWidget):
 
         # Search input
         search_input_layout = QHBoxLayout()
-        self.search_input = QLineEdit()
+        self.search_input = declare_inspection(
+            QLineEdit(),
+            "src-gui-widgets-ai-search-panel-aisearchpanelwidget-init-self-search-input|ai.search|help-inspect-src-gui-widgets-ai-search-panel-aisearchpanelwidget-init-self-search-input",
+        )
         self.search_input.setPlaceholderText("Enter search query...")
         self.search_input.returnPressed.connect(self._on_search_clicked)
         search_input_layout.addWidget(self.search_input)
 
-        self.btn_search = QPushButton("Search")
+        self.btn_search = declare_inspection(
+            QPushButton("Search"),
+            "src-gui-widgets-ai-search-panel-aisearchpanelwidget-init-self-btn-search|ai.search|help-inspect-src-gui-widgets-ai-search-panel-aisearchpanelwidget-init-self-btn-search",
+        )
         self.btn_search.clicked.connect(self._on_search_clicked)
         search_input_layout.addWidget(self.btn_search)
 
@@ -151,13 +158,19 @@ class AISearchPanelWidget(QWidget):
 
         # Type filter
         filter_layout.addWidget(QLabel("Filter:"))
-        self.filter_combo = QComboBox()
+        self.filter_combo = declare_inspection(
+            QComboBox(),
+            "src-gui-widgets-ai-search-panel-aisearchpanelwidget-init-self-filter-combo|ai.search|help-inspect-src-gui-widgets-ai-search-panel-aisearchpanelwidget-init-self-filter-combo",
+        )
         self.filter_combo.addItems(["All", "Entities", "Events"])
         filter_layout.addWidget(self.filter_combo, stretch=1)
 
         # Top-K control
         filter_layout.addWidget(QLabel("Results:"))
-        self.top_k_spin = ScrollSafeSpinBox()
+        self.top_k_spin = declare_inspection(
+            ScrollSafeSpinBox(),
+            "src-gui-widgets-ai-search-panel-aisearchpanelwidget-init-self-top-k-spin|ai.search|help-inspect-src-gui-widgets-ai-search-panel-aisearchpanelwidget-init-self-top-k-spin",
+        )
         self.top_k_spin.setMinimum(1)
         self.top_k_spin.setMaximum(100)
         self.top_k_spin.setValue(10)
@@ -173,7 +186,10 @@ class AISearchPanelWidget(QWidget):
         StyleHelper.apply_standard_list_spacing(results_layout)
 
         # Results list
-        self.results_list = QListWidget()
+        self.results_list = declare_inspection(
+            QListWidget(),
+            "src-gui-widgets-ai-search-panel-aisearchpanelwidget-init-self-results-list|ai.search|help-inspect-src-gui-widgets-ai-search-panel-aisearchpanelwidget-init-self-results-list",
+        )
         self.results_list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
         self.results_list.itemClicked.connect(self._on_result_clicked)
         self.results_list.itemActivated.connect(self._on_result_activated)

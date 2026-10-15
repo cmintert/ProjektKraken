@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 
 from src.core.summary_data import SummaryData
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.standard_buttons import (
     DestructiveButton,
@@ -80,7 +81,10 @@ class SummaryWidget(QWidget):
         layout.addWidget(self.stale_banner)
 
         # Text Display
-        self.text_display = WikiTextEdit()
+        self.text_display = declare_inspection(
+            WikiTextEdit(),
+            "src-gui-widgets-summary-widget-summarywidget-setup-ui-self-text-display|writing.summary|help-inspect-src-gui-widgets-summary-widget-summarywidget-setup-ui-self-text-display",
+        )
         self.text_display.set_adaptive_width(True)
         self.text_display.setReadOnly(True)
         self.text_display.setMinimumHeight(100)  # Ensure visible space
@@ -93,7 +97,10 @@ class SummaryWidget(QWidget):
 
         self.action_toolbar = OverflowToolBar(self)
 
-        self.cancel_btn = StandardButton("Cancel")
+        self.cancel_btn = declare_inspection(
+            StandardButton("Cancel"),
+            "src-gui-widgets-summary-widget-summarywidget-setup-ui-self-cancel-btn|writing.summary|help-inspect-src-gui-widgets-summary-widget-summarywidget-setup-ui-self-cancel-btn",
+        )
         self.cancel_btn.clicked.connect(self._cancel_edit)
         self.action_toolbar.add_button(
             self.cancel_btn,
@@ -101,7 +108,10 @@ class SummaryWidget(QWidget):
             available=False,
         )
 
-        self.done_btn = PrimaryButton("Done")
+        self.done_btn = declare_inspection(
+            PrimaryButton("Done"),
+            "src-gui-widgets-summary-widget-summarywidget-setup-ui-self-done-btn|writing.summary|help-inspect-src-gui-widgets-summary-widget-summarywidget-setup-ui-self-done-btn",
+        )
         self.done_btn.clicked.connect(self._commit_edit)
         self.action_toolbar.add_button(
             self.done_btn,
@@ -110,19 +120,31 @@ class SummaryWidget(QWidget):
             available=False,
         )
 
-        self.delete_btn = DestructiveButton("Delete")
+        self.delete_btn = declare_inspection(
+            DestructiveButton("Delete"),
+            "src-gui-widgets-summary-widget-summarywidget-setup-ui-self-delete-btn|writing.summary|help-inspect-src-gui-widgets-summary-widget-summarywidget-setup-ui-self-delete-btn",
+        )
         self.delete_btn.clicked.connect(self._confirm_delete)
         self.action_toolbar.add_button(self.delete_btn, priority=20)
 
-        self.edit_btn = StandardButton("Edit")
+        self.edit_btn = declare_inspection(
+            StandardButton("Edit"),
+            "src-gui-widgets-summary-widget-summarywidget-setup-ui-self-edit-btn|writing.summary|help-inspect-src-gui-widgets-summary-widget-summarywidget-setup-ui-self-edit-btn",
+        )
         self.edit_btn.clicked.connect(self._begin_edit)
         self.action_toolbar.add_button(self.edit_btn, priority=70)
 
-        self.copy_btn = StandardButton("Copy")
+        self.copy_btn = declare_inspection(
+            StandardButton("Copy"),
+            "src-gui-widgets-summary-widget-summarywidget-setup-ui-self-copy-btn|writing.summary|help-inspect-src-gui-widgets-summary-widget-summarywidget-setup-ui-self-copy-btn",
+        )
         self.copy_btn.clicked.connect(self._copy_to_clipboard)
         self.action_toolbar.add_button(self.copy_btn, priority=40)
 
-        self.generate_btn = PrimaryButton("Generate")
+        self.generate_btn = declare_inspection(
+            PrimaryButton("Generate"),
+            "src-gui-widgets-summary-widget-summarywidget-setup-ui-self-generate-btn|writing.summary|help-inspect-src-gui-widgets-summary-widget-summarywidget-setup-ui-self-generate-btn",
+        )
         self.generate_btn.clicked.connect(self.generate_requested.emit)
         self.action_toolbar.add_button(
             self.generate_btn,

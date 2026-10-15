@@ -139,6 +139,8 @@ midpoint end as an exact historical date.
 Group labels can be renamed, recolored, or removed from the current grouping
 through their context menu.
 
+(help-calendar-configure)=
+
 ## Configure the calendar
 
 Open **Timeline → Calendar Configuration…** to define the active calendar.
@@ -220,3 +222,375 @@ assigning either an invented month or day.
   visible historical state. The inspector identifies the source of dated
   descriptions and attributes, so corrections can be saved to the right place.
 - Timeline grouping organizes the view; it does not duplicate or delete events.
+
+## Interface control reference
+
+These explanations describe the software operation. Inspecting a control does not run it or read your entered values.
+
+(help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-name-edit)=
+
+**Calendar name** — Name this world's calendar. The name identifies the calendar used to
+display lore dates.
+
+(help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-epoch-edit)=
+
+**Epoch designation** — Set the text used to identify the calendar's epoch.
+
+(help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-month-table)=
+
+**Months** — Edit month names, abbreviations and lengths in calendar order. Calendar
+changes affect how lore-day values are displayed.
+
+(help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-btn-add-month)=
+
+**Add month** — Append a month to the calendar configuration, then supply its name and
+length before saving.
+
+(help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-btn-remove-month)=
+
+**Remove month** — Remove the selected month from the calendar configuration. Review the
+calendar before saving.
+
+(help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-day-names-edit)=
+
+**Day Names:** — e.g., Moonday, Starday, Godsday, Waterday, Earthday, Freeday, Sunday.
+
+(help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-day-abbrev-edit)=
+
+**Abbreviations:** — e.g., Mo, St, Go, Wa, Ea, Fr, Su.
+
+(help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-leap-table)=
+
+**Leap rules** — Edit the rules that add leap days to this calendar. Review their
+intervals and affected months before saving.
+
+(help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-btn-add-rule)=
+
+**Add leap rule** — Append a leap-day rule to the calendar configuration.
+
+(help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-btn-remove-rule)=
+
+**Remove leap rule** — Remove the selected leap-day rule from the calendar
+configuration.
+
+(help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-preview-float)=
+
+**Date preview** — Enter a lore-day value to preview how this calendar formats it.
+Previewing does not change an Event date.
+
+(help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-button-box)=
+
+**Button box** — Review the dialog’s choices, then use its acceptance or cancellation
+action. Inspecting a button never accepts or rejects the dialog.
+
+(help-inspect-src-gui-dialogs-grouping-config-dialog-groupingconfigdialog-setup-ui-self-list-widget)=
+
+**Grouping tags** — Select and order the tags used for Timeline groups. Grouping changes
+presentation without duplicating saved Events.
+
+(help-inspect-src-gui-dialogs-grouping-config-dialog-groupingconfigdialog-setup-ui-self-btn-up)=
+
+**Move group up** — Move the selected tag earlier in the grouping order. In First Match
+mode, earlier groups take priority.
+
+(help-inspect-src-gui-dialogs-grouping-config-dialog-groupingconfigdialog-setup-ui-self-btn-down)=
+
+**Move group down** — Move the selected tag later in the grouping order. Event dates
+remain unchanged.
+
+(help-inspect-src-gui-dialogs-grouping-config-dialog-groupingconfigdialog-setup-ui-self-radio-duplicate)=
+
+**Duplicate** — Events with multiple tags appear in all matching groups.
+
+(help-inspect-src-gui-dialogs-grouping-config-dialog-groupingconfigdialog-setup-ui-self-radio-first-match)=
+
+**First Match** — Events appear only in the first matching group.
+
+(help-inspect-src-gui-dialogs-grouping-config-dialog-groupingconfigdialog-setup-ui-self-button-box)=
+
+**Button box** — Review the dialog’s choices, then use its acceptance or cancellation
+action. Inspecting a button never accepts or rejects the dialog.
+
+(help-inspect-src-gui-dialogs-temporal-evidence-dialog-temporalevidencedialog-init-self-claims)=
+
+**Source-date claims** — Review separate date claims and their sources. Recording a
+disagreement does not combine the claims into one invented date.
+
+(help-inspect-src-gui-dialogs-temporal-evidence-dialog-temporalevidencedialog-init-self-preferred)=
+
+**Preferred** — Choose which recorded source supplies the Event date, or retain an
+independent date. Other source claims are preserved.
+
+(help-inspect-src-gui-dialogs-temporal-evidence-dialog-temporalevidencedialog-init-add)=
+
+**Add source date** — Add a separate dated source claim for this Event. Select a
+preferred source separately if it should supply the Event date.
+
+(help-inspect-src-gui-dialogs-temporal-evidence-dialog-temporalevidencedialog-init-remove)=
+
+**Remove source date** — Remove the selected source claim from the dialog draft. Review
+the preferred source before accepting.
+
+(help-inspect-src-gui-dialogs-temporal-evidence-dialog-temporalevidencedialog-init-actions)=
+
+**Actions** — Review the dialog’s choices, then use its acceptance or cancellation
+action. Inspecting a button never accepts or rejects the dialog.
+
+(help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-setup-text-first-self-date-fields-button)=
+
+**Date details and uncertainty** — Expand structured date fields and uncertainty choices
+without committing an unfinished date.
+
+(help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-setup-text-first-self-qualifier-combo)=
+
+**Date qualification** — Describe how certain the date is. Qualification is independent
+of omitted month or day precision.
+
+(help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-setup-text-first-self-limits-button)=
+
+**Possible occurrence limits** — Set the earliest and latest possible occurrence dates
+without treating uncertainty as Event duration.
+
+(help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-edit-limits-enabled)=
+
+**Enable occurrence limit** — Enable this possible-date limit. Leaving it off keeps that
+side unspecified.
+
+(help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-edit-limits-field)=
+
+**Occurrence limit date** — Enter the possible occurrence boundary. This limits
+uncertainty; it does not create an Event end date.
+
+(help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-edit-limits-actions)=
+
+**Actions** — Review the dialog’s choices, then use its acceptance or cancellation
+action. Inspecting a button never accepts or rejects the dialog.
+
+(help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-spin-year)=
+
+**Year** — Enter the year using the active world's calendar. Month and day may remain
+unspecified where partial dates are supported.
+
+(help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-combo-month)=
+
+**Month precision** — Choose a month, or leave it unspecified when only the year is
+known.
+
+(help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-combo-day)=
+
+**Day precision** — Choose a day, or leave it unspecified when the exact day is not
+known.
+
+(help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-btn-time-toggle)=
+
+**Time toggle** — Show / hide time input (auto-shown for non-midnight dates).
+
+(help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-btn-calendar)=
+
+**Choose calendar date** — Open the date picker for this field. This chooses a date; it
+does not configure the world's calendar.
+
+(help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-spin-hour)=
+
+**Hour** — Set the hour component of this date. Showing time fields is separate from
+setting date uncertainty.
+
+(help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-spin-minute)=
+
+**Minute** — Set the minute component of this date.
+
+(help-inspect-src-gui-widgets-compact-date-widget-compactdatewidget-setup-ui-self-txt-date)=
+
+**Txt date** — Enter date text (e.g. '15 Jan 3019').
+
+(help-inspect-src-gui-widgets-compact-date-widget-calendarpopup-setup-ui-self-spin-year)=
+
+**Calendar year** — Choose the year shown by the date picker.
+
+(help-inspect-src-gui-widgets-compact-date-widget-calendarpopup-setup-ui-self-combo-month)=
+
+**Calendar month** — Choose the month shown by the date picker.
+
+(help-inspect-src-gui-widgets-compact-date-widget-calendarpopup-setup-ui-btn-ok)=
+
+**OK** — Accept the current Calendar Popup choices after validation. Review the fields
+first; opening Help does not accept them.
+
+(help-inspect-src-gui-widgets-compact-date-widget-calendarpopup-setup-ui-btn-cancel)=
+
+**Cancel** — Cancel this Calendar Popup operation without accepting its pending changes.
+This is separate from applying or saving them.
+
+(help-inspect-src-gui-widgets-compact-date-widget-calendarpopup-refresh-grid-btn)=
+
+**Choose day** — Choose this day in the calendar picker. Accept the picker to use the
+chosen date.
+
+(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-temporal-description-fields-self-chronology-button)=
+
+**Chronology button** — Record Before, After or Same transition as another Event.
+Chronology constrains ordering without inventing missing date precision.
+
+(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-temporal-description-fields-self-temporal-evidence-button)=
+
+**Temporal evidence button** — Record separate source-date claims and choose which
+source supplies the Event date. Conflicting claims remain separate.
+
+(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-temporal-description-fields-self-btn-show-world-at-event)=
+
+**Show world at event** — Move Viewing time to this Event’s saved date without changing
+World current time or applying unsaved date edits.
+
+(help-inspect-src-gui-widgets-lore-date-widget-loredatewidget-setup-ui-self-year-spin)=
+
+**Year** — Set the year component using the active calendar.
+
+(help-inspect-src-gui-widgets-lore-date-widget-loredatewidget-setup-ui-self-month-combo)=
+
+**Month** — Set the month component using the active calendar.
+
+(help-inspect-src-gui-widgets-lore-date-widget-loredatewidget-setup-ui-self-day-combo)=
+
+**Day** — Set the day component using the active calendar.
+
+(help-inspect-src-gui-widgets-lore-date-widget-loredatewidget-setup-ui-self-hour-combo)=
+
+**Hour** — Set the hour component of this date.
+
+(help-inspect-src-gui-widgets-lore-date-widget-loredatewidget-setup-ui-self-minute-combo)=
+
+**Minute** — Set the minute component of this date.
+
+(help-inspect-src-gui-widgets-lore-date-widget-loredatewidget-setup-ui-self-raw-spin)=
+
+**Raw lore date** — Edit the date as a numeric count of lore days. This is another
+representation of the same date.
+
+(help-inspect-src-gui-widgets-lore-date-widget-loredatewidget-setup-ui-self-raw-toggle)=
+
+**Show raw date** — Show or hide the numeric lore-day representation of this date.
+
+(help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-btn-step-back)=
+
+**Previous date** — Step the Timeline playhead backward using the playback controller.
+This changes Viewing time, not Event dates.
+
+(help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-btn-play-pause)=
+
+**▶** — Start or pause Timeline playback. Playback changes Viewing time rather than
+rewriting event dates.
+
+(help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-btn-step-forward)=
+
+**Next date** — Step the Timeline playhead forward using the playback controller. World
+current time is unchanged.
+
+(help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-btn-set-current-time)=
+
+**Set Current Time** — Deliberately make the playhead position the world’s current story
+time. Ordinary date navigation changes Viewing time only.
+
+(help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-btn-return-present)=
+
+**Return to Current Time** — Move Viewing time back to World current time without
+changing that saved current story time.
+
+(help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-btn-go-to-date)=
+
+**Go to date** — Open date navigation to a selected Event or an entered calendar date.
+Navigation changes Viewing time without changing World current time.
+
+(help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-date-navigation-menu)=
+
+**Date navigation menu** — Open the Date navigation menu menu to choose a related
+operation. Opening the menu does not apply any of its actions.
+
+(help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-selected-event-date-action)=
+
+**Go to selected Event** — Move Viewing time to the selected Event's saved date. This
+does not change the Event or World current time.
+
+(help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-enter-date-action)=
+
+**Enter viewed date** — Open date entry to move the Timeline playhead to a chosen
+calendar date.
+
+(help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-chk-snap-playhead-to-events)=
+
+**Snap to Events** — Snap manual playhead movement to nearby event dates. This does not
+add precision to partial event dates or affect playback jumps.
+
+(help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-btn-fit)=
+
+**Fit View** — Fit the current content into the available view without changing saved
+positions or dates.
+
+(help-inspect-src-gui-widgets-timeline-display-widget-timelinedisplaywidget-init-self-text-display)=
+
+**Linked-event Timeline** — Read and navigate the linked Events shown for the inspected
+entry. This is separate from changing their saved dates.
+
+(help-inspect-src-gui-dialogs-event-chronology-dialog-eventchronologydialog-init-add)=
+
+**Add ordering** — Add a draft Before, After or Same transition constraint between this
+Event and another Event. Accept the dialog to save it.
+
+(help-inspect-src-gui-dialogs-event-chronology-dialog-eventchronologydialog-init-buttons)=
+
+**Buttons** — Review the dialog’s choices, then use its acceptance or cancellation
+action. Inspecting a button never accepts or rejects the dialog.
+
+(help-inspect-src-gui-dialogs-event-chronology-dialog-eventchronologydialog-add-row-order)=
+
+**Order** — Same transition treats both events as one chronological point, not merely
+overlapping dates.
+
+(help-inspect-src-gui-dialogs-event-chronology-dialog-eventchronologydialog-add-row-target)=
+
+**Other Event** — Choose the Event used by this ordering constraint. Ordering does not
+supply missing date precision.
+
+(help-inspect-src-gui-dialogs-event-chronology-dialog-eventchronologydialog-add-row-gap)=
+
+**Minimum gap** — Set the minimum separation between Event starts in lore days. The
+ordering determines which Event is earlier.
+
+(help-inspect-src-gui-dialogs-event-chronology-dialog-eventchronologydialog-add-row-more)=
+
+**Gap…** — Show the minimum-separation field for this ordering. The gap compares event
+starts in lore days.
+
+(help-inspect-src-gui-dialogs-event-chronology-dialog-eventchronologydialog-add-row-remove)=
+
+**Remove ordering** — Remove this ordering row from the dialog draft. Accept the dialog
+to save the revised constraints.
+
+(help-inspect-src-gui-dialogs-go-to-date-dialog-gotodatedialog-init-buttons)=
+
+**Buttons** — Review the dialog’s choices, then use its acceptance or cancellation
+action. Inspecting a button never accepts or rejects the dialog.
+
+(help-inspect-src-gui-widgets-timeline-group-band-manager-groupbandmanager-on-context-menu-requested-menu)=
+
+**Menu** — Open the Menu menu to choose a related operation. Opening the menu does not
+apply any of its actions.
+
+(help-inspect-src-gui-widgets-timeline-group-band-manager-groupbandmanager-on-context-menu-requested-rename-action)=
+
+**Rename Timeline group** — Renaming a grouping tag is not implemented in this build.
+This menu item does not change tags or Event names.
+
+(help-inspect-src-gui-widgets-timeline-group-band-manager-groupbandmanager-on-context-menu-requested-color-action)=
+
+**Change Color...** — Choose a display colour for this style. Styling does not create or
+remove a world relation.
+
+(help-inspect-src-gui-widgets-timeline-group-band-manager-groupbandmanager-on-context-menu-requested-remove-action)=
+
+**Remove from grouping** — Remove this tag from the Timeline grouping configuration. The
+tagged entries remain in the world.
+
+(help-inspect-view-src-gui-widgets-timeline-init-timelinewidget-init-self-view)=
+
+**Timeline canvas** — Navigate Events and Viewing time on the Timeline. Dragging an
+Event can change its date; inspection does not select or move it.

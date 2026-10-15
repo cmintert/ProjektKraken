@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.logging_config import get_logger
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.graph_view.graph_builder import GraphBuilder
 from src.gui.widgets.graph_view.graph_filter_bar import GraphFilterBar
 from src.gui.widgets.graph_view.graph_projection import GraphProjection
@@ -74,7 +75,10 @@ class GraphWidget(QWidget):
 
         # Private internal components (following MapWidget pattern)
         self._filter_bar = GraphFilterBar()
-        self._web_view = GraphWebView()
+        self._web_view = declare_inspection(
+            GraphWebView(),
+            "view.src-gui-widgets-graph-view-graph-widget-graphwidget-init-self-web-view|graph.exploring|help-inspect-view-src-gui-widgets-graph-view-graph-widget-graphwidget-init-self-web-view",
+        )
         self._builder = GraphBuilder()
 
         # Data Cache
@@ -132,7 +136,10 @@ class GraphWidget(QWidget):
         from src.gui.widgets.wrapping_combo_box import WrappingComboBox
 
         temporal_row = ActionFlowLayout()
-        self.temporal_mode = WrappingComboBox()
+        self.temporal_mode = declare_inspection(
+            WrappingComboBox(),
+            "src-gui-widgets-graph-view-graph-widget-graphwidget-setup-ui-self-temporal-mode|relations.timing|help-inspect-src-gui-widgets-graph-view-graph-widget-graphwidget-setup-ui-self-temporal-mode",
+        )
         self.temporal_mode.setAccessibleName("Graph temporal view")
         for label, mode in (
             ("At playhead", "at_playhead"),
@@ -143,7 +150,10 @@ class GraphWidget(QWidget):
         self.temporal_mode.currentIndexChanged.connect(
             lambda _index: self.refresh_requested.emit()
         )
-        self.show_possible = WrappingCheckBox("Show possible relations")
+        self.show_possible = declare_inspection(
+            WrappingCheckBox("Show possible relations"),
+            "src-gui-widgets-graph-view-graph-widget-graphwidget-setup-ui-self-show-possible|relations.timing|help-inspect-src-gui-widgets-graph-view-graph-widget-graphwidget-setup-ui-self-show-possible",
+        )
         self.show_possible.toggled.connect(
             lambda: self._refresh_display_locally(self._last_focus_node_id)
         )

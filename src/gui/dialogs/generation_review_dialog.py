@@ -24,6 +24,7 @@ from src.core.ai_generation import (
     ModelReply,
 )
 from src.core.description_date_policy import find_description_dates
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
@@ -115,7 +116,10 @@ class GenerationReviewDialog(QDialog):
                 main_layout.addWidget(truncation_warning)
 
         # Editable text area
-        self.text_edit = QPlainTextEdit()
+        self.text_edit = declare_inspection(
+            QPlainTextEdit(),
+            "src-gui-dialogs-generation-review-dialog-generationreviewdialog-setup-ui-self-text-edit|writing.ai|help-inspect-src-gui-dialogs-generation-review-dialog-generationreviewdialog-setup-ui-self-text-edit",
+        )
         self.text_edit.setPlainText(generated_text)
         self.text_edit.setStyleSheet(StyleHelper.get_input_field_style())
         main_layout.addWidget(self.text_edit, stretch=1)
@@ -132,14 +136,20 @@ class GenerationReviewDialog(QDialog):
         rating_label.setStyleSheet(f"color: {StyleHelper.get_dim_text_color()};")
         rating_layout.addWidget(rating_label)
 
-        self.thumbs_up_btn = QPushButton("👍")
+        self.thumbs_up_btn = declare_inspection(
+            QPushButton("👍"),
+            "src-gui-dialogs-generation-review-dialog-generationreviewdialog-setup-ui-self-thumbs-up-btn|writing.ai|help-inspect-src-gui-dialogs-generation-review-dialog-generationreviewdialog-setup-ui-self-thumbs-up-btn",
+        )
         self.thumbs_up_btn.setAccessibleName("Useful generated result")
         self.thumbs_up_btn.setToolTip("Good result")
         self.thumbs_up_btn.setCheckable(True)
         self.thumbs_up_btn.clicked.connect(self._on_thumbs_up_clicked)
         rating_layout.addWidget(self.thumbs_up_btn)
 
-        self.thumbs_down_btn = QPushButton("👎")
+        self.thumbs_down_btn = declare_inspection(
+            QPushButton("👎"),
+            "src-gui-dialogs-generation-review-dialog-generationreviewdialog-setup-ui-self-thumbs-down-btn|writing.ai|help-inspect-src-gui-dialogs-generation-review-dialog-generationreviewdialog-setup-ui-self-thumbs-down-btn",
+        )
         self.thumbs_down_btn.setAccessibleName("Unhelpful generated result")
         self.thumbs_down_btn.setToolTip("Poor result")
         self.thumbs_down_btn.setCheckable(True)
@@ -150,7 +160,10 @@ class GenerationReviewDialog(QDialog):
         main_layout.addLayout(rating_layout)
 
         # Comment field
-        self.comment_edit = QLineEdit()
+        self.comment_edit = declare_inspection(
+            QLineEdit(),
+            "src-gui-dialogs-generation-review-dialog-generationreviewdialog-setup-ui-self-comment-edit|writing.ai|help-inspect-src-gui-dialogs-generation-review-dialog-generationreviewdialog-setup-ui-self-comment-edit",
+        )
         self.comment_edit.setPlaceholderText("Optional comment…")
         self.comment_edit.setMaxLength(200)
         self.comment_edit.setStyleSheet(StyleHelper.get_input_field_style())
@@ -162,20 +175,29 @@ class GenerationReviewDialog(QDialog):
         buttons_layout.addStretch()
 
         # Discard button (left)
-        self.discard_btn = QPushButton("Discard")
+        self.discard_btn = declare_inspection(
+            QPushButton("Discard"),
+            "src-gui-dialogs-generation-review-dialog-generationreviewdialog-setup-ui-self-discard-btn|writing.ai|help-inspect-src-gui-dialogs-generation-review-dialog-generationreviewdialog-setup-ui-self-discard-btn",
+        )
         self.discard_btn.setToolTip("Discard generated content")
         self.discard_btn.setStyleSheet(StyleHelper.get_ghost_destructive_button_style())
         self.discard_btn.clicked.connect(self._on_discard_clicked)
         buttons_layout.addWidget(self.discard_btn)
 
         # Append button
-        self.append_btn = QPushButton("Append")
+        self.append_btn = declare_inspection(
+            QPushButton("Append"),
+            "src-gui-dialogs-generation-review-dialog-generationreviewdialog-setup-ui-self-append-btn|writing.ai|help-inspect-src-gui-dialogs-generation-review-dialog-generationreviewdialog-setup-ui-self-append-btn",
+        )
         self.append_btn.setToolTip("Append to existing description")
         self.append_btn.clicked.connect(self._on_append_clicked)
         buttons_layout.addWidget(self.append_btn)
 
         # Replace button (primary action)
-        self.replace_btn = QPushButton("Replace")
+        self.replace_btn = declare_inspection(
+            QPushButton("Replace"),
+            "src-gui-dialogs-generation-review-dialog-generationreviewdialog-setup-ui-self-replace-btn|writing.ai|help-inspect-src-gui-dialogs-generation-review-dialog-generationreviewdialog-setup-ui-self-replace-btn",
+        )
         self.replace_btn.setToolTip("Replace existing description")
         self.replace_btn.setStyleSheet(StyleHelper.get_primary_button_style())
         self.replace_btn.clicked.connect(self._on_replace_clicked)

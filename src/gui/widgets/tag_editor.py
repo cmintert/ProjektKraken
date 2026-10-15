@@ -6,6 +6,7 @@ from PySide6.QtCore import QStringListModel, Qt, Signal, Slot
 from PySide6.QtWidgets import QCompleter, QHBoxLayout, QLineEdit, QVBoxLayout, QWidget
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.standard_buttons import StandardButton
 from src.gui.widgets.tag_chip_view import TagChipDelegate, TagChipView, TagListModel
@@ -31,14 +32,20 @@ class TagEditorWidget(QWidget):
         input_layout.setContentsMargins(0, 0, 0, 0)
         input_layout.setSpacing(6)
 
-        self.tag_input = QLineEdit()
+        self.tag_input = declare_inspection(
+            QLineEdit(),
+            "src-gui-widgets-tag-editor-tageditorwidget-init-self-tag-input|authoring.tags|help-inspect-src-gui-widgets-tag-editor-tageditorwidget-init-self-tag-input",
+        )
         self.tag_input.setPlaceholderText("Type a tag and press Enter…")
         self.tag_input.setClearButtonEnabled(True)
         self.tag_input.returnPressed.connect(self._on_add)
         self.tag_input.textChanged.connect(self._update_add_button)
         input_layout.addWidget(self.tag_input, stretch=1)
 
-        self.btn_add = StandardButton("Add")
+        self.btn_add = declare_inspection(
+            StandardButton("Add"),
+            "src-gui-widgets-tag-editor-tageditorwidget-init-self-btn-add|authoring.tags|help-inspect-src-gui-widgets-tag-editor-tageditorwidget-init-self-btn-add",
+        )
         self.btn_add.setEnabled(False)
         self.btn_add.setToolTip("Add tag")
         self.btn_add.clicked.connect(self._on_add)
@@ -100,9 +107,7 @@ class TagEditorWidget(QWidget):
     def _update_add_button(self, *_args: object) -> None:
         candidate = self._candidate()
         self.btn_add.setEnabled(
-            self.isEnabled()
-            and bool(candidate)
-            and candidate not in self._model.tags()
+            self.isEnabled() and bool(candidate) and candidate not in self._model.tags()
         )
 
     @Slot(str)

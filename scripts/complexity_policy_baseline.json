@@ -124,7 +124,7 @@
       "id": "c901-b90fc28385bc",
       "path": "src/gui/widgets/entity_editor.py",
       "symbol": "EntityEditorWidget._save_temporal",
-      "ceiling": 19,
+      "ceiling": 16,
       "reason": "Existing production complexity reviewed for KRT-36; untouched debt only, executable edits must strictly improve."
     },
     {
@@ -146,13 +146,6 @@
       "path": "src/gui/widgets/map/raster_legend_widget.py",
       "symbol": "RasterLegendWidget._build_discrete_legend",
       "ceiling": 18,
-      "reason": "Existing production complexity reviewed for KRT-36; untouched debt only, executable edits must strictly improve."
-    },
-    {
-      "id": "c901-ff9a6eff0a3f",
-      "path": "src/gui/widgets/relation_form.py",
-      "symbol": "RelationForm.__init__",
-      "ceiling": 16,
       "reason": "Existing production complexity reviewed for KRT-36; untouched debt only, executable edits must strictly improve."
     }
   ]

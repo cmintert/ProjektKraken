@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QGraphicsScene, QMenu
 
 from src.core.calendar import CalendarConverter
 from src.core.temporal_presentation import event_temporal_presentation
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.timeline.event_item import EventItem
 from src.gui.widgets.timeline.group_band_item import GroupBandItem
 
@@ -251,13 +252,25 @@ class GroupBandManager(QObject):
         """
         logger.debug(f"Context menu requested for: {tag_name}")
 
-        menu = QMenu()
+        menu = declare_inspection(
+            QMenu(self.scene.views()[0] if self.scene.views() else None),
+            "src-gui-widgets-timeline-group-band-manager-groupbandmanager-on-context-menu-requested-menu|timeline.viewing|help-inspect-src-gui-widgets-timeline-group-band-manager-groupbandmanager-on-context-menu-requested-menu",
+        )
 
         # Add menu actions
-        rename_action = menu.addAction(f"Rename '{tag_name}'...")
-        color_action = menu.addAction("Change Color...")
+        rename_action = declare_inspection(
+            menu.addAction(f"Rename '{tag_name}'..."),
+            "src-gui-widgets-timeline-group-band-manager-groupbandmanager-on-context-menu-requested-rename-action|timeline.viewing|help-inspect-src-gui-widgets-timeline-group-band-manager-groupbandmanager-on-context-menu-requested-rename-action",
+        )
+        color_action = declare_inspection(
+            menu.addAction("Change Color..."),
+            "src-gui-widgets-timeline-group-band-manager-groupbandmanager-on-context-menu-requested-color-action|timeline.viewing|help-inspect-src-gui-widgets-timeline-group-band-manager-groupbandmanager-on-context-menu-requested-color-action",
+        )
         menu.addSeparator()
-        remove_action = menu.addAction("Remove from Grouping")
+        remove_action = declare_inspection(
+            menu.addAction("Remove from Grouping"),
+            "src-gui-widgets-timeline-group-band-manager-groupbandmanager-on-context-menu-requested-remove-action|timeline.viewing|help-inspect-src-gui-widgets-timeline-group-band-manager-groupbandmanager-on-context-menu-requested-remove-action",
+        )
 
         # Show menu and handle action
         action = menu.exec(screen_pos)
@@ -268,6 +281,7 @@ class GroupBandManager(QObject):
             self.tag_color_change_requested.emit(tag_name)
         elif action == remove_action:
             self.remove_from_grouping_requested.emit(tag_name)
+        menu.deleteLater()
 
     def get_collapsed_tags(self) -> set:
         """Get the set of collapsed tag names.

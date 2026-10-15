@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.menu_caret import PhosphorPushMenuButton
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
@@ -79,14 +80,20 @@ class TimelineWidget(QWidget):
         header_layout.addWidget(self.action_toolbar)
 
         # Playback controls
-        self.btn_step_back = QPushButton("◄")
+        self.btn_step_back = declare_inspection(
+            QPushButton("◄"),
+            "src-gui-widgets-timeline-init-timelinewidget-init-self-btn-step-back|timeline.viewing|help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-btn-step-back",
+        )
         self.btn_step_back.setToolTip("Step Backward")
         self.btn_step_back.setAccessibleName("Step backward")
         self.btn_step_back.setProperty("toolbarActionLabel", "Step backward")
         self.btn_step_back.clicked.connect(self.step_backward)
         self.action_toolbar.add_button(self.btn_step_back, priority=80)
 
-        self.btn_play_pause = QPushButton("▶")
+        self.btn_play_pause = declare_inspection(
+            QPushButton("▶"),
+            "src-gui-widgets-timeline-init-timelinewidget-init-self-btn-play-pause|timeline.viewing|help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-btn-play-pause",
+        )
         self.btn_play_pause.setToolTip("Play/Pause")
         self.btn_play_pause.setCheckable(True)
         self.btn_play_pause.setAccessibleName("Play or pause timeline")
@@ -98,7 +105,10 @@ class TimelineWidget(QWidget):
             pinned=True,
         )
 
-        self.btn_step_forward = QPushButton("►")
+        self.btn_step_forward = declare_inspection(
+            QPushButton("►"),
+            "src-gui-widgets-timeline-init-timelinewidget-init-self-btn-step-forward|timeline.viewing|help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-btn-step-forward",
+        )
         self.btn_step_forward.setToolTip("Step Forward")
         self.btn_step_forward.setAccessibleName("Step forward")
         self.btn_step_forward.setProperty("toolbarActionLabel", "Step forward")
@@ -106,31 +116,47 @@ class TimelineWidget(QWidget):
         self.action_toolbar.add_button(self.btn_step_forward, priority=80)
 
         # Current time control
-        self.btn_set_current_time = QPushButton("Set Current Time")
+        self.btn_set_current_time = declare_inspection(
+            QPushButton("Set Current Time"),
+            "src-gui-widgets-timeline-init-timelinewidget-init-self-btn-set-current-time|timeline.viewing|help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-btn-set-current-time",
+        )
         self.btn_set_current_time.setToolTip(
             "Set the current time in the world to the playhead position"
         )
         self.btn_set_current_time.clicked.connect(self.set_current_time_to_playhead)
         self.action_toolbar.add_button(self.btn_set_current_time, priority=50)
 
-        self.btn_return_present = QPushButton("Return to Current Time")
+        self.btn_return_present = declare_inspection(
+            QPushButton("Return to Current Time"),
+            "src-gui-widgets-timeline-init-timelinewidget-init-self-btn-return-present|timeline.viewing|help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-btn-return-present",
+        )
         self.btn_return_present.setToolTip(
             "Move the playhead to the current story time"
         )
         self.btn_return_present.clicked.connect(self.return_to_present)
         self.action_toolbar.add_button(self.btn_return_present, priority=70)
 
-        self.btn_go_to_date = PhosphorPushMenuButton("Go to date")
+        self.btn_go_to_date = declare_inspection(
+            PhosphorPushMenuButton("Go to date"),
+            "src-gui-widgets-timeline-init-timelinewidget-init-self-btn-go-to-date|timeline.viewing|help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-btn-go-to-date",
+        )
         self.btn_go_to_date.setToolTip(
             "Move the playhead to the selected event or enter an exact date"
         )
         self._selected_navigation_event_id: str | None = None
-        self.date_navigation_menu = QMenu(self)
-        self.selected_event_date_action = self.date_navigation_menu.addAction(
-            "Go to selected event"
+        self.date_navigation_menu = declare_inspection(
+            QMenu(self),
+            "src-gui-widgets-timeline-init-timelinewidget-init-self-date-navigation-menu|timeline.viewing|help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-date-navigation-menu",
+        )
+        self.selected_event_date_action = declare_inspection(
+            self.date_navigation_menu.addAction("Go to selected event"),
+            "src-gui-widgets-timeline-init-timelinewidget-init-self-selected-event-date-action|timeline.viewing|help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-selected-event-date-action",
         )
         self.selected_event_date_action.setEnabled(False)
-        self.enter_date_action = self.date_navigation_menu.addAction("Enter a date…")
+        self.enter_date_action = declare_inspection(
+            self.date_navigation_menu.addAction("Enter a date…"),
+            "src-gui-widgets-timeline-init-timelinewidget-init-self-enter-date-action|timeline.viewing|help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-enter-date-action",
+        )
         self.enter_date_action.setEnabled(False)
         self.enter_date_action.triggered.connect(self.go_to_date_requested.emit)
         self.selected_event_date_action.triggered.connect(
@@ -148,7 +174,10 @@ class TimelineWidget(QWidget):
             bool,
             settings.value("timeline/snap_playhead_to_events", False, type=bool),
         )
-        self.chk_snap_playhead_to_events = QCheckBox("Snap to Events")
+        self.chk_snap_playhead_to_events = declare_inspection(
+            QCheckBox("Snap to Events"),
+            "src-gui-widgets-timeline-init-timelinewidget-init-self-chk-snap-playhead-to-events|timeline.viewing|help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-chk-snap-playhead-to-events",
+        )
         self.chk_snap_playhead_to_events.setToolTip(
             "Snap manual playhead drags and ruler clicks to nearby event dates."
         )
@@ -158,14 +187,20 @@ class TimelineWidget(QWidget):
             priority=20,
         )
 
-        self.btn_fit = QPushButton("Fit View")
+        self.btn_fit = declare_inspection(
+            QPushButton("Fit View"),
+            "src-gui-widgets-timeline-init-timelinewidget-init-self-btn-fit|timeline.viewing|help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-btn-fit",
+        )
         self.btn_fit.clicked.connect(self.fit_view)
         self.action_toolbar.add_button(self.btn_fit, priority=60)
 
         main_layout.addWidget(self.header_frame)
 
         # View
-        self.view = TimelineView()
+        self.view = declare_inspection(
+            TimelineView(),
+            "view.src-gui-widgets-timeline-init-timelinewidget-init-self-view|timeline.viewing|help-inspect-view-src-gui-widgets-timeline-init-timelinewidget-init-self-view",
+        )
         self.view.set_playhead_event_snapping(snap_to_events)
         self.chk_snap_playhead_to_events.toggled.connect(
             self.set_playhead_event_snapping

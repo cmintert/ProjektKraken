@@ -176,6 +176,13 @@ class StyleHelper:
         return f"color: {theme['text_dim']}; font-style: italic;"
 
     @staticmethod
+    def get_supporting_caption_style(*, italic: bool = False) -> str:
+        """Use the shared supporting-text role for secondary explanations."""
+        theme = ThemeManager().get_theme()
+        suffix = " font-style: italic;" if italic else ""
+        return f"color: {theme['supporting_text']};" + suffix
+
+    @staticmethod
     def get_error_label_style() -> str:
         """Returns QSS for error labels.
 

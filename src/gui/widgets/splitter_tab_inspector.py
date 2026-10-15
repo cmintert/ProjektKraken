@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.logging_config import get_logger
+from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.inspector_section import AuxiliarySectionHome
 from src.gui.widgets.menu_caret import PhosphorToolMenuButton
 
@@ -299,13 +300,19 @@ class DraggableTabWidget(QTabWidget):
         self.setAcceptDrops(True)
         self.setMovable(True)
         self.currentChanged.connect(self._remember_section)
-        self.overflow_button = _InspectorMenuButton(self)
+        self.overflow_button = declare_inspection(
+            _InspectorMenuButton(self),
+            "src-gui-widgets-splitter-tab-inspector-draggabletabwidget-init-self-overflow-button|workspace.navigation|help-inspect-src-gui-widgets-splitter-tab-inspector-draggabletabwidget-init-self-overflow-button",
+        )
         self.overflow_button.setText("More actions")
         self.overflow_button.setToolTip("Inspector sections and layout")
         self.overflow_button.setAccessibleName("Inspector sections and layout")
         self.overflow_button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.overflow_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
-        self.overflow_menu = QMenu(self.overflow_button)
+        self.overflow_menu = declare_inspection(
+            QMenu(self.overflow_button),
+            "src-gui-widgets-splitter-tab-inspector-draggabletabwidget-init-self-overflow-menu|workspace.navigation|help-inspect-src-gui-widgets-splitter-tab-inspector-draggabletabwidget-init-self-overflow-menu",
+        )
         self.overflow_menu.setToolTipsVisible(True)
         self.overflow_button.setMenu(self.overflow_menu)
         self.overflow_menu.aboutToShow.connect(self._populate_overflow)
@@ -349,8 +356,14 @@ class DraggableTabWidget(QTabWidget):
         if index >= 0:
             self.setCurrentIndex(index)
         inspector._active_section = self.currentWidget()
-        menu = QMenu(self)
-        split = menu.addAction("Split active section below")
+        menu = declare_inspection(
+            QMenu(self),
+            "src-gui-widgets-splitter-tab-inspector-draggabletabwidget-show-layout-menu-menu|workspace.navigation|help-inspect-src-gui-widgets-splitter-tab-inspector-draggabletabwidget-show-layout-menu-menu",
+        )
+        split = declare_inspection(
+            menu.addAction("Split active section below"),
+            "src-gui-widgets-splitter-tab-inspector-draggabletabwidget-show-layout-menu-split|workspace.navigation|help-inspect-src-gui-widgets-splitter-tab-inspector-draggabletabwidget-show-layout-menu-split",
+        )
         split.setEnabled(self.count() > 1)
         split.triggered.connect(inspector.split_active_section)
         menu.addAction("Reset inspector layout").triggered.connect(
@@ -579,12 +592,18 @@ class SplitterTabInspector(QWidget):
     def populate_sections(self, menu: QMenu) -> None:
         """Find each section in its current pane, including dragged sections."""
         for widget, title in self._sections:
-            action = menu.addAction(title)
+            action = declare_inspection(
+                menu.addAction(title),
+                "src-gui-widgets-splitter-tab-inspector-splittertabinspector-populate-sections-action|workspace.navigation|help-inspect-src-gui-widgets-splitter-tab-inspector-splittertabinspector-populate-sections-action",
+            )
             action.triggered.connect(
                 lambda _checked=False, section=widget: self.activate_section(section)
             )
         menu.addSeparator()
-        split = menu.addAction("Split active section below")
+        split = declare_inspection(
+            menu.addAction("Split active section below"),
+            "src-gui-widgets-splitter-tab-inspector-splittertabinspector-populate-sections-split|workspace.navigation|help-inspect-src-gui-widgets-splitter-tab-inspector-splittertabinspector-populate-sections-split",
+        )
         pane = self._pane_for(self._active_section)
         split.setEnabled(pane is not None and pane.count() > 1)
         split.triggered.connect(self.split_active_section)
@@ -594,7 +613,10 @@ class SplitterTabInspector(QWidget):
                 lambda _checked=False, key=section_id: self.open_auxiliary_below(key)
             )
             if auxiliary.home.detached:
-                restore = menu.addAction(f"Return {auxiliary.home.title} here")
+                restore = declare_inspection(
+                    menu.addAction(f"Return {auxiliary.home.title} here"),
+                    "src-gui-widgets-splitter-tab-inspector-splittertabinspector-populate-sections-restore|workspace.navigation|help-inspect-src-gui-widgets-splitter-tab-inspector-splittertabinspector-populate-sections-restore",
+                )
                 restore.triggered.connect(
                     lambda _checked=False, key=section_id: self.return_auxiliary(key)
                 )
