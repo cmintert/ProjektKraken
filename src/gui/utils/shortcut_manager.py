@@ -69,7 +69,10 @@ class ShortcutManager:
     # General
     HELP = KeyboardShortcut("Help", "F1", "Help for current task")
     EXPLAIN_CONTROL = KeyboardShortcut(
-        "Explain Control", "Shift+F1", "Explain a reviewed focused control"
+        "Explain Control", "Shift+F1", "Explain the control under the pointer"
+    )
+    EXPLAIN_FOCUSED_CONTROL = KeyboardShortcut(
+        "Explain Focused Control", "Ctrl+Shift+F1", "Explain the focused control"
     )
     DESELECT = KeyboardShortcut("Deselect/Cancel", "Esc", "Deselect items or cancel")
 

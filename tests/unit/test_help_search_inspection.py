@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 from PySide6.QtCore import QCoreApplication, QEvent, QPoint, Qt
-from PySide6.QtGui import QHelpEvent, QWhatsThisClickedEvent
+from PySide6.QtGui import QCursor, QHelpEvent, QWhatsThisClickedEvent
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QPushButton, QWhatsThis
 
@@ -115,16 +115,20 @@ def test_native_shift_f1_uses_validated_excerpt(help_setup, qapp):
     button.show()
     button.setFocus()
     qapp.processEvents()
+    QCursor.setPos(button.mapToGlobal(button.rect().center()))
     with patch.object(
         coordinator.service,
         "load_control_excerpt",
         wraps=coordinator.service.load_control_excerpt,
     ) as load:
-        QTest.keyClick(button, Qt.Key.Key_F1, Qt.KeyboardModifier.ShiftModifier)
+        QTest.keyClick(
+            button,
+            Qt.Key.Key_F1,
+            Qt.KeyboardModifier.ShiftModifier,
+        )
         qapp.processEvents()
         load.assert_called_with("event.timing")
-        assert "Duration records" in button.whatsThis()
-        assert "topic:event.timing" in button.whatsThis()
+        assert coordinator.inspection._topic_id == "event.timing"
     assert QApplication.activePopupWidget() is not None
     QWhatsThis.hideText()
     qapp.processEvents()

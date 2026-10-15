@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-15
-**Commit:** 52f66fb7ae34b93beeea9859417ce2b500483181
+**Commit:** 5e2a256f7fc0d6dab6171cf22159529395d61e88
 ---
 
 # Changelog
@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-15)* **Control explanation shortcuts (KRT-89)**: Shift+F1 explains
+  the supported control under the pointer without clicking or moving focus.
+  Ctrl+Shift+F1 explains the focused control or highlighted menu action.
+  Unsupported targets show brief feedback; retain modal and draft safeguards.
+  Updated shortcut guidance, contract, regression coverage and guided human
+  review evidence, including the relation-entry discoverability finding.
 
 - *(2026-10-15)* **Interface inspection (KRT-89)**: Expanded canonical control
   explanations across workspace menus, Explorer, inspectors, writing, Timeline,

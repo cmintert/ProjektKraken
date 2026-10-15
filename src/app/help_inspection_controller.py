@@ -11,7 +11,6 @@ from PySide6.QtGui import (
     QCursor,
     QHelpEvent,
     QKeyEvent,
-    QKeySequence,
     QMouseEvent,
     QWhatsThisClickedEvent,
 )
@@ -24,6 +23,7 @@ from src.gui.utils.help_context import (
     HelpContextRegistry,
     ancestors,
     help_focus_transfer,
+    owns_help_input,
 )
 from src.gui.utils.style_helper import StyleHelper
 from src.services.help_bundle_service import HelpBundleError, HelpBundleService
@@ -34,6 +34,8 @@ if TYPE_CHECKING:
 
 class HelpInspectionController(QObject):
     """Handle Qt-native Help events and track their transient popup ownership."""
+
+    UNSUPPORTED_TEXT = "No control explanation here. Press F1 for task Help."
 
     def __init__(
         self,
@@ -53,11 +55,14 @@ class HelpInspectionController(QObject):
         self._pointer_request = False
         self.target: weakref.ReferenceType[QWidget] | None = None
         self._dismiss_key: int | None = None
+        self._popup_task_request = False
         self._popup_token = 0
         self._next_popup_token = 0
         self._topic_id: str | None = None
         self._excerpt_target: str | None = None
         self._swallow_release = False
+        self._explanation_chord = False
+        self._pending_explanation: bool | None = None
         ThemeManager().theme_changed.connect(self._theme_changed)
         app = QApplication.instance()
         if isinstance(app, QApplication):
@@ -89,6 +94,56 @@ class HelpInspectionController(QObject):
             return False
         return self._display_registration(registration, global_point)
 
+    def _eligible_target(self, widget: QWidget | None) -> bool:
+        """Exclude foreign, Help-owned and modal-blocked authoring surfaces."""
+        if (
+            widget is None
+            or not widget.isVisible()
+            or not self.help.belongs(widget)
+            or owns_help_input(widget)
+            or widget.property("krakenHelpInspectionPopup")
+        ):
+            return False
+        modal = QApplication.activeModalWidget()
+        return modal is None or widget is modal or modal.isAncestorOf(widget)
+
+    def explain_under_pointer(self) -> None:
+        """Explain the actual pointer target without a focused-control fallback."""
+        point = QCursor.pos()
+        widget = QApplication.widgetAt(point)
+        if not self._eligible_target(widget) or widget is None:
+            return
+        self.help.track_origin(None, QApplication.focusWidget())
+        registration = self._at_pointer(widget, point)
+        if registration is not None:
+            self._display_registration(registration, point)
+        else:
+            self._show_unsupported(widget, point)
+
+    def explain_focused_control(self) -> None:
+        """Explain keyboard focus or the active menu's highlighted action."""
+        menu = QApplication.activePopupWidget()
+        widget = menu if isinstance(menu, QMenu) else QApplication.focusWidget()
+        if self._active_popup() is not None:
+            widget = self.help.live(self.help.origin)
+        if not self._eligible_target(widget) or widget is None:
+            return
+        self.help.track_origin(None, widget)
+        point = widget.mapToGlobal(widget.rect().center())
+        if isinstance(widget, (QMenu, QMenuBar)):
+            if self._explain_menu_action(widget):
+                return
+        else:
+            bind_declared_widget(self.registry, widget)
+            if self.display(widget, None, point):
+                return
+        self._show_unsupported(widget, point)
+
+    def _show_unsupported(self, widget: QWidget, point: QPoint) -> None:
+        self._topic_id = None
+        self._excerpt_target = None
+        self._show_text(widget, point, self.UNSUPPORTED_TEXT)
+
     def _display_registration(
         self,
         registration: tuple[QWidget, ControlHelpRegistration],
@@ -96,12 +151,17 @@ class HelpInspectionController(QObject):
     ) -> bool:
         """Show validated content after resolving a control or menu action."""
         target, meaning = registration
-        self.help.suspend_origin()
-        self._allow_restore = True
-        self.target = weakref.ref(target)
         self._topic_id = meaning.topic_id
         self._excerpt_target = meaning.excerpt_target
         text = self._explanation(meaning.topic_id, meaning.excerpt_target)
+        self._show_text(target, point, text)
+        return True
+
+    def _show_text(self, target: QWidget, point: QPoint, text: str) -> None:
+        """Protect live authoring input before replacing the single native popup."""
+        self.help.suspend_origin()
+        self._allow_restore = True
+        self.target = weakref.ref(target)
         with help_focus_transfer():
             QWhatsThis.leaveWhatsThisMode()
             for widget in QApplication.allWidgets():
@@ -110,7 +170,6 @@ class HelpInspectionController(QObject):
             QWhatsThis.showText(point, text, target)
         self._track_popup()
         self._pointer_request = False
-        return True
 
     def _explanation(self, topic_id: str, target: str | None = None) -> str:
         try:
@@ -174,13 +233,16 @@ class HelpInspectionController(QObject):
     def _theme_changed(self, _theme: dict[str, str]) -> None:
         popup = self._active_popup()
         target = self.help.live(self.target)
-        if popup is None or target is None or self._topic_id is None:
+        if popup is None or target is None:
             return
         point = popup.pos()
+        text = (
+            self._explanation(self._topic_id, self._excerpt_target)
+            if self._topic_id is not None
+            else self.UNSUPPORTED_TEXT
+        )
         with help_focus_transfer():
-            QWhatsThis.showText(
-                point, self._explanation(self._topic_id, self._excerpt_target), target
-            )
+            QWhatsThis.showText(point, text, target)
         self._track_popup()
 
     def _popup_closed(self, token: int | None = None) -> None:
@@ -213,6 +275,7 @@ class HelpInspectionController(QObject):
         self._pointer_request = False
         self._allow_restore = restore
         self._dismiss_key = None
+        self._pending_explanation = None
         QWhatsThis.leaveWhatsThisMode()
         QWhatsThis.hideText()
         self.popup = None
@@ -225,6 +288,7 @@ class HelpInspectionController(QObject):
     def stop(self) -> None:
         """Release filters and transient Qt windows without restoring focus."""
         self._stopped = True
+        self._explanation_chord = False
         self.dismiss(restore=False)
         app = QApplication.instance()
         if isinstance(app, QApplication):
@@ -248,9 +312,11 @@ class HelpInspectionController(QObject):
                 return
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:  # noqa: N802
-        """Use native What's This events rather than a Shift+F1 shortcut."""
+        """Dispatch explanation chords and retain Qt's native pointer inspection."""
         if self._stopped:
             return False
+        if isinstance(event, QKeyEvent) and self._explanation_shortcut(watched, event):
+            return True
         if QWhatsThis.inWhatsThisMode() and event.type() in {
             QEvent.Type.Wheel,
             QEvent.Type.ContextMenu,
@@ -311,8 +377,16 @@ class HelpInspectionController(QObject):
             self._follow_task(event.href())
             return True
         elif isinstance(event, QKeyEvent):
-            return self._native_key(watched, event)
+            return self._inspection_escape(event)
         return False
+
+    def _inspection_escape(self, event: QKeyEvent) -> bool:
+        if not self._mode or event.key() != Qt.Key.Key_Escape:
+            return False
+        event.accept()
+        if event.type() == QEvent.Type.KeyPress:
+            self.dismiss()
+        return True
 
     def _at_pointer(
         self,
@@ -394,39 +468,89 @@ class HelpInspectionController(QObject):
         }
         if event.type() == QEvent.Type.KeyPress and event.key() not in modifiers:
             self._dismiss_key = event.key()
+            self._popup_task_request = (
+                event.key() == Qt.Key.Key_F1
+                and event.modifiers() == Qt.KeyboardModifier.NoModifier
+            )
         if event.type() == QEvent.Type.KeyRelease and self._dismiss_key is not None:
             if event.modifiers() == Qt.KeyboardModifier.NoModifier:
                 self._dismiss_key = None
-                QTimer.singleShot(0, self.dismiss)
+                callback = (
+                    self._open_task_from_popup
+                    if self._popup_task_request
+                    else self.dismiss
+                )
+                self._popup_task_request = False
+                QTimer.singleShot(0, callback)
         return True
 
-    def _native_key(self, watched: QWidget, event: QKeyEvent) -> bool:
-        if event.type() == QEvent.Type.KeyPress and event.matches(
-            QKeySequence.StandardKey.WhatsThis
-        ):
-            registration = self.registry.inspection_for(watched)
-            if registration:
-                target, meaning = registration
-                self.help.suspend_origin()
-                self._allow_restore = True
-                self.target = weakref.ref(target)
-                self._topic_id = meaning.topic_id
-                self._excerpt_target = meaning.excerpt_target
-                target.setWhatsThis(
-                    self._explanation(meaning.topic_id, meaning.excerpt_target)
-                )
-                app = QApplication.instance()
-                if app:
-                    app.setProperty("krakenInspectionPopup", True)
-                QTimer.singleShot(0, self._track_popup)
-            else:
-                # A region may be exempt even when another item in its owning
-                # view has an explanation. Never reuse that item's native text.
-                event.accept()
-                return True
-            # Qt's native focused-control mechanism performs the display.
+    def _open_task_from_popup(self) -> None:
+        if self._stopped:
+            return
+        self.dismiss(restore=False)
+        self.help.refresh()
+
+    def _shortcut_receiver(self, watched: QObject) -> bool:
+        popup = self._active_popup()
+        return (
+            (
+                popup is not None
+                and (watched is popup or watched is popup.windowHandle())
+            )
+            or isinstance(watched, QWidget)
+            and self.help.belongs(watched)
+        )
+
+    def _explanation_shortcut(self, watched: QObject, event: QKeyEvent) -> bool:
+        """Claim overrides and swallow the complete chord without duplicate binds."""
+        if not self._shortcut_receiver(watched):
             return False
-        if self._mode and event.key() == Qt.Key.Key_Escape:
-            self.dismiss()
+        chord_keys = {Qt.Key.Key_F1, Qt.Key.Key_Shift, Qt.Key.Key_Control}
+        if self._explanation_chord and event.key() in chord_keys:
+            if (
+                event.type() == QEvent.Type.KeyRelease
+                and event.modifiers() == Qt.KeyboardModifier.NoModifier
+            ):
+                self._explanation_chord = False
+                if self._pending_explanation is not None:
+                    QTimer.singleShot(0, self._run_pending_explanation)
+            event.accept()
             return True
+        shift = Qt.KeyboardModifier.ShiftModifier
+        if event.key() != Qt.Key.Key_F1 or event.modifiers() not in {
+            shift,
+            shift | Qt.KeyboardModifier.ControlModifier,
+        }:
+            return False
+        event.accept()
+        if event.type() == QEvent.Type.KeyPress and not event.isAutoRepeat():
+            self._explanation_chord = True
+            if self._active_popup() is not None:
+                self._pending_explanation = event.modifiers() != shift
+            elif event.modifiers() == shift:
+                self.explain_under_pointer()
+            else:
+                self.explain_focused_control()
+        return True
+
+    def _run_pending_explanation(self) -> None:
+        focused = self._pending_explanation
+        self._pending_explanation = None
+        if self._stopped or focused is None:
+            return
+        if focused:
+            self.explain_focused_control()
+        else:
+            self.explain_under_pointer()
+
+    def _explain_menu_action(self, menu: QMenu | QMenuBar) -> bool:
+        """Explain the keyboard-highlighted action without invoking it."""
+        action = menu.activeAction()
+        if action is None or action.isSeparator():
+            return False
+        bind_declared_action(self.registry, action, menu)
+        registration = self.registry.inspection_action(action)
+        if registration is not None:
+            point = menu.mapToGlobal(menu.actionGeometry(action).center())
+            return self._display_registration(registration, point)
         return False

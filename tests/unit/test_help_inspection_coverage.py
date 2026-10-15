@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QLineEdit,
     QMenu,
+    QMenuBar,
     QPushButton,
     QToolButton,
     QWidget,
@@ -112,6 +113,87 @@ def test_menu_inspection_never_triggers_action(help_setup, qapp):
     assert QApplication.activePopupWidget() is not None
     assert coordinator.inspection._topic_id == "map.historical-geometry"
     coordinator.inspection.dismiss()
+
+
+@pytest.mark.parametrize("menu_type", [QMenu, QMenuBar])
+def test_focused_shortcut_explains_active_menu_action_without_activation(
+    help_setup, qapp, menu_type
+):
+    coordinator, registry, owner, _, text = help_setup
+    menu = menu_type(owner)
+    action = declare_inspection(
+        menu.addAction("Create"),
+        "test.create|authoring.create|help-authoring-create",
+    )
+    bind_declared_action(registry, action, menu)
+    calls = []
+    action.triggered.connect(lambda: calls.append(True))
+    snapshot = (text.document(), text.toPlainText(), text.textCursor().position())
+    if isinstance(menu, QMenu):
+        menu.popup(owner.mapToGlobal(QPoint(20, 20)))
+    else:
+        owner.layout().setMenuBar(menu)
+        menu.show()
+        owner.activateWindow()
+        menu.setFocus(Qt.FocusReason.MenuBarFocusReason)
+    menu.setActiveAction(action)
+    qapp.processEvents()
+    QTest.keyClick(
+        menu.windowHandle() or owner.windowHandle(),
+        Qt.Key.Key_F1,
+        Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier,
+    )
+    qapp.processEvents()
+    popup = QApplication.activePopupWidget()
+    assert popup is not None and popup is not menu
+    assert coordinator.inspection._topic_id == "authoring.create"
+    assert coordinator.inspection._excerpt_target == "help-authoring-create"
+    assert calls == []
+    assert not coordinator.viewer.isVisible()
+    assert snapshot == (
+        text.document(),
+        text.toPlainText(),
+        text.textCursor().position(),
+    )
+    QTest.keyClick(popup.windowHandle(), Qt.Key.Key_Escape)
+    qapp.processEvents()
+    assert QApplication.activePopupWidget() is None
+
+
+def test_focused_shortcut_exempt_menu_action_does_not_reuse_previous_explanation(
+    help_setup, qapp
+):
+    coordinator, registry, owner, _, _ = help_setup
+    menu = QMenu(owner)
+    mapped = declare_inspection(
+        menu.addAction("Create"),
+        "test.create|authoring.create|help-authoring-create",
+    )
+    bind_declared_action(registry, mapped, menu)
+    exempt = menu.addAction("Exempt")
+    calls = []
+    exempt.triggered.connect(lambda: calls.append(True))
+    for action in (mapped, exempt):
+        menu.popup(owner.mapToGlobal(QPoint(20, 20)))
+        menu.setActiveAction(action)
+        qapp.processEvents()
+        QTest.keyClick(
+            menu.windowHandle(),
+            Qt.Key.Key_F1,
+            Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier,
+        )
+        qapp.processEvents()
+        popup = QApplication.activePopupWidget()
+        if action is mapped:
+            assert popup is not None and popup is not menu
+            coordinator.inspection.dismiss()
+        else:
+            assert popup is not None and popup is not menu
+            assert coordinator.inspection._topic_id is None
+            coordinator.inspection.dismiss()
+        qapp.processEvents()
+    assert calls == []
+    menu.hide()
 
 
 def test_disabled_hover_uses_event_position_not_stale_cursor(help_setup, qapp):

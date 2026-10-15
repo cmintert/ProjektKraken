@@ -8,7 +8,8 @@ The current shortcuts are also available from
 | Action | Shortcut |
 | --- | --- |
 | Help for current task | F1 |
-| Explain the focused supported control | Shift+F1 |
+| Explain the supported control under the pointer | Shift+F1 |
+| Explain the focused control or highlighted menu action | Ctrl+Shift+F1 |
 | Search the offline manual | Ctrl+F, while Help has focus |
 | Return from Help to work | Escape, while Help has focus |
 | Create event | Ctrl+E |

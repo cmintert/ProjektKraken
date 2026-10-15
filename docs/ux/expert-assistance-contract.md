@@ -176,8 +176,16 @@ Bind QKeySequence.HelpContents with Windows F1 coverage and one dispatcher for
 application-owned authoring windows/dialogs. Prevent overlapping actions or
 shortcut ambiguity. Do not intercept F1 in another application or native OS dialog.
 
-Keep native focused-control Shift+F1 behavior. **Inspect control** enters Qt
-What's This mode for pointer targeting. Do not add a competing Shift+F1 shortcut.
+Shift+F1 explains the supported control under the pointer without clicking or
+moving focus. Ctrl+Shift+F1 explains keyboard focus or the highlighted action in
+an open menu. One inspection dispatcher claims both chords and their shortcut
+overrides; do not add competing QAction/QShortcut bindings. **Inspect control**
+continues to enter Qt What's This mode for pointer targeting.
+Pointer targeting excludes Help-owned surfaces, foreign windows and controls
+blocked by the active modal dialog; it never falls back to keyboard focus.
+Unsupported authoring targets show “No control explanation here. Press F1 for
+task Help.” without stale text. Repeated requests replace one popup after the
+chord is released; auto-repeat is suppressed.
 Control snippets are generated from canonical excerpt targets; tooltips stay short.
 Expose the corresponding explanation through keyboard-accessible Help topics
 even for a non-focusable label.
@@ -381,7 +389,8 @@ KRT-87–91; they are not claims of implemented or human-tested Help.
 
 Also test unknown IDs, missing topic/bundle, destroyed origins, dialog-owner
 transfer, repeated F1, Help search Ctrl+F, Ctrl+Z in the search field, Enter/Delete
-in Help, Shift+F1 targeting and Escape through inspection/search/Help. Use
+in Help, Shift+F1 pointer targeting, Ctrl+Shift+F1 focus targeting and Escape
+through inspection/search/Help. Use
 window-level input when testing modality, in addition to widget-level assertions.
 
 Apply authoring Contracts **1–9 and 11**, with the existing
@@ -432,8 +441,18 @@ document's structure, not future runtime Help or human documentation acceptance.
   navigation, history and links.
 - [Qt supported HTML subset](https://doc.qt.io/qt-6/richtext-html-subset.html):
   the renderer's content contract, rather than a web-browser layout engine.
-- [Qt QWhatsThis](https://doc.qt.io/qt-6.10/qwhatsthis.html): native focused
-  Shift+F1, pointer inspection, Escape and explanation-link handling; competing
-  Shift+F1 shortcuts disable the native mechanism.
+- [Qt QWhatsThis](https://doc.qt.io/qt-6.10/qwhatsthis.html): native pointer
+  inspection, Escape and explanation links. The approved 2026-10-15 amendment
+  deliberately replaces Qt's default focused Shift+F1 with pointer targeting and
+  adds Ctrl+Shift+F1 for focus; native popup rendering remains shared.
 - [MyST 4.0.1 cross-references](https://myst-parser.readthedocs.io/en/v4.0.1/syntax/cross-referencing.html):
   explicit targets survive label changes; implicit heading targets are fragile.
+
+## Approved shortcut amendment — 2026-10-15
+
+Christian approved the pointer-based Shift+F1 implementation plan and selected
+Ctrl+Shift+F1 for keyboard-focused explanations. This deliberately supersedes the
+earlier native focused-control Shift+F1 requirement. F1 task Help and Help →
+Inspect control retain their existing meanings. Implementation remains part of
+KRT-89; no new prose or workflow acceptance is inferred from this contract
+amendment.

@@ -4,7 +4,8 @@
 
 The Help coordinator owns contextual invocation, read-only navigation, search
 intent and companion ownership. Its inspection controller handles native Qt
-What's This events and transient popup input. Production composition registers
+What's This pointer events, explicit pointer/focus explanation shortcuts and
+transient popup input. Production composition registers
 explicit control meanings and read-only region providers; widgets emit intent
 and render snapshots. HelpSearchService ranks validated HelpSearchDocument
 snapshots without Qt. HelpBundleService confines generated content and assets

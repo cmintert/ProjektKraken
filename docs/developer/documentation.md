@@ -44,6 +44,13 @@ Developer pages may name classes when they explain a current contract.
 
 ### Maintaining interface inspection
 
+The inspection controller owns both explanation chords: Shift+F1 hit-tests the
+pointer without falling back to keyboard focus; Ctrl+Shift+F1 explains focus or
+the active menu action. Claim shortcut overrides in that dispatcher, without
+additional QAction/QShortcut bindings. Retain native What's This pointer mode,
+popup rendering and task links. Test complete chords through window-level input
+so releases, modal blocking and Escape cannot leak into authoring operations.
+
 `docs/help-inspection.json` is the finite inspection inventory. Each declaration
 names its source symbol, semantic control identity, canonical excerpt target and
 task topic. Feature constructors attach only `meaning|topic|excerpt` metadata with

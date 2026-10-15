@@ -35,7 +35,9 @@ opens the selected result, or the first result after a new query. Search keeps
 your query when you open a topic. Escape hides search first, then returns from
 Help to your work.
 
-Focus a supported control and press **Shift+F1** to read its explanation.
+Point at a supported control and press **Shift+F1** to read its explanation
+without clicking it. For keyboard use, focus the control with Tab and press
+**Ctrl+Shift+F1**. In an open menu, this explains the highlighted action.
 Alternatively, choose **Help → Inspect control**, then click the control.
 The inspection click does not activate the control or change a map selection.
 Escape dismisses inspection or its explanation before affecting your work.
@@ -43,6 +45,8 @@ Use **Read the task in Help** in an explanation for the full procedure.
 The explanation describes the software operation; it does not read or diagnose
 your entered values. Associated form labels can also be inspected. The same
 information remains available through the manual and search.
+If no explanation is available at the target, the popup says so; press F1 for
+Help about your current task.
 
 ## Where Inspect control works
 

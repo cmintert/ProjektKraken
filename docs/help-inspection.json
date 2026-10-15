@@ -11077,8 +11077,8 @@
     {
       "source": "src/gui/dialogs/keyboard_shortcuts_dialog.py",
       "symbol": "KeyboardShortcutsDialog.__init__",
-      "sha256": "d26493b48bd312f6162ca937f2d760a72199be603a6020ed869cb9c397ca6d8d",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "47d32ef157bf7c02a8e8f4b05ef0bb63f66852f63e12ec04622def62f09dccd5",
+      "review_note": "Reviewed 2026-10-15: expose F1, pointer Shift+F1 and focused Ctrl+Shift+F1 metadata in General. Close remains dismiss-only and uses the shared secondary role; its existing canonical explanation remains accurate."
     },
     {
       "source": "src/gui/dialogs/keyboard_shortcuts_dialog.py",

@@ -1,5 +1,90 @@
 # KRT-89 expert topic curation and review
 
+## Delivery authorization — 2026-10-15
+
+Christian authorized committing this follow-up, trusting already-passed tests,
+repeating stale checks and pushing afterward. Code and test sources are unchanged
+since the recorded native run (129 passed, 1 skipped); the later edits update this
+guided-review evidence. Refresh the strict documentation check for those edits
+and retain normal pre-commit/pre-push hooks. The resulting delivery hash and final
+gate results are recorded in Linear; earlier uncommitted statuses below describe
+their respective checkpoints.
+
+## Guided human review — 2026-10-15
+
+Reviewer: Christian, using the running application during the implementation
+conversation. Christian said the sampled descriptions and Help entries looked
+good, while reviewing every entry personally was impractical. This is positive
+sampled feedback, not a claim that every explanation was independently reviewed.
+The running executable/source identity was not independently captured; these
+observations must not be attributed to a fully identified release artifact.
+
+| Scenario | Observation and outcome | Limits / usability feedback |
+| --- | --- | --- |
+| Two year-only events ordered Before/After | Christian created and saved Ada's coronation and Treaty signed in 962. Search `order events` led to the Order control explanation; the bottom task link helped reach Chronology. Following the reopen/precision check, Christian reported that it worked. | Assisted completion: the screenshot initially showed the reverse ordering, and the assistant explained the event-relative direction. No independent database inspection or saved-world artifact was captured. Search led through a control excerpt before the full task procedure. |
+| Shared uncertain handover between roles | Christian saved Handover as instructed (`962?`) and, after the task prompt for Borin/Ada ruling Test realm, reported “It works”. | User-reported success; no screenshot, independent persistence check or exact saved boundary snapshot was captured. Relations, especially changing over time, were hard to discover. On clarification Christian identified **creating or editing a relation** as the hardest entry point. This is an authoring-route discoverability gap, not a reported failure of the timing calculation. |
+| Historical border before/on/after its date | Christian confirmed an existing polygon was available. The task was to use Help to save a recognizable border change at an exact date in 962, inspect before/on/after, and leave existence dates unchanged. Christian reported “It worked”. | User-reported completion of the prompted task; no screenshot, chosen exact date, saved-world artifact or independent geometry/existence snapshot comparison was captured. |
+
+All three tasks therefore have guided, user-reported successful use with the
+limits above. They do not establish independent end-to-end acceptance or resolve
+the relation-entry discoverability issue. Record that UI follow-up separately
+from Help prose accuracy; no relation UI change is implemented by this review.
+The three-task guided review is complete. KRT-89 remains open while the shortcut
+implementation and review evidence are uncommitted; broader package/scaling and
+independent acceptance retain their KRT-91 boundaries.
+
+## Pointer explanation shortcuts — 2026-10-15
+
+Christian approved changing Shift+F1 to explain the control under the pointer,
+without activating or focusing it, and selected Ctrl+Shift+F1 for keyboard focus
+or the highlighted menu action. F1 task Help and Help → Inspect control retain
+their existing routes. The KRT-85 contract was amended in both repository and
+Linear. This follow-up is uncommitted against source baseline `5e2a256f`.
+
+The controller claims shortcut overrides and complete chords without competing
+shortcut objects. Popup replacement waits for chord release. Strict pointer
+targeting excludes foreign/Help windows and modal-blocked surfaces; unsupported
+authoring targets receive brief feedback without a focused-control fallback.
+Both shortcuts appear in the in-app Keyboard Shortcuts reference. Its Close
+action now uses the existing secondary role; no local colors or baseline
+exceptions were introduced.
+
+Verification:
+
+- Native Windows Qt 6.10.1: **129 passed, 1 skipped**, 89.84 seconds, across
+  explanation shortcuts, shortcut dialog, Help coordinator, inspection/search,
+  bundle and shortcut metadata regressions. Log:
+  `artifacts/krt89-pointer-final-native.log`.
+- The new tests distinguish focused A from pointer B; cover enabled/disabled
+  fields, associated/nested targets, menu actions and empty menu space, explicit
+  unsupported feedback, override ownership, auto-repeat, full-chord replacement,
+  Escape/F1/task links and modal/foreign/Help exclusions. Both shortcuts preserve
+  unfinished dates, Event/Entity Rich/Source F11 writing and nested modal teardown.
+  Existing popup command-isolation and active-operation regressions also pass.
+- Ruff and formatting, repository-wide mypy (479 source files), inspection,
+  visual, complexity and test-collection policies passed. Collection: 6572 total,
+  2104 `ci_fast`, 19 `smoke`. No collection or policy baseline was relaxed.
+- The only reviewed-symbol fingerprint updated is
+  `KeyboardShortcutsDialog.__init__`: the displayed shortcut metadata and Close
+  role changed, while its dismiss-only canonical explanation remains accurate.
+- Offline Help was regenerated after that inventory update. Strict Sphinx passed;
+  rendered usage guidance includes both distinct routes.
+- Assisted native captures: 24 PNGs across all six themes, using global QSS and
+  native palettes, with disabled pointer explanations, focused explanations,
+  unsupported feedback and the scrolled shortcut reference. Manifest:
+  `artifacts/krt89-pointer/native/presentation.json`. Representative dark/light
+  explanations, feedback and shortcut reference were visually inspected. Capture
+  settings were isolated; no world was loaded. Display: 96 DPI, DPR 1.0.
+
+These are automated native-input checks and assisted renders, not independent
+human workflow acceptance. The full fast suite, extracted package, scaled or
+multi-monitor displays and a new real-Chromium keyboard probe were not exercised
+in this follow-up. At that verification checkpoint, the later guided human review
+above had not yet occurred. KRT-89 stays In Progress while changes are uncommitted,
+with package/scaling acceptance in KRT-91.
+
+## Earlier curation and expansion evidence
+
 Implementation/review date: 2026-10-14. Source baseline:
 `32e391d206b0a4681eaf5b6dc930b377f4531a2e`. Local commit delivery was authorized
 on 2026-10-14 together with the KRT-88 test/acceptance follow-up. The resulting
@@ -98,7 +183,8 @@ truth or human usability. No full release/package, scaling, multi-monitor or
 independent workflow acceptance is claimed here; those remain KRT-91. Integrity
 gate expansion remains KRT-90.
 
-Manual scenario acceptance is still pending. The human reviewer should execute:
+At this earlier checkpoint, manual scenario acceptance was pending. The guided
+review above updates all three tasks; the original acceptance tasks were:
 
 1. Enter two events known only to 962, order one before the other and confirm that
    reopening preserves year-only precision without an invented month/day.
@@ -223,7 +309,8 @@ These are assisted native renders and automated checks. They do not establish
 independent human readability, all menu combinations, actual data-provider
 requests, native system dialogs, scaled displays, multi-monitor behavior or the
 full extracted package. Full-package/scaling/multi-monitor acceptance remains
-KRT-91. The three manual scenarios above remain unexecuted.
+KRT-91. At this capture checkpoint the three manual scenarios were unexecuted;
+see the later guided human review above for all three user-reported outcomes.
 
 ### Content review and maintenance limits
 

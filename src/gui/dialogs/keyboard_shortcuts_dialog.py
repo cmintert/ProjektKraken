@@ -129,6 +129,9 @@ class KeyboardShortcutsDialog(QDialog):
             content_layout,
             "General",
             [
+                ShortcutManager.HELP,
+                ShortcutManager.EXPLAIN_CONTROL,
+                ShortcutManager.EXPLAIN_FOCUSED_CONTROL,
                 ShortcutManager.DESELECT,
             ],
         )
@@ -154,7 +157,7 @@ class KeyboardShortcutsDialog(QDialog):
             "src-gui-dialogs-keyboard-shortcuts-dialog-keyboardshortcutsdialog-init-close-btn|workspace.navigation|help-inspect-src-gui-dialogs-keyboard-shortcuts-dialog-keyboardshortcutsdialog-init-close-btn",
         )
         close_btn.setMinimumWidth(100)
-        close_btn.setStyleSheet(StyleHelper.get_primary_button_style())
+        close_btn.setStyleSheet(StyleHelper.get_secondary_button_style())
         close_btn.clicked.connect(self.accept)
         button_layout.addWidget(close_btn)
         button_layout.addStretch()
