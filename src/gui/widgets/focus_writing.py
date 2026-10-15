@@ -429,11 +429,14 @@ class FocusWritingController(QObject):
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:  # noqa: N802
         """Exit on outside navigation while letting the event through."""
+        if self.active is None or self._restoring:
+            return False
+        if event.type() not in {QEvent.Type.KeyPress, QEvent.Type.MouseButtonPress}:
+            return False
+
         from src.gui.utils.help_context import owns_assistance_input
 
         if owns_assistance_input(watched):
-            return False
-        if self.active is None or self._restoring:
             return False
         if not shiboken6.isValid(self.window):
             return False

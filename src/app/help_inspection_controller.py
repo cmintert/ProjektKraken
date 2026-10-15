@@ -32,6 +32,29 @@ if TYPE_CHECKING:
     from src.app.coordinators.help_coordinator import HelpCoordinator
 
 
+_INSPECTION_EVENTS = frozenset(
+    {
+        QEvent.Type.KeyPress,
+        QEvent.Type.KeyRelease,
+        QEvent.Type.ShortcutOverride,
+        QEvent.Type.MouseMove,
+        QEvent.Type.MouseButtonPress,
+        QEvent.Type.MouseButtonRelease,
+        QEvent.Type.MouseButtonDblClick,
+        QEvent.Type.Wheel,
+        QEvent.Type.ContextMenu,
+        QEvent.Type.Hide,
+        QEvent.Type.Close,
+        QEvent.Type.DeferredDelete,
+        QEvent.Type.EnterWhatsThisMode,
+        QEvent.Type.LeaveWhatsThisMode,
+        QEvent.Type.QueryWhatsThis,
+        QEvent.Type.WhatsThis,
+        QEvent.Type.WhatsThisClicked,
+    }
+)
+
+
 class HelpInspectionController(QObject):
     """Handle Qt-native Help events and track their transient popup ownership."""
 
@@ -313,7 +336,7 @@ class HelpInspectionController(QObject):
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:  # noqa: N802
         """Dispatch explanation chords and retain Qt's native pointer inspection."""
-        if self._stopped:
+        if self._stopped or event.type() not in _INSPECTION_EVENTS:
             return False
         if isinstance(event, QKeyEvent) and self._explanation_shortcut(watched, event):
             return True

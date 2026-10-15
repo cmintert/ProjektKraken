@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-15
-**Commit:** 5e2a256f7fc0d6dab6171cf22159529395d61e88
+**Commit:** 1d42cf5d7370dd739b499572f99f043e3d3512f8
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-10-15)* **Startup performance (KRT-92)**: Skip unrelated Qt events
+  before global Help, shortcut and Focus writing handlers inspect widget ancestry.
+  This reduces the startup stall during world-theme restoration while preserving
+  existing Help routes and authoring behavior. Added regression coverage for
+  context lookups during theme-event floods.
 
 - *(2026-10-15)* **Control explanation shortcuts (KRT-89)**: Shift+F1 explains
   the supported control under the pointer without clicking or moving focus.

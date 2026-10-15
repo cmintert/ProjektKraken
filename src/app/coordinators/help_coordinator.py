@@ -414,6 +414,13 @@ class HelpCoordinator(QObject):
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:  # noqa: N802
         """Dispatch Help and detach modal companions before deferred deletion."""
+        # Theme/polish/paint events need no context lookup. Dialogs still receive
+        # lifecycle registration before their first input or deferred deletion.
+        if not isinstance(watched, QDialog) and event.type() not in {
+            QEvent.Type.KeyPress,
+            QEvent.Type.ShortcutOverride,
+        }:
+            return False
         if self._stopping or not self.belongs(watched):
             return False
         if isinstance(watched, QDialog):

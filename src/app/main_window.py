@@ -203,7 +203,7 @@ class GlobalShortcutFilter(QObject):
             True if the event was handled (consumed), False otherwise.
 
         """
-        if owns_assistance_input(obj) or event.type() != QEvent.Type.KeyPress:
+        if event.type() != QEvent.Type.KeyPress or owns_assistance_input(obj):
             return False
 
         key_event = cast(QKeyEvent, event)
