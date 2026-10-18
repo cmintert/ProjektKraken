@@ -9,9 +9,9 @@ import time
 import traceback
 from contextlib import suppress
 from copy import deepcopy
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, Optional
 
-from PySide6.QtCore import QObject, QPoint, QSize, Qt, Signal, Slot
+from PySide6.QtCore import QSize, Qt, Signal, Slot
 from PySide6.QtGui import QDropEvent, QTextCursor
 from PySide6.QtWidgets import (
     QFormLayout,
@@ -20,8 +20,6 @@ from PySide6.QtWidgets import (
     QInputDialog,
     QLabel,
     QLineEdit,
-    QListWidget,
-    QListWidgetItem,
     QMenu,
     QMessageBox,
     QScrollArea,
@@ -44,7 +42,6 @@ from src.core.temporal_entity_checkpoint import parse_temporal_entity_checkpoint
 from src.core.theme_manager import ThemeManager
 from src.gui.constants import (
     EDITOR_FORM_VERTICAL_SPACING,
-    EDITOR_LIST_SPACING,
     EDITOR_SECTION_SPACING,
 )
 from src.gui.mixins.autosave_mixin import AutoSaveManager
@@ -55,14 +52,12 @@ from src.gui.utils.suggestion_effects import apply_suggestion_effects
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.authoring_context_widget import AuthoringContextWidget
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
+from src.gui.widgets.connections_overview import ConnectionsOverview
 from src.gui.widgets.editor_presentation import DisclosureButton, EditorPresentation
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.gallery_widget import GalleryWidget
 from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
-from src.gui.widgets.relation_item_widget import (
-    RelationItemWidget,
-    relation_type_caption,
-)
+from src.gui.widgets.relation_authoring import RelationAuthoring
 from src.gui.widgets.relation_snapshots import distinct_relation_directions
 from src.gui.widgets.sheet_builder import SheetBuilderWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
@@ -104,6 +99,12 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
     temporal_save_requested = Signal(dict)
     discard_requested = Signal(str)
     inject_requested = Signal(dict)
+    connections: ConnectionsOverview
+    relation_authoring: RelationAuthoring
+    btn_add_rel: StandardButton
+    btn_edit_rel: StandardButton
+    btn_remove_rel: DestructiveButton
+
     add_relation_requested = Signal(str, str, str, dict, bool)
     remove_relation_requested = Signal(str)
     update_relation_requested = Signal(str, str, str, dict)
@@ -452,48 +453,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
     def _build_relations_tab(self) -> None:
         """Build relation actions and the relation list."""
         self.tab_relations = QWidget()
-        rel_layout = QVBoxLayout(self.tab_relations)
-        StyleHelper.apply_compact_spacing(rel_layout)
-        buttons = QHBoxLayout()
-        self.btn_add_rel = declare_inspection(
-            StandardButton("Connected to…"),
-            "src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-add-rel|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-add-rel",
-        )
-        self.btn_add_rel.clicked.connect(self._on_add_relation)
-        buttons.addWidget(self.btn_add_rel)
-        self.btn_edit_rel = declare_inspection(
-            StandardButton("Refine relation…"),
-            "src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-edit-rel|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-edit-rel",
-        )
-        self.btn_edit_rel.clicked.connect(self._on_edit_selected_relation)
-        self.btn_edit_rel.setEnabled(False)
-        buttons.addWidget(self.btn_edit_rel)
-        self.btn_remove_rel = declare_inspection(
-            DestructiveButton("Remove"),
-            "src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-remove-rel|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-remove-rel",
-        )
-        self.btn_remove_rel.clicked.connect(self._on_remove_selected_relation)
-        self.btn_remove_rel.setEnabled(False)
-        buttons.addWidget(self.btn_remove_rel)
-        buttons.addStretch()
-        rel_layout.addLayout(buttons)
-        from src.gui.widgets.relation_authoring import RelationAuthoring
+        from src.gui.widgets.connections_inspector import install_connections
 
-        self.relation_authoring = RelationAuthoring(self)
-        rel_layout.addWidget(self.relation_authoring)
-
-        self.rel_list = declare_inspection(
-            QListWidget(),
-            "src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-rel-list|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-rel-list",
-        )
-        self.rel_list.setSpacing(EDITOR_LIST_SPACING)
-        self.rel_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.rel_list.customContextMenuRequested.connect(self._show_rel_menu)
-        self.rel_list.itemDoubleClicked.connect(self._on_edit_relation)
-        self.rel_list.itemSelectionChanged.connect(self._update_relation_button_states)
-        self.rel_list.viewport().installEventFilter(self)
-        self.rel_list.setProperty("_relation_list_widget", True)
-        rel_layout.addWidget(self.rel_list)
+        install_connections(self, "entity")
         self.inspector.add_tab(
             self.tab_relations,
             "Relations",
@@ -1111,52 +1073,12 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             relations, incoming_relations
         )
         self.relation_authoring.remember_selection()
-        self.rel_list.clear()
-
-        this_name = self.name_edit.text() or "this"
-
-        if relations:
-            for rel in relations:
-                target_display = rel.get("target_name") or rel["target_id"]
-                label = f"{this_name} --{relation_type_caption(rel['rel_type'])}--> {target_display}"
-
-                widget = RelationItemWidget(
-                    label=label,
-                    target_id=rel["target_id"],
-                    target_name=target_display,
-                    attributes=cast(dict[str, Any], rel.get("attributes")),
-                )
-                widget.go_to_clicked.connect(
-                    lambda tid, tn: self.navigate_to_relation.emit(tid)
-                )
-
-                item = QListWidgetItem()
-                item.setData(Qt.ItemDataRole.UserRole, rel)
-                item.setSizeHint(QSize(200, 36))
-                self.rel_list.addItem(item)
-                self.rel_list.setItemWidget(item, widget)
-
-        if incoming_relations:
-            for rel in incoming_relations:
-                source_display = rel.get("source_name") or rel["source_id"]
-                label = f"{source_display} --{relation_type_caption(rel['rel_type'])}--> {this_name}"
-
-                widget = RelationItemWidget(
-                    label=label,
-                    target_id=rel["source_id"],
-                    target_name=source_display,
-                    attributes=cast(dict[str, Any], rel.get("attributes")),
-                )
-                widget.go_to_clicked.connect(
-                    lambda tid, tn: self.navigate_to_relation.emit(tid)
-                )
-
-                item = QListWidgetItem()
-                item.setData(Qt.ItemDataRole.UserRole, rel)
-                item.setSizeHint(QSize(200, 36))
-                self.rel_list.addItem(item)
-                self.rel_list.setItemWidget(item, widget)
-
+        self.connections.set_relations(
+            relations or [],
+            incoming_relations or [],
+            self._current_entity_id or "",
+            self.name_edit.text(),
+        )
         # Timeline should only show relations from events, not entity-to-entity relations
         event_relations = [
             rel
@@ -1314,7 +1236,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self.summary_widget.clear_summary()
         self.name_edit.clear()
         self.desc_edit.clear()
-        self.rel_list.clear()
+        self.connections.set_relations([], [], "", "")
         self._content_widget.hide()
         self._empty_state.show()
 
@@ -1322,6 +1244,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         """Receive timeline context independently of editor draft time."""
         self._relation_playhead_time = time
         self._relation_calendar = converter
+        self.connections.set_time_context(time, converter)
 
     @Slot()
     def _on_add_relation(self, rel_type: Any = "related") -> None:
@@ -1365,51 +1288,24 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
                     is_bidirectional,
                 )
 
-    def _show_rel_menu(self, pos: QPoint) -> None:
-        """Shows a context menu for relation items.
-
-        Args:
-            pos (QPoint): The position where the menu should appear.
-
-        """
-        item = self.rel_list.itemAt(pos)
-        if not item:
-            return
-        menu = declare_inspection(
-            QMenu(self),
-            "src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-menu|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-menu",
-        )
-        edit_action = declare_inspection(
-            menu.addAction("Edit"),
-            "src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-edit-action|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-edit-action",
-        )
-        remove_action = declare_inspection(
-            menu.addAction("Remove"),
-            "src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-remove-action|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-remove-action",
-        )
-        rel_data = item.data(Qt.ItemDataRole.UserRole) or {}
-        is_automatic = rel_data.get("rel_type") == "mentions"
-        edit_action.setEnabled(not is_automatic)
-        remove_action.setEnabled(not is_automatic)
-        action = menu.exec(self.rel_list.mapToGlobal(pos))
-        if action == remove_action:
-            self._on_remove_relation_item(item)
-        elif action == edit_action:
-            self._on_edit_relation(item)
-        menu.deleteLater()
-
-    def _on_remove_relation_item(self, item: QListWidgetItem) -> None:
+    def _on_remove_relation_item(self, item: dict[str, Any]) -> None:
         """Handles removing a relation item.
 
         Args:
             item (QListWidgetItem): The relation item to remove.
 
         """
-        rel_data = item.data(Qt.ItemDataRole.UserRole)
+        rel_data = item
         if rel_data.get("rel_type") == "mentions":
             return
-        target_id = rel_data.get("target_id", "?")
-        target_name = rel_data.get("target_name", target_id)
+        outgoing = (
+            rel_data.get("source_id", self._current_entity_id)
+            == self._current_entity_id
+        )
+        endpoint = "target" if outgoing else "source"
+        target_name = rel_data.get(f"{endpoint}_name") or rel_data.get(
+            f"{endpoint}_id", "?"
+        )
 
         confirm = QMessageBox.question(
             self,
@@ -1420,19 +1316,19 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         if confirm == QMessageBox.StandardButton.Yes:
             self.remove_relation_requested.emit(rel_data["id"])
 
-    @Slot(QListWidgetItem)
-    def _on_edit_relation(self, item: QListWidgetItem) -> None:
+    @Slot(dict)
+    def _on_edit_relation(self, item: dict[str, Any]) -> None:
         """Refine the same saved connection inside this inspector."""
-        self.relation_authoring.refine(item.data(Qt.ItemDataRole.UserRole))
+        self.relation_authoring.refine(item)
 
-    def _on_edit_relation_full(self, item: QListWidgetItem) -> None:
+    def _on_edit_relation_full(self, item: dict[str, Any]) -> None:
         """Handles editing a relation item.
 
         Args:
             item (QListWidgetItem): The relation item to edit.
 
         """
-        rel_data = item.data(Qt.ItemDataRole.UserRole)
+        rel_data = item
         if rel_data.get("rel_type") == "mentions":
             return
 
@@ -1465,59 +1361,17 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
     @Slot()
     def _on_edit_selected_relation(self) -> None:
-        """Handles editing the currently selected relation."""
-        if item := self.rel_list.currentItem():
-            self._on_edit_relation(item)
+        """Open the explicitly selected connection."""
+        self.connections.edit_selected()
 
     @Slot()
     def _on_remove_selected_relation(self) -> None:
-        """Handles removing the currently selected relation."""
-        if item := self.rel_list.currentItem():
-            self._on_remove_relation_item(item)
+        """Remove through the shared selection and draft guard."""
+        self.connections.remove_selected()
 
     def _update_relation_button_states(self) -> None:
-        """Updates enabled states for Edit and Remove buttons based on selection."""
-        selected = self.rel_list.selectedItems()
-        is_editable = bool(selected) and (
-            selected[0].data(Qt.ItemDataRole.UserRole).get("rel_type") != "mentions"
-        )
-        self.btn_edit_rel.setEnabled(is_editable)
-        self.btn_remove_rel.setEnabled(is_editable)
-
-    def eventFilter(self, obj: QObject, event: Any) -> bool:
-        """Event filter to handle clicks on empty space in relation lists."""
-        from PySide6.QtCore import QEvent
-        from PySide6.QtGui import QMouseEvent
-
-        try:
-            # Check if this is a mouse press on a relation list viewport
-            if (
-                isinstance(event, QMouseEvent)
-                and event.type() == QEvent.Type.MouseButtonPress
-            ):
-                if event.button() == Qt.MouseButton.LeftButton:
-                    # Find the list widget this viewport belongs to
-                    parent = obj.parent()
-                    if isinstance(parent, QListWidget) and parent.property(
-                        "_relation_list_widget"
-                    ):
-                        # Get the item at the click position
-                        item = parent.itemAt(event.pos())
-
-                        if item is None:
-                            # Clicked on empty space - clear selection
-                            parent.clearSelection()
-                            parent.setCurrentItem(cast(QListWidgetItem, None))
-                            return False  # Let Qt handle the event normally
-                        elif item.isSelected():
-                            # Clicked on already-selected item - deselect it
-                            parent.clearSelection()
-                            parent.setCurrentItem(cast(QListWidgetItem, None))
-                            return True  # Prevent re-selection
-        except RuntimeError:
-            return False
-
-        return super().eventFilter(obj, event)
+        """Refresh shared selection actions."""
+        self.connections._update_summary()
 
     def get_generation_context(self) -> Dict[str, Any]:
         """Get context for LLM generation.
@@ -2109,10 +1963,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self.tag_editor.setEnabled(not readonly)
 
         # Disable Relation buttons (viewing relations is still fine)
-        self.btn_add_rel.setEnabled(not readonly)
+        self.connections.set_editable(not readonly)
         self.relation_authoring.setEnabled(not readonly)
-        self.btn_edit_rel.setEnabled(not readonly)
-        self.btn_remove_rel.setEnabled(not readonly)
 
         # Disable Save/Discard
         self.btn_save.setEnabled(not readonly)

@@ -138,9 +138,6 @@ class EditorInspectorComposition:
                 1, "Sheet (split)" if detached else "Sheet"
             )
         )
-        from src.gui.widgets.responsive_form import scroll_section_contents
-
-        self.connections_scroll = scroll_section_contents(content.connections)
         for widget, title, section_id, tooltip in (
             (
                 content.overview,

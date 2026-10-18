@@ -3402,16 +3402,6 @@
       "kind": "QMenu"
     },
     {
-      "id": "src-gui-widgets-editor-presentation-editorpresentation-install-action-rows-disclosure",
-      "topic_id": "writing.focus",
-      "target": "help-inspect-src-gui-widgets-editor-presentation-editorpresentation-install-action-rows-disclosure",
-      "source": "src/gui/widgets/editor_presentation.py",
-      "symbol": "EditorPresentation._install_action_rows",
-      "binding": "disclosure",
-      "label": "disclosure",
-      "kind": "DisclosureButton"
-    },
-    {
       "id": "src-gui-widgets-empty-state-widget-emptystatewidget-add-action-button",
       "topic_id": "workspace.navigation",
       "target": "help-inspect-src-gui-widgets-empty-state-widget-emptystatewidget-add-action-button",
@@ -3532,46 +3522,6 @@
       "kind": "ScrollSafeComboBox"
     },
     {
-      "id": "src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-add-rel",
-      "topic_id": "authoring.details",
-      "target": "help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-add-rel",
-      "source": "src/gui/widgets/entity_editor.py",
-      "symbol": "EntityEditorWidget._build_relations_tab",
-      "binding": "self.btn_add_rel",
-      "label": "Connected to\u2026",
-      "kind": "StandardButton"
-    },
-    {
-      "id": "src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-edit-rel",
-      "topic_id": "authoring.details",
-      "target": "help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-edit-rel",
-      "source": "src/gui/widgets/entity_editor.py",
-      "symbol": "EntityEditorWidget._build_relations_tab",
-      "binding": "self.btn_edit_rel",
-      "label": "Refine relation\u2026",
-      "kind": "StandardButton"
-    },
-    {
-      "id": "src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-remove-rel",
-      "topic_id": "authoring.details",
-      "target": "help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-remove-rel",
-      "source": "src/gui/widgets/entity_editor.py",
-      "symbol": "EntityEditorWidget._build_relations_tab",
-      "binding": "self.btn_remove_rel",
-      "label": "Remove",
-      "kind": "DestructiveButton"
-    },
-    {
-      "id": "src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-rel-list",
-      "topic_id": "authoring.details",
-      "target": "help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-rel-list",
-      "source": "src/gui/widgets/entity_editor.py",
-      "symbol": "EntityEditorWidget._build_relations_tab",
-      "binding": "self.rel_list",
-      "label": "rel_list",
-      "kind": "QListWidget"
-    },
-    {
       "id": "src-gui-widgets-entity-editor-entityeditorwidget-build-action-buttons-self-btn-save",
       "topic_id": "authoring.details",
       "target": "help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-action-buttons-self-btn-save",
@@ -3590,36 +3540,6 @@
       "binding": "self.btn_discard",
       "label": "Discard",
       "kind": "StandardButton"
-    },
-    {
-      "id": "src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-menu",
-      "topic_id": "authoring.details",
-      "target": "help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-menu",
-      "source": "src/gui/widgets/entity_editor.py",
-      "symbol": "EntityEditorWidget._show_rel_menu",
-      "binding": "menu",
-      "label": "menu",
-      "kind": "QMenu"
-    },
-    {
-      "id": "src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-edit-action",
-      "topic_id": "authoring.details",
-      "target": "help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-edit-action",
-      "source": "src/gui/widgets/entity_editor.py",
-      "symbol": "EntityEditorWidget._show_rel_menu",
-      "binding": "edit_action",
-      "label": "Edit",
-      "kind": "addAction"
-    },
-    {
-      "id": "src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-remove-action",
-      "topic_id": "authoring.details",
-      "target": "help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-remove-action",
-      "source": "src/gui/widgets/entity_editor.py",
-      "symbol": "EntityEditorWidget._show_rel_menu",
-      "binding": "remove_action",
-      "label": "Remove",
-      "kind": "addAction"
     },
     {
       "id": "src-gui-widgets-entity-editor-entityeditorwidget-new-attribute-destination-baseline",
@@ -3862,46 +3782,6 @@
       "kind": "StandardButton"
     },
     {
-      "id": "src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-add",
-      "topic_id": "authoring.details",
-      "target": "help-inspect-src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-add",
-      "source": "src/gui/widgets/event_editor.py",
-      "symbol": "EventEditorWidget.create_section",
-      "binding": "btn_add",
-      "label": "+",
-      "kind": "StandardButton"
-    },
-    {
-      "id": "src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-edit",
-      "topic_id": "authoring.details",
-      "target": "help-inspect-src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-edit",
-      "source": "src/gui/widgets/event_editor.py",
-      "symbol": "EventEditorWidget.create_section",
-      "binding": "btn_edit",
-      "label": "Edit",
-      "kind": "StandardButton"
-    },
-    {
-      "id": "src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-remove",
-      "topic_id": "authoring.details",
-      "target": "help-inspect-src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-remove",
-      "source": "src/gui/widgets/event_editor.py",
-      "symbol": "EventEditorWidget.create_section",
-      "binding": "btn_remove",
-      "label": "Remove",
-      "kind": "DestructiveButton"
-    },
-    {
-      "id": "src-gui-widgets-event-editor-eventeditorwidget-create-section-lst",
-      "topic_id": "authoring.details",
-      "target": "help-inspect-src-gui-widgets-event-editor-eventeditorwidget-create-section-lst",
-      "source": "src/gui/widgets/event_editor.py",
-      "symbol": "EventEditorWidget.create_section",
-      "binding": "lst",
-      "label": "lst",
-      "kind": "QListWidget"
-    },
-    {
       "id": "src-gui-widgets-event-editor-eventeditorwidget-populate-inject-menu-action-dialog",
       "topic_id": "authoring.details",
       "target": "help-inspect-src-gui-widgets-event-editor-eventeditorwidget-populate-inject-menu-action-dialog",
@@ -3919,36 +3799,6 @@
       "symbol": "EventEditorWidget._populate_inject_menu",
       "binding": "action_save_tmpl",
       "label": "Save Selection as Template...",
-      "kind": "addAction"
-    },
-    {
-      "id": "src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-menu",
-      "topic_id": "authoring.details",
-      "target": "help-inspect-src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-menu",
-      "source": "src/gui/widgets/event_editor.py",
-      "symbol": "EventEditorWidget._show_rel_menu",
-      "binding": "menu",
-      "label": "menu",
-      "kind": "QMenu"
-    },
-    {
-      "id": "src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-edit-action",
-      "topic_id": "authoring.details",
-      "target": "help-inspect-src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-edit-action",
-      "source": "src/gui/widgets/event_editor.py",
-      "symbol": "EventEditorWidget._show_rel_menu",
-      "binding": "edit_action",
-      "label": "Edit",
-      "kind": "addAction"
-    },
-    {
-      "id": "src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-remove-action",
-      "topic_id": "authoring.details",
-      "target": "help-inspect-src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-remove-action",
-      "source": "src/gui/widgets/event_editor.py",
-      "symbol": "EventEditorWidget._show_rel_menu",
-      "binding": "remove_action",
-      "label": "Remove",
       "kind": "addAction"
     },
     {
@@ -9010,8 +8860,7 @@
       "binding": "self.view",
       "label": "View",
       "kind": "TimelineView"
-    }
-    ,
+    },
     {
       "id": "workspace.show-panel",
       "topic_id": "workspace.navigation",
@@ -9161,6 +9010,76 @@
       "binding": "raster.brush-opacity",
       "label": "Brush opacity",
       "kind": "semantic control/action"
+    },
+    {
+      "id": "connections-connect",
+      "topic_id": "relations.create",
+      "target": "help-connections-connect",
+      "source": "src/gui/widgets/connections_overview.py",
+      "symbol": "ConnectionsOverview.__init__",
+      "binding": "connect",
+      "label": "Connect",
+      "kind": "StandardButton"
+    },
+    {
+      "id": "connections-search",
+      "topic_id": "relations.create",
+      "target": "help-connections-search",
+      "source": "src/gui/widgets/connections_overview.py",
+      "symbol": "ConnectionsOverview.__init__",
+      "binding": "search",
+      "label": "Find a connection",
+      "kind": "QLineEdit"
+    },
+    {
+      "id": "connections-filters",
+      "topic_id": "relations.create",
+      "target": "help-connections-filters",
+      "source": "src/gui/widgets/connections_overview.py",
+      "symbol": "ConnectionsOverview.__init__",
+      "binding": "filters",
+      "label": "Filters",
+      "kind": "PhosphorToolMenuButton"
+    },
+    {
+      "id": "connections-overview",
+      "topic_id": "relations.create",
+      "target": "help-connections-overview",
+      "source": "src/gui/widgets/connections_overview.py",
+      "symbol": "ConnectionsOverview.__init__",
+      "binding": "overview",
+      "label": "Connections overview",
+      "kind": "QTreeView"
+    },
+    {
+      "id": "connections-edit",
+      "topic_id": "relations.create",
+      "target": "help-connections-edit",
+      "source": "src/gui/widgets/connections_overview.py",
+      "symbol": "ConnectionsOverview.__init__",
+      "binding": "edit",
+      "label": "Edit",
+      "kind": "StandardButton"
+    },
+    {
+      "id": "connections-navigate",
+      "topic_id": "relations.create",
+      "target": "help-connections-navigate",
+      "source": "src/gui/widgets/connections_overview.py",
+      "symbol": "ConnectionsOverview.__init__",
+      "binding": "navigate",
+      "label": "Go to connected entry",
+      "kind": "StandardButton"
+    },
+    {
+      "id": "connections-remove",
+      "topic_id": "relations.create",
+      "target": "help-connections-remove",
+      "source": "src/gui/widgets/connections_overview.py",
+      "symbol": "ConnectionsOverview.__init__",
+      "binding": "remove",
+      "label": "Remove",
+      "kind": "DestructiveButton"
     }
   ],
   "factory_exemptions": [
@@ -12079,8 +11998,8 @@
     {
       "source": "src/gui/widgets/editor_presentation.py",
       "symbol": "EditorPresentation._install_action_rows",
-      "sha256": "d5edbcad0dde269ffd52b164e4957015021d1bb3895bfae9acded976ae852812",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "6f8a1ca7c714ebb430586219c8afb9ceb8fa7e3d39908b8c4607eec7915f042d",
+      "review_note": "KRT-93: reviewed shared browser extraction, UUID-based guarded selection, and subordinate draft layout. Existing command, confirmation, direction and timing explanations remain applicable; browser explanations replace removed list controls."
     },
     {
       "source": "src/gui/widgets/editor_presentation.py",
@@ -12145,8 +12064,8 @@
     {
       "source": "src/gui/widgets/entity_editor.py",
       "symbol": "EntityEditorWidget._build_relations_tab",
-      "sha256": "d1460bfae4681721218e7aa9e9d3a43c1a3f1ea7afcc4c8ad9720bfa3425e2a2",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "84cb4c877576acb749f7e307f4d55a82d6f8c457beec13d6ff977a02d378186f",
+      "review_note": "KRT-93: reviewed shared browser extraction, UUID-based guarded selection, and subordinate draft layout. Existing command, confirmation, direction and timing explanations remain applicable; browser explanations replace removed list controls."
     },
     {
       "source": "src/gui/widgets/entity_editor.py",
@@ -12193,26 +12112,26 @@
     {
       "source": "src/gui/widgets/entity_editor.py",
       "symbol": "EntityEditorWidget._on_edit_relation",
-      "sha256": "8d1e2899566a7a4b3f2d8e809e3ae91f545d1b4948050403e90925a05dd02f80",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "e521eb1118e60358ff36c5fda677c09660545491af13003369c7a6e9f5d35bfe",
+      "review_note": "KRT-93: reviewed shared browser extraction, UUID-based guarded selection, and subordinate draft layout. Existing command, confirmation, direction and timing explanations remain applicable; browser explanations replace removed list controls."
     },
     {
       "source": "src/gui/widgets/entity_editor.py",
       "symbol": "EntityEditorWidget._on_edit_selected_relation",
-      "sha256": "b228bbdd3005968434d83a21ff0d063eec2901c7d1c4b1d5d1576df7644a3e90",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "e6b4c8084347a801a7c553dc7bd56efc7fe7219a7b6bd62dd792b03ac8f64d91",
+      "review_note": "KRT-93: reviewed shared browser extraction, UUID-based guarded selection, and subordinate draft layout. Existing command, confirmation, direction and timing explanations remain applicable; browser explanations replace removed list controls."
     },
     {
       "source": "src/gui/widgets/entity_editor.py",
       "symbol": "EntityEditorWidget._on_remove_relation_item",
-      "sha256": "19c86857e32547839ec73637ed1285dbfeb2a4b5b353e2fc712d5a8f131bbb3d",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "2b83f684b95af9b282ac170acdcf0e8b43f58b20b67ed4e3b8713ad2174dd74b",
+      "review_note": "KRT-93 Stage 1 review: shared UUID browser and guarded actions replace list-specific controls. Draft guidance is subordinate; errors stay visible, and collapsed drafts retain values. Header shows the canonical assertion. Existing direction/timing/command explanations remain accurate; new browser explanations cover search, filters, selection and read-only References."
     },
     {
       "source": "src/gui/widgets/entity_editor.py",
       "symbol": "EntityEditorWidget._on_remove_selected_relation",
-      "sha256": "8d53a81b0a5663feae8616523fc3a708e24fb9e4dc33145cbe8294ab26260351",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "7480d3bd9dbf06dc8edcf11f5652190a02d831c94176f0427924bee4697e8e33",
+      "review_note": "KRT-93: reviewed shared browser extraction, UUID-based guarded selection, and subordinate draft layout. Existing command, confirmation, direction and timing explanations remain applicable; browser explanations replace removed list controls."
     },
     {
       "source": "src/gui/widgets/entity_editor.py",
@@ -12282,12 +12201,6 @@
     },
     {
       "source": "src/gui/widgets/entity_editor.py",
-      "symbol": "EntityEditorWidget._show_rel_menu",
-      "sha256": "1976fb033fda10dfaf94c91f6e13e1ed0db9cfa3d45ec782623a94b1441964f7",
-      "review_note": "KRT-89: relation menu now has its Entity editor as explicit owner and is deleted after dispatch. Existing edit/remove intents and automatic-mention guards are unchanged."
-    },
-    {
-      "source": "src/gui/widgets/entity_editor.py",
       "symbol": "EntityEditorWidget._start_new_description",
       "sha256": "9ce048e376d7a5f40ab7d25f111f469f7c47d990286831d2185786c89b0805b2",
       "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
@@ -12301,8 +12214,8 @@
     {
       "source": "src/gui/widgets/entity_editor.py",
       "symbol": "EntityEditorWidget._update_relation_button_states",
-      "sha256": "22c53e7dfd9f954a5c64f79df85a5027c40aa9ac2454ec8d4812f9ca0f62baaa",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "68fe81d102abe5dd2209e626f4d1040f4fedee0a26b9072c71e06e785ed6229b",
+      "review_note": "KRT-93: reviewed shared browser extraction, UUID-based guarded selection, and subordinate draft layout. Existing command, confirmation, direction and timing explanations remain applicable; browser explanations replace removed list controls."
     },
     {
       "source": "src/gui/widgets/entity_list.py",
@@ -12403,8 +12316,8 @@
     {
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget._on_edit_relation",
-      "sha256": "8d1e2899566a7a4b3f2d8e809e3ae91f545d1b4948050403e90925a05dd02f80",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "e521eb1118e60358ff36c5fda677c09660545491af13003369c7a6e9f5d35bfe",
+      "review_note": "KRT-93: reviewed shared browser extraction, UUID-based guarded selection, and subordinate draft layout. Existing command, confirmation, direction and timing explanations remain applicable; browser explanations replace removed list controls."
     },
     {
       "source": "src/gui/widgets/event_editor.py",
@@ -12415,8 +12328,8 @@
     {
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget._on_remove_relation_item",
-      "sha256": "86eafe723eb13139b7934fd46417db62df56f493cb65b78ceb6d24ff80de132f",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "7b6b65aae3bcf7e69ca55645eefeecd1d654709b3ec00d1208025c961bacba17",
+      "review_note": "KRT-93 Stage 1 review: shared UUID browser and guarded actions replace list-specific controls. Draft guidance is subordinate; errors stay visible, and collapsed drafts retain values. Header shows the canonical assertion. Existing direction/timing/command explanations remain accurate; new browser explanations cover search, filters, selection and read-only References."
     },
     {
       "source": "src/gui/widgets/event_editor.py",
@@ -12451,8 +12364,8 @@
     {
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget._on_theme_changed",
-      "sha256": "f8e5b530d25798df22e4d404903a6d7149a6040a94fb9af754d95ef8b1811e51",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "ec3ec019f1407ce4bc537711db929054a6a1a0d3263838a7c634dc40d63f7e1c",
+      "review_note": "KRT-93: reviewed shared browser extraction, UUID-based guarded selection, and subordinate draft layout. Existing command, confirmation, direction and timing explanations remain applicable; browser explanations replace removed list controls."
     },
     {
       "source": "src/gui/widgets/event_editor.py",
@@ -12480,12 +12393,6 @@
     },
     {
       "source": "src/gui/widgets/event_editor.py",
-      "symbol": "EventEditorWidget._show_rel_menu",
-      "sha256": "f88236ef3b3aa5ecbaa41bb62f4041901fc73db4e0b5ec0ed2a8732a5289451b",
-      "review_note": "KRT-89: relation menu now has its Event editor as explicit owner and is deleted after dispatch. Edit/remove intents and automatic-mention guards remain unchanged."
-    },
-    {
-      "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget._show_temporal_evidence_summary",
       "sha256": "af1e001d9dc148f038be0164e32408b2f4b5da01ae1f4ed790db2f25d798b72a",
       "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
@@ -12501,12 +12408,6 @@
       "symbol": "EventEditorWidget.begin_save",
       "sha256": "c9a5ff3d8071373992d40243287770da48f4440c8d5001cf1a09196b6c830ac2",
       "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
-    },
-    {
-      "source": "src/gui/widgets/event_editor.py",
-      "symbol": "EventEditorWidget.create_section",
-      "sha256": "ec9460948b0f55e14cddd1cb36f60fb3c0c55dd1a98ae903878d22c3dddb38e7",
-      "review_note": "Initial code-grounded inspection declaration and canonical explanation audit for KRT-89."
     },
     {
       "source": "src/gui/widgets/event_editor.py",
@@ -14983,14 +14884,14 @@
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring.__init__",
-      "sha256": "f03dbb391338ecc65bc31226315a5e9cabfa7343e4d0c8e613be768ff9e22806",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "2ff0c65c6d8ddda01e7b4ea26b7279ba7a22bc0191ba1878194dbab75a874d40",
+      "review_note": "KRT-93 owner refinements: Meaning is one editable dropdown with stable-key suggestion data and deliberate free phrases; no Custom field. The editor heading is plain text within a neutral frame. Scrollbars refresh with the theme. Edit shares the selection row; guarded navigation/removal remain under More actions. Updated task/control explanations describe these behaviors."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._actions",
-      "sha256": "9a62632f39888c4911c72ce07d22de5c64f7f28c84906a82d58278d5541cd19b",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "ebd3d3bef7e22e226fe47d8814c622cf42e321d8a640074639069c5055c287ea",
+      "review_note": "KRT-93: reviewed shared browser extraction, UUID-based guarded selection, and subordinate draft layout. Existing command, confirmation, direction and timing explanations remain applicable; browser explanations replace removed list controls."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
@@ -15001,8 +14902,8 @@
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._apply_theme",
-      "sha256": "b09d0f05431272da78bf32016e47a4381747a36139d8fb3aa8a2142b0d92746f",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "838af076a9ac34f46f66612e371600e378d1cd8c38bdab25d40fa49203668a1e",
+      "review_note": "KRT-93 owner refinements: Meaning is one editable dropdown with stable-key suggestion data and deliberate free phrases; no Custom field. The editor heading is plain text within a neutral frame. Scrollbars refresh with the theme. Edit shares the selection row; guarded navigation/removal remain under More actions. Updated task/control explanations describe these behaviors."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
@@ -15013,8 +14914,8 @@
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._clear_body",
-      "sha256": "fdb5bb78e24d35944885140de86621b22fd90ab7cb1854d5f9e75c9e584870aa",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "bb0b336a857651733060883261e6b3a4d77bac2bb72bfeb78ec8a2ac1c1501d8",
+      "review_note": "KRT-93 Stage 1 review: shared UUID browser and guarded actions replace list-specific controls. Draft guidance is subordinate; errors stay visible, and collapsed drafts retain values. Header shows the canonical assertion. Existing direction/timing/command explanations remain accurate; new browser explanations cover search, filters, selection and read-only References."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
@@ -15025,38 +14926,32 @@
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._edit_full",
-      "sha256": "56ed1a7348779cd449bc6ebc5516efd2521406bf5830c1a1f4b94fa531ca6712",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
-    },
-    {
-      "source": "src/gui/widgets/relation_authoring.py",
-      "symbol": "RelationAuthoring._lists",
-      "sha256": "255ff79403f8e9f27e2c65f3835f5135b98f9e7cd8a0f487992d42108f20c08c",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "70b12a8bea5816da5581d6e16eb22b95b1058ba5210d8168db3e9536af5a9f5c",
+      "review_note": "KRT-93: reviewed shared browser extraction, UUID-based guarded selection, and subordinate draft layout. Existing command, confirmation, direction and timing explanations remain applicable; browser explanations replace removed list controls."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._meaning_changed",
-      "sha256": "bc52fb4e354c382d04169fba6449adcaeee7bf4a43d86b4cb65d4add98d035b1",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "4794bf3be36eaa6339f429b8bbefe6c0f636173116965d004787b22776149428",
+      "review_note": "KRT-93 owner refinements: Meaning is one editable dropdown with stable-key suggestion data and deliberate free phrases; no Custom field. The editor heading is plain text within a neutral frame. Scrollbars refresh with the theme. Edit shares the selection row; guarded navigation/removal remain under More actions. Updated task/control explanations describe these behaviors."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._preview",
-      "sha256": "24ebf1f976b6f6ee8e655fec4958d3da87de20897860e25aae81f36b119b4484",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "e78a6aaa36eb4b3ad0440a60fff07c449dd0e367c05fb96a04581c3f10f97df4",
+      "review_note": "KRT-93 Stage 1 review: shared UUID browser and guarded actions replace list-specific controls. Draft guidance is subordinate; errors stay visible, and collapsed drafts retain values. Header shows the canonical assertion. Existing direction/timing/command explanations remain accurate; new browser explanations cover search, filters, selection and read-only References."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._progressive_form",
-      "sha256": "91fee4d4d9c5d8f9fba648c11c8fe0ed9fbcb2263246345930ee3c7af59f57c7",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "11b898a04ec4998014e8d605c9e7e3b41549af0645c681aa1828409b328714d5",
+      "review_note": "KRT-93 owner refinements: Meaning is one editable dropdown with stable-key suggestion data and deliberate free phrases; no Custom field. The editor heading is plain text within a neutral frame. Scrollbars refresh with the theme. Edit shares the selection row; guarded navigation/removal remain under More actions. Updated task/control explanations describe these behaviors."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._reverse",
-      "sha256": "d266f4a8095d6270503a9e0b71b1b9fa3cbf68c2badc2d24718aae581f68c572",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "5b98f05021b07de0be43bccdb3906d9616a9c1e4a3af9d200bb4fa42d752e6e9",
+      "review_note": "KRT-93 Stage 1 review: shared UUID browser and guarded actions replace list-specific controls. Draft guidance is subordinate; errors stay visible, and collapsed drafts retain values. Header shows the canonical assertion. Existing direction/timing/command explanations remain accurate; new browser explanations cover search, filters, selection and read-only References."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
@@ -15079,20 +14974,20 @@
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring.apply",
-      "sha256": "61fa9518edabc1f29fa1a13ec92830621ee1dde25b84609fa8028be7bb385c1f",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "d01cb1527888a91c4f67fe50e196f65516901c4369744965e22a60697584461d",
+      "review_note": "KRT-93 owner refinements: Meaning is one editable dropdown with stable-key suggestion data and deliberate free phrases; no Custom field. The editor heading is plain text within a neutral frame. Scrollbars refresh with the theme. Edit shares the selection row; guarded navigation/removal remain under More actions. Updated task/control explanations describe these behaviors."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring.cancel",
-      "sha256": "04900e3a58dc6325796b920d682fd1a8c2a0514f1d56d74375ab5d8adaf47494",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "1539fb84632531ff06324a790e7e825ac9dbc922174e830483605be180afb80d",
+      "review_note": "KRT-93 owner refinements: Meaning is one editable dropdown with stable-key suggestion data and deliberate free phrases; no Custom field. The editor heading is plain text within a neutral frame. Scrollbars refresh with the theme. Edit shares the selection row; guarded navigation/removal remain under More actions. Updated task/control explanations describe these behaviors."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring.capture",
-      "sha256": "9b80fd330eabcae42e3a1af886b24fbe60190d40ca589103bccc5f6d1f74031d",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "d5edeb05e1cad7ba0534fbebedc3864cd051606aa0e269f56aa036a7c887ad17",
+      "review_note": "KRT-93 Stage 1 review: shared UUID browser and guarded actions replace list-specific controls. Draft guidance is subordinate; errors stay visible, and collapsed drafts retain values. Header shows the canonical assertion. Existing direction/timing/command explanations remain accurate; new browser explanations cover search, filters, selection and read-only References."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
@@ -15103,20 +14998,20 @@
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring.prepare_to_leave",
-      "sha256": "7db472aa5b1c58850bf77a397ea75157bec6e5ab78c5c6007ad10a8dd82890b8",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "73f5cdff9c44425cb26978a13b301ac3319c909ce0403e1f33147b7b1580ce5b",
+      "review_note": "KRT-93 Stage 1 review: shared UUID browser and guarded actions replace list-specific controls. Draft guidance is subordinate; errors stay visible, and collapsed drafts retain values. Header shows the canonical assertion. Existing direction/timing/command explanations remain accurate; new browser explanations cover search, filters, selection and read-only References."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring.resolve_drop",
-      "sha256": "48d3e836989c276a05c772914a2c5d292b979d600d5864a6fb8f2da289223fe0",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "934b5e2adb40f51c1d5aeddadcd5fcb3955de0369aa850c84e27381f487d4ba6",
+      "review_note": "KRT-93 Stage 1 review: shared UUID browser and guarded actions replace list-specific controls. Draft guidance is subordinate; errors stay visible, and collapsed drafts retain values. Header shows the canonical assertion. Existing direction/timing/command explanations remain accurate; new browser explanations cover search, filters, selection and read-only References."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring.stage_drop",
-      "sha256": "83ff36e87f10edef6c8216a73c7c84175d3872581cfce96ee67f5b9f94b1ad36",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "cee89dedc4a18b44886e7d9454543aa449fbdc1f1553a52fa7fae69725a3b926",
+      "review_note": "KRT-93 Stage 1 review: shared UUID browser and guarded actions replace list-specific controls. Draft guidance is subordinate; errors stay visible, and collapsed drafts retain values. Header shows the canonical assertion. Existing direction/timing/command explanations remain accurate; new browser explanations cover search, filters, selection and read-only References."
     },
     {
       "source": "src/gui/widgets/relation_form.py",
@@ -16491,6 +16386,12 @@
       "symbol": "PaneContainer._show_tab_menu",
       "sha256": "bdf4c38f7c35a812d861b46f0a0523e7a41d8667349b433628791089686899b4",
       "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+    },
+    {
+      "source": "src/gui/widgets/connections_overview.py",
+      "symbol": "ConnectionsOverview.__init__",
+      "sha256": "98f756545d25880a5fea4d41dea208b2b220f9107141cc9e97852a8fa4b61111",
+      "review_note": "KRT-93 owner refinements: Meaning is one editable dropdown with stable-key suggestion data and deliberate free phrases; no Custom field. The editor heading is plain text within a neutral frame. Scrollbars refresh with the theme. Edit shares the selection row; guarded navigation/removal remain under More actions. Updated task/control explanations describe these behaviors."
     }
   ],
   "review_status": {

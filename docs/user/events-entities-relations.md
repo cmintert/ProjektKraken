@@ -234,17 +234,82 @@ Relations record named, directional connections between Events and Entities. Use
 when you want to express something beyond a value or a reference in prose.
 
 1. Select an Event or Entity and open **Connections**.
-2. Choose **Connected to…**, then choose an existing target.
+2. Choose **Connect…**, then choose an existing target.
 3. Review the connection and select **Connect** to save, or **Cancel** to discard.
-4. Select a saved relation and choose **Refine relation…** to adjust its meaning and details.
+4. Single-click a saved relation to select it. Choose **Edit**, press Enter while
+   the overview has focus, or double-click the row to refine its meaning and details.
+
+Connections appear in groups based on their recorded meaning, for both incoming
+and outgoing relations. Unknown meanings appear under **Other connections**.
+System-managed mentions appear under **References** and cannot be edited here.
+Expand a group to browse it; its count describes the rows matching your filters.
+
+Use **Find a connection…** to search entry names and relationship wording.
+**Filters** limits direction or groups and can hide References. A hidden selection
+remains identified in the selection summary; filtering never chooses another row.
+
+The overview stays above the **Edit relationship** panel, whose assertion is a
+plain heading. Drag the divider to adjust their space. **Cancel** discards only
+the local draft. Selecting another relationship with unfinished changes
+offers **Apply / Discard / Keep editing**. After Apply, wait for the save result
+before selecting again. Notes keep multiline Enter behavior.
+
+**Meaning** is an editable dropdown: choose an existing suggestion or type a new
+relationship phrase directly. A selected suggestion reuses its existing type;
+opening a readable caption or changing Notes does not rename its stored type.
+There is no separate Custom type field. Navigation and removal are under the
+overview's visible **More actions** menu; **Edit** stays beside the selection.
 
 You can also drop an existing Event or Entity onto the labeled connection target. In
 this workflow, the **dropped entry is the source** and the **inspected entry is the
 target**. Review that direction before connecting. Dropping elsewhere in the inspector
 does not create a relation.
 
-For advanced options and custom relation types, use **More actions → Add detailed
+For advanced options, use **More actions → Add detailed
 relation…** or **Full relation editor…**.
+
+(help-connections-connect)=
+
+**Connect…** prepares a connection to an existing entry. Choosing a target does
+not save it: review the direction, then use Connect or Cancel. Event participant
+and location presets are also available under More actions.
+
+(help-connections-search)=
+
+**Find a connection…** searches connected names, displayed meanings and stored
+relationship types. It changes only the overview. Hidden selections retain their
+identity and any open draft; clear the search to reveal them again.
+
+(help-connections-filters)=
+
+**Filters** shows incoming and outgoing assertions, semantic groups and the
+References inclusion choice. These presentation choices never rewrite relations.
+References are included by default in a collapsed, read-only group.
+
+(help-connections-overview)=
+
+**Connections overview** lists each saved relation once by its identity. Read
+the source, meaning and target together to understand its direction. Timing and
+state-change information belong to that same assertion. Single-click selects;
+Edit, Enter or double-click opens its editor. Expand headings to browse groups.
+
+(help-connections-edit)=
+
+**Edit** opens the selected authored relationship below the overview. Apply
+updates that same saved relation; Cancel discards only the local draft. Unfinished
+changes are guarded before choosing another relationship. References are read-only.
+
+(help-connections-navigate)=
+
+**Go to connected entry** requests navigation to the opposite endpoint of the
+selected assertion. Navigation respects unfinished drafts. It does not create an
+inverse relationship, change the viewed time or apply the current edit silently.
+
+(help-connections-remove)=
+
+**Remove** requests deletion of the selected authored relationship after the
+draft guard and confirmation. It does not delete either endpoint. System-managed
+References cannot be removed here; change their originating prose instead.
 
 A relation does not automatically change a similarly named attribute or wiki link.
 Creating a reverse connection is a separate deliberate choice.
@@ -645,10 +710,6 @@ Inspect individual menu items for their effects.
 **Inspector actions** — Choose an additional inspector operation. Inspection explains
 the item without running it.
 
-(help-inspect-src-gui-widgets-editor-presentation-editorpresentation-install-action-rows-disclosure)=
-
-**More inspector controls** — Expand or collapse the additional controls in this
-inspector section.
 
 (help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-details-tab-self-desc-edit)=
 
@@ -704,25 +765,9 @@ retained.
 **Entity type** — Edit this Entity's type. The type helps categorize entries; it is
 separate from tags and relations.
 
-(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-add-rel)=
 
-**Connected to…** — Choose an existing entry and prepare a connection. Connect saves it;
-Cancel discards the draft. The inspected entry is the source in this chooser workflow.
 
-(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-edit-rel)=
 
-**Refine relation…** — Open the selected saved connection for refinement. Apply updates
-that same relation rather than creating a replacement entry.
-
-(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-btn-remove-rel)=
-
-**Remove connection** — Remove the selected connection from this Entity. This does not
-delete either connected entry.
-
-(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-relations-tab-self-rel-list)=
-
-**Entity connections** — Review connections involving this Entity, then select one to
-refine or remove.
 
 (help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-action-buttons-self-btn-save)=
 
@@ -734,20 +779,8 @@ corrections go to their displayed source; check the save status for confirmation
 **Discard** — Discard unsaved inspector changes and return to the saved content. Discard
 is deliberate and is different from hiding the inspector.
 
-(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-menu)=
 
-**Menu** — Open the Menu menu to choose a related operation. Opening the menu does not
-apply any of its actions.
 
-(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-edit-action)=
-
-**Edit connection** — Open the selected connection for editing. The connected entries
-remain separate world entries.
-
-(help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-show-rel-menu-remove-action)=
-
-**Remove connection** — Remove the selected connection without deleting its source or
-target.
 
 (help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-new-attribute-destination-baseline)=
 
@@ -843,25 +876,9 @@ corrected before they can be saved; check the save status for confirmation.
 **Discard** — Discard unsaved Event changes and return to the saved content. This
 includes unfinished inspector edits.
 
-(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-add)=
 
-**Add connection** — Prepare a connection involving this Event. Choose the target and
-meaning before accepting it.
 
-(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-edit)=
 
-**Edit connection** — Refine the selected saved connection rather than creating a
-duplicate.
-
-(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-remove)=
-
-**Remove connection** — Remove the selected connection without deleting either connected
-entry.
-
-(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-create-section-lst)=
-
-**Event connections** — Review connections involving this Event and select one for
-refinement or removal.
 
 (help-inspect-src-gui-widgets-event-editor-eventeditorwidget-populate-inject-menu-action-dialog)=
 
@@ -873,19 +890,8 @@ fields to this Event.
 **Save entry template** — Create a reusable template from selected Event fields. This
 does not create another Event.
 
-(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-menu)=
 
-**Menu** — Open the Menu menu to choose a related operation. Opening the menu does not
-apply any of its actions.
 
-(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-edit-action)=
-
-**Edit connection** — Open the selected saved connection for refinement.
-
-(help-inspect-src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-remove-action)=
-
-**Remove connection** — Remove the selected connection without deleting its source or
-target.
 
 (help-inspect-src-gui-widgets-event-list-eventlistwidget-init-self-btn-delete)=
 
@@ -966,8 +972,10 @@ separate from the connection's temporal meaning.
 
 (help-inspect-src-gui-widgets-relation-authoring-relationauthoring-progressive-form-self-meaning)=
 
-**Connection type** — Choose the authored connection type, such as membership or
-succession. Temporal meaning and boundary dates are configured separately.
+**Meaning** — Choose an existing authored connection type, such as membership,
+or type a new relationship phrase in this same dropdown. Selecting a suggestion
+reuses its stored type; merely displaying its readable caption does not rename
+that type. Temporal meaning and boundary dates are configured separately.
 
 (help-inspect-src-gui-widgets-relation-authoring-relationauthoring-progressive-form-self-reverse-button)=
 

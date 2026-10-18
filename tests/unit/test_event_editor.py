@@ -184,8 +184,8 @@ def test_remove_relation(editor, qtbot, monkeypatch):
     )
 
     # Select item
-    item = editor.rel_list.item(0)
-    editor.rel_list.setCurrentItem(item)
+    item = editor.connections.rows[0].snapshot
+    editor.connections.select_relation(item["id"])
 
     # Mock msgbox
     from PySide6.QtWidgets import QMessageBox
@@ -203,8 +203,8 @@ def test_automatic_mentions_are_read_only(editor):
     editor.load_event(
         ev, relations=[{"id": "r1", "target_id": "t1", "rel_type": "mentions"}]
     )
-    item = editor.rel_list.item(0)
-    editor.rel_list.setCurrentItem(item)
+    item = editor.connections.rows[0].snapshot
+    editor.connections.select_relation(item["id"])
     removed = []
     updated = []
     editor.remove_relation_requested.connect(removed.append)
@@ -235,8 +235,8 @@ def test_context_menu_actions(editor, qtbot, monkeypatch):
     )
 
     # Select item
-    item = editor.rel_list.item(0)
-    editor.rel_list.setCurrentItem(item)
+    item = editor.connections.rows[0].snapshot
+    editor.connections.select_relation(item["id"])
 
     # Mock RelationEditDialog
     from unittest.mock import MagicMock

@@ -137,10 +137,11 @@ def test_self_relation_is_displayed_once_distinct_ids_remain(editor):
         getattr(editor, "_load_entity_relations", None) or editor._load_event_relations
     )
     loader(rows, [dict(row) for row in rows])
-    assert editor.rel_list.count() == 2
-    assert {
-        editor.rel_list.item(i).data(Qt.ItemDataRole.UserRole)["id"] for i in range(2)
-    } == {"first", "second"}
+    assert len(editor.connections.rows) == 2
+    assert {editor.connections.rows[i].snapshot["id"] for i in range(2)} == {
+        "first",
+        "second",
+    }
 
 
 def test_drop_connect_is_one_undoable_command_with_preserved_direction(
@@ -463,10 +464,7 @@ def test_coordinator_capture_feedback_and_relation_refresh_preserve_prose(
     getattr(data, f"on_{kind}_details_ready")(source, rows, [])
     assert editor.desc_edit.get_wiki_text() == "Unfinished prose"
     assert editor.desc_edit.textCursor().position() == before
-    assert (
-        editor.rel_list.currentItem().data(Qt.ItemDataRole.UserRole)["id"]
-        == rows[0]["id"]
-    )
+    assert editor.connections.selected_id == rows[0]["id"]
     assert not editor.relation_authoring.pending_id
 
 

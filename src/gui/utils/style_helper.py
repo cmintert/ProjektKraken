@@ -819,6 +819,15 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_connection_edit_panel_style() -> str:
+        """Separate a relation draft with one neutral, theme-owned boundary."""
+        theme = ThemeManager().get_theme()
+        return (
+            f"QFrame#ConnectionEditPanel {{ background-color: {theme['surface']}; "
+            f"border: 1px solid {theme['border']}; border-radius: 4px; }}"
+        )
+
+    @staticmethod
     def get_input_field_style() -> str:
         """Returns QSS for standard input fields.
 
@@ -1324,6 +1333,20 @@ class StyleHelper:
             f"QListWidget::item:selected {{ "
             f"background-color: {theme['border']}; "
             f"color: {theme['text_main']}; }}"
+        )
+
+    @staticmethod
+    def get_connections_overview_style() -> str:
+        """Style semantic connection rows with neutral focus and selection roles."""
+        theme = ThemeManager().get_theme()
+        return (
+            f"QTreeView {{ background: {theme['surface']}; "
+            f"color: {theme['text_main']}; border: 1px solid {theme['border']}; }}"
+            "QTreeView::item { padding: 4px; }"
+            f"QTreeView::item:selected {{ background: {theme['selection_bg']}; "
+            f"color: {theme['selection_text']}; }}"
+            f"QTreeView:focus {{ border: 1px solid {theme['focus_ring']}; }}"
+            + StyleHelper.get_scrollbar_style()
         )
 
     @staticmethod

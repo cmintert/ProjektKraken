@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-15
-**Commit:** 1d42cf5d7370dd739b499572f99f043e3d3512f8
+**Last Updated:** 2026-10-18
+**Commit:** c47e07d61a6e51bfe994b5a0dacb56299942f736
 ---
 
 # Changelog
@@ -10,6 +10,21 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Added
+
+- *(2026-10-18)* **Connections (KRT-93)**: Entity and Event Connections share a searchable, semantically grouped
+  overview with UUID-based selection and an inline editor below it.
+  Browsing, draft guards, read-only References and the full relation editor remain
+  available. Vocabulary-backed wording and human UX acceptance remain pending
+  under KRT-93.
+- *(2026-10-18)* **Connections (KRT-93)**: Inline relationship Meaning is an editable suggestion dropdown;
+  authors can enter new phrases without a separate Custom type field. Existing
+  suggestions retain their stored keys when their readable captions are shown.
+- *(2026-10-18)* **Testing and documentation (KRT-93)**: Added shared overview
+  regressions, theme/width capture tooling, user guidance, Help inspection entries
+  and staged UX evidence. Framed the inline editor and refreshed its scrollbar
+  styling on theme changes.
 
 ### Changed
 

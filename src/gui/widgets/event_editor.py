@@ -6,14 +6,13 @@ attributes, and relations.
 
 import logging
 import math
-import os
 import time
 import traceback
 from contextlib import suppress
 from copy import deepcopy
-from typing import Any, Dict, cast
+from typing import Any, Dict
 
-from PySide6.QtCore import QObject, QPoint, QSize, Qt, Signal, Slot
+from PySide6.QtCore import QSize, Qt, Signal, Slot
 from PySide6.QtGui import QDropEvent
 from PySide6.QtWidgets import (
     QFormLayout,
@@ -21,8 +20,6 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QListWidget,
-    QListWidgetItem,
     QMenu,
     QMessageBox,
     QScrollArea,
@@ -44,29 +41,22 @@ from src.core.summary_data import (
 from src.core.theme_manager import ThemeManager
 from src.gui.constants import (
     EDITOR_FORM_VERTICAL_SPACING,
-    EDITOR_ICON_BUTTON_SIZE,
-    EDITOR_LIST_SPACING,
-    EDITOR_RELATION_LIST_MIN_HEIGHT,
     EDITOR_SECTION_SPACING,
 )
 from src.gui.mixins.autosave_mixin import AutoSaveManager
 from src.gui.mixins.editor_mixin import BaseEditorMixin
 from src.gui.utils.help_context import declare_inspection
-from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.utils.suggestion_effects import apply_suggestion_effects
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.authoring_context_widget import AuthoringContextWidget
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
+from src.gui.widgets.connections_overview import ConnectionsOverview
 from src.gui.widgets.editor_presentation import DisclosureButton, EditorPresentation
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.gallery_widget import GalleryWidget
 from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
-from src.gui.widgets.relation_item_widget import (
-    RelationItemWidget,
-    relation_type_caption,
-)
-from src.gui.widgets.relation_snapshots import distinct_relation_directions
+from src.gui.widgets.relation_authoring import RelationAuthoring
 from src.gui.widgets.sheet_builder import SheetBuilderWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
 from src.gui.widgets.standard_buttons import (
@@ -108,6 +98,12 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
     save_requested = Signal(dict)
     chronology_requested = Signal(list)
     discard_requested = Signal(str)
+    connections: ConnectionsOverview
+    relation_authoring: RelationAuthoring
+    btn_add_rel: StandardButton
+    btn_edit_rel: StandardButton
+    btn_remove_rel: DestructiveButton
+
     add_relation_requested = Signal(str, str, str, dict, bool)
     remove_relation_requested = Signal(str)
     update_relation_requested = Signal(str, str, str, dict)
@@ -677,292 +673,30 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             self.gallery.set_project_root(path)
 
     def _setup_relations_tab(self) -> None:
-        """Configures the Relations tab with categorized sections."""
-        from src.gui.utils.style_helper import StyleHelper
+        """Build the same Connections browser used by Entity inspectors."""
+        from src.gui.widgets.connections_inspector import install_connections
 
-        layout = QVBoxLayout(self.tab_relations)
-        StyleHelper.apply_compact_spacing(layout)
-
-        # Helper to create a section
-        def create_section(
-            title: str,
-            add_slot: Any,
-            edit_slot: Any,
-            remove_slot: Any,
-            placeholder: str = "",
-        ) -> tuple[
-            QWidget, QListWidget, StandardButton, StandardButton, DestructiveButton
-        ]:
-            """Create a categorized relation section with list and action buttons.
-
-            Args:
-                title: Section header text (e.g., "Characters", "Locations").
-                add_slot: Callable to invoke when Add button is clicked.
-                edit_slot: Callable to invoke when Edit button is clicked.
-                remove_slot: Callable to invoke when Remove button is clicked.
-                placeholder: Optional text shown when list is empty. Defaults to "".
-
-            Returns:
-                Tuple containing:
-                - QWidget: The complete section container
-                - QListWidget: The list widget showing relations
-                - StandardButton: The Add button
-                - StandardButton: The Edit button
-                - DestructiveButton: The Remove button
-
-            Note:
-                The list widget emits itemDoubleClicked when a relation is
-                double-clicked, which should trigger editing.
-            """
-            group = QWidget()
-            vbox = QVBoxLayout(group)
-            vbox.setContentsMargins(0, 0, 0, 0)
-            vbox.setSpacing(EDITOR_SECTION_SPACING)
-
-            # Header with buttons
-            hbox = QHBoxLayout()
-            from PySide6.QtWidgets import QLabel
-
-            lbl = QLabel(title)
-            lbl.setStyleSheet(StyleHelper.get_section_header_style())
-            hbox.addWidget(lbl)
-            hbox.addStretch()
-
-            # Add button
-            btn_add = declare_inspection(
-                StandardButton("+"),
-                "src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-add|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-add",
-            )
-            btn_add.setFixedSize(
-                EDITOR_ICON_BUTTON_SIZE, EDITOR_ICON_BUTTON_SIZE
-            )  # Increased from 24x24 for better touch targets
-
-            # Use Phosphorus plus icon (recolored)
-            from src.core.theme_manager import ThemeManager
-
-            theme = ThemeManager().get_theme()
-
-            icon_path = os.path.join("default_assets", "icons", "ui_icons", "plus.svg")
-            btn_add.setIcon(load_icon(icon_path, color=theme["text_main"]))
-
-            btn_add.setText("")  # Remove text to show only icon
-
-            btn_add.setStyleSheet(StyleHelper.get_icon_button_style())
-
-            btn_add.clicked.connect(add_slot)
-            hbox.addWidget(btn_add)
-
-            # Edit button
-            btn_edit = declare_inspection(
-                StandardButton("Edit"),
-                "src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-edit|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-edit",
-            )
-            btn_edit.setEnabled(False)
-            btn_edit.clicked.connect(edit_slot)
-            hbox.addWidget(btn_edit)
-
-            # Remove button
-            btn_remove = declare_inspection(
-                DestructiveButton("Remove"),
-                "src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-remove|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-create-section-btn-remove",
-            )
-            btn_remove.setEnabled(False)
-            btn_remove.clicked.connect(remove_slot)
-            hbox.addWidget(btn_remove)
-
-            vbox.addLayout(hbox)
-
-            # List
-            lst = declare_inspection(
-                QListWidget(),
-                "src-gui-widgets-event-editor-eventeditorwidget-create-section-lst|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-create-section-lst",
-            )
-            lst.setSpacing(EDITOR_LIST_SPACING)
-            lst.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-            lst.customContextMenuRequested.connect(
-                lambda pos: self._show_rel_menu(pos, lst)
-            )
-            lst.itemDoubleClicked.connect(self._on_edit_relation)
-
-            # Allow deselection by clicking on empty space or selected item
-            lst.viewport().installEventFilter(self)
-            lst.setProperty("_relation_list_widget", True)  # Mark for event filter
-
-            # Fixed height for compactness, but expandable
-            lst.setMinimumHeight(EDITOR_RELATION_LIST_MIN_HEIGHT)
-
-            # Store placeholder for later use
-            if placeholder:
-                lst.setProperty("placeholderText", placeholder)
-
-            vbox.addWidget(lst)
-
-            return group, lst, btn_add, btn_edit, btn_remove
-
-        # 1. Participants
-        (
-            self.grp_participants,
-            self.participant_list,
-            self.btn_add_participant,
-            self.btn_edit_participant,
-            self.btn_remove_participant,
-        ) = create_section(
-            "Participants",
-            self._on_add_participant,
-            self._on_edit_selected_participant,
-            self._on_remove_selected_participant,
-            "No participants yet. Click + to link a character or entity.",
-        )
-        self.participant_list.itemSelectionChanged.connect(
-            self._update_participant_button_states
-        )
-        layout.addWidget(self.grp_participants)
-
-        # 2. Locations
-        (
-            self.grp_locations,
-            self.location_list,
-            self.btn_add_location,
-            self.btn_edit_location,
-            self.btn_remove_location,
-        ) = create_section(
-            "Locations",
-            self._on_add_location,
-            self._on_edit_selected_location,
-            self._on_remove_selected_location,
-            "No locations specified. Click + to link a place.",
-        )
-        self.location_list.itemSelectionChanged.connect(
-            self._update_location_button_states
-        )
-        layout.addWidget(self.grp_locations)
-
-        # 3. Custom Relations (renamed from "Other Relations" for clarity)
-        (
-            self.grp_relations,
-            self.rel_list,
-            self.btn_add_rel,
-            self.btn_edit_rel,
-            self.btn_remove_rel,
-        ) = create_section(
-            "Other connections",
-            self._on_add_relation,
-            self._on_edit_selected_relation,
-            self._on_remove_selected_relation,
-            "No connections yet. Choose Connected to… to record one.",
-        )
-        self.rel_list.itemSelectionChanged.connect(self._update_rel_button_states)
-        layout.addWidget(self.grp_relations)
-
-        from src.gui.widgets.relation_authoring import RelationAuthoring
-
-        self.relation_authoring = RelationAuthoring(self)
-        layout.insertWidget(0, self.relation_authoring)
-        for button, title in (
-            (self.btn_add_participant, "Add participant…"),
-            (self.btn_add_location, "Add location…"),
-            (self.btn_add_rel, "Connected to…"),
-            (self.btn_edit_participant, "Refine…"),
-            (self.btn_edit_location, "Refine…"),
-            (self.btn_edit_rel, "Refine relation…"),
-        ):
-            button.setText(title)
-            button.setMinimumWidth(0)
-            button.setMaximumWidth(16777215)
+        install_connections(self, "event")
 
     def _on_add_participant(self) -> None:
-        """Quick add participant."""
-        self._on_add_relation(rel_type="involved")
+        """Capture a participant without mandatory refinement."""
+        self.relation_authoring.capture("involved")
 
     def _on_add_location(self) -> None:
-        """Quick add location."""
-        self._on_add_relation(rel_type="located_at")
-
-    def _on_edit_selected_participant(self) -> None:
-        """Handles editing the selected participant."""
-        if item := self.participant_list.currentItem():
-            self._on_edit_relation(item)
-
-    def _on_remove_selected_participant(self) -> None:
-        """Handles removing the selected participant."""
-        if item := self.participant_list.currentItem():
-            self._on_remove_relation_item(item)
-
-    def _update_participant_button_states(self) -> None:
-        """Updates enabled states for participant Edit and Remove buttons."""
-        has_selection = len(self.participant_list.selectedItems()) > 0
-        self.btn_edit_participant.setEnabled(has_selection)
-        self.btn_remove_participant.setEnabled(has_selection)
-
-    def _on_edit_selected_location(self) -> None:
-        """Handles editing the selected location."""
-        if item := self.location_list.currentItem():
-            self._on_edit_relation(item)
-
-    def _on_remove_selected_location(self) -> None:
-        """Handles removing the selected location."""
-        if item := self.location_list.currentItem():
-            self._on_remove_relation_item(item)
-
-    def _update_location_button_states(self) -> None:
-        """Updates enabled states for location Edit and Remove buttons."""
-        has_selection = len(self.location_list.selectedItems()) > 0
-        self.btn_edit_location.setEnabled(has_selection)
-        self.btn_remove_location.setEnabled(has_selection)
+        """Capture a location without mandatory refinement."""
+        self.relation_authoring.capture("located_at")
 
     def _on_edit_selected_relation(self) -> None:
-        """Handles editing the selected custom relation."""
-        if item := self.rel_list.currentItem():
-            self._on_edit_relation(item)
+        """Open the explicitly selected connection."""
+        self.connections.edit_selected()
 
     def _on_remove_selected_relation(self) -> None:
-        """Handles removing the selected custom relation."""
-        if item := self.rel_list.currentItem():
-            self._on_remove_relation_item(item)
+        """Remove through the shared selection and draft guard."""
+        self.connections.remove_selected()
 
     def _update_rel_button_states(self) -> None:
-        """Updates enabled states for custom relation Edit and Remove buttons."""
-        selected = self.rel_list.selectedItems()
-        is_editable = bool(selected) and (
-            selected[0].data(Qt.ItemDataRole.UserRole).get("rel_type") != "mentions"
-        )
-        self.btn_edit_rel.setEnabled(is_editable)
-        self.btn_remove_rel.setEnabled(is_editable)
-
-    def eventFilter(self, obj: QObject, event: Any) -> bool:
-        """Event filter to handle clicks on empty space in relation lists."""
-        from PySide6.QtCore import QEvent
-        from PySide6.QtGui import QMouseEvent
-
-        try:
-            # Check if this is a mouse press on a relation list viewport
-            if (
-                isinstance(event, QMouseEvent)
-                and event.type() == QEvent.Type.MouseButtonPress
-            ):
-                if event.button() == Qt.MouseButton.LeftButton:
-                    # Find the list widget this viewport belongs to
-                    parent = obj.parent()
-                    if isinstance(parent, QListWidget) and parent.property(
-                        "_relation_list_widget"
-                    ):
-                        # Get the item at the click position
-                        item = parent.itemAt(event.pos())
-
-                        if item is None:
-                            # Clicked on empty space - clear selection
-                            parent.clearSelection()
-                            parent.setCurrentItem(cast(QListWidgetItem, None))
-                            return False  # Let Qt handle the event normally
-                        elif item.isSelected():
-                            # Clicked on already-selected item - deselect it
-                            parent.clearSelection()
-                            parent.setCurrentItem(cast(QListWidgetItem, None))
-                            return True  # Prevent re-selection
-        except RuntimeError:
-            return False
-
-        return super().eventFilter(obj, event)
+        """Refresh shared selection actions."""
+        self.connections._update_summary()
 
     def _connect_dirty_signals(self) -> None:
         """Connects input widget signals to set_dirty(True)."""
@@ -1516,66 +1250,16 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             incoming_relations: List of incoming relation dicts, or None.
 
         """
-        relations, incoming_relations = distinct_relation_directions(
-            relations, incoming_relations
-        )
         self.relation_authoring.remember_selection()
-        self.rel_list.clear()
-        self.participant_list.clear()
-        self.location_list.clear()
-
-        def add_relation_item(
-            list_widget: QListWidget, rel: dict, prefix: str = "→"
-        ) -> None:
-            """Add a relation item to the specified list widget."""
-            if prefix == "→":
-                target_display = rel.get("target_name") or rel["target_id"]
-                other_id = rel["target_id"]
-            else:
-                target_display = rel.get("source_name") or rel["source_id"]
-                other_id = rel["source_id"]
-
-            label = (
-                f"{prefix} {target_display} [{relation_type_caption(rel['rel_type'])}]"
-            )
-
-            widget = RelationItemWidget(
-                label=label,
-                target_id=other_id,
-                target_name=target_display,
-                attributes=cast(dict[str, Any], rel.get("attributes")),
-            )
-            widget.go_to_clicked.connect(
-                lambda tid, tn: self.navigate_to_relation.emit(tid)
-            )
-
-            item = QListWidgetItem()
-            item.setData(Qt.ItemDataRole.UserRole, rel)
-            item.setSizeHint(QSize(200, 36))
-
-            list_widget.addItem(item)
-            list_widget.setItemWidget(item, widget)
-
-        if relations:
-            for rel in relations:
-                rtype = rel.get("rel_type")
-                if rtype in ("involved", "participated_in", "member_of"):
-                    add_relation_item(self.participant_list, rel, "→")
-                elif rtype == "located_at":
-                    add_relation_item(self.location_list, rel, "→")
-                else:
-                    add_relation_item(self.rel_list, rel, "→")
-
-        if incoming_relations:
-            for rel in incoming_relations:
-                add_relation_item(self.rel_list, rel, "←")
-
+        self.connections.set_relations(
+            relations or [],
+            incoming_relations or [],
+            self._current_event_id or "",
+            self.name_edit.text(),
+        )
         self.relation_authoring.refresh(
             [*(relations or []), *(incoming_relations or [])]
         )
-        self._update_participant_button_states()
-        self._update_location_button_states()
-        self._update_rel_button_states()
 
     @Slot(dict)
     def _on_theme_changed(self, theme: dict) -> None:
@@ -1590,7 +1274,6 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             theme (dict): Theme data containing color and style values
                           (must include `text_main`).
         """
-        from src.gui.utils.icon_loader import load_icon
         from src.gui.utils.style_helper import StyleHelper
 
         # Update Inject Button
@@ -1606,18 +1289,6 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
         # Update Checkboxes
         # StandardCheckbox handles its own styling on theme change
-
-        # Update Relations Tab Buttons (Icons and Styles)
-        icon_path = os.path.join("default_assets", "icons", "ui_icons", "plus.svg")
-        icon_color = theme["text_main"]
-        icon = load_icon(icon_path, color=icon_color)
-
-        # We need to update the icon and the stylesheet for each button
-        # References stored in __init__
-        for btn in [self.btn_add_participant, self.btn_add_location, self.btn_add_rel]:
-            if btn:
-                btn.setIcon(icon)
-                btn.setStyleSheet(StyleHelper.get_icon_button_style())
 
     @Slot()
     def _on_save(self) -> None:
@@ -1803,6 +1474,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         """Receive timeline context independently of editor draft time."""
         self._relation_playhead_time = time
         self._relation_calendar = converter
+        self.connections.set_time_context(time, converter)
 
     @Slot(object)  # Allow Any/object for checked signal
     def _on_add_relation(self, rel_type: Any = "related") -> None:
@@ -1849,50 +1521,18 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
                     is_bidirectional,
                 )
 
-    def _show_rel_menu(
-        self, pos: QPoint, list_widget: QListWidget | None = None
-    ) -> None:
-        """Shows context menu for relation items."""
-        # Check if list_widget is passed (from new lambda) or use default (legacy/safe)
-        target_list = list_widget or self.rel_list
-
-        item = target_list.itemAt(pos)
-        if not item:
-            return
-
-        menu = declare_inspection(
-            QMenu(self),
-            "src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-menu|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-menu",
-        )
-        edit_action = declare_inspection(
-            menu.addAction("Edit"),
-            "src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-edit-action|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-edit-action",
-        )
-        remove_action = declare_inspection(
-            menu.addAction("Remove"),
-            "src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-remove-action|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-show-rel-menu-remove-action",
-        )
-        rel_data = item.data(Qt.ItemDataRole.UserRole) or {}
-        is_automatic = rel_data.get("rel_type") == "mentions"
-        if edit_action is not None:
-            edit_action.setEnabled(not is_automatic)
-        if remove_action is not None:
-            remove_action.setEnabled(not is_automatic)
-        action = menu.exec(target_list.mapToGlobal(pos))
-
-        if action == remove_action:
-            self._on_remove_relation_item(item)
-        elif action == edit_action:
-            self._on_edit_relation(item)
-        menu.deleteLater()
-
-    def _on_remove_relation_item(self, item: QListWidgetItem) -> None:
+    def _on_remove_relation_item(self, item: dict[str, Any]) -> None:
         """Emits remove signal."""
-        rel_data = item.data(Qt.ItemDataRole.UserRole)
+        rel_data = item
         if rel_data.get("rel_type") == "mentions":
             return
-        target_id = rel_data.get("target_id", "?")
-        target_name = rel_data.get("target_name", target_id)
+        outgoing = (
+            rel_data.get("source_id", self._current_event_id) == self._current_event_id
+        )
+        endpoint = "target" if outgoing else "source"
+        target_name = rel_data.get(f"{endpoint}_name") or rel_data.get(
+            f"{endpoint}_id", "?"
+        )
 
         confirm = QMessageBox.question(
             self,
@@ -1903,14 +1543,14 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         if confirm == QMessageBox.StandardButton.Yes:
             self.remove_relation_requested.emit(rel_data["id"])
 
-    @Slot(QListWidgetItem)
-    def _on_edit_relation(self, item: QListWidgetItem) -> None:
+    @Slot(dict)
+    def _on_edit_relation(self, item: dict[str, Any]) -> None:
         """Refine the same saved connection inside this inspector."""
-        self.relation_authoring.refine(item.data(Qt.ItemDataRole.UserRole))
+        self.relation_authoring.refine(item)
 
-    def _on_edit_relation_full(self, item: QListWidgetItem) -> None:
+    def _on_edit_relation_full(self, item: dict[str, Any]) -> None:
         """Emits update signal after dialogs."""
-        rel_data = item.data(Qt.ItemDataRole.UserRole)
+        rel_data = item
         if rel_data.get("rel_type") == "mentions":
             return
 

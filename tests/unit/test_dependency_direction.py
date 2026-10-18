@@ -230,3 +230,22 @@ def test_relation_commands_use_authored_service_without_parallel_policy():
         isinstance(node, ast.Constant) and node.value == "mentions"
         for node in ast.walk(tree)
     ), "System-managed type policy belongs to AuthoredRelationService"
+
+
+def test_connection_browser_has_no_editor_or_persistence_dependencies():
+    """Keep the extracted browser independent of editor and mutation owners."""
+    for filename in ("connections_overview.py", "connection_presentation.py"):
+        modules = _imported_modules(_SOURCE_ROOT / "gui/widgets" / filename)
+        assert not any(
+            module.startswith(
+                (
+                    "src.services",
+                    "src.commands",
+                    "src.app",
+                    "src.gui.widgets.entity_editor",
+                    "src.gui.widgets.event_editor",
+                    "src.gui.widgets.relation_authoring",
+                )
+            )
+            for _, module in modules
+        )

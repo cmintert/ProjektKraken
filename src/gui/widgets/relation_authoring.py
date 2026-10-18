@@ -4,11 +4,13 @@ from copy import deepcopy
 from typing import Any, cast
 from uuid import uuid4
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QKeyEvent
 from PySide6.QtWidgets import (
     QApplication,
+    QComboBox,
     QFormLayout,
+    QFrame,
     QLabel,
     QMessageBox,
     QScrollArea,
@@ -22,12 +24,13 @@ from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
+from src.gui.widgets.connection_presentation import CAPTIONS
 from src.gui.widgets.editor_presentation import DisclosureButton
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.relation_drop_target import RelationDropTarget
 from src.gui.widgets.relation_form import RelationForm, take_form_row
 from src.gui.widgets.relation_target import RelationTargetEdit
-from src.gui.widgets.standard_buttons import StandardButton
+from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
 
 MEANINGS = {
     "related": "Connected — kind not specified",
@@ -40,12 +43,16 @@ MEANINGS = {
 }
 
 
-class RelationAuthoring(QWidget):
+class RelationAuthoring(QFrame):
     """Own only local relation drafts; emit serializable mutation intent."""
+
+    opened = Signal()
 
     def __init__(self, editor: Any) -> None:
         """Install shared controls without replacing either inspector's lists."""
         super().__init__(editor.tab_relations)
+        self.setObjectName("ConnectionEditPanel")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
         self.editor = editor
         editor.tab_relations.setObjectName("ConnectionsInspector")
@@ -63,13 +70,19 @@ class RelationAuthoring(QWidget):
         self.reversed = False
         self.capture_open = False
         self._drop_capture: dict[str, str] | None = None
+        self._assertion_caption = ""
         self._layout = QVBoxLayout(self)
-        StyleHelper.apply_no_margins(self._layout)
+        self._layout.setContentsMargins(8, 8, 8, 8)
         self.status = QLabel()
         self.status.setWordWrap(True)
         self.status.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
+        self.heading = QLabel("Edit relationship")
+        self.heading.setWordWrap(True)
+        self.heading.setStyleSheet(StyleHelper.get_section_header_style())
+        self._layout.addWidget(self.heading)
+        self.heading.hide()
         self._layout.addWidget(self.status)
         self.drop_target = RelationDropTarget(self)
         self._layout.addWidget(self.drop_target)
@@ -78,7 +91,7 @@ class RelationAuthoring(QWidget):
         StyleHelper.apply_no_margins(self.body_layout)
         self.body_scroll = QScrollArea()
         self.body_scroll.setWidgetResizable(True)
-        self.body_scroll.setMaximumHeight(500)
+        self.body_scroll.setMinimumHeight(36)
         self.body_scroll.setStyleSheet(
             StyleHelper.get_scroll_area_style() + StyleHelper.get_scrollbar_style()
         )
@@ -123,9 +136,19 @@ class RelationAuthoring(QWidget):
             StyleHelper.get_tool_button_style() + StyleHelper.get_menu_caret_style()
         )
         self._layout.insertWidget(0, menu_button)
-        self.status.setText("Choose Connected to… to record a connection.")
+        self._status("Choose Connect… to record a connection.")
+
+    def _status(self, text: str, *, visible: bool = True) -> None:
+        """Keep failures visible without spending draft space on redundant guidance."""
+        self.status.setText(text)
+        self.status.setVisible(visible)
 
     def _apply_theme(self, *_args: Any) -> None:
+        self.setStyleSheet(StyleHelper.get_connection_edit_panel_style())
+        if hasattr(self, "body_scroll"):
+            self.body_scroll.setStyleSheet(
+                StyleHelper.get_scroll_area_style() + StyleHelper.get_scrollbar_style()
+            )
         if hasattr(self, "_more_actions_button"):
             self._more_actions_button.setStyleSheet(
                 StyleHelper.get_tool_button_style() + StyleHelper.get_menu_caret_style()
@@ -158,6 +181,7 @@ class RelationAuthoring(QWidget):
         self.capture_open = False
         self._drop_capture = None
         self.reversed = False
+        self._assertion_caption = ""
         while self.footer_layout.count():
             item = self.footer_layout.takeAt(0)
             widget = item.widget()
@@ -191,12 +215,8 @@ class RelationAuthoring(QWidget):
         self.body_layout.addWidget(self.target)
         self.body_layout.addStretch()
         self._actions("Connect")
-        self.status.setText(
-            "Choose an existing object. You can refine the connection later."
-        )
-        self.body_scroll.setMinimumHeight(100)
-        self.body_scroll.setMaximumHeight(100)
-        self.body_scroll.show()
+        self._status("Choose an existing object. You can refine the connection later.")
+        self._open_draft("Connect an entry")
         self.target.setFocus()
         self.target.returnPressed.connect(self._capture_enter)
         self.target.installEventFilter(self)
@@ -214,16 +234,12 @@ class RelationAuthoring(QWidget):
         if not self.isEnabled() or not self._current_id() or self.pending_id:
             return None
         if item_id == self._current_id():
-            self.status.setText(
-                "An entry cannot be dropped onto its own Connections target."
-            )
+            self._status("An entry cannot be dropped onto its own Connections target.")
             return None
         for known_id, name, known_kind in getattr(self.editor, "_suggestion_items", []):
             if known_id == item_id and known_kind.casefold() == kind:
                 return {"id": item_id, "name": name, "type": kind}
-        self.status.setText(
-            "Choose an existing Entity or Event to prepare a connection."
-        )
+        self._status("Choose an existing Entity or Event to prepare a connection.")
         return None
 
     def stage_drop(self, payload: dict[str, str]) -> bool:
@@ -260,11 +276,8 @@ class RelationAuthoring(QWidget):
         meaning.currentIndexChanged.connect(
             lambda: self._set_drop_meaning(str(meaning.currentData()), preview)
         )
-        self.body_scroll.setMinimumHeight(150)
-        self.body_scroll.setMaximumHeight(200)
-        self.status.setText(
-            "Connection prepared. Connect saves it; Cancel discards it."
-        )
+
+        self._status("Connection prepared. Connect saves it; Cancel discards it.")
         self.apply_button.setFocus()
         return True
 
@@ -324,13 +337,13 @@ class RelationAuthoring(QWidget):
         )
         self._progressive_form()
         self._actions("Apply")
-        self.body_scroll.setMinimumHeight(380)
-        self.body_scroll.setMaximumHeight(500)
-        self.body_scroll.show()
-        self.status.setText(
-            "Refine this connection. Apply changes the same saved relation."
+        self._open_draft("Edit relationship")
+        self._status(
+            "Refine this connection. Apply changes the same saved relation.",
+            visible=False,
         )
         self._preview()
+        self.form.changed.connect(self._draft_caption)
 
     @staticmethod
     def _take_widget(layout: QFormLayout, widget: QWidget) -> None:
@@ -383,8 +396,8 @@ class RelationAuthoring(QWidget):
             label_widget = label.widget() if label is not None else None
             if label_widget is not None:
                 label_widget.hide()
-        advanced_layout.insertWidget(0, form.type_edit)
-        advanced_layout.insertWidget(0, QLabel("Custom type (stored name)"))
+        # The shared form retains its stored-key adapter, not a second UI field.
+        form.type_edit.hide()
         advanced_layout.addWidget(
             QLabel(
                 "Confidence is your certainty in the connection; weight describes its strength."
@@ -395,13 +408,25 @@ class RelationAuthoring(QWidget):
             ScrollSafeComboBox(),
             "src-gui-widgets-relation-authoring-relationauthoring-progressive-form-self-meaning|relations.create|help-inspect-src-gui-widgets-relation-authoring-relationauthoring-progressive-form-self-meaning",
         )
-        for value, title in MEANINGS.items():
-            self.meaning.addItem(title, value)
-        if self.meaning.findData(self.relation["rel_type"]) < 0:
-            self.meaning.addItem(self.relation["rel_type"], self.relation["rel_type"])
-        self.meaning.addItem("Custom type…", None)
+        self.meaning.setEditable(True)
+        self.meaning.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+        self.meaning.setToolTip("Choose an existing meaning or type a new phrase.")
+        known = dict.fromkeys(
+            [
+                *MEANINGS,
+                *getattr(self.editor, "_suggestion_types", []),
+                self.relation["rel_type"],
+            ]
+        )
+        for value in known:
+            if value != "mentions":
+                self.meaning.addItem(MEANINGS.get(value, value), value)
         self.meaning.setCurrentIndex(self.meaning.findData(self.relation["rel_type"]))
+        self.meaning.currentTextChanged.connect(self._meaning_changed)
         self.meaning.currentIndexChanged.connect(self._meaning_changed)
+        line_edit = self.meaning.lineEdit()
+        assert line_edit is not None
+        line_edit.installEventFilter(self)
         fields.addRow("Meaning", self.meaning)
         fields.addRow(form.preview_label)
         form.preview_label.show()
@@ -480,14 +505,17 @@ class RelationAuthoring(QWidget):
         ):
             self.timing_caption.setText("Timing changed — Apply to record these dates.")
 
-    def _meaning_changed(self) -> None:
+    def _meaning_changed(self, *_args: Any) -> None:
         assert self.form is not None
-        value = self.meaning.currentData()
-        if value is None:
-            self.advanced_disclosure.setChecked(True)
-            self.form.type_edit.setFocus()
-        else:
-            self.form.type_edit.setCurrentText(str(value))
+        index = self.meaning.currentIndex()
+        text = self.meaning.currentText()
+        # Display captions never become stable keys merely by opening/refocusing.
+        value = (
+            self.meaning.itemData(index)
+            if index >= 0 and text == self.meaning.itemText(index)
+            else text.strip()
+        )
+        self.form.type_edit.setCurrentText(str(value))
         self._preview()
 
     def _preview(self, *args: Any) -> None:
@@ -511,6 +539,10 @@ class RelationAuthoring(QWidget):
         else:
             sentence = f"{source_name} → {target_name}: {MEANINGS.get(kind, kind)}"
         self.form.preview_label.setText(sentence)
+        self._assertion_caption = (
+            f"{source_name} → {CAPTIONS.get(kind, kind)} → {target_name}"
+        )
+        self._draft_caption()
 
     def _reverse(self) -> None:
         assert self.form is not None and self.relation is not None
@@ -523,7 +555,7 @@ class RelationAuthoring(QWidget):
             )
             or ("source_event" in str(attrs.get("temporal", {})))
         ):
-            self.status.setText(
+            self._status(
                 "This relation uses its source event for timing or state changes. "
                 "Refine those details before reversing its direction."
             )
@@ -537,17 +569,20 @@ class RelationAuthoring(QWidget):
     def _actions(self, title: str) -> None:
         actions = OverflowToolBar()
         self.apply_button = declare_inspection(
-            StandardButton(title),
+            PrimaryButton(title),
             "src-gui-widgets-relation-authoring-relationauthoring-actions-self-apply-button|relations.create|help-inspect-src-gui-widgets-relation-authoring-relationauthoring-actions-self-apply-button",
         )
         self.apply_button.clicked.connect(self.apply)
-        actions.add_button(self.apply_button, priority=10)
+        actions.add_button(self.apply_button, priority=10, pinned=True)
         cancel = declare_inspection(
             StandardButton("Cancel"),
             "src-gui-widgets-relation-authoring-relationauthoring-actions-cancel|relations.create|help-inspect-src-gui-widgets-relation-authoring-relationauthoring-actions-cancel",
         )
         cancel.clicked.connect(self.cancel)
         actions.add_button(cancel)
+        full = StandardButton("Full relation editor…")
+        full.clicked.connect(self._edit_full)
+        actions.add_button(full)
         self.footer_layout.addWidget(actions)
         self.footer.show()
 
@@ -563,9 +598,7 @@ class RelationAuthoring(QWidget):
     def prepare_to_leave(self) -> bool:
         """Resolve only the local relation draft, independently of prose edits."""
         if self.pending_id:
-            self.status.setText(
-                "Saving this connection. Keep editing after it finishes."
-            )
+            self._status("Saving this connection. Keep editing after it finishes.")
             return False
         if not self.is_dirty():
             return True
@@ -599,9 +632,8 @@ class RelationAuthoring(QWidget):
         if self.pending_id:
             return
         self._clear_body()
-        self.body_scroll.hide()
-        self.footer.hide()
-        self.status.setText("Connection edit cancelled.")
+        self._close_draft()
+        self._status("Connection edit cancelled.", visible=False)
 
     def apply(self) -> None:
         """Validate local fields and emit one capture or refinement request."""
@@ -611,7 +643,7 @@ class RelationAuthoring(QWidget):
             self._current_id() != self._drop_capture["target_id"]
             or self.resolve_drop(self.source_id, self._drop_capture["type"]) is None
         ):
-            self.status.setText(
+            self._status(
                 "This connection's target changed. Cancel and prepare it again."
             )
             return
@@ -619,7 +651,7 @@ class RelationAuthoring(QWidget):
         if self.target is not None:
             target = self.target.resolve()
             if not target:
-                self.status.setText("Choose an existing object from the suggestions.")
+                self._status("Choose an existing object from the suggestions.")
                 return
             request.update(
                 operation="capture",
@@ -628,6 +660,10 @@ class RelationAuthoring(QWidget):
                 attributes={},
             )
         elif self.form is not None and self.relation is not None:
+            if not self.form.type_edit.currentText().strip():
+                self._status("Choose a meaning or type a relationship phrase.")
+                self.meaning.setFocus()
+                return
             if not self.form.validate():
                 return
             target, kind, _, attrs = self.form.get_data()
@@ -639,12 +675,12 @@ class RelationAuthoring(QWidget):
                 )
                 or "source_event" in str(attrs.get("temporal", {}))
             ):
-                self.status.setText(
+                self._status(
                     "Keep the source direction for source-event timing or state changes."
                 )
                 return
             if not kind:
-                self.status.setText("Choose a meaning or enter a custom type.")
+                self._status("Choose a meaning or enter a custom type.")
                 return
             request.update(
                 operation="refine",
@@ -662,7 +698,7 @@ class RelationAuthoring(QWidget):
         request["request_id"] = self.pending_id
         self.body.setEnabled(False)
         self.apply_button.setEnabled(False)
-        self.status.setText("Saving connection…")
+        self._status("Saving connection…")
         self.editor.relation_authoring_requested.emit(request)
 
     def on_finished(self, result: dict[str, Any]) -> None:
@@ -675,29 +711,15 @@ class RelationAuthoring(QWidget):
         if result.get("success"):
             self.preferred_id = str(result.get("relation_id", ""))
             self._clear_body()
-            self.body_scroll.hide()
-            self.footer.hide()
-            self.status.setText("Connection saved. Select it to refine its details.")
+            self._close_draft()
+            self._status("Connection saved. Select it and choose Edit to refine.")
             self._select_saved()
         else:
-            self.status.setText(
-                str(result.get("message", "Could not save connection."))
-            )
-
-    def _lists(self) -> list[Any]:
-        return [
-            getattr(self.editor, name)
-            for name in ("rel_list", "participant_list", "location_list")
-            if hasattr(self.editor, name)
-        ]
+            self._status(str(result.get("message", "Could not save connection.")))
 
     def _select_saved(self) -> None:
-        for widget in self._lists():
-            for index in range(widget.count()):
-                item = widget.item(index)
-                if item.data(Qt.ItemDataRole.UserRole).get("id") == self.preferred_id:
-                    widget.setCurrentItem(item)
-                    return
+        if self.preferred_id:
+            self.editor.connections.select_relation(self.preferred_id, guarded=False)
 
     def refresh(self, relations: list[Any]) -> None:
         """Retain a local draft across refresh; disable stale edits of deleted rows."""
@@ -705,20 +727,13 @@ class RelationAuthoring(QWidget):
             exists = any(row.get("id") == self.relation["id"] for row in relations)
             self.apply_button.setEnabled(exists)
             if not exists:
-                self.status.setText(
-                    "This relation no longer exists. Cancel this draft."
-                )
+                self._status("This relation no longer exists. Cancel this draft.")
         self._select_saved()
 
     def remember_selection(self) -> None:
         """Remember row identity before lists are replaced by a worker snapshot."""
-        if self.pending_id:
-            return
-        for widget in self._lists():
-            item = widget.currentItem()
-            if item is not None:
-                self.preferred_id = item.data(Qt.ItemDataRole.UserRole).get("id", "")
-                return
+        if not self.pending_id:
+            self.preferred_id = self.editor.connections.selected_id
 
     def _add_full(self) -> None:
         if self.prepare_to_leave():
@@ -728,17 +743,43 @@ class RelationAuthoring(QWidget):
     def _edit_full(self) -> None:
         if not self.prepare_to_leave():
             return
-        selected = next(
-            (
-                lst.currentItem()
-                for lst in self._lists()
-                if lst.currentItem() is not None
-            ),
-            None,
-        )
-        if selected is not None:
+        selected = self.editor.connections.selected_row()
+        if selected is not None and selected.group != "References":
             self.cancel()
-            self.editor._on_edit_relation_full(selected)
+            self.editor._on_edit_relation_full(selected.snapshot)
+
+    def prepare_selection_change(self) -> bool:
+        """Resolve only this draft before the browser changes its selected UUID."""
+        if not self.prepare_to_leave():
+            return False
+        if self.form is not None or self.capture_open:
+            self.cancel()
+        return True
+
+    def _open_draft(self, title: str) -> None:
+        self.heading.setText(title)
+        self.heading.setAccessibleName(title)
+        self.heading.show()
+        self.body_scroll.show()
+        self.footer.show()
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self._draft_caption()
+        self.opened.emit()
+
+    def _close_draft(self) -> None:
+        self.heading.hide()
+        self.body_scroll.hide()
+        self.footer.hide()
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
+
+    def _draft_caption(self) -> None:
+        title = "Connect an entry"
+        if self.relation is not None and self.form is not None:
+            title = f"Edit relationship — {self._assertion_caption or self.form.preview_label.text()}"
+        if self.is_dirty():
+            title += " · Unsaved"
+        self.heading.setText(title)
+        self.heading.setAccessibleName(title)
 
     def eventFilter(self, obj: Any, event: Any) -> bool:
         """Let popup and multiline owners handle Enter; Escape cancels locally."""

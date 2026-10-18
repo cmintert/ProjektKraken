@@ -38,11 +38,15 @@ class DetailSnapshotService:
         incoming = self._db_service.get_incoming_relations(event_id)
         metadata = self._resolve_relation_metadata(relations, incoming)
         for relation in relations:
+            relation["source_name"] = event.name
+            relation["source_event_date"] = event.lore_date
+            relation["source_event_attributes"] = event.attributes
             target = metadata.get(relation["target_id"])
             relation["target_name"] = target["name"] if target else None
             if target is not None:
                 relation["target_kind"] = target["kind"]
         for relation in incoming:
+            relation["target_name"] = event.name
             source = metadata.get(relation["source_id"])
             relation["source_name"] = source["name"] if source else None
         return DetailSnapshot(event, relations, incoming)
@@ -56,9 +60,11 @@ class DetailSnapshotService:
         incoming = self._db_service.get_incoming_relations(entity_id)
         metadata = self._resolve_relation_metadata(relations, incoming)
         for relation in relations:
+            relation["source_name"] = entity.name
             target = metadata.get(relation["target_id"])
             relation["target_name"] = target["name"] if target else None
         for relation in incoming:
+            relation["target_name"] = entity.name
             source = metadata.get(relation["source_id"])
             relation["source_name"] = source["name"] if source else None
         return DetailSnapshot(entity, relations, incoming)
