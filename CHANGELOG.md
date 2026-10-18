@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-18
-**Commit:** c47e07d61a6e51bfe994b5a0dacb56299942f736
+**Commit:** 3e8c6d056b54679bc0604366791af865dd0543de
 ---
 
 # Changelog
@@ -27,6 +27,10 @@ All notable changes to this project will be documented in this file.
   styling on theme changes.
 
 ### Changed
+
+- *(2026-10-18)* **Documentation (KRT-77)**: Recorded the guided native review
+  pass at normal and approximately 360 px inspector widths. Accepted written
+  question-and-answer review in place of required video and uncoached discovery.
 
 - *(2026-10-15)* **Startup performance (KRT-92)**: Skip unrelated Qt events
   before global Help, shortcut and Focus writing handlers inspect widget ancestry.

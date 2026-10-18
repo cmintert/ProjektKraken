@@ -49,6 +49,29 @@ in human review. This is a separately recorded human pass; no source video,
 route-coaching details or measured inspector widths were supplied. The report
 does not complete KRT-45's matched KA-01–20 comparison.
 
+On 2026-10-18 the user completed a guided, self-reported native follow-up.
+At normal inspector width, the user answered "All three is a yes, it is under
+history and context" when asked whether the viewed date, its position relative
+to linked events, and its distinction from World Time were understandable.
+After being asked to narrow the inspector to approximately 360 px, the user
+confirmed the same details remained readable and understandable: "yes clearly".
+This records a human clarity pass at both reported widths. Exact dimensions,
+runtime revision, theme, event count and dates were not independently measured;
+no recording was supplied. The participant had prior exposure and received task
+prompts, so this follow-up does not establish first-use discovery without
+coaching or native coverage of every sparse/out-of-range case. The existing
+automated boundary coverage remains separate. On this checkout, the focused
+`tests/unit/test_timeline_display.py` suite passed all 20 cases on 2026-10-18.
+
+On 2026-10-18 the user explicitly accepted this guided question-and-answer
+review method for KRT-77 and requested removal of the video requirement.
+KRT-77's acceptance now permits guided, self-reported native review with written
+outcomes at normal and approximately 360 px widths; video and uncoached first-use
+discovery are not required. The review above satisfies that human acceptance.
+Implementation is committed as `e4da0974`, and the focused automated boundary
+checks pass. This changes KRT-77's evidence requirements without asserting an
+uncoached discovery result or completing KRT-45's wider matched comparison.
+
 `NM` below means **not measured**, never zero. The baseline is **not executed**;
 the two partial implementation recordings attempted KA-01–20. B/A are
 baseline/after counts. The after verification cells summarize evidence limits
