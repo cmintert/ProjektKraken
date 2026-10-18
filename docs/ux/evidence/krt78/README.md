@@ -1,8 +1,9 @@
 # KRT-78 — Event navigation and date-save feedback
 
-Implementation and investigation: 2026-10-13. **Acceptance is incomplete.**
-Automated evidence does not establish uncoached discoverability or native Windows
-scale acceptance. Keep KRT-78 In Progress until those gates are recorded.
+Implementation and investigation: 2026-10-13. **Guided human review passed
+2026-10-18; menu styling repair included with this review record.**
+The owner accepted guided written review in this session. User-reported native
+results and automated checks are recorded separately below.
 
 ## Implemented behavior
 
@@ -89,7 +90,59 @@ The capture helper bounds event processing and explicitly releases disposable
 widgets; focus probes target the visible overflow access when the menu button
 has moved into overflow. The manifest records whether focus was actually acquired.
 
-## Remaining closure gates
+## Acceptance and delivery evidence
+
+### Guided native follow-up — 2026-10-18
+
+The owner confirmed navigation to the disputed event's representative anchor,
+the uncertainty explanation, and unchanged Event selection and World Time.
+The supplied screenshot shows the uncertain-date disclosure and separately named
+Viewing and World current time. The owner then confirmed exact navigation to
+1 January 1219 with selection and World Time retained; the second screenshot
+shows Viewing at that date and World current time at 1 January, Year 1.
+The owner also confirmed both date-navigation commands remain accessible and
+readable through narrow More actions overflow. These are guided user reports;
+the screenshots do not independently establish selection preservation.
+
+The disabled-state check exposed a presentation defect: Go to selected event
+blocked activation for an Entity selection but did not visibly look disabled.
+The owner's follow-up was interpreted as affecting both direct and overflow
+menus. Shared QMenu styling lacked a disabled-item rule. The repair uses the
+existing `action_secondary_disabled_text` role and restricts selection
+highlighting to enabled items, covering both routes and other shared menus.
+Contracts 5/6/7/8/9 apply; no selection, navigation, draft or keyboard behavior
+changes. No theme literals or policy exceptions were added.
+
+Verification: 35 focused navigation/theme tests passed; visual policy passed.
+Offscreen enabled/disabled menu captures were inspected in all six themes at
+`tmp/krt78-disabled-menu/`. These captures do not establish native acceptance.
+The owner confirmed the restarted native disabled-appearance retest in both routes:
+"Yes, works". Keyboard traversal then exposed a separate report: Tab moves across
+panels/workspaces, enters the description editor and subsequently inserts tabs.
+At the owner's request this complex focus-order/editor-keyboard work is tracked
+separately in [KRT-94](https://linear.app/projektkraken/issue/KRT-94/define-predictable-tab-navigation-across-workspaces-and-description),
+outside KRT-78 and without blocking its bounded review. No Tab behavior was changed.
+After opening Go to date with the mouse, the owner confirmed arrow-key highlight
+clarity and Enter activation of Enter a date. This passes bounded menu keyboard
+operation without asserting that whole-workspace Tab traversal passes.
+The owner then confirmed readable labels, distinct disabled appearance and clear
+keyboard highlighting in a light theme at both normal and narrow widths.
+Exact theme name and dimensions were not recorded.
+
+On a disposable Event, the owner confirmed that entering the full 1 January 1187,
+saving, selecting another entry and reopening retained 1 January 1187. The owner
+also confirmed clear unsaved-versus-completed-save feedback. In the next prompted
+check, the owner confirmed invalid-date rejection and retention of the previous
+valid date after leaving and reopening. These are guided, self-reported native
+passes; no independent database inspection or delayed-save timing measurement
+was performed in this follow-up. Existing automated save-generation/caret checks
+remain separate. Asked about native scaling/readability, the owner reported
+"Scaling works". Exact Windows display/text percentages were not supplied; this
+is a reported pass for the owner's reviewed configuration, not a measured native
+scale matrix. Guided written review replaces the previous uncoached-discovery
+gate for this bounded acceptance; video is optional, following the owner's
+explicit evidence-method preference. KRT-94 owns workspace Tab traversal.
+The menu fix and this review record form the same delivery batch.
 
 ### Disputed surrender follow-up — 2026-10-13
 
@@ -129,11 +182,11 @@ Ruff, mypy (465 source files), visual policy and complexity policy passed. Sphin
 HTML built successfully, and the changed navigation/validation paragraphs were
 checked in rendered HTML. No reviewed complexity allowance was touched.
 
-- Record a fresh uncoached creator discovering selected-event navigation for an
-  approximate-year event, identifying the view as representative, then entering
-  an exact date without changing selection or World Time.
-- Record native Windows normal/narrow/theme/focus/disabled review, supported
-  application sizes and UI-GATE-01 OS/text scaling evidence. Do not infer this
-  from offscreen captures or the historical video.
-- Link the implementation commit and completed verification in Linear. Close
-  KRT-78 only after the remaining acceptance evidence is complete.
+The former uncoached/native-review closure gates above describe the 2026-10-13
+checkpoint. The 2026-10-18 guided review supersedes the uncoached requirement
+and records normal/narrow, light-theme, disabled, menu keyboard, date-persistence,
+invalid-input and reported scaling passes with their limits. This does not claim
+complete UI-GATE-01 native scale coverage or close KRT-45's wider comparison.
+
+The delivery commit and verification are tracked in Linear. No additional
+KRT-78 human task remains in this guided review; KRT-94 remains separate work.

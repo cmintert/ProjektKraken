@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-18
-**Commit:** 3e8c6d056b54679bc0604366791af865dd0543de
+**Commit:** eefb22d0e9fec562b6f6305fa93d952c44cbf4df
 ---
 
 # Changelog
@@ -27,6 +27,11 @@ All notable changes to this project will be documented in this file.
   styling on theme changes.
 
 ### Changed
+
+- *(2026-10-18)* **Menus and review (KRT-78)**: Made disabled menu commands
+  visibly distinct using the shared theme role. Recorded guided native acceptance
+  of date navigation, save feedback, validation and presentation; tracked workspace
+  Tab navigation separately in KRT-94.
 
 - *(2026-10-18)* **Documentation (KRT-77)**: Recorded the guided native review
   pass at normal and approximately 360 px inspector widths. Accepted written

@@ -62,9 +62,13 @@ QMenu::item {{
     background-color: transparent;
     padding: 5px 20px;
 }}
-QMenu::item:selected {{
+QMenu::item:selected:enabled {{
     background-color: {selection_bg};
     color: {selection_text};
+}}
+QMenu::item:disabled {{
+    color: {action_secondary_disabled_text};
+    background-color: transparent;
 }}
 
 /* Specific Panel Backgrounds (Fix for Light Mode fallback) */
