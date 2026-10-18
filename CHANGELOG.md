@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-18
-**Commit:** eefb22d0e9fec562b6f6305fa93d952c44cbf4df
+**Commit:** 7da09126e0651e615cb7be773c1b4758dff519c0
 ---
 
 # Changelog
@@ -27,6 +27,11 @@ All notable changes to this project will be documented in this file.
   styling on theme changes.
 
 ### Changed
+
+- *(2026-10-18)* **Inspector acceptance (KRT-45/KRT-81)**: Recorded completed
+  guided native review and adopted written task outcomes in place of the matched
+  video/baseline comparison gate. Preserved historical evidence limits and kept
+  workspace Tab navigation in KRT-94.
 
 - *(2026-10-18)* **Menus and review (KRT-78)**: Made disabled menu commands
   visibly distinct using the shared theme role. Recorded guided native acceptance

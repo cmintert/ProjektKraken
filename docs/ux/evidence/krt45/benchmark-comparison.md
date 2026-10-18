@@ -1,4 +1,64 @@
-# KRT-45 human comparison — pending
+# KRT-45 acceptance register
+
+## Current method — guided native review, 2026-10-18
+
+The owner authorized completing KRT-81/KRT-45 through guided written native
+checks, one task at a time. Video, matched baseline reruns, numerical improvement
+measures and uncoached first-use classification are no longer closure requirements.
+Historical records below retain their original limits and NM values; the matched
+comparison was not executed. No measured before/after improvement is claimed.
+
+KRT-77–80 are Done. Their recorded acceptance is reused where applicable.
+KRT-81's guided human checks below are complete, covering destination
+predictability, tags/typed fields/Sheet, Media, World context, independent
+supporting views, save lifecycle and advanced authoring semantics.
+Workspace Tab traversal is separate KRT-94 work. This record completes the
+revised acceptance; the delivery commit and issue closure are tracked in Linear.
+
+### Guided outcomes
+
+Each row is a prompted native task confirmed by the owner with "yes" on
+2026-10-18. These are user reports, not independently observed persistence checks.
+
+| Prompted check | Reported outcome |
+| --- | --- |
+| Find/add an Entity tag, save and reopen | Easy to find; addition persists |
+| Remove that tag, save and reopen | Removal persists |
+| Edit text, number and Boolean fields in Details, save and reopen | Values and types remain correct |
+| Switch Fields/Sheet, edit in Sheet and reopen | Values agree; Sheet edit persists |
+| Rearrange a Sheet row, save and reopen | Layout retained |
+| Add Media attachment and caption, save and reopen | Both retained |
+| Edit caption, save and reopen | Caption change persists |
+| Remove disposable attachment and reopen | Removal persists |
+| Open World context and use its links | Links easy to use; clearly read-only |
+| Split World context, continue writing and return pane | Writing remains available; draft preserved |
+| Split Sheet and return pane | Draft and Sheet values preserved |
+| Switch entries with unsaved draft | Warning appears; Cancel/Keep editing preserves draft |
+| Switch entries and choose Save, then return | Draft saved correctly |
+| Make disposable edit, switch and Discard, then return | Last saved version restored |
+| Change the Event date for an event-linked relationship end | Relationship end follows the Event date |
+| Save/reopen approximate-date Event with duration | Uncertainty and duration retained |
+| Apply, Undo and Redo a disposable journey | Map position reverses and restores correctly |
+| Inspect relationship advanced timing/values and reopen without edits | Values unchanged |
+| Follow description link and return | Writing and editor context preserved |
+| Round-trip description source/rendered modes, save and reopen | Text, formatting and links intact |
+| Split supporting view, reset inspector layout | Views return correctly; draft preserved |
+| Inspect a field supplied by an Event | Source clearly identified |
+| Reveal additional World context items using More | Additional items appear without awkward nested scrolling |
+| Follow World context attachment link | Correct Media item selected |
+| Request attachment removal and cancel | Attachment remains intact |
+| Find writing, timing, Connections, Details and Media at normal/narrow widths | Destinations easy to find; supporting tools unobtrusive |
+
+Failed/delayed-save safeguards are covered separately by the existing
+`test_event_timing_navigation.py` regressions for newer text/caret retention,
+failed-save feedback, pending date caret and old hydration generations. The
+completed 35-case KRT-78 navigation/theme run in this session included these
+cases; this is reused automated evidence, not a native failure-injection test.
+No additional guided human task remains. No unasked task or measured improvement
+is inferred from these confirmations. The owner accepted the revised method;
+historical comparison counts and partial outcomes below remain unchanged.
+
+## Historical comparison plan and evidence
 
 Use [benchmark v1.2](../../authoring-benchmark.md) verbatim. This is a comparison
 register, **not an executed run**. The user authorized preserving the baseline

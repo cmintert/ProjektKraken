@@ -1,9 +1,18 @@
 # KRT-45 implementation evidence
 
+**Current acceptance method, 2026-10-18:** the owner authorized guided written
+native review in KRT-81 to finish KRT-45, replacing the former matched-video and
+baseline comparison gates. KRT-77–80 are Done. Completed outcomes are recorded in
+the [acceptance register](benchmark-comparison.md). Historical evidence below
+retains its original limits; no measured improvement is claimed. Guided human
+acceptance passed; the acceptance delivery and KRT-81/KRT-45 closure are tracked
+in Linear. Workspace Tab navigation remains separate KRT-94 work.
+
 Recorded 2026-10-04–05 for [KRT-45](https://linear.app/projektkraken/issue/KRT-45/define-and-validate-canonical-inspector-information-architecture).
-Implementation and automated verification are complete. **Human acceptance is
-pending.** This evidence does not establish fewer observed destination changes,
-first-use discoverability, or completion of the full authoring benchmark.
+At that checkpoint implementation and automated verification were complete and
+human acceptance was pending. This historical evidence does not establish fewer
+observed destination changes, first-use discoverability, or completion of the
+full authoring benchmark.
 
 The [first KRT-45 human review](human-run-1.md), recorded and reviewed on
 2026-10-05, covers attempted KA-01–10 under catalog v1.2. It records dropdown
