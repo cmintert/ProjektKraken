@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-19
-**Commit:** d8a4c6715422c0aa5a86848c736a737a5d13cff9
+**Commit:** 9767162fe1699cfc16b76d72381bf841f8980f05
 ---
 
 # Changelog
@@ -27,6 +27,9 @@ All notable changes to this project will be documented in this file.
   styling on theme changes.
 
 ### Changed
+
+- *(2026-10-19)* **Documentation (KRT-40)**: Linked temporal save extraction
+  evidence from the UX navigation tree for the strict documentation build.
 
 - *(2026-10-19)* **Entity editing (KRT-40)**: Extracted temporal save preparation
   into a pure snapshot service. Ownership dialogs abandon stale choices after

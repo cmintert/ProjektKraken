@@ -50,6 +50,8 @@ are unchanged.
   edits and reject new conflicts; reprojection remains distinct from authoring.
 - Ruff and changed-file formatting pass. Repository-wide mypy passes across
   **483 source files**. Visual policy and Help inspection inventory pass.
+- A fresh strict Sphinx build passes after linking this page from the UX
+  evidence navigation tree. The generated HTML index contains the expected link.
 - Complexity policy passes against the base above. `_save_temporal`: **16 → 7**;
   allowance `c901-b90fc28385bc` and C901 suppression removed. The extracted service
   preparation measures 8, metadata comparison 7 and description preparation 3;
