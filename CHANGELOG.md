@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-18
-**Commit:** 7da09126e0651e615cb7be773c1b4758dff519c0
+**Last Updated:** 2026-10-19
+**Commit:** d8a4c6715422c0aa5a86848c736a737a5d13cff9
 ---
 
 # Changelog
@@ -27,6 +27,14 @@ All notable changes to this project will be documented in this file.
   styling on theme changes.
 
 ### Changed
+
+- *(2026-10-19)* **Entity editing (KRT-40)**: Extracted temporal save preparation
+  into a pure snapshot service. Ownership dialogs abandon stale choices after
+  context changes, and submitted intent remains independent of newer drafts.
+  Preserved checkpoint-first acknowledgement, autosave, source corrections and
+  Save Changes/Discard presentation. Added focused regressions, an architecture
+  guard, rendered evidence and scoped Help reviews; documented the boundary and
+  removed the temporal-save complexity exception (16 to 7).
 
 - *(2026-10-18)* **Inspector acceptance (KRT-45/KRT-81)**: Recorded completed
   guided native review and adopted written task outcomes in place of the matched

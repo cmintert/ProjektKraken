@@ -73,6 +73,269 @@ def _setup(editor, db_service, time=12.0, event_owned=False):
     return entity, state
 
 
+@pytest.mark.parametrize("removal", [False, True])
+def test_autosave_defers_ownership_choices_without_partial_save(
+    editor, db_service, qtbot, removal
+):
+    _setup(editor, db_service)
+    editor.attribute_editor.load_attributes(
+        {} if removal else {"owner": "Guild", "rank": 2}
+    )
+    editor.desc_edit.editor.insertPlainText("Changed ")
+    with (
+        patch.object(editor, "_new_attribute_destination") as addition,
+        patch.object(editor, "_removed_attribute_patch") as remove,
+        qtbot.assertNotEmitted(editor.temporal_save_requested),
+    ):
+        editor._on_autosave()
+    addition.assert_not_called()
+    remove.assert_not_called()
+    assert editor.has_unsaved_changes()
+    assert not editor.save_pending
+    assert editor._pending_temporal_submission is None
+
+
+@pytest.mark.parametrize("removal", [False, True])
+def test_cancelled_ownership_choice_keeps_whole_draft(
+    editor, db_service, qtbot, removal
+):
+    _setup(editor, db_service)
+    editor.attribute_editor.load_attributes(
+        {} if removal else {"owner": "Guild", "rank": 2}
+    )
+    editor.desc_edit.editor.insertPlainText("Changed ")
+    method = "_removed_attribute_patch" if removal else "_new_attribute_destination"
+    with (
+        patch.object(editor, method, return_value=None),
+        qtbot.assertNotEmitted(editor.temporal_save_requested),
+    ):
+        editor._on_save()
+    assert editor.has_unsaved_changes()
+    assert not editor.save_pending
+    assert not editor._temporal_preparing
+
+
+def test_later_cancel_does_not_keep_earlier_ownership_choice(editor, db_service, qtbot):
+    _setup(editor, db_service)
+    editor.attribute_editor.load_attributes({"owner": "Guild", "rank": 2, "port": True})
+    editor.set_dirty(True)
+    with (
+        patch.object(
+            editor,
+            "_new_attribute_destination",
+            side_effect=[
+                {"scope": "baseline"},
+                None,
+            ],
+        ) as choose,
+        qtbot.assertNotEmitted(editor.temporal_save_requested),
+    ):
+        editor._on_save()
+    assert choose.call_count == 2
+    with patch.object(editor, "_new_attribute_destination", return_value=None) as retry:
+        editor._on_save()
+    assert retry.call_args.args[0] == "rank"
+    assert editor.has_unsaved_changes()
+    assert not editor.save_pending
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        "revision",
+        "entity",
+        "generation",
+        "time",
+        "state",
+        "metadata",
+        "discard",
+        "clear",
+    ],
+)
+def test_context_changes_during_choice_abandon_preparation(
+    editor, db_service, qtbot, change
+):
+    _setup(editor, db_service)
+    editor.attribute_editor.load_attributes({"owner": "Guild", "rank": 2})
+    editor.set_dirty(True)
+
+    def choose(*_):
+        assert not editor.save_pending
+        if change == "revision":
+            editor.name_edit.setText("Newer name")
+        elif change == "entity":
+            editor._current_entity_id = "different-entity"
+        elif change == "generation":
+            editor.reset_draft_tracking()
+        elif change == "time":
+            editor._temporal_time += 1
+        elif change == "state":
+            editor._temporal_state["description"] = "New comparison"
+        elif change == "metadata":
+            editor._baseline_metadata_snapshot["name"] = "New comparison"
+        elif change == "discard":
+            editor._on_discard()
+        else:
+            editor.clear()
+        return {"scope": "baseline"}
+
+    with (
+        patch.object(editor, "_new_attribute_destination", side_effect=choose),
+        qtbot.assertNotEmitted(editor.temporal_save_requested),
+    ):
+        editor._on_save()
+    assert not editor.save_pending
+    assert not editor._temporal_preparing
+    if change not in {"discard", "clear"}:
+        assert editor.has_unsaved_changes()
+
+
+def test_nested_save_is_ignored_while_choosing(editor, db_service, qtbot):
+    _setup(editor, db_service)
+    editor.attribute_editor.load_attributes({"owner": "Guild", "rank": 2})
+    editor.set_dirty(True)
+    requests = []
+    editor.temporal_save_requested.connect(requests.append)
+
+    def choose(*_):
+        editor._on_save()
+        editor._on_autosave()
+        assert requests == []
+        assert not editor.save_pending
+        return {"scope": "baseline"}
+
+    with patch.object(
+        editor, "_new_attribute_destination", side_effect=choose
+    ) as dialog:
+        editor._on_save()
+    assert dialog.call_count == 1
+    assert len(requests) == 1
+    assert requests[0]["patches"] == [
+        {
+            "field": "attribute",
+            "key": "rank",
+            "action": "set",
+            "value": 2,
+            "scope": "baseline",
+        },
+    ]
+    assert editor.save_pending
+    assert not editor._temporal_preparing
+
+
+def test_preparation_exception_releases_guard_without_starting_save(editor, db_service):
+    _setup(editor, db_service)
+    editor.attribute_editor.load_attributes({"owner": "Guild", "rank": 2})
+    editor.set_dirty(True)
+    with patch.object(
+        editor, "_new_attribute_destination", side_effect=RuntimeError("closed")
+    ):
+        with pytest.raises(RuntimeError, match="closed"):
+            editor._on_save()
+    assert not editor._temporal_preparing
+    assert not editor.save_pending
+    assert editor.has_unsaved_changes()
+
+
+@pytest.mark.parametrize("reset", ["discard", "clear", "hydrate", "missing"])
+def test_reset_releases_submitted_intent_and_ignores_late_ack(
+    editor, db_service, qtbot, reset
+):
+    entity, _ = _setup(editor, db_service)
+    editor.desc_edit.editor.insertPlainText("Changed ")
+    with qtbot.waitSignal(editor.temporal_save_requested) as request:
+        editor._on_save()
+    result = _command(request.args[0]).execute(db_service)
+    assert result.success
+    if reset == "discard":
+        editor._on_discard()
+    elif reset == "clear":
+        editor.clear()
+    else:
+        editor.load_entity(entity if reset == "hydrate" else None)
+    assert editor._pending_temporal_submission is None
+    assert not editor.finish_temporal_save(
+        True, result.data["temporal_entity_checkpoint"]
+    )
+
+
+def test_request_transport_cannot_mutate_pending_intent_or_comparisons(
+    editor, db_service, qtbot
+):
+    _setup(editor, db_service)
+    editor._pending_summary_changed = True
+    editor._pending_summary_data = {"parts": ["saved"]}
+    editor._pending_new_description_event = {"event_name": "Rebuilding"}
+    editor.set_dirty(True)
+    with qtbot.waitSignal(editor.temporal_save_requested) as request:
+        editor._on_save()
+    data = request.args[0]
+    data["metadata"]["hidden_attributes"]["_summary_data"]["parts"].append("transport")
+    data["expected"]["description"] = "transport"
+    data["expected_metadata"]["name"] = "transport"
+    assert editor._pending_temporal_submission.metadata == {
+        "hidden_attributes": {"_summary_data": {"parts": ["saved"]}},
+    }
+    assert editor._temporal_state["description"] == "Old harbor"
+    assert editor._baseline_metadata_snapshot["name"] == "Harbor"
+
+
+def test_context_change_at_event_picker_does_not_open_event_name_dialog(
+    editor, db_service
+):
+    _setup(editor, db_service)
+    snapshot = editor._capture_temporal_draft()
+
+    def change_time(*_):
+        editor._temporal_time += 1
+        return "Create a new event...", True
+
+    with patch("src.gui.widgets.entity_editor.QInputDialog") as dialog:
+        dialog.getItem.side_effect = change_time
+        assert editor._choose_dated_event(snapshot) is None
+        dialog.getText.assert_not_called()
+
+
+def test_context_change_at_destination_does_not_open_hidden_baseline_confirmation(
+    editor, db_service
+):
+    _setup(editor, db_service)
+    editor._temporal_state["absent_attribute_sources"] = {"rank": {"kind": "baseline"}}
+    snapshot = editor._capture_temporal_draft()
+    with patch("src.gui.widgets.entity_editor.QMessageBox") as dialog:
+        baseline, dated, cancel = MagicMock(), MagicMock(), MagicMock()
+        box = dialog.return_value
+        box.addButton.side_effect = [baseline, dated, cancel]
+        box.clickedButton.return_value = baseline
+        box.exec.side_effect = lambda: editor.name_edit.setText("Newer draft")
+        assert (
+            editor._new_attribute_destination("rank", snapshot.state, snapshot) is None
+        )
+        dialog.question.assert_not_called()
+
+
+def test_success_keeps_newer_summary_and_dated_description_intent(
+    editor, db_service, qtbot
+):
+    _setup(editor, db_service)
+    editor._pending_summary_changed = True
+    editor._pending_summary_data = {"text": "Submitted"}
+    editor._pending_new_description_event = {"event_name": "Rebuilding"}
+    editor.set_dirty(True)
+    with qtbot.waitSignal(editor.temporal_save_requested) as request:
+        editor._on_save()
+    result = _command(request.args[0]).execute(db_service)
+    assert result.success, result.message
+    editor._pending_summary_data = {"text": "Newer summary"}
+    editor._pending_new_description_event = {"event_name": "Later intent"}
+    editor.set_dirty(True)
+    assert editor.finish_temporal_save(True, result.data["temporal_entity_checkpoint"])
+    assert editor._pending_summary_changed
+    assert editor._pending_summary_data == {"text": "Newer summary"}
+    assert editor._pending_new_description_event == {"event_name": "Later intent"}
+    assert editor.has_unsaved_changes()
+
+
 @pytest.mark.parametrize("time", [-12.0, 0.0, 12.0])
 @pytest.mark.parametrize("event_owned", [False, True])
 @pytest.mark.parametrize("manual", [False, True])

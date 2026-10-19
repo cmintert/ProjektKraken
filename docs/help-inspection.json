@@ -12082,8 +12082,8 @@
     {
       "source": "src/gui/widgets/entity_editor.py",
       "symbol": "EntityEditorWidget._choose_dated_event",
-      "sha256": "c9d202a91050639b7567cf23898f65cc485fa316b705973e3251dbae365d619e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "f5ac4237e87888665f697b2ddf3907bb0643d7ff330dd2fec5d165833628c9d5",
+      "review_note": "KRT-40: Event choices, viewed-time ownership and event creation explanations remain accurate. Nested dialog returns now reject stale draft/context captures before continuing; labels and stored meaning are unchanged."
     },
     {
       "source": "src/gui/widgets/entity_editor.py",
@@ -12094,8 +12094,8 @@
     {
       "source": "src/gui/widgets/entity_editor.py",
       "symbol": "EntityEditorWidget._new_attribute_destination",
-      "sha256": "310fdbb11dc50f83929c56f84e7b98c3608c7d3e00e4bcb435e39a0c34f787af",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "b3d5c6f2aed1266171f1c454885559f1dcbd9d6006ff80cda43b0ed418d69226",
+      "review_note": "KRT-40: Entity baseline and At this time retain the documented ownership meanings and hidden-baseline confirmation. Stale modal choices are abandoned without submitting or discarding the draft."
     },
     {
       "source": "src/gui/widgets/entity_editor.py",
@@ -12106,8 +12106,8 @@
     {
       "source": "src/gui/widgets/entity_editor.py",
       "symbol": "EntityEditorWidget._on_discard",
-      "sha256": "7cfdb9ffed4d4d2c055637489bb62dd18a813040850765ab9b215c68d9e6fc86",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "78bc6f1117322e699eccc5ff4e3a1c13d4bb3f89f0d6397cb98db4625e45702e",
+      "review_note": "KRT-40: Discard still invalidates the draft generation and requests deliberate reload. The copied pending submission replaces scattered pending fields; existing Discard explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/entity_editor.py",
@@ -12190,14 +12190,14 @@
     {
       "source": "src/gui/widgets/entity_editor.py",
       "symbol": "EntityEditorWidget._removed_attribute_patch",
-      "sha256": "add33c3eaf4d06f2e7e0ba3ab6d06e7e2db5940f81e79f79c190f04a062a9ae7",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "f52c18484c59230ef568e14d505ede52f4124f7deae88e1d503d8f33134b314a",
+      "review_note": "KRT-40: Absent from this state and Remove source override retain their documented distinct meanings. Context checks only prevent stale nested choices; no new control or persistence behavior."
     },
     {
       "source": "src/gui/widgets/entity_editor.py",
       "symbol": "EntityEditorWidget._save_temporal",
-      "sha256": "b51d86470401ce5ff12e2cbf9b9f5825706ea7b1beba7d6f9e6b7b06b1c281ce",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "0298db7afa540f22b20f7db244a3118cbb596a4a235a96ce182f56802ea4e3e6",
+      "review_note": "KRT-40: Save Changes and autosave retain source-aware corrections, explicit ownership choices and acknowledgement-based dirty tracking. Preparation now delegates to a pure service; cancelled or stale choices submit nothing. Existing save and historical-editing explanations remain accurate."
     },
     {
       "source": "src/gui/widgets/entity_editor.py",
@@ -12206,10 +12206,10 @@
       "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
     },
     {
-      "source": "src/gui/widgets/entity_editor.py",
-      "symbol": "EntityEditorWidget._temporal_save_metadata",
-      "sha256": "006f0a21f5689e3a0f54d3bdab57eb15cd614b0278a471aa3511dc2ddfb384b2",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "source": "src/services/temporal_entity_draft_service.py",
+      "symbol": "_metadata",
+      "sha256": "032fe7225baa9a48ecd4a6a89d4f7cdd6cc110ea0d8be76f71c79a7cf3c67ab8",
+      "review_note": "KRT-40: Moved baseline metadata comparison into pure preparation. Name, type, tags, explicit summary removal and same-visible-keys sheet-layout rules are preserved; no new user control or Help wording is needed."
     },
     {
       "source": "src/gui/widgets/entity_editor.py",
@@ -16392,6 +16392,48 @@
       "symbol": "ConnectionsOverview.__init__",
       "sha256": "98f756545d25880a5fea4d41dea208b2b220f9107141cc9e97852a8fa4b61111",
       "review_note": "KRT-93 owner refinements: Meaning is one editable dropdown with stable-key suggestion data and deliberate free phrases; no Custom field. The editor heading is plain text within a neutral frame. Scrollbars refresh with the theme. Edit shares the selection row; guarded navigation/removal remain under More actions. Updated task/control explanations describe these behaviors."
+    },
+    {
+      "source": "src/gui/widgets/entity_editor.py",
+      "symbol": "EntityEditorWidget._capture_temporal_draft",
+      "sha256": "f4b1e9387390477054aaefae2468da5a67f6da81a6c2cd4a5448c049913ec2ff",
+      "review_note": "KRT-40: Reviewed extracted preparation/acknowledgement dependency. Existing historical editing, Save Changes and Discard explanations remain accurate: corrections retain source ownership, explicit dated intent remains distinct, and acknowledgements preserve newer drafts. No new UI or Help destination."
+    },
+    {
+      "source": "src/gui/widgets/entity_editor.py",
+      "symbol": "EntityEditorWidget._prepare_temporal_choices",
+      "sha256": "6463d430c0cef1ab281cbb384a613b810e4fd017755353300690eed9c389ac94",
+      "review_note": "KRT-40: Reviewed extracted preparation/acknowledgement dependency. Existing historical editing, Save Changes and Discard explanations remain accurate: corrections retain source ownership, explicit dated intent remains distinct, and acknowledgements preserve newer drafts. No new UI or Help destination."
+    },
+    {
+      "source": "src/gui/widgets/entity_editor.py",
+      "symbol": "EntityEditorWidget._temporal_draft_matches",
+      "sha256": "723f6c599f031b2cba6c054bf30f3aee96069c4f9aec1f75c345597b252c8a06",
+      "review_note": "KRT-40: Reviewed extracted preparation/acknowledgement dependency. Existing historical editing, Save Changes and Discard explanations remain accurate: corrections retain source ownership, explicit dated intent remains distinct, and acknowledgements preserve newer drafts. No new UI or Help destination."
+    },
+    {
+      "source": "src/gui/widgets/entity_editor.py",
+      "symbol": "EntityEditorWidget._temporal_save_pending",
+      "sha256": "27b225a38eacba51fa5cb5cad9155dd2223200e39c398bedb6fcd81c3535a7d1",
+      "review_note": "KRT-40: Reviewed extracted preparation/acknowledgement dependency. Existing historical editing, Save Changes and Discard explanations remain accurate: corrections retain source ownership, explicit dated intent remains distinct, and acknowledgements preserve newer drafts. No new UI or Help destination."
+    },
+    {
+      "source": "src/gui/widgets/entity_editor.py",
+      "symbol": "EntityEditorWidget.finish_temporal_save",
+      "sha256": "383ab8576ec409c5a7abd4a2d86e45770979cd45e6bf56b5f046d9fd0753f424",
+      "review_note": "KRT-40: Reviewed extracted preparation/acknowledgement dependency. Existing historical editing, Save Changes and Discard explanations remain accurate: corrections retain source ownership, explicit dated intent remains distinct, and acknowledgements preserve newer drafts. No new UI or Help destination."
+    },
+    {
+      "source": "src/services/temporal_entity_draft_service.py",
+      "symbol": "TemporalEntityDraftService.prepare",
+      "sha256": "26ef0cdc327944209c1e24d689d213480910d4d5d268c10288478086d714aceb",
+      "review_note": "KRT-40: Reviewed extracted preparation/acknowledgement dependency. Existing historical editing, Save Changes and Discard explanations remain accurate: corrections retain source ownership, explicit dated intent remains distinct, and acknowledgements preserve newer drafts. No new UI or Help destination."
+    },
+    {
+      "source": "src/services/temporal_entity_draft_service.py",
+      "symbol": "_description_patches",
+      "sha256": "e42632af25fe03aa82d20c91606f7204fba23e88edae7cade1c758d743078da2",
+      "review_note": "KRT-40: Reviewed extracted preparation/acknowledgement dependency. Existing historical editing, Save Changes and Discard explanations remain accurate: corrections retain source ownership, explicit dated intent remains distinct, and acknowledgements preserve newer drafts. No new UI or Help destination."
     }
   ],
   "review_status": {

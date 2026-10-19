@@ -209,7 +209,9 @@ def test_destination_extraction_preserves_choices_and_help_metadata(
     from PySide6.QtCore import QTimer
     from PySide6.QtWidgets import QMessageBox
 
-    monkeypatch.setattr(editor, "_choose_dated_event", lambda: {"event_id": "handover"})
+    monkeypatch.setattr(
+        editor, "_choose_dated_event", lambda snapshot=None: {"event_id": "handover"}
+    )
     seen = []
 
     def choose():

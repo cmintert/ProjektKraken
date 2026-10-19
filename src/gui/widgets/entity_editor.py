@@ -70,6 +70,14 @@ from src.gui.widgets.tag_editor import TagEditorWidget
 from src.gui.widgets.timeline_display_widget import TimelineDisplayWidget
 from src.gui.widgets.wiki_text_edit import ResizableWikiTextEditField, WikiTextEdit
 from src.gui.widgets.wrapping_buttons import WrappingPrimaryButton as PrimaryButton
+from src.services.temporal_entity_draft_service import (
+    ChoiceRequired,
+    NoChanges,
+    PendingTemporalSubmission,
+    PreparedSave,
+    TemporalEntityDraftService,
+    TemporalEntityDraftSnapshot,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -134,9 +142,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self._temporal_state: dict[str, Any] | None = None
         self._temporal_time: float | None = None
         self._dated_events: list[tuple[str, str, float]] = []
-        self._temporal_save_pending = False
+        self._pending_temporal_submission: PendingTemporalSubmission | None = None
+        self._temporal_preparing = False
         self._temporal_checkpoint_invalid = False
-        self._pending_temporal_metadata: dict[str, Any] = {}
         self.autosave_manager = AutoSaveManager(self)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
@@ -820,7 +828,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             focus.exit()
         # Handle missing entity (e.g., deleted)
         if entity is None:
-            self._temporal_save_pending = False
+            self._pending_temporal_submission = None
             self._temporal_checkpoint_invalid = False
             self._current_entity_id = None
             self._temporal_state = None
@@ -844,7 +852,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self._current_entity_id = entity.id
             self._temporal_state = None
             self._temporal_time = None
-            self._temporal_save_pending = False
+            self._pending_temporal_submission = None
             self._temporal_checkpoint_invalid = False
             self._pending_new_description_event: dict[str, Any] | None = None
             self._baseline_name = entity.name
@@ -1212,9 +1220,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             return
 
         self._pending_new_description_event = None
-        self._temporal_save_pending = False
+        self._pending_temporal_submission = None
         self._temporal_checkpoint_invalid = False
-        self._pending_temporal_metadata = {}
         self.reset_draft_tracking()
         self.set_dirty(False)
         self.discard_requested.emit(self._current_entity_id)
@@ -1229,7 +1236,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self._current_entity_id = None
         self._temporal_state = None
         self._temporal_time = None
-        self._temporal_save_pending = False
+        self._pending_temporal_submission = None
         self._temporal_checkpoint_invalid = False
         self.reset_draft_tracking()
         self._reset_pending_summary()
@@ -1564,7 +1571,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         """Provide event choices already loaded by the application."""
         self._dated_events = events
 
-    def _choose_dated_event(self) -> dict[str, Any] | None:
+    def _choose_dated_event(
+        self, snapshot: TemporalEntityDraftSnapshot | None = None
+    ) -> dict[str, Any] | None:
         """Choose an event at the pinned time or name a new one."""
         if self._temporal_time is None:
             return None
@@ -1578,6 +1587,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         label, accepted = QInputDialog.getItem(
             self, "Date this change", "Event at the viewed time:", labels, 0, False
         )
+        if snapshot is not None and not self._temporal_draft_matches(snapshot):
+            return None
         if not accepted:
             return None
         if label != labels[-1]:
@@ -1585,6 +1596,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         name, accepted = QInputDialog.getText(
             self, "New event", "Name for the event at this time:"
         )
+        if snapshot is not None and not self._temporal_draft_matches(snapshot):
+            return None
         if not accepted or not name.strip():
             return None
         return {"event_name": name.strip()}
@@ -1613,7 +1626,10 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self._on_save()
 
     def _new_attribute_destination(
-        self, key: str, state: dict[str, Any]
+        self,
+        key: str,
+        state: dict[str, Any],
+        snapshot: TemporalEntityDraftSnapshot | None = None,
     ) -> dict[str, Any] | None:
         """Choose a new attribute's existing baseline/dated ownership explicitly."""
         choice = QMessageBox(self)
@@ -1631,6 +1647,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         dated.setProperty("krakenHelpMeaning", "entity.at-time")
         choice.addButton(QMessageBox.StandardButton.Cancel)
         choice.exec()
+        if snapshot is not None and not self._temporal_draft_matches(snapshot):
+            return None
         if choice.clickedButton() == baseline:
             if key in state.get("absent_attribute_sources", {}):
                 confirmation = QMessageBox.question(
@@ -1639,16 +1657,21 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
                     "An event currently unsets this attribute. A baseline "
                     "value will remain hidden at the viewed time. Create it anyway?",
                 )
+                if snapshot is not None and not self._temporal_draft_matches(snapshot):
+                    return None
                 if confirmation != QMessageBox.StandardButton.Yes:
                     return None
             return {"scope": "baseline"}
         if choice.clickedButton() == dated:
-            event = self._choose_dated_event()
+            event = self._choose_dated_event(snapshot)
             return {"scope": "dated", **event} if event is not None else None
         return None
 
     def _removed_attribute_patch(
-        self, key: str, state: dict[str, Any]
+        self,
+        key: str,
+        state: dict[str, Any],
+        snapshot: TemporalEntityDraftSnapshot | None = None,
     ) -> dict[str, Any] | None:
         """Capture absence/override removal without saving or mutating state."""
         choice = QMessageBox(self)
@@ -1671,10 +1694,12 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             "Removing an override can reveal an earlier or baseline value."
         )
         choice.exec()
+        if snapshot is not None and not self._temporal_draft_matches(snapshot):
+            return None
         if choice.clickedButton() == absent:
             patch = {"field": "attribute", "key": key, "action": "unset"}
             if state["attribute_sources"][key]["kind"] == "baseline":
-                event = self._choose_dated_event()
+                event = self._choose_dated_event(snapshot)
                 if event is None:
                     return None
                 patch.update({"scope": "dated", **event})
@@ -1684,118 +1709,113 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         else:
             return None
 
-    def _save_temporal(self, *, interactive: bool) -> None:  # noqa: C901
-        """Emit only changed visible fields and explicit ownership choices."""
-        state = self._temporal_state
+    @property
+    def _temporal_save_pending(self) -> bool:
+        """Derive temporal pending state from the submitted intent record."""
+        return self._pending_temporal_submission is not None
+
+    def _capture_temporal_draft(self) -> TemporalEntityDraftSnapshot | None:
+        """Read the form once, copying comparisons and nested draft values."""
         if (
-            state is None
+            self._temporal_state is None
             or self._temporal_time is None
             or self._current_entity_id is None
         ):
-            return
-        if self._temporal_save_pending:
+            return None
+        return deepcopy(
+            TemporalEntityDraftSnapshot(
+                entity_id=self._current_entity_id,
+                lore_time=self._temporal_time,
+                generation=self.draft_generation,
+                revision=self.edit_revision,
+                state=self._temporal_state,
+                baseline_metadata=self._baseline_metadata_snapshot,
+                name=self.name_edit.text(),
+                entity_type=self.type_edit.currentText(),
+                description=self.desc_edit.get_wiki_text(),
+                attributes=self.attribute_editor.get_attributes(),
+                tags=self.tag_editor.get_tags(),
+                sheet_layout=self.sheet_builder.get_layout(),
+                displayed_sheet_layout=self._displayed_sheet_layout,
+                description_event=getattr(self, "_pending_new_description_event", None),
+                summary_changed=self._pending_summary_changed,
+                summary_data=self._pending_summary_data,
+            )
+        )
+
+    def _temporal_draft_matches(self, snapshot: TemporalEntityDraftSnapshot) -> bool:
+        """Reject choices prepared across nested-loop context or draft changes."""
+        return (
+            not self.save_pending
+            and not self._temporal_checkpoint_invalid
+            and self._capture_temporal_draft() == snapshot
+        )
+
+    def _prepare_temporal_choices(
+        self, snapshot: TemporalEntityDraftSnapshot, *, interactive: bool
+    ) -> NoChanges | PreparedSave | None:
+        """Resolve service-requested decisions using the existing dialogs."""
+        choices: dict[str, dict[str, Any]] = {}
+        result = TemporalEntityDraftService.prepare(snapshot, choices)
+        while isinstance(result, ChoiceRequired):
+            if not interactive:
+                return None
+            decision = (
+                self._new_attribute_destination(result.key, snapshot.state, snapshot)
+                if result.kind == "addition"
+                else self._removed_attribute_patch(result.key, snapshot.state, snapshot)
+            )
+            if decision is None or not self._temporal_draft_matches(snapshot):
+                return None
+            choices[result.key] = decision
+            result = TemporalEntityDraftService.prepare(snapshot, choices)
+        return result
+
+    def _save_temporal(self, *, interactive: bool) -> None:
+        """Prepare one captured draft, then emit a complete revision-bound request."""
+        if self._temporal_preparing or self.save_pending:
             return
         if self._temporal_checkpoint_invalid:
             self.autosave_manager.stop_timer()
             return
-        patches: list[dict[str, Any]] = []
-        description = self.desc_edit.get_wiki_text()
-        new_description_event = getattr(self, "_pending_new_description_event", None)
-        if description != state["description"] or new_description_event is not None:
-            patch: dict[str, Any] = {
-                "field": "description",
-                "action": "set",
-                "value": description,
-            }
-            if new_description_event is not None:
-                patch.update({"scope": "dated", **new_description_event})
-            patches.append(patch)
-        original = {
-            key: value
-            for key, value in state["attributes"].items()
-            if not key.startswith("_")
-        }
-        current = {
-            key: value
-            for key, value in self.attribute_editor.get_attributes().items()
-            if not key.startswith("_")
-        }
-        for key, value in current.items():
-            if key in original and original[key] == value:
-                continue
-            patch = {"field": "attribute", "key": key, "action": "set", "value": value}
-            if key not in original:
-                if not interactive:
-                    return
-                destination = self._new_attribute_destination(key, state)
-                if destination is None:
-                    return
-                patch.update(destination)
-            patches.append(patch)
-        for key in original.keys() - current.keys():
-            if not interactive:
-                return
-            removal_patch = self._removed_attribute_patch(key, state)
-            if removal_patch is None:
-                return
-            patches.append(removal_patch)
-        metadata = self._temporal_save_metadata(current, original)
-        if not patches and not metadata:
-            self.set_dirty(False)
+        snapshot = self._capture_temporal_draft()
+        if snapshot is None:
             return
-        revision = self.begin_save()
-        if revision is None:
-            return
-        self._temporal_save_pending = True
-        self._pending_temporal_metadata = metadata
-        self._submitted_description_event = deepcopy(new_description_event)
-        self.autosave_manager.stop_timer()
-        self.temporal_save_requested.emit(
-            {
-                "entity_id": self._current_entity_id,
-                "lore_time": self._temporal_time,
-                "expected": state,
-                "patches": patches,
-                "metadata": metadata,
-                "expected_metadata": self._baseline_metadata_snapshot,
-                "__editor_revision": revision,
-                "__editor_generation": self.draft_generation,
-                "__save_origin": "manual" if interactive else "autosave",
-            }
-        )
-
-    def _temporal_save_metadata(
-        self, current: dict[str, Any], original: dict[str, Any]
-    ) -> dict[str, Any]:
-        """Collect baseline metadata changes separately from temporal patches."""
-        metadata: dict[str, Any] = {}
-        if self.name_edit.text() != getattr(
-            self, "_baseline_name", self.name_edit.text()
-        ):
-            metadata["name"] = self.name_edit.text()
-        if self.type_edit.currentText() != getattr(
-            self, "_baseline_type", self.type_edit.currentText()
-        ):
-            metadata["type"] = self.type_edit.currentText()
-        hidden: dict[str, Any] = {}
-        if self.tag_editor.get_tags() != getattr(self, "_baseline_tags", []):
-            hidden["_tags"] = self.tag_editor.get_tags()
-        sheet_layout = self.sheet_builder.get_layout()
-        if (
-            sheet_layout != getattr(self, "_displayed_sheet_layout", sheet_layout)
-            and current.keys() == original.keys()
-        ):
-            hidden["_sheet_layout"] = sheet_layout
-        if self._pending_summary_changed:
-            hidden["_summary_data"] = self._pending_summary_data
-        if hidden:
-            metadata["hidden_attributes"] = hidden
-        return metadata
+        self._temporal_preparing = True
+        try:
+            prepared = self._prepare_temporal_choices(snapshot, interactive=interactive)
+            if prepared is None or not self._temporal_draft_matches(snapshot):
+                return
+            if isinstance(prepared, NoChanges):
+                self.set_dirty(False)
+                return
+            revision = self.begin_save()
+            if revision is None:
+                return
+            self._pending_temporal_submission = PendingTemporalSubmission(
+                prepared.metadata, snapshot.description_event
+            )
+            self.temporal_save_requested.emit(
+                {
+                    "entity_id": snapshot.entity_id,
+                    "lore_time": snapshot.lore_time,
+                    "expected": snapshot.state,
+                    "patches": prepared.patches,
+                    "metadata": prepared.metadata,
+                    "expected_metadata": snapshot.baseline_metadata,
+                    "__editor_revision": revision,
+                    "__editor_generation": snapshot.generation,
+                    "__save_origin": "manual" if interactive else "autosave",
+                }
+            )
+        finally:
+            self._temporal_preparing = False
 
     def finish_temporal_save(self, success: bool, checkpoint: object = None) -> bool:
         """Install saved comparisons before releasing guards; retain newer edits."""
         revision = self._pending_save_revision
-        if revision is None:
+        submitted = self._pending_temporal_submission
+        if revision is None or submitted is None:
             return False
         parsed = (
             parse_temporal_entity_checkpoint(
@@ -1808,14 +1828,13 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         )
         if success and parsed is None:
             self._temporal_checkpoint_invalid = True
-            self._temporal_save_pending = False
+            self._pending_temporal_submission = None
             self.finish_save(revision, False)
             self.temporal_snapshot_label.setText(
                 "Changes were saved, but the editor could not refresh. "
                 "Copy any newer draft before reopening this entity."
             )
             self.temporal_snapshot_banner.show()
-            self._pending_temporal_metadata = {}
             return False
         if success:
             assert parsed is not None
@@ -1833,12 +1852,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self.attribute_editor.set_source_labels(
                 self._temporal_state["attribute_sources"]
             )
-            if self._pending_new_description_event == getattr(
-                self, "_submitted_description_event", None
-            ):
+            if self._pending_new_description_event == submitted.description_event:
                 self._pending_new_description_event = None
-            metadata = getattr(self, "_pending_temporal_metadata", {})
-            hidden = metadata.get("hidden_attributes", {})
+            hidden = submitted.metadata.get("hidden_attributes", {})
             if "_sheet_layout" in hidden:
                 self._displayed_sheet_layout = deepcopy(hidden["_sheet_layout"])
             if (
@@ -1846,8 +1862,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
                 and self._pending_summary_data == hidden["_summary_data"]
             ):
                 self._reset_pending_summary()
-        self._pending_temporal_metadata = {}
-        self._temporal_save_pending = False
+        self._pending_temporal_submission = None
         self.finish_save(revision, success)
         return success
 

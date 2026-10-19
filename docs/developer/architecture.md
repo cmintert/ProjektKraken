@@ -81,6 +81,16 @@ Widget signal
 Widgets render snapshots and emit intent. They do not execute SQL, perform
 business mutations, or own service objects.
 
+Temporal entity saves use the stateless `TemporalEntityDraftService` to compare
+copied draft snapshots and prepare patches and baseline metadata. It returns
+`NoChanges`, `ChoiceRequired` or `PreparedSave`; it has no Qt, command or storage
+dependencies. The widget owns dialogs, a local preparation guard and a copied
+`PendingTemporalSubmission`, while `BaseEditorMixin` owns revisions and dirty
+state. Context and draft comparisons are checked after modal choices and before
+submission. The existing coordinator correlates results; the widget installs the
+transaction-built checkpoint before releasing save guards or restarting autosave.
+Neither preparation nor acknowledgement replaces newer live form values.
+
 ## Thread ownership
 
 `DatabaseService` belongs to the database worker thread. Never access it from

@@ -15,6 +15,15 @@ _FORBIDDEN_IMPORT_ROOTS = {
 pytestmark = pytest.mark.ci_fast
 
 
+def test_temporal_entity_preparation_is_independent_of_ui_and_persistence():
+    """Keep the KRT-40 preparation seam limited to pure data transformations."""
+    path = _SOURCE_ROOT / "services/temporal_entity_draft_service.py"
+    allowed_roots = {"copy", "dataclasses", "typing"}
+    assert all(
+        module.split(".")[0] in allowed_roots for _, module in _imported_modules(path)
+    ), "Preparation must not acquire Qt, app, GUI, commands or persistence dependencies"
+
+
 def _source_imports(source: str, module: str) -> list[tuple[int, str]]:
     """Resolve absolute and relative imports, including imported child modules."""
     tree = ast.parse(source)
