@@ -2,13 +2,6 @@
   "schema": 1,
   "allowances": [
     {
-      "id": "c901-020f2d0c9c6b",
-      "path": "src/gui/widgets/timeline/timeline_view.py",
-      "symbol": "TimelineView.set_events",
-      "ceiling": 19,
-      "reason": "Existing production complexity reviewed for KRT-36; untouched debt only, executable edits must strictly improve."
-    },
-    {
       "id": "c901-11d4d979af51",
       "path": "src/gui/dialogs/fast_inject_dialog.py",
       "symbol": "FastInjectDialog._on_apply",

@@ -13,6 +13,29 @@ to the version-matched offline bundle. None of these components query world data
 execute commands or add database-worker slots. GUI-local weak origin references
 and native popup/registration metadata never cross worker boundaries.
 
+## Timeline reconciliation and packing
+
+`TimelineEventPreparationService` prepares full replacements and ordered mutation
+batches without Qt or persistence. Its GUI-local result retains Event identities,
+lists upserts/removals and accumulates geometry invalidations. `TimelineView`
+continues to own graphics items, drop lines, group duplicates, scene updates,
+debounce, initial fitting and navigation. No command or database boundary moves.
+
+`TimelineLanePacker.measure_events()` resolves the current calendar and existing
+item/text geometry on the GUI thread. Frozen `TimelineLayoutInput` records contain
+only event ID, start/end lore days (including gap) and height. Both synchronous and
+grouped packing use `pack_timeline_intervals()`; the asynchronous `LayoutWorker`
+uses the same pure calculation with detached records. No live Event, calendar,
+font or graphics item crosses this worker boundary.
+
+Queued completion signals carry a unique request token. The view checks token
+identity and the captured layout generation before applying results. Event
+geometry, preview, scale, calendar and grouping changes invalidate older work;
+empty replacement/removal also invalidates it. One active worker coalesces newer
+requests. Stale completion redispatches through the current empty/grouped/sync/
+async selection; stale errors cannot trigger an old fallback. Current errors use
+fresh synchronous measurements. Dependency tests guard these extracted boundaries.
+
 ## Dependency direction
 
 ```text

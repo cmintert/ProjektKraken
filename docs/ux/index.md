@@ -26,6 +26,7 @@ evidence/krt21/README
 evidence/krt22/README
 evidence/krt26/README
 evidence/krt40/README
+evidence/krt41/README
 evidence/krt45/README
 evidence/krt45/benchmark-comparison
 evidence/krt45/human-run-1

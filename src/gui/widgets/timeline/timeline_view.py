@@ -17,6 +17,7 @@ from PySide6.QtCore import (
     QThreadPool,
     QTimer,
     Signal,
+    Slot,
 )
 from PySide6.QtGui import (
     QColor,
@@ -46,6 +47,10 @@ from src.gui.widgets.timeline.timeline_scene import (
     TimelineScene,
 )
 from src.gui.widgets.timeline_ruler import TickLevel, TimelineRuler
+from src.services.timeline_event_preparation_service import (
+    PreparedTimelineEvents,
+    TimelineEventPreparationService,
+)
 
 if TYPE_CHECKING:
     from src.gui.workers.layout_worker import LayoutWorker
@@ -207,6 +212,8 @@ class TimelineView(QGraphicsView):
         self._layout_start_time: float = 0.0
         self._layout_generation = 0
         self._active_layout_generation = 0
+        self._layout_request_token = 0
+        self._active_layout_token: int | None = None
         self._incremental_layout_timer = QTimer(self)
         self._incremental_layout_timer.setSingleShot(True)
         self._incremental_layout_timer.setInterval(50)
@@ -601,197 +608,99 @@ class TimelineView(QGraphicsView):
 
         """
         self._ruler.set_calendar_converter(converter)
+        self._layout_generation += 1
         self.viewport().update()
 
-    def set_events(self, events: list[Event]) -> None:  # noqa: C901
-        """Updates the scene with event items using smart lane packing. Reuses existing
-        EventItem instances where possible for performance.
-
-        Smart lane packing algorithm:
-        - Greedy interval packing (First Fit)
-        - Sort events by start time.
-        - Packs into first available lane.
-        """
-        # Show/hide empty state overlay based on event list
+    def set_events(self, events: list[Event]) -> None:
+        """Reconcile event items on the GUI thread, then request their layout."""
         self._incremental_layout_timer.stop()
-        if hasattr(self, "_empty_state"):
-            if events:
-                self._empty_state.hide()
-            else:
-                self._empty_state.show()
-                self._empty_state.raise_()
-
-        # Cleanup duplicates first to avoid pollution when scanning scene
         self._clear_duplicates()
-
-        # Sort by Date
-        sorted_events = sorted(events, key=lambda e: e.lore_date)
-        self.events = sorted_events
-        self._layout_generation += 1
-
-        # Build a map of existing items by event ID
-        existing_items: dict[str, EventItem] = {}
-        drop_lines = self._drop_lines
-        for item in self.graphics_scene.items():
-            if isinstance(item, EventItem):
-                existing_items[item.event.id] = item
-
-        # Track which items we've reused
-        reused_ids: set[str] = set()
-
-        # NOTE: Don't call repack_events() here - items don't exist yet.
-        # Items are created below, then repack_events() is called at line 470.
-
-        # Now place items in scene
-        # REPACK will have set positions, but items new or old need to be managed
-        # Actually repack_events() only updates EXISTING items or lane assignments
-        # We need to create items first?
-        # NO. Logic inversion.
-        # set_events() must CREATE items first, then pack them.
-
-        # Correct logic:
-        # 1. Create/Update all EventItems at y=0 (temp)
-        # 2. Call repack_events() to position them vertically.
-
-        # Let's rewrite this block slightly.
-
-        # Create/Update items first
-        for event in sorted_events:
-            if event.id in existing_items:
-                item = existing_items[event.id]
-                item.update_event(event)
-
-                reused_ids.add(event.id)
-            else:
-                item = EventItem(event, self.scale_factor)
-                # item.setY(0) # Will be set by repack
-                item.on_drag_complete = self._on_event_drag_complete
-                self.graphics_scene.addItem(item)
-                existing_items[event.id] = item  # Add to map for repack
-
-            # Reuse or create drop line
-            drop_line_top = -self.RULER_HEIGHT
-            if event.id in drop_lines:
-                line = drop_lines[event.id]
-                line.setLine(item.x(), drop_line_top, item.x(), 60)  # Temp Y
-            else:
-                line = self._create_drop_line(item.x(), drop_line_top, 80)
-                drop_lines[event.id] = line
-
-        # Clean up removed items
-        current_ids = {e.id for e in sorted_events}
-        for event_id, item in list(existing_items.items()):
-            if event_id not in current_ids:
-                self.graphics_scene.removeItem(item)
-
-        # Clean up drop lines
-        for event_id, line in list(drop_lines.items()):
-            if event_id not in current_ids:
-                self.graphics_scene.removeItem(line)
-                del drop_lines[event_id]
-
-        self._event_items = {
-            event_id: item
-            for event_id, item in existing_items.items()
-            if event_id in current_ids
+        existing = {
+            item.event.id: item
+            for item in self.graphics_scene.items()
+            if isinstance(item, EventItem)
         }
-
-        # Now Repack
+        prepared = TimelineEventPreparationService.replace(
+            events, set(existing) | set(self._drop_lines)
+        )
+        self._event_items = existing
+        self._reconcile_event_items(prepared)
+        self._layout_generation += 1
+        self._empty_state.setVisible(not self.events)
+        if not self.events:
+            self._empty_state.raise_()
         self.repack_events()
+        self._finish_event_replacement()
 
-        # Update Drop Lines after repack
-        # We need to iterate drop lines again to match new item Y
-        # But we don't have a map from item -> drop line easily without query
-        # Actually drop_lines is map id -> line.
-        for event_id, line in drop_lines.items():
-            if event_id in existing_items:  # Still exists
-                item = existing_items[event_id]
-                # Drop line goes to item's Y
-                line.setLine(item.x(), -self.RULER_HEIGHT, item.x(), item.y())
-
-        if sorted_events:
-            self._update_scene_rect_from_events(sorted_events)
-
-            # Center Playhead and Current Time Line if they are at 0 (initial state)
-            min_date = sorted_events[0].lore_date
-            max_date = sorted_events[-1].lore_date
-            center_date = (min_date + max_date) / 2
-
-            # Check if they are at default 0 position or we want to force center on load
-            # Let's force center them on the events for better UX if they are far off
-            if self._playhead._time == 0:
-                self.set_playhead_time(center_date)
-
-            # Don't auto-center current time line
-            # Only show when explicitly set by user
-
-            # Only fit_all on initial load, not on refreshes/updates
-            if not self._has_done_initial_fit:
-                if self.isVisible() and self.width() > 0 and self.height() > 0:
-                    self.fit_all()
-                    self._initial_fit_pending = False
-                    self._has_done_initial_fit = True
-                else:
-                    self._initial_fit_pending = True
-        else:
-            # Handle empty state - still want infinite panning
-            self._update_scene_rect_default()
-
-            # Since there are no events to fit, we just mark initial fit as done
-            # or we could center on 0.
-            if not self._has_done_initial_fit:
-                self._has_done_initial_fit = True
-
-    def apply_event_effects(self, effects: list[LoreMutationEffect]) -> None:
-        """Patch EventItems in place and request no more than one repack."""
-        layout_changed = False
-        for effect in effects:
-            event_id = effect["object_id"]
-            previous = next(
-                (event for event in self.events if event.id == event_id), None
-            )
-            self.events = [event for event in self.events if event.id != event_id]
-
-            if effect["operation"] == "delete":
-                item = self._event_items.pop(event_id, None)
-                if item is not None:
-                    self.graphics_scene.removeItem(item)
-                line = self._drop_lines.pop(event_id, None)
-                if line is not None:
-                    self.graphics_scene.removeItem(line)
-                layout_changed = previous is not None
-                continue
-
-            snapshot = effect["snapshot"]
-            assert snapshot is not None
-            event = Event.from_dict(snapshot)
-            self.events.append(event)
-            self.events.sort(key=lambda value: value.lore_date)
-            item = self._event_items.get(event_id)
+    def _reconcile_event_items(self, prepared: PreparedTimelineEvents) -> None:
+        """Apply a data-only plan without transferring scene ownership."""
+        self.events = list(prepared.events)
+        for event_id in prepared.removed_ids:
+            item = self._event_items.pop(event_id, None)
+            if item is not None:
+                self.graphics_scene.removeItem(item)
+            line = self._drop_lines.pop(event_id, None)
+            if line is not None:
+                self.graphics_scene.removeItem(line)
+        for event in prepared.upserts:
+            item = self._event_items.get(event.id)
             if item is None:
                 item = EventItem(event, self.scale_factor)
                 item.on_drag_complete = self._on_event_drag_complete
                 self.graphics_scene.addItem(item)
-                self._event_items[event_id] = item
-                line = self._create_drop_line(item.x(), -self.RULER_HEIGHT, 80)
-                self._drop_lines[event_id] = line
-                layout_changed = True
+                self._event_items[event.id] = item
             else:
-                old_signature = self._event_layout_signature(previous)
                 item.update_event(event)
-                layout_changed = layout_changed or (
-                    old_signature != self._event_layout_signature(event)
+            if event.id not in self._drop_lines:
+                self._drop_lines[event.id] = self._create_drop_line(
+                    item.x(), -self.RULER_HEIGHT, 80
                 )
+            self._drop_lines[event.id].setLine(
+                item.x(), -self.RULER_HEIGHT, item.x(), item.y()
+            )
+        # Grouped copies also receive non-geometric refreshes without a repack.
+        updates = {event.id: event for event in prepared.upserts}
+        for duplicate in self._duplicate_event_items:
+            if duplicate.event.id in updates:
+                duplicate.update_event(updates[duplicate.event.id])
 
-        if hasattr(self, "_empty_state"):
-            self._empty_state.setVisible(not self.events)
-        if self.events:
-            self._update_scene_rect_from_events(self.events)
-            if layout_changed:
-                self._layout_generation += 1
-                self._incremental_layout_timer.start()
-        else:
+    def _finish_event_replacement(self) -> None:
+        """Retain scene extent, initial fitting and initial playhead behavior."""
+        if not self.events:
             self._update_scene_rect_default()
+            self._has_done_initial_fit = True
+            return
+        for event_id, line in self._drop_lines.items():
+            item = self._event_items[event_id]
+            line.setLine(item.x(), -self.RULER_HEIGHT, item.x(), item.y())
+        self._update_scene_rect_from_events(self.events)
+        if self._playhead._time == 0:
+            self.set_playhead_time(
+                (self.events[0].lore_date + self.events[-1].lore_date) / 2
+            )
+        if not self._has_done_initial_fit:
+            if self.isVisible() and self.width() > 0 and self.height() > 0:
+                self.fit_all()
+                self._initial_fit_pending = False
+                self._has_done_initial_fit = True
+            else:
+                self._initial_fit_pending = True
+
+    def apply_event_effects(self, effects: list[LoreMutationEffect]) -> None:
+        """Patch surviving items and coalesce geometric changes into one repack."""
+        prepared = TimelineEventPreparationService.apply_effects(self.events, effects)
+        if prepared.layout_changed:
+            self._clear_duplicates()
+            self._layout_generation += 1
+        self._reconcile_event_items(prepared)
+        self._empty_state.setVisible(not self.events)
+        if not self.events:
+            self._incremental_layout_timer.stop()
+            self._update_scene_rect_default()
+        else:
+            self._update_scene_rect_from_events(self.events)
+            if prepared.layout_changed:
+                self._incremental_layout_timer.start()
 
     def _create_drop_line(
         self, x: float, top: float, bottom: float
@@ -806,16 +715,7 @@ class TimelineView(QGraphicsView):
     @staticmethod
     def _event_layout_signature(event: Event | None) -> tuple[object, ...] | None:
         """Return fields that can change an event's timeline geometry."""
-        if event is None:
-            return None
-        return (
-            event.lore_date,
-            event.lore_duration,
-            event.name,
-            event.type,
-            tuple(event.tags),
-            repr(event.attributes.get("_temporal_v2")),
-        )
+        return TimelineEventPreparationService.layout_signature(event)
 
     def repack_events(self) -> None:
         """Repacks events into lanes based on the current effective zoom level.
@@ -827,6 +727,8 @@ class TimelineView(QGraphicsView):
         For large datasets (>= ASYNC_LAYOUT_THRESHOLD events), uses async worker.
         For small datasets, uses synchronous packing for immediate response.
         """
+        self._incremental_layout_timer.stop()
+        self._layout_generation += 1
         self.layout_requested.emit()
         if not self.events:
             return
@@ -894,85 +796,79 @@ class TimelineView(QGraphicsView):
             logger.debug("Layout already in progress, queuing new request")
             return
 
-        # Mark layout as in progress
-        self._layout_in_progress = True
-        self._layout_start_time = time.perf_counter()
-        self._active_layout_generation = self._layout_generation
-
-        # Import LayoutWorker here (already imported in __init__, but being explicit)
         from src.gui.workers.layout_worker import LayoutWorker
 
-        # Create and configure worker
+        self._lane_packer.update_scale_factor(effective_scale)
+        intervals = self._lane_packer.measure_events(self.events)
+        self._layout_request_token += 1
+        self._active_layout_token = self._layout_request_token
         worker = LayoutWorker(
-            events=self.events,
-            scale_factor=effective_scale,
-            grouping_config={},  # No grouping in async mode for now
+            intervals=intervals,
+            request_token=self._active_layout_token,
         )
-
-        # Connect signals
-        worker.signals.finished.connect(self._on_layout_finished)
-        worker.signals.error.connect(self._on_layout_error)
+        worker.signals.finished.connect(
+            self._on_layout_finished, Qt.ConnectionType.QueuedConnection
+        )
+        worker.signals.error.connect(
+            self._on_layout_error, Qt.ConnectionType.QueuedConnection
+        )
 
         # Store reference to prevent garbage collection
         self._layout_worker = worker
+        self._layout_in_progress = True
+        self._layout_start_time = time.perf_counter()
+        self._active_layout_generation = self._layout_generation
 
         # Start worker in thread pool
         self._thread_pool.start(worker)
 
         logger.debug(f"Started async layout for {len(self.events)} events")
 
+    @Slot(int, dict, list, float)
     def _on_layout_finished(
-        self, lane_assignments: dict, lane_heights: list, worker_elapsed: float
+        self,
+        request_token: int,
+        lane_assignments: dict,
+        lane_heights: list,
+        worker_elapsed: float,
     ) -> None:
-        """Called when async layout worker completes.
-
-        Args:
-            lane_assignments: Dict mapping event ID to lane index.
-            lane_heights: List of lane heights.
-            worker_elapsed: Time taken by worker thread.
-        """
+        """Apply only the current request, then dispatch any newer context."""
+        if request_token != self._active_layout_token:
+            return
         total_elapsed = time.perf_counter() - self._layout_start_time
-
         stale = self._active_layout_generation != self._layout_generation
         if not stale:
             self._apply_layout_results(lane_assignments, lane_heights)
-
-        # Clear progress state
-        self._layout_in_progress = False
-        self._layout_worker = None
-
+        pending = self._pending_layout_request is not None
+        self._release_layout_worker()
         logger.info(
-            f"Async layout complete: {len(self.events)} events, "
-            f"worker: {worker_elapsed:.3f}s, total: {total_elapsed:.3f}s"
+            "Async layout complete: %d events, worker: %.3fs, total: %.3fs",
+            len(self.events),
+            worker_elapsed,
+            total_elapsed,
         )
+        if stale or pending:
+            self.repack_events()
 
-        # If there's a pending request, process it now
-        if self._pending_layout_request is not None or stale:
-            pending_scale = self._pending_layout_request
-            self._pending_layout_request = None
-            logger.debug("Processing pending layout request")
-            self._repack_events_async(
-                pending_scale
-                if pending_scale is not None
-                else self.scale_factor * self._current_zoom
-            )
-
-    def _on_layout_error(self, error_message: str) -> None:
-        """Called when async layout worker encounters an error.
-
-        Args:
-            error_message: The error message from the worker.
-        """
-        logger.error(f"Async layout error: {error_message}")
-
-        # Clear progress state
+    def _release_layout_worker(self) -> None:
+        """Release only after a callback has matched the active request token."""
         self._layout_in_progress = False
         self._layout_worker = None
+        self._active_layout_token = None
+        self._pending_layout_request = None
 
-        # Fall back to synchronous layout
-        logger.info("Falling back to synchronous layout after error")
-        effective_scale = self.scale_factor * self._current_zoom
-        self._repack_events_sync(effective_scale)
+    @Slot(int, str)
+    def _on_layout_error(self, request_token: int, error_message: str) -> None:
+        """Ignore obsolete errors; fall back using fresh current measurements."""
+        if request_token != self._active_layout_token:
+            return
+        stale = self._active_layout_generation != self._layout_generation
+        self._release_layout_worker()
+        if stale:
+            self.repack_events()
+            return
+        logger.error("Async layout error: %s", error_message)
+        self._repack_events_sync(self.scale_factor * self._current_zoom)
 
     def _apply_layout_results(
         self, event_lane_assignments: dict, lane_heights: list

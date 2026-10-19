@@ -102,11 +102,11 @@ class TestSmartLanePacking:
         assert items[0].y() == items[2].y()
 
     def test_point_events_minimal_lanes(self, timeline_widget):
-        """Point events (zero duration) at different times should use same lane."""
+        """Point events separated beyond their label extents reuse the same lane."""
         events = [
             Event(name="E1", lore_date=10, lore_duration=0),
-            Event(name="E2", lore_date=20, lore_duration=0),
-            Event(name="E3", lore_date=30, lore_duration=0),
+            Event(name="E2", lore_date=1000, lore_duration=0),
+            Event(name="E3", lore_date=2000, lore_duration=0),
         ]
         timeline_widget.set_events(events)
 

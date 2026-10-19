@@ -9,6 +9,7 @@ from PySide6.QtGui import QFont, QFontMetrics
 from src.core.events import Event
 from src.core.temporal_display import TemporalDisplay
 from src.core.temporal_presentation import event_temporal_presentation
+from src.core.timeline_layout import TimelineLayoutInput, pack_timeline_intervals
 from src.gui.widgets.timeline.event_item import EventItem
 from src.gui.widgets.timeline.item_layout import timeline_item_layout
 from src.gui.widgets.timeline.temporal_geometry import (
@@ -60,13 +61,12 @@ class TimelineLanePacker:
                 - List of lane heights (max height of events in each lane)
 
         """
+        return pack_timeline_intervals(self.measure_events(events))
+
+    def measure_events(self, events: list[Event]) -> tuple[TimelineLayoutInput, ...]:
+        """Capture detached numeric bounds on the GUI thread before dispatch."""
         self._ensure_font_metrics()
-
-        lanes_end_times: list[float] = []
-        lanes_heights: list[int] = []
-        event_lane_assignments: dict[str, int] = {}
-
-        projected = []
+        measured = []
         for event in events:
             layout = timeline_item_layout(
                 event_temporal_presentation(event, EventItem._calendar_converter),
@@ -74,22 +74,17 @@ class TimelineLanePacker:
                 self.scale_factor,
             )
             start = event.lore_date + layout.bounds.left() / self.scale_factor
-            projected.append((start, event, layout))
-        projected.sort(key=lambda entry: entry[0])
-        for start_time, event, layout in projected:
             visual_duration = layout.bounds.width() / self.scale_factor
             gap_duration = self.GAP_PIXELS / self.scale_factor
-            self._find_and_record_lane(
-                event.id,
-                lanes_end_times,
-                lanes_heights,
-                event_lane_assignments,
-                start_time,
-                start_time + visual_duration + gap_duration,
-                max(layout.height, EventItem.get_event_height(event)),
+            measured.append(
+                TimelineLayoutInput(
+                    event.id,
+                    start,
+                    start + visual_duration + gap_duration,
+                    max(layout.height, EventItem.get_event_height(event)),
+                )
             )
-
-        return event_lane_assignments, lanes_heights
+        return tuple(measured)
 
     def _calculate_visual_duration(
         self,
@@ -116,55 +111,6 @@ class TimelineLanePacker:
             self.scale_factor,
         )
         return layout.bounds.width() / self.scale_factor
-
-    def _find_and_record_lane(
-        self,
-        event_id: str,
-        ends: list[float],
-        heights: list[int],
-        assignments: dict[str, int],
-        start: float,
-        end: float,
-        height: int,
-    ) -> None:
-        """Record the lane selected for a complete measured item."""
-        assignments[event_id] = self._find_available_lane(
-            ends, heights, start, end, height
-        )
-
-    def _find_available_lane(
-        self,
-        lanes_end_times: list[float],
-        lanes_heights: list[int],
-        start_time: float,
-        end_time: float,
-        event_height: int,
-    ) -> int:
-        """Finds the first available lane for an event.
-
-        Args:
-            lanes_end_times: List of end times for each existing lane.
-            lanes_heights: List of max heights for each existing lane.
-            start_time: When the event starts.
-            end_time: When the event ends (including visual space).
-            event_height: Height of this event in pixels.
-
-        Returns:
-            int: The lane index (0-based).
-
-        """
-        # Try to find an existing lane that's available
-        for i, lane_end in enumerate(lanes_end_times):
-            if lane_end <= start_time:
-                # This lane is available - update its end time and max height
-                lanes_end_times[i] = end_time
-                lanes_heights[i] = max(lanes_heights[i], event_height)
-                return i
-
-        # No available lane found, create a new one
-        lanes_end_times.append(end_time)
-        lanes_heights.append(event_height)
-        return len(lanes_end_times) - 1
 
     def update_scale_factor(self, scale_factor: float) -> None:
         """Updates the scale factor for packing calculations.

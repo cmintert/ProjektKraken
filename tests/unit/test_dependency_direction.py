@@ -258,3 +258,40 @@ def test_connection_browser_has_no_editor_or_persistence_dependencies():
             )
             for _, module in modules
         )
+
+
+@pytest.mark.ci_fast
+@pytest.mark.parametrize(
+    "relative,allowed",
+    [
+        (
+            "services/timeline_event_preparation_service.py",
+            {"src.core.command", "src.core.events"},
+        ),
+        ("core/timeline_layout.py", set()),
+        (
+            "gui/workers/layout_worker.py",
+            {"src.core.timeline_layout"},
+        ),
+    ],
+)
+def test_timeline_preparation_and_worker_dependencies(relative, allowed):
+    """Preparation owns data; workers consume no events, calendar or GUI layout."""
+    modules = {module for _, module in _imported_modules(_SOURCE_ROOT / relative)}
+    assert all(
+        any(module == root or module.startswith(root + ".") for root in allowed)
+        for module in modules
+        if module.startswith("src.")
+    )
+    if not relative.startswith("gui/"):
+        assert not any(module.startswith("PySide6") for module in modules)
+        assert all(
+            module.split(".")[0] in {"src", "collections", "dataclasses"}
+            for module in modules
+        ), "Pure timeline preparation must not acquire persistence or lifecycle APIs"
+    else:
+        assert all(
+            module == "PySide6.QtCore" or module.startswith("PySide6.QtCore.")
+            for module in modules
+            if module.startswith("PySide6")
+        ), "Layout workers must not measure or manipulate GUI objects"
