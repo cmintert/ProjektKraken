@@ -14938,26 +14938,26 @@
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._preview",
-      "sha256": "e78a6aaa36eb4b3ad0440a60fff07c449dd0e367c05fb96a04581c3f10f97df4",
-      "review_note": "KRT-93 Stage 1 review: shared UUID browser and guarded actions replace list-specific controls. Draft guidance is subordinate; errors stay visible, and collapsed drafts retain values. Header shows the canonical assertion. Existing direction/timing/command explanations remain accurate; new browser explanations cover search, filters, selection and read-only References."
+      "sha256": "7067d2f43484d88d80c0fbd0432dad3ec451ddac712ff03743c2ce25e622cc4c",
+      "review_note": "KRT-98: Reviewed relations.create and its Meaning, Connection type, Reverse direction and Apply excerpts against the pure-helper extraction. Captions, exact stored keys, suggestion ordering, source-event preview wording and both reversal checks remain unchanged. Existing explanations remain accurate; no new UI or prose. Pure dependencies have their own scoped source reviews."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._progressive_form",
-      "sha256": "11b898a04ec4998014e8d605c9e7e3b41549af0645c681aa1828409b328714d5",
-      "review_note": "KRT-93 owner refinements: Meaning is one editable dropdown with stable-key suggestion data and deliberate free phrases; no Custom field. The editor heading is plain text within a neutral frame. Scrollbars refresh with the theme. Edit shares the selection row; guarded navigation/removal remain under More actions. Updated task/control explanations describe these behaviors."
+      "sha256": "3ca0e973235bb421015e9107bba33128eaa92519455125520a6cf2be8ca41a31",
+      "review_note": "KRT-98: Reviewed relations.create and its Meaning, Connection type, Reverse direction and Apply excerpts against the pure-helper extraction. Captions, exact stored keys, suggestion ordering, source-event preview wording and both reversal checks remain unchanged. Existing explanations remain accurate; no new UI or prose. Pure dependencies have their own scoped source reviews."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._reverse",
-      "sha256": "5b98f05021b07de0be43bccdb3906d9616a9c1e4a3af9d200bb4fa42d752e6e9",
-      "review_note": "KRT-93 Stage 1 review: shared UUID browser and guarded actions replace list-specific controls. Draft guidance is subordinate; errors stay visible, and collapsed drafts retain values. Header shows the canonical assertion. Existing direction/timing/command explanations remain accurate; new browser explanations cover search, filters, selection and read-only References."
+      "sha256": "8f3130b434bd5e1747c1074fea6cba48010f0cc3f1bdbc8216f8d39b957d0095",
+      "review_note": "KRT-98: Reviewed relations.create and its Meaning, Connection type, Reverse direction and Apply excerpts against the pure-helper extraction. Captions, exact stored keys, suggestion ordering, source-event preview wording and both reversal checks remain unchanged. Existing explanations remain accurate; no new UI or prose. Pure dependencies have their own scoped source reviews."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._set_drop_meaning",
-      "sha256": "68ea70688c274595400a7426b25c7223cabde44123d011e3816e4cf3da6efb92",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "5c1617bbebe074671b64567f163fc7227bf4f592da9461482c3e234770c3d78e",
+      "review_note": "KRT-98: Reviewed relations.create and its Meaning, Connection type, Reverse direction and Apply excerpts against the pure-helper extraction. Captions, exact stored keys, suggestion ordering, source-event preview wording and both reversal checks remain unchanged. Existing explanations remain accurate; no new UI or prose. Pure dependencies have their own scoped source reviews."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
@@ -14974,8 +14974,8 @@
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring.apply",
-      "sha256": "d01cb1527888a91c4f67fe50e196f65516901c4369744965e22a60697584461d",
-      "review_note": "KRT-93 owner refinements: Meaning is one editable dropdown with stable-key suggestion data and deliberate free phrases; no Custom field. The editor heading is plain text within a neutral frame. Scrollbars refresh with the theme. Edit shares the selection row; guarded navigation/removal remain under More actions. Updated task/control explanations describe these behaviors."
+      "sha256": "7385f25eb1623a605ea7f3951a18dcd9514c687ac6a9a90895dd9e86cf830e64",
+      "review_note": "KRT-98: Reviewed relations.create and its Meaning, Connection type, Reverse direction and Apply excerpts against the pure-helper extraction. Captions, exact stored keys, suggestion ordering, source-event preview wording and both reversal checks remain unchanged. Existing explanations remain accurate; no new UI or prose. Pure dependencies have their own scoped source reviews."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
@@ -15010,8 +15010,8 @@
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring.stage_drop",
-      "sha256": "cee89dedc4a18b44886e7d9454543aa449fbdc1f1553a52fa7fae69725a3b926",
-      "review_note": "KRT-93 Stage 1 review: shared UUID browser and guarded actions replace list-specific controls. Draft guidance is subordinate; errors stay visible, and collapsed drafts retain values. Header shows the canonical assertion. Existing direction/timing/command explanations remain accurate; new browser explanations cover search, filters, selection and read-only References."
+      "sha256": "67231275227b55fce75168bc2c717adb4046647a462ef71f9c3556c262cc6a9c",
+      "review_note": "KRT-98: Reviewed relations.create and its Meaning, Connection type, Reverse direction and Apply excerpts against the pure-helper extraction. Captions, exact stored keys, suggestion ordering, source-event preview wording and both reversal checks remain unchanged. Existing explanations remain accurate; no new UI or prose. Pure dependencies have their own scoped source reviews."
     },
     {
       "source": "src/gui/widgets/relation_form.py",
@@ -15064,8 +15064,8 @@
     {
       "source": "src/gui/widgets/relation_form.py",
       "symbol": "RelationForm._relation_type_choices",
-      "sha256": "d2212ae5bc66cae4b830826ca08f2ed6a40cd9871528629a6ee60c93f23f414f",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "c59dd84b37e4267339591d381cebd729a74c5be14828d89283ac77d296eb39c2",
+      "review_note": "KRT-98: Reviewed relations.create and its Meaning, Connection type, Reverse direction and Apply excerpts against the pure-helper extraction. Captions, exact stored keys, suggestion ordering, source-event preview wording and both reversal checks remain unchanged. Existing explanations remain accurate; no new UI or prose. Pure dependencies have their own scoped source reviews."
     },
     {
       "source": "src/gui/widgets/relation_form.py",
@@ -16434,6 +16434,42 @@
       "symbol": "_description_patches",
       "sha256": "e42632af25fe03aa82d20c91606f7204fba23e88edae7cade1c758d743078da2",
       "review_note": "KRT-40: Reviewed extracted preparation/acknowledgement dependency. Existing historical editing, Save Changes and Discard explanations remain accurate: corrections retain source ownership, explicit dated intent remains distinct, and acknowledgements preserve newer drafts. No new UI or Help destination."
+    },
+    {
+      "source": "src/core/relation_presentation.py",
+      "symbol": "overview_caption",
+      "sha256": "b0eb8cf5e5f67d13a9cd249a6275b716c0518e11b1472eecbd6f79ddf8b95a9e",
+      "review_note": "KRT-98: Extracted compatibility calculation for existing relation controls. Preserve separate captions, raw key fallback and choices, original-endpoint previews and the existing truthy/string reversal assessment. Existing relations.create explanations remain accurate; schema, inverse wording and command enforcement are deferred."
+    },
+    {
+      "source": "src/core/relation_presentation.py",
+      "symbol": "authoring_caption",
+      "sha256": "992b56ca94f62745fe1029415f045a949d7df97ca6e738962baa2d7407ca1df1",
+      "review_note": "KRT-98: Extracted compatibility calculation for existing relation controls. Preserve separate captions, raw key fallback and choices, original-endpoint previews and the existing truthy/string reversal assessment. Existing relations.create explanations remain accurate; schema, inverse wording and command enforcement are deferred."
+    },
+    {
+      "source": "src/core/relation_presentation.py",
+      "symbol": "authoring_choices",
+      "sha256": "4588de49a8f20b35e71837f7c2876b9fbdea693d3b8520b3e44ea5265bca9f15",
+      "review_note": "KRT-98: Extracted compatibility calculation for existing relation controls. Preserve separate captions, raw key fallback and choices, original-endpoint previews and the existing truthy/string reversal assessment. Existing relations.create explanations remain accurate; schema, inverse wording and command enforcement are deferred."
+    },
+    {
+      "source": "src/core/relation_presentation.py",
+      "symbol": "form_type_choices",
+      "sha256": "5a47cfa1cf32b1bfa9e7a3c92521913f1ebbbf7fd9e3d581bf8f3aa6371db2ed",
+      "review_note": "KRT-98: Extracted compatibility calculation for existing relation controls. Preserve separate captions, raw key fallback and choices, original-endpoint previews and the existing truthy/string reversal assessment. Existing relations.create explanations remain accurate; schema, inverse wording and command enforcement are deferred."
+    },
+    {
+      "source": "src/core/relation_presentation.py",
+      "symbol": "inline_relation_preview",
+      "sha256": "5e3f739d97532134562cfbe34e6b6e031be380e82178f64a55baa3413cfaaec6",
+      "review_note": "KRT-98: Extracted compatibility calculation for existing relation controls. Preserve separate captions, raw key fallback and choices, original-endpoint previews and the existing truthy/string reversal assessment. Existing relations.create explanations remain accurate; schema, inverse wording and command enforcement are deferred."
+    },
+    {
+      "source": "src/core/relation_policy.py",
+      "symbol": "has_direction_sensitive_attributes",
+      "sha256": "06d17923285ece29cfd5396f136e330e664eba361b3a988d7a64bfdd78c34757",
+      "review_note": "KRT-98: Extracted compatibility calculation for existing relation controls. Preserve separate captions, raw key fallback and choices, original-endpoint previews and the existing truthy/string reversal assessment. Existing relations.create explanations remain accurate; schema, inverse wording and command enforcement are deferred."
     }
   ],
   "review_status": {

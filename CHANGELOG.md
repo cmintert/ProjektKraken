@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-19
-**Commit:** 51be123171ff0ae38488e5a7bad65294bb8b30da
+**Commit:** 34d8c45326036d63cfa276779dc78d72a2297bb3
 ---
 
 # Changelog
@@ -27,6 +27,13 @@ All notable changes to this project will be documented in this file.
   styling on theme changes.
 
 ### Changed
+
+- *(2026-10-19)* **Relation handling (KRT-98)**: Extracted existing captions,
+  suggestions, inline previews and reversal assessment into pure core helpers.
+  Preserved relation wording, stored keys, drafts and mutation behavior; documented
+  semantic consumers and the future vocabulary integration boundary. Added focused
+  compatibility regressions, dependency guards, reproducible render tooling and
+  baseline comparisons; reviewed affected Help source records.
 
 - *(2026-10-19)* **Timeline (KRT-41)**: Extracted event reconciliation and pure
   lane packing. Background layouts use detached GUI-measured intervals and reject

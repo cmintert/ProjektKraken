@@ -62,6 +62,23 @@ def refresh(editor, outgoing, incoming=None):
     getattr(editor, f"_load_{kind}_relations")(outgoing, incoming or [])
 
 
+@pytest.mark.parametrize("predicate", ["member_of", "guards Ælf's gate"])
+def test_both_overview_perspectives_preserve_canonical_assertion(predicate):
+    snapshot = saved(0, predicate, attributes={"notes": "Keep", "confidence": 0.75})
+    before = deepcopy(snapshot)
+    outgoing = project_connections([snapshot], [], "entity", "source", "Tasgillia")[0]
+    incoming = project_connections([], [snapshot], "entity", "target-0", "House 0")[0]
+    caption = "Member of" if predicate == "member_of" else predicate
+    assert outgoing.meaning == incoming.meaning == caption
+    assert (
+        outgoing.assertion == incoming.assertion == f"Tasgillia → {caption} → House 0"
+    )
+    assert outgoing.text.startswith(f"House 0\n→ {caption}\n")
+    assert incoming.text.startswith(f"Tasgillia\n← {caption}\n")
+    assert outgoing.snapshot["id"] == incoming.snapshot["id"] == "relation-0"
+    assert snapshot == before
+
+
 def test_semantic_projection_does_not_guess_or_duplicate():
     rows = [
         saved(0, "member_of"),

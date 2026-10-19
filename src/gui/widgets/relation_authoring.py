@@ -20,27 +20,22 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.relation_policy import has_direction_sensitive_attributes
+from src.core.relation_presentation import (
+    authoring_caption,
+    authoring_choices,
+    inline_relation_preview,
+)
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
-from src.gui.widgets.connection_presentation import CAPTIONS
 from src.gui.widgets.editor_presentation import DisclosureButton
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.relation_drop_target import RelationDropTarget
 from src.gui.widgets.relation_form import RelationForm, take_form_row
 from src.gui.widgets.relation_target import RelationTargetEdit
 from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
-
-MEANINGS = {
-    "related": "Connected — kind not specified",
-    "member_of": "Member of",
-    "involved": "Participant in",
-    "located_at": "Located at",
-    "owns": "Owns",
-    "parent_of": "Parent of",
-    "caused": "Caused",
-}
 
 
 class RelationAuthoring(QFrame):
@@ -270,7 +265,7 @@ class RelationAuthoring(QFrame):
             ScrollSafeComboBox(),
             "src-gui-widgets-relation-authoring-relationauthoring-stage-drop-meaning|relations.create|help-inspect-src-gui-widgets-relation-authoring-relationauthoring-stage-drop-meaning",
         )
-        for value, title in MEANINGS.items():
+        for value, title in authoring_choices():
             meaning.addItem(title, value)
         self.body_layout.insertWidget(1, meaning)
         meaning.currentIndexChanged.connect(
@@ -284,7 +279,8 @@ class RelationAuthoring(QFrame):
     def _set_drop_meaning(self, kind: str, preview: QLabel) -> None:
         self.capture_type = kind
         preview.setText(
-            f"{self.source_name} → {self.editor.name_edit.text()}: {MEANINGS[kind]}"
+            f"{self.source_name} → {self.editor.name_edit.text()}: "
+            f"{authoring_caption(kind)}"
         )
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
@@ -411,16 +407,10 @@ class RelationAuthoring(QFrame):
         self.meaning.setEditable(True)
         self.meaning.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
         self.meaning.setToolTip("Choose an existing meaning or type a new phrase.")
-        known = dict.fromkeys(
-            [
-                *MEANINGS,
-                *getattr(self.editor, "_suggestion_types", []),
-                self.relation["rel_type"],
-            ]
-        )
-        for value in known:
-            if value != "mentions":
-                self.meaning.addItem(MEANINGS.get(value, value), value)
+        for value, title in authoring_choices(
+            getattr(self.editor, "_suggestion_types", []), self.relation["rel_type"]
+        ):
+            self.meaning.addItem(title, value)
         self.meaning.setCurrentIndex(self.meaning.findData(self.relation["rel_type"]))
         self.meaning.currentTextChanged.connect(self._meaning_changed)
         self.meaning.currentIndexChanged.connect(self._meaning_changed)
@@ -522,39 +512,21 @@ class RelationAuthoring(QFrame):
         if self.form is None or self.relation is None:
             return
         target_name = self.relation.get("target_name") or self.form.target_edit.text()
-        source_name = self.source_name
-        if self.reversed:
-            source_name, target_name = target_name, source_name
-        kind = self.form.type_edit.currentText()
-        if kind == "related":
-            sentence = (
-                f"{source_name} is connected to {target_name}; kind not specified."
-            )
-        elif kind == "involved":
-            sentence = (
-                f"{target_name} participates in {source_name}."
-                if self.form.source_event_date is not None and not self.reversed
-                else f"{source_name} participates in {target_name}."
-            )
-        else:
-            sentence = f"{source_name} → {target_name}: {MEANINGS.get(kind, kind)}"
-        self.form.preview_label.setText(sentence)
-        self._assertion_caption = (
-            f"{source_name} → {CAPTIONS.get(kind, kind)} → {target_name}"
+        preview = inline_relation_preview(
+            self.source_name,
+            target_name,
+            self.form.type_edit.currentText(),
+            source_is_event=self.form.source_event_date is not None,
+            reversed_direction=self.reversed,
         )
+        self.form.preview_label.setText(preview.text)
+        self._assertion_caption = preview.assertion
         self._draft_caption()
 
     def _reverse(self) -> None:
         assert self.form is not None and self.relation is not None
         attrs = self.form.get_data()[3]
-        if (
-            attrs.get("payload")
-            or any(
-                attrs.get(key)
-                for key in ("valid_from_event", "valid_to_event", "valid_at_event")
-            )
-            or ("source_event" in str(attrs.get("temporal", {})))
-        ):
+        if has_direction_sensitive_attributes(attrs):
             self._status(
                 "This relation uses its source event for timing or state changes. "
                 "Refine those details before reversing its direction."
@@ -667,14 +639,7 @@ class RelationAuthoring(QFrame):
             if not self.form.validate():
                 return
             target, kind, _, attrs = self.form.get_data()
-            if self.reversed and (
-                attrs.get("payload")
-                or any(
-                    attrs.get(key)
-                    for key in ("valid_from_event", "valid_to_event", "valid_at_event")
-                )
-                or "source_event" in str(attrs.get("temporal", {}))
-            ):
+            if self.reversed and has_direction_sensitive_attributes(attrs):
                 self._status(
                     "Keep the source direction for source-event timing or state changes."
                 )

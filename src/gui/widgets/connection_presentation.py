@@ -5,6 +5,7 @@ from typing import Any
 
 from src.core.calendar import CalendarConverter
 from src.core.graph_temporal import GraphTemporalMode, evaluate_graph_relation
+from src.core.relation_presentation import overview_caption
 from src.gui.widgets.relation_snapshots import distinct_relation_directions
 
 ENTITY_GROUPS = (
@@ -38,17 +39,6 @@ BUILTIN_GROUPS = {
         "located_at": "Locations",
         "caused": "Causes & consequences",
     },
-}
-CAPTIONS = {
-    "related": "Connected — kind not specified",
-    "member_of": "Member of",
-    "parent_of": "Parent of",
-    "owns": "Owns",
-    "located_at": "Located at",
-    "involved": "Participation",
-    "participated_in": "Participation",
-    "caused": "Caused",
-    "mentions": "Reference (read-only)",
 }
 
 
@@ -133,7 +123,7 @@ def project_connections(
             group = category if category in groups else "Other connections"
             if predicate == "mentions":
                 group = "References"
-            meaning = CAPTIONS.get(predicate, predicate)
+            meaning = overview_caption(predicate)
             rows.append(
                 ConnectionRow(
                     snapshot,

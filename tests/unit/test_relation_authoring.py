@@ -283,6 +283,72 @@ def relation(attributes=None):
     }
 
 
+@pytest.mark.parametrize(
+    "attrs",
+    [
+        {"payload": {"attributes": {"rank": "Lord"}}},
+        {"valid_from_event": "anchor"},
+        {"valid_to_event": "anchor"},
+        {"valid_at_event": "anchor"},
+        {"temporal": {"schema": 1, "start": {"binding": "source_event"}}},
+    ],
+)
+def test_both_inline_reversal_gates_reject_direction_sensitive_data(
+    editor, monkeypatch, attrs
+):
+    panel = editor.relation_authoring
+    row = relation()
+    before = deepcopy(attrs)
+    panel.refine(row)
+    # A form snapshot can change after Reverse but before Apply. Exercise that
+    # boundary without depending on temporal field editing/normalization here.
+    monkeypatch.setattr(
+        panel.form, "get_data", lambda: ("target", "related", False, attrs)
+    )
+    requests = []
+    editor.relation_authoring_requested.connect(requests.append)
+    panel._reverse()
+    assert not panel.reversed
+    assert "Refine those details before reversing" in panel.status.text()
+    panel.reversed = True
+    panel.apply()
+    assert not requests
+    assert not panel.pending_id
+    assert "Keep the source direction" in panel.status.text()
+    assert attrs == before
+    assert panel.relation == row
+
+
+def test_inline_reversal_retains_one_uuid_and_original_metadata(editor):
+    panel = editor.relation_authoring
+    row = relation({"custom": {"keep": [1]}, "notes": "old"})
+    before = deepcopy(row)
+    panel.refine(row)
+    requests = []
+    editor.relation_authoring_requested.connect(requests.append)
+    panel._reverse()
+    assert panel.reversed
+    assert panel.reverse_button.text() == "Restore direction"
+    panel.apply()
+    assert len(requests) == 1
+    assert requests[0]["id"] == row["id"]
+    assert (requests[0]["source_id"], requests[0]["target_id"]) == ("target", "source")
+    assert requests[0]["attributes"] == before["attributes"]
+    assert row == before
+
+
+def test_inline_preview_treats_zero_source_event_date_as_available(editor):
+    panel = editor.relation_authoring
+    row = {**relation(), "rel_type": "involved", "source_event_date": 0.0}
+    if isinstance(editor, EventEditorWidget):
+        editor.temporal_widget.set_values(0.0, 0.0)
+    panel.refine(row)
+    assert panel.form.source_event_date == 0.0
+    assert (
+        panel.form.preview_label.text() == "House Bjornaer participates in Tasgillia."
+    )
+
+
 def test_capture_requires_only_existing_target_and_no_semantics(editor):
     assert not editor.btn_edit_rel.isEnabled()
     requests = []

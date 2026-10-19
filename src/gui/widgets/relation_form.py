@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.relation_presentation import form_type_choices
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
@@ -368,22 +369,7 @@ class RelationForm(QWidget):
     @staticmethod
     def _relation_type_choices(known_types: list[str] | None) -> list[str]:
         """Prepare the existing relation-selector choices independently of layout."""
-        defaults = [
-            "birth",
-            "caused",
-            "death",
-            "involved",
-            "located_at",
-            "member_of",
-            "owns",
-            "parent_of",
-            "related",
-        ]
-        if not known_types:
-            return defaults
-        return sorted(
-            value for value in set(defaults + known_types) if value != "mentions"
-        )
+        return form_type_choices(known_types)
 
     def _group_boundaries(self) -> None:
         """Keep each boundary's intent, input and shortcut in one visual block."""

@@ -1,5 +1,14 @@
 # Architecture and Threading
 
+## Relation presentation and inline policy
+
+The pure core relation-presentation helpers own existing captions, suggestions and
+inline preview calculation. A separate core policy helper owns the existing inline
+reversal assessment. Widgets retain rendering, groups, temporal summaries, drafts
+and signals; authored persistence and exact undo boundaries are unchanged. See
+[Relation handling boundaries](relation-handling.md) for the consumer inventory,
+compatibility rules and deferred vocabulary integration contract.
+
 ## Offline Help capability
 
 The Help coordinator owns contextual invocation, read-only navigation, search

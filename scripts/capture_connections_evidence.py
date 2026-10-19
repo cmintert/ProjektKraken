@@ -30,8 +30,9 @@ def main() -> None:
     parser.add_argument("--theme", action="append")
     parser.add_argument("--width", action="append", type=int)
     parser.add_argument("--height", type=int, default=900)
+    parser.add_argument("--output", type=Path, default=Path("tmp/krt93/final"))
     options = parser.parse_args()
-    output = Path("tmp/krt93/final")
+    output = options.output
     output.mkdir(parents=True, exist_ok=True)
     QSettings.setDefaultFormat(QSettings.Format.IniFormat)
     QSettings.setPath(

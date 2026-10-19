@@ -24,6 +24,22 @@ def test_temporal_entity_preparation_is_independent_of_ui_and_persistence():
     ), "Preparation must not acquire Qt, app, GUI, commands or persistence dependencies"
 
 
+@pytest.mark.parametrize("filename", ["relation_presentation.py", "relation_policy.py"])
+def test_relation_preparation_has_only_pure_standard_library_dependencies(filename):
+    """Keep wording and assessment reusable below GUI and persistence owners."""
+    path = _SOURCE_ROOT / "core" / filename
+    assert all(
+        module.split(".")[0] in {"collections", "dataclasses", "typing"}
+        for _, module in _imported_modules(path)
+    ), "Relation preparation must not acquire Qt, SQL, filesystem or lifecycle APIs"
+    assert not any(
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id in {"open", "exec", "eval", "__import__"}
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8")))
+    ), "Pure relation preparation must not open files or bypass the import boundary"
+
+
 def _source_imports(source: str, module: str) -> list[tuple[int, str]]:
     """Resolve absolute and relative imports, including imported child modules."""
     tree = ast.parse(source)
