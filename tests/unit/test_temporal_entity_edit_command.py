@@ -1,5 +1,9 @@
 """Source-aware entity edits use the visible field owner, not world current time."""
 
+import json
+from copy import deepcopy
+from unittest.mock import patch
+
 import pytest
 
 from src.commands.temporal_entity_edit_command import TemporalEntityEditCommand
@@ -11,11 +15,15 @@ pytestmark = pytest.mark.ci_fast
 
 
 def _state(db_service, entity_id, lore_time):
-    return TemporalResolver().resolve_entity_state(
-        db_service.get_entity(entity_id),
-        db_service.get_incoming_relations(entity_id),
-        lore_time,
-    ).to_dict()
+    return (
+        TemporalResolver()
+        .resolve_entity_state(
+            db_service.get_entity(entity_id),
+            db_service.get_incoming_relations(entity_id),
+            lore_time,
+        )
+        .to_dict()
+    )
 
 
 def _world(db_service):
@@ -130,9 +138,12 @@ def test_dated_change_and_removal_meanings(db_service):
     assert remove_override.execute(db_service).success
     assert _state(db_service, entity.id, 15.0)["attributes"]["owner"] == "Guild"
     remove_override.undo(db_service)
-    assert db_service.get_relation(relation_id)["attributes"]["payload"][
-        "attributes"
-    ]["owner"] == "Army"
+    assert (
+        db_service.get_relation(relation_id)["attributes"]["payload"]["attributes"][
+            "owner"
+        ]
+        == "Army"
+    )
     absent = TemporalEntityEditCommand(
         entity.id,
         15.0,
@@ -141,9 +152,12 @@ def test_dated_change_and_removal_meanings(db_service):
     )
     assert absent.execute(db_service).success
     assert "owner" not in _state(db_service, entity.id, 15.0)["attributes"]
-    assert _state(db_service, entity.id, 15.0)["absent_attribute_sources"][
-        "owner"
-    ]["relation_id"] == relation_id
+    assert (
+        _state(db_service, entity.id, 15.0)["absent_attribute_sources"]["owner"][
+            "relation_id"
+        ]
+        == relation_id
+    )
     dated = TemporalEntityEditCommand(
         entity.id,
         15.0,
@@ -229,3 +243,272 @@ def test_baseline_metadata_and_hidden_attributes_are_preserved(db_service):
     command.undo(db_service)
     assert db_service.get_entity(entity.id).name == "Harbor"
     assert "_sheet_layout" not in db_service.get_entity(entity.id).attributes
+
+
+def test_shared_owner_is_read_once_and_restored_history_rebuilds_plan(db_service):
+    entity, _event, relation_id = _world(db_service)
+    before_relation = db_service.get_relation(relation_id)
+    command = TemporalEntityEditCommand(
+        entity.id,
+        15.0,
+        _state(db_service, entity.id, 15.0),
+        [
+            {"field": "description", "action": "set", "value": "New description"},
+            {"field": "attribute", "key": "owner", "action": "set", "value": "Navy"},
+            {
+                "field": "attribute",
+                "key": "new",
+                "action": "set",
+                "value": [1],
+                "scope": "baseline",
+            },
+            {
+                "field": "attribute",
+                "key": "mood",
+                "action": "set",
+                "value": "Hope",
+                "scope": "dated",
+                "event_name": " Rebuilding ",
+            },
+        ],
+        {"hidden_attributes": {"_tags": ["new"]}},
+        {"_tags": ["coast"]},
+    )
+    with patch.object(
+        db_service, "get_relation", wraps=db_service.get_relation
+    ) as read:
+        result = command.execute(db_service)
+    assert result.success, result.message
+    assert read.call_args_list.count(((relation_id,), {})) == 1
+    assert {tag["name"] for tag in db_service.get_tags_for_entity(entity.id)} == {"new"}
+    saved_state = deepcopy(result.data["temporal_entity_checkpoint"]["state"])
+    serialized = json.loads(json.dumps(command.to_dict()))
+    assert set(serialized) == {
+        "entity_id",
+        "lore_time",
+        "expected",
+        "patches",
+        "metadata",
+        "expected_metadata",
+        "save_origin",
+        "before_entity",
+        "before_relations",
+        "created_event_ids",
+        "created_relation_ids",
+        "is_executed",
+    }
+    assert db_service.get_event(serialized["created_event_ids"][0]).name == "Rebuilding"
+    restored = TemporalEntityEditCommand.from_dict(serialized)
+    restored.undo(db_service)
+    assert db_service.get_relation(relation_id) == before_relation
+    assert "new" not in db_service.get_entity(entity.id).attributes
+    assert db_service.get_event(serialized["created_event_ids"][0]) is None
+    assert {tag["name"] for tag in db_service.get_tags_for_entity(entity.id)} == {
+        "coast"
+    }
+    redo = restored.execute(db_service)
+    assert redo.success, redo.message
+    state = redo.data["temporal_entity_checkpoint"]["state"]
+    assert state["description"] == saved_state["description"]
+    assert state["attributes"] == saved_state["attributes"]
+    assert (
+        db_service.get_relation(relation_id)["attributes"]["note"] == "leave untouched"
+    )
+
+
+def test_dated_groups_observe_previous_insert_and_preserve_existing_event(db_service):
+    entity, event, _relation_id = _world(db_service)
+    command = TemporalEntityEditCommand(
+        entity.id,
+        10.0,
+        _state(db_service, entity.id, 10.0),
+        [
+            {
+                "field": "description",
+                "action": "set",
+                "scope": "dated",
+                "event_id": event.id,
+                "value": "First",
+            },
+            {
+                "field": "description",
+                "action": "set",
+                "scope": "dated",
+                "event_name": " Second ",
+                "value": "Last",
+            },
+            {
+                "field": "attribute",
+                "key": "mood",
+                "action": "set",
+                "scope": "dated",
+                "event_id": event.id,
+                "value": "Hope",
+            },
+        ],
+    )
+    result = command.execute(db_service)
+    assert result.success, result.message
+    relations = [db_service.get_relation(key) for key in command._created_relation_ids]
+    assert len(relations) == 2
+    assert (
+        relations[1]["attributes"]["modified_at"]
+        == relations[0]["attributes"]["modified_at"] + 1
+    )
+    assert result.data["temporal_entity_checkpoint"]["state"]["description"] == "Last"
+    assert relations[0]["attributes"]["payload"]["attributes"]["mood"] == "Hope"
+    command.undo(db_service)
+    assert db_service.get_event(event.id) is not None
+    assert len(db_service.get_all_events()) == 1
+
+
+@pytest.mark.parametrize(
+    "failure_stage", ["relation", "event", "checkpoint", "unexpected"]
+)
+def test_late_failure_rolls_back_baseline_tags_relations_and_created_events(
+    db_service, failure_stage
+):
+    entity, _event, relation_id = _world(db_service)
+    TemporalEntityEditCommand._sync_tags(db_service, entity.id, {"coast"}, "entity")
+    before_entity = db_service.get_entity(entity.id).to_dict()
+    before_relation = db_service.get_relation(relation_id)
+    before_events = [event.to_dict() for event in db_service.get_all_events()]
+    before_relations = db_service.get_incoming_relations(entity.id)
+    command = TemporalEntityEditCommand(
+        entity.id,
+        15.0,
+        _state(db_service, entity.id, 15.0),
+        [
+            {"field": "description", "action": "set", "value": "Changed owner"},
+            {
+                "field": "description",
+                "scope": "dated",
+                "event_name": "New event",
+                "action": "set",
+                "value": "New chapter",
+            },
+        ],
+        {"name": "Changed", "hidden_attributes": {"_tags": ["changed"]}},
+        {"name": entity.name, "_tags": ["coast"]},
+    )
+    if failure_stage == "relation":
+        context = patch.object(
+            db_service, "update_relation", side_effect=ValueError("write failure")
+        )
+    elif failure_stage in {"event", "unexpected"}:
+        error = RuntimeError if failure_stage == "unexpected" else ValueError
+        context = patch.object(
+            db_service, "insert_relation", side_effect=error("write failure")
+        )
+    else:
+        from src.services.temporal_entity_snapshot_service import (
+            TemporalEntitySnapshotService,
+        )
+
+        build = TemporalEntitySnapshotService.build
+        calls = []
+
+        def fail_checkpoint(service, entity_id, lore_time):
+            calls.append(entity_id)
+            if len(calls) == 2:
+                raise ValueError("write failure")
+            return build(service, entity_id, lore_time)
+
+        context = patch.object(TemporalEntitySnapshotService, "build", fail_checkpoint)
+    with context:
+        if failure_stage == "unexpected":
+            with pytest.raises(RuntimeError, match="write failure"):
+                command.execute(db_service)
+        else:
+            result = command.execute(db_service)
+            assert not result.success
+            assert "temporal_entity_checkpoint" not in result.data
+            assert result.data["diagnostic"]["reason"] == "unexpected_failure"
+    assert db_service.get_entity(entity.id).to_dict() == before_entity
+    assert db_service.get_relation(relation_id) == before_relation
+    assert [event.to_dict() for event in db_service.get_all_events()] == before_events
+    assert db_service.get_incoming_relations(entity.id) == before_relations
+    assert {tag["name"] for tag in db_service.get_tags_for_entity(entity.id)} == {
+        "coast"
+    }
+    assert not command.is_executed
+
+
+@pytest.mark.parametrize("event_kind", ["missing", "wrong_date"])
+def test_invalid_dated_event_rejects_after_baseline_write_without_partial_save(
+    db_service, event_kind
+):
+    entity, event, _relation_id = _world(db_service)
+    before = db_service.get_entity(entity.id).to_dict()
+    command = TemporalEntityEditCommand(
+        entity.id,
+        15.0,
+        _state(db_service, entity.id, 15.0),
+        [
+            {
+                "field": "description",
+                "action": "set",
+                "scope": "dated",
+                "event_id": event.id if event_kind == "wrong_date" else "missing",
+                "value": "x",
+            }
+        ],
+        {"name": "Changed"},
+        {"name": entity.name},
+    )
+    result = command.execute(db_service)
+    assert not result.success
+    assert result.message == "Selected event is not at the viewed time"
+    assert result.data["diagnostic"]["reason"] == "validation_rejected"
+    assert db_service.get_entity(entity.id).to_dict() == before
+
+
+@pytest.mark.parametrize(
+    "kind",
+    [
+        "no_owner",
+        "bad_scope",
+        "bad_metadata",
+        "bad_payload",
+        "missing_relation",
+        "wrong_target",
+    ],
+)
+def test_planning_and_payload_rejections_keep_existing_diagnostics(db_service, kind):
+    entity, _event, relation_id = _world(db_service)
+    before = db_service.get_entity(entity.id).to_dict()
+    patch_data = {"field": "description", "action": "set", "value": "Changed"}
+    metadata = {}
+    if kind == "no_owner":
+        patch_data = {"field": "attribute", "key": "new", "action": "set", "value": 1}
+        message = "A new field needs a baseline or dated scope"
+    elif kind == "bad_scope":
+        patch_data["scope"] = "unknown"
+        message = "Unknown edit scope: unknown"
+    elif kind == "bad_metadata":
+        metadata = {"hidden_attributes": {"_unsupported": 1}}
+        message = "Unsupported baseline metadata: _unsupported"
+    elif kind == "bad_payload":
+        patch_data["value"] = []
+        message = "payload.description must be a string"
+    else:
+        message = "The source relation no longer exists"
+    command = TemporalEntityEditCommand(
+        entity.id, 15.0, _state(db_service, entity.id, 15.0), [patch_data], metadata
+    )
+    if kind in {"missing_relation", "wrong_target"}:
+        relation = db_service.get_relation(relation_id)
+        relation["target_id"] = "another"
+        with patch.object(
+            db_service,
+            "get_relation",
+            return_value=None if kind == "missing_relation" else relation,
+        ):
+            result = command.execute(db_service)
+    else:
+        result = command.execute(db_service)
+    assert not result.success
+    assert result.message == message
+    assert result.data["diagnostic"]["reason"] == "validation_rejected"
+    assert "temporal_entity_checkpoint" not in result.data
+    assert db_service.get_entity(entity.id).to_dict() == before

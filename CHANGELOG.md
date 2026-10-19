@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-19
-**Commit:** 34d8c45326036d63cfa276779dc78d72a2297bb3
+**Commit:** b20db164872dfb3cf182d5baa715fad295fffa88
 ---
 
 # Changelog
@@ -27,6 +27,12 @@ All notable changes to this project will be documented in this file.
   styling on theme changes.
 
 ### Changed
+
+- *(2026-10-19)* **Temporal entity editing (KRT-42)**: Separated detached mutation
+  planning from command-owned persistence. Preserved field ownership, masking,
+  dated ordering, atomic saves, checkpoints and serialized undo/redo. Added pure
+  planning and failure/replay regressions, a dependency guard and complexity
+  ratchet, with architecture and verification evidence.
 
 - *(2026-10-19)* **Relation handling (KRT-98)**: Extracted existing captions,
   suggestions, inline previews and reversal assessment into pure core helpers.

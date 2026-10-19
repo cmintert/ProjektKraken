@@ -1,5 +1,22 @@
 # Architecture and Threading
 
+## Temporal entity edit planning
+
+`TemporalEntityEditPlanner` transforms detached entity, expected-owner, patch,
+metadata and source-relation snapshots into a local edit plan. It owns baseline
+changes, payload patching and ordered dated groups, with no persistence, Qt,
+clock or ID-allocation dependencies. Its output owns nested values independently
+of inputs and separates original from updated relation snapshots.
+
+`TemporalEntityEditCommand` retains fresh comparison/conflict checks, distinct
+source-record reads, undo state, payload validation, tag synchronization and all
+writes inside the existing `BaseCommand` transaction. Dated relation ordering is
+calculated after earlier writes, and the final checkpoint is built in that same
+transaction. Planning errors retain the existing validation diagnostics. Plans
+are not persisted: history retains the original intent and undo snapshots, and
+redo prepares another plan. UI draft preparation remains KRT-40's separate
+responsibility. See [KRT-42 evidence](../ux/evidence/krt42/README.md).
+
 ## Relation presentation and inline policy
 
 The pure core relation-presentation helpers own existing captions, suggestions and

@@ -9958,8 +9958,8 @@
     {
       "source": "src/commands/temporal_entity_edit_command.py",
       "symbol": "TemporalEntityEditCommand.execute",
-      "sha256": "90cbd9b8db874a1ecbcf7418996c45ab7d05e5bc76c65beb41905f74b10ab957",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "d3a2c1a4e1b8c4023951c53aca5af2c403db6305f32196092a28e2672109415b",
+      "review_note": "KRT-42: Reviewed 2026-10-19. Detached source/baseline/dated mutation planning preserves field ownership, hidden metadata, masks and override removal, dated grouping and names. Command-owned validation, atomic writes, ordering, checkpoint acknowledgement and serialized undo/redo are unchanged. Existing temporal Save and ownership-choice explanations remain accurate; no new control or Help wording is needed."
     },
     {
       "source": "src/commands/temporal_entity_edit_command.py",
@@ -16470,6 +16470,60 @@
       "symbol": "has_direction_sensitive_attributes",
       "sha256": "06d17923285ece29cfd5396f136e330e664eba361b3a988d7a64bfdd78c34757",
       "review_note": "KRT-98: Extracted compatibility calculation for existing relation controls. Preserve separate captions, raw key fallback and choices, original-endpoint previews and the existing truthy/string reversal assessment. Existing relations.create explanations remain accurate; schema, inverse wording and command enforcement are deferred."
+    },
+    {
+      "source": "src/commands/temporal_entity_edit_command.py",
+      "symbol": "TemporalEntityEditCommand._prepare_edit_plan",
+      "sha256": "2b58851ec0a8af41bff641c4f8797c6ab03d8f18fa973734e21ed382793745b8",
+      "review_note": "KRT-42: Reviewed 2026-10-19. Detached source/baseline/dated mutation planning preserves field ownership, hidden metadata, masks and override removal, dated grouping and names. Command-owned validation, atomic writes, ordering, checkpoint acknowledgement and serialized undo/redo are unchanged. Existing temporal Save and ownership-choice explanations remain accurate; no new control or Help wording is needed."
+    },
+    {
+      "source": "src/services/temporal_entity_edit_planner.py",
+      "symbol": "TemporalEntityEditPlanner.prepare",
+      "sha256": "8b9788cf05e846fa265529013e45283b9274adcff6c13ef99011d0d45ee41bdf",
+      "review_note": "KRT-42: Reviewed 2026-10-19. Detached source/baseline/dated mutation planning preserves field ownership, hidden metadata, masks and override removal, dated grouping and names. Command-owned validation, atomic writes, ordering, checkpoint acknowledgement and serialized undo/redo are unchanged. Existing temporal Save and ownership-choice explanations remain accurate; no new control or Help wording is needed."
+    },
+    {
+      "source": "src/services/temporal_entity_edit_planner.py",
+      "symbol": "TemporalEntityEditPlanner.source_relation_ids",
+      "sha256": "ebd9c9d2afa9d5160a4e3fe91f372a5fea1567d263ec18a0eb0ddc28f210e433",
+      "review_note": "KRT-42: Reviewed 2026-10-19. Detached source/baseline/dated mutation planning preserves field ownership, hidden metadata, masks and override removal, dated grouping and names. Command-owned validation, atomic writes, ordering, checkpoint acknowledgement and serialized undo/redo are unchanged. Existing temporal Save and ownership-choice explanations remain accurate; no new control or Help wording is needed."
+    },
+    {
+      "source": "src/services/temporal_entity_edit_planner.py",
+      "symbol": "_source_owner",
+      "sha256": "153b82990a05c9bccf54232e276863650efb3734568421fe92dc658574ccd6c9",
+      "review_note": "KRT-42: Reviewed 2026-10-19. Detached source/baseline/dated mutation planning preserves field ownership, hidden metadata, masks and override removal, dated grouping and names. Command-owned validation, atomic writes, ordering, checkpoint acknowledgement and serialized undo/redo are unchanged. Existing temporal Save and ownership-choice explanations remain accurate; no new control or Help wording is needed."
+    },
+    {
+      "source": "src/services/temporal_entity_edit_planner.py",
+      "symbol": "_destination",
+      "sha256": "5b997fca0cacf5f532fc8035ffe6ac1a1bcde39a673623bbdd8c5ebb8e2c586b",
+      "review_note": "KRT-42: Reviewed 2026-10-19. Detached source/baseline/dated mutation planning preserves field ownership, hidden metadata, masks and override removal, dated grouping and names. Command-owned validation, atomic writes, ordering, checkpoint acknowledgement and serialized undo/redo are unchanged. Existing temporal Save and ownership-choice explanations remain accurate; no new control or Help wording is needed."
+    },
+    {
+      "source": "src/services/temporal_entity_edit_planner.py",
+      "symbol": "_apply_metadata",
+      "sha256": "82dfa6ded5491978efb5e239b28d5109e4b5653a8703ec38101debd44fc6cfdd",
+      "review_note": "KRT-42: Reviewed 2026-10-19. Detached source/baseline/dated mutation planning preserves field ownership, hidden metadata, masks and override removal, dated grouping and names. Command-owned validation, atomic writes, ordering, checkpoint acknowledgement and serialized undo/redo are unchanged. Existing temporal Save and ownership-choice explanations remain accurate; no new control or Help wording is needed."
+    },
+    {
+      "source": "src/services/temporal_entity_edit_planner.py",
+      "symbol": "_apply_baseline_patch",
+      "sha256": "b429e8fee47c2024fbd11ae4b87d9d6ed0a6a55c57355e3d59b006d89953206a",
+      "review_note": "KRT-42: Reviewed 2026-10-19. Detached source/baseline/dated mutation planning preserves field ownership, hidden metadata, masks and override removal, dated grouping and names. Command-owned validation, atomic writes, ordering, checkpoint acknowledgement and serialized undo/redo are unchanged. Existing temporal Save and ownership-choice explanations remain accurate; no new control or Help wording is needed."
+    },
+    {
+      "source": "src/services/temporal_entity_edit_planner.py",
+      "symbol": "_apply_dated_patch",
+      "sha256": "1769d34fdc87af3601c4e15ef0c5da230cc6c682fe6466de560e1dae01ad88a4",
+      "review_note": "KRT-42: Reviewed 2026-10-19. Detached source/baseline/dated mutation planning preserves field ownership, hidden metadata, masks and override removal, dated grouping and names. Command-owned validation, atomic writes, ordering, checkpoint acknowledgement and serialized undo/redo are unchanged. Existing temporal Save and ownership-choice explanations remain accurate; no new control or Help wording is needed."
+    },
+    {
+      "source": "src/services/temporal_entity_edit_planner.py",
+      "symbol": "_apply_payload_patch",
+      "sha256": "d5e2334d5577cbbd76a529fd1c57052a6ea9cd7b02fbded13192afea2ecc5d26",
+      "review_note": "KRT-42: Reviewed 2026-10-19. Detached source/baseline/dated mutation planning preserves field ownership, hidden metadata, masks and override removal, dated grouping and names. Command-owned validation, atomic writes, ordering, checkpoint acknowledgement and serialized undo/redo are unchanged. Existing temporal Save and ownership-choice explanations remain accurate; no new control or Help wording is needed."
     }
   ],
   "review_status": {

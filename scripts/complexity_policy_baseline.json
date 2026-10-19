@@ -107,13 +107,6 @@
       "reason": "Existing production complexity reviewed for KRT-36; untouched debt only, executable edits must strictly improve."
     },
     {
-      "id": "c901-b0bb141a685d",
-      "path": "src/commands/temporal_entity_edit_command.py",
-      "symbol": "TemporalEntityEditCommand.execute",
-      "ceiling": 24,
-      "reason": "Existing production complexity reviewed for KRT-36; untouched debt only, executable edits must strictly improve."
-    },
-    {
       "id": "c901-be570d3593da",
       "path": "src/gui/dialogs/create_template_dialog.py",
       "symbol": "CreateTemplateDialog._on_save",

@@ -12,6 +12,11 @@ from src.core.operation_trace import safe_id
 from src.core.temporal_state import validate_payload
 from src.core.temporal_window import resolve_temporal_window
 from src.services.db_service import DatabaseService
+from src.services.temporal_entity_edit_planner import (
+    TemporalEditPlanError,
+    TemporalEntityEditPlan,
+    TemporalEntityEditPlanner,
+)
 from src.services.temporal_entity_snapshot_service import TemporalEntitySnapshotService
 
 
@@ -145,7 +150,24 @@ class TemporalEntityEditCommand(BaseCommand):
                     value_changed=True,
                 )
 
-    def execute(self, db_service: DatabaseService) -> CommandResult:  # noqa: C901
+    def _prepare_edit_plan(
+        self, db_service: DatabaseService, entity_snapshot: dict[str, Any]
+    ) -> TemporalEntityEditPlan:
+        """Collect source snapshots and classify expected planning rejections."""
+        relations = {
+            relation_id: db_service.get_relation(relation_id)
+            for relation_id in TemporalEntityEditPlanner.source_relation_ids(
+                self.expected, self.patches
+            )
+        }
+        try:
+            return TemporalEntityEditPlanner.prepare(
+                entity_snapshot, self.expected, self.patches, self.metadata, relations
+            )
+        except TemporalEditPlanError as exc:
+            raise TemporalSaveValidation(str(exc)) from exc
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
         """Verify the viewed sources and apply all patches in one transaction."""
         try:
             self._verify(self._current_state(db_service))
@@ -157,101 +179,26 @@ class TemporalEntityEditCommand(BaseCommand):
             self._before_relations = {}
             self._created_event_ids = []
             self._created_relation_ids = []
-            base_attrs = deepcopy(entity.attributes)
-            base_desc = entity.description
-            for key, value in self.metadata.get("hidden_attributes", {}).items():
-                if key not in {"_tags", "_sheet_layout", "_summary_data"}:
-                    raise TemporalSaveValidation(
-                        f"Unsupported baseline metadata: {key}"
-                    )
-                if value is None:
-                    base_attrs.pop(key, None)
-                else:
-                    base_attrs[key] = value
-            relation_updates: dict[str, dict[str, Any]] = {}
-            dated_updates: dict[tuple[str, str], dict[str, Any]] = {}
-
-            for patch in self.patches:
-                field = patch["field"]
-                field_key = patch.get("key")
-                action = patch["action"]
-                scope = patch.get("scope", "source")
-                owner = (
-                    self.expected["description_source"]
-                    if field == "description"
-                    else self.expected["attribute_sources"].get(field_key)
-                )
-                if scope == "source":
-                    if owner is None:
-                        raise TemporalSaveValidation(
-                            "A new field needs a baseline or dated scope"
-                        )
-                    if owner["kind"] == "baseline":
-                        scope = "baseline"
-                    else:
-                        scope = "relation"
-                        relation_id = owner["relation_id"]
-                if scope == "baseline":
-                    if field == "description":
-                        base_desc = patch["value"]
-                    else:
-                        assert isinstance(field_key, str)
-                        if action in {"unset", "remove_override"}:
-                            base_attrs.pop(field_key, None)
-                        else:
-                            base_attrs[field_key] = patch["value"]
-                elif scope == "relation":
-                    if relation_id not in relation_updates:
-                        relation = db_service.get_relation(relation_id)
-                        if relation is None or relation["target_id"] != self.entity_id:
-                            raise TemporalSaveValidation(
-                                "The source relation no longer exists"
-                            )
-                        self._before_relations[relation_id] = deepcopy(relation)
-                        relation_updates[relation_id] = deepcopy(relation)
-                    rel_attrs = relation_updates[relation_id]["attributes"]
-                    payload = rel_attrs.setdefault("payload", {})
-                    self._apply_payload_patch(payload, patch)
-                elif scope == "dated":
-                    event_id = patch.get("event_id", "")
-                    event_name = patch.get("event_name", "")
-                    if not event_id and not event_name.strip():
-                        raise TemporalSaveValidation(
-                            "Choose an event or enter a new event name"
-                        )
-                    bucket = dated_updates.setdefault(
-                        (event_id, event_name),
-                        {"attributes": {}, "unset_attributes": []},
-                    )
-                    self._apply_payload_patch(bucket, patch)
-                else:
-                    raise TemporalSaveValidation(f"Unknown edit scope: {scope}")
-
-            updates = {"name": entity.name, "type": entity.type}
-            updates.update(self.metadata)
-            if (
-                base_desc != entity.description
-                or base_attrs != entity.attributes
-                or updates["name"] != entity.name
-                or updates["type"] != entity.type
-            ):
+            plan = self._prepare_edit_plan(db_service, self._before_entity)
+            self._before_relations = plan.before_relations
+            if plan.baseline_changed:
                 db_service.insert_entity(
                     replace(
                         entity,
-                        name=updates["name"],
-                        type=updates["type"],
-                        description=base_desc,
-                        attributes=base_attrs,
+                        name=plan.baseline["name"],
+                        type=plan.baseline["type"],
+                        description=plan.baseline["description"],
+                        attributes=plan.baseline["attributes"],
                     )
                 )
-                if "_tags" in self.metadata.get("hidden_attributes", {}):
+                if plan.sync_tags:
                     self._sync_tags(
                         db_service,
                         self.entity_id,
-                        set(base_attrs.get("_tags", [])),
+                        set(plan.baseline["attributes"].get("_tags", [])),
                         "entity",
                     )
-            for relation in relation_updates.values():
+            for relation in plan.relation_updates.values():
                 self._validate_payload(relation["attributes"]["payload"])
                 db_service.update_relation(
                     relation["id"],
@@ -259,7 +206,7 @@ class TemporalEntityEditCommand(BaseCommand):
                     relation["rel_type"],
                     relation["attributes"],
                 )
-            for (event_id, event_name), payload in dated_updates.items():
+            for (event_id, event_name), payload in plan.dated_updates.items():
                 self._validate_payload(payload)
                 if event_id:
                     event = db_service.get_event(event_id)
@@ -342,27 +289,6 @@ class TemporalEntityEditCommand(BaseCommand):
             validate_payload(payload)
         except ValueError as exc:
             raise TemporalSaveValidation(str(exc)) from exc
-
-    @staticmethod
-    def _apply_payload_patch(payload: dict[str, Any], patch: dict[str, Any]) -> None:
-        """Change only the requested payload field."""
-        if patch["field"] == "description":
-            if patch["action"] == "remove_override":
-                payload.pop("description", None)
-            else:
-                payload["description"] = patch["value"]
-            return
-        key = patch["key"]
-        attrs = payload.setdefault("attributes", {})
-        unsets = payload.setdefault("unset_attributes", [])
-        if patch["action"] == "set":
-            attrs[key] = patch["value"]
-            if key in unsets:
-                unsets.remove(key)
-        else:
-            attrs.pop(key, None)
-            if patch["action"] == "unset" and key not in unsets:
-                unsets.append(key)
 
     def undo(self, db_service: DatabaseService) -> None:
         """Restore the exact records captured before execution."""

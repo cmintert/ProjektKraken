@@ -24,6 +24,21 @@ def test_temporal_entity_preparation_is_independent_of_ui_and_persistence():
     ), "Preparation must not acquire Qt, app, GUI, commands or persistence dependencies"
 
 
+def test_temporal_entity_edit_planning_is_independent_of_ui_and_persistence():
+    """Keep KRT-42 mutation planning independent of storage and side effects."""
+    path = _SOURCE_ROOT / "services/temporal_entity_edit_planner.py"
+    assert all(
+        module.split(".")[0] in {"copy", "dataclasses", "typing"}
+        for _, module in _imported_modules(path)
+    ), "Planning must not acquire Qt, app, GUI, commands or persistence dependencies"
+    assert not any(
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id in {"open", "exec", "eval", "__import__"}
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8")))
+    ), "Preparation must not open files or bypass the import boundary"
+
+
 @pytest.mark.parametrize("filename", ["relation_presentation.py", "relation_policy.py"])
 def test_relation_preparation_has_only_pure_standard_library_dependencies(filename):
     """Keep wording and assessment reusable below GUI and persistence owners."""
