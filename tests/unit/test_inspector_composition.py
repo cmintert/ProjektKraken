@@ -24,7 +24,10 @@ from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.event_editor import EventEditorWidget
 from src.gui.widgets.splitter_tab_inspector import DraggableTabWidget, _move_tab
 
-pytestmark = pytest.mark.ci_fast
+pytestmark = [
+    pytest.mark.ci_fast,
+    pytest.mark.usefixtures("isolated_theme_manager"),
+]
 
 
 @pytest.fixture(params=["entity", "event"])
@@ -749,7 +752,9 @@ def test_writing_tool_toggles_preserve_prose_selection_scroll_and_undo(editor, q
     assert editor.has_unsaved_changes()
 
 
-def test_quiet_support_styles_survive_theme_changes(editor, qapp):
+def test_quiet_support_styles_survive_theme_changes(editor, qapp, monkeypatch):
+    monkeypatch.setattr(qapp, "setStyleSheet", editor.setStyleSheet)
+    monkeypatch.setattr(qapp, "setPalette", editor.setPalette)
     manager = ThemeManager()
     for theme in ("light_mode", "dark_mode"):
         manager.set_theme(theme, qapp)

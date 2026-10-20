@@ -128,67 +128,25 @@ def test_preview_fetches_rag(qtbot, widget, monkeypatch):  # noqa: C901
         "src.gui.widgets.llm_generation_widget.RAGService", MockRAGService
     )
 
-    # Mock UI dialogs to be headless
-    # We patch QDialog to avoid execution loop
-    class MockDialog:
-        def __init__(self, *args, **kwargs):
-            pass
+    # Keep real Qt controls so Help bindings and preview rendering are exercised.
+    from PySide6.QtWidgets import QDialog, QPlainTextEdit
 
-        def setWindowTitle(self, t):
-            pass
+    previews = []
 
-        def resize(self, w, h):
-            pass
+    def capture_preview(dialog):
+        previews.append(dialog.findChild(QPlainTextEdit).toPlainText())
+        return QDialog.DialogCode.Accepted
 
-        def setStyleSheet(self, s):
-            pass
-
-        def exec(self):
-            pass
-
-        def accept(self):
-            pass
-
-        def setLayout(self, layout):
-            pass
-
-        def setPlainText(self, t):
-            pass
-
-        def setReadOnly(self, b):
-            pass
-
-        def addWidget(self, w):
-            pass
-
-        def addLayout(self, layout):
-            pass
-
-        def addStretch(self):
-            pass
-
-        @property
-        def clicked(self):
-            class Sig:
-                def connect(self, f):
-                    pass
-
-            return Sig()
-
-    monkeypatch.setattr("src.gui.widgets.llm_generation_widget.QDialog", MockDialog)
-    monkeypatch.setattr(
-        "src.gui.widgets.llm_generation_widget.QVBoxLayout", MockDialog
-    )  # Dummy
-    monkeypatch.setattr("src.gui.widgets.llm_generation_widget.QHBoxLayout", MockDialog)
-    monkeypatch.setattr("src.gui.widgets.llm_generation_widget.QLabel", MockDialog)
-    monkeypatch.setattr(
-        "src.gui.widgets.llm_generation_widget.QPlainTextEdit", MockDialog
-    )
-    monkeypatch.setattr("src.gui.widgets.llm_generation_widget.QPushButton", MockDialog)
+    monkeypatch.setattr(QDialog, "exec", capture_preview)
+    widget.world_context_cb.setChecked(False)
+    widget.spatial_cb.setChecked(False)
 
     widget.rag_cb.setChecked(True)
     widget.custom_prompt_edit.setPlainText("Test Prompt")
     widget._on_preview_clicked()
+
+    assert len(previews) == 1
+    assert mock_rag_return in previews[0]
 
     # Check that we had an init call and a get_context call or similar
     # We expect init with db_path, then get_context with query

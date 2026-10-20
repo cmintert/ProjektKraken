@@ -115,7 +115,24 @@ def test_primary_button_style_contains_theme_values(theme_manager):
     ],
 )
 def test_button_styles_share_the_inactive_rule(style_factory):
-    assert StyleHelper.get_disabled_button_style() in style_factory()
+    style = style_factory()
+    role = {
+        StyleHelper.get_primary_button_style: "primary",
+        StyleHelper.get_secondary_button_style: "secondary",
+        StyleHelper.get_tool_button_style: "secondary",
+        StyleHelper.get_destructive_button_style: "destructive",
+    }.get(style_factory)
+    if role is None:
+        assert StyleHelper.get_disabled_button_style() in style
+    else:
+        theme = ThemeManager().get_theme()
+        prefix = f"action_{role}_disabled"
+        assert (
+            "QPushButton:disabled, QToolButton:disabled { "
+            f"background-color: {theme[prefix + '_bg']}; "
+            f"color: {theme[prefix + '_text']}; "
+            f"border-color: {theme[prefix + '_border']}; }}"
+        ) in style
 
 
 def test_destructive_button_style_contains_theme_values(theme_manager):
@@ -240,7 +257,7 @@ def test_wiki_link_style_valid(theme_manager):
     theme = theme_manager.get_theme()
     style = StyleHelper.get_wiki_link_style(broken=False)
 
-    assert theme["accent_secondary"] in style
+    assert theme["link_neutral"] in style
     assert "underline" in style
 
 
@@ -249,7 +266,7 @@ def test_wiki_link_style_broken(theme_manager):
     theme = theme_manager.get_theme()
     style = StyleHelper.get_wiki_link_style(broken=True)
 
-    assert theme["error"] in style
+    assert theme["link_unresolved"] in style
     assert "underline" in style
 
 

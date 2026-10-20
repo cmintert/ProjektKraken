@@ -96,13 +96,13 @@ def test_offset_correctness():
 
 
 def test_pipe_with_whitespace():
-    """Test pipe modifier with whitespace is trimmed."""
+    """Trim target identity while retaining the author's exact visible label."""
     text = "Link to [[Target  |  Label  ]]."
     links = WikiLinkParser.extract_links(text)
 
     assert len(links) == 1
     assert links[0].name == "Target"
-    assert links[0].modifier == "Label"
+    assert links[0].modifier == "  Label  "
 
 
 def test_nested_brackets_rejected():

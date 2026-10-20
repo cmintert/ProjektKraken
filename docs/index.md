@@ -28,6 +28,7 @@ reference/index
 :maxdepth: 1
 :caption: Releases
 
+releases/0.20.0-beta1
 releases/0.19.7-beta1
 ```
 

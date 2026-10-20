@@ -8,7 +8,10 @@ from src.core.theme_manager import ThemeManager
 from src.gui.widgets.map.map_layer_model import MapLayerModel
 from src.gui.widgets.map.map_layer_panel import MapLayerPanel
 
-pytestmark = pytest.mark.ci_fast
+pytestmark = [
+    pytest.mark.ci_fast,
+    pytest.mark.usefixtures("isolated_theme_manager"),
+]
 
 
 @pytest.mark.parametrize("outside_only", [False, True])
@@ -23,7 +26,9 @@ pytestmark = pytest.mark.ci_fast
         "muted_light_mode",
     ],
 )
-def test_theme_then_scrub_preserves_selected_layer(qtbot, theme, outside_only):
+def test_theme_then_scrub_preserves_selected_layer(
+    qtbot, theme, outside_only, qapp, monkeypatch
+):
     node = MapLayerNode(
         name="Selected site", layer_type="marker", id="site", start_date=1000.0
     )
@@ -33,6 +38,8 @@ def test_theme_then_scrub_preserves_selected_layer(qtbot, theme, outside_only):
     )
     panel = MapLayerPanel()
     qtbot.addWidget(panel)
+    monkeypatch.setattr(qapp, "setStyleSheet", panel.setStyleSheet)
+    monkeypatch.setattr(qapp, "setPalette", panel.setPalette)
     panel.set_model(model)
     panel.set_playhead_time(0.0)
     panel.set_temporal_filter_enabled(outside_only)

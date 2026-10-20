@@ -14,7 +14,10 @@ from src.gui.widgets.wiki_text_edit import WikiTextEdit
 from src.services.language_tool_service import LanguageToolWorker, LTMatch
 
 TEXT = "Hello wrld in this sentence."
-pytestmark = pytest.mark.ci_fast
+pytestmark = [
+    pytest.mark.ci_fast,
+    pytest.mark.usefixtures("isolated_theme_manager"),
+]
 
 
 @pytest.fixture
@@ -172,8 +175,12 @@ def test_suggestion_is_one_undoable_edit_and_stale_action_is_inert(spelling):
     assert view.toPlainText() == TEXT
 
 
-def test_ignore_and_theme_refresh_preserve_authoring_context(spelling, qapp):
+def test_ignore_and_theme_refresh_preserve_authoring_context(
+    spelling, qapp, monkeypatch
+):
     view, controller, requests = spelling
+    monkeypatch.setattr(qapp, "setStyleSheet", view.setStyleSheet)
+    monkeypatch.setattr(qapp, "setPalette", view.setPalette)
     controller.check_now()
     complete(controller, requests[-1])
     cursor = view.textCursor()
@@ -243,6 +250,8 @@ def test_real_wiki_theme_switch_preserves_matches_and_undo(
     QSettings().setValue("SpellCheck/enabled", True)
     widget = WikiTextEdit()
     qtbot.addWidget(widget)
+    monkeypatch.setattr(qapp, "setStyleSheet", widget.setStyleSheet)
+    monkeypatch.setattr(qapp, "setPalette", widget.setPalette)
     widget.set_wiki_text(TEXT + " See [[Harbor]].")
     if source:
         widget.toggle_view_mode()

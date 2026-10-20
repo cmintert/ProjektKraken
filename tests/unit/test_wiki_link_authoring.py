@@ -9,7 +9,10 @@ from PySide6.QtGui import QContextMenuEvent, QTextCursor
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 from src.services.text_parser import WikiLinkParser
 
-pytestmark = pytest.mark.ci_fast
+pytestmark = [
+    pytest.mark.ci_fast,
+    pytest.mark.usefixtures("isolated_theme_manager"),
+]
 TARGET = "550e8400-e29b-41d4-a716-446655440000"
 OTHER = "550e8400-e29b-41d4-a716-446655440001"
 
@@ -243,12 +246,14 @@ def test_peek_eye_cursor_matches_modifier_and_preserves_writing(writing, source,
     ) == before
 
 
-def test_peek_cursor_recolors_with_theme_without_editing_document(writing):
+def test_peek_cursor_recolors_with_theme_without_editing_document(writing, monkeypatch):
     from PySide6.QtGui import QColor
     from PySide6.QtWidgets import QApplication
 
     from src.core.theme_manager import ThemeManager
 
+    monkeypatch.setattr(QApplication.instance(), "setStyleSheet", writing.setStyleSheet)
+    monkeypatch.setattr(QApplication.instance(), "setPalette", writing.setPalette)
     manager = ThemeManager()
     original_theme = manager.current_theme_name
     writing.set_wiki_text("See [[House Bjornaer]].")

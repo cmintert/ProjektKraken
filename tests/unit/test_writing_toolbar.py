@@ -8,7 +8,10 @@ from PySide6.QtWidgets import QToolButton
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
-pytestmark = pytest.mark.ci_fast
+pytestmark = [
+    pytest.mark.ci_fast,
+    pytest.mark.usefixtures("isolated_theme_manager"),
+]
 
 
 @pytest.mark.parametrize("source", [False, True])
@@ -116,9 +119,13 @@ def test_edit_menu_uses_native_editor_undo_and_redo(qtbot):
         "muted_light_mode",
     ],
 )
-def test_theme_switch_preserves_authoring_history_and_recolors_icons(qtbot, theme):
+def test_theme_switch_preserves_authoring_history_and_recolors_icons(
+    qtbot, theme, qapp, monkeypatch
+):
     widget = WikiTextEdit()
     qtbot.addWidget(widget)
+    monkeypatch.setattr(qapp, "setStyleSheet", widget.setStyleSheet)
+    monkeypatch.setattr(qapp, "setPalette", widget.setPalette)
     widget.set_wiki_text("A [[id:alpha|linked]] **draft**")
     view = widget.editor
     view.moveCursor(QTextCursor.MoveOperation.End)

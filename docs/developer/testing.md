@@ -84,6 +84,15 @@ been explicitly marked slow, not a bounded fast suite.
 Use fixtures from `tests/conftest.py`, including `qapp`, `db_service`, and
 `init_theme_manager`.
 
+Component theme tests can request `isolated_theme_manager` before constructing
+their widgets, or apply `pytest.mark.usefixtures("isolated_theme_manager")` at
+module level. This fixture uses the real manager and production themes, restores
+the previous singleton, and completes deferred widget deletion before restoring
+it. Theme notifications then reach the current test's receivers instead of
+widgets retained from earlier serial tests. Keep palette and stylesheet updates
+on the component probe when testing its presentation. Tests specifically covering
+the application palette must retain real QApplication palette assertions.
+
 ## Local pre-push automation
 
 See [Development Setup](development.md) to install the commit and push hooks.

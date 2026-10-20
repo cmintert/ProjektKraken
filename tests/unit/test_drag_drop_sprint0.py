@@ -54,7 +54,7 @@ def test_event_editor_accepts_drops(event_editor):
 
 
 def test_entity_editor_drop_creates_relation_signal(entity_editor, qtbot):
-    """Test that dropping an item on entity editor emits add_relation_requested signal."""
+    """A labeled drop prepares a connection; Connect emits the directed request."""
     # Load an entity so the editor is ready
     entity = Entity(id="entity-123", name="Test Entity", type="Character")
     entity_editor.load_entity(entity)
@@ -76,24 +76,12 @@ def test_entity_editor_drop_creates_relation_signal(entity_editor, qtbot):
         Qt.KeyboardModifier.NoModifier,  # modifiers
     )
 
-    # Wait for the signal
-    with qtbot.waitSignal(
-        entity_editor.add_relation_requested, timeout=1000
-    ) as blocker:
-        entity_editor.dropEvent(drop_event)
-
-    # Verify signal was emitted with correct parameters
-    # Signal: source_id, target_id, rel_type, attributes, bidirectional
-    args = blocker.args
-    assert args[0] == "event-456"  # source: dropped item
-    assert args[1] == "entity-123"  # target: current entity
-    assert args[2] == "related"  # default relation type
-    assert args[3] == {}  # empty attributes
-    assert args[4] is False  # not bidirectional
+    entity_editor._suggestion_items = [("event-456", "The Great War", "event")]
+    _assert_drop_requires_connect(entity_editor, drop_event, "event-456", "entity-123")
 
 
 def test_event_editor_drop_creates_relation_signal(event_editor, qtbot):
-    """Test that dropping an item on event editor emits add_relation_requested signal."""
+    """A labeled drop prepares a connection; Connect emits the directed request."""
     # Load an event so the editor is ready
     event = Event(id="event-123", name="Test Event", lore_date=0.0)
     event_editor.load_event(event)
@@ -115,17 +103,43 @@ def test_event_editor_drop_creates_relation_signal(event_editor, qtbot):
         Qt.KeyboardModifier.NoModifier,
     )
 
-    # Wait for the signal
-    with qtbot.waitSignal(event_editor.add_relation_requested, timeout=1000) as blocker:
-        event_editor.dropEvent(drop_event)
+    event_editor._suggestion_items = [("entity-456", "John Smith", "entity")]
+    _assert_drop_requires_connect(event_editor, drop_event, "entity-456", "event-123")
 
-    # Verify signal was emitted with correct parameters
-    args = blocker.args
-    assert args[0] == "entity-456"  # source: dropped item
-    assert args[1] == "event-123"  # target: current event
-    assert args[2] == "related"  # default relation type
-    assert args[3] == {}  # empty attributes
-    assert args[4] is False  # not bidirectional
+
+def _assert_drop_requires_connect(editor, drop_event, source_id, target_id):
+    """Protect the non-mutating inspector boundary and explicit save action."""
+    requests = []
+    editor.relation_authoring_requested.connect(requests.append)
+    editor.dropEvent(drop_event)
+    assert not drop_event.isAccepted()
+    assert not editor.relation_authoring.capture_open
+    assert requests == []
+
+    panel = editor.relation_authoring
+    from PySide6.QtCore import QPoint
+    from PySide6.QtGui import QDragEnterEvent
+
+    enter = QDragEnterEvent(
+        QPoint(10, 10),
+        Qt.DropAction.CopyAction,
+        drop_event.mimeData(),
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+    )
+    panel.drop_target.dragEnterEvent(enter)
+    assert enter.isAccepted()
+    panel.drop_target.dropEvent(drop_event)
+    assert drop_event.isAccepted()
+    assert panel.capture_open
+    assert requests == []
+    panel.apply_button.click()
+    assert len(requests) == 1
+    request = requests[0]
+    assert request["source_id"] == source_id
+    assert request["target_id"] == target_id
+    assert request["rel_type"] == "related"
+    assert request["attributes"] == {}
 
 
 def test_entity_editor_rejects_drop_when_no_entity_loaded(entity_editor, qtbot):

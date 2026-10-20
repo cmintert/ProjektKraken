@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from PySide6.QtCore import QPoint
 from PySide6.QtWidgets import QToolButton, QVBoxLayout, QWidget
 
 from src.core.theme_manager import ThemeManager
@@ -57,6 +58,11 @@ def test_timeline_keeps_playback_and_overflows_secondary_options(qtbot) -> None:
 
 def test_project_panel_keeps_new_menu_available_at_narrow_width(qtbot) -> None:
     panel = UnifiedListWidget()
+    panel.setStyleSheet(
+        ThemeManager().format_stylesheet(
+            Path("src/resources/main.qss").read_text(encoding="utf-8")
+        )
+    )
     _show_narrow(qtbot, panel, width=150)
 
     assert not panel.btn_new.isHidden()
@@ -66,6 +72,11 @@ def test_project_panel_keeps_new_menu_available_at_narrow_width(qtbot) -> None:
 
 def test_project_filters_keep_selectors_and_overflow_actions(qtbot) -> None:
     panel = UnifiedListWidget()
+    panel.setStyleSheet(
+        ThemeManager().format_stylesheet(
+            Path("src/resources/main.qss").read_text(encoding="utf-8")
+        )
+    )
     _show_narrow(qtbot, panel, width=300)
     panel.filter_action_toolbar.refresh()
 
@@ -79,14 +90,33 @@ def test_project_filters_keep_selectors_and_overflow_actions(qtbot) -> None:
         panel.btn_clear_filters,
     ):
         assert button.isVisibleTo(panel) or button in toolbar.overflowed_buttons()
-    assert (
-        panel.filter_action_toolbar.geometry().right() <= panel.contentsRect().right()
+    # The production panel retains complete controls on a scrollable page.
+    # Compare geometry in that page's coordinates, then exercise the visible route.
+    scroll = panel.controls_scroll
+    page = scroll.widget()
+    right = toolbar.mapTo(page, QPoint(toolbar.width() - 1, 0)).x()
+    assert right <= page.contentsRect().right()
+    assert scroll.viewport().width() <= panel.width()
+    scroll.ensureWidgetVisible(toolbar.overflow_button)
+    qtbot.waitUntil(
+        lambda: scroll.viewport()
+        .rect()
+        .contains(
+            toolbar.overflow_button.mapTo(
+                scroll.viewport(), toolbar.overflow_button.rect().center()
+            )
+        )
     )
 
 
 def test_graph_filters_fit_one_compact_row_and_overflow_actions(qtbot) -> None:
     bar = GraphFilterBar()
     host = QWidget()
+    host.setStyleSheet(
+        ThemeManager().format_stylesheet(
+            Path("src/resources/main.qss").read_text(encoding="utf-8")
+        )
+    )
     qtbot.addWidget(host)
     layout = QVBoxLayout(host)
     layout.setContentsMargins(0, 0, 0, 0)

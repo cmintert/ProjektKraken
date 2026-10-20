@@ -36,7 +36,7 @@ class MockLongformManager:
 def test_auto_refresh_logic(qtbot):
     """
     Verifies that:
-    1. Legacy Event/Entity results request a full data refresh.
+    1. Legacy creation refreshes its dataset; updates use the full fallback.
     2. MainWindow's longform refresh respects its toggle.
     3. The toggle setting updates button visibility and triggers refresh.
     """
@@ -63,10 +63,12 @@ def test_auto_refresh_logic(qtbot):
     main_window.longform_editor.set_refresh_button_visible(not is_auto)
     assert main_window.longform_editor.refresh_button_visible is False
 
-    # Legacy command results without lore effects use the full-refresh fallback.
+    # Legacy creation refreshes its own dataset without hydrating other drafts.
     data_handler = main_window.data_handler
+    full_reloads = []
+    data_handler.reload_all_data.connect(lambda: full_reloads.append(True))
 
-    with qtbot.waitSignal(data_handler.reload_all_data, timeout=1000):
+    with qtbot.waitSignal(data_handler.reload_events, timeout=1000):
         # Simulate Event Command Success
         result = CommandResult(
             success=True,
@@ -76,6 +78,7 @@ def test_auto_refresh_logic(qtbot):
         )
         data_handler.on_command_finished(result)
 
+    assert full_reloads == []
     # Check the longform refresh toggle independently of the lore refresh path.
     main_window._on_auto_refresh_longform()
     assert main_window.longform_manager.load_count == 1
@@ -92,6 +95,7 @@ def test_auto_refresh_logic(qtbot):
 
     main_window._on_auto_refresh_longform()
     assert main_window.longform_manager.load_count == 2
+    assert full_reloads == [True]
 
     # Test 4: Toggle Off
     main_window.toggle_longform_auto_refresh()

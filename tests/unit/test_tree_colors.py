@@ -41,7 +41,7 @@ def test_outline_colors_update_on_theme_change(outline_widget, theme_manager):
     with patch.object(
         ThemeManager,
         "get_theme",
-        return_value={"accent_secondary": "#000000", "primary": "#000000"},
+        return_value=base_theme | {"event_main": "#000000", "entity_main": "#000000"},
     ):
         # Trigger update manually to set initial colors
         outline_widget._update_colors()
@@ -56,8 +56,8 @@ def test_outline_colors_update_on_theme_change(outline_widget, theme_manager):
 
     # Change theme - include all required keys
     new_theme = base_theme | {
-        "accent_secondary": "#123456",  # Event color
-        "primary": "#654321",  # Entity color
+        "event_main": "#123456",
+        "entity_main": "#654321",
         "destructive": "#FF0000",  # Required for DestructiveButton
         "app_bg": "#000000",  # Required for GraphicsScene
         "text_main": "#FFFFFF",

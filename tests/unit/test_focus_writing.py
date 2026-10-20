@@ -214,7 +214,9 @@ def test_same_item_reload_keeps_focus_new_item_exits(focus_setup):
 def test_repeated_entry_restores_width_and_chrome(focus_setup, qtbot):
     _window, editor, controller = focus_setup
     view = editor.desc_edit
-    qtbot.wait(10)
+    # This fixture fits without a scrollbar once queued adaptive rows settle.
+    # Capture the settled width, rather than the temporary scrollbar allocation.
+    qtbot.waitUntil(lambda: editor.scroll_area.verticalScrollBar().maximum() == 0)
     original_limits = (view.minimumWidth(), view.maximumWidth())
     original_sizes = editor.description_field.sizes()
     for _ in range(3):

@@ -16,7 +16,10 @@ from src.gui.widgets.connection_presentation import project_connections
 from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.event_editor import EventEditorWidget
 
-pytestmark = pytest.mark.ci_fast
+pytestmark = [
+    pytest.mark.ci_fast,
+    pytest.mark.usefixtures("isolated_theme_manager"),
+]
 
 
 def saved(index, predicate="related", **extra):
@@ -276,6 +279,8 @@ def test_minimum_height_uses_wrapped_content_without_overlap(
     panel.timing_disclosure.setChecked(True)
     manager = ThemeManager()
     previous_style = qapp.styleSheet()
+    monkeypatch.setattr(qapp, "setStyleSheet", inspector.setStyleSheet)
+    monkeypatch.setattr(qapp, "setPalette", inspector.setPalette)
     template = Path("src/resources/main.qss").read_text(encoding="utf-8")
     monkeypatch.setattr(manager, "_qss_template", template)
     try:

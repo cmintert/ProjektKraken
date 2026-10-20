@@ -1,3 +1,5 @@
+from contextlib import closing
+
 import pytest
 
 from src.core.entities import Entity
@@ -6,69 +8,40 @@ from src.services.db_service import DatabaseService
 
 @pytest.fixture
 def db_path(tmp_path):
-    """Provides a path to a temporary database file."""
-    # We use a real file because in-memory DBs (:memory:) are isolated per connection usually,
-    # or shared via URI but WAL behavior might be slightly different or less critical to test there.
-    # To strictly test WAL isolation, a file is best.
-    p = tmp_path / "isolation_test.db"
-    return str(p)
+    """Provide a real file so independent connections share WAL state."""
+    return str(tmp_path / "isolation_test.db")
 
 
 def test_snapshot_isolation_and_refresh(db_path):
-    """Verifies that ensure_fresh_view captures updates from other connections."""
+    """Refresh preserves an owned snapshot until its caller ends the transaction."""
+    with (
+        closing(DatabaseService(db_path)) as writer,
+        closing(DatabaseService(db_path)) as reader,
+    ):
+        writer.connect()
+        reader.connect()
+        writer_connection = writer.require_connection()
+        reader_connection = reader.require_connection()
+        assert writer_connection.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
+        assert reader.get_all_entities() == []
 
-    # 1. Setup Writer Connection
-    writer_service = DatabaseService(db_path)
-    writer_service.connect()
-    # Ensure WAL mode
-    writer_service._connection.execute("PRAGMA journal_mode=WAL;")
-    writer_service._init_schema()
+        reader_connection.execute("BEGIN DEFERRED TRANSACTION")
+        assert reader.get_all_entities() == []
 
-    # 2. Setup Reader Connection (simulating Worker)
-    reader_service = DatabaseService(db_path)
-    reader_service.connect()
+        entity = Entity(name="Visible One", type="test")
+        writer.insert_entity(entity)
+        writer_connection.commit()
 
-    # 3. Reader establishes a snapshot by reading
-    # Using a transaction block or just a select might trigger it depending on isolation level.
-    # Python sqlite3 defaults to DEFERRED.
-    # We need to ensure we are 'in a transaction'.
+        # A refresh cannot commit or roll back a transaction owned by its caller.
+        reader.ensure_fresh_view()
+        assert reader_connection.in_transaction
+        assert reader.get_all_entities() == []
 
-    # Initial state: Empty
-    assert len(reader_service.get_all_entities()) == 0
-
-    # Reader is now potentially holding a read transaction if we didn't commit?
-    # correct `get_all_entities` executes a select.
-    # If isolation_level is default, it might auto-commit read.
-    # To simulate the persistent worker issue, we might need to manually ensure we are in a transaction.
-
-    reader_service._connection.execute("BEGIN DEFERRED TRANSACTION")
-    reader_service._connection.execute("SELECT * FROM entities")
-
-    # 4. Writer inserts data
-    entity = Entity(name="Visible One", type="test")
-    writer_service.insert_entity(entity)
-    # Writer commits (insert_entity does this contextually if designed so, let's double check)
-    # The service methods usually commit.
-
-    # 5. Reader checks again - WITHOUT refreshing
-    # Since we manually started a transaction on reader, it should be isolated.
-    cursor = reader_service._connection.execute("SELECT COUNT(*) FROM entities")
-    count = cursor.fetchone()[0]
-
-    # If snapshot isolation is working as expected (and causing the bug), count should be 0
-    assert count == 0, (
-        "Reader should not see data committed after its transaction started"
-    )
-
-    # 6. Apply Fix: Ensure Fresh View
-    # This should commit/rollback the current read transaction
-    reader_service.ensure_fresh_view()
-
-    # 7. Reader checks again - WITH refreshing
-    results = reader_service.get_all_entities()
-    assert len(results) == 1, "Reader should see data after refreshing view"
-    assert results[0].name == "Visible One"
-
-    # Cleanup
-    writer_service.close()
-    reader_service.close()
+        # Ending the snapshot belongs to the caller; the next read sees WAL data.
+        reader_connection.rollback()
+        reader.ensure_fresh_view()
+        assert not reader_connection.in_transaction
+        results = reader.get_all_entities()
+        assert len(results) == 1
+        assert results[0].id == entity.id
+        assert results[0].name == "Visible One"

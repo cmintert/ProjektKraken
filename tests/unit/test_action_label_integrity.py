@@ -25,7 +25,10 @@ from src.gui.utils.action_label_metrics import (
 from src.gui.widgets.action_flow_layout import ActionFlowLayout
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
 
-pytestmark = pytest.mark.ci_fast
+pytestmark = [
+    pytest.mark.ci_fast,
+    pytest.mark.usefixtures("isolated_theme_manager"),
+]
 
 
 def styled_host(qtbot):
@@ -420,11 +423,15 @@ def test_native_panel_fill_and_live_theme_switch_use_theme_tokens(
     qtbot.addWidget(panel)
     panel.resize(120, 120)
     panel.show()
+    # Exercise the real application palette, but keep QSS on this probe widget.
+    # Restyling unrelated widgets from the full serial suite is unbounded work.
+    monkeypatch.setattr(qapp, "setStyleSheet", panel.setStyleSheet)
     try:
         template = Path("src/resources/main.qss").read_text("utf-8")
         manager.apply_theme(qapp, template)
         qtbot.wait(1)
         expected = QColor(manager.get_theme()["app_bg"])
+        assert qapp.palette().color(panel.backgroundRole()) == expected
         assert panel.grab().toImage().pixelColor(20, 20) == expected
         alternate = "light_mode" if theme != "light_mode" else "dark_mode"
         monkeypatch.setattr(manager, "current_theme_name", alternate)
@@ -433,9 +440,12 @@ def test_native_panel_fill_and_live_theme_switch_use_theme_tokens(
         assert panel.grab().toImage().pixelColor(20, 20) == QColor(
             manager.get_theme()["app_bg"]
         )
+        assert qapp.palette().color(panel.backgroundRole()) == QColor(
+            manager.get_theme()["app_bg"]
+        )
+        assert qapp.styleSheet() == old_stylesheet
     finally:
         qapp.setPalette(old_palette)
-        qapp.setStyleSheet(old_stylesheet)
 
 
 def test_icon_only_action_name_is_not_painted_text_but_clipping_still_fails(qtbot):

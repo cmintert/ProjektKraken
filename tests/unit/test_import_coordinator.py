@@ -128,8 +128,12 @@ class TestDatabaseManager:
         """show_database_manager should create and show the dialog."""
         mock_dialog = MagicMock()
         mock_dialog_class.return_value = mock_dialog
+        fake_window.app_coordinator = MagicMock()
         coordinator.show_database_manager()
         mock_dialog.exec.assert_called_once()
+        assert mock_dialog.edit_transition_handler == (
+            fake_window.app_coordinator.map_edits.request_transition
+        )
 
 
 class TestSingleObsidianExport:
@@ -149,9 +153,7 @@ class TestSingleObsidianExport:
         """A prepared snapshot should lead to a worker export request."""
         requests = []
         coordinator.run_obsidian_export_requested.connect(
-            lambda item_type, item_id, path: requests.append(
-                (item_type, item_id, path)
-            )
+            lambda item_type, item_id, path: requests.append((item_type, item_id, path))
         )
         mock_dialog.getSaveFileName.return_value = (
             "C:/tmp/Chosen Name.md",
@@ -167,9 +169,7 @@ class TestSingleObsidianExport:
             }
         )
 
-        assert requests == [
-            ("entity", "entity-1", "C:/tmp/Chosen Name.md")
-        ]
+        assert requests == [("entity", "entity-1", "C:/tmp/Chosen Name.md")]
 
     @patch("src.app.coordinators.import_coordinator.AutoClosingMessageBox")
     def test_successful_export_shows_transient_result(
@@ -214,9 +214,7 @@ class TestSingleObsidianExport:
             }
         )
 
-        fake_window.status_bar.showMessage.assert_called_with(
-            "Export failed", 3000
-        )
+        fake_window.status_bar.showMessage.assert_called_with("Export failed", 3000)
         mock_message_box.assert_called_once_with(
             "Obsidian Export Failed",
             "Failed to export 'The Kraken': disk full",

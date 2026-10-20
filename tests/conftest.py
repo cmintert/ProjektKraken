@@ -34,12 +34,9 @@ else:
         def __init__(self, *args, **kwargs):
             if not args:
                 organization = (
-                    QtCore.QCoreApplication.organizationName()
-                    or "ProjektKrakenTests"
+                    QtCore.QCoreApplication.organizationName() or "ProjektKrakenTests"
                 )
-                application = (
-                    QtCore.QCoreApplication.applicationName() or "pytest"
-                )
+                application = QtCore.QCoreApplication.applicationName() or "pytest"
                 super().__init__(
                     self.Format.IniFormat,
                     self.Scope.UserScope,
@@ -129,6 +126,19 @@ def init_theme_manager():
     # Verify theme was loaded successfully
     theme = tm.get_theme()
     assert "surface" in theme, "ThemeManager failed to load valid theme"
+
+
+@pytest.fixture
+def isolated_theme_manager(qapp, monkeypatch, init_theme_manager):
+    """Give a component test its own real theme singleton and signal receivers."""
+    from src.core.theme_manager import ThemeManager
+
+    monkeypatch.setattr(ThemeManager, "_instance", None)
+    manager = ThemeManager(str(repo_root / "themes.json"))
+    yield manager
+    # Complete widget deletion while their own sender is still the singleton.
+    QtCore.QCoreApplication.sendPostedEvents(None, QtCore.QEvent.Type.DeferredDelete)
+    qapp.processEvents()
 
 
 @pytest.fixture(autouse=True)

@@ -7,7 +7,10 @@ from PySide6.QtGui import QTextCharFormat
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
-pytestmark = pytest.mark.ci_fast
+pytestmark = [
+    pytest.mark.ci_fast,
+    pytest.mark.usefixtures("isolated_theme_manager"),
+]
 
 
 def layout_formats(view):
@@ -20,11 +23,15 @@ def layout_formats(view):
 
 
 @pytest.mark.parametrize("theme", ThemeManager().get_available_themes())
-def test_theme_link_refresh_preserves_history_and_semantics(qtbot, theme):
+def test_theme_link_refresh_preserves_history_and_semantics(
+    qtbot, theme, qapp, monkeypatch
+):
     manager = ThemeManager()
     original = manager.current_theme_name
     widget = WikiTextEdit()
     qtbot.addWidget(widget)
+    monkeypatch.setattr(qapp, "setStyleSheet", widget.setStyleSheet)
+    monkeypatch.setattr(qapp, "setPalette", widget.setPalette)
     widget.set_completer(items=[("ent", "Entry", "entity"), ("evt", "Moment", "event")])
     widget.set_wiki_text("[[id:ent|Entry]] [[Moment]] [[Gone]]")
     view = widget.editor

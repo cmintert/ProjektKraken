@@ -23,6 +23,8 @@ def test_editor_typography_uses_editor_tokens_not_application_sizes():
             "text_main": "#dddddd",
             "accent_secondary": "#336699",
             "error": "#aa2233",
+            "link_neutral": "#8090a0",
+            "link_unresolved": "#a09080",
         }
     )
 
@@ -36,7 +38,13 @@ def test_editor_typography_uses_editor_tokens_not_application_sizes():
 
 
 def test_default_heading_sizes_have_clear_visual_separation():
-    typography = EditorTypography.from_theme({})
+    typography = EditorTypography.from_theme(
+        {
+            "text_main": "#dddddd",
+            "link_neutral": "#8090a0",
+            "link_unresolved": "#a09080",
+        }
+    )
 
     assert typography.h1_size == 20.0
     assert typography.h2_size == 16.0
@@ -103,9 +111,7 @@ def test_clearing_heading_restores_body_rhythm(qtbot):
     character_format = _first_character_format(block)
     assert block_format.headingLevel() == 0
     assert block_format.topMargin() == 0
-    assert block_format.bottomMargin() == pytest.approx(
-        typography.block_margins(0)[1]
-    )
+    assert block_format.bottomMargin() == pytest.approx(typography.block_margins(0)[1])
     assert block_format.lineHeight() == typography.line_height_percent
     assert character_format.fontPointSize() == typography.body_size
 
@@ -153,8 +159,14 @@ def test_toolbar_changes_rendered_size_of_existing_heading(qtbot):
         widget.document().firstBlock()
     ).height()
 
-    button = widget.toolbar.widgetForAction(widget.editor.action_h3)
-    qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
+    menu = widget.toolbar_presentation._menus["Headings"]
+    assert widget.editor.action_h3 in menu.actions()
+    menu.popup(widget.mapToGlobal(widget.rect().center()))
+    qtbot.mouseClick(
+        menu,
+        Qt.MouseButton.LeftButton,
+        pos=menu.actionGeometry(widget.editor.action_h3).center(),
+    )
     qtbot.wait(10)
 
     block = widget.document().firstBlock()

@@ -45,9 +45,7 @@ def published_db_path(tmp_path) -> str:
         )
     )
     with service.transaction() as conn:
-        insert_or_update_longform_meta(
-            conn, "events", "published", position=100.0
-        )
+        insert_or_update_longform_meta(conn, "events", "published", position=100.0)
     service.close()
     return path
 
@@ -140,7 +138,8 @@ def test_local_mode_does_not_require_authentication(published_db_path: str) -> N
 
     assert response.status_code == 200
     assert [section["id"] for section in response.json()["sections"]] == [
-        "published"
+        "published",
+        "unindexed",
     ]
 
 
@@ -167,9 +166,7 @@ def test_lan_mode_protects_every_api_endpoint(
     assert wrong.status_code == 401
     assert valid.status_code == 200
     for response in (missing, wrong, valid):
-        assert response.headers["Content-Security-Policy"] == (
-            _CONTENT_SECURITY_POLICY
-        )
+        assert response.headers["Content-Security-Policy"] == (_CONTENT_SECURITY_POLICY)
 
 
 def test_lan_viewer_shell_and_health_remain_public(published_db_path: str) -> None:
@@ -206,12 +203,8 @@ def test_failed_access_codes_are_rate_limited(published_db_path: str) -> None:
         )
         assert response.status_code == 401
 
-    limited = client.get(
-        "/api/theme", headers={"Authorization": "Bearer 99999999"}
-    )
-    successful = client.get(
-        "/api/theme", headers={"Authorization": "Bearer 01234567"}
-    )
+    limited = client.get("/api/theme", headers={"Authorization": "Bearer 99999999"})
+    successful = client.get("/api/theme", headers={"Authorization": "Bearer 01234567"})
     still_limited = client.get(
         "/api/theme", headers={"Authorization": "Bearer 99999999"}
     )
@@ -248,12 +241,18 @@ def test_valid_access_code_survives_global_failure_bound() -> None:
     other_client = TestClient(
         app, base_url="http://127.0.0.1", client=("other-client", 50000)
     )
-    assert other_client.get(
-        "/api/theme", headers={"Authorization": "Bearer 99999999"}
-    ).status_code == 429
-    assert other_client.get(
-        "/api/theme", headers={"Authorization": "Bearer 01234567"}
-    ).status_code == 200
+    assert (
+        other_client.get(
+            "/api/theme", headers={"Authorization": "Bearer 99999999"}
+        ).status_code
+        == 429
+    )
+    assert (
+        other_client.get(
+            "/api/theme", headers={"Authorization": "Bearer 01234567"}
+        ).status_code
+        == 200
+    )
 
 
 def test_http_get_does_not_index_missing_items(published_db_path: str) -> None:
@@ -284,9 +283,7 @@ def test_read_only_database_skips_initialization_and_rejects_writes(
 
 
 @pytest.mark.parametrize("doc_id", ["bad/id", "a" * 65, "white space"])
-def test_invalid_doc_id_returns_422(
-    published_db_path: str, doc_id: str
-) -> None:
+def test_invalid_doc_id_returns_422(published_db_path: str, doc_id: str) -> None:
     client = _client(ServerConfig(db_path=published_db_path))
 
     response = client.get("/api/longform", params={"doc_id": doc_id})
@@ -330,7 +327,7 @@ type: note
                     "name": "JSON entry",
                     "type": "note",
                     "description": (
-                        '<svg><script>alert(1)</script></svg><a '
+                        "<svg><script>alert(1)</script></svg><a "
                         'href="java&#115;cript:alert(2)" data-any="x">bad</a> '
                         "[Safe](https://example.com)"
                     ),
@@ -347,9 +344,7 @@ type: note
         insert_or_update_longform_meta(
             conn, "entities", "markdown-hostile", position=100.0
         )
-        insert_or_update_longform_meta(
-            conn, "entities", "json-hostile", position=200.0
-        )
+        insert_or_update_longform_meta(conn, "entities", "json-hostile", position=200.0)
     service.close()
 
     response = _client(ServerConfig(db_path=path)).get("/api/longform")
@@ -368,16 +363,14 @@ type: note
         "attacker.invalid",
     ):
         assert forbidden not in lowered
-    assert "<strong>Markdown formatting</strong>" in sections["markdown-hostile"][
-        "html"
-    ]
+    assert (
+        "<strong>Markdown formatting</strong>" in sections["markdown-hostile"]["html"]
+    )
     assert (
         '<a class="wikilink" data-target="json-hostile">JSON entry</a>'
         in sections["markdown-hostile"]["html"]
     )
-    assert '<a href="https://example.com">Safe</a>' in sections["json-hostile"][
-        "html"
-    ]
+    assert '<a href="https://example.com">Safe</a>' in sections["json-hostile"]["html"]
 
 
 @pytest.mark.parametrize(

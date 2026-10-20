@@ -18,7 +18,10 @@ generated_root = bundle_tests.generated_root
 focus_setup = focus_tests.focus_setup
 standard_calendar = date_tests.standard_calendar
 
-pytestmark = pytest.mark.ci_fast
+pytestmark = [
+    pytest.mark.ci_fast,
+    pytest.mark.usefixtures("isolated_theme_manager"),
+]
 
 
 @pytest.fixture
@@ -176,11 +179,15 @@ def test_reading_position_and_destroyed_origin(help_setup, qapp):
         "muted_light_mode",
     ],
 )
-def test_theme_switch_preserves_reading_and_authoring_context(help_setup, theme_name):
+def test_theme_switch_preserves_reading_and_authoring_context(
+    help_setup, theme_name, qapp, monkeypatch
+):
     from src.core.theme_manager import ThemeManager
 
     coordinator, _, _, _, text = help_setup
     coordinator.request()
+    monkeypatch.setattr(qapp, "setStyleSheet", coordinator.viewer.setStyleSheet)
+    monkeypatch.setattr(qapp, "setPalette", coordinator.viewer.setPalette)
     coordinator.viewer.browser.verticalScrollBar().setValue(80)
     snapshot = (
         coordinator.index,

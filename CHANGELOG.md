@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-20
-**Commit:** 6248e62c4e2b324b3547f73da4698dbdc7d96cc2
+**Commit:** d947f900
 ---
 
 # Changelog
@@ -10,6 +10,24 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Changed
+
+- *(2026-10-20)* **Release**: Bumped project and application metadata to
+  version 0.20.0 for beta 1, updated the release date and README package
+  references, added linked beta release notes, refreshed the README layout
+  screenshot with the current Northwatch Demo workspace, and limited preference
+  path guidance to the supported Windows release.
+- *(2026-10-20)* **Release preparation (KRT-100)**: Reviewed the connection-ownership API
+  guard and bounded worker growth with an exact ceiling; documented architecture
+  rationale, verification limits and the beta publication sequence. Updated stale
+  WAL-isolation, unsaved-change and creation-refresh regressions to the current
+  ownership and coordinator boundaries, isolated component theme-test state and
+  probe styling, aligned drop/heading-menu regressions with current controls and
+  semantic theme inputs, corrected stale preview, layout, label-preservation and
+  local-viewer expectations, and prepared matching itch.io publication copy.
+
+## [0.20.0]
 
 ### Added
 

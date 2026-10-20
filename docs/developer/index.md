@@ -4,6 +4,7 @@
 :maxdepth: 1
 
 development
+release-0.20.0-readiness
 logging-diagnostics
 worker-failure-contracts
 architecture
