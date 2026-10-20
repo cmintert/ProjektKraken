@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-20
-**Commit:** 7895d128
+**Commit:** 26006d5c
 ---
 
 # Changelog
@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-10-20)* **Release verification (KRT-100)**: Reserve actual empty menu
+  space in the Help fallback regression instead of assuming a style-dependent
+  frame pixel is outside every action. Verified with production application QSS.
 - *(2026-10-20)* **Map navigation (KRT-102)**: Space-drag pans across interactive
   regions, paths, markers, labels and edit handles without changing authored data.
   Restore the previous tool, cursor and interaction state after release, focus or

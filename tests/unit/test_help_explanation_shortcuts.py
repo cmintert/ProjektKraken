@@ -344,9 +344,12 @@ def test_empty_menu_space_shows_feedback_without_focused_fallback(help_setup, qa
     registry.register_inspection(origin, "event.duration", "event.timing")
     menu = QMenu(owner)
     menu.addAction("Exempt")
+    # Reserve genuine empty space; menu frame pixels can belong to the first
+    # action under production QSS and native styles with no outer menu margin.
+    menu.setMinimumHeight(menu.sizeHint().height() + 24)
     menu.popup(owner.mapToGlobal(QPoint(20, 20)))
     qapp.processEvents()
-    point = QPoint(0, 0)
+    point = QPoint(menu.width() // 2, menu.height() - 8)
     assert menu.actionAt(point) is None
     hover(menu, qapp, point)
     explain(menu, qapp)
