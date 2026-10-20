@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-20
-**Commit:** d947f900
+**Commit:** 7895d128
 ---
 
 # Changelog
@@ -10,6 +10,14 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Fixed
+
+- *(2026-10-20)* **Map navigation (KRT-102)**: Space-drag pans across interactive
+  regions, paths, markers, labels and edit handles without changing authored data.
+  Restore the previous tool, cursor and interaction state after release, focus or
+  grab loss, and tool changes; suppress abandoned pan releases. Added real Qt
+  scrolling, draft/painting protection and post-pan editing regressions.
 
 ### Changed
 

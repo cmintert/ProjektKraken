@@ -306,7 +306,6 @@ class TestSpacePanningRasterMode:
 
         view = self._view_with_active_raster(qtbot)
         view._space_pressed = True
-        view.setDragMode(__import__("PySide6.QtWidgets", fromlist=["QGraphicsView"]).QGraphicsView.DragMode.ScrollHandDrag)
 
         with patch.object(
             view._raster_edit_tool, "handle_mouse_press", return_value=True

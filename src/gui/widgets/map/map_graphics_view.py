@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, cast
 
 from PySide6.QtCore import (
     Property,
+    QEvent,
     QPoint,
     QPointF,
     QRect,
@@ -83,6 +84,7 @@ from src.gui.widgets.map.raster_edit_tool import RasterEditMode
 from src.gui.widgets.map.scale_bar_overlay import ScaleBarOverlay
 from src.gui.widgets.map.scale_bar_painter import ScaleBarPainter
 from src.gui.widgets.map.snapping_manager import SnappingManager, SnapType
+from src.gui.widgets.map.space_pan import SpacePan
 from src.gui.widgets.map.trajectory_edit_overlay import TrajectoryEditOverlay
 from src.gui.widgets.map.trajectory_renderer import TrajectoryRenderer
 from src.gui.widgets.map.vertex_editor import VertexEditor
@@ -104,6 +106,8 @@ LAYER_UI_OVERLAY = MAP_LAYER_Z_UI_OVERLAY
 KEYFRAME_COLOR_DEFAULT = "#f1c40f"  # Yellow (fallback)
 CALIBRATION_POINT_COUNT = 2
 MINIMUM_MARKER_POINTER_DIAMETER_PX = 20.0
+
+
 class KeyframeItem(QGraphicsObject):
     """Passive playback dot for a trajectory keyframe."""
 
@@ -248,7 +252,9 @@ class MapGraphicsView(QGraphicsView):
     # -- Raster editing signals --
     raster_stroke_completed = Signal(str, object)  # node_id, tile patches
     raster_value_probed = Signal(str, object, float, float)  # node_id, sample, x, y
-    raster_edit_externally_stopped = Signal()  # edit stopped by Escape or other non-panel trigger
+    raster_edit_externally_stopped = (
+        Signal()
+    )  # edit stopped by Escape or other non-panel trigger
     raster_brush_resize_requested = Signal(int)  # new brush size from Ctrl+scroll
     raster_tool_shortcut_requested = Signal(str)
 
@@ -407,7 +413,7 @@ class MapGraphicsView(QGraphicsView):
         self.marker_icon_catalog = MarkerIconCatalog.load()
 
         # Space held-to-pan state (industry-standard painting-app shortcut)
-        self._space_pressed: bool = False
+        self._space_pan = SpacePan(self)
 
         # One-shot marker placement mode, activated by the map toolbar.
         self._is_placing_marker: bool = False
@@ -493,10 +499,15 @@ class MapGraphicsView(QGraphicsView):
             self._world_root, snapshot.get("metadata", {})
         )
         updates = payload.get("marker_attributes", [])
-        by_id = {
-            item["id"]: item["attributes"]
-            for item in updates if isinstance(item, dict)
-        } if isinstance(updates, list) else {}
+        by_id = (
+            {
+                item["id"]: item["attributes"]
+                for item in updates
+                if isinstance(item, dict)
+            }
+            if isinstance(updates, list)
+            else {}
+        )
         for marker_id, marker in self._marker_manager.markers.items():
             if marker_id in by_id:
                 marker.set_visual_attributes(by_id[marker_id])
@@ -1046,7 +1057,8 @@ class MapGraphicsView(QGraphicsView):
         map_widget = self._find_map_widget()
         if map_widget is not None:
             map_widget.request_edit_transition(
-                "edit marker appearance", lambda: self._accepted_start_marker_appearance_edit(marker_id)
+                "edit marker appearance",
+                lambda: self._accepted_start_marker_appearance_edit(marker_id),
             )
         else:
             self._accepted_start_marker_appearance_edit(marker_id)
@@ -1195,9 +1207,7 @@ class MapGraphicsView(QGraphicsView):
         self._clear_marker_placement_preview()
         preview = QGraphicsEllipseItem(-8.0, -8.0, 16.0, 16.0)
         preview.setPos(scene_pos)
-        preview.setFlag(
-            QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True
-        )
+        preview.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True)
         theme = self.tm.get_theme()
         color = QColor(theme.get("accent_secondary", "#3498db"))
         fill = QColor(color)
@@ -1298,7 +1308,9 @@ class MapGraphicsView(QGraphicsView):
             node = self._layer_model.find_node_by_id(marker_id)
             if node is not None:
                 status = self._layer_model.temporal_validity(node).status.value
-                self._trajectory.set_temporal_uncertainty(status in {"possible", "indeterminate"})
+                self._trajectory.set_temporal_uncertainty(
+                    status in {"possible", "indeterminate"}
+                )
 
     def clear_trajectory(self) -> None:
         """Clears the rendered trajectory path, keyframes, and labels."""
@@ -1644,7 +1656,8 @@ class MapGraphicsView(QGraphicsView):
         map_widget = self._find_map_widget()
         if map_widget is not None:
             map_widget.request_edit_transition(
-                "edit a map footprint", lambda: self._accepted_start_footprint_edit(detail_map_id)
+                "edit a map footprint",
+                lambda: self._accepted_start_footprint_edit(detail_map_id),
             )
         else:
             self._accepted_start_footprint_edit(detail_map_id)
@@ -1852,9 +1865,7 @@ class MapGraphicsView(QGraphicsView):
         self._show_temporal_ghosts = bool(visible)
         self._apply_effective_layer_visibility()
 
-    def set_temporal_authoring_override(
-        self, marker_id: str, enabled: bool
-    ) -> None:
+    def set_temporal_authoring_override(self, marker_id: str, enabled: bool) -> None:
         """Keep an actively edited feature visible despite temporal validity."""
         if enabled:
             self._temporal_authoring_overrides.add(marker_id)
@@ -1895,14 +1906,8 @@ class MapGraphicsView(QGraphicsView):
             temporal_invalid = base_visible and not effective_visibility.get(
                 node_id, base_visible
             )
-            override = (
-                base_visible and node_id in self._temporal_authoring_overrides
-            )
-            ghost = (
-                temporal_invalid
-                and self._show_temporal_ghosts
-                and not override
-            )
+            override = base_visible and node_id in self._temporal_authoring_overrides
+            ghost = temporal_invalid and self._show_temporal_ghosts and not override
             set_ghost = getattr(item, "set_temporal_ghost", None)
             if callable(set_ghost):
                 set_ghost(ghost)
@@ -1910,13 +1915,8 @@ class MapGraphicsView(QGraphicsView):
                 effective_visibility.get(node_id, base_visible) or ghost or override
             )
             item.setVisible(visible)
-            if (
-                not visible
-                and self._vertex_editor.editing_feature_id == node_id
-            ):
-                self._vertex_editor.finish_vertex_editing(
-                    emit_geometry_change=False
-                )
+            if not visible and self._vertex_editor.editing_feature_id == node_id:
+                self._vertex_editor.finish_vertex_editing(emit_geometry_change=False)
         self.effective_visibility_changed.emit()
         self._schedule_label_layout()
 
@@ -1980,7 +1980,9 @@ class MapGraphicsView(QGraphicsView):
                 self.setDragMode(QGraphicsView.DragMode.NoDrag)
                 return False
             ancestor = ancestor.parentItem()
-        marker = item if isinstance(item, MarkerItem) else self._marker_near_view_pos(pos)
+        marker = (
+            item if isinstance(item, MarkerItem) else self._marker_near_view_pos(pos)
+        )
         if marker is None:
             self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
             return False
@@ -2003,12 +2005,48 @@ class MapGraphicsView(QGraphicsView):
         event.accept()
         return True
 
+    @property
+    def _space_pressed(self) -> bool:
+        """Expose whether temporary Space navigation currently owns input."""
+        return self._space_pan.held
+
+    @_space_pressed.setter
+    def _space_pressed(self, pressed: bool) -> None:
+        if pressed:
+            self._space_pan.begin()
+        else:
+            self._space_pan.end()
+
+    def setDragMode(self, mode: QGraphicsView.DragMode) -> None:
+        """Let deliberate tool changes abort temporary panning safely."""
+        pan = getattr(self, "_space_pan", None)
+        if pan is not None:
+            pan.end()
+        super().setDragMode(mode)
+
+    def event(self, event: QEvent) -> bool:
+        """Restore tool interaction if the Space release cannot reach this view."""
+        if event.type() in (
+            QEvent.Type.FocusOut,
+            QEvent.Type.WindowDeactivate,
+            QEvent.Type.Hide,
+        ):
+            pan = getattr(self, "_space_pan", None)
+            if pan is not None:
+                pan.end()
+        return super().event(event)
+
+    def viewportEvent(self, event: QEvent) -> bool:
+        """Cancel a pan if Qt or another window takes its mouse grab."""
+        pan = getattr(self, "_space_pan", None)
+        if event.type() == QEvent.Type.UngrabMouse and pan is not None and pan.dragging:
+            pan.end()
+        return super().viewportEvent(event)
+
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Handle mouse press: raster edit, drawing, calibration, or normal."""
         # Space held-to-pan takes absolute priority over every sub-system.
-        if self._space_pressed and event.button() == Qt.MouseButton.LeftButton:
-            self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
-            super().mousePressEvent(event)
+        if self._space_pan.press(event):
             return
 
         # Raster editing mode (highest priority).
@@ -2087,8 +2125,7 @@ class MapGraphicsView(QGraphicsView):
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Reset drag mode on release."""
         # Space panning takes priority — Qt needs the release to end scroll-pan correctly.
-        if self._space_pressed and event.button() == Qt.MouseButton.LeftButton:
-            super().mouseReleaseEvent(event)
+        if self._space_pan.release(event):
             return
 
         # Raster editing
@@ -2103,7 +2140,10 @@ class MapGraphicsView(QGraphicsView):
                 if self._raster_edit_tool.handle_mouse_release(scene_pos):
                     return
 
-        if self._proxy_drag_marker is not None and event.button() == Qt.MouseButton.LeftButton:
+        if (
+            self._proxy_drag_marker is not None
+            and event.button() == Qt.MouseButton.LeftButton
+        ):
             marker = self._proxy_drag_marker
             if not self._proxy_drag_started:
                 marker.clicked.emit(marker.marker_id, marker.object_type)
@@ -2121,6 +2161,8 @@ class MapGraphicsView(QGraphicsView):
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         """Handle mouse move: raster edit, drawing preview, vertex editing, coordinates."""
+        if self._space_pan.move(event):
+            return
         scene_pos = self.mapToScene(event.position().toPoint())
 
         if self._trajectory_edit_overlay.follow_second_location_cursor(scene_pos):
@@ -2140,12 +2182,8 @@ class MapGraphicsView(QGraphicsView):
                 self._schedule_label_layout()
 
         # Raster editing (before super to avoid ScrollHandDrag panning).
-        # When Space is held, yield to super() so Qt's pan gesture gets the move.
         if self._raster_edit_tool.is_active:
-            if self._space_pressed:
-                super().mouseMoveEvent(event)
-            else:
-                self._raster_edit_tool.handle_mouse_move(scene_pos)
+            self._raster_edit_tool.handle_mouse_move(scene_pos)
         elif not proxy_dragging:
             super().mouseMoveEvent(event)
 
@@ -2178,6 +2216,9 @@ class MapGraphicsView(QGraphicsView):
         Args:
             event: The mouse double-click event.
         """
+        if self._space_pressed or self._space_pan.suppress_release:
+            event.accept()
+            return
         if self._drawing_tool.handle_double_click():
             return
         super().mouseDoubleClickEvent(event)
@@ -2188,6 +2229,11 @@ class MapGraphicsView(QGraphicsView):
         Args:
             event: The key press event.
         """
+        if event.key() == Qt.Key.Key_Space:
+            if not event.isAutoRepeat():
+                self._space_pan.begin()
+            event.accept()
+            return
         map_widget = self._find_map_widget()
         if (
             map_widget is not None
@@ -2241,19 +2287,9 @@ class MapGraphicsView(QGraphicsView):
                     event.accept()
                     return
                 self._raster_edit_tool.mode = shortcut_mode
-                self.raster_tool_shortcut_requested.emit(
-                    shortcut_mode.name.lower()
-                )
+                self.raster_tool_shortcut_requested.emit(shortcut_mode.name.lower())
                 event.accept()
                 return
-
-        # Space held-to-pan (industry-standard painting-app shortcut).
-        if event.key() == Qt.Key.Key_Space and not event.isAutoRepeat():
-            self._space_pressed = True
-            self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
-            self.viewport().setCursor(Qt.CursorShape.OpenHandCursor)
-            event.accept()
-            return
 
         super().keyPressEvent(event)
 
@@ -2315,15 +2351,9 @@ class MapGraphicsView(QGraphicsView):
         Args:
             event: The key release event.
         """
-        if event.key() == Qt.Key.Key_Space and not event.isAutoRepeat():
-            self._space_pressed = False
-            if self._raster_edit_tool.is_active:
-                # Return to brush mode: NoDrag + crosshair cursor
-                self.setDragMode(QGraphicsView.DragMode.NoDrag)
-                self.viewport().setCursor(Qt.CursorShape.CrossCursor)
-            elif not self.calibration_mode:
-                self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
-                self.viewport().unsetCursor()
+        if event.key() == Qt.Key.Key_Space:
+            if not event.isAutoRepeat():
+                self._space_pan.end()
             event.accept()
             return
         super().keyReleaseEvent(event)
@@ -2345,16 +2375,8 @@ class MapGraphicsView(QGraphicsView):
         item = self._footprint_items.get(self._editing_footprint_id or "")
         if item is None:
             return False
-        iw = (
-            self.pixmap_item.boundingRect().width()
-            if self.pixmap_item
-            else 1000.0
-        )
-        ih = (
-            self.pixmap_item.boundingRect().height()
-            if self.pixmap_item
-            else 1000.0
-        )
+        iw = self.pixmap_item.boundingRect().width() if self.pixmap_item else 1000.0
+        ih = self.pixmap_item.boundingRect().height() if self.pixmap_item else 1000.0
         shift = bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier)
         step = 10.0 if shift else 1.0
         nudge_map: dict[int, tuple[float, float]] = {
@@ -2435,6 +2457,9 @@ class MapGraphicsView(QGraphicsView):
         Args:
             event: The context menu event.
         """
+        if self._space_pressed or self._space_pan.suppress_release:
+            event.accept()
+            return
         if not self.pixmap_item:
             return
 
@@ -2448,7 +2473,8 @@ class MapGraphicsView(QGraphicsView):
         near_marker = (
             self._marker_near_view_pos(pos)
             if not isinstance(
-                item, (KeyframeItem, MarkerItem, TrajectoryPathItem, PathItem, RegionItem)
+                item,
+                (KeyframeItem, MarkerItem, TrajectoryPathItem, PathItem, RegionItem),
             )
             else None
         )
