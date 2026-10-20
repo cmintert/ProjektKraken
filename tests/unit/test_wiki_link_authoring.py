@@ -343,7 +343,7 @@ def test_both_context_menus_offer_link_creation(writing, monkeypatch, spell_hit)
     writing.set_wiki_text("House Bjornaer")
     select(writing, 0, 14)
     if spell_hit:
-        writing.editor._lt_matches = [
+        writing.editor.spell_check._matches = [
             SimpleNamespace(offset=0, length=14, replacements=["House"], rule_id="TEST")
         ]
     menus = []

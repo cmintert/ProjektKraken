@@ -25,6 +25,7 @@ evidence/krt18/map-art-direction
 evidence/krt21/README
 evidence/krt22/README
 evidence/krt26/README
+evidence/krt39/README
 evidence/krt40/README
 evidence/krt42/README
 evidence/krt98/README

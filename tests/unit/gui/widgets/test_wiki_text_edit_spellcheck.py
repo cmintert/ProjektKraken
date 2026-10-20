@@ -12,11 +12,14 @@ from __future__ import annotations
 from typing import List
 
 import pytest
+import shiboken6
 from PySide6.QtCore import QSettings
 from PySide6.QtGui import QContextMenuEvent
 
 from src.gui.widgets.wiki_text_edit import WikiTextEdit, WikiTextEditView
 from src.services.language_tool_service import LTMatch
+
+pytestmark = pytest.mark.ci_fast
 
 
 @pytest.fixture
@@ -52,10 +55,10 @@ def _enable_spellcheck(language: str = "en-US") -> None:
 
 def _start_worker_without_network(view: WikiTextEditView) -> None:
     """Start the real QThread but detach the public-API worker slot."""
-    view._ensure_spell_check_worker()
-    worker = view._lt_worker
+    view.spell_check._ensure_worker()
+    worker = view.spell_check._worker
     assert worker is not None
-    view._lt_check_requested.disconnect(worker.check_revision)
+    worker.check = lambda *args, **kwargs: None
 
 
 def _make_match(offset: int, length: int, **kw) -> LTMatch:
@@ -70,27 +73,29 @@ def _make_match(offset: int, length: int, **kw) -> LTMatch:
 
 
 class TestTriggerGating:
-    """Tests for when/how ``_trigger_lt_check`` fires (or does not)."""
+    """Tests for when/how ``spell_check.check_now`` fires (or does not)."""
 
     def test_disabled_by_default_does_not_emit(self, editor: WikiTextEdit) -> None:
         emissions: List[tuple] = []
-        editor.editor._lt_check_requested.connect(lambda *a: emissions.append(a))
+        editor.editor.spell_check.check_requested.connect(
+            lambda *a: emissions.append(a)
+        )
 
         editor.editor.setPlainText("This is a long enough sentence to trigger.")
-        editor.editor._trigger_lt_check()
+        editor.editor.spell_check.check_now()
 
         assert emissions == []
 
-    def test_enabled_with_long_text_emits_check(
-        self, editor: WikiTextEdit
-    ) -> None:
+    def test_enabled_with_long_text_emits_check(self, editor: WikiTextEdit) -> None:
         _enable_spellcheck()
         _start_worker_without_network(editor.editor)
         emissions: List[tuple] = []
-        editor.editor._lt_check_requested.connect(lambda *a: emissions.append(a))
+        editor.editor.spell_check.check_requested.connect(
+            lambda *a: emissions.append(a)
+        )
 
         editor.editor.setPlainText("This is a long enough sentence to trigger.")
-        editor.editor._trigger_lt_check()
+        editor.editor.spell_check.check_now()
 
         assert len(emissions) == 1
         request_id, revision, text, language, username, api_key = emissions[0]
@@ -107,17 +112,18 @@ class TestTriggerGating:
         _enable_spellcheck()
         view = editor.editor
         # Seed an existing match to confirm it gets cleared.
-        view._apply_lt_results([_make_match(0, 2)])
+        view.setPlainText("some existing long text")
+        view.spell_check._apply_results([_make_match(0, 2)])
         assert len(view.extraSelections()) == 1
 
         emissions: List[tuple] = []
-        view._lt_check_requested.connect(lambda *a: emissions.append(a))
+        view.spell_check.check_requested.connect(lambda *a: emissions.append(a))
         view.setPlainText("too short")
-        view._trigger_lt_check()
+        view.spell_check.check_now()
 
         assert emissions == []
         assert view.extraSelections() == []
-        assert view._lt_matches == []
+        assert view.spell_check._matches == []
 
     def test_trigger_uses_plaintext_not_raw_wiki_source(
         self, editor: WikiTextEdit
@@ -136,8 +142,8 @@ class TestTriggerGating:
         view.set_wiki_text("Hello [[Gandalf|the wizard]] travels far.")
 
         emissions: List[tuple] = []
-        view._lt_check_requested.connect(lambda *a: emissions.append(a))
-        view._trigger_lt_check()
+        view.spell_check.check_requested.connect(lambda *a: emissions.append(a))
+        view.spell_check.check_now()
 
         assert len(emissions) == 1
         sent_text = emissions[0][2]
@@ -152,26 +158,26 @@ def test_stale_spellcheck_result_and_suggestion_cannot_touch_new_text(
     """Late offsets are ignored after an edit, including replacement actions."""
     view = editor.editor
     view.setPlainText("Hello wrld in this sentence")
-    view._lt_request_id = 7
-    view._lt_pending_text = view.toPlainText()
+    view.spell_check._request_id = 7
+    view.spell_check._pending = (0, view.document().revision(), view.toPlainText())
     old_revision = view.document().revision()
     match = _make_match(6, 4, replacements=["world"])
     view.setPlainText("New Hello wrld in this sentence")
 
-    view._on_lt_results(7, old_revision, [match])
-    view._apply_lt_suggestion("world", match)
+    view.spell_check._on_results(7, old_revision, [match])
+    view.spell_check.apply_suggestion("world", match)
 
     assert view.extraSelections() == []
     assert view.toPlainText() == "New Hello wrld in this sentence"
 
 
 class TestApplyResults:
-    """Tests for ``_apply_lt_results`` and extra-selection management."""
+    """Tests for ``spell_check._apply_results`` and extra-selection management."""
 
     def test_match_produces_extra_selection(self, editor: WikiTextEdit) -> None:
         view = editor.editor
         view.setPlainText("Hello wrld!")
-        view._apply_lt_results([_make_match(offset=6, length=4)])
+        view.spell_check._apply_results([_make_match(offset=6, length=4)])
 
         sels = view.extraSelections()
         assert len(sels) == 1
@@ -185,9 +191,7 @@ class TestApplyResults:
     ) -> None:
         view = editor.editor
         view.setPlainText("Hello wrld and tset!")
-        view._apply_lt_results(
-            [_make_match(6, 4), _make_match(15, 4)]
-        )
+        view.spell_check._apply_results([_make_match(6, 4), _make_match(15, 4)])
         sels = view.extraSelections()
         assert len(sels) == 2
         assert {s.cursor.selectedText() for s in sels} == {"wrld", "tset"}
@@ -195,21 +199,21 @@ class TestApplyResults:
     def test_empty_match_list_clears_selections(self, editor: WikiTextEdit) -> None:
         view = editor.editor
         view.setPlainText("Hello wrld!")
-        view._apply_lt_results([_make_match(6, 4)])
+        view.spell_check._apply_results([_make_match(6, 4)])
         assert view.extraSelections()
 
-        view._apply_lt_results([])
+        view.spell_check._apply_results([])
         assert view.extraSelections() == []
 
     def test_clear_spell_check_resets_state(self, editor: WikiTextEdit) -> None:
         view = editor.editor
         view.setPlainText("Hello wrld!")
-        view._apply_lt_results([_make_match(6, 4)])
-        assert view._lt_matches
+        view.spell_check._apply_results([_make_match(6, 4)])
+        assert view.spell_check._matches
         assert view.extraSelections()
 
         view.clear_spell_check()
-        assert view._lt_matches == []
+        assert view.spell_check._matches == []
         assert view.extraSelections() == []
 
 
@@ -220,26 +224,24 @@ class TestIgnoreAndApply:
         view = editor.editor
         view.setPlainText("Hello wrld!")
         match = _make_match(6, 4, replacements=["world"])
-        view._apply_lt_results([match])
+        view.spell_check._apply_results([match])
 
-        view._apply_lt_suggestion("world", match)
+        view.spell_check.apply_suggestion("world", match)
 
         assert view.toPlainText() == "Hello world!"
         # After applying, the match should be removed from the active list.
-        assert match not in view._lt_matches
+        assert match not in view.spell_check._matches
 
-    def test_ignore_match_removes_only_that_match(
-        self, editor: WikiTextEdit
-    ) -> None:
+    def test_ignore_match_removes_only_that_match(self, editor: WikiTextEdit) -> None:
         view = editor.editor
         view.setPlainText("Hello wrld and tset!")
         m1 = _make_match(6, 4, rule_id="R1")
         m2 = _make_match(15, 4, rule_id="R2")
-        view._apply_lt_results([m1, m2])
+        view.spell_check._apply_results([m1, m2])
 
-        view._ignore_lt_match(m1)
+        view.spell_check.ignore_match(m1)
 
-        assert view._lt_matches == [m2]
+        assert view.spell_check._matches == [m2]
         remaining = view.extraSelections()
         assert len(remaining) == 1
         assert remaining[0].cursor.selectedText() == "tset"
@@ -287,8 +289,12 @@ class TestContextMenu:
     ) -> None:
         view = editor.editor
         view.setPlainText("Hello wrld!")
-        view._apply_lt_results(
-            [_make_match(6, 4, replacements=["world", "word", "warld"], rule_id="SPELL")]
+        view.spell_check._apply_results(
+            [
+                _make_match(
+                    6, 4, replacements=["world", "word", "warld"], rule_id="SPELL"
+                )
+            ]
         )
 
         shown = self._menu_for_offset(editor, offset=7, monkeypatch=monkeypatch)
@@ -303,11 +309,11 @@ class TestContextMenu:
     ) -> None:
         view = editor.editor
         view.setPlainText("Hello wrld!")
-        view._apply_lt_results([_make_match(6, 4, replacements=["world"])])
+        view.spell_check._apply_results([_make_match(6, 4, replacements=["world"])])
 
         shown = self._menu_for_offset(editor, offset=0, monkeypatch=monkeypatch)
 
-        # Offset 0 is the 'H' of "Hello" — outside the [6,10) match span.
+        # Offset 0 is the 'H' of "Hello" â€” outside the [6,10) match span.
         assert "world" not in shown["actions"]
 
     def test_match_without_replacements_still_offers_ignore(
@@ -315,7 +321,9 @@ class TestContextMenu:
     ) -> None:
         view = editor.editor
         view.setPlainText("Hello wrld!")
-        view._apply_lt_results([_make_match(6, 4, replacements=[], rule_id="NOFIX")])
+        view.spell_check._apply_results(
+            [_make_match(6, 4, replacements=[], rule_id="NOFIX")]
+        )
 
         shown = self._menu_for_offset(editor, offset=7, monkeypatch=monkeypatch)
 
@@ -327,7 +335,7 @@ class TestContextMenu:
         view = editor.editor
         view.setPlainText("Hello wrld!")
         ten = [f"fix{i}" for i in range(10)]
-        view._apply_lt_results([_make_match(6, 4, replacements=ten)])
+        view.spell_check._apply_results([_make_match(6, 4, replacements=ten)])
 
         shown = self._menu_for_offset(editor, offset=7, monkeypatch=monkeypatch)
 
@@ -340,26 +348,26 @@ class TestLifecycle:
     """Tests for thread startup and clean shutdown."""
 
     def test_worker_thread_is_lazy(self, editor: WikiTextEdit) -> None:
-        assert editor.editor._lt_thread is None
+        assert editor.editor.spell_check._thread is None
 
     def test_shutdown_stops_worker_thread(self, editor: WikiTextEdit) -> None:
         view = editor.editor
         _enable_spellcheck()
         _start_worker_without_network(view)
-        thread = view._lt_thread
+        thread = view.spell_check._thread
         assert thread is not None
         assert thread.isRunning()
 
-        view._shutdown_spell_check()
+        view.spell_check.shutdown()
 
-        assert view._lt_thread is None
-        assert not thread.isRunning()
+        assert view.spell_check._thread is None
+        assert not shiboken6.isValid(thread) or not thread.isRunning()
 
     def test_shutdown_is_idempotent(self, editor: WikiTextEdit) -> None:
         view = editor.editor
-        view._shutdown_spell_check()
+        view.spell_check.shutdown()
         # Second call must not raise.
-        view._shutdown_spell_check()
+        view.spell_check.shutdown()
 
     def test_wrapper_close_stops_worker(
         self,
@@ -368,25 +376,25 @@ class TestLifecycle:
     ) -> None:
         _enable_spellcheck()
         _start_worker_without_network(editor.editor)
-        thread = editor.editor._lt_thread
+        thread = editor.editor.spell_check._thread
         assert thread is not None
 
         editor.close()
         qapp.processEvents()
 
-        assert editor.editor._lt_thread is None
-        assert not thread.isRunning()
+        assert editor.editor.spell_check._thread is None
+        assert not shiboken6.isValid(thread) or not thread.isRunning()
 
     def test_direct_view_close_stops_worker(self, qtbot, qapp) -> None:
         _enable_spellcheck()
         view = WikiTextEditView()
         qtbot.addWidget(view)
         _start_worker_without_network(view)
-        thread = view._lt_thread
+        thread = view.spell_check._thread
         assert thread is not None
 
         view.close()
         qapp.processEvents()
 
-        assert view._lt_thread is None
-        assert not thread.isRunning()
+        assert view.spell_check._thread is None
+        assert not shiboken6.isValid(thread) or not thread.isRunning()

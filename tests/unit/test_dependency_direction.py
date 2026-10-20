@@ -15,6 +15,38 @@ _FORBIDDEN_IMPORT_ROOTS = {
 pytestmark = pytest.mark.ci_fast
 
 
+def test_spell_check_capability_has_one_narrow_gui_owner():
+    """KRT-39 keeps scheduling and workers out of the authoring view."""
+    path = _SOURCE_ROOT / "gui/widgets/spell_check_controller.py"
+    allowed = {
+        "src.core.theme_manager",
+        "src.gui.utils.help_context",
+        "src.services.language_tool_service",
+    }
+    modules = {module for _, module in _imported_modules(path)}
+    assert all(
+        any(m == root or m.startswith(root + ".") for root in allowed)
+        for m in modules
+        if m.startswith("src.")
+    )
+    view = _SOURCE_ROOT / "gui/widgets/wiki_text_edit.py"
+    tree = ast.parse(view.read_text("utf-8"))
+    assert not any(
+        isinstance(node, ast.Attribute) and node.attr.startswith("_lt_")
+        for node in ast.walk(tree)
+    ), "Spelling state belongs to SpellCheckController"
+    assert not any(
+        isinstance(node, ast.Name) and node.id in {"QThread", "LanguageToolWorker"}
+        for node in ast.walk(tree)
+    ), "WikiTextEdit must delegate spelling worker ownership"
+    assert not any(
+        "wiki_text_edit" in module
+        for _, module in _imported_modules(
+            _SOURCE_ROOT / "gui/dialogs/spell_check_settings_dialog.py"
+        )
+    )
+
+
 def test_temporal_entity_preparation_is_independent_of_ui_and_persistence():
     """Keep the KRT-40 preparation seam limited to pure data transformations."""
     path = _SOURCE_ROOT / "services/temporal_entity_draft_service.py"

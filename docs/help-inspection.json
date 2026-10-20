@@ -7835,8 +7835,8 @@
       "id": "src-gui-widgets-wiki-text-edit-wikitexteditview-contextmenuevent-ignore-action",
       "topic_id": "writing.edit",
       "target": "help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-contextmenuevent-ignore-action",
-      "source": "src/gui/widgets/wiki_text_edit.py",
-      "symbol": "WikiTextEditView.contextMenuEvent",
+      "source": "src/gui/widgets/spell_check_controller.py",
+      "symbol": "SpellCheckController.add_menu_actions",
       "binding": "ignore_action",
       "label": "ignore_action",
       "kind": "addAction"
@@ -7875,7 +7875,7 @@
       "id": "src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-self-language-combo",
       "topic_id": "writing.spelling",
       "target": "help-inspect-src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-self-language-combo",
-      "source": "src/gui/widgets/wiki_text_edit.py",
+      "source": "src/gui/dialogs/spell_check_settings_dialog.py",
       "symbol": "SpellCheckSettingsDialog.__init__",
       "binding": "self._language_combo",
       "label": "Language:",
@@ -7885,7 +7885,7 @@
       "id": "src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-self-username-edit",
       "topic_id": "writing.spelling",
       "target": "help-inspect-src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-self-username-edit",
-      "source": "src/gui/widgets/wiki_text_edit.py",
+      "source": "src/gui/dialogs/spell_check_settings_dialog.py",
       "symbol": "SpellCheckSettingsDialog.__init__",
       "binding": "self._username_edit",
       "label": "Username:",
@@ -7895,7 +7895,7 @@
       "id": "src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-self-apikey-edit",
       "topic_id": "writing.spelling",
       "target": "help-inspect-src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-self-apikey-edit",
-      "source": "src/gui/widgets/wiki_text_edit.py",
+      "source": "src/gui/dialogs/spell_check_settings_dialog.py",
       "symbol": "SpellCheckSettingsDialog.__init__",
       "binding": "self._apikey_edit",
       "label": "API Key:",
@@ -7905,7 +7905,7 @@
       "id": "src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-cancel-btn",
       "topic_id": "writing.spelling",
       "target": "help-inspect-src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-cancel-btn",
-      "source": "src/gui/widgets/wiki_text_edit.py",
+      "source": "src/gui/dialogs/spell_check_settings_dialog.py",
       "symbol": "SpellCheckSettingsDialog.__init__",
       "binding": "cancel_btn",
       "label": "Cancel",
@@ -7915,7 +7915,7 @@
       "id": "src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-save-btn",
       "topic_id": "writing.spelling",
       "target": "help-inspect-src-gui-widgets-wiki-text-edit-spellchecksettingsdialog-init-save-btn",
-      "source": "src/gui/widgets/wiki_text_edit.py",
+      "source": "src/gui/dialogs/spell_check_settings_dialog.py",
       "symbol": "SpellCheckSettingsDialog.__init__",
       "binding": "save_btn",
       "label": "Save",
@@ -16094,22 +16094,22 @@
       "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
     },
     {
-      "source": "src/gui/widgets/wiki_text_edit.py",
+      "source": "src/gui/dialogs/spell_check_settings_dialog.py",
       "symbol": "SpellCheckSettingsDialog.__init__",
       "sha256": "433f8cb6745cfd0006e711890cfe9de9cd4e56b4a8885176850c3b073ef6782e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "review_note": "KRT-39: relocated settings dialog; opt-in, language, optional credentials and Save/Cancel meanings are unchanged. Stable Help targets retained."
     },
     {
-      "source": "src/gui/widgets/wiki_text_edit.py",
+      "source": "src/gui/dialogs/spell_check_settings_dialog.py",
       "symbol": "SpellCheckSettingsDialog._apply_style",
       "sha256": "4c3274a197061cac442632b75d000d716cbe00268afdc8249545aeb768314591",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "review_note": "KRT-39: relocated settings dialog; opt-in, language, optional credentials and Save/Cancel meanings are unchanged. Stable Help targets retained."
     },
     {
-      "source": "src/gui/widgets/wiki_text_edit.py",
+      "source": "src/gui/dialogs/spell_check_settings_dialog.py",
       "symbol": "SpellCheckSettingsDialog._save",
       "sha256": "c782b83a7d017e3204d49e839bec520166e0bbd7e133917da3d897aef9153d0f",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "review_note": "KRT-39: relocated settings dialog; opt-in, language, optional credentials and Save/Cancel meanings are unchanged. Stable Help targets retained."
     },
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
@@ -16196,16 +16196,16 @@
       "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
     },
     {
-      "source": "src/gui/widgets/wiki_text_edit.py",
-      "symbol": "WikiTextEditView._apply_lt_results",
-      "sha256": "a1c67d690a238d49639203ec5ad46e50ed07328bea9dc3e1f7e4645b02bc1e2e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "source": "src/gui/widgets/spell_check_controller.py",
+      "symbol": "SpellCheckController._apply_results",
+      "sha256": "f84a392d968b2230c5b663783b884ef55dce8ff7ced27f033d585d2b5fdc5da3",
+      "review_note": "KRT-39: current matches remain transient wavy error-role underlines; no authoring edit. Rendering is delegated to _render and refreshes on theme changes."
     },
     {
-      "source": "src/gui/widgets/wiki_text_edit.py",
-      "symbol": "WikiTextEditView._apply_lt_suggestion",
-      "sha256": "4cf284f6fe2e70a7959fc4cb66b2811a35d659909f7d967c740efed9ad76dc29",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "source": "src/gui/widgets/spell_check_controller.py",
+      "symbol": "SpellCheckController.apply_suggestion",
+      "sha256": "60196c2a65908c8ad1a09e492e016beaa5b2f78c555becfe2789ee89b0a37a40",
+      "review_note": "KRT-39: suggestion replaces a current match through ordinary text undo. Stale or read-only actions cannot edit writing."
     },
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
@@ -16229,12 +16229,6 @@
       "source": "src/gui/widgets/wiki_text_edit.py",
       "symbol": "WikiTextEditView._get_theme_css",
       "sha256": "53ce85e93bdd5a14746184afd0f2c6d01d48aa17b0001b222d2d9d89da462777",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
-    },
-    {
-      "source": "src/gui/widgets/wiki_text_edit.py",
-      "symbol": "WikiTextEditView._ignore_lt_match",
-      "sha256": "2935595c4c99b3a274c68d0577d4743c6a54a6cff68f1ecd4084b6bc640a708a",
       "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
     },
     {
@@ -16318,8 +16312,8 @@
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
       "symbol": "WikiTextEditView.contextMenuEvent",
-      "sha256": "9a168fbda08161bc578220d5b5ce73e70b137946a053da0a1c7d803f5738abc9",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "e8644709f443f7cb11cb6f9ea8a5a8db1a5bbf8011ebc3b884b0c2deb82e6013",
+      "review_note": "KRT-39: spelling ownership delegated to SpellCheckController; writing, standard context actions and wiki-link routes remain unchanged."
     },
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
@@ -16524,6 +16518,36 @@
       "symbol": "_apply_payload_patch",
       "sha256": "d5e2334d5577cbbd76a529fd1c57052a6ea9cd7b02fbded13192afea2ecc5d26",
       "review_note": "KRT-42: Reviewed 2026-10-19. Detached source/baseline/dated mutation planning preserves field ownership, hidden metadata, masks and override removal, dated grouping and names. Command-owned validation, atomic writes, ordering, checkpoint acknowledgement and serialized undo/redo are unchanged. Existing temporal Save and ownership-choice explanations remain accurate; no new control or Help wording is needed."
+    },
+    {
+      "source": "src/gui/widgets/spell_check_controller.py",
+      "symbol": "SpellCheckController.add_menu_actions",
+      "sha256": "1da45e879a64a302c34e491153228aa3872edd36790ea8830c1ba9a1171886e7",
+      "review_note": "KRT-39: suggestions retain their first-five ordering and Ignore applies only to the current occurrence. Read-only replacement actions are disabled; standard and link actions remain composed by the view."
+    },
+    {
+      "source": "src/gui/widgets/spell_check_controller.py",
+      "symbol": "SpellCheckController._render",
+      "sha256": "591b782ace860bc9f66aeab5ab05eabf69650a7e500714f1449629baa45fcce0",
+      "review_note": "KRT-39: spelling uses transient error-role wavy underlines; theme refresh does not edit authored text."
+    },
+    {
+      "source": "src/gui/widgets/spell_check_controller.py",
+      "symbol": "SpellCheckController.check_now",
+      "sha256": "75aedd664390e1658dc8f61a0a802015f4f1dc0ab24198b8d601b710ab404737",
+      "review_note": "KRT-39: opt-in LanguageTool checks use rendered plain text and unchanged language/credential settings after the existing debounce."
+    },
+    {
+      "source": "src/gui/widgets/spell_check_controller.py",
+      "symbol": "SpellCheckController._on_results",
+      "sha256": "715fb95445bb34279e41da8518ff85b14d3525bc0a9c08a207d47b2914eb52de",
+      "review_note": "KRT-39: only current enabled requests can display spelling results; disabling, editing and closing invalidate pending work."
+    },
+    {
+      "source": "src/gui/widgets/spell_check_controller.py",
+      "symbol": "SpellCheckController.ignore_match",
+      "sha256": "053503ab4ad9835e0997998a0a92e87f94700d58a130fc13276c828554fd761c",
+      "review_note": "KRT-39: Ignore hides only the selected current occurrence and does not change writing or undo history."
     }
   ],
   "review_status": {

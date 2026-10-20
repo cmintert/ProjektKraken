@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-19
-**Commit:** b20db164872dfb3cf182d5baa715fad295fffa88
+**Last Updated:** 2026-10-20
+**Commit:** 4ce41c0ad94a07e82ab7a773d7cf7264a7847920
 ---
 
 # Changelog
@@ -27,6 +27,13 @@ All notable changes to this project will be documented in this file.
   styling on theme changes.
 
 ### Changed
+
+- *(2026-10-19)* **Writing (KRT-39)**: Extracted spell-check scheduling, worker
+  lifecycle, suggestions and underlines from WikiTextEdit, with a separate
+  settings dialog and compatible public editor APIs. Disabling or closing rejects
+  late results; theme changes refresh underlines without changing writing or undo.
+  Read-only spelling suggestions remain visible and disabled. Added lifecycle,
+  authoring-context and dependency regressions, Help reviews and render evidence.
 
 - *(2026-10-19)* **Temporal entity editing (KRT-42)**: Separated detached mutation
   planning from command-owned persistence. Preserved field ownership, masking,

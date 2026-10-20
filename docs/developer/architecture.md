@@ -1,5 +1,28 @@
 # Architecture and Threading
 
+## Spell-check lifecycle and presentation
+
+`SpellCheckController` is a GUI-thread QObject parented to a standard `QTextEdit`.
+It owns the debounce timer, lazy LanguageTool thread/worker, settings generation,
+request snapshots, matches, spelling actions and transient underlines. Requests
+and results use explicit queued delivery; the worker receives detached text and
+settings, never editor/document objects. The view retains standard context-menu
+composition and wiki-link actions. Settings live in the separate
+`SpellCheckSettingsDialog`, re-exported at its original import location.
+
+Results require the current enabled request, settings generation, document
+revision and rendered plain text. Edits, replacement, settings changes and
+shutdown invalidate pending work. Theme refresh recolors existing underlines;
+Qt highlighter-only revision changes refresh valid match revisions without
+changing authored text or undo history. Suggestions still use ordinary text undo.
+
+Closing stops scheduling and joins the current worker; showing a surviving view
+resumes scheduling. Parent/editor destruction invokes cleanup while the child
+controller still exists, without accessing the dying editor. No forced thread
+termination or HTTP cancellation is introduced: closing can still wait for the
+current request. Dependency guards prevent spelling state or thread ownership
+from returning to `WikiTextEdit`. See [KRT-39 evidence](../ux/evidence/krt39/README.md).
+
 ## Temporal entity edit planning
 
 `TemporalEntityEditPlanner` transforms detached entity, expected-owner, patch,

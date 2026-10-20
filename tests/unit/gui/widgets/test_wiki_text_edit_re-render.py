@@ -1,9 +1,10 @@
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
+from tests.unit.test_visual_presentation import layout_formats
 
 
-def test_on_theme_changed_forces_rerender(qtbot):
-    """Test that changing the theme forces a re-render of the HTML content with new colors."""
+def test_on_theme_changed_refreshes_transient_colors(qtbot):
+    """Theme refresh changes layout presentation without rewriting authored HTML."""
     widget = WikiTextEdit()
     qtbot.addWidget(widget)
 
@@ -18,7 +19,8 @@ def test_on_theme_changed_forces_rerender(qtbot):
     try:
         # Inject test themes
         tm.themes = {
-            "test_theme_a": base_theme | {
+            "test_theme_a": base_theme
+            | {
                 "text_main": "#AAAAAA",
                 "accent_secondary": "#BBBBBB",
                 "font_size_body": "10pt",
@@ -34,7 +36,8 @@ def test_on_theme_changed_forces_rerender(qtbot):
                 "app_bg": "#111111",  # Required for GraphicsScene
                 "text_dim": "#888888",
             },
-            "test_theme_b": base_theme | {
+            "test_theme_b": base_theme
+            | {
                 "text_main": "#CCCCCC",
                 "accent_secondary": "#DDDDDD",
                 "font_size_body": "10pt",
@@ -59,19 +62,25 @@ def test_on_theme_changed_forces_rerender(qtbot):
         # Set text
         widget.set_wiki_text("Test Content")
 
-        # Check HTML has test_theme_a color
-        html_a = widget.toHtml().lower()
-        assert "#aaaaaa" in html_a
-        assert "#cccccc" not in html_a
+        html_a = widget.toHtml()
+        undo_steps = widget.editor.document().availableUndoSteps()
+        colors_a = {
+            f.format.foreground().color().name() for f in layout_formats(widget.editor)
+        }
+        assert "#aaaaaa" in colors_a
+        assert "#cccccc" not in colors_a
 
         # Switch the widget's rendered theme without restyling every live Qt widget.
         tm.current_theme_name = "test_theme_b"
         widget.editor._on_theme_changed(tm.get_theme())
 
-        # Check HTML has test_theme_b color
-        html_b = widget.toHtml().lower()
-        assert "#cccccc" in html_b
-        assert "#aaaaaa" not in html_b
+        colors_b = {
+            f.format.foreground().color().name() for f in layout_formats(widget.editor)
+        }
+        assert "#cccccc" in colors_b
+        assert "#aaaaaa" not in colors_b
+        assert widget.toHtml() == html_a
+        assert widget.editor.document().availableUndoSteps() == undo_steps
 
     finally:
         # Restore original themes
