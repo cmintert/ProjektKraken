@@ -19,6 +19,9 @@ jobs:
     name: Build and smoke Windows x64 package
     runs-on: windows-latest
     timeout-minutes: 75
+    permissions:
+      contents: read
+      actions: read
     outputs:
       package_name: ${{ steps.metadata.outputs.package_name }}
       release_tag: ${{ steps.metadata.outputs.release_tag }}
@@ -35,6 +38,15 @@ jobs:
           architecture: "x64"
           cache: pip
           cache-dependency-path: packaging/windows/requirements.lock
+
+      - name: Require exact-candidate release regression before tagged build
+        if: inputs.release_tag != '' || github.ref_type == 'tag'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $candidate = git rev-parse HEAD
+          python -m scripts.release_regression verify --sha $candidate --repo $env:GITHUB_REPOSITORY
 
       - name: Install hash-pinned packaging environment
         shell: pwsh
@@ -149,6 +161,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
+      actions: read
     steps:
       - name: Checkout release notes from exact tag
         uses: actions/checkout@v4
@@ -167,6 +180,15 @@ jobs:
             echo "Unsupported beta tag: ${GITHUB_REF_NAME}" >&2
             exit 1
           fi
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Recheck release regression before publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python -m scripts.release_regression verify --sha "$(git rev-parse HEAD)" --repo "$GITHUB_REPOSITORY"
 
       - name: Download verified candidate
         uses: actions/download-artifact@v4

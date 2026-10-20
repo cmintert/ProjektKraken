@@ -8,6 +8,7 @@ import shlex
 import subprocess
 import sys
 import time
+import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -75,6 +76,7 @@ def resolve_base_ref(explicit: str | None) -> str:
 def make_steps(mode: str, base_ref: str) -> list[tuple[str, list[str]]]:
     """Return the auditable, non-mutating quality steps."""
     py = sys.executable
+    release_plan = ROOT / "artifacts" / "release-runs" / str(uuid.uuid4()) / "plan.json"
     steps = [
         ("Dependency contracts", [py, "-m", "scripts.check_dependencies"]),
         ("Repository-wide Ruff", [py, "-m", "ruff", "check"]),
@@ -87,7 +89,19 @@ def make_steps(mode: str, base_ref: str) -> list[tuple[str, list[str]]]:
             "Visual contract",
             [py, "-m", "scripts.check_visual_policy", "--base-ref", base_ref],
         ),
-        ("Reviewed test inventory", [py, "-m", "scripts.check_test_policy"]),
+        (
+            "Reviewed test inventory",
+            [
+                py,
+                "-m",
+                "scripts.release_regression",
+                "plan",
+                "--output",
+                str(release_plan),
+            ]
+            if mode == "release"
+            else [py, "-m", "scripts.check_test_policy"],
+        ),
         ("Generated schema", [py, "docs/generate_schema_docs.py", "--check"]),
         ("Inspection Help review", [py, "-m", "scripts.check_help_inspection"]),
         ("Offline Help bundle", [py, "-m", "scripts.build_help"]),
@@ -129,11 +143,10 @@ def make_steps(mode: str, base_ref: str) -> list[tuple[str, list[str]]]:
                 [
                     py,
                     "-m",
-                    "pytest",
-                    "--maxfail=1",
-                    "--durations=30",
-                    "--cov=src",
-                    "--cov-report=term-missing",
+                    "scripts.release_regression",
+                    "local",
+                    "--plan",
+                    str(release_plan),
                 ],
             )
         )

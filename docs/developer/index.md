@@ -5,6 +5,7 @@
 
 development
 release-0.20.0-readiness
+release-regression
 logging-diagnostics
 worker-failure-contracts
 architecture

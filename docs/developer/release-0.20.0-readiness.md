@@ -174,8 +174,11 @@ Help workflow and diagnostic checks tracked by KRT-44, KRT-91 and KRT-66.
 3. Run the current remote full-regression fallback on that exact commit:
    `gh workflow run tests.yml --ref main -f full_regression=true`.
    Confirm the workflow run's head SHA equals the candidate commit and its
-   **Manual full regression** job passes. The current workflow is named
-   **Smoke CI**; there is no separate Full Regression and Coverage workflow.
+   **Release verification** aggregate passes with complete coverage. The workflow
+   remains **Smoke CI**; its manual full path uses six shards and fresh module
+   processes. Follow [isolated release regression](release-regression.md) for
+   retained evidence and reviewed same-run recovery. Partial prior results do not
+   validate this candidate.
 4. Create the lightweight `0.20.0-beta1` tag on the verified commit only after
    tagging is authorized. Push the tag only when explicitly authorized.
 5. The tag runs **Windows Beta Package**. Retain its ZIP, checksum and smoke

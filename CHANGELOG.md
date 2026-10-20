@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-20
-**Commit:** a91bb049
+**Commit:** a80e2859
 ---
 
 # Changelog
@@ -27,6 +27,14 @@ All notable changes to this project will be documented in this file.
   scrolling, draft/painting protection and post-pan editing regressions.
 
 ### Changed
+
+- *(2026-10-20)* **Release regression (KRT-103)**: Replace release-only serial
+  pytest with deterministic exhaustive shard planning, supervised module
+  processes, durable fault diagnostics, reviewed recovery and fail-closed coverage
+  aggregation. Share the runner with local release preflight; require exact-SHA
+  regression evidence before tagged package builds and publication. Preserve lean
+  push/PR checks and separate Windows acceptance. Add disposable fault tests and
+  documented provenance, retention and performance measurement.
 
 - *(2026-10-20)* **Release**: Bumped project and application metadata to
   version 0.20.0 for beta 1, updated the release date and README package

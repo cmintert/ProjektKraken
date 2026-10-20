@@ -21,8 +21,11 @@ parallel with each other or with `ci_fast` on the development workstation.
   security, packaging, core/services/repositories, and selected command and
   persistence tests. Keep it deterministic and within the 12-minute CI budget.
 - The full suite, including coverage, runs locally before release via
-  `python -m scripts.preflight release`. Remote full regression is an optional
-  manual-dispatch fallback.
+  `python -m scripts.preflight release`, using sequential module subprocesses.
+  The manual remote release gate runs six isolated shards and requires a complete
+  aggregate for the exact candidate before tagged builds/publication. See
+  [isolated release regression](release-regression.md) for provenance, recovery,
+  artifacts and the separate Windows acceptance boundary.
 
 ### Discovery and membership policy
 

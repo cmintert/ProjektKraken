@@ -41,7 +41,8 @@ def test_release_checks_entire_suite_without_double_fast_run() -> None:
     assert any(
         "scripts.check_action_labels --matrix full" in value for value in commands
     )
-    assert any("--cov=src" in value for value in commands)
+    assert any("scripts.release_regression plan" in value for value in commands)
+    assert any("scripts.release_regression local --plan" in value for value in commands)
     assert all("smoke or ci_fast" not in value for value in commands)
 
 

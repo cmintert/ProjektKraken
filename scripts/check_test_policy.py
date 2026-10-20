@@ -6,6 +6,7 @@ import io
 import json
 import os
 import sys
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -61,6 +62,11 @@ def hidden_tests(root: Path) -> list[str]:
 
 def snapshot(items: list[pytest.Item]) -> dict[str, Any]:
     """Record stable node identities and overlapping suite counts."""
+    duplicates = [
+        key for key, count in Counter(x.nodeid for x in items).items() if count != 1
+    ]
+    if duplicates:
+        raise ValueError(f"Duplicate collected node IDs: {duplicates}")
     tests = {
         item.nodeid: sorted(suite for suite in SUITES if item.get_closest_marker(suite))
         for item in items
@@ -106,10 +112,46 @@ class CollectionRecorder:
     def __init__(self) -> None:
         """Initialize an empty snapshot until collection completes."""
         self.result: dict[str, Any] = {}
+        self.order: list[str] = []
+        self.skips: list[dict[str, str]] = []
+        self.deselected: list[str] = []
+
+    def pytest_collectreport(self, report: Any) -> None:
+        """Retain collection skips, which are not executable test cases."""
+        if report.skipped:
+            self.skips.append({"nodeid": report.nodeid, "reason": str(report.longrepr)})
+
+    def pytest_deselected(self, items: list[pytest.Item]) -> None:
+        """Detect plugins silently reducing the canonical collection."""
+        self.deselected.extend(item.nodeid for item in items)
 
     def pytest_collection_finish(self, session: pytest.Session) -> None:
         """Record the finished full collection."""
         self.result = snapshot(session.items)
+        self.order = [item.nodeid for item in session.items]
+
+
+def collect_reviewed() -> CollectionRecorder:
+    """Collect once for release planning using the existing inventory authority."""
+    misplaced = hidden_tests(ROOT)
+    if misplaced:
+        raise ValueError(f"Tests outside tests/: {misplaced}")
+    recorder = CollectionRecorder()
+    options = os.environ.pop("PYTEST_ADDOPTS", None)
+    try:
+        code = pytest.main(
+            [str(ROOT / "tests"), "--collect-only", "-q", "-o", "addopts="],
+            plugins=[recorder],
+        )
+    finally:
+        if options is not None:
+            os.environ["PYTEST_ADDOPTS"] = options
+    if code != pytest.ExitCode.OK or recorder.deselected:
+        raise ValueError(f"Incomplete collection: exit {code}, {recorder.deselected}")
+    failures = regressions(json.loads(BASELINE.read_text("utf-8")), recorder.result)
+    if failures:
+        raise ValueError("\n".join(failures))
+    return recorder
 
 
 def main() -> int:
