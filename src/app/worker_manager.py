@@ -232,6 +232,9 @@ class WorkerManager(QObject):
         self.window.worker.entities_loaded.connect(
             self.window.data_handler.on_entities_loaded, connection_type
         )
+        self.window.worker.dataset_load_failed.connect(
+            self.window.data_coordinator.on_dataset_load_failed, connection_type
+        )
         self.window.worker.event_details_loaded.connect(
             self.window.data_handler.on_event_details_loaded, connection_type
         )

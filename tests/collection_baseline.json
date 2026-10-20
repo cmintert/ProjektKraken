@@ -1,24 +1,24 @@
 {
   "schema": 1,
   "counts": {
-    "smoke": 18,
-    "ci_fast": 1605,
+    "smoke": 19,
+    "ci_fast": 2396,
     "slow": 1,
     "performance": 0,
-    "full": 5973,
-    "full_only": 4359
+    "full": 6838,
+    "full_only": 4433
   },
   "categories": {
     "architecture": 11,
-    "cli": 48,
+    "cli": 73,
     "gui": 14,
-    "integration": 234,
+    "integration": 244,
     "packaging": 13,
     "performance": 16,
     "repro": 2,
     "root": 15,
     "security": 5,
-    "unit": 5615
+    "unit": 6445
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -32,6 +32,30 @@
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_size_stays_within_growth_budget[src/app/map_handler.py-baseline0]": [],
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_size_stays_within_growth_budget[src/services/db_service.py-baseline4]": [],
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_size_stays_within_growth_budget[src/services/worker.py-baseline1]": [],
+    "tests/cli/test_action_label_audit_runtime.py::test_concurrent_audit_is_rejected_and_slot_is_reusable": [
+      "ci_fast"
+    ],
+    "tests/cli/test_action_label_audit_runtime.py::test_default_profile_is_quick_and_full_is_explicit": [
+      "ci_fast"
+    ],
+    "tests/cli/test_action_label_audit_runtime.py::test_malformed_stream_cannot_produce_successful_report": [
+      "ci_fast"
+    ],
+    "tests/cli/test_action_label_audit_runtime.py::test_streamed_report_preserves_all_snapshots_and_failures[metadata0]": [
+      "ci_fast"
+    ],
+    "tests/cli/test_action_label_audit_runtime.py::test_streamed_report_preserves_all_snapshots_and_failures[metadata1]": [
+      "ci_fast"
+    ],
+    "tests/cli/test_action_label_release_gate.py::test_current_header_without_native_surface_records_is_incomplete": [
+      "ci_fast"
+    ],
+    "tests/cli/test_action_label_release_gate.py::test_missing_and_pending_native_review_block_release": [
+      "ci_fast"
+    ],
+    "tests/cli/test_action_label_release_gate.py::test_stale_native_review_cannot_approve_changed_presentation": [
+      "ci_fast"
+    ],
     "tests/cli/test_backup_cli.py::test_create_backup_failure": [
       "ci_fast"
     ],
@@ -176,6 +200,57 @@
     "tests/cli/test_obsidian_cli.py::test_export_obsidian_success": [
       "ci_fast"
     ],
+    "tests/cli/test_preflight.py::test_installer_migrates_old_pre_commit_push_wrapper": [
+      "ci_fast"
+    ],
+    "tests/cli/test_preflight.py::test_installer_preserves_legacy_push_hook": [
+      "ci_fast"
+    ],
+    "tests/cli/test_preflight.py::test_installer_preserves_unrelated_push_hook": [
+      "ci_fast"
+    ],
+    "tests/cli/test_preflight.py::test_malformed_hook_input_fails_closed": [
+      "ci_fast"
+    ],
+    "tests/cli/test_preflight.py::test_missing_base_is_actionable": [
+      "ci_fast"
+    ],
+    "tests/cli/test_preflight.py::test_missing_tool_returns_failure": [
+      "ci_fast"
+    ],
+    "tests/cli/test_preflight.py::test_native_hook_accepts_clean_head_and_annotated_tag": [
+      "ci_fast"
+    ],
+    "tests/cli/test_preflight.py::test_native_hook_allows_deletion_without_validating_dirty_tree": [
+      "ci_fast"
+    ],
+    "tests/cli/test_preflight.py::test_native_hook_blocks_failed_check": [
+      "ci_fast"
+    ],
+    "tests/cli/test_preflight.py::test_native_hook_rejects_additional_non_head_ref": [
+      "ci_fast"
+    ],
+    "tests/cli/test_preflight.py::test_native_hook_rejects_local_changes[staged]": [
+      "ci_fast"
+    ],
+    "tests/cli/test_preflight.py::test_native_hook_rejects_local_changes[unstaged]": [
+      "ci_fast"
+    ],
+    "tests/cli/test_preflight.py::test_native_hook_rejects_local_changes[untracked]": [
+      "ci_fast"
+    ],
+    "tests/cli/test_preflight.py::test_native_hook_rejects_tree_changed_during_checks": [
+      "ci_fast"
+    ],
+    "tests/cli/test_preflight.py::test_old_pre_commit_wrapper_fails_closed": [
+      "ci_fast"
+    ],
+    "tests/cli/test_preflight.py::test_push_runs_deep_quality_and_curated_regressions": [
+      "ci_fast"
+    ],
+    "tests/cli/test_preflight.py::test_release_checks_entire_suite_without_double_fast_run": [
+      "ci_fast"
+    ],
     "tests/gui/dialogs/test_about_dialog.py::test_about_dialog_has_close_button": [],
     "tests/gui/dialogs/test_about_dialog.py::test_about_dialog_initialization": [],
     "tests/gui/widgets/test_history_panel_theme.py::test_history_panel_hover_style": [],
@@ -197,6 +272,21 @@
     "tests/integration/test_commands.py::test_delete_event_undo": [],
     "tests/integration/test_context_tags.py::test_context_create_cleanup_and_undo_round_trip": [],
     "tests/integration/test_db_isolation.py::test_snapshot_isolation_and_refresh": [],
+    "tests/integration/test_demo_world.py::test_failed_generation_does_not_publish_partial_world": [
+      "ci_fast"
+    ],
+    "tests/integration/test_demo_world.py::test_generator_refuses_existing_world": [
+      "ci_fast"
+    ],
+    "tests/integration/test_demo_world.py::test_reigns_share_the_event_boundary_and_uncertainty_stays_partial": [
+      "ci_fast"
+    ],
+    "tests/integration/test_demo_world.py::test_saved_demo_changes_ruler_description_border_and_location": [
+      "ci_fast"
+    ],
+    "tests/integration/test_demo_world.py::test_validation_exercise_is_the_only_issue_and_can_be_repaired": [
+      "ci_fast"
+    ],
     "tests/integration/test_id_based_wiki_commands.py::test_broken_id_link_skipped": [],
     "tests/integration/test_id_based_wiki_commands.py::test_format_helpers": [],
     "tests/integration/test_id_based_wiki_commands.py::test_id_based_link_processing": [],
@@ -272,6 +362,18 @@
     "tests/integration/test_server_integration.py::test_root_redirects_to_longform": [],
     "tests/integration/test_server_integration.py::test_server_endpoints": [],
     "tests/integration/test_server_integration.py::test_wikilink_target_is_escaped": [],
+    "tests/integration/test_startup_load_failure.py::test_initial_load_failure_dismisses_splash[False-entities]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_startup_load_failure.py::test_initial_load_failure_dismisses_splash[False-events]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_startup_load_failure.py::test_initial_load_failure_dismisses_splash[True-entities]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_startup_load_failure.py::test_initial_load_failure_dismisses_splash[True-events]": [
+      "ci_fast"
+    ],
     "tests/integration/test_summary_persistence_integrity.py::TestEditorSaveMergesAttributes::test_entity_save_with_pending_summary_keeps_hidden_attrs": [],
     "tests/integration/test_summary_persistence_integrity.py::TestEditorSaveMergesAttributes::test_entity_save_without_pending_summary_keeps_existing": [],
     "tests/integration/test_summary_persistence_integrity.py::TestEditorSaveMergesAttributes::test_event_save_with_pending_summary_keeps_hidden_attrs": [],
@@ -413,6 +515,9 @@
     "tests/integration/test_wikilinking_navigation.py::test_navigate_to_entity_success": [],
     "tests/integration/test_wikilinking_navigation.py::test_peek_keeps_dirty_entity_authoring_context": [],
     "tests/integration/test_wikilinking_navigation.py::test_provisional_materialization_is_undoable_without_navigation": [],
+    "tests/integration/test_worker_load_failure_delivery.py::test_failed_event_load_preserves_display_until_successful_empty_result": [
+      "ci_fast"
+    ],
     "tests/integration/test_world_data_trust.py::test_dated_raster_fresh_session_and_snapshot_undo": [
       "ci_fast"
     ],
@@ -1430,29 +1535,149 @@
     "tests/unit/gui/widgets/test_empty_state_widget.py::test_set_description_empty_hides_label": [],
     "tests/unit/gui/widgets/test_empty_state_widget.py::test_set_message": [],
     "tests/unit/gui/widgets/test_empty_state_widget.py::test_show_hide": [],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_actual_destruction_joins_inflight_worker[False]": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_actual_destruction_joins_inflight_worker[True]": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_application_exit_stops_worker_and_pending_debounce": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_blocked_widget_signals_still_invalidate_changed_document": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_close_and_reopen_wrapper_reactivates_spelling": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_debounce_restarts_and_checks_latest_text": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_disable_clears_and_reenable_requires_fresh_result": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_disabled_result_rejected_even_without_explicit_refresh": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_document_replacement_invalidates_pending_same_text": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_ignore_and_theme_refresh_preserve_authoring_context": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_old_menu_action_cannot_apply_to_equal_fresh_match": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_pending_results_invalidated_by_context_change[close]": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_pending_results_invalidated_by_context_change[credentials]": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_pending_results_invalidated_by_context_change[disable]": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_pending_results_invalidated_by_context_change[edit]": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_pending_results_invalidated_by_context_change[language]": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_queued_worker_delivery_after_shutdown_is_inert": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_readonly_suggestion_is_disabled_and_cannot_mutate": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_real_wiki_theme_switch_preserves_matches_and_undo[False]": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_real_wiki_theme_switch_preserves_matches_and_undo[True]": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_reordered_results_do_not_replace_current_matches": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_settings_dialog_save_cancel_and_compatibility_export[False]": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_settings_dialog_save_cancel_and_compatibility_export[True]": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_suggestion_is_one_undoable_edit_and_stale_action_is_inert": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_visible_settings_action_synchronizes_controller_and_check_state[False]": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_visible_settings_action_synchronizes_controller_and_check_state[True]": [
+      "ci_fast"
+    ],
     "tests/unit/gui/widgets/test_wiki_peek_panel.py::test_peek_rethemes_visible_controls_without_losing_content": [],
-    "tests/unit/gui/widgets/test_wiki_text_edit_re-render.py::test_on_theme_changed_forces_rerender": [],
-    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestApplyResults::test_clear_spell_check_resets_state": [],
-    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestApplyResults::test_empty_match_list_clears_selections": [],
-    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestApplyResults::test_match_produces_extra_selection": [],
-    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestApplyResults::test_multiple_matches_produce_multiple_selections": [],
-    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestContextMenu::test_click_inside_match_shows_suggestions": [],
-    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestContextMenu::test_click_outside_match_shows_standard_menu_only": [],
-    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestContextMenu::test_editor_styles_only_make_viewport_transparent": [],
-    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestContextMenu::test_match_without_replacements_still_offers_ignore": [],
-    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestContextMenu::test_suggestions_limited_to_five": [],
-    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestIgnoreAndApply::test_apply_suggestion_replaces_span": [],
-    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestIgnoreAndApply::test_ignore_match_removes_only_that_match": [],
-    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestLifecycle::test_direct_view_close_stops_worker": [],
-    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestLifecycle::test_shutdown_is_idempotent": [],
-    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestLifecycle::test_shutdown_stops_worker_thread": [],
-    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestLifecycle::test_worker_thread_is_lazy": [],
-    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestLifecycle::test_wrapper_close_stops_worker": [],
-    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestTriggerGating::test_disabled_by_default_does_not_emit": [],
-    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestTriggerGating::test_enabled_with_long_text_emits_check": [],
-    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestTriggerGating::test_short_text_skipped_and_clears_existing_underlines": [],
-    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestTriggerGating::test_trigger_uses_plaintext_not_raw_wiki_source": [],
-    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::test_stale_spellcheck_result_and_suggestion_cannot_touch_new_text": [],
+    "tests/unit/gui/widgets/test_wiki_text_edit_re-render.py::test_on_theme_changed_refreshes_transient_colors": [],
+    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestApplyResults::test_clear_spell_check_resets_state": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestApplyResults::test_empty_match_list_clears_selections": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestApplyResults::test_match_produces_extra_selection": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestApplyResults::test_multiple_matches_produce_multiple_selections": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestContextMenu::test_click_inside_match_shows_suggestions": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestContextMenu::test_click_outside_match_shows_standard_menu_only": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestContextMenu::test_editor_styles_only_make_viewport_transparent": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestContextMenu::test_match_without_replacements_still_offers_ignore": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestContextMenu::test_suggestions_limited_to_five": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestIgnoreAndApply::test_apply_suggestion_replaces_span": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestIgnoreAndApply::test_ignore_match_removes_only_that_match": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestLifecycle::test_direct_view_close_stops_worker": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestLifecycle::test_shutdown_is_idempotent": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestLifecycle::test_shutdown_stops_worker_thread": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestLifecycle::test_worker_thread_is_lazy": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestLifecycle::test_wrapper_close_stops_worker": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestTriggerGating::test_disabled_by_default_does_not_emit": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestTriggerGating::test_enabled_with_long_text_emits_check": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestTriggerGating::test_short_text_skipped_and_clears_existing_underlines": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::TestTriggerGating::test_trigger_uses_plaintext_not_raw_wiki_source": [
+      "ci_fast"
+    ],
+    "tests/unit/gui/widgets/test_wiki_text_edit_spellcheck.py::test_stale_spellcheck_result_and_suggestion_cannot_touch_new_text": [
+      "ci_fast"
+    ],
     "tests/unit/gui/widgets/timeline/test_duration_bar_scaling.py::TestDurationBarScaling::test_bounding_rect_uses_zoom": [],
     "tests/unit/gui/widgets/timeline/test_duration_bar_scaling.py::TestDurationBarScaling::test_duration_bar_scales_with_zoom": [],
     "tests/unit/gui/widgets/timeline/test_duration_bar_scaling.py::TestDurationBarScaling::test_event_item_has_set_zoom_method": [],
@@ -1967,6 +2192,130 @@
     "tests/unit/services/test_transfer_pipeline.py::test_world_package_roundtrip_and_duplicate_folder": [
       "ci_fast"
     ],
+    "tests/unit/test_action_label_integrity.py::test_deliberately_small_geometry_proves_gate_fails": [
+      "ci_fast",
+      "smoke"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_flow_repositions_original_widgets_without_authoring_signals": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_gate_catches_ancestor_clipping_and_sibling_overlap": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_generation_grid_and_prompt_remain_separate_at_enlarged_text": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_icon_only_action_name_is_not_painted_text_but_clipping_still_fails": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_intrinsic_dimensions_fit_actual_font_and_style[QCheckBox]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_intrinsic_dimensions_fit_actual_font_and_style[QPushButton]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_intrinsic_dimensions_fit_actual_font_and_style[QRadioButton]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_intrinsic_dimensions_fit_actual_font_and_style[QToolButton]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_menu_detects_changed_wording_and_constrained_geometry": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_missing_source_owner_and_unknown_adapter_fail_closed": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_mixed_icon_text_and_split_button_include_decoration": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_multiline_push_button_requires_complete_height": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_native_panel_fill_and_live_theme_switch_use_theme_tokens[cyberpunk_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_native_panel_fill_and_live_theme_switch_use_theme_tokens[dark_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_native_panel_fill_and_live_theme_switch_use_theme_tokens[fantasy_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_native_panel_fill_and_live_theme_switch_use_theme_tokens[imperial_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_native_panel_fill_and_live_theme_switch_use_theme_tokens[light_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_native_panel_fill_and_live_theme_switch_use_theme_tokens[muted_light_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_overflow_tracks_dynamic_text_focus_and_single_toggle": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_pinned_actions_and_overflow_stack_without_collision": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_populated_explorer_keeps_filter_row_compact_and_list_expansive": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_responsive_dialog_actions_stack_and_preserve_accept_role": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_scrollable_panel_background_follows_app_theme[cyberpunk_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_scrollable_panel_background_follows_app_theme[dark_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_scrollable_panel_background_follows_app_theme[fantasy_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_scrollable_panel_background_follows_app_theme[imperial_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_scrollable_panel_background_follows_app_theme[light_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_scrollable_panel_background_follows_app_theme[muted_light_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_shared_label_geometry_survives_interaction_states[cyberpunk_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_shared_label_geometry_survives_interaction_states[dark_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_shared_label_geometry_survives_interaction_states[fantasy_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_shared_label_geometry_survives_interaction_states[imperial_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_shared_label_geometry_survives_interaction_states[light_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_shared_label_geometry_survives_interaction_states[muted_light_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_wrapped_choice_has_one_keyboard_and_full_label_click_target": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_wrapping_controls_use_complete_painted_label_geometry[checkbox]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_wrapping_controls_use_complete_painted_label_geometry[combo]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_wrapping_controls_use_complete_painted_label_geometry[push]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_wrapping_controls_use_complete_painted_label_geometry[radio]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_action_label_integrity.py::test_wrapping_controls_use_complete_painted_label_geometry[tool]": [
+      "ci_fast"
+    ],
     "tests/unit/test_ai_audit_logging.py::test_disabled_auditing_does_not_create_file": [],
     "tests/unit/test_ai_audit_logging.py::test_discard_is_recorded_as_refused": [],
     "tests/unit/test_ai_audit_logging.py::test_generation_event_is_one_parseable_json_line": [],
@@ -1974,6 +2323,7 @@
     "tests/unit/test_ai_audit_logging.py::test_review_event_captures_decision_feedback_and_edits": [],
     "tests/unit/test_ai_audit_logging.py::test_setup_audit_logging_is_idempotent_and_does_not_propagate": [],
     "tests/unit/test_ai_generation.py::test_apply_modes_are_explicit_and_do_not_parse_reply_text": [],
+    "tests/unit/test_ai_generation.py::test_generation_request_serializes_task_scoped_retrieval_query": [],
     "tests/unit/test_ai_generation.py::test_model_reply_maps_provider_fields_without_touching_content": [],
     "tests/unit/test_ai_generation.py::test_v1_template_selection_maps_to_v2_intent_task": [],
     "tests/unit/test_ai_generation.py::test_world_preferences_round_trip": [],
@@ -2216,6 +2566,135 @@
     "tests/unit/test_attribute_editor.py::test_hidden_attributes_can_be_shown_explicitly": [],
     "tests/unit/test_attribute_editor.py::test_initial_state": [],
     "tests/unit/test_attribute_editor.py::test_parse_value_logic": [],
+    "tests/unit/test_authored_relation_service.py::test_command_factory_rejects_foreign_thread_before_binding": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_commands_reject_bad_replacement_endpoints_without_writes[legacy-add-source]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_commands_reject_bad_replacement_endpoints_without_writes[legacy-add-target]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_commands_reject_bad_replacement_endpoints_without_writes[legacy-reverse-source]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_commands_reject_bad_replacement_endpoints_without_writes[legacy-reverse-target]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_commands_reject_bad_replacement_endpoints_without_writes[legacy-update]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_commands_reject_bad_replacement_endpoints_without_writes[missing-add-source]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_commands_reject_bad_replacement_endpoints_without_writes[missing-add-target]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_commands_reject_bad_replacement_endpoints_without_writes[missing-reverse-source]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_commands_reject_bad_replacement_endpoints_without_writes[missing-reverse-target]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_commands_reject_bad_replacement_endpoints_without_writes[missing-update]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_create_update_and_reverse_all_endpoint_kinds[entity-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_create_update_and_reverse_all_endpoint_kinds[entity-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_create_update_and_reverse_all_endpoint_kinds[event-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_create_update_and_reverse_all_endpoint_kinds[event-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_existing_noncanonical_uuid_encodings_are_rejected[braces]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_existing_noncanonical_uuid_encodings_are_rejected[compact]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_existing_noncanonical_uuid_encodings_are_rejected[prefix]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_existing_noncanonical_uuid_encodings_are_rejected[upper]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_existing_noncanonical_uuid_encodings_are_rejected[whitespace]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_facade_honors_injected_repository_and_lookup_precedence": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_facade_reopens_file_connection_without_replacing_service": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_failed_snapshot_restoration_rolls_back_outer_write": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_invalid_service_endpoint_and_type_do_not_call_dependencies": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_invalid_uuid_does_not_invoke_lookup_or_open_facade[42]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_invalid_uuid_does_not_invoke_lookup_or_open_facade[None]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_invalid_uuid_does_not_invoke_lookup_or_open_facade[]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_invalid_uuid_does_not_invoke_lookup_or_open_facade[name]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_invalid_uuid_does_not_invoke_lookup_or_open_facade[{00000000-0000-0000-0000-000000000000}]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_legacy_serialized_add_is_rejected_without_rewriting_history": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_legacy_serialized_update_is_rejected_without_rewriting_snapshot": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_missing_endpoint_feedback_remains_compatible": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_readonly_rejects_mutations_without_altering_rows[create]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_readonly_rejects_mutations_without_altering_rows[restore]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_readonly_rejects_mutations_without_altering_rows[update]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_serialized_undo_restores_noncanonical_snapshot_exactly": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_service_and_facade_cannot_write_from_foreign_thread": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_service_joins_caller_transaction_and_preserves_rollback[create]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_service_joins_caller_transaction_and_preserves_rollback[restore]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_service_joins_caller_transaction_and_preserves_rollback[update]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_standalone_serialization_failure_rolls_back[create]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_standalone_serialization_failure_rolls_back[update]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_authored_relation_service.py::test_supplied_identity_and_zero_timestamp_are_not_reallocated": [
+      "ci_fast"
+    ],
     "tests/unit/test_authoring_context_builder.py::test_draft_date_controls_chronology_and_root_dynamic_relation": [],
     "tests/unit/test_authoring_context_builder.py::test_entity_attribute_values_are_bounded": [],
     "tests/unit/test_authoring_context_builder.py::test_entity_context_aggregates_public_structured_knowledge": [],
@@ -2274,6 +2753,9 @@
       "ci_fast"
     ],
     "tests/unit/test_backup_restore_coordinator.py::test_invalid_backup_keeps_session_active[unauthorized]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_backup_restore_coordinator.py::test_restore_guard_retains_continuation_without_stopping_worker": [
       "ci_fast"
     ],
     "tests/unit/test_backup_restore_coordinator.py::test_restore_waits_for_worker_shutdown": [
@@ -2777,6 +3259,9 @@
     "tests/unit/test_command_coordinator.py::test_clear_history": [
       "ci_fast"
     ],
+    "tests/unit/test_command_coordinator.py::test_concurrent_command_results_keep_their_request_context": [
+      "ci_fast"
+    ],
     "tests/unit/test_command_coordinator.py::test_execute_command": [
       "ci_fast"
     ],
@@ -2801,6 +3286,9 @@
     "tests/unit/test_command_coordinator.py::test_on_command_result_success_adds_to_undo_stack": [
       "ci_fast"
     ],
+    "tests/unit/test_command_coordinator.py::test_operation_trace_survives_request_and_discards_late_result": [
+      "ci_fast"
+    ],
     "tests/unit/test_command_coordinator.py::test_raster_paint_result_does_not_reload_all_data[PaintRasterCommand]": [
       "ci_fast"
     ],
@@ -2819,13 +3307,22 @@
     "tests/unit/test_command_coordinator.py::test_stack_state_logging_is_one_compact_debug_record": [
       "ci_fast"
     ],
+    "tests/unit/test_command_coordinator.py::test_trace_ids_exclude_authored_text_and_secret_like_values": [
+      "ci_fast"
+    ],
     "tests/unit/test_command_coordinator.py::test_undo_moves_to_redo_stack": [
       "ci_fast"
     ],
     "tests/unit/test_command_coordinator.py::test_undo_on_empty_stack_does_nothing": [
       "ci_fast"
     ],
+    "tests/unit/test_command_coordinator.py::test_undo_redo_get_distinct_attempt_ids_with_stable_command_id": [
+      "ci_fast"
+    ],
     "tests/unit/test_command_coordinator.py::test_worker_result_resolves_command_by_serializable_id": [
+      "ci_fast"
+    ],
+    "tests/unit/test_command_coordinator.py::test_world_switch_discards_late_result_and_releases_pending_command": [
       "ci_fast"
     ],
     "tests/unit/test_command_registry.py::test_register_additional_command_type": [
@@ -3035,6 +3532,111 @@
     "tests/unit/test_connection_manager.py::TestConnectSignalSafe::test_connect_signal_safe_with_missing_signal": [],
     "tests/unit/test_connection_manager.py::TestConnectSignalSafe::test_connect_signal_safe_with_none_object": [],
     "tests/unit/test_connection_manager.py::TestConnectSignalSafe::test_connect_signal_safe_with_valid_signal": [],
+    "tests/unit/test_connections_overview.py::test_both_overview_perspectives_preserve_canonical_assertion[guards \\xc6lf's gate]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_both_overview_perspectives_preserve_canonical_assertion[member_of]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_counts_filters_and_uuid_refresh[entity-0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_counts_filters_and_uuid_refresh[entity-100]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_counts_filters_and_uuid_refresh[entity-20]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_counts_filters_and_uuid_refresh[entity-5]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_counts_filters_and_uuid_refresh[event-0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_counts_filters_and_uuid_refresh[event-100]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_counts_filters_and_uuid_refresh[event-20]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_counts_filters_and_uuid_refresh[event-5]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_dirty_selection_guard_and_draft_refresh[entity-Apply]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_dirty_selection_guard_and_draft_refresh[entity-Discard]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_dirty_selection_guard_and_draft_refresh[entity-Keep editing]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_dirty_selection_guard_and_draft_refresh[event-Apply]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_dirty_selection_guard_and_draft_refresh[event-Discard]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_dirty_selection_guard_and_draft_refresh[event-Keep editing]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_double_click_and_notes_refresh_preserve_caret[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_double_click_and_notes_refresh_preserve_caret[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_editable_display_caption_does_not_rewrite_stable_type_on_notes_edit[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_editable_display_caption_does_not_rewrite_stable_type_on_notes_edit[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_editor_heading_is_plain_and_empty_meaning_stays_local[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_editor_heading_is_plain_and_empty_meaning_stays_local[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_group_keyboard_never_removes_a_previously_selected_relation[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_group_keyboard_never_removes_a_previously_selected_relation[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_meaning_is_editable_and_reuses_known_keys_without_custom_mode[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_meaning_is_editable_and_reuses_known_keys_without_custom_mode[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_minimum_height_uses_wrapped_content_without_overlap[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_minimum_height_uses_wrapped_content_without_overlap[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_references_navigation_and_readonly_survive_refresh[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_references_navigation_and_readonly_survive_refresh[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_semantic_projection_does_not_guess_or_duplicate": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_ten_pointer_selections_never_open_or_mutate[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_ten_pointer_selections_never_open_or_mutate[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_wheel_scrolls_overview_without_changing_meaning[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_wheel_scrolls_overview_without_changing_meaning[event]": [
+      "ci_fast"
+    ],
     "tests/unit/test_constants.py::test_autosave_delay": [],
     "tests/unit/test_constants.py::test_constants_are_immutable_types": [],
     "tests/unit/test_constants.py::test_image_file_filter": [],
@@ -3050,6 +3652,8 @@
     "tests/unit/test_context_tags.py::test_cleanup_is_one_composite_and_preserves_other_tags": [],
     "tests/unit/test_context_tags.py::test_context_bar_renders_inactive_active_and_review_states": [],
     "tests/unit/test_context_tags.py::test_context_editor_reuses_tag_autocomplete": [],
+    "tests/unit/test_context_tags.py::test_contextual_map_creation_keeps_submission_tags[entity]": [],
+    "tests/unit/test_context_tags.py::test_contextual_map_creation_keeps_submission_tags[event]": [],
     "tests/unit/test_context_tags.py::test_dirty_selected_inspector_blocks_cleanup": [],
     "tests/unit/test_context_tags.py::test_editor_creation_and_map_creation_use_context_factory": [],
     "tests/unit/test_context_tags.py::test_failed_creation_does_not_enter_recovery": [],
@@ -3063,10 +3667,92 @@
     "tests/unit/test_create_template_dialog.py::test_create_template_dialog_layout_pruning_checked": [],
     "tests/unit/test_create_template_dialog.py::test_create_template_dialog_layout_pruning_removes_empty_rows": [],
     "tests/unit/test_create_template_dialog.py::test_create_template_dialog_layout_pruning_unchecked": [],
+    "tests/unit/test_creation_ux.py::test_cancel_and_failure_keep_relation_and_writing_drafts": [],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[entity-False-feature-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[entity-False-feature-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[entity-False-marker-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[entity-False-marker-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[entity-False-peek-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[entity-False-peek-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[entity-True-feature-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[entity-True-feature-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[entity-True-marker-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[entity-True-marker-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[entity-True-peek-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[entity-True-peek-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[event-False-feature-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[event-False-feature-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[event-False-marker-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[event-False-marker-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[event-False-peek-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[event-False-peek-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[event-True-feature-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[event-True-feature-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[event-True-marker-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[event-True-marker-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[event-True-peek-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_contextual_completion_preserves_live_writing[event-True-peek-event]": [
+      "ci_fast"
+    ],
     "tests/unit/test_creation_ux.py::test_create_cancel_does_nothing": [],
     "tests/unit/test_creation_ux.py::test_explorer_create_opens_new_entity": [],
+    "tests/unit/test_creation_ux.py::test_explorer_create_opens_new_event": [],
     "tests/unit/test_creation_ux.py::test_explorer_create_reveals_entity_hidden_by_advanced_filter": [],
     "tests/unit/test_creation_ux.py::test_explorer_create_reveals_entity_hidden_by_search": [],
+    "tests/unit/test_creation_ux.py::test_open_missing_link_exposes_creation_in_peek[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_open_missing_link_exposes_creation_in_peek[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_creation_ux.py::test_peek_button_materializes_without_stealing_writing_focus[entity]": [],
+    "tests/unit/test_creation_ux.py::test_peek_button_materializes_without_stealing_writing_focus[event]": [],
     "tests/unit/test_creation_ux.py::test_provisional_create_keeps_origin": [],
     "tests/unit/test_creation_ux.py::test_real_creation_form_persists_type_and_undo_redo[Airship]": [
       "ci_fast"
@@ -3096,10 +3782,18 @@
     "tests/unit/test_data_coordinator.py::TestGraphData::test_on_graph_data_ready_updates_widget": [],
     "tests/unit/test_data_coordinator.py::TestGraphData::test_on_graph_metadata_ready_updates_widget": [],
     "tests/unit/test_data_coordinator.py::TestGraphData::test_repeated_active_graph_changes_coalesce": [],
-    "tests/unit/test_data_coordinator.py::TestReloadActiveEditorRelations::test_no_reload_when_no_active_editor": [],
-    "tests/unit/test_data_coordinator.py::TestReloadActiveEditorRelations::test_plain_update_reloads_only_if_active_detail_is_affected": [],
-    "tests/unit/test_data_coordinator.py::TestReloadActiveEditorRelations::test_reload_entity_relations": [],
-    "tests/unit/test_data_coordinator.py::TestReloadActiveEditorRelations::test_reload_event_relations": [],
+    "tests/unit/test_data_coordinator.py::TestReloadActiveEditorRelations::test_no_reload_when_no_active_editor": [
+      "ci_fast"
+    ],
+    "tests/unit/test_data_coordinator.py::TestReloadActiveEditorRelations::test_plain_update_reloads_only_if_active_detail_is_affected": [
+      "ci_fast"
+    ],
+    "tests/unit/test_data_coordinator.py::TestReloadActiveEditorRelations::test_reload_entity_relations": [
+      "ci_fast"
+    ],
+    "tests/unit/test_data_coordinator.py::TestReloadActiveEditorRelations::test_reload_event_relations": [
+      "ci_fast"
+    ],
     "tests/unit/test_data_coordinator.py::TestSignalHandlers::test_on_command_failed_shows_warning": [],
     "tests/unit/test_data_coordinator.py::TestSignalHandlers::test_on_entities_ready_updates_widgets": [],
     "tests/unit/test_data_coordinator.py::TestSignalHandlers::test_on_entity_details_ready_loads_editor": [],
@@ -3110,7 +3804,9 @@
     "tests/unit/test_data_coordinator.py::TestSignalHandlers::test_on_panel_show_requested_unknown_panel": [],
     "tests/unit/test_data_coordinator.py::TestSignalHandlers::test_on_selection_requested": [],
     "tests/unit/test_data_coordinator.py::TestSignalHandlers::test_on_suggestions_update": [],
-    "tests/unit/test_data_coordinator.py::TestSignalHandlers::test_startup_completes_after_primary_datasets": [],
+    "tests/unit/test_data_coordinator.py::TestSignalHandlers::test_startup_completes_after_primary_datasets": [
+      "ci_fast"
+    ],
     "tests/unit/test_data_coordinator.py::TestSummaryResult::test_summary_no_matching_editor": [],
     "tests/unit/test_data_coordinator.py::TestSummaryResult::test_summary_routed_to_entity_editor": [],
     "tests/unit/test_data_coordinator.py::TestSummaryResult::test_summary_routed_to_event_editor": [],
@@ -3118,6 +3814,21 @@
     "tests/unit/test_data_coordinator.py::test_save_started_refresh_preserves_event_document_after_ack": [],
     "tests/unit/test_data_coordinator.py::test_save_started_refresh_preserves_temporal_entity_after_ack": [],
     "tests/unit/test_data_coordinator.py::test_stale_event_detail_response_cannot_change_selected_item": [],
+    "tests/unit/test_data_coordinator.py::test_startup_failure_completes_once[False-entities]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_data_coordinator.py::test_startup_failure_completes_once[False-events]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_data_coordinator.py::test_startup_failure_completes_once[True-entities]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_data_coordinator.py::test_startup_failure_completes_once[True-events]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_data_coordinator.py::test_unrelated_and_completed_load_failures_do_not_change_startup": [
+      "ci_fast"
+    ],
     "tests/unit/test_data_handler.py::TestDataHandlerDecoupling::test_no_mainwindow_reference": [],
     "tests/unit/test_data_handler.py::TestDataHandlerDecoupling::test_uses_internal_cache": [],
     "tests/unit/test_data_handler.py::TestDataHandlerSignals::test_command_finished_handles_failure": [],
@@ -3158,6 +3869,7 @@
     "tests/unit/test_database_manager_dialog.py::test_add_complete_world_folder_from_registered_location": [],
     "tests/unit/test_database_manager_dialog.py::test_link_and_revoke_external_database": [],
     "tests/unit/test_database_manager_dialog.py::test_select_external_world_requires_and_remembers_approval": [],
+    "tests/unit/test_database_manager_dialog.py::test_select_world_does_not_change_settings_until_transition_accepts": [],
     "tests/unit/test_database_manager_dialog.py::test_world_manager_actions_have_explanatory_tooltips": [],
     "tests/unit/test_db_bulk_operations.py::test_bulk_insert_entities_empty_list": [
       "ci_fast"
@@ -3313,6 +4025,21 @@
     "tests/unit/test_dependency_contract.py::test_stale_projection_is_detected_and_regenerated": [
       "ci_fast"
     ],
+    "tests/unit/test_dependency_direction.py::test_authored_relation_facade_only_delegates[_validate_relation_endpoint-validate_endpoint]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_authored_relation_facade_only_delegates[insert_relation-create]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_authored_relation_facade_only_delegates[update_relation-update]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_authored_relation_service_stays_below_facade_and_owns_no_sql": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_connection_browser_has_no_editor_or_persistence_dependencies": [
+      "ci_fast"
+    ],
     "tests/unit/test_dependency_direction.py::test_connection_guard_allows_public_access": [
       "ci_fast"
     ],
@@ -3361,6 +4088,18 @@
     "tests/unit/test_dependency_direction.py::test_private_connections_stay_in_persistence_internals": [
       "ci_fast"
     ],
+    "tests/unit/test_dependency_direction.py::test_relation_commands_use_authored_service_without_parallel_policy": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_relation_preparation_has_only_pure_standard_library_dependencies[relation_policy.py]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_relation_preparation_has_only_pure_standard_library_dependencies[relation_presentation.py]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_simple_load_reporter_cannot_execute_operations": [
+      "ci_fast"
+    ],
     "tests/unit/test_dependency_direction.py::test_source_layers_do_not_import_upward[commands]": [
       "ci_fast"
     ],
@@ -3371,6 +4110,24 @@
       "ci_fast"
     ],
     "tests/unit/test_dependency_direction.py::test_source_layers_do_not_import_upward[services]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_spell_check_capability_has_one_narrow_gui_owner": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_temporal_entity_edit_planning_is_independent_of_ui_and_persistence": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_temporal_entity_preparation_is_independent_of_ui_and_persistence": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_timeline_preparation_and_worker_dependencies[core/timeline_layout.py-allowed1]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_timeline_preparation_and_worker_dependencies[gui/workers/layout_worker.py-allowed2]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_timeline_preparation_and_worker_dependencies[services/timeline_event_preparation_service.py-allowed0]": [
       "ci_fast"
     ],
     "tests/unit/test_desc_cursor_autosave.py::test_entity_cursor_preserved_after_completer_update_then_reload": [],
@@ -3399,6 +4156,36 @@
     "tests/unit/test_drag_drop_sprint0.py::test_entity_editor_rejects_invalid_mime_data": [],
     "tests/unit/test_drag_drop_sprint0.py::test_event_editor_accepts_drops": [],
     "tests/unit/test_drag_drop_sprint0.py::test_event_editor_drop_creates_relation_signal": [],
+    "tests/unit/test_drag_navigation_mitigation.py::test_card_hold_and_text_selection_do_not_navigate": [
+      "ci_fast"
+    ],
+    "tests/unit/test_drag_navigation_mitigation.py::test_deferred_save_is_superseded_by_next_document_gesture": [
+      "ci_fast"
+    ],
+    "tests/unit/test_drag_navigation_mitigation.py::test_document_gesture_supersedes_pending_explorer_timer": [
+      "ci_fast"
+    ],
+    "tests/unit/test_drag_navigation_mitigation.py::test_explicit_link_save_continuation_keeps_document_origin": [
+      "ci_fast"
+    ],
+    "tests/unit/test_drag_navigation_mitigation.py::test_held_press_and_cancelled_drag_never_switch_shared_tab": [
+      "ci_fast"
+    ],
+    "tests/unit/test_drag_navigation_mitigation.py::test_programmatic_selection_is_silent_keyboard_browse_is_completed": [
+      "ci_fast"
+    ],
+    "tests/unit/test_drag_navigation_mitigation.py::test_shared_zone_click_stays_local_explicit_open_reveals_inspector[0-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_drag_navigation_mitigation.py::test_shared_zone_click_stays_local_explicit_open_reveals_inspector[1-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_drag_navigation_mitigation.py::test_visible_separate_inspector_updates_only_after_release[entity-0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_drag_navigation_mitigation.py::test_visible_separate_inspector_updates_only_after_release[event-1]": [
+      "ci_fast"
+    ],
     "tests/unit/test_drag_pill.py::test_drag_pill_caches_painter_data": [],
     "tests/unit/test_drag_pill.py::test_drag_pill_custom_offset": [],
     "tests/unit/test_drag_pill.py::test_drag_pill_displays_correct_text": [],
@@ -3732,6 +4519,34 @@
     "tests/unit/test_event_list.py::test_set_events_empty": [],
     "tests/unit/test_event_list.py::test_set_events_with_data": [],
     "tests/unit/test_event_list.py::test_widget_styling": [],
+    "tests/unit/test_event_timing_navigation.py::test_date_menu_survives_overflow": [],
+    "tests/unit/test_event_timing_navigation.py::test_disputed_surrender_navigates_zero_anchor[0.0]": [],
+    "tests/unit/test_event_timing_navigation.py::test_disputed_surrender_navigates_zero_anchor[20.0]": [],
+    "tests/unit/test_event_timing_navigation.py::test_event_anchor_remains_selectable_under_playhead[0.0-False-0.5]": [],
+    "tests/unit/test_event_timing_navigation.py::test_event_anchor_remains_selectable_under_playhead[0.0-False-1.0]": [],
+    "tests/unit/test_event_timing_navigation.py::test_event_anchor_remains_selectable_under_playhead[0.0-False-2.0]": [],
+    "tests/unit/test_event_timing_navigation.py::test_event_anchor_remains_selectable_under_playhead[0.0-True-0.5]": [],
+    "tests/unit/test_event_timing_navigation.py::test_event_anchor_remains_selectable_under_playhead[0.0-True-1.0]": [],
+    "tests/unit/test_event_timing_navigation.py::test_event_anchor_remains_selectable_under_playhead[0.0-True-2.0]": [],
+    "tests/unit/test_event_timing_navigation.py::test_event_anchor_remains_selectable_under_playhead[3.0-False-0.5]": [],
+    "tests/unit/test_event_timing_navigation.py::test_event_anchor_remains_selectable_under_playhead[3.0-False-1.0]": [],
+    "tests/unit/test_event_timing_navigation.py::test_event_anchor_remains_selectable_under_playhead[3.0-False-2.0]": [],
+    "tests/unit/test_event_timing_navigation.py::test_event_anchor_remains_selectable_under_playhead[3.0-True-0.5]": [],
+    "tests/unit/test_event_timing_navigation.py::test_event_anchor_remains_selectable_under_playhead[3.0-True-1.0]": [],
+    "tests/unit/test_event_timing_navigation.py::test_event_anchor_remains_selectable_under_playhead[3.0-True-2.0]": [],
+    "tests/unit/test_event_timing_navigation.py::test_fixed_relation_uses_saved_january_playhead": [],
+    "tests/unit/test_event_timing_navigation.py::test_hydration_rejects_old_save_feedback": [],
+    "tests/unit/test_event_timing_navigation.py::test_invalid_date_never_requests_save": [],
+    "tests/unit/test_event_timing_navigation.py::test_january_entry_survives_command_and_reopening[autosave]": [],
+    "tests/unit/test_event_timing_navigation.py::test_january_entry_survives_command_and_reopening[blur]": [],
+    "tests/unit/test_event_timing_navigation.py::test_january_entry_survives_command_and_reopening[calendar]": [],
+    "tests/unit/test_event_timing_navigation.py::test_january_entry_survives_command_and_reopening[enter]": [],
+    "tests/unit/test_event_timing_navigation.py::test_save_acknowledgement_retains_pending_date_caret": [],
+    "tests/unit/test_event_timing_navigation.py::test_save_feedback_preserves_newer_text_and_caret": [],
+    "tests/unit/test_event_timing_navigation.py::test_selected_navigation_revalidates_global_target[-42.25]": [],
+    "tests/unit/test_event_timing_navigation.py::test_selected_navigation_revalidates_global_target[0.0]": [],
+    "tests/unit/test_event_timing_navigation.py::test_selected_navigation_revalidates_global_target[433177.5]": [],
+    "tests/unit/test_event_timing_navigation.py::test_structured_year_edit_preserves_day": [],
     "tests/unit/test_events_duration.py::TestEventDuration::test_event_editor_has_duration_field": [],
     "tests/unit/test_events_duration.py::TestEventDuration::test_event_editor_loads_saves_duration": [],
     "tests/unit/test_events_duration.py::TestEventDuration::test_event_item_rect_no_duration": [],
@@ -3760,6 +4575,9 @@
     "tests/unit/test_fast_inject_layout.py::test_apply_template_merges_layout_with_overwrite": [],
     "tests/unit/test_fast_inject_layout.py::test_apply_template_merges_layout_without_overwrite": [],
     "tests/unit/test_fast_inject_layout.py::test_apply_template_with_layout_no_existing_layout": [],
+    "tests/unit/test_feature_geometry_commands.py::test_base_compare_apply_undo_redo_preserves_other_fields": [
+      "ci_fast"
+    ],
     "tests/unit/test_feature_geometry_commands.py::test_create_undo_redo_and_serialization": [
       "ci_fast"
     ],
@@ -3767,6 +4585,17 @@
     "tests/unit/test_feature_geometry_coordinator.py::test_cancel_discards_preview_and_restores_playhead_geometry": [],
     "tests/unit/test_feature_geometry_coordinator.py::test_edit_between_states_creates_one_atomic_command": [],
     "tests/unit/test_feature_geometry_coordinator.py::test_failed_geometry_apply_keeps_session_editable": [],
+    "tests/unit/test_feature_geometry_coordinator.py::test_geometry_draft_survives_recreated_scene_item_and_detects_conflict": [],
+    "tests/unit/test_feature_geometry_coordinator.py::test_geometry_removal_retains_independent_working_copy": [],
+    "tests/unit/test_feature_geometry_coordinator.py::test_geometry_transition_resolves_each_target[apply-base]": [],
+    "tests/unit/test_feature_geometry_coordinator.py::test_geometry_transition_resolves_each_target[apply-new_state]": [],
+    "tests/unit/test_feature_geometry_coordinator.py::test_geometry_transition_resolves_each_target[apply-state]": [],
+    "tests/unit/test_feature_geometry_coordinator.py::test_geometry_transition_resolves_each_target[discard-base]": [],
+    "tests/unit/test_feature_geometry_coordinator.py::test_geometry_transition_resolves_each_target[discard-new_state]": [],
+    "tests/unit/test_feature_geometry_coordinator.py::test_geometry_transition_resolves_each_target[discard-state]": [],
+    "tests/unit/test_feature_geometry_coordinator.py::test_geometry_transition_resolves_each_target[keep-base]": [],
+    "tests/unit/test_feature_geometry_coordinator.py::test_geometry_transition_resolves_each_target[keep-new_state]": [],
+    "tests/unit/test_feature_geometry_coordinator.py::test_geometry_transition_resolves_each_target[keep-state]": [],
     "tests/unit/test_feature_geometry_coordinator.py::test_stale_map_snapshots_do_not_render": [],
     "tests/unit/test_feature_geometry_coordinator.py::test_states_and_markers_may_arrive_in_either_order": [],
     "tests/unit/test_feature_geometry_deletion_restore.py::test_layer_subtree_delete_undo_restores_geometry_states[path]": [],
@@ -3996,6 +4825,369 @@
     "tests/unit/test_h1_to_h6_fixes.py::TestH6SetRasterBlendModeFetchesOldMode::test_undo_uses_db_fetched_old_mode": [],
     "tests/unit/test_headless_operation.py::test_cli_export_headless": [],
     "tests/unit/test_headless_operation.py::test_database_operations_headless": [],
+    "tests/unit/test_help_bundle.py::test_all_topics_search_and_navigation": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_bundle.py::test_confined_navigation[%2e%2e/world.kraken]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_bundle.py::test_confined_navigation[../world.kraken]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_bundle.py::test_confined_navigation[//host/path]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_bundle.py::test_confined_navigation[C:/secret]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_bundle.py::test_confined_navigation[file:///C:/secret]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_bundle.py::test_confined_navigation[https://example.invalid/page]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_bundle.py::test_confined_navigation[maps.html#missing]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_bundle.py::test_confined_navigation[maps.html%5c..%5csecret]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_bundle.py::test_confined_navigation[maps.html?remote=true]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_bundle.py::test_deterministic_rebuild": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_bundle.py::test_escaped_symlink": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_bundle.py::test_failed_generation_preserves_bundle[asset]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_bundle.py::test_failed_generation_preserves_bundle[link]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_bundle.py::test_failed_generation_preserves_bundle[raw]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_bundle.py::test_failed_generation_preserves_bundle[remote]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_bundle.py::test_failed_generation_preserves_bundle[target]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_bundle.py::test_frozen_default_uses_bundle_root": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_bundle.py::test_help_only_probe_without_world_startup": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_bundle.py::test_missing_and_malformed_bundle": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_bundle.py::test_package_identity_and_arbitrary_working_directory": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_bundle.py::test_qt_rendering_anchors_tables_code_images": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_bundle.py::test_stale_version_and_corrupt_payload": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_context_precedence_and_scoped_operation": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_deleting_outer_modal_detaches_inner_owned_help": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_f1_preserves_live_draft_and_reuses_viewer": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_help_does_not_validate_or_accept_date_draft[f1]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_help_does_not_validate_or_accept_date_draft[menu]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_help_keeps_real_f11_writing_and_undo[entity-rich]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_help_keeps_real_f11_writing_and_undo[entity-source]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_help_keeps_real_f11_writing_and_undo[event-rich]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_help_keeps_real_f11_writing_and_undo[event-source]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_help_keyboard_does_not_mutate_background_map": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_help_preserves_real_geometry_working_copy": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_missing_bundle_then_retry": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_modal_window_input_and_owner_transfer": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_navigation_and_failed_link_recovery": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_nested_modal_owner_deferred_deletion": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_no_origin_falls_back_to_manual": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_reading_position_and_destroyed_origin": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_real_unsaved_relation_dialog_keeps_fields": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_reparented_writing_keeps_semantic_owner": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_resource_loading_is_confined": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_theme_switch_preserves_reading_and_authoring_context[cyberpunk_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_theme_switch_preserves_reading_and_authoring_context[dark_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_theme_switch_preserves_reading_and_authoring_context[fantasy_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_theme_switch_preserves_reading_and_authoring_context[imperial_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_theme_switch_preserves_reading_and_authoring_context[light_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_theme_switch_preserves_reading_and_authoring_context[muted_light_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_coordinator.py::test_unfinished_chronology_input_keeps_dialog_state": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_empty_menu_space_shows_feedback_without_focused_fallback": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_explanation_preserves_unfinished_date[KeyboardModifier.ShiftModifier]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_explanation_preserves_unfinished_date[KeyboardModifier.ShiftModifier|ControlModifier]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_help_chords_are_visible_in_shortcuts_dialog": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_pointer_and_focus_are_distinct_without_activation[False-QLabel]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_pointer_and_focus_are_distinct_without_activation[False-QLineEdit]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_pointer_and_focus_are_distinct_without_activation[False-QPushButton]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_pointer_and_focus_are_distinct_without_activation[True-QLabel]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_pointer_and_focus_are_distinct_without_activation[True-QLineEdit]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_pointer_and_focus_are_distinct_without_activation[True-QPushButton]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_pointer_does_not_fall_back_to_focus_or_blocked_surface[foreign]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_pointer_does_not_fall_back_to_focus_or_blocked_surface[help]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_pointer_does_not_fall_back_to_focus_or_blocked_surface[missing]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_pointer_does_not_fall_back_to_focus_or_blocked_surface[modal]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_pointer_geometry_region_and_task_link_leave_selection_unchanged": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_pointer_menu_action_wins_over_keyboard_highlight": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_shortcut_nested_modal_target_and_outer_deletion[KeyboardModifier.ShiftModifier]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_shortcut_nested_modal_target_and_outer_deletion[KeyboardModifier.ShiftModifier|ControlModifier]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_shortcut_override_repeat_and_popup_replacement": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_shortcuts_preserve_f11_live_writing[entity-rich-KeyboardModifier.ShiftModifier]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_shortcuts_preserve_f11_live_writing[entity-rich-KeyboardModifier.ShiftModifier|ControlModifier]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_shortcuts_preserve_f11_live_writing[entity-source-KeyboardModifier.ShiftModifier]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_shortcuts_preserve_f11_live_writing[entity-source-KeyboardModifier.ShiftModifier|ControlModifier]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_shortcuts_preserve_f11_live_writing[event-rich-KeyboardModifier.ShiftModifier]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_shortcuts_preserve_f11_live_writing[event-rich-KeyboardModifier.ShiftModifier|ControlModifier]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_shortcuts_preserve_f11_live_writing[event-source-KeyboardModifier.ShiftModifier]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_shortcuts_preserve_f11_live_writing[event-source-KeyboardModifier.ShiftModifier|ControlModifier]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_explanation_shortcuts.py::test_unsupported_feedback_clears_content_and_f1_opens_origin_task": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_inspection_coverage.py::test_action_owner_teardown_releases_cached_native_handles": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_inspection_coverage.py::test_control_search_lands_on_concise_explanation": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_inspection_coverage.py::test_disabled_hover_uses_event_position_not_stale_cursor": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_inspection_coverage.py::test_drift_missing_target_and_binding_fail_with_actionable_diagnostics": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_inspection_coverage.py::test_every_declared_explanation_is_generated_and_bounded": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_inspection_coverage.py::test_exempt_menu_wrappers_survive_binding_scan_until_native_teardown": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_inspection_coverage.py::test_explorer_buttons_and_creation_actions_have_specific_help": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_inspection_coverage.py::test_focused_shortcut_exempt_menu_action_does_not_reuse_previous_explanation": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_inspection_coverage.py::test_focused_shortcut_explains_active_menu_action_without_activation[QMenuBar]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_inspection_coverage.py::test_focused_shortcut_explains_active_menu_action_without_activation[QMenu]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_inspection_coverage.py::test_form_label_and_default_action_reuse_exact_meaning": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_inspection_coverage.py::test_inspection_resolves_nested_graph_child_input": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_inspection_coverage.py::test_menu_inspection_never_triggers_action": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_inspection_coverage.py::test_new_input_factory_requires_declaration_or_reason": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_inspection_coverage.py::test_overflow_equivalent_wins_over_generic_proxy_declaration": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_inspection_coverage.py::test_review_fingerprint_ignores_format_but_detects_behavior": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_inspection_coverage.py::test_standard_dialog_buttons_use_roles_and_task_destination": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_all_production_meanings_are_reachable": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_cpp_owned_label_and_viewport_keep_registration_after_wrapper_gc": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_debounce_and_query_undo_are_local": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_destination_extraction_preserves_choices_and_help_metadata[None-None]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_destination_extraction_preserves_choices_and_help_metadata[entity.at-time-expected1]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_destination_extraction_preserves_choices_and_help_metadata[entity.baseline-expected0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_disabled_control_and_missing_excerpt_never_activate_or_show_stale_text": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_expert_queries_find_canonical_topics[Longform recover removed document-longform.recovery]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_expert_queries_find_canonical_topics[attributes relations mentions-authoring.representations]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_expert_queries_find_canonical_topics[change a border in 962-map.historical-geometry]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_expert_queries_find_canonical_topics[find relation validity-relations.timing]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_expert_queries_find_canonical_topics[visible value source correction-entity.value-source]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_expert_queries_find_canonical_topics[why does a year have uncertain date-date.precision]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_geometry_region_uses_pointer_without_selection": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_hidden_baseline_confirmation_still_cancels": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_inspection_exempt_click_does_not_activate": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_inspection_task_link_and_modal_deletion": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_native_popup_keys_do_not_apply_background_map": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_native_shift_f1_uses_validated_excerpt": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_pointer_inspection_does_not_exit_f11[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_pointer_inspection_does_not_exit_f11[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_pointer_inspection_keeps_date_draft": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_search_flush_enter_retains_query_and_local_escape": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_search_normalization_prefix_deduplication_and_snippets": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_search_reveal_retains_selected_result_and_bundle_error_clears_hits": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_search_inspection.py::test_twenty_meanings_have_nonempty_generated_excerpts": [
+      "ci_fast"
+    ],
     "tests/unit/test_history_service_timestamps.py::test_save_command_timestamps": [],
     "tests/unit/test_history_service_timestamps.py::test_session_records_current_application_version": [],
     "tests/unit/test_history_thread_safety.py::test_history_changed_emits_snapshot_dicts": [],
@@ -4274,6 +5466,12 @@
     "tests/unit/test_inspector_composition.py::test_context_navigation_retains_original_signals_and_renderer[event]": [
       "ci_fast"
     ],
+    "tests/unit/test_inspector_composition.py::test_entity_source_caption_tracks_its_field_visibility[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_entity_source_caption_tracks_its_field_visibility[event]": [
+      "ci_fast"
+    ],
     "tests/unit/test_inspector_composition.py::test_failed_auxiliary_split_restores_original_home[entity-False]": [
       "ci_fast"
     ],
@@ -4287,6 +5485,12 @@
       "ci_fast"
     ],
     "tests/unit/test_inspector_composition.py::test_invalid_date_and_newer_prose_survive_section_navigation[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_large_inspector_allocates_spare_height_to_its_body[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_large_inspector_allocates_spare_height_to_its_body[event]": [
       "ci_fast"
     ],
     "tests/unit/test_inspector_composition.py::test_linked_events_fit_the_existing_document_without_nested_scroll[entity]": [
@@ -4374,6 +5578,21 @@
       "ci_fast"
     ],
     "tests/unit/test_inspector_composition.py::test_tags_and_sheet_edits_remain_dirty_through_view_changes[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_world_view_button_refreshes_its_theme_without_editing_draft[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_wrapped_footer_reserves_readable_body_space[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_wrapped_footer_reserves_readable_body_space[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_writing_disclosures_expose_state_and_keep_panels_independent[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_inspector_composition.py::test_writing_disclosures_expose_state_and_keep_panels_independent[event]": [
       "ci_fast"
     ],
     "tests/unit/test_inspector_composition.py::test_writing_tool_toggles_preserve_prose_selection_scroll_and_undo[entity]": [
@@ -4608,15 +5827,24 @@
     "tests/unit/test_llm_generation_logic.py::test_default_system_prompt_fallback": [],
     "tests/unit/test_llm_generation_logic.py::test_preview_dialog_builds_prompt": [],
     "tests/unit/test_llm_generation_logic.py::test_preview_fetches_rag": [],
+    "tests/unit/test_llm_generation_preview.py::test_preview_and_generation_use_identical_retrieval_arguments": [],
     "tests/unit/test_llm_generation_preview.py::test_preview_rag_success": [],
+    "tests/unit/test_llm_generation_preview.py::test_preview_rag_with_world_context": [],
+    "tests/unit/test_llm_generation_preview.py::test_preview_skips_retrieval_when_disabled_or_zero[False-2]": [],
+    "tests/unit/test_llm_generation_preview.py::test_preview_skips_retrieval_when_disabled_or_zero[True-0]": [],
     "tests/unit/test_llm_generation_widget.py::test_empty_custom_prompt_error": [],
     "tests/unit/test_llm_generation_widget.py::test_generation_flow_custom_prompt": [],
     "tests/unit/test_llm_generation_widget.py::test_generation_review_audit_preserves_raw_and_edited_text": [],
     "tests/unit/test_llm_generation_widget.py::test_generation_worker_copies_structured_prompt": [],
+    "tests/unit/test_llm_generation_widget.py::test_generation_worker_excludes_current_object_by_identity": [],
     "tests/unit/test_llm_generation_widget.py::test_generation_worker_injects_entity_context_independently_of_spatial": [],
     "tests/unit/test_llm_generation_widget.py::test_generation_worker_injects_event_context_without_rag": [],
+    "tests/unit/test_llm_generation_widget.py::test_generation_worker_legacy_request_falls_back_to_prompt": [],
     "tests/unit/test_llm_generation_widget.py::test_generation_worker_rejects_malformed_structured_prompt": [],
     "tests/unit/test_llm_generation_widget.py::test_generation_worker_skips_disabled_event_context": [],
+    "tests/unit/test_llm_generation_widget.py::test_generation_worker_skips_retrieval_when_disabled_or_zero[False-2]": [],
+    "tests/unit/test_llm_generation_widget.py::test_generation_worker_skips_retrieval_when_disabled_or_zero[True-0]": [],
+    "tests/unit/test_llm_generation_widget.py::test_generation_worker_uses_request_query_and_exact_exclusion": [],
     "tests/unit/test_llm_generation_widget.py::test_initial_selection_is_custom": [],
     "tests/unit/test_llm_generation_widget.py::test_initial_state": [],
     "tests/unit/test_llm_generation_widget.py::test_malformed_generation_settings_fall_back": [],
@@ -4660,6 +5888,12 @@
     "tests/unit/test_lmstudio_config.py::test_derive_all_openai_compatible_endpoints": [],
     "tests/unit/test_lmstudio_config.py::test_model_discovery_returns_sorted_unique_ids": [],
     "tests/unit/test_lmstudio_config.py::test_normalize_migrates_full_endpoint_to_base_url": [],
+    "tests/unit/test_logging_config.py::test_missing_stderr_and_unwritable_destinations_do_not_raise": [],
+    "tests/unit/test_logging_config.py::test_normal_mode_excludes_debug_and_explicit_mode_includes_it": [],
+    "tests/unit/test_logging_config.py::test_processes_get_distinct_diagnostic_and_audit_paths": [],
+    "tests/unit/test_logging_config.py::test_reconfiguration_closes_owned_files_and_preserves_foreign_handler": [],
+    "tests/unit/test_logging_config.py::test_rotation_suspends_and_retries_without_growing_file": [],
+    "tests/unit/test_logging_config.py::test_unwritable_portable_directory_uses_user_data": [],
     "tests/unit/test_longform_authoring.py::test_automatic_inclusion_removal_and_explicit_restore[entities]": [
       "ci_fast"
     ],
@@ -4965,11 +6199,44 @@
     "tests/unit/test_lore_duration_decomposition.py::test_duration_decomposition_complex": [],
     "tests/unit/test_lore_duration_decomposition.py::test_duration_decomposition_exact_year": [],
     "tests/unit/test_lore_duration_decomposition.py::test_duration_decomposition_year_and_month": [],
+    "tests/unit/test_lore_mutation_effects.py::test_atomic_marker_failure_rolls_back_lore_creation[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_lore_mutation_effects.py::test_atomic_marker_failure_rolls_back_lore_creation[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_lore_mutation_effects.py::test_creation_composite_preserves_child_selection[False]": [],
+    "tests/unit/test_lore_mutation_effects.py::test_creation_composite_preserves_child_selection[True]": [],
+    "tests/unit/test_lore_mutation_effects.py::test_creation_fallback_respects_selection_and_avoids_hydration[False-False-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_lore_mutation_effects.py::test_creation_fallback_respects_selection_and_avoids_hydration[False-False-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_lore_mutation_effects.py::test_creation_fallback_respects_selection_and_avoids_hydration[False-True-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_lore_mutation_effects.py::test_creation_fallback_respects_selection_and_avoids_hydration[False-True-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_lore_mutation_effects.py::test_creation_fallback_respects_selection_and_avoids_hydration[True-False-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_lore_mutation_effects.py::test_creation_fallback_respects_selection_and_avoids_hydration[True-False-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_lore_mutation_effects.py::test_creation_fallback_respects_selection_and_avoids_hydration[True-True-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_lore_mutation_effects.py::test_creation_fallback_respects_selection_and_avoids_hydration[True-True-event]": [
+      "ci_fast"
+    ],
     "tests/unit/test_lore_mutation_effects.py::test_delete_checks_active_detail_without_full_reload": [],
     "tests/unit/test_lore_mutation_effects.py::test_editor_save_composite_aggregates_one_effect": [],
     "tests/unit/test_lore_mutation_effects.py::test_event_and_entity_crud_emit_persisted_effects": [],
     "tests/unit/test_lore_mutation_effects.py::test_incremental_handler_patches_cache_without_full_reload": [],
     "tests/unit/test_lore_mutation_effects.py::test_malformed_effect_uses_one_full_fallback": [],
+    "tests/unit/test_lore_mutation_effects.py::test_unrelated_marker_composite_keeps_conservative_refresh": [],
     "tests/unit/test_main_analysis_panel.py::TestMainAnalysisPanelCreation::test_has_intelligence_button": [],
     "tests/unit/test_main_analysis_panel.py::TestMainAnalysisPanelCreation::test_has_intelligence_panel": [],
     "tests/unit/test_main_analysis_panel.py::TestMainAnalysisPanelCreation::test_has_status_label": [],
@@ -5178,6 +6445,114 @@
       "ci_fast"
     ],
     "tests/unit/test_map_drag_overlay.py::test_drag_overlay_visibility": [],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_all_transition_reasons_require_resolution[apply-close Kraken]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_all_transition_reasons_require_resolution[apply-delete this feature]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_all_transition_reasons_require_resolution[apply-delete this map]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_all_transition_reasons_require_resolution[apply-edit another geometry target]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_all_transition_reasons_require_resolution[apply-open another map]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_all_transition_reasons_require_resolution[apply-restore the backup]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_all_transition_reasons_require_resolution[apply-select another world]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_all_transition_reasons_require_resolution[discard-close Kraken]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_all_transition_reasons_require_resolution[discard-delete this feature]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_all_transition_reasons_require_resolution[discard-delete this map]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_all_transition_reasons_require_resolution[discard-edit another geometry target]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_all_transition_reasons_require_resolution[discard-open another map]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_all_transition_reasons_require_resolution[discard-restore the backup]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_all_transition_reasons_require_resolution[discard-select another world]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_all_transition_reasons_require_resolution[keep-close Kraken]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_all_transition_reasons_require_resolution[keep-delete this feature]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_all_transition_reasons_require_resolution[keep-delete this map]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_all_transition_reasons_require_resolution[keep-edit another geometry target]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_all_transition_reasons_require_resolution[keep-open another map]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_all_transition_reasons_require_resolution[keep-restore the backup]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_all_transition_reasons_require_resolution[keep-select another world]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_clean_existing_edit_leaves_without_decision": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_close_event_is_ignored_until_guard_approves[apply]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_close_event_is_ignored_until_guard_approves[discard]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_close_event_is_ignored_until_guard_approves[keep]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_enter_activates_focused_decision[apply_button-apply]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_enter_activates_focused_decision[discard_button-discard]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_enter_activates_focused_decision[keep_button-keep]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_escape_and_disabled_apply_keep_the_draft": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_failure_and_unrelated_results_retain_draft_and_cancel_action": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_first_pending_action_wins_and_world_change_invalidates_it": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_invalid_apply_cannot_release_action": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_new_draft_requires_decision_even_when_unchanged": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_repeated_requests_do_not_replace_approved_destination": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_same_map_list_refresh_reloads_data_without_navigation_prompt": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_edit_transition_coordinator.py::test_selector_keeps_accepted_identity_and_same_map_refresh": [
+      "ci_fast"
+    ],
     "tests/unit/test_map_feature.py::TestBackwardCompatibility::test_marker_alias_is_map_feature": [],
     "tests/unit/test_map_feature.py::TestBackwardCompatibility::test_marker_constructor_unchanged": [],
     "tests/unit/test_map_feature.py::TestBackwardCompatibility::test_marker_from_dict_without_new_fields": [],
@@ -5223,6 +6598,135 @@
     "tests/unit/test_map_feature.py::TestSpatialProperties::test_path_spatial_properties": [],
     "tests/unit/test_map_feature.py::TestSpatialProperties::test_region_spatial_properties": [],
     "tests/unit/test_map_feature.py::TestSpatialProperties::test_spatial_properties_merge_attributes": [],
+    "tests/unit/test_map_feature_actions.py::test_ambiguous_selection_and_group_disable_actions": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_deferred_transition_rechecks_after_approval": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_delete_confirmation_revalidates_target": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_event_and_raster_marker_capabilities": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_layers_button_keyboard_menu_and_tree_selection": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_layers_management_without_available_canvas[absent]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_layers_management_without_available_canvas[hidden]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_layers_management_without_available_canvas[outside]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_locked_layers_target_cannot_edit_previous_canvas_feature[path]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_locked_layers_target_cannot_edit_previous_canvas_feature[point]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_locked_layers_target_cannot_edit_previous_canvas_feature[region]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_map_replacement_disables_old_scene_until_matching_snapshot": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_modal_style_rejects_recreated_scene_item": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_modeless_validity_does_not_apply_after_selection_change": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_open_menu_revalidates_target[date]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_open_menu_revalidates_target[delete]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_open_menu_revalidates_target[lock]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_open_menu_revalidates_target[map]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_open_menu_revalidates_target[selection]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_restricted_capability_vocabulary[marker]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_restricted_capability_vocabulary[path]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_restricted_capability_vocabulary[region]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_returning_to_feature_reopens_valid_modeless_editor": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_same_map_scene_refresh_retains_layers_target": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_theme_layout_keyboard_and_overflow[1400-cyberpunk_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_theme_layout_keyboard_and_overflow[1400-dark_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_theme_layout_keyboard_and_overflow[1400-fantasy_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_theme_layout_keyboard_and_overflow[1400-imperial_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_theme_layout_keyboard_and_overflow[1400-light_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_theme_layout_keyboard_and_overflow[1400-muted_light_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_theme_layout_keyboard_and_overflow[520-cyberpunk_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_theme_layout_keyboard_and_overflow[520-dark_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_theme_layout_keyboard_and_overflow[520-fantasy_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_theme_layout_keyboard_and_overflow[520-imperial_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_theme_layout_keyboard_and_overflow[520-light_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_theme_layout_keyboard_and_overflow[520-muted_light_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_visible_routes_dispatch_existing_intents[canvas-path-Edit path at current date]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_visible_routes_dispatch_existing_intents[canvas-point-Edit appearance]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_visible_routes_dispatch_existing_intents[canvas-region-Edit border at current date]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_visible_routes_dispatch_existing_intents[layers-path-Edit path at current date]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_visible_routes_dispatch_existing_intents[layers-point-Edit appearance]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions.py::test_visible_routes_dispatch_existing_intents[layers-region-Edit border at current date]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_feature_actions_persistence.py::test_visible_region_revision_at_date_apply_undo_redo_reopen": [
+      "ci_fast"
+    ],
     "tests/unit/test_map_feature_ui.py::TestConstantsImport::test_backward_compatible_aliases": [],
     "tests/unit/test_map_feature_ui.py::TestConstantsImport::test_feature_constants_exist": [],
     "tests/unit/test_map_feature_ui.py::TestDrawingMode::test_cancel_clears_vertices": [],
@@ -5320,6 +6824,8 @@
     "tests/unit/test_map_graphics_view.py::TestSpacePanningRasterMode::test_space_release_in_raster_mode_restores_no_drag": [],
     "tests/unit/test_map_handler_create.py::test_cancel_emits_nothing": [],
     "tests/unit/test_map_handler_create.py::test_existing_entity_emits_marker_created": [],
+    "tests/unit/test_map_handler_create.py::test_feature_cancel_does_not_create_lore[path]": [],
+    "tests/unit/test_map_handler_create.py::test_feature_cancel_does_not_create_lore[region]": [],
     "tests/unit/test_map_handler_create.py::test_feature_creation_preserves_chosen_entity_type[path]": [],
     "tests/unit/test_map_handler_create.py::test_feature_creation_preserves_chosen_entity_type[region]": [],
     "tests/unit/test_map_handler_create.py::test_new_object_requests_atomic_creation[choice0-entity]": [],
@@ -5367,6 +6873,78 @@
     "tests/unit/test_map_image_storage.py::TestMapImageStorage::test_relative_path_resolution": [],
     "tests/unit/test_map_image_storage.py::TestMapImageStorage::test_relative_path_storage": [],
     "tests/unit/test_map_image_storage.py::TestMapImageStorage::test_unique_filename_generation": [],
+    "tests/unit/test_map_inspector_navigation.py::test_declined_inspection_retains_local_selection": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_inspector_navigation.py::test_explicit_open_keeps_dirty_inspector_guard": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_inspector_navigation.py::test_hold_and_drag_do_not_navigate": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_inspector_navigation.py::test_layer_selection_opens_with_focused_button_keyboard": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_inspector_navigation.py::test_narrow_toolbar_keeps_labeled_open_action_in_overflow": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_inspector_navigation.py::test_passive_inspection_only_updates_visible_separate_target[hidden-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_inspector_navigation.py::test_passive_inspection_only_updates_visible_separate_target[hidden-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_inspector_navigation.py::test_passive_inspection_only_updates_visible_separate_target[inactive-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_inspector_navigation.py::test_passive_inspection_only_updates_visible_separate_target[inactive-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_inspector_navigation.py::test_passive_inspection_only_updates_visible_separate_target[moved-map-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_inspector_navigation.py::test_passive_inspection_only_updates_visible_separate_target[moved-map-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_inspector_navigation.py::test_passive_inspection_only_updates_visible_separate_target[visible-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_inspector_navigation.py::test_passive_inspection_only_updates_visible_separate_target[visible-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_inspector_navigation.py::test_pending_passive_save_rechecks_moved_workspace": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_inspector_navigation.py::test_pending_save_retains_map_origin_and_new_press_supersedes[False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_inspector_navigation.py::test_pending_save_retains_map_origin_and_new_press_supersedes[True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_inspector_navigation.py::test_same_inspected_object_can_be_opened_explicitly": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_inspector_navigation.py::test_shared_zone_click_stays_on_map_and_explicit_open_reveals[path-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_inspector_navigation.py::test_shared_zone_click_stays_on_map_and_explicit_open_reveals[path-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_inspector_navigation.py::test_shared_zone_click_stays_on_map_and_explicit_open_reveals[point-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_inspector_navigation.py::test_shared_zone_click_stays_on_map_and_explicit_open_reveals[point-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_inspector_navigation.py::test_shared_zone_click_stays_on_map_and_explicit_open_reveals[region-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_inspector_navigation.py::test_shared_zone_click_stays_on_map_and_explicit_open_reveals[region-event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_inspector_navigation.py::test_temporal_hidden_selection_disables_open_and_cannot_open_stale_target": [
+      "ci_fast"
+    ],
     "tests/unit/test_map_keyframe_labels.py::test_collect_keyframe_obstacles_math": [],
     "tests/unit/test_map_keyframe_labels.py::test_marker_dodges_keyframe_label": [],
     "tests/unit/test_map_keyframe_labels.py::test_trajectory_renderer_schedules_layout": [],
@@ -5499,6 +7077,42 @@
     "tests/unit/test_map_layer_opacity_preview.py::test_preview_opacity_suppresses_tree_changed_signal": [],
     "tests/unit/test_map_layer_opacity_preview.py::test_preview_opacity_updates_local_state": [],
     "tests/unit/test_map_layer_renaming_regression.py::test_layer_rename_no_double_signals": [],
+    "tests/unit/test_map_layer_theme_lifecycle.py::test_theme_then_scrub_preserves_selected_layer[cyberpunk_mode-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_layer_theme_lifecycle.py::test_theme_then_scrub_preserves_selected_layer[cyberpunk_mode-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_layer_theme_lifecycle.py::test_theme_then_scrub_preserves_selected_layer[dark_mode-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_layer_theme_lifecycle.py::test_theme_then_scrub_preserves_selected_layer[dark_mode-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_layer_theme_lifecycle.py::test_theme_then_scrub_preserves_selected_layer[fantasy_mode-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_layer_theme_lifecycle.py::test_theme_then_scrub_preserves_selected_layer[fantasy_mode-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_layer_theme_lifecycle.py::test_theme_then_scrub_preserves_selected_layer[imperial_mode-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_layer_theme_lifecycle.py::test_theme_then_scrub_preserves_selected_layer[imperial_mode-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_layer_theme_lifecycle.py::test_theme_then_scrub_preserves_selected_layer[light_mode-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_layer_theme_lifecycle.py::test_theme_then_scrub_preserves_selected_layer[light_mode-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_layer_theme_lifecycle.py::test_theme_then_scrub_preserves_selected_layer[muted_light_mode-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_layer_theme_lifecycle.py::test_theme_then_scrub_preserves_selected_layer[muted_light_mode-True]": [
+      "ci_fast"
+    ],
     "tests/unit/test_map_layer_view_integration.py::TestViewLayerLocks::test_existing_layer_lock_is_applied_to_reloaded_marker": [],
     "tests/unit/test_map_layer_view_integration.py::TestViewLayerLocks::test_initial_layer_lock_is_applied_when_model_attaches": [],
     "tests/unit/test_map_layer_view_integration.py::TestViewLayerLocks::test_locked_canvas_context_menu_only_offers_unlock[show_feature_context_menu]": [],
@@ -6111,6 +7725,8 @@
     ],
     "tests/unit/test_production_workspace.py::test_activity_action_follows_moved_panel": [],
     "tests/unit/test_production_workspace.py::test_factory_layout_matches_workspace_contract": [],
+    "tests/unit/test_production_workspace.py::test_production_map_click_keeps_shared_workspace_active[entity]": [],
+    "tests/unit/test_production_workspace.py::test_production_map_click_keeps_shared_workspace_active[event]": [],
     "tests/unit/test_production_workspace.py::test_production_window_registers_reused_feature_widgets": [],
     "tests/unit/test_production_workspace.py::test_production_window_uses_visible_central_workspace": [],
     "tests/unit/test_production_workspace.py::test_reset_layout_preserves_outer_window_geometry": [],
@@ -6129,6 +7745,8 @@
     "tests/unit/test_prompt_builder.py::TestPromptBuilder::test_substitute_variables": [],
     "tests/unit/test_prompt_builder.py::TestPromptBuilder::test_substitute_variables_missing_context": [],
     "tests/unit/test_prompt_builder.py::TestPromptBuilder::test_system_prompt_enforces_date_free_descriptions": [],
+    "tests/unit/test_prompt_builder.py::test_retrieval_query_bounds_long_task_and_keeps_subject": [],
+    "tests/unit/test_prompt_builder.py::test_retrieval_query_uses_task_and_subject_without_source_content": [],
     "tests/unit/test_prompt_editor_widget.py::TestPromptEditorWidget::test_initial_state": [],
     "tests/unit/test_prompt_editor_widget.py::TestPromptEditorWidget::test_insert_variable": [],
     "tests/unit/test_prompt_editor_widget.py::TestPromptEditorWidget::test_popout_mode": [],
@@ -6174,10 +7792,16 @@
     "tests/unit/test_protocols.py::TestTimelineDataProvider::test_missing_get_events_for_group": [],
     "tests/unit/test_protocols.py::TestTimelineDataProvider::test_missing_get_group_metadata": [],
     "tests/unit/test_protocols.py::TestTimelineDataProvider::test_valid_implementation": [],
+    "tests/unit/test_provider_diagnostic_error.py::test_http_error_reports_status_without_sensitive_content": [],
     "tests/unit/test_qsettings_isolation.py::test_qsettings_group_round_trip": [],
     "tests/unit/test_qsettings_isolation.py::test_qsettings_uses_private_ini_store": [],
+    "tests/unit/test_rag_dedup.py::test_exact_object_exclusion_keeps_same_named_other_object": [],
+    "tests/unit/test_rag_dedup.py::test_hybrid_merge_bounds_semantic_additions_after_unique_mentions": [],
+    "tests/unit/test_rag_dedup.py::test_hybrid_merge_uses_world_object_identity_without_mutating_sources": [],
     "tests/unit/test_rag_dedup.py::test_rag_case_insensitive_deduplication": [],
     "tests/unit/test_rag_dedup.py::test_rag_deduplication": [],
+    "tests/unit/test_rag_dedup.py::test_retrieval_query_content_stays_out_of_ordinary_logs[10]": [],
+    "tests/unit/test_rag_dedup.py::test_retrieval_query_content_stays_out_of_ordinary_logs[20]": [],
     "tests/unit/test_rag_threshold.py::test_rag_custom_threshold": [],
     "tests/unit/test_rag_threshold.py::test_rag_filters_low_score_results": [],
     "tests/unit/test_rag_threshold.py::test_rag_lexical_results_bypass_threshold": [],
@@ -6631,6 +8255,36 @@
     "tests/unit/test_relation_authoring.py::test_bidirectional_replay_collision_rolls_back_first_insert": [
       "ci_fast"
     ],
+    "tests/unit/test_relation_authoring.py::test_both_inline_reversal_gates_reject_direction_sensitive_data[entity-attrs0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_both_inline_reversal_gates_reject_direction_sensitive_data[entity-attrs1]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_both_inline_reversal_gates_reject_direction_sensitive_data[entity-attrs2]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_both_inline_reversal_gates_reject_direction_sensitive_data[entity-attrs3]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_both_inline_reversal_gates_reject_direction_sensitive_data[entity-attrs4]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_both_inline_reversal_gates_reject_direction_sensitive_data[event-attrs0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_both_inline_reversal_gates_reject_direction_sensitive_data[event-attrs1]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_both_inline_reversal_gates_reject_direction_sensitive_data[event-attrs2]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_both_inline_reversal_gates_reject_direction_sensitive_data[event-attrs3]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_both_inline_reversal_gates_reject_direction_sensitive_data[event-attrs4]": [
+      "ci_fast"
+    ],
     "tests/unit/test_relation_authoring.py::test_capture_refinement_full_undo_redo_retains_identity_and_creation": [
       "ci_fast"
     ],
@@ -6649,16 +8303,88 @@
     "tests/unit/test_relation_authoring.py::test_coordinator_capture_feedback_and_relation_refresh_preserve_prose[event]": [
       "ci_fast"
     ],
+    "tests/unit/test_relation_authoring.py::test_drop_connect_is_one_undoable_command_with_preserved_direction[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_drop_connect_is_one_undoable_command_with_preserved_direction[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_drop_does_not_replace_unfinished_draft[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_drop_does_not_replace_unfinished_draft[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_drop_stages_named_directed_draft_and_connect_emits_once[entity-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_drop_stages_named_directed_draft_and_connect_emits_once[entity-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_drop_stages_named_directed_draft_and_connect_emits_once[event-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_drop_stages_named_directed_draft_and_connect_emits_once[event-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_drop_target_rechecks_identity_between_enter_and_drop[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_drop_target_rechecks_identity_between_enter_and_drop[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_escape_discards_staged_drop_without_discarding_prose[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_escape_discards_staged_drop_without_discarding_prose[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_inline_preview_treats_zero_source_event_date_as_available[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_inline_preview_treats_zero_source_event_date_as_available[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_inline_reversal_retains_one_uuid_and_original_metadata[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_inline_reversal_retains_one_uuid_and_original_metadata[event]": [
+      "ci_fast"
+    ],
     "tests/unit/test_relation_authoring.py::test_inline_timing_keeps_fixed_start_and_dynamic_end[entity]": [
       "ci_fast"
     ],
     "tests/unit/test_relation_authoring.py::test_inline_timing_keeps_fixed_start_and_dynamic_end[event]": [
       "ci_fast"
     ],
+    "tests/unit/test_relation_authoring.py::test_invalid_and_self_drops_never_stage_or_mutate[entity-missing-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_invalid_and_self_drops_never_stage_or_mutate[entity-source-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_invalid_and_self_drops_never_stage_or_mutate[entity-target-map]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_invalid_and_self_drops_never_stage_or_mutate[event-missing-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_invalid_and_self_drops_never_stage_or_mutate[event-source-entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_invalid_and_self_drops_never_stage_or_mutate[event-target-map]": [
+      "ci_fast"
+    ],
     "tests/unit/test_relation_authoring.py::test_notes_enter_and_escape_do_not_change_description[entity]": [
       "ci_fast"
     ],
     "tests/unit/test_relation_authoring.py::test_notes_enter_and_escape_do_not_change_description[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_readonly_and_changed_target_reject_drop[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_readonly_and_changed_target_reject_drop[event]": [
       "ci_fast"
     ],
     "tests/unit/test_relation_authoring.py::test_refine_only_notes_and_meaning_preserves_advanced_snapshot[entity]": [
@@ -6674,6 +8400,18 @@
       "ci_fast"
     ],
     "tests/unit/test_relation_authoring.py::test_reversal_is_one_undoable_update_and_stale_snapshot_is_rejected": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_self_relation_is_displayed_once_distinct_ids_remain[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_self_relation_is_displayed_once_distinct_ids_remain[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_whole_inspector_drop_never_stages_or_mutates[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_authoring.py::test_whole_inspector_drop_never_stages_or_mutates[event]": [
       "ci_fast"
     ],
     "tests/unit/test_relation_commands.py::test_add_relation_bidirectional": [
@@ -6730,6 +8468,96 @@
     "tests/unit/test_relation_playhead.py::test_now_is_exact_and_preserves_other_boundary[start-0.0]": [],
     "tests/unit/test_relation_playhead.py::test_now_is_exact_and_preserves_other_boundary[start-125.512345]": [],
     "tests/unit/test_relation_playhead.py::test_playhead_attributes_survive_command_undo_redo": [],
+    "tests/unit/test_relation_presentation.py::test_authoring_choices_keep_order_identity_and_caption_collisions": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_captions_preserve_surface_meaning_and_exact_unknown_keys[--]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_captions_preserve_surface_meaning_and_exact_unknown_keys[Member of-Member of-Member of]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_captions_preserve_surface_meaning_and_exact_unknown_keys[guards \\xc6lf's gate-guards \\xc6lf's gate-guards \\xc6lf's gate]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_captions_preserve_surface_meaning_and_exact_unknown_keys[involved-Participation-Participant in]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_captions_preserve_surface_meaning_and_exact_unknown_keys[member_of-Member of-Member of]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_captions_preserve_surface_meaning_and_exact_unknown_keys[mentions-Reference (read-only)-mentions]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_captions_preserve_surface_meaning_and_exact_unknown_keys[participated_in-Participation-participated_in]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_captions_preserve_surface_meaning_and_exact_unknown_keys[related-Connected \\u2014 kind not specified-Connected \\u2014 kind not specified]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_full_form_defaults_and_returned_choices_are_independent[None]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_full_form_defaults_and_returned_choices_are_independent[known1]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_full_form_observed_types_are_sorted_without_normalizing_keys": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_previews_preserve_original_direction_rules[custom oath-False-True-B \\u2192 A: custom oath-B \\u2192 custom oath \\u2192 A]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_previews_preserve_original_direction_rules[involved-False-False-A participates in B.-A \\u2192 Participation \\u2192 B]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_previews_preserve_original_direction_rules[involved-True-False-B participates in A.-A \\u2192 Participation \\u2192 B]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_previews_preserve_original_direction_rules[involved-True-True-B participates in A.-B \\u2192 Participation \\u2192 A]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_previews_preserve_original_direction_rules[member_of-True-False-A \\u2192 B: Member of-A \\u2192 Member of \\u2192 B]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_previews_preserve_original_direction_rules[related-False-False-A is connected to B; kind not specified.-A \\u2192 Connected \\u2014 kind not specified \\u2192 B]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_previews_preserve_original_direction_rules[related-True-True-B is connected to A; kind not specified.-B \\u2192 Connected \\u2014 kind not specified \\u2192 A]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_reversal_assessment_preserves_truthiness_and_string_compatibility[attributes0-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_reversal_assessment_preserves_truthiness_and_string_compatibility[attributes1-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_reversal_assessment_preserves_truthiness_and_string_compatibility[attributes10-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_reversal_assessment_preserves_truthiness_and_string_compatibility[attributes2-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_reversal_assessment_preserves_truthiness_and_string_compatibility[attributes3-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_reversal_assessment_preserves_truthiness_and_string_compatibility[attributes4-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_reversal_assessment_preserves_truthiness_and_string_compatibility[attributes5-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_reversal_assessment_preserves_truthiness_and_string_compatibility[attributes6-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_reversal_assessment_preserves_truthiness_and_string_compatibility[attributes7-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_reversal_assessment_preserves_truthiness_and_string_compatibility[attributes8-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_relation_presentation.py::test_reversal_assessment_preserves_truthiness_and_string_compatibility[attributes9-True]": [
+      "ci_fast"
+    ],
     "tests/unit/test_relation_repo_temporal.py::test_insert_and_retrieve_temporal_relation": [
       "ci_fast"
     ],
@@ -6820,6 +8648,12 @@
     "tests/unit/test_responsive_panel_toolbars.py::test_project_filters_keep_selectors_and_overflow_actions": [],
     "tests/unit/test_responsive_panel_toolbars.py::test_project_panel_keeps_new_menu_available_at_narrow_width": [],
     "tests/unit/test_responsive_panel_toolbars.py::test_timeline_keeps_playback_and_overflows_secondary_options": [],
+    "tests/unit/test_runtime_diagnostics.py::test_diagnostic_write_failure_still_delegates_original_exception": [],
+    "tests/unit/test_runtime_diagnostics.py::test_launcher_import_failure_is_persisted_before_application_import": [],
+    "tests/unit/test_runtime_diagnostics.py::test_native_fault_writes_persistent_traceback_in_child_process": [],
+    "tests/unit/test_runtime_diagnostics.py::test_qt_callback_and_warning_are_persisted_once_in_real_event_loop": [],
+    "tests/unit/test_runtime_diagnostics.py::test_qt_fatal_message_is_persisted_before_child_aborts": [],
+    "tests/unit/test_runtime_diagnostics.py::test_uncaught_python_and_thread_tracebacks_are_persisted": [],
     "tests/unit/test_scale_bar_painter.py::TestScaleBarPainterPositioning::test_scale_bar_formats_distance_correctly": [],
     "tests/unit/test_scale_bar_painter.py::TestScaleBarPainterPositioning::test_scale_bar_rounds_to_nice_numbers": [],
     "tests/unit/test_scale_bar_painter.py::TestScaleBarPainterPositioning::test_scale_bar_x_position_clamped_at_large_scales": [],
@@ -6858,6 +8692,9 @@
       "ci_fast"
     ],
     "tests/unit/test_search_service.py::test_index_event": [
+      "ci_fast"
+    ],
+    "tests/unit/test_search_service.py::test_lexical_snippet_uses_only_matching_type_and_active_model": [
       "ci_fast"
     ],
     "tests/unit/test_search_service.py::test_model_dimension_filtering": [
@@ -6957,6 +8794,27 @@
       "ci_fast"
     ],
     "tests/unit/test_search_utils.py::test_matches_search_with_dict": [
+      "ci_fast"
+    ],
+    "tests/unit/test_secondary_action_theme.py::test_activity_buttons_share_intrinsic_size_after_label_and_font_changes": [
+      "ci_fast"
+    ],
+    "tests/unit/test_secondary_action_theme.py::test_secondary_actions_share_rendered_states_and_keep_other_roles[cyberpunk_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_secondary_action_theme.py::test_secondary_actions_share_rendered_states_and_keep_other_roles[dark_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_secondary_action_theme.py::test_secondary_actions_share_rendered_states_and_keep_other_roles[fantasy_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_secondary_action_theme.py::test_secondary_actions_share_rendered_states_and_keep_other_roles[imperial_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_secondary_action_theme.py::test_secondary_actions_share_rendered_states_and_keep_other_roles[light_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_secondary_action_theme.py::test_secondary_actions_share_rendered_states_and_keep_other_roles[muted_light_mode]": [
       "ci_fast"
     ],
     "tests/unit/test_section_parsing.py::test_section_manager_initializes": [],
@@ -7198,6 +9056,54 @@
     "tests/unit/test_startup_check.py::test_check_environment_lists_missing_modules": [],
     "tests/unit/test_startup_check.py::test_format_environment_error_includes_recovery_command": [],
     "tests/unit/test_startup_check.py::test_write_startup_failure_uses_log_directory": [],
+    "tests/unit/test_startup_event_dispatch.py::test_focus_writing_theme_flood_does_not_resolve_help[entity-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_startup_event_dispatch.py::test_focus_writing_theme_flood_does_not_resolve_help[entity-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_startup_event_dispatch.py::test_focus_writing_theme_flood_does_not_resolve_help[event-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_startup_event_dispatch.py::test_focus_writing_theme_flood_does_not_resolve_help[event-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_startup_event_dispatch.py::test_global_shortcuts_ignore_theme_events_before_context[100]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_startup_event_dispatch.py::test_global_shortcuts_ignore_theme_events_before_context[39]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_startup_event_dispatch.py::test_global_shortcuts_ignore_theme_events_before_context[74]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_startup_event_dispatch.py::test_global_shortcuts_ignore_theme_events_before_context[76]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_startup_event_dispatch.py::test_global_shortcuts_ignore_theme_events_before_context[77]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_startup_event_dispatch.py::test_global_shortcuts_ignore_theme_events_before_context[97]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_startup_event_dispatch.py::test_help_filters_ignore_theme_events_before_context[100]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_startup_event_dispatch.py::test_help_filters_ignore_theme_events_before_context[39]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_startup_event_dispatch.py::test_help_filters_ignore_theme_events_before_context[74]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_startup_event_dispatch.py::test_help_filters_ignore_theme_events_before_context[76]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_startup_event_dispatch.py::test_help_filters_ignore_theme_events_before_context[77]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_startup_event_dispatch.py::test_help_filters_ignore_theme_events_before_context[97]": [
+      "ci_fast"
+    ],
     "tests/unit/test_style_helper.py::test_apply_compact_spacing": [],
     "tests/unit/test_style_helper.py::test_apply_form_spacing": [],
     "tests/unit/test_style_helper.py::test_apply_no_margins": [],
@@ -7295,6 +9201,7 @@
     "tests/unit/test_summary_service.py::test_second_overlong_response_is_trimmed_at_sentence_boundary": [],
     "tests/unit/test_summary_service.py::test_short_source_prompt_requires_one_sentence": [],
     "tests/unit/test_summary_service.py::test_short_summary_limit_remains_shorter_than_source": [],
+    "tests/unit/test_summary_service.py::test_summary_diagnostics_exclude_prompt_and_response_content": [],
     "tests/unit/test_summary_service.py::test_too_short_source_is_rejected_before_provider": [],
     "tests/unit/test_summary_service.py::test_two_overlong_responses_preserve_existing_summary": [],
     "tests/unit/test_summary_service_provider.py::test_get_provider_fallback_raises_error": [],
@@ -7641,6 +9548,54 @@
     "tests/unit/test_temporal_display.py::test_year_extent_is_calendar_bound_not_midpoint[800]": [
       "ci_fast"
     ],
+    "tests/unit/test_temporal_entity_draft_service.py::test_addition_requires_explicit_destination[destination0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_draft_service.py::test_addition_requires_explicit_destination[destination1]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_draft_service.py::test_addition_requires_explicit_destination[destination2]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_draft_service.py::test_choices_are_copied_and_no_partial_payload_escapes": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_draft_service.py::test_metadata_only_preserves_empty_and_deleted_summary_intent[None]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_draft_service.py::test_metadata_only_preserves_empty_and_deleted_summary_intent[summary1]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_draft_service.py::test_metadata_only_preserves_empty_and_deleted_summary_intent[summary2]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_draft_service.py::test_preparation_and_pending_intent_own_nested_copies": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_draft_service.py::test_removal_preserves_the_selected_meaning[removal0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_draft_service.py::test_removal_preserves_the_selected_meaning[removal1]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_draft_service.py::test_removal_preserves_the_selected_meaning[removal2]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_draft_service.py::test_same_description_can_start_a_new_dated_owner": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_draft_service.py::test_sheet_reordering_is_saved_only_with_unchanged_visible_keys": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_draft_service.py::test_source_corrections_do_not_choose_new_ownership[source0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_draft_service.py::test_source_corrections_do_not_choose_new_ownership[source1]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_draft_service.py::test_unchanged_draft_ignores_hidden_values_and_displayed_layout": [
+      "ci_fast"
+    ],
     "tests/unit/test_temporal_entity_edit_command.py::test_baseline_metadata_and_hidden_attributes_are_preserved": [
       "ci_fast"
     ],
@@ -7653,13 +9608,118 @@
     "tests/unit/test_temporal_entity_edit_command.py::test_dated_change_and_removal_meanings": [
       "ci_fast"
     ],
+    "tests/unit/test_temporal_entity_edit_command.py::test_dated_groups_observe_previous_insert_and_preserve_existing_event": [
+      "ci_fast"
+    ],
     "tests/unit/test_temporal_entity_edit_command.py::test_empty_description_and_expired_owner_return_to_baseline": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_command.py::test_invalid_dated_event_rejects_after_baseline_write_without_partial_save[missing]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_command.py::test_invalid_dated_event_rejects_after_baseline_write_without_partial_save[wrong_date]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_command.py::test_late_failure_rolls_back_baseline_tags_relations_and_created_events[checkpoint]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_command.py::test_late_failure_rolls_back_baseline_tags_relations_and_created_events[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_command.py::test_late_failure_rolls_back_baseline_tags_relations_and_created_events[relation]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_command.py::test_late_failure_rolls_back_baseline_tags_relations_and_created_events[unexpected]": [
       "ci_fast"
     ],
     "tests/unit/test_temporal_entity_edit_command.py::test_mixed_source_correction_preserves_unrelated_data_and_undo": [
       "ci_fast"
     ],
+    "tests/unit/test_temporal_entity_edit_command.py::test_planning_and_payload_rejections_keep_existing_diagnostics[bad_metadata]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_command.py::test_planning_and_payload_rejections_keep_existing_diagnostics[bad_payload]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_command.py::test_planning_and_payload_rejections_keep_existing_diagnostics[bad_scope]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_command.py::test_planning_and_payload_rejections_keep_existing_diagnostics[missing_relation]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_command.py::test_planning_and_payload_rejections_keep_existing_diagnostics[no_owner]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_command.py::test_planning_and_payload_rejections_keep_existing_diagnostics[wrong_target]": [
+      "ci_fast"
+    ],
     "tests/unit/test_temporal_entity_edit_command.py::test_provenance_identifies_each_winning_field": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_command.py::test_shared_owner_is_read_once_and_restored_history_rebuilds_plan": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_planner.py::test_attribute_action_sequences_retain_existing_mask_semantics[actions0-initial0-expected0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_planner.py::test_attribute_action_sequences_retain_existing_mask_semantics[actions1-initial1-expected1]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_planner.py::test_attribute_action_sequences_retain_existing_mask_semantics[actions2-initial2-expected2]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_planner.py::test_attribute_action_sequences_retain_existing_mask_semantics[actions3-initial3-expected3]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_planner.py::test_attribute_action_sequences_retain_existing_mask_semantics[actions4-initial4-expected4]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_planner.py::test_baseline_removals_delete_the_key[remove_override]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_planner.py::test_baseline_removals_delete_the_key[unset]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_planner.py::test_dated_groups_keep_first_use_order_untrimmed_names_and_last_patch": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_planner.py::test_description_override_removal_and_empty_baseline": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_planner.py::test_hidden_metadata_removal_and_noop[_sheet_layout]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_planner.py::test_hidden_metadata_removal_and_noop[_summary_data]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_planner.py::test_hidden_metadata_removal_and_noop[_tags]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_planner.py::test_metadata_only_name_type_and_tags": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_planner.py::test_missing_or_wrong_target_relation_rejects[None]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_planner.py::test_missing_or_wrong_target_relation_rejects[record1]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_planner.py::test_mixed_plan_preserves_unrelated_values_and_detaches_all_nested_inputs": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_planner.py::test_planning_rejections_preserve_messages_and_inputs[patch0-metadata0-A new field needs a baseline or dated scope]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_planner.py::test_planning_rejections_preserve_messages_and_inputs[patch1-metadata1-Unknown edit scope: unknown]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_planner.py::test_planning_rejections_preserve_messages_and_inputs[patch2-metadata2-Choose an event or enter a new event name]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_planner.py::test_planning_rejections_preserve_messages_and_inputs[patch3-metadata3-Unsupported baseline metadata: _private]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_entity_edit_planner.py::test_relation_snapshot_collection_is_distinct_and_excludes_explicit_destinations": [
       "ci_fast"
     ],
     "tests/unit/test_temporal_manager.py::test_caching_behavior": [],
@@ -7758,6 +9818,18 @@
     "tests/unit/test_temporal_save_checkpoint.py::test_acknowledgement_keeps_newer_attribute_edits[True]": [
       "ci_fast"
     ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_autosave_defers_ownership_choices_without_partial_save[False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_autosave_defers_ownership_choices_without_partial_save[True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_cancelled_ownership_choice_keeps_whole_draft[False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_cancelled_ownership_choice_keeps_whole_draft[True]": [
+      "ci_fast"
+    ],
     "tests/unit/test_temporal_save_checkpoint.py::test_checkpoint_failure_rolls_back_edit": [
       "ci_fast"
     ],
@@ -7765,6 +9837,9 @@
       "ci_fast"
     ],
     "tests/unit/test_temporal_save_checkpoint.py::test_composite_checkpoint_failure_rolls_back_children": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_conflict_log_identifies_field_source_and_operation_without_values": [
       "ci_fast"
     ],
     "tests/unit/test_temporal_save_checkpoint.py::test_consecutive_saves_without_background_refresh[False-False--12.0]": [
@@ -7801,6 +9876,36 @@
       "ci_fast"
     ],
     "tests/unit/test_temporal_save_checkpoint.py::test_consecutive_saves_without_background_refresh[True-True-12.0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_context_change_at_destination_does_not_open_hidden_baseline_confirmation": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_context_change_at_event_picker_does_not_open_event_name_dialog": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_context_changes_during_choice_abandon_preparation[clear]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_context_changes_during_choice_abandon_preparation[discard]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_context_changes_during_choice_abandon_preparation[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_context_changes_during_choice_abandon_preparation[generation]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_context_changes_during_choice_abandon_preparation[metadata]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_context_changes_during_choice_abandon_preparation[revision]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_context_changes_during_choice_abandon_preparation[state]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_context_changes_during_choice_abandon_preparation[time]": [
       "ci_fast"
     ],
     "tests/unit/test_temporal_save_checkpoint.py::test_coordinator_handles_missing_checkpoint_as_saved_but_unacknowledged": [
@@ -7845,10 +9950,43 @@
     "tests/unit/test_temporal_save_checkpoint.py::test_invalid_acknowledgement_keeps_draft_and_stops_retries[wrong_time]": [
       "ci_fast"
     ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_later_cancel_does_not_keep_earlier_ownership_choice": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_nested_save_is_ignored_while_choosing": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_preparation_exception_releases_guard_without_starting_save": [
+      "ci_fast"
+    ],
     "tests/unit/test_temporal_save_checkpoint.py::test_rapid_typing_uses_acknowledgement_before_real_autosave_timer": [
       "ci_fast"
     ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_request_transport_cannot_mutate_pending_intent_or_comparisons": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_reset_releases_submitted_intent_and_ignores_late_ack[clear]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_reset_releases_submitted_intent_and_ignores_late_ack[discard]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_reset_releases_submitted_intent_and_ignores_late_ack[hydrate]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_reset_releases_submitted_intent_and_ignores_late_ack[missing]": [
+      "ci_fast"
+    ],
     "tests/unit/test_temporal_save_checkpoint.py::test_snapshot_uses_calendar_aware_resolution_for_verification": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_source_only_conflict_records_provenance_without_description": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_success_and_composite_conflict_keep_diagnostics_separate": [
+      "ci_fast"
+    ],
+    "tests/unit/test_temporal_save_checkpoint.py::test_success_keeps_newer_summary_and_dated_description_intent": [
       "ci_fast"
     ],
     "tests/unit/test_temporal_save_checkpoint.py::test_worker_delivers_checkpoint_after_commit_and_history_round_trip": [
@@ -7940,6 +10078,15 @@
     "tests/unit/test_time_coordinator.py::test_go_to_date_discarded_draft_centers_target[date]": [],
     "tests/unit/test_time_coordinator.py::test_go_to_date_discarded_draft_centers_target[event]": [],
     "tests/unit/test_time_coordinator.py::test_go_to_date_uses_playhead_fanout_and_centers": [],
+    "tests/unit/test_time_coordinator.py::test_real_timeline_context_follows_authoring_guard[cancel]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_time_coordinator.py::test_real_timeline_context_follows_authoring_guard[save-failure]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_time_coordinator.py::test_real_timeline_context_follows_authoring_guard[save-success]": [
+      "ci_fast"
+    ],
     "tests/unit/test_time_coordinator.py::test_relation_context_uses_playhead_not_world_time": [],
     "tests/unit/test_time_coordinator.py::test_show_world_at_event_ignores_stale_id[event-False]": [],
     "tests/unit/test_time_coordinator.py::test_show_world_at_event_ignores_stale_id[other-True]": [],
@@ -8131,7 +10278,57 @@
     "tests/unit/test_timeline_display.py::test_playhead_highlighting": [],
     "tests/unit/test_timeline_display.py::test_single_event_display": [],
     "tests/unit/test_timeline_display.py::test_timeline_escapes_stored_relation_and_payload_text": [],
+    "tests/unit/test_timeline_display.py::test_viewed_date_position_for_sparse_and_outside_lists[event_dates0-150.0-expected_order0]": [],
+    "tests/unit/test_timeline_display.py::test_viewed_date_position_for_sparse_and_outside_lists[event_dates1-50.0-expected_order1]": [],
+    "tests/unit/test_timeline_display.py::test_viewed_date_position_for_sparse_and_outside_lists[event_dates2-100.0-expected_order2]": [],
+    "tests/unit/test_timeline_display.py::test_viewed_date_position_for_sparse_and_outside_lists[event_dates3-150.0-expected_order3]": [],
+    "tests/unit/test_timeline_display.py::test_viewed_date_position_for_sparse_and_outside_lists[event_dates4-50.0-expected_order4]": [],
+    "tests/unit/test_timeline_display.py::test_viewed_date_position_for_sparse_and_outside_lists[event_dates5-100.0-expected_order5]": [],
+    "tests/unit/test_timeline_display.py::test_viewed_date_position_for_sparse_and_outside_lists[event_dates6-150.0-expected_order6]": [],
+    "tests/unit/test_timeline_display.py::test_viewed_date_position_for_sparse_and_outside_lists[event_dates7-200.0-expected_order7]": [],
+    "tests/unit/test_timeline_display.py::test_viewed_date_position_for_sparse_and_outside_lists[event_dates8-250.0-expected_order8]": [],
+    "tests/unit/test_timeline_display.py::test_viewed_date_position_for_sparse_and_outside_lists[event_dates9-250.0-expected_order9]": [],
+    "tests/unit/test_timeline_display.py::test_viewing_and_world_time_are_distinct_and_calendar_formatted": [],
     "tests/unit/test_timeline_display.py::test_widget_creation": [],
+    "tests/unit/test_timeline_event_preparation_service.py::test_absent_delete_cannot_erase_prior_geometry_change[delete]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_event_preparation_service.py::test_absent_delete_cannot_erase_prior_geometry_change[move]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_event_preparation_service.py::test_absent_deletion_is_not_a_geometry_change": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_event_preparation_service.py::test_geometry_and_grouping_fields_invalidate[attributes-value5]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_event_preparation_service.py::test_geometry_and_grouping_fields_invalidate[lore_date--0.125]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_event_preparation_service.py::test_geometry_and_grouping_fields_invalidate[lore_duration-0.25]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_event_preparation_service.py::test_geometry_and_grouping_fields_invalidate[name-Longer name]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_event_preparation_service.py::test_geometry_and_grouping_fields_invalidate[tags-value4]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_event_preparation_service.py::test_geometry_and_grouping_fields_invalidate[type-combat]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_event_preparation_service.py::test_metadata_refresh_does_not_repack": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_event_preparation_service.py::test_ordered_effects_preserve_untouched_identity_and_last_update": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_event_preparation_service.py::test_replacement_keeps_identity_and_equal_date_order": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_event_preparation_service.py::test_upsert_then_delete_leaves_no_upsert": [
+      "ci_fast"
+    ],
     "tests/unit/test_timeline_fit.py::TestFitAll::test_fit_all_events_only": [],
     "tests/unit/test_timeline_fit.py::TestFitAll::test_fit_all_includes_current_time": [],
     "tests/unit/test_timeline_fit.py::TestFitAll::test_fit_all_includes_playhead": [],
@@ -8231,6 +10428,150 @@
     "tests/unit/test_timeline_lane_packer.py::TestTimelineLanePacker::test_overlapping_events_different_lanes": [],
     "tests/unit/test_timeline_lane_packer.py::TestTimelineLanePacker::test_point_events": [],
     "tests/unit/test_timeline_lane_packer.py::TestTimelineLanePacker::test_scale_factor_update": [],
+    "tests/unit/test_timeline_layout_boundary.py::test_actual_worker_delivery_applies_scene_on_gui_thread": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_layout_boundary.py::test_batch_missing_delete_keeps_one_debounced_layout": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_layout_boundary.py::test_calendar_change_invalidates_active_result": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_layout_boundary.py::test_current_error_falls_back_to_fresh_sync_layout": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_layout_boundary.py::test_deleting_final_events_invalidates_worker_and_stops_timer": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_layout_boundary.py::test_grouped_transition_ignores_pending_standard_layout[DUPLICATE-2]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_layout_boundary.py::test_grouped_transition_ignores_pending_standard_layout[FIRST_MATCH-1]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_layout_boundary.py::test_latest_request_coalesces_and_ignores_obsolete_callbacks": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_layout_boundary.py::test_measured_inputs_are_detached": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_layout_boundary.py::test_metadata_refresh_updates_group_duplicates_without_repack": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_layout_boundary.py::test_preview_change_invalidates_worker": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_layout_boundary.py::test_pure_packing_stable_ties_and_variable_heights": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_layout_boundary.py::test_replacement_reuses_selected_item_and_removes_guides": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_layout_boundary.py::test_stale_completion_consumes_pending_debounce": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_layout_boundary.py::test_stale_completion_redispatches_current_threshold[False-0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_layout_boundary.py::test_stale_completion_redispatches_current_threshold[False-1]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_layout_boundary.py::test_stale_completion_redispatches_current_threshold[True-0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_layout_boundary.py::test_stale_completion_redispatches_current_threshold[True-1]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_layout_boundary.py::test_worker_failure_retains_token": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_layout_boundary.py::test_worker_returns_token_and_only_packs_records": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_accepted_context_survives_pan_zoom_selection_then_clears": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_collapsed_band_receives_uncertainty_and_legacy_dates_stay_exact": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_date_caption_and_time_roles_remain_readable_in_future_state[cyberpunk_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_date_caption_and_time_roles_remain_readable_in_future_state[dark_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_date_caption_and_time_roles_remain_readable_in_future_state[fantasy_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_date_caption_and_time_roles_remain_readable_in_future_state[imperial_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_date_caption_and_time_roles_remain_readable_in_future_state[light_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_date_caption_and_time_roles_remain_readable_in_future_state[muted_light_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_duration_length_never_includes_occurrence_uncertainty[1218]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_duration_length_never_includes_occurrence_uncertainty[June 1218]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_duration_length_never_includes_occurrence_uncertainty[after 1218]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_duration_length_never_includes_occurrence_uncertainty[before 1218]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_duration_length_never_includes_occurrence_uncertainty[between June 1218 and October 1218]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_duration_length_never_includes_occurrence_uncertainty[c. 1218]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_first_items_do_not_hide_behind_time_identity_rows": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_independent_endpoints_do_not_invent_an_authored_length": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_invalid_calendar_still_uses_actual_error_symbol": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_manual_snap_publishes_target_without_modifying_assertions": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_measure_threshold_is_independent_from_year_and_presence_thresholds": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_production_group_duplicates_share_zoom_and_refresh_captions": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_rejected_and_deferred_navigation_do_not_replace_accepted_context": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_saved_playhead_restores_after_complete_widget_initialization[-12.5]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_saved_playhead_restores_after_complete_widget_initialization[0.0]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_saved_playhead_restores_after_complete_widget_initialization[42.25]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_saved_playhead_restores_after_complete_widget_initialization[444682.5]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_shared_hit_and_packing_extents_cover_all_three_channels": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_target_refresh_and_deletion_clear_stale_context": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_time_lines_remain_dashed_and_coincident_identity_is_named": [
+      "ci_fast"
+    ],
     "tests/unit/test_timeline_rendering.py::test_event_item_bounding_rect": [],
     "tests/unit/test_timeline_rendering.py::test_event_item_flags": [],
     "tests/unit/test_timeline_rendering.py::test_event_item_paint": [],
@@ -8391,6 +10732,7 @@
     "tests/unit/test_trajectory_commands.py::test_update_command_serialization_preserves_undo_state": [
       "ci_fast"
     ],
+    "tests/unit/test_trajectory_edit_coordinator.py::test_accepted_map_notification_does_not_discard_draft": [],
     "tests/unit/test_trajectory_edit_coordinator.py::test_apply_does_not_move_playhead_to_proposed_date": [],
     "tests/unit/test_trajectory_edit_coordinator.py::test_apply_emits_one_atomic_command_and_waits_for_reload": [],
     "tests/unit/test_trajectory_edit_coordinator.py::test_cancel_date_restores_date_but_keeps_spatial_edit_and_playhead": [],
@@ -8403,12 +10745,14 @@
     "tests/unit/test_trajectory_edit_coordinator.py::test_date_edit_does_not_move_playhead_or_follow_navigation": [],
     "tests/unit/test_trajectory_edit_coordinator.py::test_deleting_down_to_one_point_restarts_guided_second_location_flow": [],
     "tests/unit/test_trajectory_edit_coordinator.py::test_direct_date_input_changes_proposal_without_moving_playhead": [],
+    "tests/unit/test_trajectory_edit_coordinator.py::test_failed_acknowledgement_reload_does_not_release_navigation": [],
     "tests/unit/test_trajectory_edit_coordinator.py::test_full_cancel_keeps_current_playhead": [],
     "tests/unit/test_trajectory_edit_coordinator.py::test_guided_accept_rejection_is_shown_inline_when_playhead_did_not_advance": [],
     "tests/unit/test_trajectory_edit_coordinator.py::test_invalid_playhead_date_is_shown_inline": [],
     "tests/unit/test_trajectory_edit_coordinator.py::test_one_point_track_opens_guided_and_accepts_later_playhead_destination": [],
     "tests/unit/test_trajectory_edit_coordinator.py::test_selected_keyframe_date_can_copy_current_playhead_without_moving_it": [],
     "tests/unit/test_trajectory_edit_coordinator.py::test_speed_equalization_preview_has_no_persistence_side_effect": [],
+    "tests/unit/test_trajectory_edit_coordinator.py::test_transition_apply_waits_for_expected_authoritative_reload": [],
     "tests/unit/test_trajectory_edit_coordinator.py::test_use_playhead_inside_date_edit_keeps_suboperation_open": [],
     "tests/unit/test_trajectory_edit_coordinator.py::test_whole_speed_equalization_uses_map_distance_context": [],
     "tests/unit/test_trajectory_edit_overlay.py::test_date_edit_highlights_adjacent_affected_segments": [],
@@ -8849,6 +11193,15 @@
     "tests/unit/test_wiki_link_authoring.py::test_mixed_formatting_whitespace_and_supported_roundtrip": [
       "ci_fast"
     ],
+    "tests/unit/test_wiki_link_authoring.py::test_peek_cursor_recolors_with_theme_without_editing_document": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_peek_eye_cursor_matches_modifier_and_preserves_writing[False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_wiki_link_authoring.py::test_peek_eye_cursor_matches_modifier_and_preserves_writing[True]": [
+      "ci_fast"
+    ],
     "tests/unit/test_wiki_link_authoring.py::test_selected_prose_label_identity_undo_and_following_typing[rich]": [
       "ci_fast"
     ],
@@ -8975,7 +11328,9 @@
     "tests/unit/test_worker.py::test_run_command_failure": [],
     "tests/unit/test_worker.py::test_run_command_success": [],
     "tests/unit/test_worker.py::test_save_current_time": [],
+    "tests/unit/test_worker.py::test_serialized_command_result_retains_original_trace": [],
     "tests/unit/test_worker.py::test_successful_command_and_undo_invalidate_temporal_cache": [],
+    "tests/unit/test_worker.py::test_summary_failure_log_excludes_exception_content": [],
     "tests/unit/test_worker_embedding_queue.py::TestEmbeddingQueue::test_concurrent_embedding_gets_queued": [],
     "tests/unit/test_worker_embedding_queue.py::TestEmbeddingQueue::test_do_index_clears_flag_after_completion": [],
     "tests/unit/test_worker_embedding_queue.py::TestEmbeddingQueue::test_do_index_clears_flag_on_exception": [],
@@ -8996,6 +11351,60 @@
     "tests/unit/test_worker_index_caching.py::TestIndexObjectCaching::test_second_index_object_call_reuses_same_service": [],
     "tests/unit/test_worker_index_caching.py::TestRebuildSearchIndexCaching::test_rebuild_handles_import_error_from_get_service": [],
     "tests/unit/test_worker_index_caching.py::TestRebuildSearchIndexCaching::test_rebuild_uses_cached_service": [],
+    "tests/unit/test_worker_load_failures.py::test_simple_load_contract[data-entities]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_worker_load_failures.py::test_simple_load_contract[data-events]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_worker_load_failures.py::test_simple_load_contract[data-maps]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_worker_load_failures.py::test_simple_load_contract[empty-entities]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_worker_load_failures.py::test_simple_load_contract[empty-events]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_worker_load_failures.py::test_simple_load_contract[empty-maps]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_worker_load_failures.py::test_simple_load_contract[operational-entities]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_worker_load_failures.py::test_simple_load_contract[operational-events]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_worker_load_failures.py::test_simple_load_contract[operational-maps]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_worker_load_failures.py::test_simple_load_contract[refresh-entities]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_worker_load_failures.py::test_simple_load_contract[refresh-events]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_worker_load_failures.py::test_simple_load_contract[refresh-maps]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_worker_load_failures.py::test_simple_load_contract[unavailable-entities]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_worker_load_failures.py::test_simple_load_contract[unavailable-events]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_worker_load_failures.py::test_simple_load_contract[unavailable-maps]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_worker_load_failures.py::test_simple_load_contract[unexpected-entities]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_worker_load_failures.py::test_simple_load_contract[unexpected-events]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_worker_load_failures.py::test_simple_load_contract[unexpected-maps]": [
+      "ci_fast"
+    ],
     "tests/unit/test_worker_manager_debounce.py::TestIndexDebounce::test_debounce_constant_is_reasonable": [],
     "tests/unit/test_worker_manager_debounce.py::TestIndexDebounce::test_disabled_auto_index_does_not_start_timer": [],
     "tests/unit/test_worker_manager_debounce.py::TestIndexDebounce::test_does_not_emit_immediately": [],
@@ -9231,6 +11640,45 @@
       "ci_fast"
     ],
     "tests/unit/test_world_validator.py::test_get_all_relations_on_db_service": [
+      "ci_fast"
+    ],
+    "tests/unit/test_writing_toolbar.py::test_compact_selector_and_button_tooltips": [
+      "ci_fast"
+    ],
+    "tests/unit/test_writing_toolbar.py::test_edit_menu_uses_native_editor_undo_and_redo": [
+      "ci_fast"
+    ],
+    "tests/unit/test_writing_toolbar.py::test_format_menu_reuses_existing_shortcut_actions": [
+      "ci_fast"
+    ],
+    "tests/unit/test_writing_toolbar.py::test_narrow_formatting_strip_retains_full_menu_commands": [
+      "ci_fast"
+    ],
+    "tests/unit/test_writing_toolbar.py::test_narrow_secondary_overflow_keeps_disabled_link_routes": [
+      "ci_fast"
+    ],
+    "tests/unit/test_writing_toolbar.py::test_opening_writing_menus_preserves_draft_selection_and_undo[False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_writing_toolbar.py::test_opening_writing_menus_preserves_draft_selection_and_undo[True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_writing_toolbar.py::test_theme_switch_preserves_authoring_history_and_recolors_icons[cyberpunk_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_writing_toolbar.py::test_theme_switch_preserves_authoring_history_and_recolors_icons[dark_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_writing_toolbar.py::test_theme_switch_preserves_authoring_history_and_recolors_icons[fantasy_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_writing_toolbar.py::test_theme_switch_preserves_authoring_history_and_recolors_icons[imperial_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_writing_toolbar.py::test_theme_switch_preserves_authoring_history_and_recolors_icons[light_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_writing_toolbar.py::test_theme_switch_preserves_authoring_history_and_recolors_icons[muted_light_mode]": [
       "ci_fast"
     ]
   }

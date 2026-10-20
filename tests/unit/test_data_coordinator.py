@@ -74,9 +74,7 @@ def coordinator(fake_window):
     return DataCoordinator(fake_window)
 
 
-def test_event_detail_refresh_cannot_replace_pending_draft(
-    coordinator, fake_window
-):
+def test_event_detail_refresh_cannot_replace_pending_draft(coordinator, fake_window):
     """A save response may refresh metadata without hydrating live prose."""
     from src.core.events import Event
 
@@ -176,7 +174,6 @@ class TestDataLoading:
                 "load_entities",
             )
 
-
     def test_incremental_event_effect_updates_primary_consumers(
         self, coordinator, fake_window
     ) -> None:
@@ -186,9 +183,7 @@ class TestDataLoading:
         existing = Event(id="event-1", name="Old", lore_date=10.0)
         coordinator._cached_events = [existing]
         applied: list[tuple[str, str, str]] = []
-        coordinator.lore_mutation_applied.connect(
-            lambda *args: applied.append(args)
-        )
+        coordinator.lore_mutation_applied.connect(lambda *args: applied.append(args))
         updated = Event(id="event-1", name="New", lore_date=20.0)
 
         coordinator.on_lore_mutation_ready(
@@ -331,6 +326,7 @@ class TestSignalHandlers:
         fake_window.unified_list.set_data.assert_called_once()
         fake_window.map_widget.set_cached_items.assert_called_once()
 
+    @pytest.mark.ci_fast
     def test_startup_completes_after_primary_datasets(self, coordinator, fake_window):
         """Startup completes only when events and entities both reach the UI."""
         completions = []
@@ -507,6 +503,7 @@ class TestGraphData:
         assert len(signals) == 1
 
 
+@pytest.mark.ci_fast
 class TestReloadActiveEditorRelations:
     """Tests for reloading active editor relations."""
 
@@ -516,7 +513,7 @@ class TestReloadActiveEditorRelations:
         fake_window.event_editor._current_event_id = "evt-123"
         with patch.object(coordinator, "load_event_details") as m:
             coordinator.on_reload_active_editor_relations()
-            m.assert_called_once_with("evt-123")
+            m.assert_called_once_with("evt-123", relations_only=True)
 
     def test_reload_entity_relations(self, coordinator, fake_window):
         """Should reload entity details when entity editor is active."""
@@ -524,7 +521,7 @@ class TestReloadActiveEditorRelations:
         fake_window.entity_editor._current_entity_id = "ent-456"
         with patch.object(coordinator, "load_entity_details") as m:
             coordinator.on_reload_active_editor_relations()
-            m.assert_called_once_with("ent-456")
+            m.assert_called_once_with("ent-456", relations_only=True)
 
     def test_no_reload_when_no_active_editor(self, coordinator, fake_window):
         """Should not crash when no editor is active."""
@@ -552,16 +549,61 @@ class TestReloadActiveEditorRelations:
             coordinator.on_reload_affected_editor_relations(effect("unrelated"))
             load.assert_not_called()
             coordinator.on_reload_affected_editor_relations(effect("linked"))
-            load.assert_called_once_with("active")
+            load.assert_called_once_with("active", relations_only=True)
 
         with patch.object(coordinator, "load_event_details") as load:
             coordinator.on_reload_affected_editor_relations(effect("active"))
-            load.assert_called_once_with("active")
+            load.assert_called_once_with("active", relations_only=True)
 
         coordinator._event_detail_id = "stale"
         with patch.object(coordinator, "load_event_details") as load:
             coordinator.on_reload_affected_editor_relations(effect("unrelated"))
-            load.assert_called_once_with("active")
+            load.assert_called_once_with("active", relations_only=True)
+
+
+@pytest.mark.ci_fast
+@pytest.mark.parametrize("failed_dataset", ["events", "entities"])
+@pytest.mark.parametrize("other_ready_first", [False, True])
+def test_startup_failure_completes_once(
+    coordinator, fake_window, failed_dataset, other_ready_first
+):
+    """Either pending primary load can fail before or after the other succeeds."""
+    completions = []
+    fake_window.startup_completed.connect(completions.append)
+    other_dataset = "entities" if failed_dataset == "events" else "events"
+    ready = {
+        "events": coordinator.on_events_ready,
+        "entities": coordinator.on_entities_ready,
+    }
+    if other_ready_first:
+        ready[other_dataset]([])
+    assert completions == []
+    coordinator.on_dataset_load_failed(failed_dataset)
+    assert completions == [False]
+    coordinator.on_dataset_load_failed(failed_dataset)
+    coordinator.on_dataset_load_failed(other_dataset)
+    ready["events"]([])
+    ready["entities"]([])
+    assert completions == [False]
+
+
+@pytest.mark.ci_fast
+def test_unrelated_and_completed_load_failures_do_not_change_startup(
+    coordinator, fake_window
+):
+    """Maps, completed datasets and later reload failures do not fail startup."""
+    completions = []
+    fake_window.startup_completed.connect(completions.append)
+    coordinator.on_dataset_load_failed("maps")
+    coordinator.on_dataset_load_failed("unrelated")
+    coordinator.on_events_ready([])
+    coordinator.on_dataset_load_failed("events")
+    assert completions == []
+    coordinator.on_entities_ready([])
+    assert completions == [True]
+    coordinator.on_dataset_load_failed("events")
+    coordinator.on_dataset_load_failed("entities")
+    assert completions == [True]
 
 
 class TestCompleterData:

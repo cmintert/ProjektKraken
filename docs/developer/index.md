@@ -5,6 +5,7 @@
 
 development
 logging-diagnostics
+worker-failure-contracts
 architecture
 relation-handling
 commands-and-history

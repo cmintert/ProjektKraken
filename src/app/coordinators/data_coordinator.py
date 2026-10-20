@@ -328,6 +328,17 @@ class DataCoordinator(BaseCoordinator):
             self._cached_entities.append(Entity.from_dict(snapshot))
             self._cached_entities.sort(key=lambda entity: entity.name)
 
+    @Slot(str)
+    def on_dataset_load_failed(self, dataset: str) -> None:
+        """Finish initial loading once if a pending primary dataset fails."""
+        if (
+            self._startup_completion_emitted
+            or dataset not in self._startup_datasets_pending
+        ):
+            return
+        self._startup_completion_emitted = True
+        self.main_window.startup_completed.emit(False)
+
     def _mark_startup_dataset_ready(self, dataset: str) -> None:
         """Dismiss startup only after the primary world data reaches the UI."""
         self._startup_datasets_pending.discard(dataset)

@@ -1,5 +1,19 @@
 # Architecture and Threading
 
+## Simple-load failure reporting
+
+`DatabaseWorker` retains its event/entity/map load slots, database access, guards,
+success signals and thread ownership. A private reporter owns only a safe
+operation/type/stack-location error log and the existing user-facing error signal.
+It cannot execute or dispatch operations. Failed loads do not emit empty loaded
+snapshots or completion signals; successful empty results still replace displayed
+data. An additional dataset-specific failure notification is queued to the data
+coordinator: a pending event/entity load failure terminates startup once with
+`False`, releasing the existing splash without reporting empty success. Later
+results cannot replace that terminal outcome. See
+[worker failure contracts](worker-failure-contracts.md) for the bounded
+inventory, consumer regression and verification evidence.
+
 ## Spell-check lifecycle and presentation
 
 `SpellCheckController` is a GUI-thread QObject parented to a standard `QTextEdit`.

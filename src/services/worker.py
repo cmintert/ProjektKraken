@@ -66,6 +66,7 @@ class DatabaseWorker(QObject):
     events_loaded = Signal(list)  # List[Event]
     entities_loaded = Signal(list)  # List[Entity]
     maps_loaded = Signal(list)  # List[Map]
+    dataset_load_failed = Signal(str)  # events | entities | maps; no result snapshot
     markers_loaded = Signal(str, list)  # map_id, List[Marker]
     trajectories_loaded = Signal(str, list)  # map_id, JSON-safe trajectory snapshots
     feature_geometry_states_loaded = Signal(str, list)
@@ -399,6 +400,18 @@ class DatabaseWorker(QObject):
             self.embedding_stats_loaded.emit({"count": 0, "last_updated": None})
             self.error_occurred.emit("Failed to load semantic-index statistics.")
 
+    def _report_load_failure(
+        self, operation: str, user_message: str, exc: Exception
+    ) -> None:
+        """Report a simple-load failure without logging world or exception text."""
+        logger.error(
+            "Worker load failed operation=%s error_type=%s stack=%s",
+            operation,
+            type(exc).__name__,
+            safe_stack(exc),
+        )
+        self.error_occurred.emit(user_message)
+
     @Slot()
     def load_events(self) -> None:
         """Loads all events."""
@@ -411,9 +424,9 @@ class DatabaseWorker(QObject):
             events = self.db_service.get_all_events()
             self.events_loaded.emit(events)
             self.operation_finished.emit("Events Loaded.")
-        except Exception:
-            logger.error(f"Failed to load events: {traceback.format_exc()}")
-            self.error_occurred.emit("Failed to load events.")
+        except Exception as exc:
+            self._report_load_failure("load_events", "Failed to load events.", exc)
+            self.dataset_load_failed.emit("events")
 
     @Slot()
     def load_entities(self) -> None:
@@ -427,9 +440,9 @@ class DatabaseWorker(QObject):
             entities = self.db_service.get_all_entities()
             self.entities_loaded.emit(entities)
             self.operation_finished.emit("Entities Loaded.")
-        except Exception:
-            logger.error(f"Failed to load entities: {traceback.format_exc()}")
-            self.error_occurred.emit("Failed to load entities.")
+        except Exception as exc:
+            self._report_load_failure("load_entities", "Failed to load entities.", exc)
+            self.dataset_load_failed.emit("entities")
 
     @Slot()
     def load_maps(self) -> None:
@@ -443,9 +456,9 @@ class DatabaseWorker(QObject):
             maps = self.db_service.get_all_maps()
             self.maps_loaded.emit(maps)
             self.operation_finished.emit("Maps Loaded.")
-        except Exception:
-            logger.error(f"Failed to load maps: {traceback.format_exc()}")
-            self.error_occurred.emit("Failed to load maps.")
+        except Exception as exc:
+            self._report_load_failure("load_maps", "Failed to load maps.", exc)
+            self.dataset_load_failed.emit("maps")
 
     @Slot(str)
     def load_markers(self, map_id: str) -> None:

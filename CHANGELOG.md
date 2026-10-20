@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-20
-**Commit:** 4ce41c0ad94a07e82ab7a773d7cf7264a7847920
+**Commit:** 6248e62c4e2b324b3547f73da4698dbdc7d96cc2
 ---
 
 # Changelog
@@ -27,6 +27,17 @@ All notable changes to this project will be documented in this file.
   styling on theme changes.
 
 ### Changed
+
+- *(2026-10-20)* **Startup (KRT-99)**: Initial event/entity load failures now
+  dismiss the startup splash and expose the existing error status. Added queued
+  failure/splash regressions, corrected stale relation-only refresh assertions
+  and reconciled the renamed theme test in the collection baseline.
+
+- *(2026-10-20)* **Worker failures (KRT-38)**: Centralized event, entity and map
+  load failure reporting with safe operation/type/stack-location diagnostics.
+  Preserved user messages, missing-database guards and queued loading behavior;
+  added signal-contract and real-thread displayed-data regressions and a bounded
+  worker failure inventory.
 
 - *(2026-10-19)* **Writing (KRT-39)**: Extracted spell-check scheduling, worker
   lifecycle, suggestions and underlines from WikiTextEdit, with a separate

@@ -15,6 +15,35 @@ _FORBIDDEN_IMPORT_ROOTS = {
 pytestmark = pytest.mark.ci_fast
 
 
+def test_simple_load_reporter_cannot_execute_operations():
+    """KRT-38 reporting may only log safe context and emit an error."""
+    tree = ast.parse((_SOURCE_ROOT / "services/worker.py").read_text("utf-8"))
+    worker = next(
+        node
+        for node in tree.body
+        if isinstance(node, ast.ClassDef) and node.name == "DatabaseWorker"
+    )
+    reporter = next(
+        node
+        for node in worker.body
+        if isinstance(node, ast.FunctionDef) and node.name == "_report_load_failure"
+    )
+    allowed_calls = {"logger.error", "type", "safe_stack", "self.error_occurred.emit"}
+    for node in ast.walk(reporter):
+        if isinstance(node, ast.Call):
+            assert ast.unparse(node.func) in allowed_calls, (
+                "Load failure reporting cannot execute or dispatch operations"
+            )
+        if (
+            isinstance(node, ast.Attribute)
+            and isinstance(node.value, ast.Name)
+            and node.value.id == "self"
+        ):
+            assert node.attr == "error_occurred", (
+                "Load failure reporting cannot access database or success signals"
+            )
+
+
 def test_spell_check_capability_has_one_narrow_gui_owner():
     """KRT-39 keeps scheduling and workers out of the authoring view."""
     path = _SOURCE_ROOT / "gui/widgets/spell_check_controller.py"
