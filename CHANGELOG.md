@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-20
-**Commit:** 26006d5c
+**Commit:** a91bb049
 ---
 
 # Changelog
@@ -13,6 +13,10 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-10-20)* **Release CI (KRT-100)**: Verify complete one-line action labels
+  by available width and unclipped glyph bounds across font backends. Let the
+  manual full regression report all failures in one run while retaining its
+  failing exit status and coverage upload.
 - *(2026-10-20)* **Release verification (KRT-100)**: Reserve actual empty menu
   space in the Help fallback regression instead of assuming a style-dependent
   frame pixel is outside every action. Verified with production application QSS.

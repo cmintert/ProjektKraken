@@ -75,7 +75,13 @@ def test_populated_explorer_keeps_filter_row_compact_and_list_expansive(qtbot):
     qtbot.wait(10)
     filters = panel.filter_combo.parentWidget()
     more = panel.filter_action_toolbar.overflow_button
-    assert more.label_geometry().required.height() == more.fontMetrics().height()
+    geometry = more.label_geometry()
+    # Font backends can round the glyph bounds and line height differently.
+    # The complete label must fit one line and remain unclipped in both axes.
+    assert (
+        more.fontMetrics().horizontalAdvance(more.text()) <= geometry.available.width()
+    )
+    assert geometry.fits
     assert filters.height() == filters.layout().heightForWidth(filters.width())
     assert panel.list_widget.height() > panel.height() * 0.7
     assert not audit_widget(root)
