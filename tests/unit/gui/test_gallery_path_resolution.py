@@ -7,7 +7,7 @@ causes issues in portable/built versions.
 """
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -29,8 +29,8 @@ def test_gallery_path_resolution_logic(qtbot):
     """
     Directly unit test the path resolution method we plan to add.
     """
-    main_window = MagicMock()
-    widget = GalleryWidget(main_window)
+    widget = GalleryWidget(None)
+    qtbot.addWidget(widget)
 
     project_root = Path("C:/Dist/World")
 

@@ -94,9 +94,16 @@ def outcomes(directory: Path, expected: list[str]) -> dict[str, Any]:
 
 
 def valid_phases(parts: list[dict[str, Any]]) -> bool:
-    """Require each phase exactly once, allowing setup skips without a call."""
+    """Require ordered terminal phases, allowing subtests and setup skips."""
     phases = [part["phase"] for part in parts]
-    if phases == ["setup", "call", "teardown"]:
+    # unittest subtests emit additional call reports under the same nodeid.
+    # They still require one setup, at least one call, and one teardown.
+    if (
+        phases[1:-1]
+        and phases[0] == "setup"
+        and phases[-1] == "teardown"
+        and all(phase == "call" for phase in phases[1:-1])
+    ):
         return True
     return phases == ["setup", "teardown"] and parts[0]["outcome"] in {
         "skipped",

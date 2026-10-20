@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-20
-**Commit:** aad50c84
+**Commit:** 960551ee
 ---
 
 # Changelog
@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-10-20)* **Release regression (KRT-103)**: Accepted repeated passing
+  unittest subtest reports in shard evidence, stabilized Qt gallery teardown and
+  layout checks across runners, and added focused verifier coverage.
 - *(2026-10-20)* **Release regression (KRT-103)**: Accept independent GitHub
   runner images for initial shards while recording each environment and rejecting
   drift during a shard or across its recovery attempts. Added regression tests

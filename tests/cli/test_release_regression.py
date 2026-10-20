@@ -287,6 +287,18 @@ def test_teardown_failure_is_not_a_passing_case():
     assert execution.case_outcome(parts) == "failed"
 
 
+def test_unittest_subtest_reports_are_complete_only_with_terminal_phases():
+    parts = [
+        {"phase": phase, "outcome": "passed", "xfail": False}
+        for phase in ("setup", "call", "call", "call", "teardown")
+    ]
+    assert execution.valid_phases(parts)
+    assert execution.case_outcome(parts) == "passed"
+    assert not execution.valid_phases(parts[:-1])
+    parts[2]["outcome"] = "failed"
+    assert execution.case_outcome(parts) == "failed"
+
+
 def test_cross_host_artifact_redirect_strips_authorization():
     request = urllib.request.Request(
         "https://api.github.com/artifact", headers={"Authorization": "Bearer private"}
