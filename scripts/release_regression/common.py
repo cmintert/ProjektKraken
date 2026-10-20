@@ -149,12 +149,18 @@ def configuration() -> dict[str, str]:
     return {path.relative_to(ROOT).as_posix(): file_hash(path) for path in paths}
 
 
-def provenance(plan: dict[str, Any]) -> None:
-    """Reject source or environment drift before accepting more execution."""
+def provenance(
+    plan: dict[str, Any], *, expected_environment: dict[str, Any] | None = None
+) -> None:
+    """Check committed inputs and, within one job, its recorded environment.
+
+    Hosted matrix jobs may land on different runner images during a rollout.
+    Their complete environments are retained per shard and checked per attempt.
+    """
     if (
         source_sha() != plan["sha"]
-        or environment() != plan["environment"]
         or configuration() != plan["configuration"]
+        or (expected_environment is not None and environment() != expected_environment)
     ):
         raise ValueError("Candidate or environment changed; start a fresh complete run")
 

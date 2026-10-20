@@ -15,8 +15,15 @@ unexpected deselection, removed baseline cases and lost critical markers fail.
 New cases are assigned automatically. Intentional renames/removals still require
 the existing reviewed baseline update procedure.
 
-`plan.json` binds the SHA, environment, inventory digest, run identity and exact
-module assignments. Node IDs are case-sensitive. Longest-estimated modules are
+`plan.json` binds the SHA, planner environment, inventory digest, run identity
+and exact module assignments. Each shard records its own complete runner
+environment: GitHub can assign different image revisions to separate jobs while
+an image rollout is in progress. A shard checks that its source, configuration
+and environment stay stable during execution. The aggregator retains each image
+and environment digest, and refuses recovery if a later attempt changes the
+initial environment of that same shard. Mixed initial shard images are visible
+in the evidence and do not silently inherit the planner image. Node IDs are
+case-sensitive. Longest-estimated modules are
 allocated first to the least-loaded shard, with stable path/shard tie-breaking.
 No module is split. `durations.json` contains observed spans for 263 completed
 modules from [failed run 39438787358](https://github.com/cmintert/ProjektKraken/actions/runs/39438787358).
@@ -104,8 +111,9 @@ Download them before expiry if longer retention is needed.
 Use GitHub's **Re-run failed jobs** within the same run. Successful shards and
 the original plan are retained; failed shards execute every assigned module
 again. Do not create a new run and mix its evidence into the old one. Package,
-Python, native dependency, runner-image or rendering-environment drift requires
-a fresh complete run, even at unchanged SHA. Expired/missing artifacts also
+Python, native dependency, runner-image or rendering-environment drift within a
+shard's recovery attempts requires a fresh complete run, even at unchanged SHA.
+Expired/missing artifacts also
 require a complete new run.
 
 Configure the GitHub environment `release-regression-recovery` with a required
@@ -223,6 +231,14 @@ runtime.
 The Windows-hosted Linux container probe was stopped at the owner's request;
 none of its results certify Linux release behavior. Authoritative Linux checks
 will use GitHub's Ubuntu runner after the change is committed and pushed.
+The first dispatched run on `aad50c84` was
+[39492278049](https://github.com/cmintert/ProjektKraken/actions/runs/39492278049).
+Its planner used runner image `20261012.163.1`; several shards received
+`20261018.168.1` and failed the original cross-job environment equality check
+before tests. Shard 0 passed, but the aggregate correctly stayed red with no
+complete coverage. Runner images are now recorded per shard, while each job
+still checks its own environment during execution and against later recovery
+attempts. This fix requires a new full run on its own exact commit.
 The manual infrastructure workflow runs the three reported cases independently,
 both with their original fixtures and with production QApplication QSS applied;
 its optional shared-order probe runs the five preceding GUI-heavy modules before

@@ -54,11 +54,13 @@ def verify_shard(
     common.unseal(report)
     if directory.name != f"shard-{report['shard']}-attempt-{report['attempt']}":
         raise ValueError("Shard directory identity mismatch")
+    started = common.read(directory / "started.json")
+    if report["environment"] != started["environment"]:
+        raise ValueError("Shard environment changed during execution")
     for key, expected in (
         ("plan", plan["digest"]),
         ("sha", plan["sha"]),
         ("run", plan["run"]),
-        ("environment", plan["environment"]),
     ):
         if report[key] != expected:
             raise ValueError(f"Shard provenance mismatch: {key}")
@@ -99,13 +101,14 @@ def verify_history(plan: dict[str, Any], history: list[Path]) -> None:
     """Retain initial-attempt provenance instead of accepting expired history."""
     if int(history[0].name.rsplit("-", 1)[1]) != 1:
         raise ValueError("Missing initial attempt; start a fresh complete run")
+    initial_environment = common.read(history[0] / "started.json")["environment"]
     for directory in history:
         started = common.read(directory / "started.json")
         for key, expected in (
             ("plan", plan["digest"]),
             ("sha", plan["sha"]),
             ("run", plan["run"]),
-            ("environment", plan["environment"]),
+            ("environment", initial_environment),
         ):
             if started[key] != expected:
                 raise ValueError("Attempt history contains mismatched provenance")
@@ -226,6 +229,8 @@ def aggregate(
                     "status": "passed",
                     "attempt": report["attempt"],
                     "seconds": report["seconds"],
+                    "runner_image": report["environment"].get("image", ""),
+                    "environment_digest": common.digest(report["environment"]),
                     **detail,
                 }
             )
@@ -283,12 +288,12 @@ def render_summary(summary: dict[str, Any]) -> str:
         f"Candidate: `{summary['sha']}`; run: `{summary['run']}`; "
         f"expected tests: {summary['expected']}.",
         "",
-        "| Shard | Result | Attempt | Seconds |",
-        "| --- | --- | --- | --- |",
+        "| Shard | Result | Attempt | Seconds | Runner image |",
+        "| --- | --- | --- | --- | --- |",
     ]
     lines.extend(
         f"| {s['shard']} | {s['status']} | {s.get('attempt', '')} | "
-        f"{s.get('seconds', '')} |"
+        f"{s.get('seconds', '')} | {s.get('runner_image', '')} |"
         for s in summary["shards"]
     )
     for shard in summary["shards"]:
@@ -307,7 +312,8 @@ def render_summary(summary: dict[str, Any]) -> str:
             "",
             f"Execution skips: {len(summary['skips'])}; "
             f"collection skips: {len(summary['collection_skips'])}.",
-            "Skip reasons, attempt ledger and environment: summary.json.",
+            "Skip reasons and attempt ledger: summary.json. "
+            "Full runner environments: shard.json in each shard artifact.",
             "Complete coverage published."
             if summary["status"] == "passed"
             else "INCOMPLETE: no complete coverage is certified.",

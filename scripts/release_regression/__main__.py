@@ -84,7 +84,7 @@ def create_plan(args: argparse.Namespace) -> dict[str, Any]:
         collection_skips=recorder.skips,
         configuration=common.configuration(),
     )
-    common.provenance(result)
+    common.provenance(result, expected_environment=env)
     if args.output.exists():
         raise ValueError("Plan already exists; reuse it or start a new run directory")
     common.write(args.output, result)

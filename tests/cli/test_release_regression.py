@@ -200,6 +200,34 @@ def test_complete_evidence_combines_coverage_and_verifies_release(successful_evi
     remote.verify_summary(root / "aggregate", plan["sha"], {"id": 123})
 
 
+def test_separate_runner_image_retains_provenance_without_blocking_shard(
+    disposable_suite, monkeypatch
+):
+    root, plan = disposable_suite({"ok": "def test_probe():\n    assert VALUE == 42\n"})
+    plan["environment"] = {"image": "planner-image"}
+    plan = reseal(plan)
+    monkeypatch.setattr(common, "environment", lambda: {"image": "shard-image"})
+    directory = execution.run_shard(plan, 0, root / "evidence", module_timeout=15)
+    assert common.read(directory / "shard.json")["environment"] == {
+        "image": "shard-image"
+    }
+    result = aggregation.aggregate(plan, root / "evidence", root / "aggregate")
+    assert result["status"] == "passed", result["errors"]
+    assert result["shards"][0]["runner_image"] == "shard-image"
+
+
+def test_recovery_rejects_runner_image_drift(disposable_suite, monkeypatch):
+    root, plan = disposable_suite({"ok": "def test_probe():\n    assert VALUE == 42\n"})
+    monkeypatch.setattr(common, "environment", lambda: {"image": "first-image"})
+    execution.run_shard(plan, 0, root / "evidence", module_timeout=15)
+    monkeypatch.setattr(common, "environment", lambda: {"image": "new-image"})
+    execution.run_shard(plan, 0, root / "evidence", attempt=2, module_timeout=15)
+    result = aggregation.aggregate(plan, root / "evidence", root / "aggregate")
+    assert result["status"] == "failed"
+    assert "mismatched provenance" in result["errors"][0]
+    assert not (root / "aggregate/coverage.xml").exists()
+
+
 @pytest.mark.parametrize("missing", ["junit.xml", "coverage.data", "progress.jsonl"])
 def test_missing_artifacts_fail_closed(successful_evidence, missing):
     root, plan, directory = successful_evidence
@@ -240,7 +268,7 @@ def test_environment_or_sha_drift_prevents_execution(successful_evidence, monkey
     root, plan, _ = successful_evidence
     monkeypatch.setattr(common, "environment", lambda: {"changed": True})
     with pytest.raises(ValueError, match="fresh complete run"):
-        execution.run_shard(plan, 0, root / "evidence", attempt=2)
+        common.provenance(plan, expected_environment={"test": "environment"})
     monkeypatch.setattr(common, "source_sha", lambda: "b" * 40)
     result = aggregation.aggregate(plan, root / "evidence", root / "wrong-source")
     assert result["status"] == "failed"

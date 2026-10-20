@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-20
-**Commit:** a80e2859
+**Commit:** aad50c84
 ---
 
 # Changelog
@@ -13,6 +13,10 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-10-20)* **Release regression (KRT-103)**: Accept independent GitHub
+  runner images for initial shards while recording each environment and rejecting
+  drift during a shard or across its recovery attempts. Added regression tests
+  and documented the failed first remote run.
 - *(2026-10-20)* **Release CI (KRT-100)**: Verify complete one-line action labels
   by available width and unclipped glyph bounds across font backends. Let the
   manual full regression report all failures in one run while retaining its

@@ -194,6 +194,7 @@ def run_shard(
     """Continue other modules after failure and write immutable shard attempts."""
     planner.validate(plan)
     common.provenance(plan)
+    job_environment = common.environment()
     if not 0 <= shard < len(plan["shards"]) or attempt < 1:
         raise ValueError("Invalid shard or attempt")
     directory = output / f"shard-{shard}-attempt-{attempt}"
@@ -207,7 +208,7 @@ def run_shard(
         "shard": shard,
         "attempt": attempt,
         "explanation": explanation,
-        "environment": common.environment(),
+        "environment": job_environment,
         "modules": [],
         "unstarted": [],
         "counts": {},
@@ -239,7 +240,7 @@ def run_shard(
         sys.stdout.flush()
     report["seconds"] = time.monotonic() - start
     try:
-        common.provenance(plan)
+        common.provenance(plan, expected_environment=job_environment)
     except ValueError as error:
         report["source_error"] = str(error)
     report["status"] = (
