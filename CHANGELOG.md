@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-21
-**Commit:** f4c91c144a3e3e35aa4a71456f2ee5d2659bc9fc
+**Commit:** 41c856bff3b49839b16d2f01bcc2950621eb2637
 ---
 
 # Changelog
@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-10-21)* **Release regression (KRT-103)**: Prepared the disposable
+  infrastructure test artifact directory on Linux and Windows before pytest
+  creates its isolated temporary files.
 - *(2026-10-21)* **CLI (KRT-104)**: Repaired index dispatch, attachment
   imports and owner types, map marker bounds, import world targeting,
   machine-readable create output, and false-success failure paths. Added a
