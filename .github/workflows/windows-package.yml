@@ -73,11 +73,6 @@ jobs:
             python -c "import importlib.util, sys; sys.exit(1 if importlib.util.find_spec('$module') else 0)"
           }
 
-      - name: Run packaging contract tests
-        shell: pwsh
-        run: |
-          python -m unittest discover -s tests/packaging -p "test_*.py" -v
-
       - name: Create separate Help build environment
         shell: pwsh
         run: |

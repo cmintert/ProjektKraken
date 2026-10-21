@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-21
-**Commit:** d6750c43
+**Commit:** 0c7c02e0
 ---
 
 # Changelog
@@ -10,6 +10,14 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Fixed
+
+- *(2026-10-21)* **Windows beta packaging (KRT-100)**: Remove the duplicate
+  packaging contract test step from the runtime-only package job. Its test
+  module imports pytest, which that environment intentionally excludes; the
+  exact-source full regression already runs those tests. Document how to
+  rebuild an unchanged beta tag after a workflow-only correction.
 
 ### Changed
 

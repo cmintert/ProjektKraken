@@ -162,6 +162,21 @@ to storage hosts do not receive the GitHub token. Required check configuration
 does not prevent a user manually creating a tag; tagged build/publication checks
 enforce the boundary independently.
 
+For a packaging workflow-only correction after tagging, keep the beta tag on
+the verified source commit. Commit the workflow fix to `main`, then dispatch
+the updated workflow with the existing tag:
+
+```text
+gh workflow run windows-package.yml --ref main -f release_tag=<existing-beta-tag>
+```
+
+The workflow runs from `main` but checks out and packages the tag. Its build
+and publication jobs still verify full regression for the tag's exact source
+SHA. Packaging contract tests run in that required full regression; the
+runtime-only package environment deliberately excludes pytest. A change to
+application source or locked dependencies needs a new candidate and exact-SHA
+full regression before tagging.
+
 1. Commit the candidate through the normal review and separately authorized
    delivery process; run local checks against that candidate.
 2. Obtain complete Linux regression and coverage for that SHA.
