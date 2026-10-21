@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-21
-**Commit:** 5f2c13ca
+**Commit:** d6750c43
 ---
 
 # Changelog
@@ -11,12 +11,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- *(2026-10-21)* **Release**: Bumped project and application metadata to
+  version 0.20.1 for beta 1 and updated package references, release notes,
+  publication copy, and readiness status after the 0.20.0 beta 1 packaging
+  attempt failed.
+
+## [0.20.1]
+
 ### Fixed
 
 - *(2026-10-21)* **Windows beta packaging (KRT-100)**: Update Pillow and
   certifi to audited releases and force UTF-8 output for the package workflow's
   dependency audit after the beta 1 package job stopped before building.
-  Prepare beta 2 release notes for the corrected candidate.
+  Prepare corrected beta release notes for the new candidate.
 - *(2026-10-20)* **Release regression (KRT-103)**: Accepted repeated passing
   unittest subtest reports in shard evidence, stabilized Qt gallery teardown and
   layout checks across runners, and added focused verifier coverage.

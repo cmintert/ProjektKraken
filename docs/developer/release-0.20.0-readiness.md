@@ -1,5 +1,10 @@
 # 0.20.0 beta 1 release preparation
 
+Historical preparation record: the `0.20.0-beta1` tag was created, but its
+Windows package job stopped during dependency auditing before building a ZIP.
+The corrected release candidate is `0.20.1-beta1`; use its release notes and
+current KRT-100 status for publication decisions.
+
 Preparation date: 20 October 2026. Source baseline: `d947f900` plus the staged
 version bump and release preparation. This is an uncommitted candidate, not a
 publication approval. Final package evidence must identify the committed source
