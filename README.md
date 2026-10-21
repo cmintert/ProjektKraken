@@ -157,54 +157,17 @@ Open the extracted `ProjektKraken` folder and double-click
 
 ### CLI Tools
 
-ProjektKraken includes comprehensive command-line tools for headless operations.
+Source checkouts include offline command-line tools for existing world folders.
+Use Python 3.13 or newer with project dependencies, and close the desktop app
+before writing through the CLI.
 
-**Note:** In portable mode (v0.6.0+), database paths should point to the `.kraken` file within a world directory:
-
-```bash
-# Example world structure:
-# worlds/My Campaign/My Campaign.kraken
-
-# Events
-python -m src.cli.event create --database "worlds/My Campaign/My Campaign.kraken" --name "Event" --date 100.0
-python -m src.cli.event list --database "worlds/My Campaign/My Campaign.kraken"
-
-# Or use shorter paths if you're in the project directory:
-python -m src.cli.event list --database "worlds/My Campaign/My Campaign.kraken"
-
-# Entities  
-python -m src.cli.entity create --database "worlds/My Campaign/My Campaign.kraken" --name "Character" --type character
-python -m src.cli.entity list --database "worlds/My Campaign/My Campaign.kraken"
-
-# Relations
-python -m src.cli.relation add --database "worlds/My Campaign/My Campaign.kraken" --source <id> --target <id> --type "caused"
-
-# Calendar Configuration
-python -m src.cli.calendar show --database "worlds/My Campaign/My Campaign.kraken"
-python -m src.cli.calendar set --database "worlds/My Campaign/My Campaign.kraken" --config calendar.json
-
-# Maps
-python -m src.cli.map list --database "worlds/My Campaign/My Campaign.kraken"
-python -m src.cli.map create --database "worlds/My Campaign/My Campaign.kraken" --name "World Map" --image map.png
-
-# Attachments
-python -m src.cli.attachment list --database "worlds/My Campaign/My Campaign.kraken" --owner-type event --owner-id <id>
-
-# Longform Export
-python -m src.cli.longform export --database "worlds/My Campaign/My Campaign.kraken" --output document.md
-
-# Wiki Link Scanning
-python -m src.cli.wiki scan --database "worlds/My Campaign/My Campaign.kraken" --text "The [[Hero]] met [[Villain]]"
-
-# Semantic Search
-python -m src.cli.index rebuild --database "worlds/My Campaign/My Campaign.kraken"
-python -m src.cli.index query --database "worlds/My Campaign/My Campaign.kraken" --text "find the wizard"
-
-# Data Import
-python -m src.app.main import --file "data/backup.json" --mode update
+```text
+python -m src.cli.cli entity list --database "worlds/My Campaign/My Campaign.kraken" --json
+python -m src.cli.cli info show --database "worlds/My Campaign/My Campaign.kraken"
 ```
 
-See **[CLI Documentation](src/cli/README.md)** for complete reference.
+See the **[CLI reference](docs/reference/cli.md)** for supported actions,
+options, import targeting, and limitations.
 
 ### Semantic Search
 

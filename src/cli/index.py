@@ -71,7 +71,7 @@ def rebuild_index(args: argparse.Namespace) -> int:
             object_types=object_types, excluded_attributes=excluded
         )
 
-        print("\n✓ Index rebuild complete:")
+        print("\nOK Index rebuild complete:")
         for obj_type, counts in result.per_type.items():
             print(
                 f"  {obj_type}: {counts.indexed} indexed, "
@@ -118,7 +118,7 @@ def delete_object(args: argparse.Namespace) -> int:
             object_type=args.type, object_id=args.id, model=args.model
         )
 
-        print(f"✓ Deleted embeddings for {args.type} {args.id}")
+        print(f"OK Deleted embeddings for {args.type} {args.id}")
         return 0
 
     except Exception as e:
@@ -170,10 +170,10 @@ def index_object(args: argparse.Namespace) -> int:
         elif args.type == "event":
             search_service.index_event(args.id, excluded_attributes=excluded)
         else:
-            print(f"✗ Unknown object type: {args.type}")
+            print(f"ERROR Unknown object type: {args.type}", file=sys.stderr)
             return 1
 
-        print(f"✓ Indexed {args.type} {args.id}")
+        print(f"OK Indexed {args.type} {args.id}")
         return 0
 
     except Exception as e:
@@ -202,13 +202,12 @@ def query_index(args: argparse.Namespace) -> int:
         db_service.connect()
 
         if args.verbose:
-            print(f"Query: {args.text}")
-            print(f"Type filter: {args.type or 'all'}")
-            print(f"Top-k: {args.top_k}")
-            print(f"Provider: {args.provider}")
+            print(f"Query: {args.text}", file=sys.stderr)
+            print(f"Type filter: {args.type or 'all'}", file=sys.stderr)
+            print(f"Top-k: {args.top_k}", file=sys.stderr)
+            print(f"Provider: {args.provider}", file=sys.stderr)
             if args.model:
-                print(f"Model: {args.model}")
-            print()
+                print(f"Model: {args.model}", file=sys.stderr)
 
         # Create search service
         search_service = create_search_service(
@@ -264,6 +263,8 @@ def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: 
     rebuild_parser = subparsers.add_parser(
         "rebuild", help="Rebuild the semantic search index"
     )
+    rebuild_parser.add_argument("--database", "-d", required=True)
+    rebuild_parser.set_defaults(func=rebuild_index)
     rebuild_parser.add_argument(
         "--type",
         choices=["entity", "event", "all"],
@@ -286,6 +287,8 @@ def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: 
 
     # Index-object command
     index_parser = subparsers.add_parser("index-object", help="Index a single object")
+    index_parser.add_argument("--database", "-d", required=True)
+    index_parser.set_defaults(func=index_object)
     index_parser.add_argument(
         "--type",
         choices=["entity", "event"],
@@ -315,6 +318,8 @@ def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: 
     query_parser = subparsers.add_parser(
         "query", help="Query the semantic search index"
     )
+    query_parser.add_argument("--database", "-d", required=True)
+    query_parser.set_defaults(func=query_index)
     query_parser.add_argument(
         "--text",
         required=True,
@@ -350,6 +355,8 @@ def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: 
     del_obj_parser = subparsers.add_parser(
         "delete-object", help="Delete embeddings for a single object"
     )
+    del_obj_parser.add_argument("--database", "-d", required=True)
+    del_obj_parser.set_defaults(func=delete_object)
     del_obj_parser.add_argument(
         "--type",
         choices=["entity", "event"],
@@ -373,10 +380,6 @@ def main() -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
-    # Global options
-    parser.add_argument(
-        "-d", "--database", required=True, help="Path to .kraken database file"
-    )
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="Enable verbose logging"
     )
@@ -393,22 +396,12 @@ def main() -> int:
         logging.getLogger().setLevel(logging.DEBUG)
 
     # Validate database path
-    if not validate_database_path(args.database):
-        print(f"✗ Database file not found: {args.database}")
-        return 1
-
-    # Execute command
-    if args.command == "rebuild":
-        return rebuild_index(args)
-    elif args.command == "index-object":
-        return index_object(args)
-    elif args.command == "query":
-        return query_index(args)
-    elif args.command == "delete-object":
-        return delete_object(args)
-    else:
+    if not hasattr(args, "func"):
         parser.print_help()
+        return 2
+    if not validate_database_path(args.database):
         return 1
+    return args.func(args)
 
 
 if __name__ == "__main__":

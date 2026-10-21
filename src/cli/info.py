@@ -79,10 +79,7 @@ def gather_stats(db_service: DatabaseService) -> dict[str, Any]:
             asset_path = Path(attachment.image_rel_path)
             if not asset_path.is_absolute():
                 asset_path = world_root / asset_path
-            try:
-                total_size += asset_path.stat().st_size
-            except (OSError, TypeError):
-                pass
+            total_size += asset_path.stat().st_size
 
         stats["attachments"]["count"] = attachment_count
         stats["attachments"]["total_size_mb"] = round(total_size / (1024 * 1024), 2)
@@ -95,12 +92,13 @@ def gather_stats(db_service: DatabaseService) -> dict[str, Any]:
                 break
 
         stats["tags"] = len(db_service.get_all_tags())
-        stats["timeline_grouping"] = db_service.get_timeline_grouping_config() is not None
+        stats["timeline_grouping"] = (
+            db_service.get_timeline_grouping_config() is not None
+        )
 
-    except Exception as e:
-        logger.error(f"Error gathering stats: {e}")
-        if logger.isEnabledFor(logging.DEBUG):
-            raise
+    except Exception:
+        logger.exception("Error gathering stats")
+        raise
 
     return stats
 
@@ -180,9 +178,7 @@ def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: 
     # Show
     show_p = subparsers.add_parser("show", help="Show database info")
     show_p.add_argument("--database", "-d", required=True)
-    show_p.add_argument(
-        "--json", action="store_true", help="Output as JSON"
-    )
+    show_p.add_argument("--json", action="store_true", help="Output as JSON")
     show_p.set_defaults(func=show_info)
 
 
@@ -209,7 +205,7 @@ def main() -> None:
         sys.exit(args.func(args))
     else:
         parser.print_help()
-        sys.exit(1)
+        sys.exit(2)
 
 
 if __name__ == "__main__":

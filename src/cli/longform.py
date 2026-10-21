@@ -43,7 +43,7 @@ def export_longform(args: argparse.Namespace) -> int:
         if args.output:
             output_path = Path(args.output)
             output_path.write_text(markdown, encoding="utf-8")
-            print(f"✓ Exported to {output_path}")
+            print(f"OK Exported to {output_path}")
         else:
             print(markdown)
         return 0
@@ -77,7 +77,7 @@ def move_entry(args: argparse.Namespace) -> int:
         # Check if item exists in database at all
         name = db_service.get_name(args.id)
         if not name:
-            print(f"✗ Item not found in database: {args.id}")
+            print(f"ERROR Item not found in database: {args.id}", file=sys.stderr)
             return 1
 
         old_meta = _get_current_meta(db_service, args.table, args.id, args.doc_id)
@@ -97,10 +97,10 @@ def move_entry(args: argparse.Namespace) -> int:
         result = cmd.execute(db_service)
 
         if result.success:
-            print(f"✓ Moved/Added entry: {args.id}")
+            print(f"OK Moved/Added entry: {args.id}")
             return 0
         else:
-            print(f"✗ Error: {result.message}")
+            print(f"ERROR: {result.message}", file=sys.stderr)
             return 1
     except Exception as e:
         logger.error(f"Failed to move: {e}")
@@ -121,17 +121,19 @@ def remove_entry(args: argparse.Namespace) -> int:
 
         old_meta = _get_current_meta(db_service, args.table, args.id, args.doc_id)
         if not old_meta:
-            print(f"✗ Item not in longform: {args.table}.{args.id}")
+            print(
+                f"ERROR Item not in longform: {args.table}.{args.id}", file=sys.stderr
+            )
             return 1
 
         cmd = RemoveLongformEntryCommand(args.table, args.id, old_meta, args.doc_id)
         result = cmd.execute(db_service)
 
         if result.success:
-            print(f"✓ Removed entry: {args.id}")
+            print(f"OK Removed entry: {args.id}")
             return 0
         else:
-            print(f"✗ Error: {result.message}")
+            print(f"ERROR: {result.message}", file=sys.stderr)
             return 1
     except Exception as e:
         logger.error(f"Failed to remove: {e}")
@@ -150,17 +152,19 @@ def promote_entry(args: argparse.Namespace) -> int:
 
         old_meta = _get_current_meta(db_service, args.table, args.id, args.doc_id)
         if not old_meta:
-            print(f"✗ Item not in longform: {args.table}.{args.id}")
+            print(
+                f"ERROR Item not in longform: {args.table}.{args.id}", file=sys.stderr
+            )
             return 1
 
         cmd = PromoteLongformEntryCommand(args.table, args.id, old_meta, args.doc_id)
         result = cmd.execute(db_service)
 
         if result.success:
-            print(f"✓ Promoted entry: {args.id}")
+            print(f"OK Promoted entry: {args.id}")
             return 0
         else:
-            print(f"✗ Error: {result.message}")
+            print(f"ERROR: {result.message}", file=sys.stderr)
             return 1
     except Exception as e:
         logger.error(f"Failed to promote: {e}")
@@ -179,17 +183,19 @@ def demote_entry(args: argparse.Namespace) -> int:
 
         old_meta = _get_current_meta(db_service, args.table, args.id, args.doc_id)
         if not old_meta:
-            print(f"✗ Item not in longform: {args.table}.{args.id}")
+            print(
+                f"ERROR Item not in longform: {args.table}.{args.id}", file=sys.stderr
+            )
             return 1
 
         cmd = DemoteLongformEntryCommand(args.table, args.id, old_meta, args.doc_id)
         result = cmd.execute(db_service)
 
         if result.success:
-            print(f"✓ Demoted entry: {args.id}")
+            print(f"OK Demoted entry: {args.id}")
             return 0
         else:
-            print(f"✗ Error: {result.message}")
+            print(f"ERROR: {result.message}", file=sys.stderr)
             return 1
     except Exception as e:
         logger.error(f"Failed to demote: {e}")
@@ -208,7 +214,7 @@ def reindex_longform(args: argparse.Namespace) -> int:
 
         with db_service.transaction() as connection:
             longform_builder.reindex_document_positions(connection, args.doc_id)
-        print("✓ Reindexed longform document positions.")
+        print("OK Reindexed longform document positions.")
         return 0
     except Exception as e:
         logger.error(f"Failed to reindex: {e}")
@@ -308,7 +314,7 @@ def main() -> None:
         sys.exit(args.func(args))
     else:
         parser.print_help()
-        sys.exit(1)
+        sys.exit(2)
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@
 :maxdepth: 1
 
 cli
+cli-verification
 configuration
 database-schema
 ```

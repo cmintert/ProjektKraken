@@ -17,6 +17,7 @@ Usage:
 """
 
 import argparse
+import json
 import logging
 import sys
 
@@ -60,12 +61,23 @@ def create_event(args: argparse.Namespace) -> int:
         cmd = CreateEventCommand(event_data)
         result = cmd.execute(db_service)
         if result.success:
-            print(f"✓ Created event: {result.data['id']}")
+            if args.json:
+                print(
+                    json.dumps(
+                        {
+                            "id": result.data["id"],
+                            "name": args.name,
+                            "lore_date": args.date,
+                        }
+                    )
+                )
+                return 0
+            print(f"OK Created event: {result.data['id']}")
             print(f"  Name: {args.name}")
             print(f"  Date: {args.date}")
             return 0
         else:
-            print(f"✗ Error: {result.message}")
+            print(f"ERROR: {result.message}", file=sys.stderr)
             return 1
 
     except Exception as e:
@@ -87,7 +99,7 @@ def list_events(args: argparse.Namespace) -> int:
 
         events = db_service.get_all_events()
 
-        if not events:
+        if not events and not args.json:
             print("No events found.")
             return 0
 
@@ -157,7 +169,7 @@ def show_event(args: argparse.Namespace) -> int:
         event = db_service.get_event(args.id)
 
         if not event:
-            print(f"✗ Event not found: {args.id}")
+            print(f"ERROR Event not found: {args.id}", file=sys.stderr)
             return 1
 
         # Output format
@@ -206,7 +218,7 @@ def update_event(args: argparse.Namespace) -> int:
         # Check if event exists
         event = db_service.get_event(args.id)
         if not event:
-            print(f"✗ Event not found: {args.id}")
+            print(f"ERROR Event not found: {args.id}", file=sys.stderr)
             return 1
 
         # Build update data
@@ -229,19 +241,22 @@ def update_event(args: argparse.Namespace) -> int:
             update_data["attributes"] = new_attrs
 
         if not update_data:
-            print("✗ No updates specified. Use --name, --date, --type, etc.")
+            print(
+                "ERROR No updates specified. Use --name, --date, --type, etc.",
+                file=sys.stderr,
+            )
             return 1
 
         cmd = UpdateEventCommand(args.id, update_data)
         result = cmd.execute(db_service)
 
         if result.success:
-            print(f"✓ Updated event: {args.id}")
+            print(f"OK Updated event: {args.id}")
             for key, value in update_data.items():
                 print(f"  {key}: {value}")
             return 0
         else:
-            print(f"✗ Error: {result.message}")
+            print(f"ERROR: {result.message}", file=sys.stderr)
             return 1
 
     except Exception as e:
@@ -264,7 +279,7 @@ def delete_event(args: argparse.Namespace) -> int:
         # Check if event exists
         event = db_service.get_event(args.id)
         if not event:
-            print(f"✗ Event not found: {args.id}")
+            print(f"ERROR Event not found: {args.id}", file=sys.stderr)
             return 1
 
         # Confirm deletion unless --force
@@ -279,10 +294,10 @@ def delete_event(args: argparse.Namespace) -> int:
         result = cmd.execute(db_service)
 
         if result.success:
-            print(f"✓ Deleted event: {args.id}")
+            print(f"OK Deleted event: {args.id}")
             return 0
         else:
-            print(f"✗ Error: {result.message}")
+            print(f"ERROR: {result.message}", file=sys.stderr)
             return 1
 
     except Exception as e:
@@ -315,6 +330,9 @@ def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: 
     create_parser.add_argument("--description", help="Event description")
     create_parser.add_argument("--duration", type=float, help="Event duration (float)")
     create_parser.add_argument("--tags", help="Comma-separated list of tags")
+    create_parser.add_argument(
+        "--json", action="store_true", help="Output created ID as JSON"
+    )
     create_parser.set_defaults(func=create_event)
 
     # List command
@@ -396,7 +414,7 @@ def main() -> None:
     if hasattr(args, "database"):
         # Note: Create operations can work with non-existent databases
         # as DatabaseService will create them automatically
-        allow_create = args.command == "create"
+        allow_create = False
         if not validate_database_path(args.database, allow_create=allow_create):
             sys.exit(1)
 
@@ -405,7 +423,7 @@ def main() -> None:
         sys.exit(args.func(args))
     else:
         parser.print_help()
-        sys.exit(1)
+        sys.exit(2)
 
 
 if __name__ == "__main__":

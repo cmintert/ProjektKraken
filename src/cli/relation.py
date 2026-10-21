@@ -40,13 +40,13 @@ def add_relation(args: argparse.Namespace) -> int:
         # Verify source exists
         source_name = db_service.get_name(args.source)
         if not source_name:
-            print(f"✗ Source not found: {args.source}")
+            print(f"ERROR Source not found: {args.source}", file=sys.stderr)
             return 1
 
         # Verify target exists
         target_name = db_service.get_name(args.target)
         if not target_name:
-            print(f"✗ Target not found: {args.target}")
+            print(f"ERROR Target not found: {args.target}", file=sys.stderr)
             return 1
 
         cmd = AddRelationCommand(
@@ -57,7 +57,7 @@ def add_relation(args: argparse.Namespace) -> int:
         if result.success:
             source_short = args.source[:8]
             target_short = args.target[:8]
-            print("✓ Added relation:")
+            print("OK Added relation:")
             print(f"  Source: {source_name} ({source_short}...)")
             print(f"  Target: {target_name} ({target_short}...)")
             print(f"  Type: {args.type}")
@@ -65,7 +65,7 @@ def add_relation(args: argparse.Namespace) -> int:
                 print("  (bidirectional)")
             return 0
         else:
-            print("✗ Failed to add relation")
+            print("ERROR Failed to add relation", file=sys.stderr)
             return 1
 
     except Exception as e:
@@ -88,7 +88,7 @@ def list_relations(args: argparse.Namespace) -> int:
         # Verify source exists
         source_name = db_service.get_name(args.source)
         if not source_name:
-            print(f"✗ Source not found: {args.source}")
+            print(f"ERROR Source not found: {args.source}", file=sys.stderr)
             return 1
 
         # Get relations
@@ -106,7 +106,7 @@ def list_relations(args: argparse.Namespace) -> int:
                 print(f"Outgoing ({len(outgoing)}):")
                 for rel in outgoing:
                     target_name = db_service.get_name(rel["target_id"])
-                    print(f"  → {target_name}")
+                    print(f"  -> {target_name}")
                     print(f"    Type: {rel['rel_type']}")
                     print(f"    Target ID: {rel['target_id']}")
                     print(f"    Relation ID: {rel['id']}")
@@ -116,7 +116,7 @@ def list_relations(args: argparse.Namespace) -> int:
                 print(f"Incoming ({len(incoming)}):")
                 for rel in incoming:
                     source_rel_name = db_service.get_name(rel["source_id"])
-                    print(f"  ← {source_rel_name}")
+                    print(f"  <- {source_rel_name}")
                     print(f"    Type: {rel['rel_type']}")
                     print(f"    Source ID: {rel['source_id']}")
                     print(f"    Relation ID: {rel['id']}")
@@ -147,7 +147,7 @@ def delete_relation(args: argparse.Namespace) -> int:
         # Get relation details for confirmation
         relation = db_service.get_relation(args.id)
         if not relation:
-            print(f"✗ Relation not found: {args.id}")
+            print(f"ERROR Relation not found: {args.id}", file=sys.stderr)
             return 1
 
         # Confirm deletion unless --force
@@ -156,7 +156,7 @@ def delete_relation(args: argparse.Namespace) -> int:
             target_name = db_service.get_name(relation["target_id"])
             rel_type = relation["rel_type"]
             print(
-                f"About to delete relation: {source_name} → {target_name} ({rel_type})"
+                f"About to delete relation: {source_name} -> {target_name} ({rel_type})"
             )
             response = input("Are you sure? (yes/no): ")
             if response.lower() not in ["yes", "y"]:
@@ -167,10 +167,10 @@ def delete_relation(args: argparse.Namespace) -> int:
         result = cmd.execute(db_service)
 
         if result.success:
-            print(f"✓ Deleted relation: {args.id}")
+            print(f"OK Deleted relation: {args.id}")
             return 0
         else:
-            print("✗ Failed to delete relation")
+            print("ERROR Failed to delete relation", file=sys.stderr)
             return 1
 
     except Exception as e:
@@ -193,7 +193,7 @@ def update_relation(args: argparse.Namespace) -> int:
         # Check if relation exists
         relation = db_service.get_relation(args.id)
         if not relation:
-            print(f"✗ Relation not found: {args.id}")
+            print(f"ERROR Relation not found: {args.id}", file=sys.stderr)
             return 1
 
         target_id = args.target if args.target else relation["target_id"]
@@ -211,10 +211,10 @@ def update_relation(args: argparse.Namespace) -> int:
         result = cmd.execute(db_service)
 
         if result.success:
-            print(f"✓ Updated relation: {args.id}")
+            print(f"OK Updated relation: {args.id}")
             return 0
         else:
-            print("✗ Failed to update relation")
+            print("ERROR Failed to update relation", file=sys.stderr)
             return 1
 
     except Exception as e:
@@ -323,7 +323,7 @@ def main() -> None:
         sys.exit(args.func(args))
     else:
         parser.print_help()
-        sys.exit(1)
+        sys.exit(2)
 
 
 if __name__ == "__main__":

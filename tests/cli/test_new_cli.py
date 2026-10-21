@@ -13,7 +13,19 @@ pytestmark = pytest.mark.ci_fast
 @patch("src.cli.map.validate_database_path", return_value=True)
 @patch("src.cli.map.DatabaseService")
 @patch("src.cli.map.CreateMapCommand")
-@patch("sys.argv", ["map.py", "create", "--database", "test.db", "--name", "Test Map"])
+@patch(
+    "sys.argv",
+    [
+        "map.py",
+        "create",
+        "--database",
+        "test.db",
+        "--name",
+        "Test Map",
+        "--image",
+        "map.png",
+    ],
+)
 def test_map_create(MockCommand, MockDB, MockValidate, capsys):
     mock_cmd_instance = MockCommand.return_value
     mock_cmd_instance.execute.return_value.success = True

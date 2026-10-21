@@ -93,15 +93,24 @@ class AddImagesCommand(BaseCommand):
             # We clear this list in case of re-execution
             self._added_attachment_ids = []
 
-            attachments = db_service.attachment_service.add_images(
-                self.owner_type, self.owner_id, self.source_paths
+            attachments, failures = (
+                db_service.attachment_service.add_images_with_report(
+                    self.owner_type, self.owner_id, self.source_paths
+                )
             )
 
             self._added_attachment_ids = [a.id for a in attachments]
-            self._is_executed = True
+            self._is_executed = bool(attachments)
 
-            result = CommandResult(True, f"Added {len(attachments)} images")
-            result.data = {"owner_type": self.owner_type, "owner_id": self.owner_id}
+            result = CommandResult(
+                bool(attachments), f"Added {len(attachments)} images"
+            )
+            result.data = {
+                "owner_type": self.owner_type,
+                "owner_id": self.owner_id,
+                "attachment_ids": self._added_attachment_ids,
+                "failures": failures,
+            }
             return result
         except Exception as e:
             return CommandResult(False, str(e))
@@ -149,9 +158,7 @@ class AddImagesCommand(BaseCommand):
             data["owner_id"],
             data["source_paths"],
         )
-        command._added_attachment_ids = list(
-            data.get("added_attachment_ids", [])
-        )
+        command._added_attachment_ids = list(data.get("added_attachment_ids", []))
         command._is_executed = bool(data.get("is_executed", False))
         return command
 
@@ -320,9 +327,7 @@ class ReorderImagesCommand(BaseCommand):
             data["owner_id"],
             data["new_order_ids"],
         )
-        command._previous_order_ids = list(
-            data.get("previous_order_ids", [])
-        )
+        command._previous_order_ids = list(data.get("previous_order_ids", []))
         command._is_executed = bool(data.get("is_executed", False))
         return command
 

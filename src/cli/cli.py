@@ -64,9 +64,7 @@ For help on a specific command:
     subparsers = parser.add_subparsers(dest="module", help="Available modules")
 
     # Register all CLI modules
-    event_sp = subparsers.add_parser(
-        "event", help="Manage events", aliases=["events"]
-    )
+    event_sp = subparsers.add_parser("event", help="Manage events", aliases=["events"])
     event_sp.add_argument("--verbose", "-v", action="store_true")
     event_subs = event_sp.add_subparsers(dest="command")
     event.register_commands(event_subs)
@@ -147,8 +145,8 @@ For help on a specific command:
 
     # Validate database path if present
     if hasattr(args, "database"):
-        # Determine if create is allowed
-        allow_create = hasattr(args, "command") and args.command == "create"
+        # Ordinary create actions add records to an existing world.
+        allow_create = args.module == "backup" and args.command == "restore"
         if not validate_database_path(args.database, allow_create=allow_create):
             sys.exit(1)
 
@@ -157,7 +155,7 @@ For help on a specific command:
         sys.exit(args.func(args))
     else:
         parser.print_help()
-        sys.exit(1)
+        sys.exit(2)
 
 
 if __name__ == "__main__":

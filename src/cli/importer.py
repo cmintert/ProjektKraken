@@ -4,6 +4,7 @@ Handles command-line triggering of the import process.
 """
 
 import argparse
+import sys
 from pathlib import Path
 from typing import List, cast
 
@@ -16,10 +17,40 @@ from src.app.constants import (
 )
 from src.core.logging_config import get_logger
 from src.core.paths import get_worlds_dir
+from src.core.world import World, WorldManager
 from src.services.db_service import DatabaseService
 from src.services.import_service import ImportService
+from src.services.world_storage_settings import WorldStorageSettings
 
 logger = get_logger(__name__)
+
+
+def _resolve_import_world(database: str | None) -> World | None:
+    """Choose an existing, trusted world using the desktop application's settings."""
+    settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+    storage = WorldStorageSettings(settings)
+    manager = WorldManager(
+        get_worlds_dir(),
+        additional_world_paths=storage.registered_world_paths(),
+        approved_external_paths=storage.external_approvals(),
+    )
+    if database:
+        target = Path(database).resolve(strict=False)
+        return next(
+            (
+                world
+                for world in manager.discover_worlds()
+                if world.db_path.resolve(strict=False) == target
+            ),
+            None,
+        )
+    active_path = storage.active_world_path()
+    if active_path is not None:
+        inspected = World.inspect(active_path)
+        approval = storage.approved_external_path(inspected) if inspected else None
+        return World.load(active_path, [approval] if approval else [])
+    active_name = cast(str | None, settings.value(SETTINGS_ACTIVE_DB_KEY, None))
+    return manager.get_world(active_name) if active_name else None
 
 
 def run_import_cli(args: List[str]) -> int:
@@ -36,41 +67,36 @@ def run_import_cli(args: List[str]) -> int:
     parser.add_argument(
         "--file", "-f", required=True, help="Path to the JSON file to import."
     )
-    # Future flags could be added here (e.g., --world, --verbose)
+    parser.add_argument(
+        "--database", "-d", help="Existing database in a complete world folder"
+    )
 
     try:
         parsed_args = parser.parse_args(args)
-    except SystemExit:
-        return 1
+    except SystemExit as exc:
+        return exc.code if isinstance(exc.code, int) else 2
 
     file_path = Path(parsed_args.file).resolve()  # Security: Resolve path
 
     if not file_path.exists():
         logger.error(f"File not found: {file_path}")
-        print(f"Error: File '{file_path}' does not exist.")
+        print(f"Error: File '{file_path}' does not exist.", file=sys.stderr)
         return 1
 
     if not file_path.is_file():
         logger.error(f"Not a file: {file_path}")
-        print(f"Error: '{file_path}' is not a file.")
+        print(f"Error: '{file_path}' is not a file.", file=sys.stderr)
         return 1
 
-    # 1. Setup Database Connection
-    # We need to know which world to use. For now, use the active one from settings.
-    settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-    active_world = cast(
-        str, settings.value(SETTINGS_ACTIVE_DB_KEY, "Default World")
-    )
-
-    # Check if world exists
-    world_dir = get_worlds_dir() / active_world
-    if not world_dir.exists():
-        logger.error(f"Active world directory not found: {world_dir}")
-        print(f"Error: Active world '{active_world}' not found.")
+    world = _resolve_import_world(parsed_args.database)
+    if world is None:
+        print(
+            "Error: Import target is not a valid, approved existing world.",
+            file=sys.stderr,
+        )
         return 1
-
-    db_path = str(world_dir / "kraken.db")
-    logger.info(f"Using database: {db_path}")
+    db_path = str(world.db_path)
+    print(f"Import target: {world.name} ({world.db_path})", file=sys.stderr)
 
     try:
         db_service = DatabaseService(db_path)
@@ -85,11 +111,11 @@ def run_import_cli(args: List[str]) -> int:
                 json_content = f.read()
         except FileNotFoundError:  # Should be caught by file_path.exists() earlier
             logger.error(f"File not found: {file_path}")
-            print(f"Error: File not found: '{file_path}'.")
+            print(f"Error: File not found: '{file_path}'.", file=sys.stderr)
             return 1
         except Exception as e:  # Catch other potential file reading errors
             logger.error(f"Error reading file '{file_path}': {e}")
-            print(f"Error reading file '{file_path}': {e}")
+            print(f"Error reading file '{file_path}': {e}", file=sys.stderr)
             return 1
 
         # 3. Parse and Validate
@@ -98,7 +124,7 @@ def run_import_cli(args: List[str]) -> int:
         except ValueError as e:
             msg = f"Validation Error: {e}"
             logger.error(msg)
-            print(msg)
+            print(msg, file=sys.stderr)
             return 1
 
         # 4. Import
@@ -119,14 +145,14 @@ def run_import_cli(args: List[str]) -> int:
                     print(f"  - {w}")
             return 0
         else:
-            print("\nImport Failed!")
+            print("\nImport Failed!", file=sys.stderr)
             for error in result.errors:
-                print(f"  - {error}")
+                print(f"  - {error}", file=sys.stderr)
             return 1
 
     except Exception as e:
         logger.exception("Unexpected CLI import error")
-        print(f"Critical Error: {e}")
+        print(f"Critical Error: {e}", file=sys.stderr)
         return 1
     finally:
         if "db_service" in locals() and db_service:

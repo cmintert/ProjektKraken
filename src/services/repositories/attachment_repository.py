@@ -90,6 +90,23 @@ class AttachmentRepository(BaseRepository):
         cursor = self._connection.execute(sql)
         return [self._row_to_domain(row) for row in cursor.fetchall()]
 
+    def normalize_legacy_owner_types(self, records: List[tuple[str, str]]) -> None:
+        """Rewrite only the reviewed plural-owner records in one transaction."""
+        canonical = {"entities": "entity", "events": "event"}
+        with self.transaction() as conn:
+            for attachment_id, old_type in records:
+                if old_type not in canonical:
+                    raise ValueError(f"Unsupported legacy owner type: {old_type}")
+                changed = conn.execute(
+                    "UPDATE image_attachments SET owner_type = ? "
+                    "WHERE id = ? AND owner_type = ?",
+                    (canonical[old_type], attachment_id, old_type),
+                )
+                if changed.rowcount != 1:
+                    raise RuntimeError(
+                        f"Attachment changed during repair: {attachment_id}"
+                    )
+
     def delete(self, attachment_id: str) -> None:
         """Deletes an attachment record by ID."""
         sql = "DELETE FROM image_attachments WHERE id = ?"

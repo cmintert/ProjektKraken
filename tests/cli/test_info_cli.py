@@ -1,10 +1,11 @@
 """Tests for database information CLI statistics."""
 
-from unittest.mock import MagicMock
+from argparse import Namespace
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.cli.info import gather_stats
+from src.cli.info import gather_stats, show_info
 from src.core.image_attachment import ImageAttachment
 from src.services.db_service import DatabaseService
 
@@ -41,3 +42,12 @@ def test_gather_stats_resolves_attachment_relative_to_world(tmp_path) -> None:
     stats = gather_stats(db_service)
 
     assert stats["attachments"] == {"count": 1, "total_size_mb": 1.0}
+
+
+def test_failed_stats_do_not_report_success(capsys) -> None:
+    db_service = MagicMock()
+    db_service.get_all_entities.side_effect = RuntimeError("stats unavailable")
+    with patch("src.cli.info.DatabaseService", return_value=db_service):
+        result = show_info(Namespace(database="World.kraken", json=True, verbose=False))
+    assert result == 1
+    assert capsys.readouterr().out == ""

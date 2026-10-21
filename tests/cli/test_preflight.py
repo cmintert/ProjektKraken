@@ -15,7 +15,8 @@ pytestmark = pytest.mark.ci_fast
 def test_push_runs_deep_quality_and_curated_regressions() -> None:
     """Every normal push must verify more than the remote smoke suite."""
     commands = [" ".join(command) for _, command in make_steps("push", "base123")]
-    assert len(commands) == 11
+    assert len(commands) == 12
+    assert any("tests/cli/test_cli_contract.py" in value for value in commands)
     assert any("scripts.check_help_inspection" in value for value in commands)
     assert any("scripts.build_help" in value for value in commands)
     assert any("smoke or ci_fast" in value for value in commands)
@@ -35,7 +36,8 @@ def test_push_runs_deep_quality_and_curated_regressions() -> None:
 def test_release_checks_entire_suite_without_double_fast_run() -> None:
     """A release candidate requires the full tests and coverage."""
     commands = [" ".join(command) for _, command in make_steps("release", "base123")]
-    assert len(commands) == 12
+    assert len(commands) == 13
+    assert any("tests/cli/test_cli_contract.py" in value for value in commands)
     assert any("scripts.check_help_inspection" in value for value in commands)
     assert any("scripts.build_help" in value for value in commands)
     assert any(

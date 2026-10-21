@@ -39,19 +39,19 @@ def set_grouping(args: argparse.Namespace) -> int:
         # Parse tags
         tags = [t.strip() for t in args.tags.split(",") if t.strip()]
         if not tags:
-            print("✗ No tags specified.")
+            print("ERROR No tags specified.", file=sys.stderr)
             return 1
 
         cmd = SetTimelineGroupingCommand(tags, mode=args.mode)
         result = cmd.execute(db_service)
 
         if result.success:
-            print("✓ Set timeline grouping:")
+            print("OK Set timeline grouping:")
             print(f"  Tags: {', '.join(tags)}")
             print(f"  Mode: {args.mode}")
             return 0
         else:
-            print(f"✗ Error: {result.message}")
+            print(f"ERROR: {result.message}", file=sys.stderr)
             return 1
 
     except Exception as e:
@@ -75,10 +75,10 @@ def clear_grouping(args: argparse.Namespace) -> int:
         result = cmd.execute(db_service)
 
         if result.success:
-            print("✓ Timeline grouping cleared.")
+            print("OK Timeline grouping cleared.")
             return 0
         else:
-            print(f"✗ Error: {result.message}")
+            print(f"ERROR: {result.message}", file=sys.stderr)
             return 1
 
     except Exception as e:
@@ -102,10 +102,10 @@ def update_tag_color(args: argparse.Namespace) -> int:
         result = cmd.execute(db_service)
 
         if result.success:
-            print(f"✓ Updated color for tag '{args.tag}' to {args.color}")
+            print(f"OK Updated color for tag '{args.tag}' to {args.color}")
             return 0
         else:
-            print(f"✗ Error: {result.message}")
+            print(f"ERROR: {result.message}", file=sys.stderr)
             return 1
 
     except Exception as e:
@@ -187,7 +187,7 @@ def main() -> None:
         sys.exit(args.func(args))
     else:
         parser.print_help()
-        sys.exit(1)
+        sys.exit(2)
 
 
 if __name__ == "__main__":

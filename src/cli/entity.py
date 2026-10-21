@@ -17,6 +17,7 @@ Usage:
 """
 
 import argparse
+import json
 import logging
 import sys
 
@@ -59,14 +60,21 @@ def create_entity(args: argparse.Namespace) -> int:
         result = cmd.execute(db_service)
 
         if result.success:
-            print(f"✓ Created entity: {result.data['id']}")
+            if args.json:
+                print(
+                    json.dumps(
+                        {"id": result.data["id"], "name": args.name, "type": args.type}
+                    )
+                )
+                return 0
+            print(f"OK Created entity: {result.data['id']}")
             print(f"  Name: {args.name}")
             print(f"  Type: {args.type}")
             if args.tags:
                 print(f"  Tags: {args.tags}")
             return 0
         else:
-            print(f"✗ Error: {result.message}")
+            print(f"ERROR: {result.message}", file=sys.stderr)
             return 1
 
     except Exception as e:
@@ -88,7 +96,7 @@ def list_entities(args: argparse.Namespace) -> int:
 
         entities = db_service.get_all_entities()
 
-        if not entities:
+        if not entities and not args.json:
             print("No entities found.")
             return 0
 
@@ -155,7 +163,7 @@ def show_entity(args: argparse.Namespace) -> int:
         entity = db_service.get_entity(args.id)
 
         if not entity:
-            print(f"✗ Entity not found: {args.id}")
+            print(f"ERROR Entity not found: {args.id}", file=sys.stderr)
             return 1
 
         # Output format
@@ -194,7 +202,7 @@ def show_entity(args: argparse.Namespace) -> int:
                         target_name = db_service.get_name(rel["target_id"])
                         target_id_short = rel["target_id"][:8]
                         print(
-                            f"  → {target_name} ({rel['rel_type']}) "
+                            f"  -> {target_name} ({rel['rel_type']}) "
                             f"[{target_id_short}...]"
                         )
 
@@ -204,7 +212,7 @@ def show_entity(args: argparse.Namespace) -> int:
                         source_name = db_service.get_name(rel["source_id"])
                         source_id_short = rel["source_id"][:8]
                         print(
-                            f"  ← {source_name} ({rel['rel_type']}) "
+                            f"  <- {source_name} ({rel['rel_type']}) "
                             f"[{source_id_short}...]"
                         )
 
@@ -233,7 +241,7 @@ def update_entity(args: argparse.Namespace) -> int:
         # Check if entity exists
         entity = db_service.get_entity(args.id)
         if not entity:
-            print(f"✗ Entity not found: {args.id}")
+            print(f"ERROR Entity not found: {args.id}", file=sys.stderr)
             return 1
 
         # Build update data
@@ -253,19 +261,21 @@ def update_entity(args: argparse.Namespace) -> int:
             update_data["attributes"] = new_attrs
 
         if not update_data:
-            print("✗ No updates specified. Use --name, --type, --description, --tags")
+            print(
+                "ERROR No updates specified. Use --name, --type, --description, --tags"
+            )
             return 1
 
         cmd = UpdateEntityCommand(args.id, update_data)
         result = cmd.execute(db_service)
 
         if result.success:
-            print(f"✓ Updated entity: {args.id}")
+            print(f"OK Updated entity: {args.id}")
             for key, value in update_data.items():
                 print(f"  {key}: {value}")
             return 0
         else:
-            print(f"✗ Error: {result.message}")
+            print(f"ERROR: {result.message}", file=sys.stderr)
             return 1
 
     except Exception as e:
@@ -288,7 +298,7 @@ def delete_entity(args: argparse.Namespace) -> int:
         # Check if entity exists
         entity = db_service.get_entity(args.id)
         if not entity:
-            print(f"✗ Entity not found: {args.id}")
+            print(f"ERROR Entity not found: {args.id}", file=sys.stderr)
             return 1
 
         # Confirm deletion unless --force
@@ -303,10 +313,10 @@ def delete_entity(args: argparse.Namespace) -> int:
         result = cmd.execute(db_service)
 
         if result.success:
-            print(f"✓ Deleted entity: {args.id}")
+            print(f"OK Deleted entity: {args.id}")
             return 0
         else:
-            print(f"✗ Error: {result.message}")
+            print(f"ERROR: {result.message}", file=sys.stderr)
             return 1
 
     except Exception as e:
@@ -340,6 +350,9 @@ def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: 
     )
     create_parser.add_argument("--description", help="Entity description")
     create_parser.add_argument("--tags", help="Comma-separated list of tags")
+    create_parser.add_argument(
+        "--json", action="store_true", help="Output created ID as JSON"
+    )
     create_parser.set_defaults(func=create_entity)
 
     # List command
@@ -416,7 +429,7 @@ def main() -> None:
     if hasattr(args, "database"):
         # Note: Create operations can work with non-existent databases
         # as DatabaseService will create them automatically
-        allow_create = args.command == "create"
+        allow_create = False
         if not validate_database_path(args.database, allow_create=allow_create):
             sys.exit(1)
 
@@ -425,7 +438,7 @@ def main() -> None:
         sys.exit(args.func(args))
     else:
         parser.print_help()
-        sys.exit(1)
+        sys.exit(2)
 
 
 if __name__ == "__main__":

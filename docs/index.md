@@ -29,6 +29,7 @@ reference/index
 :caption: Releases
 
 releases/0.20.0-beta1
+releases/0.20.1-beta1
 releases/0.19.7-beta1
 ```
 

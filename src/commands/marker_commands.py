@@ -6,6 +6,7 @@ updates, icon/color changes, and keyframe deletions.
 
 import dataclasses
 import logging
+import math
 from typing import Optional
 
 from src.commands.base_command import BaseCommand, CommandResult
@@ -13,6 +14,12 @@ from src.core.marker import Marker
 from src.services.db_service import DatabaseService
 
 logger = logging.getLogger(__name__)
+
+
+def _validate_anchor(x: float, y: float) -> None:
+    """Require finite, normalized marker coordinates before persistence."""
+    if not all(math.isfinite(value) and 0.0 <= value <= 1.0 for value in (x, y)):
+        raise ValueError("Marker coordinates must be between 0.0 and 1.0")
 
 
 class CreateMarkerCommand(BaseCommand):
@@ -46,6 +53,7 @@ class CreateMarkerCommand(BaseCommand):
 
         """
         try:
+            _validate_anchor(self._marker.x, self._marker.y)
             existing = db_service.get_marker_by_composite(
                 self._marker.map_id,
                 self._marker.object_id,
@@ -173,6 +181,7 @@ class UpdateMarkerCommand(BaseCommand):
             }
 
             self._new_marker = dataclasses.replace(current, **clean_data)
+            _validate_anchor(self._new_marker.x, self._new_marker.y)
 
             db_service.insert_marker(self._new_marker)
             self._is_executed = True
@@ -259,8 +268,8 @@ class DeleteMarkerCommand(BaseCommand):
                     command_name="DeleteMarkerCommand",
                 )
 
-            self._deleted_trajectories = (
-                db_service.trajectory_repo.snapshot_by_marker(self.marker_id)
+            self._deleted_trajectories = db_service.trajectory_repo.snapshot_by_marker(
+                self.marker_id
             )
             self._deleted_geometry_states = (
                 db_service.feature_geometry_repo.snapshot_by_marker(self.marker_id)
@@ -334,12 +343,8 @@ class DeleteMarkerCommand(BaseCommand):
         marker_data = data.get("deleted_marker")
         if marker_data:
             command._deleted_marker = Marker.from_dict(marker_data)
-        command._deleted_trajectories = list(
-            data.get("deleted_trajectories", [])
-        )
-        command._deleted_geometry_states = list(
-            data.get("deleted_geometry_states", [])
-        )
+        command._deleted_trajectories = list(data.get("deleted_trajectories", []))
+        command._deleted_geometry_states = list(data.get("deleted_geometry_states", []))
         command._is_executed = bool(data.get("is_executed", marker_data))
         return command
 

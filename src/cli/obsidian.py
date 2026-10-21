@@ -37,17 +37,17 @@ def export_obsidian(args: argparse.Namespace) -> int:
         )
 
         if result.success:
-            print("✓ Export successful!")
+            print("OK Export successful!")
             print(f"  Files created: {result.files_created}")
             print(f"  Location: {result.output_dir}")
 
             if result.errors:
-                print(f"\n⚠️ Completed with {len(result.errors)} warnings:")
+                print(f"\nWarning: Completed with {len(result.errors)} warnings:")
                 for err in result.errors:
                     print(f"  - {err}")
             return 0
         else:
-            print("✗ Export failed.")
+            print("ERROR Export failed.", file=sys.stderr)
             for err in result.errors:
                 print(f"  - {err}")
             return 1
@@ -102,7 +102,7 @@ def main() -> None:
         sys.exit(args.func(args))
     else:
         parser.print_help()
-        sys.exit(1)
+        sys.exit(2)
 
 
 if __name__ == "__main__":

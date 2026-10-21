@@ -33,6 +33,13 @@ class AttachmentService:
         self._repo = repository
         self._store = asset_store
 
+    @staticmethod
+    def _validate_owner(owner_type: str, owner_id: str) -> None:
+        if owner_type not in {"entity", "event"}:
+            raise ValueError(f"Invalid attachment owner type: {owner_type}")
+        if not owner_id:
+            raise ValueError("Attachment owner ID is required")
+
     def add_images(
         self, owner_type: str, owner_id: str, source_paths: List[str]
     ) -> List[ImageAttachment]:
@@ -47,7 +54,18 @@ class AttachmentService:
             List of created ImageAttachment objects.
 
         """
-        created_attachments = []
+        created, _failures = self.add_images_with_report(
+            owner_type, owner_id, source_paths
+        )
+        return created
+
+    def add_images_with_report(
+        self, owner_type: str, owner_id: str, source_paths: List[str]
+    ) -> Tuple[List[ImageAttachment], Dict[str, str]]:
+        """Import images and retain per-source failures for automation callers."""
+        self._validate_owner(owner_type, owner_id)
+        created_attachments: List[ImageAttachment] = []
+        failures: Dict[str, str] = {}
 
         # Get current max order index to append new images at the end
         existing = self._repo.list_by_owner(owner_type, owner_id)
@@ -94,11 +112,10 @@ class AttachmentService:
 
             except Exception as e:
                 logger.error(f"Failed to add image {path}: {e}")
-                # Continue with others? Or abort all?
-                # For now, simplistic approach: log and continue.
+                failures[path] = str(e)
                 continue
 
-        return created_attachments
+        return created_attachments, failures
 
     def remove_image(self, attachment_id: str) -> Tuple[bool, Optional[Dict[str, Any]]]:
         """Removes an image attachment. Moves files to trash and deletes DB record.
@@ -162,12 +179,14 @@ class AttachmentService:
 
     def get_attachments(self, owner_type: str, owner_id: str) -> List[ImageAttachment]:
         """Retrieves all attachments for an owner."""
+        self._validate_owner(owner_type, owner_id)
         return self._repo.list_by_owner(owner_type, owner_id)
 
     def update_order(
         self, owner_type: str, owner_id: str, ordered_ids: List[str]
     ) -> None:
         """Updates the order of attachments."""
+        self._validate_owner(owner_type, owner_id)
         self._repo.update_order(owner_type, owner_id, ordered_ids)
 
     def update_caption(self, attachment_id: str, caption: Optional[str]) -> None:

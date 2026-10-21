@@ -45,11 +45,11 @@ def create_map(args: argparse.Namespace) -> int:
         result = cmd.execute(db_service)
 
         if result.success:
-            print(f"✓ Created map: {result.data['id']}")
+            print(f"OK Created map: {result.data['id']}")
             print(f"  Name: {args.name}")
             return 0
         else:
-            print(f"✗ Error: {result.message}")
+            print(f"ERROR: {result.message}", file=sys.stderr)
             return 1
 
     except Exception as e:
@@ -115,10 +115,10 @@ def delete_map(args: argparse.Namespace) -> int:
         result = cmd.execute(db_service)
 
         if result.success:
-            print(f"✓ Deleted map: {args.id}")
+            print(f"OK Deleted map: {args.id}")
             return 0
         else:
-            print(f"✗ Error: {result.message}")
+            print(f"ERROR: {result.message}", file=sys.stderr)
             return 1
 
     except Exception as e:
@@ -163,10 +163,10 @@ def add_marker(args: argparse.Namespace) -> int:
         result = cmd.execute(db_service)
 
         if result.success:
-            print(f"✓ Added marker: {result.data['id']}")
+            print(f"OK Added marker: {result.data['id']}")
             return 0
         else:
-            print(f"✗ Error: {result.message}")
+            print(f"ERROR: {result.message}", file=sys.stderr)
             return 1
 
     except Exception as e:
@@ -193,17 +193,17 @@ def update_map(args: argparse.Namespace) -> int:
             update_data["image_path"] = args.image
 
         if not update_data:
-            print("✗ No updates specified. Use --name or --image.")
+            print("ERROR No updates specified. Use --name or --image.", file=sys.stderr)
             return 1
 
         cmd = UpdateMapCommand(args.id, update_data)
         result = cmd.execute(db_service)
 
         if result.success:
-            print(f"✓ Updated map: {args.id}")
+            print(f"OK Updated map: {args.id}")
             return 0
         else:
-            print(f"✗ Error: {result.message}")
+            print(f"ERROR: {result.message}", file=sys.stderr)
             return 1
 
     except Exception as e:
@@ -242,17 +242,17 @@ def marker_update(args: argparse.Namespace) -> int:
             update_data["attributes"] = attributes
 
         if not update_data:
-            print("✗ No updates specified.")
+            print("ERROR No updates specified.", file=sys.stderr)
             return 1
 
         cmd = UpdateMarkerCommand(args.id, update_data)
         result = cmd.execute(db_service)
 
         if result.success:
-            print(f"✓ Updated marker: {args.id}")
+            print(f"OK Updated marker: {args.id}")
             return 0
         else:
-            print(f"✗ Error: {result.message}")
+            print(f"ERROR: {result.message}", file=sys.stderr)
             return 1
 
     except Exception as e:
@@ -285,10 +285,10 @@ def marker_delete(args: argparse.Namespace) -> int:
         result = cmd.execute(db_service)
 
         if result.success:
-            print(f"✓ Deleted marker: {args.id}")
+            print(f"OK Deleted marker: {args.id}")
             return 0
         else:
-            print(f"✗ Error: {result.message}")
+            print(f"ERROR: {result.message}", file=sys.stderr)
             return 1
 
     except Exception as e:
@@ -349,7 +349,7 @@ def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: 
     create_p = subparsers.add_parser("create", help="Create a new map")
     create_p.add_argument("--database", "-d", required=True)
     create_p.add_argument("--name", "-n", required=True)
-    create_p.add_argument("--image", "-i", help="Path to image file")
+    create_p.add_argument("--image", "-i", required=True, help="Path to map image")
     create_p.set_defaults(func=create_map)
 
     # Map List
@@ -430,16 +430,14 @@ def main() -> None:
         logging.getLogger().setLevel(logging.DEBUG)
 
     if hasattr(args, "database"):
-        if not validate_database_path(
-            args.database, allow_create=(args.command == "create")
-        ):
+        if not validate_database_path(args.database):
             sys.exit(1)
 
     if hasattr(args, "func"):
         sys.exit(args.func(args))
     else:
         parser.print_help()
-        sys.exit(1)
+        sys.exit(2)
 
 
 if __name__ == "__main__":

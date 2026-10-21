@@ -45,6 +45,13 @@ def test_add_images(service, mock_repo, mock_store):
     assert created[1].order_index == 1
 
 
+@pytest.mark.parametrize("owner_type", ["entities", "events", "map", ""])
+def test_rejects_noncanonical_owner_types(service, mock_repo, owner_type):
+    with pytest.raises(ValueError, match="Invalid attachment owner type"):
+        service.add_images(owner_type, "owner-id", ["image.png"])
+    mock_repo.insert.assert_not_called()
+
+
 def test_remove_image(service, mock_repo, mock_store):
     att = ImageAttachment(
         id="1", owner_type="event", owner_id="e1", image_rel_path="p", order_index=0

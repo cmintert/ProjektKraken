@@ -120,6 +120,10 @@ def make_steps(mode: str, base_ref: str) -> list[tuple[str, list[str]]]:
                 "docs/_build/html",
             ],
         ),
+        (
+            "CLI contract",
+            [py, "-m", "pytest", "tests/cli/test_cli_contract.py", "-q", "--maxfail=1"],
+        ),
     ]
     if mode == "release":
         steps.append(

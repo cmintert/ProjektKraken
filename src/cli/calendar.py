@@ -34,7 +34,10 @@ def create_calendar(args: argparse.Namespace) -> int:
         if args.months:
             for m_str in args.months.split(","):
                 if ":" not in m_str:
-                    print(f"✗ Invalid month format: {m_str}. Use Name:Days")
+                    print(
+                        f"ERROR Invalid month format: {m_str}. Use Name:Days",
+                        file=sys.stderr,
+                    )
                     return 1
                 name, days = m_str.split(":", 1)
                 months.append(
@@ -86,18 +89,18 @@ def create_calendar(args: argparse.Namespace) -> int:
         errors = config.validate()
         if errors:
             for err in errors:
-                print(f"✗ Validation error: {err}")
+                print(f"ERROR Validation error: {err}", file=sys.stderr)
             return 1
 
         cmd = CreateCalendarConfigCommand(config)
         result = cmd.execute(db_service)
 
         if result.success:
-            print(f"✓ Created calendar: {config.id}")
+            print(f"OK Created calendar: {config.id}")
             print(f"  Name: {config.name}")
             return 0
         else:
-            print(f"✗ Error: {result.message}")
+            print(f"ERROR: {result.message}", file=sys.stderr)
             return 1
 
     except Exception as e:
@@ -151,7 +154,7 @@ def show_calendar(args: argparse.Namespace) -> int:
 
         config = db_service.get_calendar_config(args.id)
         if not config:
-            print(f"✗ Calendar not found: {args.id}")
+            print(f"ERROR Calendar not found: {args.id}", file=sys.stderr)
             return 1
 
         if args.json:
@@ -201,10 +204,10 @@ def set_active_calendar(args: argparse.Namespace) -> int:
         result = cmd.execute(db_service)
 
         if result.success:
-            print(f"✓ Calendar {args.id} is now active.")
+            print(f"OK Calendar {args.id} is now active.")
             return 0
         else:
-            print(f"✗ Error: {result.message}")
+            print(f"ERROR: {result.message}", file=sys.stderr)
             return 1
     except Exception as e:
         logger.error(f"Failed to set active calendar: {e}")
@@ -224,7 +227,7 @@ def delete_calendar(args: argparse.Namespace) -> int:
         if not args.force:
             c = db_service.get_calendar_config(args.id)
             if not c:
-                print(f"✗ Calendar not found: {args.id}")
+                print(f"ERROR Calendar not found: {args.id}", file=sys.stderr)
                 return 1
             print(f"About to delete calendar: {c.name} ({args.id})")
             if input("Are you sure? (y/n): ").lower() != "y":
@@ -234,10 +237,10 @@ def delete_calendar(args: argparse.Namespace) -> int:
         result = cmd.execute(db_service)
 
         if result.success:
-            print(f"✓ Deleted calendar: {args.id}")
+            print(f"OK Deleted calendar: {args.id}")
             return 0
         else:
-            print(f"✗ Error: {result.message}")
+            print(f"ERROR: {result.message}", file=sys.stderr)
             return 1
     except Exception as e:
         logger.error(f"Failed to delete calendar: {e}")
@@ -307,7 +310,7 @@ def main() -> None:
 
     if not args.command:
         parser.print_help()
-        sys.exit(1)
+        sys.exit(2)
 
     if not validate_database_path(args.database):
         sys.exit(1)

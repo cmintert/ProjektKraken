@@ -38,7 +38,7 @@ def scan_links(args: argparse.Namespace) -> int:
             obj = db_service.get_event(args.source)
 
         if not obj:
-            print(f"✗ Source object not found: {args.source}")
+            print(f"ERROR Source object not found: {args.source}", file=sys.stderr)
             return 1
 
         # Get content from field
@@ -47,17 +47,17 @@ def scan_links(args: argparse.Namespace) -> int:
         elif hasattr(obj, "attributes") and args.field in obj.attributes:
             text_content = obj.attributes[args.field]
         else:
-            print(f"✗ Field '{args.field}' not found on object.")
+            print(f"ERROR Field '{args.field}' not found on object.", file=sys.stderr)
             return 1
 
         cmd = ProcessWikiLinksCommand(args.source, text_content or "", args.field)
         result = cmd.execute(db_service)
 
         if result.success:
-            print(f"✓ {result.message}")
+            print(f"OK {result.message}")
             return 0
         else:
-            print(f"✗ Error: {result.message}")
+            print(f"ERROR: {result.message}", file=sys.stderr)
             return 1
 
     except Exception as e:
@@ -115,7 +115,7 @@ def main() -> None:
         sys.exit(args.func(args))
     else:
         parser.print_help()
-        sys.exit(1)
+        sys.exit(2)
 
 
 if __name__ == "__main__":

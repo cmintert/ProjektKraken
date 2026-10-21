@@ -29,15 +29,13 @@ def create_backup(args: argparse.Namespace) -> int:
         service.set_database_path(args.database)
 
         desc = args.description or "Manual backup via CLI"
-        backup = service.create_backup(
-            backup_type=BackupType.MANUAL, description=desc
-        )
+        backup = service.create_backup(backup_type=BackupType.MANUAL, description=desc)
 
         if backup:
-            print(f"✓ Backup created successfully: {backup.backup_path}")
+            print(f"OK Backup created successfully: {backup.backup_path}")
             return 0
         else:
-            print("✗ Backup creation failed.")
+            print("ERROR Backup creation failed.", file=sys.stderr)
             return 1
 
     except Exception as e:
@@ -89,7 +87,7 @@ def restore_backup(args: argparse.Namespace) -> int:
 
         backup_file = Path(args.file)
         if not backup_file.exists():
-            print(f"✗ Backup file not found: {backup_file}")
+            print(f"ERROR Backup file not found: {backup_file}", file=sys.stderr)
             return 1
 
         target_path = Path(args.database)
@@ -102,10 +100,10 @@ def restore_backup(args: argparse.Namespace) -> int:
         success = service.restore_backup(backup_file, target_path)
 
         if success:
-            print(f"✓ Database restored successfully to: {target_path}")
+            print(f"OK Database restored successfully to: {target_path}")
             return 0
         else:
-            print("✗ Restore failed.")
+            print("ERROR Restore failed.", file=sys.stderr)
             return 1
 
     except Exception as e:
@@ -159,16 +157,17 @@ def main() -> None:
         logging.getLogger().setLevel(logging.DEBUG)
 
     if hasattr(args, "database"):
-        # For restore we might be restoring to a new path, so allow_create=True
-        # effectively just checks validity of path structure
-        if not validate_database_path(args.database, allow_create=True):
+        # Only restore may target a database that does not exist yet.
+        if not validate_database_path(
+            args.database, allow_create=args.command == "restore"
+        ):
             sys.exit(1)
 
     if hasattr(args, "func"):
         sys.exit(args.func(args))
     else:
         parser.print_help()
-        sys.exit(1)
+        sys.exit(2)
 
 
 if __name__ == "__main__":
