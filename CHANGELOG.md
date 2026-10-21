@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-20
-**Commit:** 960551ee
+**Last Updated:** 2026-10-21
+**Commit:** 5f2c13ca
 ---
 
 # Changelog
@@ -13,6 +13,10 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-10-21)* **Windows beta packaging (KRT-100)**: Update Pillow and
+  certifi to audited releases and force UTF-8 output for the package workflow's
+  dependency audit after the beta 1 package job stopped before building.
+  Prepare beta 2 release notes for the corrected candidate.
 - *(2026-10-20)* **Release regression (KRT-103)**: Accepted repeated passing
   unittest subtest reports in shard evidence, stabilized Qt gallery teardown and
   layout checks across runners, and added focused verifier coverage.

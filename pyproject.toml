@@ -9,7 +9,7 @@ authors = [
 
 dependencies = [
     "PySide6==6.10.1",
-    "Pillow==12.3.0",
+    "Pillow==13.0.0",
     "fastapi==0.141.1",
     "uvicorn[standard]==0.40.0",
     "python-multipart==0.0.31",
