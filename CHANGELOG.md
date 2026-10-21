@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-21
-**Commit:** 8ae3d130de292760928509569709d8bc9ffc058b
+**Commit:** 233d605a3818f5399f0c0fb146bf8bb5ffe299c5
 ---
 
 # Changelog
@@ -29,6 +29,11 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-10-21)* **Worker architecture (KRT-101)**: Moved semantic indexing,
+  its model cache, queue, Windows safety probe, and suggestion queries into a
+  worker-thread service while preserving the existing Qt slots and signals.
+  Added worker-boundary coverage, updated architecture documentation, and
+  ratcheted the worker-size ceiling downward.
 - *(2026-10-21)* **Help review (KRT-104)**: Recorded the reviewed attachment
   batch and marker-position command effects; the existing gallery and map Help
   explanations remain accurate.

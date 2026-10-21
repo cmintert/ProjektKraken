@@ -1,5 +1,18 @@
 # Architecture and Threading
 
+## Worker semantic indexing
+
+`WorkerSemanticIndexService` owns the pending embedding queue, cached
+`SearchService`, Windows native-model probe, index rebuild, and semantic
+suggestion query. It is a plain Python object invoked through the existing
+`DatabaseWorker` Qt slots on the database worker thread. The worker retains its
+public slots and signals; the service receives the current worker-owned database
+service only for each operation and emits through narrow notification callbacks.
+Database reinitialization, failed initialization, and cleanup discard cached
+search and pending work. The native-model probe remains once per worker lifetime.
+The historical 1,990-line worker reference remains recorded in the architecture
+test, with an explicit 1,864-line ceiling after this extraction.
+
 ## Simple-load failure reporting
 
 `DatabaseWorker` retains its event/entity/map load slots, database access, guards,

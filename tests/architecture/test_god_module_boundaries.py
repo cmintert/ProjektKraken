@@ -77,9 +77,9 @@ CHOKE_POINT_BASELINES: dict[str, ChokePointBaseline] = {
     },
     "src/services/worker.py": {
         "line_count": 1990,
-        # Reviewed migration/shutdown/failure plumbing; no new growth headroom.
-        # See docs/developer/release-0.20.0-readiness.md.
-        "maximum_lines": 2115,
+        # KRT-101 extracted semantic indexing from the measured 2,115-line file.
+        # This is a reviewed hard ceiling, without a renewed growth allowance.
+        "maximum_lines": 1864,
         "public_api": frozenset(
             """
             class:DatabaseWorker

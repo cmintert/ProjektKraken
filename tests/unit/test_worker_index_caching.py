@@ -1,148 +1,70 @@
-"""Tests for worker search-service caching in index_object / rebuild_search_index.
+"""Search model reuse and worker rebuild delivery regressions."""
 
-Regression tests for the Windows heap-corruption crash (0xc0000374) caused by
-creating a new SentenceTransformer model on every autosave.  The fix reuses the
-cached SearchService returned by DatabaseWorker._get_search_service() so the
-underlying model is loaded at most once per worker lifetime.
-"""
-
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from src.services.search_service import IndexRebuildCounts, IndexRebuildResult
 from src.services.worker import DatabaseWorker
 
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
 
-
-@pytest.fixture()
+@pytest.fixture
 def worker():
-    """Bare worker instance with no real DB."""
-    w = DatabaseWorker("test.db")
-    # Inject a minimal mock db_service so get_connection() is callable.
-    mock_db = MagicMock()
-    mock_db.get_connection.return_value = MagicMock()  # fake SQLite connection
-    w.db_service = mock_db
-    return w
+    worker = DatabaseWorker("test.db")
+    worker.db_service = MagicMock()
+    return worker
 
 
-@pytest.fixture()
-def mock_search_service():
-    return MagicMock()
+def test_index_and_rebuild_share_one_search_service(worker):
+    search = MagicMock()
+    search.rebuild_index.return_value = IndexRebuildResult(
+        per_type={"entity": IndexRebuildCounts(indexed=3)}
+    )
+    finished = []
+    worker.index_rebuild_finished.connect(
+        lambda indexed, unchanged, failed: finished.append((indexed, unchanged, failed))
+    )
+
+    with patch(
+        "src.services.search_service.create_search_service", return_value=search
+    ) as create:
+        worker.index_object("entity", "one")
+        worker.index_object("event", "two", ["private"])
+        worker.rebuild_search_index("all")
+
+    create.assert_called_once()
+    search.index_entity.assert_called_once_with("one", None)
+    search.index_event.assert_called_once_with("two", ["private"])
+    assert search.rebuild_index.call_args.kwargs["object_types"] == ["entity", "event"]
+    assert finished == [(3, 0, 0)]
 
 
-# ---------------------------------------------------------------------------
-# Caching tests (the crash fix)
-# ---------------------------------------------------------------------------
-
-
-class TestIndexObjectCaching:
-    """index_object() must reuse _get_search_service() instead of constructing
-    a fresh provider on every call."""
-
-    def test_index_object_uses_cached_service(self, worker, mock_search_service):
-        """_get_search_service is called, not create_search_service directly."""
-        worker._get_search_service = MagicMock(return_value=mock_search_service)
-
-        worker.index_object("entity", "abc-123")
-
-        # The cached getter must have been invoked exactly once.
-        worker._get_search_service.assert_called_once()
-        # The underlying index_entity must have been called on the *same* object.
-        mock_search_service.index_entity.assert_called_once_with("abc-123", None)
-
-    def test_second_index_object_call_reuses_same_service(
-        self, worker, mock_search_service
+def test_rebuild_import_error_emits_one_error_and_terminal_count(worker):
+    errors = []
+    finished = []
+    worker.error_occurred.connect(errors.append)
+    worker.index_rebuild_finished.connect(
+        lambda indexed, unchanged, failed: finished.append((indexed, unchanged, failed))
+    )
+    with patch.object(
+        worker._semantic_index,
+        "_get_search_service",
+        side_effect=ImportError("sentence-transformers unavailable\ninstall it"),
     ):
-        """Calling index_object twice must not construct the model twice."""
-        call_count = 0
-        first_service = mock_search_service
-
-        def fake_get():
-            nonlocal call_count
-            call_count += 1
-            return first_service
-
-        worker._get_search_service = fake_get
-
-        worker.index_object("entity", "id-1")
-        worker.index_object("entity", "id-2")
-
-        # Both calls went through the same getter (called twice, but the real
-        # _get_search_service only builds the model on the first call).
-        assert call_count == 2
-        # Both index_entity calls happened on the same service instance.
-        assert mock_search_service.index_entity.call_count == 2
-
-    def test_index_event_delegates_correctly(self, worker, mock_search_service):
-        """index_object('event', …) calls index_event on the cached service."""
-        worker._get_search_service = MagicMock(return_value=mock_search_service)
-
-        worker.index_object("event", "evt-42", excluded_attributes=["_private"])
-
-        mock_search_service.index_event.assert_called_once_with(
-            "evt-42", ["_private"]
-        )
-        mock_search_service.index_entity.assert_not_called()
-
-    def test_index_object_emits_error_when_service_unavailable(self, worker):
-        """If _get_search_service returns None, error_occurred must be emitted."""
-        worker._get_search_service = MagicMock(return_value=None)
-        errors = []
-        worker.error_occurred.connect(errors.append)
-
-        worker.index_object("entity", "no-svc")
-
-        assert len(errors) == 1
-        assert "entity" in errors[0].lower() or "unavailable" in errors[0].lower()
-
-
-class TestRebuildSearchIndexCaching:
-    """rebuild_search_index() must also reuse _get_search_service()."""
-
-    def test_rebuild_uses_cached_service(self, worker, mock_search_service):
-        mock_search_service.rebuild_index.return_value = IndexRebuildResult(
-            per_type={
-                "entity": IndexRebuildCounts(indexed=3),
-                "event": IndexRebuildCounts(indexed=5),
-            }
-        )
-        worker._get_search_service = MagicMock(return_value=mock_search_service)
-
-        finished = []
-        worker.index_rebuild_finished.connect(
-            lambda indexed, unchanged, failed: finished.append(
-                (indexed, unchanged, failed)
-            )
-        )
-
         worker.rebuild_search_index("all")
 
-        worker._get_search_service.assert_called_once()
-        mock_search_service.rebuild_index.assert_called_once()
-        assert finished == [(8, 0, 0)]
+    assert errors == ["sentence-transformers unavailable"]
+    assert finished == [(0, 0, 1)]
 
-    def test_rebuild_handles_import_error_from_get_service(self, worker):
-        """ImportError in _get_search_service is forwarded as an error signal."""
 
-        def raise_import():
-            raise ImportError("sentence-transformers is not installed.")
+def test_rebuild_without_database_reports_error_without_terminal_count(worker):
+    worker.db_service = None
+    errors = []
+    finished = []
+    worker.error_occurred.connect(errors.append)
+    worker.index_rebuild_finished.connect(lambda *counts: finished.append(counts))
 
-        worker._get_search_service = raise_import
-        errors = []
-        finished = []
-        worker.error_occurred.connect(errors.append)
-        worker.index_rebuild_finished.connect(
-            lambda indexed, unchanged, failed: finished.append(
-                (indexed, unchanged, failed)
-            )
-        )
+    worker.rebuild_search_index("all")
 
-        worker.rebuild_search_index("all")
-
-        assert len(errors) == 1
-        assert "sentence-transformers" in errors[0]
-        assert finished == [(0, 0, 1)]
+    assert errors == ["Database not ready for index rebuild."]
+    assert finished == []

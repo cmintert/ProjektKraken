@@ -6,11 +6,9 @@ Handles asynchronous database operations to keep the UI responsive.
 import json
 import logging
 import sqlite3
-import subprocess
-import sys
 import traceback
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, List, Optional, Set, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, List, Optional, Set, Union, cast
 
 from PySide6.QtCore import QObject, Signal, SignalInstance, Slot
 
@@ -21,11 +19,6 @@ from src.core.operation_trace import event as trace_event
 from src.core.operation_trace import finish as finish_trace
 from src.core.operation_trace import from_request as trace_from_request
 from src.core.operation_trace import safe_stack
-from src.core.semantic_config import (
-    SEMANTIC_COMPLETION_ENABLE_EMBEDDING,
-    SEMANTIC_COMPLETION_PROBE_ON_WINDOWS,
-    SEMANTIC_COMPLETION_PROBE_TIMEOUT_S,
-)
 from src.core.summary_data import SummaryData
 from src.services import longform_builder
 from src.services.asset_store import AssetStore
@@ -41,11 +34,14 @@ from src.services.obsidian_exporter import (
     ObsidianExportPreparation,
 )
 from src.services.summary_service import SummaryService
+from src.services.worker_semantic_index_service import (
+    SemanticIndexNotifications,
+    WorkerSemanticIndexService,
+)
 
 if TYPE_CHECKING:
     from src.core.temporal_manager import TemporalManager
     from src.services.history_service import HistoryService
-    from src.services.search_service import SearchService
 
 logger = logging.getLogger(__name__)
 
@@ -157,74 +153,22 @@ class DatabaseWorker(QObject):
         self.temporal_manager: Optional["TemporalManager"] = None
         self.history_service: Optional["HistoryService"] = None
         self.summary_service: Optional[SummaryService] = None
-        self._search_service: Optional["SearchService"] = None
-        # Embedding queue to prevent concurrent embedding operations
-        self._embedding_in_progress = False
-        self._pending_embeddings: Set[Tuple[str, str, Optional[Tuple[str, ...]]]] = (
-            set()
-        )
-        self._semantic_probe_ran = False
-        self._semantic_probe_ok = True
-
-    def _ensure_semantic_probe(self) -> bool:
-        """Run a one-time crash-safety probe before semantic model usage.
-
-        On Windows, sentence-transformers / torch may crash the host process in
-        native code. This probe runs in a child Python process so a failure does
-        not terminate the app. If the probe fails, semantic embedding completions
-        are disabled for this worker lifetime.
-        """
-        if self._semantic_probe_ran:
-            return self._semantic_probe_ok
-
-        self._semantic_probe_ran = True
-
-        if sys.platform != "win32" or not SEMANTIC_COMPLETION_PROBE_ON_WINDOWS:
-            self._semantic_probe_ok = True
-            return True
-
-        model_name = "all-MiniLM-L6-v2"
-        probe_code = (
-            "import os;"
-            "os.environ.setdefault('TOKENIZERS_PARALLELISM','false');"
-            "os.environ.setdefault('OMP_NUM_THREADS','1');"
-            "from sentence_transformers import SentenceTransformer;"
-            f"m=SentenceTransformer('{model_name}', device='cpu');"
-            "m.encode(['probe'], show_progress_bar=False)"
-        )
-
-        try:
-            result = subprocess.run(
-                [sys.executable, "-c", probe_code],
-                check=False,
-                capture_output=True,
-                text=True,
-                timeout=SEMANTIC_COMPLETION_PROBE_TIMEOUT_S,
+        self._semantic_index = WorkerSemanticIndexService(
+            SemanticIndexNotifications(
+                operation_started=self.operation_started.emit,
+                operation_finished=self.operation_finished.emit,
+                error_occurred=self.error_occurred.emit,
+                rebuild_progress=self.index_rebuild_progress.emit,
+                rebuild_finished=self.index_rebuild_finished.emit,
+                suggestions_ready=self.semantic_suggestions_ready.emit,
             )
-        except Exception:
-            logger.warning("Semantic embedding probe failed", exc_info=True)
-            self._semantic_probe_ok = False
-            return False
-
-        if result.returncode != 0:
-            logger.warning(
-                "Semantic embedding probe disabled feature on this run "
-                "(code=%s, stderr=%s)",
-                result.returncode,
-                (result.stderr or "").strip()[:300],
-            )
-            self._semantic_probe_ok = False
-            return False
-
-        self._semantic_probe_ok = True
-        logger.info("Semantic embedding probe passed")
-        return True
+        )
 
     @Slot()
     def initialize_db(self) -> None:
         """Initializes the database connection and services."""
         try:
-            self._search_service = None  # Reset cached service on re-init
+            self._semantic_index.reset_database()
             self.operation_started.emit("Connecting to Database...")
             self.db_service = DatabaseService(self.db_path, world_root=self.world_root)
             self.db_service.connect()
@@ -297,7 +241,7 @@ class DatabaseWorker(QObject):
         self.summary_service = None
         self.temporal_manager = None
         self.history_service = None
-        self._search_service = None
+        self._semantic_index.reset_database()
 
     @Slot()
     def cleanup(self) -> None:
@@ -307,7 +251,7 @@ class DatabaseWorker(QObject):
         """
         errors: list[str] = []
         try:
-            self._search_service = None
+            self._semantic_index.reset_database()
             if self.history_service:
                 self.history_service.end_session()
                 self.history_service = None
@@ -1191,105 +1135,10 @@ class DatabaseWorker(QObject):
         object_id: str,
         excluded_attributes: Optional[List[str]] = None,
     ) -> None:
-        """Index a single object (entity or event) for semantic search.
-
-        Queues the embedding request if one is already in progress, otherwise
-        starts the embedding immediately. This prevents concurrent embedding
-        operations which can fail due to resource conflicts.
-
-        Args:
-            object_type: 'entity' or 'event'.
-            object_id: UUID of the object to index.
-            excluded_attributes: Optional list of attribute keys to exclude.
-
-        """
-        if not self.db_service:
-            return
-
-        # Queue the request if an embedding is already in progress
-        if self._embedding_in_progress:
-            self._pending_embeddings.add(
-                (
-                    object_type,
-                    object_id,
-                    tuple(excluded_attributes) if excluded_attributes else None,
-                )
-            )
-            logger.debug(
-                f"[Worker] Embedding already in progress, queuing {object_type} {object_id}"
-            )
-            return
-
-        # Start the embedding
-        self._do_index_object(object_type, object_id, excluded_attributes)
-
-    def _do_index_object(
-        self,
-        object_type: str,
-        object_id: str,
-        excluded_attributes: Optional[List[str]] = None,
-    ) -> None:
-        """Perform the actual indexing operation.
-
-        Sets the embedding-in-progress flag and processes the embedding,
-        then clears the flag and processes any pending embeddings.
-
-        Args:
-            object_type: 'entity' or 'event'.
-            object_id: UUID of the object to index.
-            excluded_attributes: Optional list of attribute keys to exclude.
-
-        """
-        self._embedding_in_progress = True
-
-        try:
-            self.operation_started.emit(f"Indexing {object_type} {object_id}...")
-
-            # Reuse the cached SearchService so the underlying SentenceTransformer
-            # model is loaded only once per worker lifetime.  Creating a fresh
-            # provider on every call spawns tqdm monitor threads via
-            # huggingface_hub, which causes Windows heap corruption (0xc0000374)
-            # under repeated background-thread model instantiation.
-            search_service = self._get_search_service()
-            if search_service is None:
-                raise RuntimeError("Search service unavailable")
-
-            # Index the object
-            if object_type == "entity":
-                search_service.index_entity(object_id, excluded_attributes)
-            elif object_type == "event":
-                search_service.index_event(object_id, excluded_attributes)
-            else:
-                raise ValueError(f"Unknown object type: {object_type}")
-
-            self.operation_finished.emit(f"Indexed {object_type} {object_id}.")
-
-        except Exception:
-            logger.error(f"Failed to index {object_type}: {traceback.format_exc()}")
-            self.error_occurred.emit(f"Failed to index {object_type} {object_id}.")
-        finally:
-            # Clear the flag and process next pending embedding
-            self._embedding_in_progress = False
-            self._process_pending_embeddings()
-
-    def _process_pending_embeddings(self) -> None:
-        """Process the next pending embedding from the queue."""
-        if not self._pending_embeddings:
-            return
-
-        # Get the first pending embedding
-        next_embedding = self._pending_embeddings.pop()
-        object_type, object_id, excluded_attributes_tuple = next_embedding
-
-        # Convert tuple back to list if present
-        excluded_attributes = (
-            list(excluded_attributes_tuple) if excluded_attributes_tuple else None
+        """Index an object through the worker-owned semantic service."""
+        self._semantic_index.index_object(
+            self.db_service, object_type, object_id, excluded_attributes
         )
-
-        logger.debug(
-            f"[Worker] Processing queued embedding for {object_type} {object_id}"
-        )
-        self._do_index_object(object_type, object_id, excluded_attributes)
 
     @Slot(str, list)
     def rebuild_search_index(
@@ -1297,67 +1146,10 @@ class DatabaseWorker(QObject):
         object_type: str,
         excluded_attributes: Optional[List[str]] = None,
     ) -> None:
-        """Rebuild the semantic search index on the worker thread.
-
-        Emits index_rebuild_progress periodically and index_rebuild_finished
-        when done.
-
-        Args:
-            object_type: 'all', 'entity', or 'event'.
-            excluded_attributes: Optional list of attribute keys to exclude.
-
-        """
-        if not self.db_service:
-            self.error_occurred.emit("Database not ready for index rebuild.")
-            return
-
-        try:
-            # Reuse cached SearchService for the same reason as index_object:
-            # avoids repeated SentenceTransformer instantiation on the worker
-            # thread which causes Windows heap corruption via tqdm monitor threads.
-            try:
-                search_service = self._get_search_service()
-            except ImportError as e:
-                msg = str(e).split("\n")[0]
-                self.error_occurred.emit(msg)
-                self.index_rebuild_finished.emit(0, 0, 1)
-                return
-
-            if search_service is None:
-                self.error_occurred.emit("Search service unavailable for rebuild.")
-                self.index_rebuild_finished.emit(0, 0, 1)
-                return
-
-            types = ["entity", "event"] if object_type == "all" else [object_type]
-
-            self.operation_started.emit("Rebuilding search index...")
-
-            def report_progress(done: int, total: int) -> None:
-                percentage = 100 if total == 0 else int(done * 100 / total)
-                self.index_rebuild_progress.emit(done, total, percentage)
-
-            result = search_service.rebuild_index(
-                object_types=types,
-                excluded_attributes=excluded_attributes or [],
-                progress_callback=report_progress,
-            )
-
-            self.index_rebuild_finished.emit(
-                result.indexed,
-                result.unchanged,
-                result.failed,
-            )
-            self.operation_finished.emit(
-                "Index rebuilt: "
-                f"{result.indexed} indexed, "
-                f"{result.unchanged} unchanged, "
-                f"{result.failed} failed."
-            )
-
-        except Exception:
-            logger.error(f"Index rebuild failed: {traceback.format_exc()}")
-            self.error_occurred.emit("Index rebuild failed.")
-            self.index_rebuild_finished.emit(0, 0, 1)
+        """Rebuild the index through the worker-owned semantic service."""
+        self._semantic_index.rebuild_search_index(
+            self.db_service, object_type, excluded_attributes
+        )
 
     @Slot(dict)
     def apply_filter(self, filter_config: dict) -> None:
@@ -1496,57 +1288,14 @@ class DatabaseWorker(QObject):
             logger.error(f"Failed to load graph data: {traceback.format_exc()}")
             self.error_occurred.emit("Failed to load graph data.")
 
-    def _get_search_service(self) -> Optional["SearchService"]:
-        """Return a cached SearchService, creating it lazily on first use.
-
-        Returns:
-            SearchService instance, or None if unavailable.
-
-        """
-        if self._search_service is not None:
-            return self._search_service
-        if not self.db_service:
-            return None
-        from src.services.search_service import create_search_service
-
-        conn = self.db_service.get_connection()
-        if conn is None:
-            return None
-        self._search_service = create_search_service(conn)
-        return self._search_service
-
     @Slot(str, int, float)
     def query_semantic_suggestions(
         self, prefix: str, top_k: int = 5, min_score: float = 0.85
     ) -> None:
-        """Run a semantic query and emit matching suggestions.
-
-        Called from the main thread via QueuedConnection. Filters results
-        by *min_score* before emitting to avoid sending noise to the UI.
-
-        Args:
-            prefix: The typed wiki-link prefix text.
-            top_k: Maximum results to retrieve from the index.
-            min_score: Minimum cosine similarity to include.
-
-        """
-        if not SEMANTIC_COMPLETION_ENABLE_EMBEDDING:
-            return
-        if not self.db_service:
-            return
-        if not self._ensure_semantic_probe():
-            return
-        try:
-            svc = self._get_search_service()
-            if svc is None:
-                return
-            results = svc.query(text=prefix, top_k=top_k)
-            names = [
-                r["name"] for r in results if r["score"] >= min_score and r["name"]
-            ]
-            self.semantic_suggestions_ready.emit(prefix, names)
-        except Exception:
-            logger.debug("Semantic suggestion query failed", exc_info=True)
+        """Query suggestions through the worker-owned semantic service."""
+        self._semantic_index.query_semantic_suggestions(
+            self.db_service, prefix, top_k, min_score
+        )
 
     @Slot()
     def load_completer_data(self) -> None:

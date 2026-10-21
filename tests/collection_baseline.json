@@ -2,23 +2,23 @@
   "schema": 1,
   "counts": {
     "smoke": 19,
-    "ci_fast": 2396,
+    "ci_fast": 2398,
     "slow": 1,
     "performance": 0,
-    "full": 6838,
-    "full_only": 4433
+    "full": 6833,
+    "full_only": 4426
   },
   "categories": {
     "architecture": 11,
     "cli": 73,
     "gui": 14,
-    "integration": 244,
+    "integration": 245,
     "packaging": 13,
     "performance": 16,
     "repro": 2,
     "root": 15,
     "security": 5,
-    "unit": 6445
+    "unit": 6439
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -516,6 +516,9 @@
     "tests/integration/test_wikilinking_navigation.py::test_peek_keeps_dirty_entity_authoring_context": [],
     "tests/integration/test_wikilinking_navigation.py::test_provisional_materialization_is_undoable_without_navigation": [],
     "tests/integration/test_worker_load_failure_delivery.py::test_failed_event_load_preserves_display_until_successful_empty_result": [
+      "ci_fast"
+    ],
+    "tests/integration/test_worker_semantic_index_delivery.py::test_queued_index_uses_worker_thread_and_delivers_existing_signal": [
       "ci_fast"
     ],
     "tests/integration/test_world_data_trust.py::test_dated_raster_fresh_session_and_snapshot_undo": [
@@ -4095,6 +4098,9 @@
       "ci_fast"
     ],
     "tests/unit/test_dependency_direction.py::test_relation_preparation_has_only_pure_standard_library_dependencies[relation_presentation.py]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_semantic_index_has_one_service_owner_and_thin_worker_slots": [
       "ci_fast"
     ],
     "tests/unit/test_dependency_direction.py::test_simple_load_reporter_cannot_execute_operations": [
@@ -8855,6 +8861,7 @@
     "tests/unit/test_semantic_completions.py::TestWorkerSemanticQuery::test_graceful_on_exception": [],
     "tests/unit/test_semantic_completions.py::TestWorkerSemanticQuery::test_no_emit_without_db": [],
     "tests/unit/test_semantic_completions.py::TestWorkerSemanticQuery::test_probe_failure_disables_query_safely": [],
+    "tests/unit/test_semantic_completions.py::TestWorkerSemanticQuery::test_probe_timeout_is_cached_and_emits_no_result": [],
     "tests/unit/test_set_layer_opacity_command.py::test_command_falls_back_to_current_opacity_if_none_provided": [],
     "tests/unit/test_set_layer_opacity_command.py::test_command_uses_explicit_previous_opacity": [],
     "tests/unit/test_sheet_builder.py::TestAttributePairWidget::test_get_parsed_value_boolean_false": [],
@@ -11331,26 +11338,18 @@
     "tests/unit/test_worker.py::test_serialized_command_result_retains_original_trace": [],
     "tests/unit/test_worker.py::test_successful_command_and_undo_invalidate_temporal_cache": [],
     "tests/unit/test_worker.py::test_summary_failure_log_excludes_exception_content": [],
-    "tests/unit/test_worker_embedding_queue.py::TestEmbeddingQueue::test_concurrent_embedding_gets_queued": [],
-    "tests/unit/test_worker_embedding_queue.py::TestEmbeddingQueue::test_do_index_clears_flag_after_completion": [],
-    "tests/unit/test_worker_embedding_queue.py::TestEmbeddingQueue::test_do_index_clears_flag_on_exception": [],
-    "tests/unit/test_worker_embedding_queue.py::TestEmbeddingQueue::test_do_index_processes_pending_after_completion": [],
-    "tests/unit/test_worker_embedding_queue.py::TestEmbeddingQueue::test_do_index_sets_flag": [],
-    "tests/unit/test_worker_embedding_queue.py::TestEmbeddingQueue::test_embedding_queue_initialized": [],
-    "tests/unit/test_worker_embedding_queue.py::TestEmbeddingQueue::test_excluded_attributes_preserved_in_queue": [],
-    "tests/unit/test_worker_embedding_queue.py::TestEmbeddingQueue::test_first_embedding_starts_immediately": [],
-    "tests/unit/test_worker_embedding_queue.py::TestEmbeddingQueue::test_full_queue_cycle": [],
-    "tests/unit/test_worker_embedding_queue.py::TestEmbeddingQueue::test_multiple_concurrent_requests_queued": [],
-    "tests/unit/test_worker_embedding_queue.py::TestEmbeddingQueue::test_process_pending_embeddings_dequeues_one": [],
-    "tests/unit/test_worker_embedding_queue.py::TestEmbeddingQueue::test_process_pending_empty_is_noop": [],
+    "tests/unit/test_worker_embedding_queue.py::test_failed_embedding_drains_queue_and_emits_one_error": [],
+    "tests/unit/test_worker_embedding_queue.py::test_index_without_database_emits_nothing": [],
+    "tests/unit/test_worker_embedding_queue.py::test_reentrant_requests_are_queued_with_exclusions": [],
+    "tests/unit/test_worker_embedding_queue.py::test_reset_drops_database_bound_state_but_retains_probe": [],
+    "tests/unit/test_worker_embedding_queue.py::test_unsupported_type_reports_one_failure": [],
+    "tests/unit/test_worker_embedding_queue.py::test_worker_release_resets_semantic_state[_clear_failed_initialization]": [],
+    "tests/unit/test_worker_embedding_queue.py::test_worker_release_resets_semantic_state[cleanup]": [],
     "tests/unit/test_worker_filtering.py::TestWorkerFiltering::test_apply_filter_empty_config_passes_none": [],
     "tests/unit/test_worker_filtering.py::TestWorkerFiltering::test_apply_filter_flow": [],
-    "tests/unit/test_worker_index_caching.py::TestIndexObjectCaching::test_index_event_delegates_correctly": [],
-    "tests/unit/test_worker_index_caching.py::TestIndexObjectCaching::test_index_object_emits_error_when_service_unavailable": [],
-    "tests/unit/test_worker_index_caching.py::TestIndexObjectCaching::test_index_object_uses_cached_service": [],
-    "tests/unit/test_worker_index_caching.py::TestIndexObjectCaching::test_second_index_object_call_reuses_same_service": [],
-    "tests/unit/test_worker_index_caching.py::TestRebuildSearchIndexCaching::test_rebuild_handles_import_error_from_get_service": [],
-    "tests/unit/test_worker_index_caching.py::TestRebuildSearchIndexCaching::test_rebuild_uses_cached_service": [],
+    "tests/unit/test_worker_index_caching.py::test_index_and_rebuild_share_one_search_service": [],
+    "tests/unit/test_worker_index_caching.py::test_rebuild_import_error_emits_one_error_and_terminal_count": [],
+    "tests/unit/test_worker_index_caching.py::test_rebuild_without_database_reports_error_without_terminal_count": [],
     "tests/unit/test_worker_load_failures.py::test_simple_load_contract[data-entities]": [
       "ci_fast"
     ],

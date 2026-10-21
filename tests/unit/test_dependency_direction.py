@@ -15,6 +15,60 @@ _FORBIDDEN_IMPORT_ROOTS = {
 pytestmark = pytest.mark.ci_fast
 
 
+def test_semantic_index_has_one_service_owner_and_thin_worker_slots():
+    """KRT-101 keeps indexing state below the public Qt worker boundary."""
+    service_path = _SOURCE_ROOT / "services/worker_semantic_index_service.py"
+    service_tree = ast.parse(service_path.read_text(encoding="utf-8"))
+    assert all(
+        module.split(".")[1] in {"core", "services"}
+        for _, module in _imported_modules(service_path)
+        if module.startswith("src.")
+    )
+    assert not any(
+        isinstance(node, ast.Name) and node.id in {"QObject", "QThread"}
+        for node in ast.walk(service_tree)
+    )
+
+    tree = ast.parse((_SOURCE_ROOT / "services/worker.py").read_text("utf-8"))
+    worker = next(
+        node
+        for node in tree.body
+        if isinstance(node, ast.ClassDef) and node.name == "DatabaseWorker"
+    )
+    owned_state = {
+        "_search_service",
+        "_pending_embeddings",
+        "_embedding_in_progress",
+        "_semantic_probe_ran",
+        "_semantic_probe_ok",
+    }
+    assert not any(
+        isinstance(node, ast.Attribute)
+        and isinstance(node.value, ast.Name)
+        and node.value.id == "self"
+        and node.attr in owned_state
+        for node in ast.walk(worker)
+    )
+    for name in (
+        "index_object",
+        "rebuild_search_index",
+        "query_semantic_suggestions",
+    ):
+        method = next(
+            node
+            for node in worker.body
+            if isinstance(node, ast.FunctionDef) and node.name == name
+        )
+        calls = [
+            node
+            for statement in method.body
+            for node in ast.walk(statement)
+            if isinstance(node, ast.Call)
+        ]
+        assert len(calls) == 1
+        assert ast.unparse(calls[0].func) == f"self._semantic_index.{name}"
+
+
 def test_simple_load_reporter_cannot_execute_operations():
     """KRT-38 reporting may only log safe context and emit an error."""
     tree = ast.parse((_SOURCE_ROOT / "services/worker.py").read_text("utf-8"))

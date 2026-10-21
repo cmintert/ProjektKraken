@@ -45,10 +45,12 @@ def editor_view(qapp):
 def worker(monkeypatch):
     """A DatabaseWorker with a mocked db_service."""
     monkeypatch.setattr(
-        "src.services.worker.SEMANTIC_COMPLETION_ENABLE_EMBEDDING", True
+        "src.services.worker_semantic_index_service.SEMANTIC_COMPLETION_ENABLE_EMBEDDING",
+        True,
     )
     monkeypatch.setattr(
-        "src.services.worker.SEMANTIC_COMPLETION_PROBE_ON_WINDOWS", False
+        "src.services.worker_semantic_index_service.SEMANTIC_COMPLETION_PROBE_ON_WINDOWS",
+        False,
     )
     w = DatabaseWorker("test.db")
     w.db_service = MagicMock()
@@ -225,20 +227,32 @@ class TestWorkerSemanticQuery:
     def test_emits_filtered_results(self, worker):
         """Results below min_score are filtered out; signal carries plain names."""
         mock_results = [
-            {"name": "Dragon", "object_type": "entity", "score": 0.92,
-             "object_id": "1", "id": "e1", "type": "creature", "metadata": {},
-             "text_content": ""},
-            {"name": "Dragonfly", "object_type": "entity", "score": 0.70,
-             "object_id": "2", "id": "e2", "type": "creature", "metadata": {},
-             "text_content": ""},
+            {
+                "name": "Dragon",
+                "object_type": "entity",
+                "score": 0.92,
+                "object_id": "1",
+                "id": "e1",
+                "type": "creature",
+                "metadata": {},
+                "text_content": "",
+            },
+            {
+                "name": "Dragonfly",
+                "object_type": "entity",
+                "score": 0.70,
+                "object_id": "2",
+                "id": "e2",
+                "type": "creature",
+                "metadata": {},
+                "text_content": "",
+            },
         ]
 
         spy = MagicMock()
         worker.semantic_suggestions_ready.connect(spy)
 
-        with patch(
-            "src.services.search_service.create_search_service"
-        ) as mock_css:
+        with patch("src.services.search_service.create_search_service") as mock_css:
             mock_svc = MagicMock()
             mock_svc.query.return_value = mock_results
             mock_css.return_value = mock_svc
@@ -260,9 +274,7 @@ class TestWorkerSemanticQuery:
 
     def test_caches_search_service(self, worker):
         """SearchService is created once and reused."""
-        with patch(
-            "src.services.search_service.create_search_service"
-        ) as mock_css:
+        with patch("src.services.search_service.create_search_service") as mock_css:
             mock_svc = MagicMock()
             mock_svc.query.return_value = []
             mock_css.return_value = mock_svc
@@ -282,40 +294,70 @@ class TestWorkerSemanticQuery:
             "src.services.search_service.create_search_service",
             side_effect=RuntimeError("model load failed"),
         ):
-            # Clear cache so _get_search_service tries to create a new one
-            worker._search_service = None
+            # Clear cache so the new owner tries to create a service.
+            worker._semantic_index._search_service = None
             worker.query_semantic_suggestions("test", 5, 0.85)
 
         spy.assert_not_called()
 
     def test_cache_reset_on_initialize(self, worker):
         """Cache is cleared when initialize_db is called."""
-        worker._search_service = MagicMock()
+        worker._semantic_index._search_service = MagicMock()
 
         with patch("src.services.worker.DatabaseService") as MockDB:
             mock_instance = MockDB.return_value
             mock_instance._attachment_repo = MagicMock()
             worker.initialize_db()
 
-        assert worker._search_service is None
+        assert worker._semantic_index._search_service is None
 
     def test_probe_failure_disables_query_safely(self, worker, monkeypatch):
         """A failed Windows probe must skip SearchService creation and emit nothing."""
         monkeypatch.setattr(
-            "src.services.worker.SEMANTIC_COMPLETION_PROBE_ON_WINDOWS", True
+            "src.services.worker_semantic_index_service.SEMANTIC_COMPLETION_PROBE_ON_WINDOWS",
+            True,
         )
-        monkeypatch.setattr("src.services.worker.sys.platform", "win32")
-        worker._semantic_probe_ran = False
+        monkeypatch.setattr(
+            "src.services.worker_semantic_index_service.sys.platform", "win32"
+        )
+        worker._semantic_index._semantic_probe_ran = False
 
         spy = MagicMock()
         worker.semantic_suggestions_ready.connect(spy)
 
-        with patch("src.services.worker.subprocess.run") as mock_run:
+        with patch(
+            "src.services.worker_semantic_index_service.subprocess.run"
+        ) as mock_run:
             mock_run.return_value = MagicMock(returncode=1, stderr="probe failed")
             with patch("src.services.search_service.create_search_service") as mock_css:
                 worker.query_semantic_suggestions("Dragon", 5, 0.85)
 
         mock_css.assert_not_called()
+        spy.assert_not_called()
+
+    def test_probe_timeout_is_cached_and_emits_no_result(self, worker, monkeypatch):
+        """A native probe timeout suppresses later attempts for this worker."""
+        import subprocess
+
+        monkeypatch.setattr(
+            "src.services.worker_semantic_index_service.SEMANTIC_COMPLETION_PROBE_ON_WINDOWS",
+            True,
+        )
+        monkeypatch.setattr(
+            "src.services.worker_semantic_index_service.sys.platform", "win32"
+        )
+        spy = MagicMock()
+        worker.semantic_suggestions_ready.connect(spy)
+        with patch(
+            "src.services.worker_semantic_index_service.subprocess.run",
+            side_effect=subprocess.TimeoutExpired("python", 5),
+        ) as probe:
+            with patch("src.services.search_service.create_search_service") as create:
+                worker.query_semantic_suggestions("Dragon", 5, 0.85)
+                worker.query_semantic_suggestions("Dragon", 5, 0.85)
+
+        probe.assert_called_once()
+        create.assert_not_called()
         spy.assert_not_called()
 
 
