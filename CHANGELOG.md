@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-21
-**Commit:** 41c856bff3b49839b16d2f01bcc2950621eb2637
+**Commit:** 8ae3d130de292760928509569709d8bc9ffc058b
 ---
 
 # Changelog
@@ -29,6 +29,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-10-21)* **Help review (KRT-104)**: Recorded the reviewed attachment
+  batch and marker-position command effects; the existing gallery and map Help
+  explanations remain accurate.
 - *(2026-10-21)* **Release**: Bumped project and application metadata to
   version 0.20.1 for beta 1 and updated package references, release notes,
   publication copy, and readiness status after the 0.20.0 beta 1 packaging

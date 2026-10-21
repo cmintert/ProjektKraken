@@ -9490,8 +9490,8 @@
     {
       "source": "src/commands/image_commands.py",
       "symbol": "AddImagesCommand.execute",
-      "sha256": "5239141a5d8862eeaa1c10fd46d5b39fb231b56c0cd853df3ae514b273f904d6",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "fc9a593ff8b44004e8ec7ea406b6a08910007766f9cde9297c88dbde554a2a3a",
+      "review_note": "KRT-104 preserves each successful image in a partial import, reports failed paths, and fails when none import. Gallery Help still correctly says Add imports an image; no visible control promise changed."
     },
     {
       "source": "src/commands/image_commands.py",
@@ -9754,8 +9754,8 @@
     {
       "source": "src/commands/marker_commands.py",
       "symbol": "CreateMarkerCommand.execute",
-      "sha256": "e9fd4475bef71e891610ce510836cc9b4563fe44ce519cb02ef323c5787092ca",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "a2c2b08c636c7d60666fd1e0645c8087f0b04ec7a0fbce9e46d65af2f887c37c",
+      "review_note": "KRT-104 rejects nonfinite or out-of-range normalized positions before marker creation. Map clicks provide valid positions, so Add Marker Help remains accurate."
     },
     {
       "source": "src/commands/marker_commands.py",
@@ -9802,8 +9802,8 @@
     {
       "source": "src/commands/marker_commands.py",
       "symbol": "UpdateMarkerCommand.execute",
-      "sha256": "65747108f7109289b66ac1c9db335b81e41d1c982f89f210a174b34c62f06b26",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "407fa38c698b9049b527c57ba1ac5f82313bcaf0b41da0469e43e9da45ab7284",
+      "review_note": "KRT-104 applies the same normalized position guard before updating a marker. Existing map move Help describes valid GUI movement and needs no wording change."
     },
     {
       "source": "src/commands/marker_commands.py",
