@@ -42,6 +42,11 @@ def install_connections(editor: Any, kind: str) -> None:
     splitter.setStretchFactor(0, 1)
     splitter.setStretchFactor(1, 1)
     layout.addWidget(splitter, 1)
+    # Keep feedback visible when the draft pane is collapsed.
+    authoring._layout.removeWidget(authoring.status)
+    layout.addWidget(authoring.status)
+    authoring.status.hide()
+    authoring.hide()
 
     def opened() -> None:
         splitter.setSizes([max(80, splitter.height() // 2)] * 2)

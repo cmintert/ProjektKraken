@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-22
-**Commit:** b160cd921d4ed5b29ee8c233ddcffa6600a00958
+**Commit:** aa67637278ae8737283cb6350e279b4332b7b12b
 ---
 
 # Changelog
@@ -24,6 +24,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-10-22)* **Connections**: Collapsed the inline editor pane after
+  saving or cancelling so the overview reclaims its space. Kept feedback visible
+  outside the pane and added Entity/Event coverage for closing and reopening it.
 - *(2026-10-21)* **Release regression (KRT-103)**: Prepared the disposable
   infrastructure test artifact directory on Linux and Windows before pytest
   creates its isolated temporary files.

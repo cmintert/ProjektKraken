@@ -722,6 +722,7 @@ class RelationAuthoring(QFrame):
         return True
 
     def _open_draft(self, title: str) -> None:
+        self.show()
         self.heading.setText(title)
         self.heading.setAccessibleName(title)
         self.heading.show()
@@ -736,6 +737,7 @@ class RelationAuthoring(QFrame):
         self.body_scroll.hide()
         self.footer.hide()
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
+        self.hide()
 
     def _draft_caption(self) -> None:
         title = "Connect an entry"

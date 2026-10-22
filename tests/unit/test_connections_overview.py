@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 import pytest
 from PySide6.QtCore import QPoint, QPointF, Qt
 from PySide6.QtGui import QFont, QFontDatabase, QFontMetrics, QWheelEvent
-from PySide6.QtWidgets import QApplication, QMessageBox, QWidget
+from PySide6.QtWidgets import QApplication, QMessageBox, QSplitter, QWidget
 
 from src.core.entities import Entity
 from src.core.events import Event
@@ -177,6 +177,52 @@ def test_ten_pointer_selections_never_open_or_mutate(inspector, qtbot):
     assert requests == []
     qtbot.keyClick(view.tree, Qt.Key.Key_Return)
     assert inspector.relation_authoring.relation["id"] == rows[-1]["id"]
+
+
+def test_finished_inline_edit_releases_splitter_space(inspector, qtbot):
+    inspector.inspector.activate_section(inspector.tab_relations)
+    refresh(inspector, [saved(0)])
+    view = inspector.connections
+    panel = inspector.relation_authoring
+    splitter = inspector.tab_relations.findChild(QSplitter)
+    assert splitter is not None
+    qtbot.wait(5)
+    assert not panel.isVisible()
+    assert splitter.sizes()[1] == 0
+
+    view.select_relation("relation-0")
+    view.edit_selected()
+    qtbot.wait(5)
+    assert panel.isVisible()
+    assert splitter.sizes()[1] > 0
+
+    panel.form.notes_edit.setPlainText("Changed notes")
+    requests = []
+    inspector.relation_authoring_requested.connect(requests.append)
+    panel.apply()
+    assert len(requests) == 1
+    panel.on_finished(
+        {
+            "request_id": requests[0]["request_id"],
+            "success": True,
+            "relation_id": "relation-0",
+        }
+    )
+    qtbot.wait(5)
+    assert not panel.isVisible()
+    assert splitter.sizes()[1] == 0
+    assert panel.status.isVisible()
+    assert "Connection saved" in panel.status.text()
+    assert view.selected_id == "relation-0"
+
+    view.edit_selected()
+    qtbot.wait(5)
+    assert panel.isVisible()
+    assert splitter.sizes()[1] > 0
+    panel.cancel()
+    qtbot.wait(5)
+    assert not panel.isVisible()
+    assert splitter.sizes()[1] == 0
 
 
 @pytest.mark.parametrize("decision", ["Keep editing", "Discard", "Apply"])
