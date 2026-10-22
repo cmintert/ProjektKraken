@@ -555,8 +555,8 @@ class TimelineView(QGraphicsView):
         playhead_screen_pos = self.mapFromScene(playhead_scene_x, 0)
         screen_x = playhead_screen_pos.x()
 
-        # Check if visible
-        if screen_x < 0 or screen_x > rect.width():
+        # The handle is painted in viewport pixels, not scene coordinates.
+        if screen_x < 0 or screen_x > self.viewport().width():
             return
 
         # Draw Handle

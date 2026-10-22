@@ -4,7 +4,7 @@ Additional tests for Timeline rendering and EventItem paint methods.
 
 import pytest
 from PySide6.QtCore import QRectF, Qt
-from PySide6.QtGui import QImage, QPainter
+from PySide6.QtGui import QImage, QPainter, QTransform
 from PySide6.QtWidgets import QStyleOptionGraphicsItem
 
 from src.core.events import Event
@@ -23,6 +23,37 @@ def timeline_view(qtbot):
     view = TimelineView()
     qtbot.addWidget(view)
     return view
+
+
+@pytest.mark.parametrize("width", [320, 1000])
+@pytest.mark.parametrize("zoom", [0.5, 1.0, 2.0, 4.0])
+@pytest.mark.parametrize("fraction", [-0.05, 0.05, 0.75, 0.98, 1.05])
+def test_playhead_handle_visibility_uses_viewport(
+    timeline_view, qtbot, width, zoom, fraction
+):
+    """Zoom and panning must not hide a handle whose center is on screen."""
+    view = timeline_view
+    view.resize(width, 400)
+    view.show()
+    qtbot.waitExposed(view)
+    view.setTransform(QTransform.fromScale(zoom, 1.0))
+    view.setSceneRect(-10000, -1000, 20000, 2000)
+    view.centerOn(500, 0)
+    viewport = view.viewport()
+    target_x = int(viewport.width() * fraction)
+    scene_x = view.mapToScene(target_x, 0).x()
+    view._playhead.set_time(scene_x / view.scale_factor, view.scale_factor)
+    scene_rect = view.mapToScene(viewport.rect()).boundingRect()
+    image = QImage(viewport.size(), QImage.Format.Format_ARGB32)
+    image.fill(Qt.GlobalColor.transparent)
+    blank = image.copy()
+    painter = QPainter(image)
+    try:
+        view._draw_playhead_handle(painter, scene_rect)
+    finally:
+        painter.end()
+
+    assert (image != blank) == (0 <= target_x <= viewport.width())
 
 
 @pytest.fixture

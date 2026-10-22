@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-22
-**Commit:** 54a32662c389b7712cac9ff1014e5b631e28219a
+**Commit:** 9734aed535fd92a846f371f301aa3e3421133b5a
 ---
 
 # Changelog
@@ -24,6 +24,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-10-22)* **Timeline**: Kept the playhead marker visible across the
+  viewport when zoomed in. Added rendering coverage for zoom levels, narrow
+  and wide layouts, and on-screen and off-screen positions.
 - *(2026-10-22)* **Workspace**: Aligned content with panel tabs using shared
   12 px horizontal insets across all 11 panels. Checked header and body geometry
   in every workspace zone, dark/light themes and normal/narrow widths, and
