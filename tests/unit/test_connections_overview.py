@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from PySide6.QtCore import QPoint, QPointF, Qt
-from PySide6.QtGui import QFont, QFontDatabase, QWheelEvent
+from PySide6.QtGui import QFont, QFontDatabase, QFontMetrics, QWheelEvent
 from PySide6.QtWidgets import QApplication, QMessageBox, QWidget
 
 from src.core.entities import Entity
@@ -76,8 +76,8 @@ def test_both_overview_perspectives_preserve_canonical_assertion(predicate):
     assert (
         outgoing.assertion == incoming.assertion == f"Tasgillia → {caption} → House 0"
     )
-    assert outgoing.text.startswith(f"House 0\n→ {caption}\n")
-    assert incoming.text.startswith(f"Tasgillia\n← {caption}\n")
+    expected = f"Tasgillia → {caption} → House 0 · Timing: not specified"
+    assert outgoing.text == incoming.text == expected
     assert outgoing.snapshot["id"] == incoming.snapshot["id"] == "relation-0"
     assert snapshot == before
 
@@ -110,6 +110,23 @@ def test_semantic_projection_does_not_guess_or_duplicate():
         rows, [], "entity", "source", "Tasgillia", categories={"member_of": "unknown"}
     )
     assert explicit[0].group == "Other connections"
+
+
+def test_connections_stay_one_line_at_narrow_and_wide_widths(inspector, qapp):
+    view = inspector.connections
+    target = "Ashford Army with a deliberately long connection name " * 4
+    refresh(inspector, [saved(0, "departs_from", target_name=target)])
+    index = view._indices["relation-0"]
+    assert "\n" not in index.data()
+    assert "departs_from" in index.data()
+    assert target in index.data(Qt.ItemDataRole.ToolTipRole)
+    assert not view.tree.wordWrap()
+    for width in (360, 1000):
+        inspector.resize(width, 900)
+        qapp.processEvents()
+        assert view.tree.visualRect(index).height() == (
+            QFontMetrics(view.tree.font()).height() + 16
+        )
 
 
 @pytest.mark.parametrize("count", [0, 5, 20, 100])

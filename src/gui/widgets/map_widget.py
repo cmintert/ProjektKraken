@@ -283,6 +283,7 @@ class MapWidget(
         # Layout
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+        StyleHelper.apply_panel_top_spacing(layout)
         self._build_toolbar(layout)
 
         self._build_breadcrumb(layout)

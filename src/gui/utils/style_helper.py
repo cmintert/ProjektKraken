@@ -1198,6 +1198,12 @@ class StyleHelper:
         )
 
     @staticmethod
+    def apply_panel_top_spacing(layout: QLayout) -> None:
+        """Apply the shared 12 px inset beneath workspace panel tabs."""
+        margins = layout.contentsMargins()
+        layout.setContentsMargins(margins.left(), 12, margins.right(), margins.bottom())
+
+    @staticmethod
     def apply_standard_list_spacing(layout: QLayout) -> None:
         """Applies standard spacing for list layouts.
 
@@ -1807,7 +1813,7 @@ class StyleHelper:
         Returns:
             str: QSS stylesheet string for toolbar spacing.
         """
-        return "QToolBar { spacing: 4px; padding: 4px; }"
+        return "QToolBar { spacing: 4px; padding: 0px 4px 4px 4px; }"
 
     @staticmethod
     def get_raster_mode_badge_style(bg_color: str) -> str:

@@ -76,6 +76,7 @@ class TimelineWidget(QWidget):
         self.header_frame.setObjectName("TimelineHeader")
         header_layout = QHBoxLayout(self.header_frame)
         header_layout.setContentsMargins(4, 4, 4, 4)
+        StyleHelper.apply_panel_top_spacing(header_layout)
         self.action_toolbar = OverflowToolBar(self.header_frame)
         header_layout.addWidget(self.action_toolbar)
 

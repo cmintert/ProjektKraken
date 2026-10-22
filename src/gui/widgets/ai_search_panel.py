@@ -128,6 +128,7 @@ class AISearchPanelWidget(QWidget):
         # Main layout
         main_layout = QVBoxLayout(self)
         StyleHelper.apply_standard_list_spacing(main_layout)
+        StyleHelper.apply_panel_top_spacing(main_layout)
 
         # === Search Section ===
         search_group = QGroupBox("Semantic Search")

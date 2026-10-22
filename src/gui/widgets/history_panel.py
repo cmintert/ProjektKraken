@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
 
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
+from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.standard_buttons import DestructiveButton, StandardButton
 
@@ -71,6 +72,7 @@ class HistoryPanelWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setSizeConstraint(QLayout.SizeConstraint.SetNoConstraint)
         layout.setContentsMargins(5, 5, 5, 5)
+        StyleHelper.apply_panel_top_spacing(layout)
         layout.setSpacing(5)
 
         # Header with buttons

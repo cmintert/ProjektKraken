@@ -53,27 +53,19 @@ ROW_ROLE = int(Qt.ItemDataRole.UserRole)
 
 
 class ConnectionDelegate(QStyledItemDelegate):
-    """Measure the complete row at the actual view width, including long names."""
+    """Keep connection rows on one line with consistent vertical breathing room."""
 
     def sizeHint(
         self,
         option: QStyleOptionViewItem,
         index: QModelIndex | QPersistentModelIndex,
     ) -> QSize:
-        """Reserve wrapped text height instead of an inspector-wide fixed row."""
+        """Measure one text line; the view elides overflow with a full tooltip."""
         view = self.parent()
         assert isinstance(view, QTreeView)
         width = max(40, view.viewport().width() - view.indentation() * 2 - 16)
-        text = str(index.data(Qt.ItemDataRole.DisplayRole) or "")
-        bounds = QFontMetrics(view.font()).boundingRect(
-            0,
-            0,
-            width,
-            100000,
-            int(Qt.TextFlag.TextWordWrap | Qt.TextFlag.TextWrapAnywhere),
-            text,
-        )
-        return QSize(width, bounds.height() + 16)
+        metrics = QFontMetrics(view.font())
+        return QSize(width, metrics.height() + 16)
 
 
 class ConnectionsOverview(QWidget):
@@ -143,8 +135,8 @@ class ConnectionsOverview(QWidget):
         )
         self.tree.setAccessibleName("Connections by meaning")
         self.tree.setHeaderHidden(True)
-        self.tree.setWordWrap(True)
-        self.tree.setTextElideMode(Qt.TextElideMode.ElideNone)
+        self.tree.setWordWrap(False)
+        self.tree.setTextElideMode(Qt.TextElideMode.ElideRight)
         self.tree.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.tree.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.tree.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)

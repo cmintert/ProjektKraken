@@ -1,11 +1,14 @@
 """Production-window architecture checks for the unified workspace shell."""
 
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+from PySide6.QtCore import QPoint
 from PySide6.QtWidgets import QDockWidget
 
 from src.app.main_window import MainWindow
+from src.core.theme_manager import ThemeManager
 from src.gui.workspace import WorkspaceShell
 
 
@@ -101,3 +104,41 @@ def test_reset_layout_preserves_outer_window_geometry(main_window) -> None:
     assert main_window.geometry() == before
     assert main_window.workspace.panel_zone("timeline") == "bottom"
     assert main_window.workspace.panel_zone("project") == "left"
+
+
+def test_panel_headers_match_project_gap_after_moving(main_window, qapp) -> None:
+    """Panel content keeps the same top inset in every workspace location."""
+    for editor in (main_window.entity_editor, main_window.event_editor):
+        editor._empty_state.hide()
+        editor._content_widget.show()
+    anchors = {
+        "project": main_window.unified_list.action_toolbar,
+        "history": main_window.history_panel.action_toolbar,
+        "entity": main_window.entity_editor.header_widget,
+        "event": main_window.event_editor.header_widget,
+        "analysis": main_window.analysis_panel.action_toolbar,
+        "timeline": main_window.timeline.action_toolbar,
+        "longform": main_window.longform_editor.action_toolbar,
+        "graph": main_window.graph_widget._filter_bar._search_input,
+        "wiki_peek": main_window.wiki_peek_panel.title,
+        "map": main_window.map_widget.toolbar,
+        "ai_search": main_window.ai_search_panel.layout().itemAt(0).widget(),
+    }
+    main_window.show()
+    manager = ThemeManager()
+    original_theme = manager.current_theme_name
+    stylesheet = Path("src/resources/main.qss").read_text(encoding="utf-8")
+    try:
+        for theme in ("dark_mode", "light_mode"):
+            manager.current_theme_name = theme
+            main_window.setStyleSheet(manager.format_stylesheet(stylesheet))
+            for width in (1600, 1000):
+                main_window.resize(width, 900)
+                for panel_id, anchor in anchors.items():
+                    main_window.workspace.move_panel(panel_id, "center")
+                    main_window.workspace.show_panel(panel_id)
+                    qapp.processEvents()
+                    panel = main_window.workspace.panel(panel_id)
+                    assert anchor.mapTo(panel, QPoint()).y() == 12, panel_id
+    finally:
+        manager.current_theme_name = original_theme

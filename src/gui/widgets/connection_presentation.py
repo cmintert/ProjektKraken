@@ -57,9 +57,8 @@ class ConnectionRow:
 
     @property
     def text(self) -> str:
-        """Return wrapping, accessible row text including all relevant status."""
-        arrow = "→" if self.direction == "outgoing" else "←"
-        return f"{self.title}\n{arrow} {self.meaning}\n{self.timing}"
+        """Return one-line, accessible row text including all relevant status."""
+        return " ".join(f"{self.assertion} · {self.timing}".split())
 
 
 def connection_timing(

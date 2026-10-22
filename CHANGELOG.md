@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-22
-**Commit:** dd0ce5ca079254a3ad70a4d8e8369ed5cc8d0fec
+**Commit:** b160cd921d4ed5b29ee8c233ddcffa6600a00958
 ---
 
 # Changelog
@@ -40,6 +40,12 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-10-22)* **Workspace**: Standardized the gap beneath panel tabs to
+  12 px across all panels. Added geometry checks for moved panels in dark and
+  light themes at normal and narrow widths.
+- *(2026-10-22)* **Connections**: Displayed each relationship on one line
+  using the tooltip's source-to-target wording and timing. Long rows use an
+  ellipsis with the full assertion in the tooltip; added Entity/Event coverage.
 - *(2026-10-21)* **Worker architecture (KRT-101)**: Moved semantic indexing,
   its model cache, queue, Windows safety probe, and suggestion queries into a
   worker-thread service while preserving the existing Qt slots and signals.

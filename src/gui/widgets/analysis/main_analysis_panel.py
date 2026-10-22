@@ -84,6 +84,7 @@ class MainAnalysisPanel(QWidget):
         """Build and wire the widget layout."""
         layout = QVBoxLayout(self)
         layout.setSizeConstraint(QLayout.SizeConstraint.SetNoConstraint)
+        StyleHelper.apply_panel_top_spacing(layout)
 
         # --- Trigger buttons ---
         self.action_toolbar = OverflowToolBar(self)
