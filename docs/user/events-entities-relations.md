@@ -292,6 +292,8 @@ References are included by default in a collapsed, read-only group.
 the source, meaning and target together to understand its direction. Timing and
 state-change information belong to that same assertion. Single-click selects;
 Edit, Enter or double-click opens its editor. Expand headings to browse groups.
+Each relation appears on one line. Long rows shorten with an ellipsis; hover over
+the row to read the full assertion, including its direction and timing.
 
 (help-connections-edit)=
 

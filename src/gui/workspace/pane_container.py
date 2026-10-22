@@ -255,7 +255,10 @@ class PaneContainer(QWidget):
         )
         self.tabs.tabBar().setTabData(index, panel_id)
         self.tabs.setTabToolTip(index, title)
-        close_button = QToolButton(self.tabs.tabBar())
+        close_button = declare_inspection(
+            QToolButton(self.tabs.tabBar()),
+            "workspace.close-panel|workspace.navigation|help-inspect-workspace-close-panel",
+        )
         close_button.setObjectName("WorkspacePanelCloseButton")
         close_button.clicked.connect(
             lambda _checked=False, target=panel_id: self.panel_close_requested.emit(

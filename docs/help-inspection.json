@@ -9080,6 +9080,16 @@
       "binding": "remove",
       "label": "Remove",
       "kind": "DestructiveButton"
+    },
+    {
+      "id": "workspace.close-panel",
+      "topic_id": "workspace.navigation",
+      "target": "help-inspect-workspace-close-panel",
+      "source": "src/gui/workspace/pane_container.py",
+      "symbol": "PaneContainer.add_panel",
+      "binding": "close_button",
+      "label": "Close panel",
+      "kind": "QToolButton"
     }
   ],
   "factory_exemptions": [
@@ -9232,8 +9242,8 @@
     {
       "source": "src/app/ui_manager.py",
       "symbol": "UIManager.create_view_menu",
-      "sha256": "7797f357e027f0cb68cc12b3351d36562ac6244171b83973350a640b599030e6",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "6cec8d7443c36e527fe52684cdc453586247991d2987562f5eb0a33b17a5b369",
+      "review_note": "Reviewed checked View > Panels actions: checking opens and activates the existing panel; unchecking closes it without deleting content. Menu state follows layout changes. Updated canonical workspace task and panel visibility explanation; zone and theme meanings remain unchanged."
     },
     {
       "source": "src/app/ui_manager.py",
@@ -11500,8 +11510,8 @@
     {
       "source": "src/gui/widgets/ai_search_panel.py",
       "symbol": "AISearchPanelWidget.__init__",
-      "sha256": "ac6f23583be7ac2ff77bc6391f8e6c609620016be37440578c8daa5b2df1bafc",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "63056b99d585cd3d3e25fc672eaeb2c6f0e5f39be91fe22513714c66c73538fe",
+      "review_note": "Reviewed panel inset/margin changes only in AISearchPanelWidget.__init__: existing control identities, labels, eligibility, keyboard actions, task destinations and authoring state are unchanged. Canonical control explanations remain accurate; no new interaction or exception is introduced."
     },
     {
       "source": "src/gui/widgets/ai_search_panel.py",
@@ -11692,8 +11702,8 @@
     {
       "source": "src/gui/widgets/analysis/main_analysis_panel.py",
       "symbol": "MainAnalysisPanel._init_ui",
-      "sha256": "bfc1aea1c6178f1ebb186ca30afb1c936f9148d775147f34b6e8682e3fb85cab",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "563cffaef988185c58a84eb185fefb6b1ce6fd997ee0819d40440a6b6ba0ff3e",
+      "review_note": "Reviewed panel inset/margin changes only in MainAnalysisPanel._init_ui: existing control identities, labels, eligibility, keyboard actions, task destinations and authoring state are unchanged. Canonical control explanations remain accurate; no new interaction or exception is introduced."
     },
     {
       "source": "src/gui/widgets/analysis/temporal_panel.py",
@@ -12040,8 +12050,8 @@
     {
       "source": "src/gui/widgets/entity_editor.py",
       "symbol": "EntityEditorWidget._build_editor_shell",
-      "sha256": "a962045bfca5efa0a3a77281efe31fc8b1cb92f0359f9c77bbe720c3e347a701",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "80d28fda90a34bcd4512eec11f426454673d1373d4a3aedd263753bd28fa8553",
+      "review_note": "Reviewed panel inset/margin changes only in EntityEditorWidget._build_editor_shell: existing control identities, labels, eligibility, keyboard actions, task destinations and authoring state are unchanged. Canonical control explanations remain accurate; no new interaction or exception is introduced."
     },
     {
       "source": "src/gui/widgets/entity_editor.py",
@@ -12244,8 +12254,8 @@
     {
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget._build_editor_shell",
-      "sha256": "edd604b2bf1155c053120f76b2ddb3ad16fb94f9651a9b51bb885e201fafa797",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "159be821c924920ff458e007d32444654cf32160ebf6e27db344eb2475941d32",
+      "review_note": "Reviewed panel inset/margin changes only in EventEditorWidget._build_editor_shell: existing control identities, labels, eligibility, keyboard actions, task destinations and authoring state are unchanged. Canonical control explanations remain accurate; no new interaction or exception is introduced."
     },
     {
       "source": "src/gui/widgets/event_editor.py",
@@ -12610,8 +12620,8 @@
     {
       "source": "src/gui/widgets/graph_view/graph_filter_bar.py",
       "symbol": "GraphFilterBar._setup_ui",
-      "sha256": "cf2cf4e5d8c7cfcd0181f4cac184c538268dac85e2c40dc78b0c5ccfbc451b90",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "94390feb1926258c8db13b633240064fb0043584ca573fdff30d2faf0013fead",
+      "review_note": "Reviewed panel inset/margin changes only in GraphFilterBar._setup_ui: existing control identities, labels, eligibility, keyboard actions, task destinations and authoring state are unchanged. Canonical control explanations remain accurate; no new interaction or exception is introduced."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
@@ -12688,8 +12698,8 @@
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
       "symbol": "GraphWidget._setup_ui",
-      "sha256": "db36f0105798dea367deed5d3f66d3969da8ed03c3c2b3e0455b81cfe357d2e1",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "8c6df29ff3e0b7694fe78ae3e45e28e616d2405c1a83bee3d109a1881be8f76b",
+      "review_note": "Reviewed panel inset/margin changes only in GraphWidget._setup_ui: existing control identities, labels, eligibility, keyboard actions, task destinations and authoring state are unchanged. Canonical control explanations remain accurate; no new interaction or exception is introduced."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
@@ -12718,8 +12728,8 @@
     {
       "source": "src/gui/widgets/history_panel.py",
       "symbol": "HistoryPanelWidget._setup_ui",
-      "sha256": "7e1a80efc6da92cd6852702feae46b04716027ab3a4037da149bfb7e1450b3a8",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "e4263b53da02415719e2be3a8a49d8a65c87dae33cbd6806cda0962bb0ad3d15",
+      "review_note": "Reviewed panel inset/margin changes only in HistoryPanelWidget._setup_ui: existing control identities, labels, eligibility, keyboard actions, task destinations and authoring state are unchanged. Canonical control explanations remain accurate; no new interaction or exception is introduced."
     },
     {
       "source": "src/gui/widgets/inspector_section.py",
@@ -13036,8 +13046,8 @@
     {
       "source": "src/gui/widgets/longform/editor.py",
       "symbol": "LongformEditorWidget._setup_ui",
-      "sha256": "b447231d09d3abba46a2a4c5349bf38125cf09afd8802b7abc14c62c49855e15",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "48d719241371cb620c28fce47417407757b625575c6e5fcd0b6302f0c9a4d63a",
+      "review_note": "Reviewed panel inset/margin changes only in LongformEditorWidget._setup_ui: existing control identities, labels, eligibility, keyboard actions, task destinations and authoring state are unchanged. Canonical control explanations remain accurate; no new interaction or exception is introduced."
     },
     {
       "source": "src/gui/widgets/longform/editor.py",
@@ -14332,8 +14342,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget.__init__",
-      "sha256": "ae581ac1e387c61736fec0bbde5f67ab87cc56c25bf0e8cbe4a9d83d8c5cd6ba",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "b2cb9b9a699ef88260076a3109b6728dcc3258954eb88c06dfaa29c5840fe0db",
+      "review_note": "Reviewed panel inset/margin changes only in MapWidget.__init__: existing control identities, labels, eligibility, keyboard actions, task destinations and authoring state are unchanged. Canonical control explanations remain accurate; no new interaction or exception is introduced."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -15742,8 +15752,8 @@
     {
       "source": "src/gui/widgets/timeline/__init__.py",
       "symbol": "TimelineWidget.__init__",
-      "sha256": "10cd8e132b10615c9b39a95e46f1d87bfd86105232b9b8ab02924048a7602aa6",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "d778cb04cdb7d599d544d38d1c28f6f982c2e713403bd93b0533ad85885f9749",
+      "review_note": "Reviewed panel inset/margin changes only in TimelineWidget.__init__: existing control identities, labels, eligibility, keyboard actions, task destinations and authoring state are unchanged. Canonical control explanations remain accurate; no new interaction or exception is introduced."
     },
     {
       "source": "src/gui/widgets/timeline/__init__.py",
@@ -15922,8 +15932,8 @@
     {
       "source": "src/gui/widgets/unified_list.py",
       "symbol": "UnifiedListWidget.__init__",
-      "sha256": "3a74ca4d271ed0841202ece9df084a8bf7cbdca0e65b3f9cdcb2fa6ab4b1f8c1",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "17bff7de02969f14970974bdd581dd22ec16ebf49fed13e54ab7333f5102b37a",
+      "review_note": "Reviewed panel inset/margin changes only in UnifiedListWidget.__init__: existing control identities, labels, eligibility, keyboard actions, task destinations and authoring state are unchanged. Canonical control explanations remain accurate; no new interaction or exception is introduced."
     },
     {
       "source": "src/gui/widgets/unified_list.py",
@@ -16072,8 +16082,8 @@
     {
       "source": "src/gui/widgets/wiki_peek_panel.py",
       "symbol": "WikiPeekPanel.__init__",
-      "sha256": "3a6780ac2861baa2345366369da7514ee98300ab20fa95cb3d9dc9ade95e9305",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "2fbf96e2eea03813cfb7ea332d86b2d8cd21e7543993ce0927536856c7339fab",
+      "review_note": "Reviewed panel inset/margin changes only in WikiPeekPanel.__init__: existing control identities, labels, eligibility, keyboard actions, task destinations and authoring state are unchanged. Canonical control explanations remain accurate; no new interaction or exception is introduced."
     },
     {
       "source": "src/gui/widgets/wiki_peek_panel.py",
@@ -16378,14 +16388,14 @@
     {
       "source": "src/gui/workspace/pane_container.py",
       "symbol": "PaneContainer._show_tab_menu",
-      "sha256": "bdf4c38f7c35a812d861b46f0a0523e7a41d8667349b433628791089686899b4",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "5d80a30b78202aacd0705b2c475193e7e13000995004dbd4131746032806f2d0",
+      "review_note": "Reviewed the added insertion-index argument: the context menu still moves the same panel to the selected zone and preserves its editing state. The existing Move panel explanation remains accurate; the workspace task now also describes drag ordering and insertion."
     },
     {
       "source": "src/gui/widgets/connections_overview.py",
       "symbol": "ConnectionsOverview.__init__",
-      "sha256": "98f756545d25880a5fea4d41dea208b2b220f9107141cc9e97852a8fa4b61111",
-      "review_note": "KRT-93 owner refinements: Meaning is one editable dropdown with stable-key suggestion data and deliberate free phrases; no Custom field. The editor heading is plain text within a neutral frame. Scrollbars refresh with the theme. Edit shares the selection row; guarded navigation/removal remain under More actions. Updated task/control explanations describe these behaviors."
+      "sha256": "ad095dc3e172e7cc09ed38d54e11bf4867715e0dfbc4584a113892e7c46ac662",
+      "review_note": "Reviewed single-line connection rows with right elision and full assertion/timing tooltips. Updated the overview explanation. Selection, Edit/Enter/double-click, filtering, direction, navigation and guarded removal retain their existing meanings."
     },
     {
       "source": "src/gui/widgets/entity_editor.py",
@@ -16548,6 +16558,12 @@
       "symbol": "SpellCheckController.ignore_match",
       "sha256": "053503ab4ad9835e0997998a0a92e87f94700d58a130fc13276c828554fd761c",
       "review_note": "KRT-39: Ignore hides only the selected current occurrence and does not change writing or undo history."
+    },
+    {
+      "source": "src/gui/workspace/pane_container.py",
+      "symbol": "PaneContainer.add_panel",
+      "sha256": "9ff6f8cc942cc76bae68430c3ac1ae2527815866bc2b7481108d6275cb9375d7",
+      "review_note": "Reviewed the declared close button for every panel instance. It requests closing the panel tab while retaining the live widget and draft; View > Panels reopens it in its current zone. The canonical close-panel explanation describes this operation. Reopening and moving panels recreate the same declared control meaning."
     }
   ],
   "review_status": {

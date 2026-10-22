@@ -21,16 +21,23 @@ the number of zones remains fixed.
 - **History** shows available undo and redo operations.
 - **Analysis** provides validation, temporal, and intelligence reports.
 
-Choose any panel under **View → Panels**. Kraken reveals the zone where that
-panel currently lives and activates its tab. The activity bar provides quick
-access to the most frequently used panels.
+Use the checked entries under **View → Panels** to see which panels are open.
+Check an entry to open its panel and activate its tab in its current zone;
+uncheck it to close the panel. You can also close a panel with the close button
+on its tab. Closing retains the panel's live content and editing state. Reopen it
+from **View → Panels**, or use its activity-bar button where available.
 
-Drag a tab onto another zone's tab bar to move it. You can also right-click a
-tab and choose **Move to Left**, **Move to Center**, **Move to Right**, or
+Drag tabs within a zone's tab bar to change their order. Drag a tab onto another
+zone's tab bar to move it, placing it before or after the tab at the drop position.
+You can also right-click a tab and choose **Move to Left**, **Move to Center**,
+**Move to Right**, or
 **Move to Bottom**. Moving a panel preserves its current editing state.
 Empty or hidden zones temporarily open as **Drop panel here** targets while a
 tab is being dragged. They collapse again if the drag is cancelled or ends
 somewhere else.
+If all Center panels are closed, the empty zone shows
+**Open a panel from View → Panels**. Closing the last panel in another zone hides
+that zone; reopening a panel reveals it again.
 
 When a panel becomes narrow, its primary action remains visible and secondary
 actions move into a **⋯** menu. Buttons keep their full labels instead of being
@@ -47,8 +54,9 @@ previous useful size.
 3. Enter a layout name.
 4. Restore or delete it later from the **Layouts** menu.
 
-Saved layouts contain panel locations, tab order, active tabs, zone sizes, and
-zone visibility. They do not contain the outer window's screen coordinates.
+Saved layouts contain panel locations, tab order, active tabs, closed panels,
+zone sizes, and zone visibility. They do not contain the outer window's screen
+coordinates.
 
 Use **Layouts → Reset Layout** or **View → Reset Layout** to restore the
 factory panel arrangement without moving or resizing the outer window. Layout
@@ -435,7 +443,14 @@ list determines priority in First Match mode.
 
 (help-inspect-workspace-show-panel)=
 
-**Show panel** — Show and activate the indicated workspace panel. Its existing content and editing state are retained.
+**Panel visibility** — Check to open and activate the indicated workspace panel;
+uncheck to close it. Its existing content and editing state are retained.
+
+(help-inspect-workspace-close-panel)=
+
+**Close panel** — Close this panel's tab while retaining its live content and
+editing state. Reopen it from **View → Panels** in its current workspace zone.
+Closing a panel does not delete world content.
 
 (help-inspect-workspace-show-zone)=
 

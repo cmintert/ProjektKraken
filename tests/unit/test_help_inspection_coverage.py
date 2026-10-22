@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QMenu,
     QMenuBar,
     QPushButton,
+    QTabBar,
     QToolButton,
     QWidget,
 )
@@ -28,6 +29,7 @@ from src.app.help_composition import HelpSurfaceBindings
 from src.app.help_declared_bindings import bind_declared_action, bind_declared_widget
 from src.core.help_inspection_inventory import check_inventory, symbol_fingerprint
 from src.gui.utils.help_context import declare_inspection
+from src.gui.workspace import WorkspaceShell
 from src.services.help_bundle_service import HelpBundleService
 from src.services.help_search_service import HelpSearchService
 from tests.unit import test_help_coordinator as existing
@@ -57,6 +59,100 @@ def test_control_search_lands_on_concise_explanation(generated_root):
     assert any(
         result.fragment == "help-inspect-raster-hardness" for result in results[:5]
     )
+
+
+@pytest.mark.parametrize("mode", ["pointer", "focused"])
+def test_workspace_close_inspection_preserves_live_panel_across_recreation(
+    help_setup, qapp, mode
+):
+    coordinator, registry, owner, _, text = help_setup
+    shell = WorkspaceShell(owner)
+    owner.layout().addWidget(shell)
+    shell.register_panel("draft", "Draft", text, "center")
+    # Keep another tab so accidental activation/reordering is observable.
+    shell.register_panel("other", "Other", QWidget(), "center")
+    owner.move(0, 0)
+    owner.resize(700, 600)
+    cursor = text.textCursor()
+    cursor.movePosition(cursor.MoveOperation.End)
+    cursor.insertText(" still unsaved")
+    cursor.setPosition(2)
+    cursor.setPosition(9, cursor.MoveMode.KeepAnchor)
+    text.setTextCursor(cursor)
+    bindings = HelpSurfaceBindings(coordinator)
+    qapp.installEventFilter(bindings)
+
+    def draft_snapshot():
+        return (
+            text.document(),
+            text.toPlainText(),
+            text.document().isModified(),
+            text.document().availableUndoSteps(),
+            text.textCursor().position(),
+            text.textCursor().anchor(),
+            text.verticalScrollBar().value(),
+        )
+
+    try:
+        for zone in ("center", "left", "right", "bottom"):
+            shell.move_panel("draft", zone)
+            for _generation in range(2):
+                shell.show_panel("draft")
+                shell.horizontal_splitter.setSizes([150, 350, 150])
+                shell.vertical_splitter.setSizes([350, 150])
+                qapp.processEvents()
+                pane = shell.panes[zone]
+                button = pane.tabs.tabBar().tabButton(
+                    pane.index_of("draft"), QTabBar.ButtonPosition.RightSide
+                )
+                assert isinstance(button, QToolButton)
+                registration = registry.inspection_for(button)[1]
+                assert registration.meaning == "workspace.close-panel"
+                assert registration.topic_id == "workspace.navigation"
+                assert (
+                    registration.excerpt_target == "help-inspect-workspace-close-panel"
+                )
+                snapshot = draft_snapshot()
+                layout = shell.capture_layout()
+                if mode == "pointer":
+                    coordinator.inspection.enter()
+                    point = button.mapToGlobal(button.rect().center())
+                    QTest.mouseClick(
+                        owner.windowHandle(),
+                        Qt.MouseButton.LeftButton,
+                        pos=owner.mapFromGlobal(point),
+                    )
+                else:
+                    owner.activateWindow()
+                    button.setFocus()
+                    qapp.processEvents()
+                    assert button.hasFocus()
+                    QTest.keyClick(
+                        button,
+                        Qt.Key.Key_F1,
+                        Qt.KeyboardModifier.ControlModifier
+                        | Qt.KeyboardModifier.ShiftModifier,
+                    )
+                qapp.processEvents()
+                assert coordinator.inspection._topic_id == "workspace.navigation"
+                assert (
+                    coordinator.inspection._excerpt_target
+                    == "help-inspect-workspace-close-panel"
+                )
+                assert QApplication.activePopupWidget() is not None, (zone, _generation)
+                assert shell.capture_layout() == layout
+                assert draft_snapshot() == snapshot
+                coordinator.inspection.dismiss()
+                qapp.processEvents()
+                QTest.mouseClick(button, Qt.MouseButton.LeftButton)
+                assert not shell.is_panel_open("draft")
+                shell.show_panel("draft")
+                qapp.processEvents()
+                assert shell.panel("draft") is text
+                assert draft_snapshot() == snapshot
+    finally:
+        coordinator.inspection.dismiss()
+        qapp.removeEventFilter(bindings)
 
 
 def test_explorer_buttons_and_creation_actions_have_specific_help(
@@ -97,6 +193,8 @@ def test_menu_inspection_never_triggers_action(help_setup, qapp):
         menu.addAction("Edit border"),
         "|".join((record["id"], record["topic_id"], record["target"])),
     )
+    action.setCheckable(True)
+    action.setChecked(True)
     calls = []
     action.triggered.connect(lambda: calls.append(True))
     bind_declared_action(registry, action, menu)
@@ -110,6 +208,7 @@ def test_menu_inspection_never_triggers_action(help_setup, qapp):
     )
     qapp.processEvents()
     assert calls == []
+    assert action.isChecked()
     assert QApplication.activePopupWidget() is not None
     assert coordinator.inspection._topic_id == "map.historical-geometry"
     coordinator.inspection.dismiss()
@@ -125,6 +224,8 @@ def test_focused_shortcut_explains_active_menu_action_without_activation(
         menu.addAction("Create"),
         "test.create|authoring.create|help-authoring-create",
     )
+    action.setCheckable(True)
+    action.setChecked(True)
     bind_declared_action(registry, action, menu)
     calls = []
     action.triggered.connect(lambda: calls.append(True))
@@ -149,6 +250,7 @@ def test_focused_shortcut_explains_active_menu_action_without_activation(
     assert coordinator.inspection._topic_id == "authoring.create"
     assert coordinator.inspection._excerpt_target == "help-authoring-create"
     assert calls == []
+    assert action.isChecked()
     assert not coordinator.viewer.isVisible()
     assert snapshot == (
         text.document(),

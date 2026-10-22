@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-22
-**Commit:** 9734aed535fd92a846f371f301aa3e3421133b5a
+**Commit:** a717f18780268e29f1ce522b779f3c21e30b243e
 ---
 
 # Changelog
@@ -23,6 +23,11 @@ All notable changes to this project will be documented in this file.
   and panel menu state.
 
 ### Fixed
+
+- *(2026-10-22)* **Help**: Declared workspace panel-close inspection, updated
+  panel visibility, tab ordering, saved-layout and compact connection-row guidance,
+  and recorded the reviewed presentation changes. Added inspection coverage for
+  draft retention and recreated close buttons across all workspace zones.
 
 - *(2026-10-22)* **Timeline**: Kept the playhead marker visible across the
   viewport when zoomed in. Added rendering coverage for zoom levels, narrow
