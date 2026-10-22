@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-21
-**Commit:** 233d605a3818f5399f0c0fb146bf8bb5ffe299c5
+**Last Updated:** 2026-10-22
+**Commit:** dd0ce5ca079254a3ad70a4d8e8369ed5cc8d0fec
 ---
 
 # Changelog
@@ -10,6 +10,17 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Added
+
+- *(2026-10-22)* **Workspace**: Added subtle, themed Phosphor close buttons
+  for all panels and checked View > Panels entries for closing and reopening
+  them while retaining their widgets and drafts. Saved layouts remember closed
+  panels and their locations.
+- *(2026-10-22)* **Workspace**: Enabled drag ordering within each pane and
+  insertion at the drop position when moving panels between panes. Added GUI
+  coverage for ordering, layout restoration, close controls, theme changes,
+  and panel menu state.
 
 ### Fixed
 

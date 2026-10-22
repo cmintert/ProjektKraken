@@ -29,6 +29,7 @@ class UIManager:
         self.main_window = main_window
         self._window_widget = cast(QWidget, main_window)
         self._zone_actions: dict[ZoneName, QAction] = {}
+        self._panel_actions: dict[str, QAction] = {}
 
     def create_file_menu(self, menu_bar: QMenuBar) -> None:
         """Create the File menu."""
@@ -164,11 +165,17 @@ class UIManager:
                 "workspace.show-panel|workspace.navigation|help-inspect-workspace-show-panel",
             )
             action.setObjectName(f"ViewPanel_{definition.id}")
+            action.setCheckable(True)
+            action.setChecked(workspace.is_panel_open(definition.id))
             action.triggered.connect(
-                lambda _checked=False, panel_id=definition.id: workspace.show_panel(
-                    panel_id
+                lambda checked=False, panel_id=definition.id: (
+                    workspace.show_panel(panel_id)
+                    if checked
+                    else workspace.close_panel(panel_id)
                 )
             )
+            self._panel_actions[definition.id] = action
+        workspace.layout_changed.connect(self._sync_panel_actions)
 
         zones_menu = declare_inspection(
             view_menu.addMenu("Zones"),
@@ -228,6 +235,11 @@ class UIManager:
     def _sync_zone_action(self, zone: str, visible: bool) -> None:
         if zone in self._zone_actions:
             self._zone_actions[cast(ZoneName, zone)].setChecked(visible)
+
+    def _sync_panel_actions(self) -> None:
+        workspace = self.main_window.workspace
+        for panel_id, action in self._panel_actions.items():
+            action.setChecked(workspace.is_panel_open(panel_id))
 
     def create_layouts_menu(self, menu_bar: QMenuBar) -> None:
         """Create named workspace layout actions."""

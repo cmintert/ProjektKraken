@@ -82,6 +82,17 @@ def normalize_layout(
 
     saved_zones = source.get("zones", {})
     known = set(registry.panel_ids())
+    raw_closed = source.get("closed_panels", {})
+    closed_panels = (
+        {
+            panel_id: zone
+            for panel_id, zone in raw_closed.items()
+            if isinstance(panel_id, str) and panel_id in known and zone in ZONE_NAMES
+        }
+        if isinstance(raw_closed, Mapping)
+        else {}
+    )
+    closed = set(closed_panels)
     assigned: set[str] = set()
     panels_by_zone: dict[ZoneName, list[str]] = {zone: [] for zone in ZONE_NAMES}
 
@@ -93,13 +104,17 @@ def normalize_layout(
         for raw_panel_id in raw_panels:
             if not isinstance(raw_panel_id, str):
                 continue
-            if raw_panel_id not in known or raw_panel_id in assigned:
+            if (
+                raw_panel_id not in known
+                or raw_panel_id in assigned
+                or raw_panel_id in closed
+            ):
                 continue
             panels_by_zone[zone].append(raw_panel_id)
             assigned.add(raw_panel_id)
 
     for definition in registry.definitions():
-        if definition.id not in assigned:
+        if definition.id not in assigned and definition.id not in closed:
             panels_by_zone[definition.default_zone].append(definition.id)
             assigned.add(definition.id)
 
@@ -128,4 +143,5 @@ def normalize_layout(
     return {
         "layout_version": WORKSPACE_LAYOUT_VERSION,
         "zones": normalized_zones,
+        "closed_panels": closed_panels,
     }

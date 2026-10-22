@@ -96,6 +96,8 @@ class WorkspaceShell(QWidget):
             "bottom": 210,
         }
         self._activity_actions: dict[str, QAction] = {}
+        self._closed_panels: set[str] = set()
+        self._panel_titles: dict[str, str] = {}
         self._applying_layout = False
         self._drag_revealed_zones: set[ZoneName] = set()
 
@@ -143,7 +145,9 @@ class WorkspaceShell(QWidget):
             pane.panel_move_requested.connect(self.move_panel)
             pane.panel_drag_started.connect(self._begin_panel_drag)
             pane.panel_drag_finished.connect(self._finish_panel_drag)
+            pane.panel_order_changed.connect(self.layout_changed)
             pane.panel_activated.connect(self.panel_activated)
+            pane.panel_close_requested.connect(self.close_panel)
         self.horizontal_splitter.splitterMoved.connect(self._remember_horizontal_sizes)
         self.vertical_splitter.splitterMoved.connect(self._remember_vertical_sizes)
         self._outer_frame = RoundedWorkspaceFrame(
@@ -174,6 +178,7 @@ class WorkspaceShell(QWidget):
             activity_id=activity_id,
         )
         self.registry.register(definition)
+        self._panel_titles[panel_id] = title
         self.panes[default_zone].add_panel(panel_id, title, widget)
         if activity_id is not None:
             action = self.activity_bar.addAction(title)
@@ -196,15 +201,29 @@ class WorkspaceShell(QWidget):
         """Return the current zone for *panel_id*."""
         return self.registry.location(panel_id)
 
+    def is_panel_open(self, panel_id: str) -> bool:
+        """Return whether a registered panel has a workspace tab."""
+        zone = self.panel_zone(panel_id)
+        return self.panes[zone].contains_panel(panel_id)
+
     def set_panel_title(self, panel_id: str, title: str) -> None:
         """Update the visible tab title wherever a panel currently lives."""
         zone = self.panel_zone(panel_id)
-        if not self.panes[zone].set_panel_title(panel_id, title):
+        self._panel_titles[panel_id] = title
+        if panel_id not in self._closed_panels and not self.panes[zone].set_panel_title(
+            panel_id, title
+        ):
             raise RuntimeError(f"Panel missing from registered zone: {panel_id}")
 
     def show_panel(self, panel_id: str, *, focus: bool = False) -> None:
         """Reveal the panel's current zone and activate its tab."""
         zone = self.panel_zone(panel_id)
+        reopened = panel_id in self._closed_panels
+        if reopened:
+            self.panes[zone].add_panel(
+                panel_id, self._panel_titles[panel_id], self.panel(panel_id)
+            )
+            self._closed_panels.remove(panel_id)
         self.show_zone(zone)
         already_active = self.panes[zone].current_panel_id() == panel_id
         self.panes[zone].activate_panel(panel_id)
@@ -212,29 +231,58 @@ class WorkspaceShell(QWidget):
             self.panel_activated.emit(panel_id)
         widget = self.panel(panel_id)
         widget.show()
+        if reopened:
+            self.layout_changed.emit()
         if focus:
             widget.setFocus(Qt.FocusReason.ShortcutFocusReason)
 
-    def move_panel(self, panel_id: str, zone: str) -> None:
+    def close_panel(self, panel_id: str) -> None:
+        """Remove a panel tab while retaining its widget and registered location."""
+        zone = self.panel_zone(panel_id)
+        widget = self.panes[zone].remove_panel(panel_id)
+        if widget is None:
+            return
+        widget.hide()
+        self._closed_panels.add(panel_id)
+        if zone != "center" and not self.panes[zone].panel_ids():
+            self.hide_zone(zone)
+        self.layout_changed.emit()
+
+    def move_panel(self, panel_id: str, zone: str, index: int = -1) -> None:
         """Move the same panel widget into one of the four fixed zones."""
         if zone not in ZONE_NAMES:
             raise ValueError(f"Unknown zone: {zone}")
         target_zone = cast(ZoneName, zone)
         source_zone = self.panel_zone(panel_id)
         if source_zone == target_zone:
+            if index >= 0:
+                pane = self.panes[target_zone]
+                current = pane.index_of(panel_id)
+                if current >= 0:
+                    destination = index - (index > current)
+                    pane.tabs.tabBar().moveTab(
+                        current, max(0, min(destination, pane.tabs.count() - 1))
+                    )
             self.show_panel(panel_id)
             return
 
-        widget = self.panes[source_zone].remove_panel(panel_id)
+        was_closed = panel_id in self._closed_panels
+        widget = (
+            self.panel(panel_id)
+            if was_closed
+            else self.panes[source_zone].remove_panel(panel_id)
+        )
         if widget is None:
             raise RuntimeError(f"Panel missing from registered zone: {panel_id}")
-        definition = self.registry.definition(panel_id)
         target_was_drag_revealed = target_zone in self._drag_revealed_zones
         self._drag_revealed_zones.discard(target_zone)
         self.show_zone(target_zone)
         if target_was_drag_revealed:
             self.zone_visibility_changed.emit(target_zone, True)
-        self.panes[target_zone].add_panel(panel_id, definition.title, widget)
+        self.panes[target_zone].add_panel(
+            panel_id, self._panel_titles[panel_id], widget, index
+        )
+        self._closed_panels.discard(panel_id)
         self.registry.set_location(panel_id, target_zone)
         self.panes[target_zone].activate_panel(panel_id)
 
@@ -306,6 +354,7 @@ class WorkspaceShell(QWidget):
     def apply_layout(self, layout: object) -> dict[str, Any]:
         """Normalize and apply explicit workspace state."""
         normalized = normalize_layout(layout, self.registry)
+        self._closed_panels = set(normalized["closed_panels"])
         zones = normalized["zones"]
         self._applying_layout = True
         try:
@@ -313,12 +362,15 @@ class WorkspaceShell(QWidget):
                 for panel_id in list(pane.panel_ids()):
                     pane.remove_panel(panel_id)
 
+            for panel_id, zone in normalized["closed_panels"].items():
+                self.registry.set_location(panel_id, zone)
+
             for zone in ZONE_NAMES:
                 zone_data = zones[zone]
                 for panel_id in zone_data["panels"]:
                     definition = self.registry.definition(panel_id)
                     self.panes[zone].add_panel(
-                        panel_id, definition.title, definition.widget
+                        panel_id, self._panel_titles[panel_id], definition.widget
                     )
                     self.registry.set_location(panel_id, zone)
                 active = zone_data["active"]
@@ -360,7 +412,15 @@ class WorkspaceShell(QWidget):
                 "panels": pane.panel_ids(),
                 "active": pane.current_panel_id(),
             }
-        return {"layout_version": WORKSPACE_LAYOUT_VERSION, "zones": zones}
+        return {
+            "layout_version": WORKSPACE_LAYOUT_VERSION,
+            "zones": zones,
+            "closed_panels": {
+                panel_id: self.panel_zone(panel_id)
+                for panel_id in self.panel_ids()
+                if panel_id in self._closed_panels
+            },
+        }
 
     def reset_layout(self) -> None:
         """Restore deterministic factory panel placement and zone geometry."""

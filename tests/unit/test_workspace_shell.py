@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from pathlib import Path
+from unittest.mock import patch
 
-from PySide6.QtCore import QEvent, QMimeData, QPointF, Qt
-from PySide6.QtGui import QColor, QDropEvent
-from PySide6.QtWidgets import QApplication, QLabel
+from PySide6.QtCore import QEvent, QMimeData, QPoint, QPointF, Qt
+from PySide6.QtGui import QColor, QDropEvent, QMouseEvent
+from PySide6.QtWidgets import QApplication, QLabel, QTabBar, QToolButton
 
 from src.core.theme_manager import ThemeManager
 from src.gui.workspace import (
@@ -35,9 +36,7 @@ def _registry() -> PanelRegistry:
         "history": "bottom",
     }
     for panel_id, zone in defaults.items():
-        registry.register(
-            PanelDefinition(panel_id, panel_id.title(), QLabel(), zone)
-        )
+        registry.register(PanelDefinition(panel_id, panel_id.title(), QLabel(), zone))
     return registry
 
 
@@ -96,6 +95,63 @@ def test_move_panel_reuses_widget_and_updates_registry(qtbot) -> None:
         assert shell.active_panel(zone) == "map"
 
 
+def test_drag_reorders_panels_in_same_pane_and_layout_remembers(qtbot) -> None:
+    shell = _shell(qtbot)
+    shell.resize(1600, 900)
+    shell.show()
+    pane = shell.panes["center"]
+    bar = pane.tabs.tabBar()
+    before = pane.panel_ids()
+    cross_zone_drags: list[str] = []
+    layout_changes: list[bool] = []
+    pane.panel_drag_started.connect(cross_zone_drags.append)
+    shell.layout_changed.connect(lambda: layout_changes.append(True))
+
+    start = bar.tabRect(0).center()
+    destination = bar.tabRect(2).center()
+    qtbot.mousePress(bar, Qt.MouseButton.LeftButton, pos=start)
+    for x in range(start.x(), destination.x() + 1, 12):
+        qtbot.mouseMove(bar, pos=QPoint(x, start.y()))
+    qtbot.mouseRelease(bar, Qt.MouseButton.LeftButton, pos=destination)
+
+    assert pane.panel_ids() != before
+    assert pane.panel_ids().index("entity") > 0
+    assert cross_zone_drags == []
+    assert layout_changes
+    captured = shell.capture_layout()
+    shell.reset_layout()
+    shell.apply_layout(captured)
+    assert pane.panel_ids() == captured["zones"]["center"]["panels"]
+
+
+def test_drag_leaving_tab_strip_keeps_original_panel_identity(qtbot) -> None:
+    shell = _shell(qtbot)
+    shell.resize(1400, 800)
+    shell.show()
+    bar = shell.panes["center"].tabs.tabBar()
+    start = bar.tabRect(0).center()
+    outside = QPoint(bar.width() + 30, start.y())
+    started: list[str] = []
+    bar.panel_drag_started.connect(started.append)
+
+    qtbot.mousePress(bar, Qt.MouseButton.LeftButton, pos=start)
+    move = QMouseEvent(
+        QEvent.Type.MouseMove,
+        QPointF(outside),
+        QPointF(bar.mapToGlobal(outside)),
+        Qt.MouseButton.NoButton,
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+    )
+    with patch("src.gui.workspace.pane_container.QDrag") as drag_class:
+        QApplication.sendEvent(bar, move)
+    qtbot.mouseRelease(bar, Qt.MouseButton.LeftButton, pos=outside)
+
+    assert started == ["entity"]
+    payload = drag_class.return_value.setMimeData.call_args.args[0]
+    assert bytes(payload.data(PANEL_MIME_TYPE).data()) == b"entity"
+
+
 def test_pane_corners_are_mirrored_over_content_after_resize(qapp, qtbot):
     """Opaque content and tab frames cannot change one corner's curvature."""
     pane = PaneContainer("center")
@@ -121,8 +177,10 @@ def test_pane_corners_are_mirrored_over_content_after_resize(qapp, qtbot):
                     colors = [
                         rendered.pixelColor(px, py)
                         for px, py in (
-                            (x, y), (w - 1 - x, y),
-                            (x, h - 1 - y), (w - 1 - x, h - 1 - y),
+                            (x, y),
+                            (w - 1 - x, y),
+                            (x, h - 1 - y),
+                            (w - 1 - x, h - 1 - y),
                         )
                     ]
                     for channel in ("red", "green", "blue"):
@@ -134,8 +192,7 @@ def test_pane_corners_are_mirrored_over_content_after_resize(qapp, qtbot):
                         assert abs(values[0] - values[1]) <= 5
                         assert abs(values[2] - values[3]) <= 5
             border = QColor(ThemeManager().get_theme()["border"])
-            for x, y in ((w // 2, 0), (w // 2, h - 1),
-                         (0, h // 2), (w - 1, h // 2)):
+            for x, y in ((w // 2, 0), (w // 2, h - 1), (0, h // 2), (w - 1, h // 2)):
                 assert rendered.pixelColor(x, y) == border
             inset = int(8 * rendered.devicePixelRatio())
             assert rendered.pixelColor(inset, h - 1 - inset) == QColor("magenta")
@@ -188,8 +245,12 @@ def test_outer_frame_encloses_activity_bar_and_tracks_theme(qapp, qtbot):
                 image = shell.grab().toImage()
                 w, h = image.width(), image.height()
                 border = QColor(manager.get_theme()["border"])
-                for x, y in ((0, h // 2), (w - 1, h // 2),
-                             (w // 2, 0), (w // 2, h - 1)):
+                for x, y in (
+                    (0, h // 2),
+                    (w - 1, h // 2),
+                    (w // 2, 0),
+                    (w // 2, h - 1),
+                ):
                     assert image.pixelColor(x, y) == border
                 assert shell.activity_bar.geometry().left() == 4
                 for offset in range(4):
@@ -203,6 +264,8 @@ def test_outer_frame_encloses_activity_bar_and_tracks_theme(qapp, qtbot):
 
 def test_drop_tab_on_another_pane_moves_the_same_panel(qtbot) -> None:
     shell = _shell(qtbot)
+    shell.resize(1400, 800)
+    shell.show()
     widget = shell.panel("map")
     mime_data = QMimeData()
     mime_data.setData(PANEL_MIME_TYPE, b"map")
@@ -220,6 +283,30 @@ def test_drop_tab_on_another_pane_moves_the_same_panel(qtbot) -> None:
     assert shell.panel("map") is widget
     assert shell.panel_zone("map") == "right"
     assert shell.active_panel("right") == "map"
+    assert shell.panes["right"].panel_ids()[0] == "map"
+
+
+def test_drop_on_later_tab_places_panel_after_it(qtbot) -> None:
+    shell = _shell(qtbot)
+    shell.resize(1400, 800)
+    shell.show()
+    shell.move_panel("map", "right", 0)
+    bar = shell.panes["right"].tabs.tabBar()
+    last = bar.tabRect(bar.count() - 1)
+    mime_data = QMimeData()
+    mime_data.setData(PANEL_MIME_TYPE, b"map")
+    event = QDropEvent(
+        QPointF(last.right() - 2, last.center().y()),
+        Qt.DropAction.MoveAction,
+        mime_data,
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+    )
+
+    bar.dropEvent(event)
+
+    assert event.isAccepted()
+    assert shell.panes["right"].panel_ids() == ["analysis", "ai_search", "map"]
 
 
 def test_empty_zone_becomes_temporary_drop_target(qtbot) -> None:
@@ -276,6 +363,78 @@ def test_show_panel_reopens_hidden_zone(qtbot) -> None:
 
     assert shell.zone_visible("bottom")
     assert shell.active_panel("bottom") == "timeline"
+
+
+def test_close_button_closes_each_workspace_panel_without_destroying_it(qtbot) -> None:
+    shell = _shell(qtbot)
+    for zone, panel_id in (
+        ("left", "project"),
+        ("center", "event"),
+        ("right", "analysis"),
+        ("bottom", "timeline"),
+    ):
+        pane = shell.panes[zone]
+        widget = shell.panel(panel_id)
+        assert pane.tabs.tabsClosable()
+        close_button = pane.tabs.tabBar().tabButton(
+            pane.index_of(panel_id), QTabBar.ButtonPosition.RightSide
+        )
+        assert isinstance(close_button, QToolButton)
+        assert close_button.objectName() == "WorkspacePanelCloseButton"
+        assert close_button.accessibleName() == f"Close {panel_id.title()} panel"
+        pane.tabs.tabCloseRequested.emit(pane.index_of(panel_id))
+        assert not pane.contains_panel(panel_id)
+        assert shell.panel(panel_id) is widget
+        shell.show_panel(panel_id)
+        assert pane.contains_panel(panel_id)
+        assert shell.panel(panel_id) is widget
+
+
+def test_panel_close_button_click_and_theme_recolor(qtbot) -> None:
+    shell = _shell(qtbot)
+    shell.resize(1200, 800)
+    shell.show()
+    pane = shell.panes["center"]
+    index = pane.index_of("event")
+    close_button = pane.tabs.tabBar().tabButton(index, QTabBar.ButtonPosition.RightSide)
+    assert isinstance(close_button, QToolButton)
+    assert close_button.size().width() == 20
+    assert not close_button.icon().isNull()
+
+    manager = ThemeManager()
+    old_theme = manager.current_theme_name
+    try:
+        manager.current_theme_name = "light_mode"
+        manager.theme_changed.emit(manager.get_theme())
+        light_icon = close_button.icon().pixmap(14, 14).toImage()
+        manager.current_theme_name = "dark_mode"
+        manager.theme_changed.emit(manager.get_theme())
+        dark_icon = close_button.icon().pixmap(14, 14).toImage()
+        assert light_icon != dark_icon
+    finally:
+        manager.current_theme_name = old_theme
+        manager.theme_changed.emit(manager.get_theme())
+
+    qtbot.mouseClick(close_button, Qt.MouseButton.LeftButton)
+    assert not pane.contains_panel("event")
+
+
+def test_closed_panel_and_zone_survive_layout_restore(qtbot) -> None:
+    shell = _shell(qtbot)
+    shell.move_panel("map", "right")
+    shell.close_panel("map")
+    shell.close_panel("project")
+    saved = shell.capture_layout()
+
+    assert saved["closed_panels"] == {"project": "left", "map": "right"}
+    shell.reset_layout()
+    shell.apply_layout(saved)
+
+    assert not shell.panes["right"].contains_panel("map")
+    assert not shell.panes["left"].contains_panel("project")
+    assert shell.panel_zone("map") == "right"
+    shell.show_panel("map")
+    assert shell.panes["right"].contains_panel("map")
 
 
 def test_panel_activation_emits_for_tab_changes_and_reselection(qtbot) -> None:
@@ -367,9 +526,10 @@ def test_incompatible_version_uses_factory_layout() -> None:
     )
 
     assert result["zones"]["left"]["panels"] == ["project"]
-    assert result["zones"]["center"]["panels"] == DEFAULT_WORKSPACE_LAYOUT[
-        "zones"
-    ]["center"]["panels"]
+    assert (
+        result["zones"]["center"]["panels"]
+        == DEFAULT_WORKSPACE_LAYOUT["zones"]["center"]["panels"]
+    )
 
 
 def test_repeated_window_resize_keeps_center_available(qtbot) -> None:
