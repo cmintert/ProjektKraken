@@ -2,6 +2,11 @@
 
 # Troubleshooting
 
+Find the symptom below, check the active world and preserve any unfinished
+work before recovery. The [installation guide](getting-started.md#install-and-launch)
+and [backup procedure](import-export-and-backups.md#back-up-and-restore) are the
+canonical starting points for package and saved-data recovery.
+
 ## The app does not start
 
 1. Confirm that you extracted the complete ZIP before launching it.
@@ -42,12 +47,20 @@ the packaged app has no console.
 If the application opens, choose **Layouts → Reset Layout**. This restores the
 default panel arrangement without deleting world folders.
 
+If it does not open, this menu is unavailable. Report the startup failure with
+the diagnostics below before changing settings or world files. Reinstalling
+only the executable does not restore a world or its assets.
+
 ## AI models are not listed
 
-- Confirm LM Studio is running.
-- Enter only the server address.
-- Refresh models after loading or unloading a model in LM Studio.
-- Generation and embedding may require different models.
+1. Confirm LM Studio is running and has the required model loaded.
+2. Open **Settings → AI Search Index and Settings…** and check that the server
+   field contains the server address, not an individual API endpoint.
+3. Choose **Refresh Models** for the relevant provider and read the connection
+   result. Generation and embedding may require different models.
+4. Follow {ref}`AI setup <help-settings-ai>` if either model remains unavailable.
+
+Retry the original search or generation only after the connection succeeds.
 
 ## Raster editing has paused
 
@@ -66,3 +79,9 @@ necessary.
 Confirm the active world in the title bar, the selected inspector item, the
 active map, and the timeline playhead. Dated map content may change as the
 playhead moves.
+
+Check **Source** before correcting an Entity value. If a map feature is absent
+at this time, locate it in Layers and use **Jump to valid time**. These checks
+help distinguish a different historical view from a failed save. See
+[time and historical state](temporal-model.md) before changing dates to repair
+an apparent discrepancy.

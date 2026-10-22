@@ -119,23 +119,10 @@ multiple users simultaneously.
 
 ### Windows Executable (Recommended)
 
-1. Download the Windows x64 ZIP and its `.sha256` file from
-   [GitHub Releases](https://github.com/cmintert/ProjektKraken/releases).
-2. Verify the download in PowerShell:
-
-   ```powershell
-   Get-FileHash .\ProjektKraken-0.20.1-beta1-windows-x64.zip -Algorithm SHA256
-   ```
-
-   The reported hash must match the value in the downloaded `.sha256` file.
-3. Extract the complete ZIP into an ordinary user folder. Keep the
-   `ProjektKraken` folder and its `_internal` folder together.
-4. Open the extracted `ProjektKraken` folder and double-click
-   `ProjektKraken.exe`.
-
-No Python installation or command line is required. The portable `worlds/`
-directory is created beside the executable on first launch.
-See the [beta release notes](docs/releases/0.20.1-beta1.md) for known
+Follow [Install and launch](docs/user/getting-started.md#install-and-launch)
+for the Windows download, checksum verification and extraction procedure.
+The packaged application needs no Python installation. See the
+[beta release notes](docs/releases/0.20.1-beta1.md) for version-specific
 limitations and safe update guidance.
 
 ### From Source
@@ -189,13 +176,9 @@ python -m src.cli.index query --database world.kraken --text "ancient wizard"
 See the **[Search, AI, and Analysis guide](docs/user/search-ai-and-analysis.md)**
 for desktop and command-line setup guidance.
 
-For desktop AI features, open **Tools → AI Settings**, enter the LM Studio
-server address (for example `http://localhost:1234`), and select **Refresh
-Models**. Choose one loaded text-generation model and, if semantic search uses
-LM Studio, one embedding-capable model. ProjektKraken derives the individual
-`/v1` endpoints; do not paste a completion or embedding endpoint into the
-server field. Cloud generation providers remain visible but disabled until
-their adapters meet the same reply and cancellation contract.
+For desktop AI features, follow
+[Configure LM Studio](docs/user/search-ai-and-analysis.md#configure-lm-studio).
+The current route is **Settings → AI Search Index and Settings…**.
 
 ## Troubleshooting
 

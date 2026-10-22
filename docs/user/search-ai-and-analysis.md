@@ -6,15 +6,21 @@ ProjektKraken can index world content for semantic search, ask a configured
 local model to help revise descriptions, and analyze the world's internal
 consistency.
 
+Generation and semantic search need their configured providers; deterministic
+World Context does not call a model. Start with an open world and the relevant
+model server available. See [World Context and AI interpretation](world-context-model.md)
+before treating generated text or search results as historical evidence.
+
 (help-settings-ai)=
 
 ## Configure LM Studio
 
 1. Open **Settings → AI Search Index and Settings…**.
 2. Enter the LM Studio server address, such as `http://localhost:1234`.
-3. Refresh the available models.
+3. Choose **Refresh Models** for the relevant provider.
 4. Choose a generation model and, when needed, a separate embedding model.
-5. Test the connection and save the settings for the world.
+5. Check the connection result and choose **OK**. Settings also save as their
+   fields are accepted; **Cancel** is not a rollback of settings already saved.
 
 Enter the server address, not a `/completions` or `/embeddings` endpoint.
 Cloud-provider controls remain unavailable until their adapters are enabled.
@@ -23,8 +29,16 @@ Cloud-provider controls remain unavailable until their adapters are enabled.
 
 ## Search the world
 
-Open the **AI Search** panel, build or refresh the index, and enter a natural
-language query. Results can include events and entities ranked by relevance.
+1. Open **Settings → AI Search Index and Settings… → Knowledge Base**.
+   Choose **Rebuild Index** when the index needs rebuilding and wait for
+   completion.
+2. Open **View → Panels → AI Search**.
+3. Enter a natural-language query and choose **Search**.
+4. Review the returned entries and open the intended result.
+
+Results can include Events and Entities ranked by relevance. Search does not
+rewrite their content. If the expected entry is absent, check index status and
+provider settings before concluding that the world has no matching record.
 
 Search quality depends on the selected embedding model and the freshness of the
 index.
@@ -39,6 +53,11 @@ index.
 4. Apply the template to the editable prompt.
 5. Generate and review the response.
 6. Choose **Replace**, **Append**, or **Discard**.
+7. Save the edited entry and reopen it to verify the accepted description.
+
+Replace changes the description; Append adds the accepted response to it.
+Discard rejects the proposed response. Review factual claims before either
+accepting action, and use supported text/content Undo if an accepted edit is wrong.
 
 Selecting a template does not overwrite the draft. Generated text is not
 inserted until you explicitly apply it.
@@ -119,7 +138,7 @@ travel with that world.
 
 ## Use the Analysis Suite
 
-Open **Analysis Suite** from **View**. Its tabs can:
+Open **View → Panels → Analysis**. Its tabs can:
 
 - validate references and world consistency;
 - inspect temporal relationships and character lifespans;
@@ -175,6 +194,15 @@ The Graph displays relations between world entries. Search and filters change th
 connections shown; they do not edit those relations. Viewed time and the selected
 temporal mode determine which historical connections are visible. Use a deliberate
 inspector navigation action to edit an entry.
+
+1. Open **View → Panels → Graph**.
+2. Choose the temporal mode appropriate to the question you are asking.
+3. Search or filter to inspect the relevant connections, then clear the filter
+   to restore the broader view.
+
+Read direction and uncertainty labels before interpreting an edge. See
+{ref}`relation timing in the Graph <help-relations-timing>` for the temporal
+modes. A hidden edge has not been deleted.
 
 ## Interface control reference
 

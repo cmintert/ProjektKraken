@@ -18,6 +18,7 @@ from scripts.build_help import ROOT, write_json
 from src.app.help_package_probe import probe_help, run_help_probe
 from src.core.help_bundle import HELP_INPUT_FILES, file_hash
 from src.services.help_bundle_service import HelpBundleError, HelpBundleService
+from src.services.help_search_service import HelpSearchService
 
 pytestmark = pytest.mark.ci_fast
 
@@ -122,10 +123,26 @@ def test_all_topics_search_and_navigation(generated_root):
         "authoring.create"
     )
     assert reader.load_control_excerpt("unknown.topic") is None
-    assert len(reader.pages()) == 13
+    expected_pages = {
+        path.relative_to(generated_root / "docs/user").with_suffix(".html").as_posix()
+        for path in (generated_root / "docs/user").rglob("*.md")
+    }
+    assert {page.path for page in reader.pages()} == expected_pages
     assert "getting-started.html" in reader.load_page("index.html")
     reader.resource_path("maps.html#dated-path-and-region-geometry")
     search = reader.search_documents()
+    search_service = HelpSearchService(search)
+    for query, destination in (
+        ("changing kingdom", "northwatch-tutorial.html"),
+        ("precision uncertainty duration", "temporal-model.html"),
+        ("values connections", "representations.html"),
+        ("Entity history viewed location", "world-context-model.html"),
+        ("external databases reduce portability", "portability-and-recovery.html"),
+    ):
+        results = search_service.search(query)
+        assert any(result.page == destination for result in results), query
+        for result in results:
+            reader.resource_path(result.page + "#" + result.fragment)
     assert any("星" in entry.text for entry in search)
     assert {t["id"] for t in registry["topics"]}.issubset(
         {topic for entry in search for topic in entry.topic_ids}
@@ -291,7 +308,7 @@ def test_frozen_default_uses_bundle_root(help_root, tmp_path, monkeypatch):
 def test_qt_rendering_anchors_tables_code_images(generated_root, qapp):
     reader = service(generated_root)
     evidence = probe_help(reader)
-    assert evidence["pages"] == 13
+    assert evidence["pages"] == len(reader.pages())
     browser = QTextBrowser()
     try:
         browser.setSource(QUrl.fromLocalFile(str(reader.resource_path("fixture.html"))))
@@ -326,5 +343,5 @@ def test_help_only_probe_without_world_startup(generated_root, tmp_path, qapp):
     )
     result = json.loads(report.read_text("utf-8"))
     assert result["success"]
-    assert result["help_evidence"]["pages"] == 13
+    assert result["help_evidence"]["pages"] == len(service(generated_root).pages())
     assert not (tmp_path / "worlds").exists()

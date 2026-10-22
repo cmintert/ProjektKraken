@@ -2,8 +2,10 @@
 
 ## What this does
 
-The Timeline places events along the world's history. The playhead represents
-the current lore time and also controls time-sensitive map content.
+Use the Timeline to view history, record uncertain dates and compare source
+claims. Begin with an open world and its active calendar. The playhead is
+**Viewing time**, separate from **World current time**. See the
+[time model](temporal-model.md) for precision, duration and historical sources.
 
 (help-timeline-viewing)=
 
@@ -78,6 +80,8 @@ occurrence is known to that year; it does not assert January 1 or a year-long du
 2. Leave unknown month and day components unspecified. In the separate date controls, **Delete** clears the selected component.
 3. Add a qualification when needed: for example, `c. 961` for approximate or `961?` for uncertain.
 4. If you know actual bounds, enter an expression such as `between 959 and 963`, or use **Possible date limits…**.
+5. Validate the date, then use **Save Changes** or check the separate save
+   status. Reopen the Event and confirm that unknown components remain unknown.
 
 Approximate and uncertain qualifications do not establish hard limits by themselves. An
 occurrence window describes when something happened, not how long it lasted.
@@ -143,9 +147,15 @@ through their context menu.
 
 ## Configure the calendar
 
-Open **Timeline → Calendar Configuration…** to define the active calendar.
+1. Open **Timeline → Calendar Configuration…**.
+2. Review the calendar settings before changing them and accept only the
+   intended configuration.
+3. Check a known Event date and the Timeline ruler using the resulting calendar.
+
 Calendar configuration controls how stored lore days are formatted throughout
-the interface.
+the interface. It does not independently reschedule every saved Event to retain
+the old calendar's displayed date. Back up a world before substantial calendar
+changes; do not use a calendar change to correct one Event's date.
 
 The timeline ruler marks actual calendar boundaries. Year and month ticks line
 up with events dated to the first day of that year or month. Week ticks use the
@@ -214,8 +224,8 @@ assigning either an invented month or day.
 
 ## Tips and gotchas
 
-- Internally, `1.0` represents one lore day, but the interface formats it using
-  the active calendar.
+- Dates use the active world's calendar. Do not interpret a raw numeric lore
+  day as a calendar year when exchanging records.
 - Changing the playhead can change which map trajectory or dated raster state
   is visible.
 - With an entity selected, changing the playhead can also show the entity's

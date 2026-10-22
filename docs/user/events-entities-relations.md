@@ -1,13 +1,16 @@
 # Events, Entities, and Relations
 
-For the exact Markdown vocabulary, provisional links, and read-only Peek, see
-[Wiki editor Markdown and links](wiki-editor-markdown.md).
-
 ## What this does
 
 Events record what happens and when. Entities represent people, places,
 factions, objects, and other things in the world. Relations connect any two
 items with a named direction and optional details.
+
+Start with an open world and use the procedures below to create, edit and
+connect its entries. See [representations](representations.md) when deciding
+between a value, a relation and a prose link. The [time model](temporal-model.md)
+explains historical sources; [writing and links](wiki-editor-markdown.md) covers
+the exact Markdown vocabulary and Peek.
 
 (help-authoring-create)=
 
@@ -18,8 +21,13 @@ An **Event** records something that happens, such as a coronation or battle. An
 
 1. Open the Explorer’s **New** menu.
 2. Choose **Create Event** or **Create Entity**.
-3. Enter a name. For an Entity, also choose its type.
-4. Select the new item in the Explorer to add descriptions, attributes and other details.
+3. Enter a name and confirm creation. For an Entity, choose its type.
+4. Select the new item in the Explorer, add details, then use **Save Changes**
+   or wait for the save status to confirm the edit.
+
+Check that the entry remains when you select it again. Cancel a creation
+dialog before accepting it if you do not want the entry; use Undo for a saved,
+supported creation rather than leaving an unwanted duplicate.
 
 A new Event initially uses the Timeline’s **viewed time**. Check its date in the
 inspector, especially when you know only the year or an approximate date. Dates and
@@ -46,6 +54,8 @@ narrative text; attributes hold named values; tags help you group and find items
 3. Add attributes for details you want to record separately, such as an occupation or population.
 4. Add tags, images and captions as needed.
 5. Open **Connections** to review or create relations.
+6. Choose **Save Changes**, or wait for the separate save status to confirm
+   the edit, then reopen the same entry to verify its content.
 
 Descriptions support formatting and `[[Wiki Links]]`. Creating a wiki link does not
 replace the deliberate creation of a named relation.
@@ -91,6 +101,9 @@ alongside an uncertain connection.
 <help-entity-historical-editing>` · {ref}`Wiki links <help-writing-links>`
 
 ### Examples
+
+The table is a comparison reference. For the conceptual model, see
+[Understand attributes, relations and mentions](representations.md).
 
 | What you want to express | What each representation gives you |
 | --- | --- |
@@ -403,14 +416,23 @@ wiki link also creates a `mentions` relation.
 5. Create dated events for important moments in the character's history.
 6. Use the Graph and Timeline to review the resulting context.
 
+Save the description and other edited fields before treating this workflow as
+complete. Reopen the character to check its content and review relation
+direction separately. For a guided introduction with prepared checkpoints,
+use the [Northwatch tutorial](northwatch-tutorial.md).
+
 (help-authoring-delete)=
 
 ## Delete an entry deliberately
 
-Delete removes the selected entry from the world, rather than merely hiding it or
-removing it from a document. Review any confirmation and dependency warnings. Cancel
-keeps the entry. Supported world deletions can be undone; deleting or restoring a
-complete world is a separate operation.
+1. Select the intended entry in Project and choose **Delete**.
+2. Check the name and any dependency warnings in the confirmation.
+3. Confirm only if you intend to remove the entry from the world. Choose
+   **Cancel** to keep it.
+
+Check that the entry has disappeared from Project. This is different from
+removing an entry from one Longform document. Supported world-entry deletions
+can be undone; deleting or restoring a complete world is a separate operation.
 
 (help-media-gallery)=
 

@@ -67,6 +67,11 @@
 - `src/commands/base_command.py`, `src/services/worker.py`, `tests/conftest.py`
 
 ## Project Skills
+
+- Documentation follows `docs/developer/documentation.md`: choose a primary
+  Diátaxis purpose, verify operational claims, preserve contextual Help IDs and
+  anchors, and record rendered and human review separately. Use the linked review
+  and reader-testing forms; build success is not reader-performance evidence.
 - For bounded architecture refactoring or executable edits to reviewed C901
   hotspots, use `.agents/skills/incremental-refactor/SKILL.md`. Run
   `python -m scripts.check_complexity_policy`; touched hotspots must strictly

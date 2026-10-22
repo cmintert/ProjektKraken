@@ -5,6 +5,10 @@
 The current shortcuts are also available from
 **Help → Keyboard Shortcuts…**.
 
+Read the focus requirement with the action. For example, Ctrl+I creates an
+Entity outside text editing, but applies Italic in a description. Ctrl+F
+searches the focused text surface or Help rather than every open panel.
+
 | Action | Shortcut |
 | --- | --- |
 | Help for current task | F1 |
@@ -13,7 +17,7 @@ The current shortcuts are also available from
 | Search the offline manual | Ctrl+F, while Help has focus |
 | Return from Help to work | Escape, while Help has focus |
 | Create event | Ctrl+E |
-| Create entity | Ctrl+I |
+| Create entity, outside text editing | Ctrl+I |
 | Create map | Ctrl+M |
 | Undo | Ctrl+Z |
 | Redo | Ctrl+Y or Ctrl+Shift+Z |
@@ -21,7 +25,7 @@ The current shortcuts are also available from
 | Open a wiki link | Ctrl+Click |
 | Choose relation type while dropping | Shift+Drop |
 | Bold | Ctrl+B |
-| Italic | Ctrl+I |
+| Italic, in description text | Ctrl+I |
 | Heading 1, 2, or 3 | Ctrl+1, Ctrl+2, Ctrl+3 |
 | Body text | Ctrl+0 |
 | Focus writing / exit focus | F11 |

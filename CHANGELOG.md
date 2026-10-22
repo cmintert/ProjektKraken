@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-22
-**Commit:** a717f18780268e29f1ce522b779f3c21e30b243e
+**Commit:** a6e211e9f9ccf28c7c17af945b0fb16cf2372309
 ---
 
 # Changelog
@@ -12,6 +12,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-10-22)* **Documentation (KRT-105)**: Adopted the complete authoring
+  standard, aligned contributor and agent guidance, and added review and
+  reader-testing forms. Revised the user manual with a Northwatch tutorial,
+  conceptual explanations and corrected task routes while preserving Help
+  identities and control-reference locations. Updated Help-bundle tests for
+  complete page inclusion and searchable new guides. Human acceptance remains
+  pending.
 
 - *(2026-10-22)* **Workspace**: Added subtle, themed Phosphor close buttons
   for all panels and checked View > Panels entries for closing and reopening

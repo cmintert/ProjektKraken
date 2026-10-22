@@ -3,8 +3,17 @@
 # User Manual
 
 This manual describes the capabilities available in the current ProjektKraken
-desktop application. It is organized around tasks rather than internal
-implementation.
+desktop application. It is organized around tasks.
+
+Start with [installation and world setup](getting-started.md), then follow
+[Explore a changing kingdom](northwatch-tutorial.md) with the Northwatch sample.
+For a specific job, choose a task chapter below or press F1 from your work.
+The [time model](temporal-model.md), [representations](representations.md),
+[World Context](world-context-model.md) and [portability](portability-and-recovery.md)
+explanations describe the concepts behind those procedures.
+
+Each task chapter keeps its detailed control reference at the end. Shift+F1,
+Ctrl+Shift+F1 and Help search reach those precise explanations directly.
 
 (help-manual-inspect)=
 
@@ -96,6 +105,7 @@ for the current task, or search the manual, if a target has no explanation.
 :maxdepth: 1
 
 getting-started
+northwatch-tutorial
 workspace
 events-entities-relations
 wiki-editor-markdown
@@ -106,6 +116,10 @@ search-ai-and-analysis
 import-export-and-backups
 keyboard-shortcuts
 troubleshooting
+temporal-model
+representations
+world-context-model
+portability-and-recovery
 ```
 
 ProjektKraken saves world content as you work. Undo and redo remain available

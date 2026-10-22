@@ -6,6 +6,10 @@ ProjektKraken uses one stable workspace with four destinations: Left, Center,
 Right, and Bottom. Feature panels can move between those zones as tabs, while
 the number of zones remains fixed.
 
+Use this guide to arrange panels, save a layout and find your entries. Begin
+with an open world. Layout changes affect application preferences; they do not
+reorganize the world's Events, Entities or chronology.
+
 (help-workspace-navigation)=
 
 ## Main workspace
@@ -52,7 +56,8 @@ previous useful size.
 1. Arrange the panels and resize the four zones.
 2. Open **Layouts → Save Current Layout…**.
 3. Enter a layout name.
-4. Restore or delete it later from the **Layouts** menu.
+4. Confirm the name, then use the layout's **Restore** entry under **Layouts**
+   to check the arrangement. Its **Delete** entry removes the saved layout.
 
 Saved layouts contain panel locations, tab order, active tabs, closed panels,
 zone sizes, and zone visibility. They do not contain the outer window's screen
@@ -64,16 +69,21 @@ changes affect only the interface, not world content.
 
 ## Change the theme
 
-Open **View → Theme** and select an available theme. The choice applies to the
-workspace and is retained with your application preferences.
+1. Open **View → Theme** and select an available theme.
+2. Check the workspace in that theme. The choice is retained with application
+   preferences; select your previous theme through the same menu to return.
 
 (help-explorer-browsing)=
 
 ## Find and organize Explorer entries
 
-Search and filter the Explorer to find existing Events, Entities and maps. Sorting
-changes their displayed order; it does not change saved dates or content. Clearing
-filters restores the list without deleting entries.
+1. Open **Project** from **View → Panels** if the Explorer is closed.
+2. Enter part of an existing entry's name in its search field.
+3. Review the filters if the expected entry is missing, then select the result.
+4. Clear the search and filters to show the full list again.
+
+The selected entry opens through the normal draft safeguards. Sorting changes
+display order, not saved dates or content; filtering never deletes entries.
 
 (help-history-undo)=
 

@@ -1,5 +1,10 @@
 # Wiki editor Markdown and links
 
+Write an Event or Entity description, link it to existing entries and return
+to your draft. Begin with the intended entry selected. For the difference
+between a prose reference and an asserted connection, see
+[attributes, relations and mentions](representations.md).
+
 (help-writing-edit)=
 
 ## Write in Rich or Markdown Source view
@@ -11,6 +16,8 @@ prose and supported formatting, or **Markdown source** to edit the exact stored 
 2. Use **Headings**, **Bold**, **Italic**, or the **Format** menu to format your writing.
 3. Open **View → Markdown source** when you want to edit Markdown directly.
 4. Choose **View → Rendered view** to return to Rich view when the content supports it.
+5. Use **Save Changes**, or wait for the inspector's separate save status,
+   then reopen the same entry to check the stored description.
 
 Rich view supports paragraphs, headings from `#` through `###`, bold, italic and wiki
 links. **Clear Formatting** removes heading, bold and italic formatting from the
@@ -127,8 +134,8 @@ Peek** returns focus to the writing surface.
 not a link; linking it selects an existing entry and does not create a new
 entry or an authored connection.
 
-Peek currently shows a read-only text description. Rich media previews and
-advanced Markdown editing are future product work; their source remains intact.
+Peek shows a read-only text description. Unsupported Markdown stays intact in
+Source view; use that view when the description cannot safely return to Rich.
 
 (help-writing-spelling)=
 

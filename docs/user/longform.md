@@ -1,6 +1,10 @@
 # Longform Writing
 
-[Back Up and Restore](import-export-and-backups.md#back-up-and-restore)
+Use Longform to arrange existing Events and Entities into a document. Begin
+with an open world containing the entries you want to include. Their saved
+content remains shared with their inspectors; the outline controls membership
+and order. See [portability and recovery](portability-and-recovery.md) when
+deciding between publication, export and backup.
 
 (help-longform-recovery)=
 
@@ -26,10 +30,9 @@ If displayed content appears out of date, use **Refresh**, or enable **Settings 
 Auto-Refresh Longform Editor**. Refresh updates the view; it does not recover deleted
 world content.
 
-For recovery, use Undo for supported edits or **File → Backup & Restore** for saved
-database backups. Restoring replaces saved world data, is not ordinarily undoable and
-requires unfinished edits to be resolved. Database backups do not contain assets; use a
-portable world package when images and maps must travel with the world.
+For recovery, use Undo for supported edits. Follow the canonical
+{ref}`backup and restore procedure <help-backup-restore>` when replacing saved
+world data; it has different consequences from restoring document membership.
 
 **Example:** Remove Ada’s biography from one narrative without deleting Ada. Add it back
 through **Add content…** if you want it in that document again.
@@ -77,9 +80,13 @@ chooser. Adding and arranging membership do not select another inspector entry.
 
 ## Export
 
-Use **File → Export → Export Longform to Markdown…** for one document. Use
-**Export as Obsidian Vault…** when you want linked Markdown files suitable for
-an Obsidian workspace.
+Open **File → Import / Export… → Export** and choose the publication or lore
+format that matches your goal. Follow [Publish Longform](import-export-and-backups.md#publish-longform)
+for Markdown, Word or PDF in authored outline order. For separate linked notes,
+follow [Export Lore](import-export-and-backups.md#export-lore).
+
+Review the output preview and warnings before **Create output**, then open the
+resulting file to check it. Export does not change the world's outline or text.
 
 ## Tips and gotchas
 

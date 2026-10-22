@@ -5,12 +5,22 @@
 Maps combine an image with placed events and entities, drawn paths and regions,
 temporal trajectories, nested detail maps, and optional editable raster layers.
 
+Start with an open world and an image for a new map, or an existing map for
+editing. Use this guide to choose the operation that matches your intended
+change. [Time and historical state](temporal-model.md#shape-location-and-presence)
+explains why a border, a journey and existence dates are separate assertions.
+
 ## Create and open a map
 
 1. Open the Explorer's **New** menu.
 2. Select **Create Map**.
 3. Choose an image and provide a name.
 4. Select the map in Project or the Map panel.
+
+Check that the image appears before placing features. Creating a map does not
+place your existing Events or Entities on it. Cancel the creation dialog if
+the wrong image was selected; avoid creating a second map to repair a missing
+asset without first checking the world's asset files.
 
 (help-map-features)=
 
@@ -23,6 +33,9 @@ draw areas.
 2. Choose **Add Marker**, **Draw Path**, or **Draw Region**.
 3. Place the marker preview or draw the vertices.
 4. Choose **Confirm** or press **Enter** to finish. Choose **Cancel** or press **Escape** to discard the draft.
+
+Check the saved feature on the map and in Layers. A preview alone is not a
+saved marker, path or region. Use Undo for an accepted supported feature change.
 
 Before confirming a marker, click elsewhere to move its preview. Paths require at least
 two vertices; regions require at least three.
@@ -97,6 +110,10 @@ Historical geometry lets one map feature have different shapes at different date
 3. Choose **Feature actions → Edit border at current date** or **Edit path at current date**.
 4. Edit the working copy, then choose **Confirm** or press **Enter**. **Cancel** or **Escape** discards the edit.
 
+View a date before the change, then return to its date to verify both shapes.
+Use Undo if the accepted state is wrong. Do not change visibility dates to
+repair the vertices of a historical border.
+
 At an existing state’s exact date, this edits that state. At another date, Kraken
 prepares a new state from the shape currently shown. Confirming saves the change as one
 undoable operation.
@@ -135,6 +152,10 @@ of its shape and ordinary layer visibility.
 2. Choose **Feature actions → Visibility dates…**.
 3. Set **Exists from** and **Exists until**, choosing **Manual date**, **Date not known**, or **Unbounded** for each side.
 4. Confirm the changes.
+
+View dates on either side of an exact boundary to check the result. If the
+feature disappears, find it in Layers and use **Jump to valid time**; it has
+not been deleted. Reopen **Visibility dates…** to correct a boundary.
 
 **Date not known** means the boundary is unresolved. **Unbounded** means there is no
 limit on that side. Partial dates retain their precision; uncertain presence is marked
@@ -203,6 +224,9 @@ relations.
 2. Place the second location, move the Timeline to its later arrival date, then choose **Accept Second Location**.
 3. Add further locations as needed.
 4. Choose **Apply** to save the complete journey as one undoable change, or **Cancel** to discard it.
+
+Move the playhead across the saved route to verify the recorded locations.
+Changing the view during this check does not edit a location's date.
 
 For an existing journey, choose **Edit journey**. Changes remain in a working copy until
 you apply them. Event markers cannot have trajectories.

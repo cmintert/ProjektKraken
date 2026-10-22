@@ -7,6 +7,10 @@ your writing, or move a complete world to another ProjektKraken installation.
 The window explains what each format contains and whether it can be imported
 again before you choose a file.
 
+Start with the intended world open and resolve unfinished edits before
+transferring saved content. [Portability and recovery](portability-and-recovery.md)
+explains the boundary between lore exchange, database backups and complete worlds.
+
 These actions serve different purposes:
 
 - **Lore import and export** moves entities, events, relations, tags, dates, and
@@ -138,7 +142,8 @@ export so the package does not appear complete when it is not.
 1. Choose **Import a portable world as a new world**.
 2. Select a `.krakenworld` file and enter a new world name.
 3. Review the package size and file count, then click **Transfer world**.
-4. Open **Manage Worlds…** and select the imported world. Restart when prompted.
+4. Open **File → Manage Databases…**, select the imported world and choose
+   **Select & Restart**.
 
 Import always creates a new world folder and a new world identity. It never
 overwrites the active world. Internal lore IDs remain intact so relations and
@@ -152,6 +157,18 @@ map connections continue to work.
 
 Use **File → Backup & Restore** or the shortcuts in **World Transfer &
 Backups** to create, restore, locate, and configure backups.
+
+1. Choose **File → Backup & Restore → Create Backup…**.
+2. Enter an optional description and confirm. Wait for the success message.
+3. Choose **Show Backup Location** in the same menu to locate the saved copy.
+
+To restore, first check that you have the required assets separately. Choose
+**File → Backup & Restore → Restore from Backup…**, select the intended backup,
+review the replacement warning and resolve unfinished edits when prompted.
+Confirm only when you intend to replace the active world's saved data. After
+the operation closes Kraken, restart and reopen the world to verify the result.
+If the restore fails, read its result and safety-snapshot location before
+attempting recovery; do not assume an interrupted operation restored the world.
 
 Restoring a `.kraken` backup replaces the active world's saved data and is not
 an ordinary undoable action. Backups do not contain asset files. Use a portable

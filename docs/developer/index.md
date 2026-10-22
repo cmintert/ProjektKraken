@@ -21,6 +21,8 @@ action-label-release-gate
 performance-measurement
 contributing
 documentation
+documentation-review
+documentation-reader-testing
 ../ux/index
 ```
 

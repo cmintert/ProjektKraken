@@ -85,6 +85,11 @@ For styling:
 
 ## References
 
+Documentation follows `docs/developer/documentation.md`. Choose a primary
+Diátaxis purpose, verify UI wording and save/recovery behavior, and preserve Help
+IDs, excerpts and anchors. Record source/rendered checks separately from human
+approval and reader testing using the guide's forms.
+
 - `README.md` for developer commands and product context.
 - `docs/developer/architecture.md` for deeper architecture details.
 - `docs/developer/testing.md` for test strategy and expectations.

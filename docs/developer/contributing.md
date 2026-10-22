@@ -21,6 +21,16 @@ Use conventional commit types such as `feat`, `fix`, `docs`, `refactor`,
 Do not mix unrelated cleanup with a feature change. Preserve existing user
 changes in a dirty working tree.
 
+## Documentation authoring and review
+
+Documentation changes follow [Documentation Authoring and Maintenance](documentation.md).
+Identify the reader, Diátaxis purpose, source revision and affected Help IDs.
+Use the [review form](documentation-review.md) to record source verification,
+rendered inspection and human approval separately. Use the
+[reader-testing protocol](documentation-reader-testing.md) for task observations.
+New or substantially revised user-facing explanations need human approval before
+publication; scheduled reader rounds must be identified as pending.
+
 ## Incremental architecture and complexity improvement
 
 Reviewed C901 debt is recorded in `scripts/complexity_policy_baseline.json`.

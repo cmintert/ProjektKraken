@@ -6,18 +6,25 @@ Each ProjektKraken world is a portable folder containing its lore database,
 manifest, and assets. You can move or back up the whole folder without
 separating its content.
 
+Install Kraken, open a world, then use the [Northwatch tutorial](northwatch-tutorial.md)
+to see how its history changes. For the storage model and the limits of a
+database-only backup, see [portability and recovery](portability-and-recovery.md).
+
 ## Install and launch
 
 ### Windows
 
-1. Open the ProjektKraken release on GitHub and download both files with the
+1. Open [ProjektKraken Releases](https://github.com/cmintert/ProjektKraken/releases)
+   and download both files with the
    same version:
-   - `ProjektKraken-0.19.7-beta1-windows-x64.zip`
-   - `ProjektKraken-0.19.7-beta1-windows-x64.zip.sha256`
-2. Open PowerShell in the download folder and run:
+   - `ProjektKraken-0.20.1-beta1-windows-x64.zip`
+   - `ProjektKraken-0.20.1-beta1-windows-x64.zip.sha256`
+2. Put these two files in a folder of their own. Open PowerShell in that
+   folder and run:
 
    ```powershell
-   Get-FileHash .\ProjektKraken-0.19.7-beta1-windows-x64.zip -Algorithm SHA256
+   Get-FileHash *.zip `
+     -Algorithm SHA256
    ```
 
 3. Compare the reported hash with the value in the `.sha256` file. The letters
@@ -31,15 +38,25 @@ No Python installation, command prompt, or `start-kraken.cmd` is required.
 Keep the `_internal` folder beside `ProjektKraken.exe`; it contains the files
 the application needs.
 
+The filenames above illustrate 0.20.1 beta 1. Use the exact filename of the
+release you download and read its release notes before updating an existing
+installation. For a source checkout, follow the
+[developer setup](https://github.com/cmintert/ProjektKraken/blob/main/docs/developer/development.md).
+
 (help-world-manage)=
 
 ## Create or open a world
 
 1. Open **File → Manage Databases…**.
-2. Create a world, or choose **Add World Folder** to register an existing complete
-   world folder from a local, removable, network, or synchronized location.
-3. Confirm the selection.
+2. Choose **Create New** and enter the new world's details, or choose
+   **Add World Folder** and select an existing complete world folder.
+3. Select the world in the list and choose **Select & Restart**. Resolve any
+   unfinished work before accepting the restart.
 4. The active world name appears in the application title.
+
+Registration leaves the folder where it is. If the configured database is
+missing, obtain the complete world instead of treating a new empty world as
+recovery. **Cancel** closes World Manager without switching worlds.
 
 World folders are stored under `worlds/` in portable installations:
 
@@ -53,11 +70,11 @@ worlds/
 
 ## First workflow
 
-1. In the Explorer, open the **New** menu.
-2. Create an event, entity, or map.
-3. Select the new item to open its inspector.
-4. Add a description, attributes, tags, images, or relations.
-5. Open the Timeline, Map, Graph, or Longform panel when you need another view.
+Follow [Explore a changing kingdom](northwatch-tutorial.md) to compare two
+dates in a prepared world. To start writing your own world instead, follow
+{ref}`Create an event or entity <help-authoring-create>`, then
+{ref}`Add details <help-authoring-details>`. The creation and editing procedures
+remain in that chapter so their save and recovery instructions have one home.
 
 ## Tips and gotchas
 
