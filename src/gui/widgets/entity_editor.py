@@ -182,7 +182,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self._content_widget = QWidget()
         content_layout = QVBoxLayout(self._content_widget)
         StyleHelper.apply_form_spacing(content_layout)
-        StyleHelper.apply_panel_top_spacing(content_layout)
+        StyleHelper.apply_panel_spacing(content_layout)
         outer_layout.addWidget(self._content_widget)
         self._content_widget.hide()
         return content_layout

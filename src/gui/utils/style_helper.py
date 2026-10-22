@@ -24,6 +24,7 @@ from src.gui.constants import (
     TOOLTIP_DELAY_MS,
     TOOLTIP_DURATION_MS,
 )
+from src.gui.ui_constants import WORKSPACE_CONTENT_INSET
 
 logger = logging.getLogger(__name__)
 
@@ -1198,10 +1199,15 @@ class StyleHelper:
         )
 
     @staticmethod
-    def apply_panel_top_spacing(layout: QLayout) -> None:
-        """Apply the shared 12 px inset beneath workspace panel tabs."""
+    def apply_panel_spacing(layout: QLayout) -> None:
+        """Align workspace content with its tabs using shared 12 px insets."""
         margins = layout.contentsMargins()
-        layout.setContentsMargins(margins.left(), 12, margins.right(), margins.bottom())
+        layout.setContentsMargins(
+            WORKSPACE_CONTENT_INSET,
+            WORKSPACE_CONTENT_INSET,
+            WORKSPACE_CONTENT_INSET,
+            margins.bottom(),
+        )
 
     @staticmethod
     def apply_standard_list_spacing(layout: QLayout) -> None:
@@ -1813,7 +1819,7 @@ class StyleHelper:
         Returns:
             str: QSS stylesheet string for toolbar spacing.
         """
-        return "QToolBar { spacing: 4px; padding: 0px 4px 4px 4px; }"
+        return "QToolBar { spacing: 4px; padding: 0px 0px 4px 0px; }"
 
     @staticmethod
     def get_raster_mode_badge_style(bg_color: str) -> str:

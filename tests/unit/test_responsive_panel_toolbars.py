@@ -3,11 +3,12 @@
 from pathlib import Path
 
 from PySide6.QtCore import QPoint
-from PySide6.QtWidgets import QToolButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QToolButton
 
 from src.core.theme_manager import ThemeManager
+from src.gui.ui_constants import WORKSPACE_CONTENT_INSET
 from src.gui.widgets.analysis.main_analysis_panel import MainAnalysisPanel
-from src.gui.widgets.graph_view.graph_filter_bar import GraphFilterBar
+from src.gui.widgets.graph_view.graph_widget import GraphWidget
 from src.gui.widgets.history_panel import HistoryPanelWidget
 from src.gui.widgets.timeline import TimelineWidget
 from src.gui.widgets.unified_list import UnifiedListWidget
@@ -110,24 +111,20 @@ def test_project_filters_keep_selectors_and_overflow_actions(qtbot) -> None:
 
 
 def test_graph_filters_fit_one_compact_row_and_overflow_actions(qtbot) -> None:
-    bar = GraphFilterBar()
-    host = QWidget()
+    host = GraphWidget()
+    bar = host._filter_bar
     host.setStyleSheet(
         ThemeManager().format_stylesheet(
             Path("src/resources/main.qss").read_text(encoding="utf-8")
         )
     )
     qtbot.addWidget(host)
-    layout = QVBoxLayout(host)
-    layout.setContentsMargins(0, 0, 0, 0)
-    layout.addWidget(bar)
-    layout.addStretch(1)
     host.resize(530, 500)
     host.show()
     qtbot.wait(1)
     bar.action_toolbar.refresh()
 
-    assert bar.width() == 530
+    assert bar.width() == host.width() - 2 * WORKSPACE_CONTENT_INSET
     from scripts.action_label_audit import audit_widget
 
     qtbot.waitUntil(lambda: not audit_widget(host))

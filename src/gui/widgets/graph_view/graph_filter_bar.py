@@ -16,7 +16,6 @@ from PySide6.QtWidgets import (
 )
 
 from src.gui.utils.help_context import declare_inspection
-from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.action_flow_layout import ActionFlowLayout
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
@@ -63,8 +62,7 @@ class GraphFilterBar(QWidget):
         self.setSizePolicy(policy)
         layout = ActionFlowLayout(self)
         layout.setSizeConstraint(QLayout.SizeConstraint.SetNoConstraint)
-        layout.setContentsMargins(4, 4, 4, 4)
-        StyleHelper.apply_panel_top_spacing(layout)
+        layout.setContentsMargins(0, 0, 0, 4)
         layout.setSpacing(4)
 
         # Search Bar

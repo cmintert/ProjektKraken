@@ -30,7 +30,7 @@ class WikiPeekPanel(QWidget):
         self._item_id = ""
         self._target_name = ""
         layout = QVBoxLayout(self)
-        StyleHelper.apply_panel_top_spacing(layout)
+        StyleHelper.apply_panel_spacing(layout)
         self.title = QLabel("Peek")
         self.detail = QLabel("")
         self.description = declare_inspection(

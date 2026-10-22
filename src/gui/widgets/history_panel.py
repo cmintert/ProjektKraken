@@ -72,7 +72,7 @@ class HistoryPanelWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setSizeConstraint(QLayout.SizeConstraint.SetNoConstraint)
         layout.setContentsMargins(5, 5, 5, 5)
-        StyleHelper.apply_panel_top_spacing(layout)
+        StyleHelper.apply_panel_spacing(layout)
         layout.setSpacing(5)
 
         # Header with buttons

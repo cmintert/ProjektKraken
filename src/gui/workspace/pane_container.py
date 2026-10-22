@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.ui_constants import WORKSPACE_CONTENT_INSET
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
@@ -33,6 +34,14 @@ from src.gui.workspace.rounded_frame import RoundedWorkspaceFrame
 PANEL_MIME_TYPE = "application/x-projektkraken-panel"
 _PANE_CORNER_RADIUS = 9
 _PANEL_CLOSE_ICON = "default_assets/icons/ui_icons/x-circle.svg"
+
+
+class _TabCornerSpacer(QWidget):
+    """Reserve the same horizontal gutter as the panel content."""
+
+    def sizeHint(self) -> QSize:  # noqa: N802
+        """Give Qt's tab-row layout an explicit, font-independent gutter."""
+        return QSize(WORKSPACE_CONTENT_INSET, _PANE_CORNER_RADIUS)
 
 
 class WorkspaceTabBar(QTabBar):
@@ -164,10 +173,8 @@ class PaneContainer(QWidget):
         # Reserve space in Qt's tab-row layout, so tabs and scroll buttons
         # cannot extend beneath the painted outer corners.
         for corner in (Qt.Corner.TopLeftCorner, Qt.Corner.TopRightCorner):
-            spacer = QLabel(self.tabs)
-            # QLabel supplies the valid sizeHint needed by QTabWidget's style
-            # layout; a bare QWidget's invalid hint makes Qt ignore the inset.
-            spacer.setFixedSize(_PANE_CORNER_RADIUS + 1, _PANE_CORNER_RADIUS)
+            spacer = _TabCornerSpacer(self.tabs)
+            spacer.setFixedSize(spacer.sizeHint())
             spacer.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
             self.tabs.setCornerWidget(spacer, corner)
         tab_bar.panel_drop_requested.connect(self._request_drop)

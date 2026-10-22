@@ -195,7 +195,7 @@ class UnifiedListWidget(QWidget):
         main_layout = QVBoxLayout(self)
         main_layout.setSizeConstraint(QLayout.SizeConstraint.SetNoConstraint)
         StyleHelper.apply_standard_list_spacing(main_layout)
-        StyleHelper.apply_panel_top_spacing(main_layout)
+        StyleHelper.apply_panel_spacing(main_layout)
 
         # Toolbar
         self.action_toolbar = OverflowToolBar(self)

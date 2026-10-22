@@ -106,8 +106,10 @@ def test_reset_layout_preserves_outer_window_geometry(main_window) -> None:
     assert main_window.workspace.panel_zone("project") == "left"
 
 
-def test_panel_headers_match_project_gap_after_moving(main_window, qapp) -> None:
-    """Panel content keeps the same top inset in every workspace location."""
+def test_panel_headers_match_project_gap_after_moving(
+    main_window, qapp, monkeypatch
+) -> None:
+    """Panel content aligns with the tab strip after relocation and resizing."""
     for editor in (main_window.entity_editor, main_window.event_editor):
         editor._empty_state.hide()
         editor._content_widget.show()
@@ -124,21 +126,44 @@ def test_panel_headers_match_project_gap_after_moving(main_window, qapp) -> None
         "map": main_window.map_widget.toolbar,
         "ai_search": main_window.ai_search_panel.layout().itemAt(0).widget(),
     }
+    body_anchors = {
+        "project": [
+            main_window.unified_list.search_bar,
+            main_window.unified_list.list_widget,
+        ],
+        "entity": [main_window.entity_editor.inspector],
+        "event": [main_window.event_editor.inspector],
+        "timeline": [main_window.timeline.time_status.dates, main_window.timeline.view],
+        "graph": [main_window.graph_widget.temporal_mode],
+        "map": [main_window.map_widget.map_selector],
+    }
     main_window.show()
     manager = ThemeManager()
     original_theme = manager.current_theme_name
     stylesheet = Path("src/resources/main.qss").read_text(encoding="utf-8")
+    monkeypatch.setattr(manager, "_qss_template", stylesheet)
+    monkeypatch.setattr(qapp, "setStyleSheet", main_window.setStyleSheet)
+    monkeypatch.setattr(qapp, "setPalette", main_window.setPalette)
     try:
         for theme in ("dark_mode", "light_mode"):
-            manager.current_theme_name = theme
-            main_window.setStyleSheet(manager.format_stylesheet(stylesheet))
+            manager.set_theme(theme)
             for width in (1600, 1000):
                 main_window.resize(width, 900)
-                for panel_id, anchor in anchors.items():
-                    main_window.workspace.move_panel(panel_id, "center")
-                    main_window.workspace.show_panel(panel_id)
-                    qapp.processEvents()
-                    panel = main_window.workspace.panel(panel_id)
-                    assert anchor.mapTo(panel, QPoint()).y() == 12, panel_id
+                for zone in ("left", "center", "right", "bottom"):
+                    for panel_id, anchor in anchors.items():
+                        main_window.workspace.move_panel(panel_id, zone)
+                        main_window.workspace.show_panel(panel_id)
+                        qapp.processEvents()
+                        panel = main_window.workspace.panel(panel_id)
+                        context = (theme, width, zone, panel_id)
+                        assert anchor.mapTo(panel, QPoint()).y() == 12, context
+                        pane = main_window.workspace.panes[zone]
+                        bar = pane.tabs.tabBar()
+                        tab_left = bar.mapTo(pane, QPoint()).x()
+                        for widget in [anchor, *body_anchors.get(panel_id, [])]:
+                            assert widget.mapTo(pane, QPoint()).x() == tab_left, (
+                                context,
+                                widget,
+                            )
     finally:
         manager.current_theme_name = original_theme

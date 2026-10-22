@@ -1,5 +1,7 @@
 """Standard GUI spacing and interaction constants."""
 
+WORKSPACE_CONTENT_INSET = 12
+
 
 class Spacing:
     """Standard spacing values on an eight-point grid."""

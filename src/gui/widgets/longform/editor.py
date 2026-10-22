@@ -104,7 +104,7 @@ class LongformEditorWidget(QWidget):
         """Setup the user interface."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        StyleHelper.apply_panel_top_spacing(layout)
+        StyleHelper.apply_panel_spacing(layout)
 
         # Theme for icons
         theme = ThemeManager().get_theme()

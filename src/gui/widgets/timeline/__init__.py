@@ -70,13 +70,13 @@ class TimelineWidget(QWidget):
         main_layout.setSizeConstraint(QLayout.SizeConstraint.SetNoConstraint)
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0, 0, 0, 0)
+        StyleHelper.apply_panel_spacing(main_layout)
 
         # Toolbar Container (Header)
         self.header_frame = QWidget()
         self.header_frame.setObjectName("TimelineHeader")
         header_layout = QHBoxLayout(self.header_frame)
-        header_layout.setContentsMargins(4, 4, 4, 4)
-        StyleHelper.apply_panel_top_spacing(header_layout)
+        header_layout.setContentsMargins(0, 0, 0, 4)
         self.action_toolbar = OverflowToolBar(self.header_frame)
         header_layout.addWidget(self.action_toolbar)
 

@@ -24,7 +24,7 @@ class TimelineTimeStatus(QWidget):
         """Create a compact strip that also fits narrow docks."""
         super().__init__(parent)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(8, 3, 8, 3)
+        layout.setContentsMargins(0, 3, 0, 3)
         layout.setSpacing(2)
         self.dates = QLabel()
         self.notice = QLabel()

@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 
 from src.core.logging_config import get_logger
 from src.gui.utils.help_context import declare_inspection
+from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.graph_view.graph_builder import GraphBuilder
 from src.gui.widgets.graph_view.graph_filter_bar import GraphFilterBar
 from src.gui.widgets.graph_view.graph_projection import GraphProjection
@@ -127,6 +128,7 @@ class GraphWidget(QWidget):
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+        StyleHelper.apply_panel_spacing(layout)
         layout.setSpacing(0)
 
         # Filter bar at top
