@@ -40,6 +40,7 @@ from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.timeline.event_item import EventItem
 from src.gui.widgets.timeline.group_band_manager import GroupBandManager
 from src.gui.widgets.timeline.group_label_overlay import GroupLabelOverlay
+from src.gui.widgets.timeline.layout_history import TimelineLayoutHistory
 from src.gui.widgets.timeline.time_indicators import TimelineTimeIndicators
 from src.gui.widgets.timeline.timeline_scene import (
     CurrentTimeLineItem,
@@ -211,6 +212,7 @@ class TimelineView(QGraphicsView):
         self._pending_layout_request: float | None = None
         self._layout_start_time: float = 0.0
         self._layout_generation = 0
+        self._lane_history = TimelineLayoutHistory()
         self._active_layout_generation = 0
         self._layout_request_token = 0
         self._active_layout_token: int | None = None
@@ -366,6 +368,7 @@ class TimelineView(QGraphicsView):
         super().resizeEvent(event)
         fitted = False
         if self._initial_fit_pending and self.width() > 0 and self.height() > 0:
+            self._lane_history.clear()
             self.fit_all()
             self._initial_fit_pending = False
             self._has_done_initial_fit = True
@@ -680,6 +683,7 @@ class TimelineView(QGraphicsView):
             )
         if not self._has_done_initial_fit:
             if self.isVisible() and self.width() > 0 and self.height() > 0:
+                self._lane_history.clear()
                 self.fit_all()
                 self._initial_fit_pending = False
                 self._has_done_initial_fit = True
@@ -696,6 +700,7 @@ class TimelineView(QGraphicsView):
         self._empty_state.setVisible(not self.events)
         if not self.events:
             self._incremental_layout_timer.stop()
+            self._lane_history.clear()
             self._update_scene_rect_default()
         else:
             self._update_scene_rect_from_events(self.events)
@@ -730,6 +735,10 @@ class TimelineView(QGraphicsView):
         self._incremental_layout_timer.stop()
         self._layout_generation += 1
         self.layout_requested.emit()
+        scopes = {"standard", "all"} | {
+            "tag:" + tag for tag in self._grouping_tag_order
+        }
+        self._lane_history.prepare({event.id for event in self.events}, scopes)
         if not self.events:
             return
 
@@ -752,6 +761,7 @@ class TimelineView(QGraphicsView):
             )
             if bands_exist:
                 self._repack_grouped_events()
+                self._lane_history.commit()
                 return
             else:
                 logger.warning(
@@ -778,11 +788,12 @@ class TimelineView(QGraphicsView):
 
         # Perform packing
         event_lane_assignments, lane_heights = self._lane_packer.pack_events(
-            self.events
+            self.events, self._lane_history.snapshot()
         )
 
         # Apply layout
         self._apply_layout_results(event_lane_assignments, lane_heights)
+        self._accept_standard_layout(event_lane_assignments, lane_heights)
 
     def _repack_events_async(self, effective_scale: float) -> None:
         """Asynchronous version of event repacking for large datasets.
@@ -805,6 +816,7 @@ class TimelineView(QGraphicsView):
         worker = LayoutWorker(
             intervals=intervals,
             request_token=self._active_layout_token,
+            previous=self._lane_history.snapshot(),
         )
         worker.signals.finished.connect(
             self._on_layout_finished, Qt.ConnectionType.QueuedConnection
@@ -839,6 +851,7 @@ class TimelineView(QGraphicsView):
         stale = self._active_layout_generation != self._layout_generation
         if not stale:
             self._apply_layout_results(lane_assignments, lane_heights)
+            self._accept_standard_layout(lane_assignments, lane_heights)
         pending = self._pending_layout_request is not None
         self._release_layout_worker()
         logger.info(
@@ -1106,8 +1119,8 @@ class TimelineView(QGraphicsView):
 
             # Band is expanded - pack and show events
             if events_in_group:
-                layout_map, lane_heights = self._lane_packer.pack_events(
-                    events_in_group
+                layout_map, lane_heights = self._pack_group_events(
+                    events_in_group, "tag:" + tag
                 )
 
                 for event in events_in_group:
@@ -1201,7 +1214,7 @@ class TimelineView(QGraphicsView):
                     if event.id in drop_lines:
                         drop_lines[event.id].setVisible(False)
         else:
-            layout_map, lane_heights = self._lane_packer.pack_events(self.events)
+            layout_map, lane_heights = self._pack_group_events(self.events, "all")
 
             for event in self.events:
                 lane_idx = layout_map[event.id]
@@ -1227,6 +1240,28 @@ class TimelineView(QGraphicsView):
                 )
 
         return current_y
+
+    def _accept_standard_layout(
+        self, lanes: dict[str, int], heights: list[int]
+    ) -> None:
+        """Publish history only after the scene has accepted the current result."""
+        self._lane_history.stage("standard", lanes, heights)
+        self._lane_history.commit()
+
+    def _pack_group_events(
+        self, events: list[Event], scope: str
+    ) -> tuple[dict[str, int], list[int]]:
+        """Stage occurrence-local history until the entire grouped pass succeeds."""
+        lanes, heights = self._lane_packer.pack_events(
+            events, self._lane_history.snapshot(scope)
+        )
+        self._lane_history.stage(scope, lanes, heights)
+        return lanes, heights
+
+    def compact_lanes(self) -> None:
+        """Deliberately reclaim row space without changing authored state or time."""
+        self._lane_history.clear()
+        self.repack_events()
 
     def fit_all(self) -> None:
         """Fits the view to encompass all event items, playhead, and current time line.

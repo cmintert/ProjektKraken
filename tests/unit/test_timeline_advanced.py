@@ -47,6 +47,8 @@ class TestSmartLanePacking:
         timeline_widget.set_events(events)
         # At this zoom the duration bars and captions fit between events.
         timeline_widget.view._apply_zoom(5)
+        # Zoom preserves spare rows; explicit compaction reclaims them.
+        timeline_widget.view.compact_lanes()
 
         items = [
             i
@@ -125,11 +127,16 @@ class TestSmartLanePacking:
         events = [
             Event(name="E1", lore_date=0, lore_duration=10),  # 0-10 -> Lane 0
             Event(name="E2", lore_date=5, lore_duration=10),  # 5-15 -> Lane 1
-            Event(name="E3", lore_date=12, lore_duration=10),  # 12-22 -> Lane 0 (reuse)
-            Event(name="E4", lore_date=16, lore_duration=10),  # 16-26 -> Lane 1 (reuse)
+            Event(
+                name="E3", lore_date=12, lore_duration=10
+            ),  # 12-22 -> Lane 2 (below E2)
+            Event(
+                name="E4", lore_date=16, lore_duration=10
+            ),  # 16-26 -> Lane 3 (below E3)
         ]
         timeline_widget.set_events(events)
         timeline_widget.view._apply_zoom(5)
+        timeline_widget.view.compact_lanes()
 
         items = [
             i
@@ -138,10 +145,11 @@ class TestSmartLanePacking:
         ]
         items.sort(key=lambda i: i.event.lore_date)
 
-        # Should only use 2 lanes
+        # The chronological overlap chain requires four lanes.
         y_coords = [item.y() for item in items]
         unique_lanes = len(set(y_coords))
-        assert unique_lanes == 2, f"Should use 2 lanes, but used {unique_lanes}"
+        assert unique_lanes == 4
+        assert y_coords == sorted(y_coords)
 
 
 class TestZoomToCursor:

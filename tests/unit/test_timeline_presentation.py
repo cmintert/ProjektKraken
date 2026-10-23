@@ -25,6 +25,37 @@ from src.gui.widgets.timeline_lane_packer import TimelineLanePacker
 pytestmark = pytest.mark.ci_fast
 
 
+def test_label_bounds_follow_text_instead_of_fixed_width(qapp):
+    from PySide6.QtGui import QFont, QFontDatabase, QFontMetricsF
+
+    QFontDatabase.addApplicationFont("C:/Windows/Fonts/segoeui.ttf")
+    font = QFont("Segoe UI", 10)
+    font.setBold(True)
+    event = Event(id="short", name="Short", lore_date=0)
+    presentation = event_temporal_presentation(event, None)
+    short = timeline_item_layout(presentation, event.name, 20, font)
+    long_name = "A very long event name " * 8
+    long = timeline_item_layout(presentation, long_name, 20, font)
+    assert short.bounds.width() < 400
+    assert long.bounds.width() > 400
+    metrics = QFontMetricsF(font)
+    assert long.bounds.right() >= long.label_x + metrics.horizontalAdvance(
+        long_name + " · Not yet"
+    )
+
+
+def test_packing_reuses_space_between_short_labels(qapp):
+    packer = TimelineLanePacker(100)
+    events = [
+        Event(id="a", name="A", lore_date=0),
+        Event(id="b", name="B", lore_date=3),
+    ]
+    measured = packer.measure_events(events)
+    # Previously the blanket 400 px box spanned more than these 3 days.
+    assert measured[0].end <= measured[1].start
+    assert packer.pack_events(events)[0] == {"a": 0, "b": 0}
+
+
 @pytest.fixture
 def calendar():
     converter = CalendarConverter(CalendarConfig.create_default())

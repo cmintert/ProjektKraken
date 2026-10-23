@@ -7429,7 +7429,7 @@
       "symbol": "TimelineWidget.__init__",
       "binding": "self.btn_fit",
       "label": "Fit View",
-      "kind": "QPushButton"
+      "kind": "PhosphorToolMenuButton"
     },
     {
       "id": "src-gui-widgets-timeline-group-band-manager-groupbandmanager-on-context-menu-requested-menu",
@@ -9090,6 +9090,16 @@
       "binding": "close_button",
       "label": "Close panel",
       "kind": "QToolButton"
+    },
+    {
+      "id": "timeline.compact-lanes",
+      "topic_id": "timeline.viewing",
+      "target": "help-inspect-timeline-compact-lanes",
+      "source": "src/gui/widgets/timeline/__init__.py",
+      "symbol": "TimelineWidget.__init__",
+      "binding": "self.compact_action",
+      "label": "Compact lanes",
+      "kind": "addAction"
     }
   ],
   "factory_exemptions": [
@@ -15752,8 +15762,8 @@
     {
       "source": "src/gui/widgets/timeline/__init__.py",
       "symbol": "TimelineWidget.__init__",
-      "sha256": "d778cb04cdb7d599d544d38d1c28f6f982c2e713403bd93b0533ad85885f9749",
-      "review_note": "Reviewed panel inset/margin changes only in TimelineWidget.__init__: existing control identities, labels, eligibility, keyboard actions, task destinations and authoring state are unchanged. Canonical control explanations remain accurate; no new interaction or exception is introduced."
+      "sha256": "5dfdc3ffe147c079fa504264cb4edf574c448e170e8991f43f9980fb11a76222",
+      "review_note": "KRT-107 compact-first revision: zoom automatically uses minimum row count. Compact lanes keeps its anchor and optionally resets placement preferences; tooltip and canonical explanation now describe that behavior. Fit View direct activation, selection and time remain unchanged."
     },
     {
       "source": "src/gui/widgets/timeline/__init__.py",

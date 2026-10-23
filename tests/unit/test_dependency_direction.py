@@ -431,10 +431,13 @@ def test_timeline_preparation_and_worker_dependencies(relative, allowed):
     )
     if not relative.startswith("gui/"):
         assert not any(module.startswith("PySide6") for module in modules)
-        assert all(
-            module.split(".")[0] in {"src", "collections", "dataclasses"}
-            for module in modules
-        ), "Pure timeline preparation must not acquire persistence or lifecycle APIs"
+        allowed_stdlib = {"src", "collections", "dataclasses"}
+        if relative == "core/timeline_layout.py":
+            # Ordered reservation queries remain pure numeric preparation.
+            allowed_stdlib.add("bisect")
+        assert all(module.split(".")[0] in allowed_stdlib for module in modules), (
+            "Pure timeline preparation must not acquire persistence or lifecycle APIs"
+        )
     else:
         assert all(
             module == "PySide6.QtCore" or module.startswith("PySide6.QtCore.")

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-23
-**Commit:** 87d0b1e440b7e483b081e744bfdc042dcabecd5a
+**Commit:** 7f7f950c7c904f7e478da9ab1ddcc16f7fc242bd
 ---
 
 # Changelog
@@ -12,6 +12,16 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-10-23)* **Timeline (KRT-107)**: Overlapping events now stay in
+  chronological lane order, with earlier events above later ones. Zooming uses
+  the fewest rows allowed by that ordering and reclaims spare rows automatically.
+  Packing measures text and marker extents instead of reserving 400 pixels for
+  every label, allowing separated events to share rows.
+  **Compact lanes** beside **Fit View** optionally resets placement preferences
+  without changing event dates or the viewed time.
+  Added layout, lifecycle and measured-bounds regressions, architecture and manual
+  guidance, Help inspection coverage and a reproducible review probe.
 
 - *(2026-10-22)* **Documentation (KRT-105)**: Adopted the complete authoring
   standard, aligned contributor and agent guidance, and added review and

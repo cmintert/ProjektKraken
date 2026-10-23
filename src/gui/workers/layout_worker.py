@@ -9,7 +9,12 @@ from collections.abc import Sequence
 
 from PySide6.QtCore import QObject, QRunnable, Signal
 
-from src.core.timeline_layout import TimelineLayoutInput, pack_timeline_intervals
+from src.core.timeline_layout import (
+    TimelineLayoutInput,
+    TimelineLayoutSnapshot,
+    pack_stable_timeline_intervals,
+    pack_timeline_intervals,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -37,16 +42,19 @@ class LayoutWorker(QRunnable):
         self,
         intervals: Sequence[TimelineLayoutInput],
         request_token: int,
+        previous: TimelineLayoutSnapshot = TimelineLayoutSnapshot(),
     ) -> None:
         """Initialize the layout worker.
 
         Args:
             intervals: Detached GUI-measured intervals to pack.
             request_token: Identity returned with either completion signal.
+            previous: Frozen accepted layout; never mutable GUI-owned history.
         """
         super().__init__()
         self.intervals = tuple(intervals)
         self.request_token = request_token
+        self.previous = previous
         self.signals = LayoutWorkerSignals()
         self.setAutoDelete(True)
 
@@ -58,7 +66,12 @@ class LayoutWorker(QRunnable):
         try:
             start_time = time.perf_counter()
 
-            lane_assignments, lane_heights = pack_timeline_intervals(self.intervals)
+            if self.previous.lanes:
+                lane_assignments, lane_heights = pack_stable_timeline_intervals(
+                    self.intervals, self.previous
+                )
+            else:
+                lane_assignments, lane_heights = pack_timeline_intervals(self.intervals)
 
             elapsed = time.perf_counter() - start_time
 

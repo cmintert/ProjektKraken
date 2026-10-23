@@ -14,12 +14,14 @@ from collections.abc import Callable
 from typing import Any, Optional, cast
 
 from PySide6.QtCore import QSettings, QSize, Qt, Signal
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
     QLayout,
     QMenu,
     QSizePolicy,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -27,7 +29,7 @@ from PySide6.QtWidgets import (
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
-from src.gui.widgets.menu_caret import PhosphorPushMenuButton
+from src.gui.widgets.menu_caret import PhosphorPushMenuButton, PhosphorToolMenuButton
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 from src.gui.widgets.timeline.event_item import EventItem
@@ -189,10 +191,25 @@ class TimelineWidget(QWidget):
         )
 
         self.btn_fit = declare_inspection(
-            QPushButton("Fit View"),
+            PhosphorToolMenuButton(self),
             "src-gui-widgets-timeline-init-timelinewidget-init-self-btn-fit|timeline.viewing|help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-btn-fit",
         )
-        self.btn_fit.clicked.connect(self.fit_view)
+        self.fit_action = QAction("Fit View", self)
+        self.fit_action.triggered.connect(self.fit_view)
+        self.btn_fit.setDefaultAction(self.fit_action)
+        self.btn_fit.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
+        self.fit_menu = QMenu(self)
+        self.fit_menu.addAction(self.fit_action)
+        self.compact_action = declare_inspection(
+            self.fit_menu.addAction("Compact lanes"),
+            "timeline.compact-lanes|timeline.viewing|help-inspect-timeline-compact-lanes",
+        )
+        self.compact_action.setToolTip(
+            "Repack events without keeping their previous rows"
+        )
+        self.compact_action.triggered.connect(self._compact_lanes)
+        self.fit_menu.aboutToShow.connect(self._update_layout_menu)
+        self.btn_fit.setMenu(self.fit_menu)
         self.action_toolbar.add_button(self.btn_fit, priority=60)
 
         main_layout.addWidget(self.header_frame)
@@ -222,6 +239,14 @@ class TimelineWidget(QWidget):
         ThemeManager().theme_changed.connect(self._apply_theme)
         self.view.time_indicators.refresh()
         self._next_navigation_context: dict[str, Any] | None = None
+
+    def _compact_lanes(self) -> None:
+        """Forward the deliberate presentation-only compaction request."""
+        self.view.compact_lanes()
+
+    def _update_layout_menu(self) -> None:
+        """Explain and disable compaction when there are no events."""
+        self.compact_action.setEnabled(bool(self.view.events))
 
     def _apply_theme(self, theme: dict[str, str] | None = None) -> None:
         """Share normal, disabled, checked and keyboard-focus action presentation."""

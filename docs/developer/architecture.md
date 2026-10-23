@@ -112,6 +112,19 @@ requests. Stale completion redispatches through the current empty/grouped/sync/
 async selection; stale errors cannot trigger an old fallback. Current errors use
 fresh synchronous measurements. Dependency tests guard these extracted boundaries.
 
+Accepted lane history is GUI-owned and scoped separately to standard layout,
+each tag band and All events. Frozen snapshots cross the layout-worker boundary.
+Packing uses saved lore-date anchors (stable ID ties) independently of visual
+collision starts. Each interval takes one row below the deepest earlier
+intersecting interval, or row zero without such predecessors. This longest-path
+recurrence minimizes rows under chronological precedence, in O(n squared) time
+and O(n) storage. A chain can require more rows than unconstrained overlap depth.
+Current member heights shrink automatically; accepted history cannot override
+chronology. Both worker and GUI paths use this same canonical calculation.
+Histories are published after successful scene application; stale worker
+callbacks cannot publish them. Grouped passes stage history until the full pass
+succeeds. Empty timelines purge history; ordinary refreshes keep surviving IDs.
+
 ## Dependency direction
 
 ```text

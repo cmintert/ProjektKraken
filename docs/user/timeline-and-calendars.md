@@ -535,6 +535,27 @@ add precision to partial event dates or affect playback jumps.
 **Fit View** — Fit the current content into the available view without changing saved
 positions or dates.
 
+Overlapping events are arranged chronologically: the earlier event stays above
+later events whose labels or timing markers overlap it. Non-overlapping events
+can share a row. Equal saved dates use a stable tie-break. Saved dates determine
+this order without adding precision to uncertain dates.
+Spacing follows measured text and marker widths rather than a fixed label box.
+
+Zooming uses the fewest rows allowed by those rules and reclaims spare rows
+automatically. An overlapping chain can need more rows than a layout that allows
+later events above earlier ones.
+
+(help-inspect-timeline-compact-lanes)=
+
+**Compact lanes** — To explicitly repack the arrangement, open the arrow beside **Fit View** and
+choose **Compact lanes**. In a narrow panel, open **More actions**, then the
+**Fit View** submenu. Automatic zooming already minimizes row count; this action
+rebuilds the same deterministic chronological arrangement. Dates, the
+viewed time and selection stay unchanged. This arrangement becomes the starting
+point for subsequent zooms. The action is unavailable when there are no events.
+Row arrangements are retained while this timeline is open, rather than saved
+with the world.
+
 (help-inspect-src-gui-widgets-timeline-display-widget-timelinedisplaywidget-init-self-text-display)=
 
 **Linked-event Timeline** — Read and navigate the linked Events shown for the inspected

@@ -74,7 +74,7 @@ def test_event_item_bounding_rect(qtbot):
     rect = item.boundingRect()
     assert isinstance(rect, QRectF)
     assert rect.contains(item.shape().boundingRect())
-    assert rect.width() >= EventItem.MAX_WIDTH
+    assert 0 < rect.width() < 400  # Short labels do not reserve phantom space.
     assert rect.height() >= EventItem.ICON_SIZE
 
 

@@ -53,7 +53,6 @@ class EventItem(QGraphicsItem):
     Theme-aware coloring.
     """
 
-    MAX_WIDTH = 400  # Increased to fit longer calendar-formatted dates
     ICON_SIZE = 16  # Diamond size in pixels (increased from 14)
     PADDING = 5
 

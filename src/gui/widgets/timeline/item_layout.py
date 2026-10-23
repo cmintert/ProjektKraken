@@ -131,7 +131,6 @@ def timeline_item_layout(
     main_metrics = QFontMetricsF(main_font)
     caption_metrics = QFontMetricsF(caption_font)
     width = max(
-        400.0,
         main_metrics.horizontalAdvance(name + " · Not yet"),
         caption_metrics.horizontalAdvance(presentation.presence.caption),
     )

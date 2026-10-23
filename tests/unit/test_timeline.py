@@ -46,7 +46,9 @@ def test_lane_layout_logic(qapp):
     events = [
         Event(name="E1", lore_date=10, lore_duration=30),  # 10-40
         Event(name="E2", lore_date=20, lore_duration=30),  # 20-50 (overlaps E1)
-        Event(name="E3", lore_date=45, lore_duration=20),  # 45-65 (can reuse lane 0)
+        Event(
+            name="E3", lore_date=45, lore_duration=20
+        ),  # 45-65 (below overlapping E2)
     ]
 
     widget.set_events(events)
@@ -57,7 +59,7 @@ def test_lane_layout_logic(qapp):
     # With smart packing:
     # E1 (10-40) -> Lane 0
     # E2 (20-50) -> Lane 1 (overlaps E1)
-    # E3 (45-65) -> Lane 0 (can reuse since 45 > 40)
+    # E3 (45-65) -> Lane 2 (must remain below E2)
 
     y1 = items[0].y()  # E1
     y2 = items[1].y()  # E2
@@ -66,8 +68,8 @@ def test_lane_layout_logic(qapp):
     # E1 and E2 should be on different lanes (overlapping)
     assert y1 != y2, "Overlapping events should use different lanes"
 
-    # E3 should reuse E1's lane (non-overlapping)
-    assert y1 == y3, "Non-overlapping events should reuse lanes"
+    # The overlap chain requires increasing chronological lanes.
+    assert y1 < y2 < y3
 
 
 def test_focus_event(qapp):
@@ -104,9 +106,10 @@ def test_gravity_packing(qapp):
     """
     widget = TimelineWidget()
     events = [
-        Event(name="E1", lore_date=0, lore_duration=100),  # Ends 100
-        Event(name="E2", lore_date=0, lore_duration=10),  # Ends 10
-        Event(name="E3", lore_date=110, lore_duration=10),  # Starts 110
+        # Equal-start ties use stable IDs rather than accidental input order.
+        Event(id="e1", name="E1", lore_date=0, lore_duration=100),  # Ends 100
+        Event(id="e2", name="E2", lore_date=0, lore_duration=10),  # Ends 10
+        Event(id="e3", name="E3", lore_date=110, lore_duration=10),  # Starts 110
     ]
 
     # Needs to match widget's scale factor for accurate visual calculation

@@ -1,7 +1,6 @@
 """Timeline Lane Packer Module.
 
-Provides the lane packing algorithm for organizing events on the timeline without
-overlaps using a greedy "First Fit" approach.
+Measures timeline bounds and delegates detached, stable lane packing.
 """
 
 from PySide6.QtGui import QFont, QFontMetrics
@@ -9,7 +8,11 @@ from PySide6.QtGui import QFont, QFontMetrics
 from src.core.events import Event
 from src.core.temporal_display import TemporalDisplay
 from src.core.temporal_presentation import event_temporal_presentation
-from src.core.timeline_layout import TimelineLayoutInput, pack_timeline_intervals
+from src.core.timeline_layout import (
+    TimelineLayoutInput,
+    TimelineLayoutSnapshot,
+    pack_stable_timeline_intervals,
+)
 from src.gui.widgets.timeline.event_item import EventItem
 from src.gui.widgets.timeline.item_layout import timeline_item_layout
 from src.gui.widgets.timeline.temporal_geometry import (
@@ -20,9 +23,8 @@ from src.gui.widgets.timeline.temporal_geometry import (
 class TimelineLanePacker:
     """Handles the lane packing algorithm for timeline events.
 
-    Uses a greedy "First Fit" algorithm to pack events into lanes, minimizing vertical
-    space while preventing visual overlaps. Supports variable-height events by tracking
-    per-lane heights.
+    Saved dates order overlapping events above later ones. Rows are minimized
+    under chronological precedence; heights follow current row members.
     """
 
     # Constants for spacing
@@ -48,12 +50,17 @@ class TimelineLanePacker:
             self.font = font
             self.fm = QFontMetrics(font)
 
-    def pack_events(self, events: list[Event]) -> tuple[dict[str, int], list[int]]:
-        """Packs events into lanes using the First Fit algorithm.
+    def pack_events(
+        self,
+        events: list[Event],
+        previous: TimelineLayoutSnapshot = TimelineLayoutSnapshot(),
+    ) -> tuple[dict[str, int], list[int]]:
+        """Pack measured events, retaining valid accepted lane placements.
 
         Args:
             events: List of Event objects to pack (should be sorted by
                 lore_date).
+            previous: Frozen accepted occurrence layout, or empty for compaction.
 
         Returns:
             Tuple of:
@@ -61,7 +68,7 @@ class TimelineLanePacker:
                 - List of lane heights (max height of events in each lane)
 
         """
-        return pack_timeline_intervals(self.measure_events(events))
+        return pack_stable_timeline_intervals(self.measure_events(events), previous)
 
     def measure_events(self, events: list[Event]) -> tuple[TimelineLayoutInput, ...]:
         """Capture detached numeric bounds on the GUI thread before dispatch."""
@@ -82,6 +89,7 @@ class TimelineLanePacker:
                     start,
                     start + visual_duration + gap_duration,
                     max(layout.height, EventItem.get_event_height(event)),
+                    event.lore_date,
                 )
             )
         return tuple(measured)

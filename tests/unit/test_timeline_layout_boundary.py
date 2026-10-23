@@ -41,7 +41,10 @@ def test_pure_packing_stable_ties_and_variable_heights():
         TimelineLayoutInput("b", -1.5, 0.125, 30),
         TimelineLayoutInput("c", 0, 0.25, 40),
     )
-    assert pack_timeline_intervals(intervals) == ({"a": 0, "b": 1, "c": 0}, [40, 30])
+    assert pack_timeline_intervals(intervals) == (
+        {"a": 0, "b": 1, "c": 2},
+        [20, 30, 40],
+    )
     assert pack_timeline_intervals(()) == ({}, [])
 
 
@@ -59,6 +62,7 @@ def test_measured_inputs_are_detached(qapp, monkeypatch):
         "start",
         "end",
         "height",
+        "anchor",
     }
     with pytest.raises(dataclasses.FrozenInstanceError):
         intervals[0].start = 10
