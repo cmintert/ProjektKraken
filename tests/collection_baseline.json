@@ -5,13 +5,13 @@
     "ci_fast": 2398,
     "slow": 1,
     "performance": 0,
-    "full": 6833,
-    "full_only": 4426
+    "full": 6834,
+    "full_only": 4427
   },
   "categories": {
     "architecture": 11,
     "cli": 73,
-    "gui": 14,
+    "gui": 15,
     "integration": 245,
     "packaging": 13,
     "performance": 16,
@@ -253,8 +253,9 @@
     ],
     "tests/gui/dialogs/test_about_dialog.py::test_about_dialog_has_close_button": [],
     "tests/gui/dialogs/test_about_dialog.py::test_about_dialog_initialization": [],
-    "tests/gui/widgets/test_history_panel_theme.py::test_history_panel_hover_style": [],
     "tests/gui/widgets/test_history_panel_theme.py::test_history_panel_theme_refresh": [],
+    "tests/gui/widgets/test_history_panel_theme.py::test_history_surfaces_follow_every_theme": [],
+    "tests/gui/widgets/test_history_panel_theme.py::test_theme_switch_preserves_history_position": [],
     "tests/gui/widgets/test_map_graphics_view.py::test_map_view_uses_minimal_viewport_update": [],
     "tests/gui/widgets/test_relation_type_picker_refactor.py::test_custom_text_emits_signal": [],
     "tests/gui/widgets/test_relation_type_picker_refactor.py::test_initialization": [],

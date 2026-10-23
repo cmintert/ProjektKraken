@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-23
-**Commit:** b600a5eb4f371145980951e686c56d78d8fb0701
+**Commit:** 87d0b1e440b7e483b081e744bfdc042dcabecd5a
 ---
 
 # Changelog
@@ -67,6 +67,10 @@ All notable changes to this project will be documented in this file.
   rebuild an unchanged beta tag after a workflow-only correction.
 
 ### Changed
+
+- *(2026-10-23)* **Testing**: Recorded the intentional replacement of the
+  History hover-style test with theme-rendering and context-preservation tests
+  in the reviewed collection inventory.
 
 - *(2026-10-23)* **Documentation**: Rewrote the README around user workflows,
   retained the workspace screenshot and portable-install guidance, linked the
