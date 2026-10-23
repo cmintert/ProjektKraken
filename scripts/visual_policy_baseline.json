@@ -990,55 +990,6 @@
       "source": "bg_color = self._current_theme_config.get(\"background_color\", \"#1e1e1e\")"
     },
     {
-      "key": "src/gui/widgets/history_panel.py|HistoryPanelWidget._add_command_item|literal-color|128f2f8c392eb402",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in HistoryPanelWidget._add_command_item; migrate this expression when its presentation path is next touched.",
-      "source": "bg_color = QColor(theme.get(\"primary\", \"#4A9EFF\"))"
-    },
-    {
-      "key": "src/gui/widgets/history_panel.py|HistoryPanelWidget._add_command_item|literal-color|90a7255aa35f97df",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in HistoryPanelWidget._add_command_item; migrate this expression when its presentation path is next touched.",
-      "source": "bg_color = QColor(theme.get(\"accent\", \"#FF9800\"))"
-    },
-    {
-      "key": "src/gui/widgets/history_panel.py|HistoryPanelWidget._add_command_item|literal-color|d139cb99d3390891",
-      "count": 2,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in HistoryPanelWidget._add_command_item; migrate this expression when its presentation path is next touched.",
-      "source": "color = QColor(theme.get(\"text_main\", \"#E0E0E0\"))"
-    },
-    {
-      "key": "src/gui/widgets/history_panel.py|HistoryPanelWidget._add_command_item|literal-color|dad8252028023902",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in HistoryPanelWidget._add_command_item; migrate this expression when its presentation path is next touched.",
-      "source": "color = QColor(theme.get(\"text_dim\", \"#808080\"))"
-    },
-    {
-      "key": "src/gui/widgets/history_panel.py|HistoryPanelWidget._add_command_item|local-color-derivation|5d79aa3168d56c1b",
-      "count": 2,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in HistoryPanelWidget._add_command_item; migrate this expression when its presentation path is next touched.",
-      "source": "bg_color.setAlpha(30)"
-    },
-    {
-      "key": "src/gui/widgets/history_panel.py|HistoryPanelWidget._apply_theme|literal-color|a2fec634d2eca09e",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in HistoryPanelWidget._apply_theme; migrate this expression when its presentation path is next touched.",
-      "source": "self.backgroundRole(), QColor(theme.get(\"surface\", \"#323232\"))"
-    },
-    {
-      "key": "src/gui/widgets/history_panel.py|HistoryPanelWidget._apply_theme|literal-color|d139cb99d3390891",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in HistoryPanelWidget._apply_theme; migrate this expression when its presentation path is next touched.",
-      "source": "self.foregroundRole(), QColor(theme.get(\"text_main\", \"#E0E0E0\"))"
-    },
-    {
       "key": "src/gui/widgets/longform/content.py|LongformContentWidget._apply_theme|literal-color|4f6666232a525634",
       "count": 1,
       "category": "legacy",

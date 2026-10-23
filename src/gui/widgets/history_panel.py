@@ -142,30 +142,11 @@ class HistoryPanelWidget(QWidget):
     def _apply_theme(self) -> None:
         """Apply current theme colors to the widget."""
         try:
-            from src.gui.utils.style_helper import StyleHelper
-
-            theme = ThemeManager().get_theme()
-
-            # Set background and text color directly to the widget
-            # (without broad CSS selector to avoid inheritance issues)
-            self.setAutoFillBackground(True)
-            palette = self.palette()
-            palette.setColor(
-                self.backgroundRole(), QColor(theme.get("surface", "#323232"))
-            )
-            palette.setColor(
-                self.foregroundRole(), QColor(theme.get("text_main", "#E0E0E0"))
-            )
-            self.setPalette(palette)
-
-            # Apply Stylesheet for components
-            self.undo_btn.setStyleSheet(StyleHelper.get_icon_button_style())
-            self.redo_btn.setStyleSheet(StyleHelper.get_icon_button_style())
-            self.command_list.setStyleSheet(StyleHelper.get_list_widget_style())
-
-            # Specific colors for labels
-            self.status_label.setStyleSheet(StyleHelper.get_empty_state_style())
-            self.info_label.setStyleSheet(StyleHelper.get_preview_label_style())
+            self.setStyleSheet(StyleHelper.get_history_panel_style())
+            self.undo_btn.setStyleSheet(StyleHelper.get_secondary_button_style())
+            self.redo_btn.setStyleSheet(StyleHelper.get_secondary_button_style())
+            self.status_label.setStyleSheet(StyleHelper.get_supporting_caption_style())
+            self.info_label.setStyleSheet(StyleHelper.get_supporting_caption_style())
 
             logger.debug("Theme applied to history panel (v2)")
 
@@ -186,9 +167,12 @@ class HistoryPanelWidget(QWidget):
         Args:
             theme_data: New theme data dictionary
         """
+        scroll = self.command_list.verticalScrollBar().value()
+        current_row = self.command_list.currentRow()
         self._apply_theme()
-        # Refresh display to re-generate items with new theme colors
         self._refresh_display()
+        self.command_list.setCurrentRow(current_row)
+        self.command_list.verticalScrollBar().setValue(scroll)
 
     @Slot(list, list)
     def update_history(
@@ -303,28 +287,22 @@ class HistoryPanelWidget(QWidget):
 
             if can_undo:
                 # Commands that can be undone - normal color
-                color = QColor(theme.get("text_main", "#E0E0E0"))
+                color = QColor(theme["text_main"])
                 if is_top:
                     # Highlight the next undo command
                     font = QFont()
                     font.setBold(True)
                     item.setFont(font)
-                    bg_color = QColor(theme.get("primary", "#4A9EFF"))
-                    bg_color.setAlpha(30)
-                    item.setBackground(QBrush(bg_color))
             elif can_redo:
                 # Commands that have been undone - dimmed
-                color = QColor(theme.get("text_dim", "#808080"))
+                color = QColor(theme["supporting_text"])
                 if is_top:
                     # Highlight the next redo command
                     font = QFont()
                     font.setBold(True)
                     item.setFont(font)
-                    bg_color = QColor(theme.get("accent", "#FF9800"))
-                    bg_color.setAlpha(30)
-                    item.setBackground(QBrush(bg_color))
             else:
-                color = QColor(theme.get("text_main", "#E0E0E0"))
+                color = QColor(theme["text_main"])
 
             item.setForeground(QBrush(color))
 

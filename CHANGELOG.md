@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-22
-**Commit:** a6e211e9f9ccf28c7c17af945b0fb16cf2372309
+**Last Updated:** 2026-10-23
+**Commit:** b600a5eb4f371145980951e686c56d78d8fb0701
 ---
 
 # Changelog
@@ -31,6 +31,11 @@ All notable changes to this project will be documented in this file.
   and panel menu state.
 
 ### Fixed
+
+- *(2026-10-23)* **History**: Used shared semantic panel, row, button and
+  caption styles; preserved selection, scroll and focus across theme changes.
+  Added theme-rendering and context-preservation coverage and removed seven
+  replaced legacy visual-policy exceptions.
 
 - *(2026-10-22)* **Help**: Declared workspace panel-close inspection, updated
   panel visibility, tab ordering, saved-layout and compact connection-row guidance,
@@ -62,6 +67,10 @@ All notable changes to this project will be documented in this file.
   rebuild an unchanged beta tag after a workflow-only correction.
 
 ### Changed
+
+- *(2026-10-23)* **Documentation**: Rewrote the README around user workflows,
+  retained the workspace screenshot and portable-install guidance, linked the
+  maintained guides, and clarified source generation of the Northwatch sample.
 
 - *(2026-10-22)* **Workspace**: Standardized the gap beneath panel tabs to
   12 px across all panels. Added geometry checks for moved panels in dark and

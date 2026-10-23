@@ -1,6 +1,9 @@
 import pytest
+from PySide6.QtCore import QPoint
+from PySide6.QtGui import QColor
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.history_panel import HistoryPanelWidget
 
 
@@ -42,16 +45,59 @@ def test_history_panel_theme_refresh(history_panel, qtbot):
     assert new_color != initial_color
 
 
-def test_history_panel_hover_style(history_panel):
-    """Test that the hover style is properly set in QSS."""
-    theme = ThemeManager().get_theme()
-    primary = theme.get("primary", "#4A9EFF")
+def test_history_surfaces_follow_every_theme(history_panel, qapp):
+    """Rendered workspace and row backgrounds follow live palette changes."""
+    manager = ThemeManager()
+    history_panel.resize(700, 320)
+    history_panel.show()
+    history_panel.update_history(
+        [{"description": f"Command {i}"} for i in range(40)],
+        [{"description": "Undone command"}],
+    )
+    for name in manager.themes:
+        manager.set_theme(name)
+        qapp.processEvents()
+        theme = manager.get_theme()
+        image = history_panel.grab().toImage()
+        assert image.pixelColor(0, 0) == QColor(theme["app_bg"])
+        viewport = history_panel.command_list.viewport()
+        row = history_panel.command_list.visualItemRect(
+            history_panel.command_list.item(0)
+        )
+        assert viewport.grab().toImage().pixelColor(
+            QPoint(viewport.width() - 20, row.center().y())
+        ) == QColor(theme["surface"])
+        assert history_panel.command_list.item(0).foreground().color() == QColor(
+            theme["supporting_text"]
+        )
+        assert history_panel.undo_btn.styleSheet() == (
+            StyleHelper.get_secondary_button_style()
+        )
+        assert history_panel.redo_btn.styleSheet() == (
+            StyleHelper.get_secondary_button_style()
+        )
 
-    qss = history_panel.command_list.styleSheet()
-    assert "QListWidget::item:hover" in qss
-    if len(primary) == 7 and primary.startswith("#"):
-        r = int(primary[1:3], 16)
-        g = int(primary[3:5], 16)
-        b = int(primary[5:7], 16)
-        expected_hover = f"rgba({r}, {g}, {b}, 0.1)"
-        assert expected_hover in qss
+
+def test_theme_switch_preserves_history_position(history_panel, qapp):
+    """Recoloring preserves history scroll, focus and detached snapshots."""
+    undo = [{"description": f"Command {i}"} for i in range(80)]
+    redo = [{"description": "Undone command"}]
+    history_panel.resize(350, 300)
+    history_panel.show()
+    history_panel.update_history(undo, redo)
+    history_panel.command_list.setCurrentRow(30)
+    history_panel.command_list.setFocus()
+    qapp.processEvents()
+    scrollbar = history_panel.command_list.verticalScrollBar()
+    position = scrollbar.value()
+    assert position > 0
+    focused = qapp.focusWidget()
+
+    ThemeManager().set_theme("light_mode")
+    qapp.processEvents()
+
+    assert scrollbar.value() == position
+    assert history_panel.command_list.currentRow() == 30
+    assert qapp.focusWidget() is focused
+    assert history_panel._undo_stack == undo
+    assert history_panel._redo_stack == redo

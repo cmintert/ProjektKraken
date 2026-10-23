@@ -1311,6 +1311,22 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_history_panel_style() -> str:
+        """Keep history on workspace surfaces with neutral, readable rows."""
+        theme = ThemeManager().get_theme()
+        return (
+            f"HistoryPanelWidget {{ background-color: {theme['app_bg']}; }}"
+            f"QListWidget {{ background-color: {theme['surface']}; "
+            f"alternate-background-color: {theme['app_bg']}; "
+            f"color: {theme['text_main']}; "
+            f"border: 1px solid {theme['border']}; "
+            "border-radius: 4px; padding: 2px; }"
+            "QListWidget::item { padding: 4px; border-radius: 2px; }"
+            + StyleHelper.get_item_view_selection_style("QListWidget")
+            + StyleHelper.get_scrollbar_style()
+        )
+
+    @staticmethod
     def get_list_widget_style() -> str:
         """Returns QSS for themed list widgets.
 
