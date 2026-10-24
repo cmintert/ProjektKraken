@@ -224,11 +224,10 @@ class TestGraphFilterBarLexiconButton:
         bar = GraphFilterBar()
         assert hasattr(bar, "show_lexicon_editor_requested")
 
-    def test_lexicon_button_exists(self, qapp):
-        """The lexicon button widget is created."""
+    def test_lexicon_entry_point_is_removed(self, qapp):
+        """Graph styles are configured only through the main Settings action."""
         bar = GraphFilterBar()
-        assert hasattr(bar, "_lexicon_btn")
-        assert "Lexicon" in bar._lexicon_btn.text()
+        assert not hasattr(bar, "_lexicon_btn")
 
 
 # ---------------------------------------------------------------------------

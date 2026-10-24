@@ -516,6 +516,13 @@ class TestPlayheadEventSnapping:
                 stored[key] = value
 
         monkeypatch.setattr(timeline_module, "QSettings", FakeSettings)
+        from src.gui.utils.settings_navigation import settings_navigation
+
+        def save_contextual(key, value):
+            stored[key] = value
+
+        bus = settings_navigation()
+        bus.contextual_changed.connect(save_contextual)
         widget = timeline_module.TimelineWidget()
         qtbot.addWidget(widget)
 
@@ -528,6 +535,7 @@ class TestPlayheadEventSnapping:
         qtbot.addWidget(restored)
         assert restored.chk_snap_playhead_to_events.isChecked()
         assert restored.view.is_playhead_event_snapping_enabled()
+        bus.contextual_changed.disconnect(save_contextual)
 
 
 class TestEventItemCaching:

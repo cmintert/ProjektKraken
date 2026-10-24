@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-23
-**Commit:** 7f7f950c7c904f7e478da9ab1ddcc16f7fc242bd
+**Last Updated:** 2026-10-24
+**Commit:** bf7335de7c4f1b351e932ef538dcaad86f520ad3
 ---
 
 # Changelog
@@ -12,6 +12,18 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-10-24)* **Settings Center (KRT-55)**: Consolidated configuration into
+  one searchable, modeless window with Kraken and This World scopes, shared
+  Apply/OK/Cancel behavior and conflict handling. The main **Settings** action
+  opens the center directly; duplicate configuration launchers are removed.
+  World policies for derived WikiLink relations and index exclusions now travel
+  with their world. Default and world themes are independent, LanguageTool
+  credentials use the OS credential store, and targeted resets preserve worlds,
+  credentials and saved resources. Added migration, transactional undo, draft
+  and navigation regressions, isolated presentation capture tooling and updated
+  the settings reference and contextual Help. Fixed settings snapshots for
+  populated worlds such as Northwatch.
 
 - *(2026-10-23)* **Timeline (KRT-107)**: Overlapping events now stay in
   chronological lane order, with earlier events above later ones. Zooming uses

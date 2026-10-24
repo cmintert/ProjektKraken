@@ -149,27 +149,31 @@ def test_view_panels_menu_tracks_open_and_closed_panels(qtbot):
     assert not shell.is_panel_open("project")
 
 
-def test_auto_relation_setting_has_explanatory_tooltip(ui_manager, qtbot):
-    """The WikiLink relation preference explains its effect before toggling."""
-
-    class RetainingMenuBar(QMenuBar):
-        def __init__(self):
-            super().__init__()
-            self.menus = []
-
-        def addMenu(self, title):
-            menu = super().addMenu(title)
-            self.menus.append(menu)
-            return menu
-
-    menu_bar = RetainingMenuBar()
+def test_settings_is_one_direct_action_without_alternative_menu_routes(
+    ui_manager, qtbot, mock_main_window
+):
+    menu_bar = QMenuBar()
     qtbot.addWidget(menu_bar)
-    with patch("src.app.ui_manager.QSettings") as mock_settings:
-        mock_settings.return_value.value.return_value = False
-        ui_manager.create_settings_menu(menu_bar)
+    ui_manager.create_file_menu(menu_bar)
+    ui_manager.create_timeline_menu(menu_bar)
+    ui_manager.create_settings_menu(menu_bar)
+    settings = [action for action in menu_bar.actions() if action.text() == "Settings"]
+    assert len(settings) == 1
+    assert settings[0].menu() is None
+    settings[0].trigger()
+    mock_main_window.app_coordinator.settings.open_settings.assert_called_once_with()
 
-    settings_menu = menu_bar.menus[0]
-    assert settings_menu.toolTipsVisible() is True
-    assert ui_manager.auto_relation_action.toolTip() == (
-        "When enabled, saving a wiki link creates a mentions relation to its target."
-    )
+    def labels(menu):
+        result = []
+        for action in menu.actions():
+            result.append(action.text())
+            if action.menu() is not None:
+                result.extend(labels(action.menu()))
+        return result
+
+    menu_labels = labels(menu_bar)
+    assert not any("Settings" in label for label in menu_labels if label != "Settings")
+    assert "Configure Grouping..." not in menu_labels
+    assert "Calendar Configuration..." not in menu_labels
+    assert "Create Backup..." in menu_labels
+    assert "Clear Grouping" in menu_labels

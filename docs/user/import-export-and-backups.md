@@ -158,6 +158,9 @@ map connections continue to work.
 Use **File → Backup & Restore** or the shortcuts in **World Transfer &
 Backups** to create, restore, locate, and configure backups.
 
+Open **Settings → Kraken → Backups & storage**. Change the policy or locations, then choose **Apply** to save.
+Applying a policy does not create or restore a backup.
+
 1. Choose **File → Backup & Restore → Create Backup…**.
 2. Enter an optional description and confirm. Wait for the success message.
 3. Choose **Show Backup Location** in the same menu to locate the saved copy.
@@ -559,5 +562,5 @@ database backup.
 
 (help-inspect-src-app-ui-manager-uimanager-create-file-menu-settings-action)=
 
-**Backup settings** — Configure automatic backups, retention and storage locations
-without restoring a backup.
+**Backup policy** — Open **Settings → Kraken → Backups & storage** and
+choose Apply to save policy or location changes. Backup operations remain in File.

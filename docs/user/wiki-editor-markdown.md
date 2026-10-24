@@ -42,7 +42,7 @@ their existing shortcuts; full command names also appear in **Format**. The
 previous **Body** command is named **Clear Formatting** to describe its existing
 effect. It still clears heading/bold/italic formatting; no new Body operation was
 added. **View** contains Markdown source/Rendered view and Table of contents;
-**Tools** contains Spelling settings. Narrow rows use labeled **More actions**.
+**Tools** contains the Spell & grammar checking toggle. Narrow rows use labeled **More actions**.
 
 (help-writing-links)=
 
@@ -141,7 +141,8 @@ Source view; use that view when the description cannot safely return to Rich.
 
 ## Configure spelling suggestions
 
-Spelling settings choose the language and optional checking service used for
+Open **Settings → Kraken → Writing** to configure spelling. Choose the
+language and optional checking service used for
 suggestions. Reviewing or ignoring a suggestion does not rewrite the description;
 accepting a replacement edits the text. Provider credentials are settings, not world
 content.
@@ -330,7 +331,9 @@ navigate within that writing.
 
 (help-inspect-src-gui-widgets-writing-toolbar-writingtoolbarpresentation-view-actions-owner-action-spell-check)=
 
-**Spelling settings** — Spell &amp; grammar check settings (LanguageTool).
+**Spell & grammar checking** — Enable or disable checking immediately.
+Configure language and the LanguageTool account under **Settings → Kraken
+→ Writing**.
 
 (help-inspect-src-gui-widgets-writing-toolbar-writingtoolbarpresentation-build-menus-button)=
 

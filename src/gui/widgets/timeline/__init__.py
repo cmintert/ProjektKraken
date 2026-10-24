@@ -322,7 +322,11 @@ class TimelineWidget(QWidget):
     def set_playhead_event_snapping(self, enabled: bool) -> None:
         """Apply and persist the manual playhead event-snapping preference."""
         self.view.set_playhead_event_snapping(enabled)
-        QSettings().setValue("timeline/snap_playhead_to_events", enabled)
+        from src.gui.utils.settings_navigation import settings_navigation
+
+        settings_navigation().contextual_changed.emit(
+            "timeline/snap_playhead_to_events", enabled
+        )
 
     def set_playhead_time(
         self, time: float, navigation_context: dict[str, Any] | None = None

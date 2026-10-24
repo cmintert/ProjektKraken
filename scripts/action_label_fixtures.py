@@ -70,6 +70,7 @@ _DIALOGS = {
     "progress_dialog": "ProgressDialog",
 }
 _WIDGETS = {
+    "settings_center": "SettingsCenter",
     "ai_search_panel": "AISearchPanelWidget",
     "analysis.main_analysis_panel": "MainAnalysisPanel",
     "authoring_context_widget": "AuthoringContextWidget",
@@ -249,6 +250,36 @@ def make_surface(surface: Surface, temporary_root: Path) -> QWidget:
     """Construct one known surface without personal world/storage access."""
     if surface.name == "WorkspaceShell":
         return _workspace_surface()
+    if surface.name == "SettingsCenter":
+        from src.core.ai_generation import AIGenerationPreferences
+        from src.core.calendar import CalendarConfig
+        from src.core.settings_registry import SETTINGS
+        from src.gui.widgets.settings_center import SettingsCenter
+
+        center = SettingsCenter()
+        values = {
+            d.id: d.default
+            for d in SETTINGS
+            if d.scope == "kraken" and d.default is not None
+        }
+        center.render_values(values)
+        world = {
+            "world.calendar": CalendarConfig.create_default().to_dict(),
+            "world.grouping": None,
+            "world.lexicon": None,
+            "world.tag_colors": {},
+            "world.ai": AIGenerationPreferences().to_dict(),
+        }
+        center.build_world_pages(
+            {
+                "values": world,
+                "tags": [],
+                "entity_types": ["Character"],
+                "relation_types": ["knows"],
+            }
+        )
+        center.ai.set_world_preferences(world["world.ai"])
+        return center
     if surface.name == "EntryLinkPicker":
         from src.gui.widgets.wiki_link_authoring import EntryLinkPicker
         from src.gui.widgets.wiki_text_edit import WikiTextEditView

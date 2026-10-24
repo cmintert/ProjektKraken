@@ -117,8 +117,12 @@ class MainAnalysisPanel(QWidget):
             settings.value("analysis/editorial_checks", False, type=bool)
         )
         self.editorial_checks.setChecked(editorial_enabled)
+        from src.gui.utils.settings_navigation import settings_navigation
+
         self.editorial_checks.toggled.connect(
-            lambda checked: settings.setValue("analysis/editorial_checks", checked)
+            lambda checked: settings_navigation().contextual_changed.emit(
+                "analysis/editorial_checks", checked
+            )
         )
         self.status_label = QLabel("")
         self.status_label.setStyleSheet(StyleHelper.get_preview_label_style())

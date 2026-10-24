@@ -69,9 +69,120 @@ changes affect only the interface, not world content.
 
 ## Change the theme
 
-1. Open **View → Theme** and select an available theme.
-2. Check the workspace in that theme. The choice is retained with application
-   preferences; select your previous theme through the same menu to return.
+1. Open **Settings** and choose **Appearance**.
+2. Under **Kraken**, choose the default theme. Under **This World**, choose an
+   override or **Use Kraken default**.
+3. Choose **Apply** to use the saved choice.
+
+(help-settings-center)=
+
+## Configure Kraken and the current world
+
+Choose **Settings** in the main menu bar. It opens Settings Center directly,
+without a dropdown. The window stays open while you work. All configuration
+pages are reached here; other panels do not contain settings launchers.
+
+Choose **Kraken** for local preferences or **This World — ‹name›** for portable
+world configuration. Search finds settings in both scopes and shows each
+result's scope. Pending edits survive page, scope and search changes.
+
+| Category | Kraken | This World |
+| --- | --- | --- |
+| Appearance | Default theme | World theme override |
+| Writing | Longform refresh; spelling, language and LanguageTool account | Auto-create relations from WikiLinks |
+| Timeline | Snap to Events | Calendar, grouping order and tag colours |
+| Analysis | Editorial checks | — |
+| AI | Providers, models, connections, automatic indexing and summary settings | Creative preferences, prompts, templates and index exclusions |
+| Graph | — | Visual lexicon: node and relation styles |
+| Backups & storage | Backup interval, retention and locations | — |
+| Advanced | Targeted preference and workspace resets | — |
+
+**Apply** saves pending edits and keeps the window open. **OK** saves and closes.
+**Cancel** discards changes since the last successful Apply. Closing with pending
+changes offers **Apply / Discard / Keep editing**. World changes appear as one
+undoable history action; local preferences and credentials are saved separately.
+If a backend fails, the failed edits remain pending and the message explains the
+failure. Successfully saved groups are not undone by a later Cancel.
+
+**Pending** identifies unsaved edits; **Customized** identifies saved non-default
+values. Inline controls such as Snap to Events apply immediately. If another
+control changes a setting you are editing, choose **Use current value** or
+**Keep my edit** before applying. Selecting another world protects pending world
+changes while retaining independent Kraken drafts. World selection currently
+requires an application restart.
+
+### Reset selected preferences
+
+Search for a preference to use **Reset selected setting**, or choose **Reset page**.
+These actions stage eligible defaults until Apply. **Advanced → Reset Kraken
+preferences** also stages local defaults, without resetting world configuration.
+Calendar contents, authored tag colours and task-template resources are excluded
+from generic resets. World theme reset restores inheritance from Kraken.
+
+**Reset workspace state…** requires confirmation and Apply, then takes effect on
+the next startup. It resets transient window/view state and filters. Worlds,
+registered world locations and trust, credentials, named layouts, brush presets
+and recent colour history remain intact. The launcher option `--reset-settings`
+uses the same local preference boundary and does not clear those resources.
+
+### Connections, portability and index changes
+
+Provider connections, local model paths and credentials remain on this computer.
+LanguageTool credentials use the OS credential store. A failed credential
+migration retains the previous value rather than silently losing access.
+
+WikiLink auto-relations and semantic-index exclusions are world policies. Existing
+worlds import their legacy local values once; newly created worlds begin with
+auto-relations off and no additional excluded attributes. Moving a world retains
+its saved policy. Changing exclusions does not remove already indexed material:
+apply the setting, then explicitly rebuild the complete index. Index rebuilding
+and backup creation/restoration are operations, not effects of Apply.
+
+(help-inspect-settings-center-search)=
+
+**Search all settings** — Find configuration by its name, category or aliases in
+both Kraken and This World. Search never examines credential values.
+
+(help-inspect-settings-center-open)=
+
+**Settings** — Open or raise the single configuration window directly from the
+main menu bar. Reopening preserves pending changes.
+
+(help-inspect-settings-center-scope)=
+
+**Scope** — Kraken settings stay local. This World settings travel with the named
+world. Switching scope preserves unapplied edits.
+
+(help-inspect-settings-center-navigation)=
+
+**Categories and results** — Select a category or search result to reveal its
+controls. Pending and Customized identify different saved states.
+
+(help-inspect-settings-center-preference)=
+
+**Preference** — Edit the named setting in the displayed scope. Apply saves;
+Cancel discards unapplied changes. Reset is available only for eligible defaults.
+
+(help-inspect-settings-center-apply)=
+
+**Apply** — Validate and save pending edits across pages. The window remains open;
+failed groups remain pending with an explanation.
+
+(help-inspect-settings-center-ok)=
+
+**OK** — Apply pending edits and close after successful persistence.
+
+(help-inspect-settings-center-cancel)=
+
+**Cancel** — Discard changes since the last successful Apply and close. Already
+acknowledged changes remain saved.
+
+(help-inspect-settings-center-exclusions)=
+
+**Index exclusions** — Enter comma-separated attribute names excluded from this
+world's semantic index. Apply saves the policy; explicitly rebuild the full index
+to replace existing indexed material. Attributes beginning with `_` are already
+excluded by the indexing rules.
 
 (help-explorer-browsing)=
 
@@ -372,8 +483,8 @@ apply any of its actions.
 
 (help-inspect-src-app-ui-manager-uimanager-create-view-menu-theme-menu)=
 
-**Theme** — Open the Theme menu to choose a related operation. Opening the menu does not
-apply any of its actions.
+**Appearance** — Configure theme defaults and overrides under **Settings →
+This World → Appearance**. The former View launcher is removed.
 
 (help-inspect-src-app-ui-manager-uimanager-create-view-menu-reset-action)=
 
@@ -416,8 +527,8 @@ does not apply any of its actions.
 
 (help-inspect-src-app-ui-manager-uimanager-create-timeline-menu-self-grouping-config-action)=
 
-**Configure grouping** — Choose Timeline grouping tags, their order and whether multi-
-tagged Events appear once or in each matching group.
+**Grouping** — Choose tags, their order and multi-tag behavior under
+**Settings → This World → Timeline**. Choose Apply to save.
 
 (help-inspect-src-app-ui-manager-uimanager-create-timeline-menu-self-grouping-clear-action)=
 
@@ -426,18 +537,18 @@ Events.
 
 (help-inspect-src-app-ui-manager-uimanager-create-timeline-menu-calendar-action)=
 
-**Calendar Configuration...** — Open the calendar configuration used to interpret and
-format lore dates. Review calendar changes carefully before saving.
+**Calendar** — Configure lore date formatting under **Settings → This World
+→ Timeline**. Review calendar changes carefully before Apply.
 
 (help-inspect-src-app-ui-manager-uimanager-create-settings-menu-settings-menu)=
 
-**Settings** — Open the Settings menu to choose a related operation. Opening the menu
-does not apply any of its actions.
+**Settings** — Open or raise Settings Center directly from the main menu bar.
+There is no Settings dropdown. Opening the window does not apply pending edits.
 
 (help-inspect-src-app-ui-manager-uimanager-create-settings-menu-self-auto-relation-action)=
 
 **Auto-Create Relations from Wikilinks** — When enabled, saving a wiki link creates a
-mentions relation to its target.
+mentions relation to its target in this world. The policy travels with the world.
 
 (help-inspect-src-app-ui-manager-uimanager-create-settings-menu-self-longform-refresh-action)=
 
@@ -468,7 +579,8 @@ Closing a panel does not delete world content.
 
 (help-inspect-workspace-theme)=
 
-**Interface theme** — Apply this interface theme. Theme changes preserve Help reading position and the authoring origin.
+**Interface theme** — Configure the Kraken default and the world's optional override
+in the Settings Center. Applying a theme preserves the authoring origin.
 
 (help-inspect-workspace-saved-layout)=
 

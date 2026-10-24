@@ -135,14 +135,6 @@ class GraphFilterBar(QWidget):
         self._rel_type_combo.currentIndexChanged.connect(self._on_filter_changed)
         layout.addWidget(self._rel_type_combo, stretch=2)
 
-        # Visual Lexicon editor button
-        self._lexicon_btn = declare_inspection(
-            QPushButton("Lexicon"),
-            "src-gui-widgets-graph-view-graph-filter-bar-graphfilterbar-setup-ui-self-lexicon-btn|graph.exploring|help-inspect-src-gui-widgets-graph-view-graph-filter-bar-graphfilterbar-setup-ui-self-lexicon-btn",
-        )
-        self._lexicon_btn.setToolTip("Edit visual styles for entity and relation types")
-        self._lexicon_btn.clicked.connect(self.show_lexicon_editor_requested.emit)
-
         # Refresh button
         self._refresh_btn = declare_inspection(
             QPushButton("Refresh"),
@@ -158,7 +150,6 @@ class GraphFilterBar(QWidget):
             pinned=True,
         )
         self.action_toolbar.add_button(self._adv_filter_btn, priority=70)
-        self.action_toolbar.add_button(self._lexicon_btn, priority=40)
         layout.addWidget(self.action_toolbar)
 
     def _on_filter_changed(self) -> None:

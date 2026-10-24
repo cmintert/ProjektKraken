@@ -112,7 +112,8 @@ def test_all_topics_search_and_navigation(generated_root):
     reader = service(generated_root, source_root=generated_root)
     reader.validate()
     registry = json.loads((generated_root / "docs/help-topics.json").read_text("utf-8"))
-    assert len(registry["topics"]) == 49
+    assert len(registry["topics"]) == 50
+    assert "settings.center" in {topic["id"] for topic in registry["topics"]}
     for topic in registry["topics"]:
         resolved = reader.resolve_topic(topic["id"])
         assert resolved.id == topic["id"]

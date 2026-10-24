@@ -72,6 +72,7 @@ as their toolbar controls. The inspection click does not run the action.
 | --- | --- |
 | {ref}`Explorer <help-explorer-browsing>` | New, Delete, search, filters and sorting. |
 | {ref}`Inspectors <help-authoring-details>` | Name, type, description, attributes, tags, gallery and Connections actions. |
+| {ref}`Settings Center <help-settings-center>` | Local and world configuration, Apply/Cancel, conflicts and targeted resets. |
 | {ref}`Writing <help-writing-edit>` | Formatting, Rich/Source, links, headings, Focus writing and spelling settings. |
 | {ref}`Timeline <help-timeline-viewing>` | Play, step, Go to date, Set Current Time and grouping. |
 | {ref}`Map and Layers <help-map-features>` | Marker/path/region tools, feature actions, visibility, appearance and raster tools. |

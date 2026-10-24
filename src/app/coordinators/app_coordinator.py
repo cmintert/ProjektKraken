@@ -199,6 +199,12 @@ class AppCoordinator(QObject):
             self.icon_library.on_initialized, Qt.ConnectionType.QueuedConnection
         )
 
+    def bind_settings(self) -> None:
+        """Compose settings after command infrastructure exists."""
+        from src.app.settings_composition import compose_settings
+
+        self.settings = compose_settings(self.main_window)
+
     def validate_world(self, editorial_checks: bool = False) -> str:
         """Request world validation on the DatabaseWorker thread.
 

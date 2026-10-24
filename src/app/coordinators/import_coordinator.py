@@ -10,6 +10,7 @@ Handles:
 """
 
 import logging
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Optional
 
 from PySide6.QtCore import Signal, Slot
@@ -127,8 +128,7 @@ class ImportCoordinator(BaseCoordinator):
                     )
                 if len(result.ambiguous_items) > _AMBIGUOUS_ITEM_PREVIEW_LIMIT:
                     remaining = (
-                        len(result.ambiguous_items)
-                        - _AMBIGUOUS_ITEM_PREVIEW_LIMIT
+                        len(result.ambiguous_items) - _AMBIGUOUS_ITEM_PREVIEW_LIMIT
                     )
                     msg += f"\n  ...and {remaining} more."
             if result.unparsed_date_count > 0:
@@ -167,9 +167,15 @@ class ImportCoordinator(BaseCoordinator):
     def show_database_manager(self) -> None:
         """Shows the Database Manager dialog."""
         dialog = DatabaseManagerDialog(self.main_window)
-        dialog.edit_transition_handler = (
-            self.main_window.app_coordinator.map_edits.request_transition
-        )
+
+        def protect_world_change(reason: str, continuation: Callable[[], None]) -> None:
+            self.main_window.app_coordinator.settings.request_world_transition(
+                lambda: self.main_window.app_coordinator.map_edits.request_transition(
+                    reason, continuation
+                )
+            )
+
+        dialog.edit_transition_handler = protect_world_change
         if dialog.exec() == QDialog.DialogCode.Accepted:
             pass
 
@@ -182,9 +188,7 @@ class ImportCoordinator(BaseCoordinator):
             )
 
     @Slot(dict)
-    def on_obsidian_export_prepared(
-        self, snapshot: ObsidianExportPreparation
-    ) -> None:
+    def on_obsidian_export_prepared(self, snapshot: ObsidianExportPreparation) -> None:
         """Choose the output path after the worker resolves the item.
 
         Args:
@@ -218,9 +222,7 @@ class ImportCoordinator(BaseCoordinator):
         self.main_window.status_bar.showMessage("Exporting...", 0)
 
     @Slot(dict)
-    def on_obsidian_export_finished(
-        self, snapshot: ObsidianExportCompletion
-    ) -> None:
+    def on_obsidian_export_finished(self, snapshot: ObsidianExportCompletion) -> None:
         """Present the result of a worker-thread Obsidian export.
 
         Args:
@@ -228,9 +230,7 @@ class ImportCoordinator(BaseCoordinator):
 
         """
         if snapshot["success"]:
-            message = (
-                f"Exported '{snapshot['item_name']}' to {snapshot['file_path']}"
-            )
+            message = f"Exported '{snapshot['item_name']}' to {snapshot['file_path']}"
             self.main_window.status_bar.showMessage(message, 5000)
             popup = AutoClosingMessageBox(
                 "Obsidian Export Complete",

@@ -228,6 +228,29 @@ def test_gui_and_app_do_not_import_database_service() -> None:
     )
 
 
+def test_settings_forms_do_not_own_persistence() -> None:
+    """KRT-55 forms expose detached values, without preference or SQL backends."""
+    forbidden = {
+        "src.services.local_settings",
+        "src.services.secret_store",
+        "src.services.db_service",
+        "src.services.repositories",
+        "src.commands",
+        "src.app",
+    }
+    for name in ("settings_center.py", "settings_forms.py"):
+        path = _SOURCE_ROOT / "gui/widgets" / name
+        for _, module in _imported_modules(path):
+            assert not any(
+                module == root or module.startswith(root + ".") for root in forbidden
+            )
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        assert not any(
+            isinstance(node, ast.Name) and node.id == "QSettings"
+            for node in ast.walk(tree)
+        )
+
+
 def _private_connection_lines(source: str) -> list[int]:
     """Find private connection access regardless of receiver name."""
     lines = []

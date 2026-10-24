@@ -20,6 +20,7 @@ class HelpSurfaceBindings(QObject):
     """Register dynamically created dialogs and semantic composite controls."""
 
     DIALOG_TOPICS = {
+        "SettingsCenter": "settings.center",
         "GoToDateDialog": "timeline.viewing",
         "RelationEditDialog": "relations.create",
         "TemporalValidityDialog": "map.visibility",

@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any
 from PySide6.QtCore import QObject, Slot
 from PySide6.QtWidgets import QColorDialog
 
-from src.app.qt_invocation import invoke_queued
 from src.commands.timeline_grouping_commands import (
     ClearTimelineGroupingCommand,
     SetTimelineGroupingCommand,
@@ -103,48 +102,15 @@ class TimelineGroupingManager(QObject):
             logger.debug("No grouping configuration found")
 
     def on_configure_grouping_requested(self) -> None:
-        """Opens grouping configuration dialog by requesting data from worker thread."""
-        # Request data from worker thread (thread-safe)
-        invoke_queued(
-            self.window.worker,
-            "load_grouping_dialog_data",
-        )
+        """Reveal timeline grouping in the shared Settings Center."""
+        self.window.app_coordinator.settings.open_settings("world.grouping")
 
     @Slot(list, object)
     def on_grouping_dialog_data_loaded(
         self, tags_data: list, current_config: dict[str, Any] | None
     ) -> None:
-        """Handler for grouping dialog data loaded from worker.
-
-        Args:
-            tags_data: List of dicts with 'name', 'color', 'count' for each tag.
-            current_config: Current grouping config dict or None.
-
-        """
-        from src.gui.dialogs.grouping_config_dialog import GroupingConfigDialog
-
-        try:
-            self._tag_colors.update(
-                {
-                    str(tag["name"]): str(tag["color"])
-                    for tag in tags_data
-                    if isinstance(tag, dict) and tag.get("name") and tag.get("color")
-                }
-            )
-            # Create dialog with pre-loaded data
-            command_coordinator = getattr(self.window, "command_coordinator")
-            dialog = GroupingConfigDialog(
-                tags_data,
-                current_config,
-                command_coordinator,
-                self.window,
-            )
-            dialog.grouping_applied.connect(self.on_grouping_applied)
-            dialog.exec()
-
-        except Exception as e:
-            logger.error(f"Failed to open grouping dialog: {e}")
-            self.window.show_error_message(f"Failed to open grouping dialog: {e}")
+        """Compatibility route for pending contextual grouping requests."""
+        self.window.app_coordinator.settings.open_settings("world.grouping")
 
     @Slot(list, str)
     def on_grouping_applied(self, tag_order: list, mode: str) -> None:

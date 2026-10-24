@@ -151,7 +151,10 @@ def test_return_label_refreshes_after_rename_and_has_generic_fallback(session):
     action = window.event_editor.desc_edit.action_return_writing
     assert len(action.text()) < len(action.toolTip())
     assert action.toolTip() == f"Back to {origin.name.strip()}"
-    assert window.event_editor.desc_edit._return_button.accessibleName() == action.toolTip()
+    assert (
+        window.event_editor.desc_edit._return_button.accessibleName()
+        == action.toolTip()
+    )
 
 
 def test_nested_links_return_in_order_and_unrelated_navigation_clears(session):
@@ -360,13 +363,6 @@ def test_missing_hydration_releases_return_controls(session, monkeypatch):
 def test_link_save_command_reopen_and_rename_keeps_identity(
     session, db_service, monkeypatch, kind, derive_mentions
 ):
-    from PySide6.QtCore import QSettings
-
-    from src.app.constants import (
-        SETTINGS_AUTO_RELATION_KEY,
-        WINDOW_SETTINGS_APP,
-        WINDOW_SETTINGS_KEY,
-    )
     from src.services.text_parser import WikiLinkParser
 
     window, objects = session
@@ -390,9 +386,7 @@ def test_link_save_command_reopen_and_rename_keeps_identity(
     assert len(db_service.get_all_entities()) == 3
     commands = []
     window.editor_coordinator.command_requested.connect(commands.append)
-    QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP).setValue(
-        SETTINGS_AUTO_RELATION_KEY, derive_mentions
-    )
+    window.editor_coordinator.auto_create_relations = derive_mentions
     editor._on_save()
     assert len(commands) == 1
     command = commands[0]

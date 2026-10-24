@@ -11,14 +11,9 @@ import logging
 from copy import deepcopy
 from typing import TYPE_CHECKING, Dict, List, Optional
 
-from PySide6.QtCore import QSettings, Signal, Slot
+from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import QDialog, QInputDialog, QMessageBox, QWidget
 
-from src.app.constants import (
-    SETTINGS_AUTO_RELATION_KEY,
-    WINDOW_SETTINGS_APP,
-    WINDOW_SETTINGS_KEY,
-)
 from src.app.coordinators.base_coordinator import BaseCoordinator
 from src.commands.base_command import BaseCommand, CommandResult
 from src.commands.chronology_commands import ApplyChronologyCommand
@@ -79,6 +74,7 @@ class EditorCoordinator(BaseCoordinator):
 
         """
         super().__init__(main_window)
+        self.auto_create_relations = False
         self._last_drag_drop_command_id: Optional[int] = None
         self._pending_temporal_command_id: str | None = None
         self._pending_temporal_revision: int | None = None
@@ -597,8 +593,7 @@ class EditorCoordinator(BaseCoordinator):
         self, cmds: list[BaseCommand], source_id: str, description: str
     ) -> None:
         """Appends ProcessWikiLinksCommand to cmds if auto-relation is enabled."""
-        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        if settings.value(SETTINGS_AUTO_RELATION_KEY, False, type=bool):
+        if getattr(self, "auto_create_relations", False):
             cmds.append(ProcessWikiLinksCommand(source_id, description or ""))
 
     # ------------------------------------------------------------------

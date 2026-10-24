@@ -2202,27 +2202,11 @@ class WikiTextEdit(QFrame):
         self._return_button.setAccessibleName(destination)
         self.link_toolbar.refresh()
 
-    def _open_spell_settings(self, _checked: bool = False) -> None:
-        """Show the SpellCheckSettingsDialog and sync the toolbar button state on close."""
-        from PySide6.QtCore import QSettings
+    def _set_spell_check_enabled(self, checked: bool) -> None:
+        """Emit an inline toggle through the shared configuration adapter."""
+        from src.gui.utils.settings_navigation import settings_navigation
 
-        # Restore the button's visual state before opening — triggered() may
-        # have toggled it, but the dialog owns the enabled/disabled decision.
-        s = QSettings()
-        self.action_spell_check.setChecked(
-            cast(bool, s.value("SpellCheck/enabled", False, type=bool))
-        )
-
-        dlg = SpellCheckSettingsDialog(self)
-
-        def _on_close() -> None:
-            s2 = QSettings()
-            enabled = cast(bool, s2.value("SpellCheck/enabled", False, type=bool))
-            self.action_spell_check.setChecked(enabled)
-            self.editor.spell_check.refresh_settings()
-
-        dlg.finished.connect(_on_close)
-        dlg.show()
+        settings_navigation().contextual_changed.emit("SpellCheck/enabled", checked)
 
     def _toggle_view_mode(self) -> None:
         """Proxy to toggle view mode and update toolbar button text."""

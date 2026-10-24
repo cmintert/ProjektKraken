@@ -194,9 +194,11 @@ class BackupCoordinator(BaseCoordinator):
             if not window.check_unsaved_changes(editor):
                 return
         map_edits = window.app_coordinator.map_edits
-        if (window.app_coordinator.trajectory_edit.is_active
-                or window.app_coordinator.feature_geometry.is_active
-                or map_edits.is_waiting):
+        if (
+            window.app_coordinator.trajectory_edit.is_active
+            or window.app_coordinator.feature_geometry.is_active
+            or map_edits.is_waiting
+        ):
             map_edits.request_transition(
                 "restore the backup", lambda: self._execute_restore(backup_file)
             )
@@ -343,7 +345,11 @@ class BackupCoordinator(BaseCoordinator):
 
     @Slot()
     def show_backup_settings(self) -> None:
-        """Opens the backup settings dialog and applies changes to BackupService."""
+        """Reveal backup preferences in the shared Settings Center."""
+        self.main_window.app_coordinator.settings.open_settings("backup_enabled")
+
+    def apply_backup_settings(self) -> None:
+        """Refresh the existing backup service from acknowledged local preferences."""
         from src.core.backup_config import BackupConfig
         from src.gui.dialogs.backup_settings_dialog import (
             BACKUP_AUTO_SAVE_INTERVAL_KEY,
@@ -356,71 +362,63 @@ class BackupCoordinator(BaseCoordinator):
             BACKUP_VACUUM_BEFORE_KEY,
             BACKUP_VERIFY_AFTER_KEY,
             BACKUP_WEEKLY_RETENTION_KEY,
-            BackupSettingsDialog,
         )
 
-        dialog = BackupSettingsDialog(self.main_window)
+        if self.backup_service is None:
+            return
 
-        def apply_settings() -> None:
-            """Apply dialog settings to BackupService."""
-            if self.backup_service is None:
-                return
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
-            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        # Build config from QSettings
+        custom_dir = cast(str, settings.value(BACKUP_CUSTOM_DIR_KEY, ""))
+        external_path = cast(str, settings.value(BACKUP_EXTERNAL_PATH_KEY, ""))
 
-            # Build config from QSettings
-            custom_dir = cast(str, settings.value(BACKUP_CUSTOM_DIR_KEY, ""))
-            external_path = cast(str, settings.value(BACKUP_EXTERNAL_PATH_KEY, ""))
+        config = BackupConfig(
+            enabled=cast(
+                bool,
+                settings.value(BACKUP_ENABLED_KEY, True, type=bool),
+            ),
+            auto_save_interval_minutes=int(
+                cast(
+                    int | str,
+                    settings.value(BACKUP_AUTO_SAVE_INTERVAL_KEY, 5),
+                )
+            ),
+            auto_save_retention_count=int(
+                cast(
+                    int | str,
+                    settings.value(BACKUP_AUTO_SAVE_RETENTION_KEY, 12),
+                )
+            ),
+            daily_retention_count=int(
+                cast(
+                    int | str,
+                    settings.value(BACKUP_DAILY_RETENTION_KEY, 7),
+                )
+            ),
+            weekly_retention_count=int(
+                cast(
+                    int | str,
+                    settings.value(BACKUP_WEEKLY_RETENTION_KEY, 4),
+                )
+            ),
+            manual_retention_count=int(
+                cast(
+                    int | str,
+                    settings.value(BACKUP_MANUAL_RETENTION_KEY, -1),
+                )
+            ),
+            verify_after_backup=cast(
+                bool,
+                settings.value(BACKUP_VERIFY_AFTER_KEY, True, type=bool),
+            ),
+            vacuum_before_backup=cast(
+                bool,
+                settings.value(BACKUP_VACUUM_BEFORE_KEY, False, type=bool),
+            ),
+            backup_dir=Path(custom_dir) if custom_dir else None,
+            external_backup_path=Path(external_path) if external_path else None,
+        )
 
-            config = BackupConfig(
-                enabled=cast(
-                    bool,
-                    settings.value(BACKUP_ENABLED_KEY, True, type=bool),
-                ),
-                auto_save_interval_minutes=int(
-                    cast(
-                        int | str,
-                        settings.value(BACKUP_AUTO_SAVE_INTERVAL_KEY, 5),
-                    )
-                ),
-                auto_save_retention_count=int(
-                    cast(
-                        int | str,
-                        settings.value(BACKUP_AUTO_SAVE_RETENTION_KEY, 12),
-                    )
-                ),
-                daily_retention_count=int(
-                    cast(
-                        int | str,
-                        settings.value(BACKUP_DAILY_RETENTION_KEY, 7),
-                    )
-                ),
-                weekly_retention_count=int(
-                    cast(
-                        int | str,
-                        settings.value(BACKUP_WEEKLY_RETENTION_KEY, 4),
-                    )
-                ),
-                manual_retention_count=int(
-                    cast(
-                        int | str,
-                        settings.value(BACKUP_MANUAL_RETENTION_KEY, -1),
-                    )
-                ),
-                verify_after_backup=cast(
-                    bool,
-                    settings.value(BACKUP_VERIFY_AFTER_KEY, True, type=bool),
-                ),
-                vacuum_before_backup=cast(
-                    bool,
-                    settings.value(BACKUP_VACUUM_BEFORE_KEY, False, type=bool),
-                ),
-                backup_dir=Path(custom_dir) if custom_dir else None,
-                external_backup_path=Path(external_path) if external_path else None,
-            )
-
-            self.backup_service.update_config(config)
-            logger.info("Backup settings applied to service")
-
-        dialog.settings_changed.connect(apply_settings)
-        dialog.exec()
+        self.backup_service.update_config(config)
+        logger.info("Backup settings applied to service")

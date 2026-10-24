@@ -5,7 +5,7 @@ from MainWindow to reduce its size and improve maintainability.
 """
 
 import datetime
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from PySide6.QtCore import QObject, QSettings, Qt, QThread, QTimer, Slot
 
@@ -46,6 +46,8 @@ class AISearchManager(QObject):
 
         """
         super().__init__()
+        self.index_excluded_attributes: list[str] = []
+
         self.window = main_window
         self._task_template_catalog = TaskTemplateCatalog()
         self._custom_task_templates: tuple[TaskTemplate, ...] = ()
@@ -68,37 +70,24 @@ class AISearchManager(QObject):
             editor = getattr(self.window, editor_name, None)
             generator = getattr(editor, "llm_generator", None)
             if generator is not None:
-                generator.preferences_changed.connect(
-                    self._preference_save_timer.start
-                )
+                generator.preferences_changed.connect(self._preference_save_timer.start)
+
+    def _settings_form(self) -> Any:
+        """Return the embedded status view without using it as preference storage."""
+        from src.gui.widgets.settings_center import SettingsCenter
+
+        settings = getattr(
+            getattr(self.window, "app_coordinator", None), "settings", None
+        )
+        view = getattr(settings, "view", None)
+        if isinstance(view, SettingsCenter):
+            return view.ai
+        return getattr(self.window, "ai_settings_dialog", None)
 
     @Slot()
     def show_ai_settings_dialog(self) -> None:
-        """Shows the AI Settings dialog."""
-        from src.gui.dialogs.ai_settings_dialog import AISettingsDialog
-
-        if not self.window.ai_settings_dialog:
-            self.window.ai_settings_dialog = AISettingsDialog(self.window)
-            self.window.ai_settings_dialog.rebuild_index_requested.connect(
-                self.on_ai_settings_rebuild_requested
-            )
-            self.window.ai_settings_dialog.index_status_requested.connect(
-                self.refresh_search_index_status
-            )
-            self.window.ai_settings_dialog.settings_saved.connect(
-                self._on_settings_saved
-            )
-            self.window.ai_settings_dialog.task_templates_changed.connect(
-                self._on_task_templates_changed
-            )
-            self.window.ai_settings_dialog.set_task_templates(self._task_templates)
-            self.window.worker_manager.load_ai_preferences_requested.emit()
-            # Initial status update
-            self.refresh_search_index_status()
-
-        self.window.ai_settings_dialog.show()
-        self.window.ai_settings_dialog.raise_()
-        self.window.ai_settings_dialog.activateWindow()
+        """Reveal AI configuration in the shared Settings Center."""
+        self.window.app_coordinator.settings.open_settings("ai_embedding_provider")
 
     @Slot()
     def _on_settings_saved(self) -> None:
@@ -109,19 +98,8 @@ class AISearchManager(QObject):
         - EntityEditor's LLMGenerationWidget (reloads templates/settings)
         """
         logger.info("AI settings saved — propagating refresh")
-
-        dialog = getattr(self.window, "ai_settings_dialog", None)
-        if dialog is not None:
-            self._save_current_world_preferences()
-
-        # Refresh worker-thread services (cross-thread call)
         if hasattr(self.window, "worker") and self.window.worker:
-            invoke_queued(
-                self.window.worker,
-                "refresh_ai_settings",
-            )
-
-        # Refresh entity editor's LLM generation widget
+            invoke_queued(self.window.worker, "refresh_ai_settings")
         if hasattr(self.window, "entity_editor") and hasattr(
             self.window.entity_editor, "llm_generator"
         ):
@@ -140,7 +118,6 @@ class AISearchManager(QObject):
     @Slot(object)
     def on_ai_preferences_loaded(self, raw_preferences: object) -> None:
         """Apply world preferences, or seed a new world from legacy settings."""
-        dialog = getattr(self.window, "ai_settings_dialog", None)
         if isinstance(raw_preferences, dict):
             loaded = AIGenerationPreferences.from_dict(raw_preferences)
             preferences = self._task_template_catalog.migrate_preferences(loaded)
@@ -149,16 +126,12 @@ class AISearchManager(QObject):
                 self._custom_task_templates
             )
             self._cache_world_preferences(preferences)
-            if dialog is not None:
-                dialog.set_task_templates(self._task_templates)
-                dialog.apply_world_preferences(preferences)
             if preferences != loaded:
                 self.window.worker_manager.save_ai_preferences_requested.emit(
                     preferences.to_dict()
                 )
         else:
             self._save_current_world_preferences()
-
         for editor_name in ("entity_editor", "event_editor"):
             editor = getattr(self.window, editor_name, None)
             generator = getattr(editor, "llm_generator", None)
@@ -172,17 +145,13 @@ class AISearchManager(QObject):
         if not isinstance(templates, (list, tuple)):
             return
         custom = tuple(
-            template for template in templates if isinstance(template, TaskTemplate)
+            (template for template in templates if isinstance(template, TaskTemplate))
         )
         merged = self._task_template_catalog.merge(custom)
         for template in custom:
             self._task_template_catalog.validate_world_template(template, merged)
         self._custom_task_templates = custom
         self._task_templates = merged
-
-        dialog = getattr(self.window, "ai_settings_dialog", None)
-        if dialog is not None:
-            dialog.set_task_templates(self._task_templates)
         for editor_name in ("entity_editor", "event_editor"):
             editor = getattr(self.window, editor_name, None)
             generator = getattr(editor, "llm_generator", None)
@@ -216,64 +185,49 @@ class AISearchManager(QObject):
     @Slot()
     def _save_current_world_preferences(self) -> None:
         """Persist current creative settings via the queued DB worker path."""
-        dialog = getattr(self.window, "ai_settings_dialog", None)
-        if dialog is not None:
-            preferences = dialog.export_world_preferences()
-        else:
-            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-            preferences = AIGenerationPreferences(
-                persona=str(
-                    settings.value("ai_gen_system_prompt", DEFAULT_SYSTEM_PROMPT)
-                ),
-                max_tokens=cast(
-                    int,
-                    settings.value("ai_gen_max_tokens", 512, type=int),
-                ),
-                temperature_percent=cast(
-                    int,
-                    settings.value("ai_gen_temperature", 70, type=int),
-                ),
-                rag_enabled=cast(
-                    bool,
-                    settings.value("ai_gen_rag_enabled", True, type=bool),
-                ),
-                rag_limit=cast(
-                    int,
-                    settings.value("ai_gen_rag_limit", 3, type=int),
-                ),
-                spatial_enabled=cast(
-                    bool,
-                    settings.value(
-                        "ai_gen_spatial_enabled", False, type=bool
-                    ),
-                ),
-                filter_reasoning=cast(
-                    bool,
-                    settings.value(
-                        "ai_gen_filter_reasoning", True, type=bool
-                    ),
-                ),
-                audit_enabled=cast(
-                    bool,
-                    settings.value("ai_gen_audit_log", False, type=bool),
-                ),
-                selected_entity_template_id=str(
-                    settings.value("ai_gen_entity_template_id", "") or ""
-                ),
-                selected_event_template_id=str(
-                    settings.value("ai_gen_event_template_id", "") or ""
-                ),
-                entity_prompt_draft=str(
-                    settings.value("ai_gen_entity_prompt", "") or ""
-                ),
-                event_prompt_draft=str(
-                    settings.value("ai_gen_event_prompt", "") or ""
-                ),
-                custom_task_templates=self._custom_task_templates,
-            )
-        self.window.worker_manager.save_ai_preferences_requested.emit(
-            preferences.to_dict()
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        preferences = AIGenerationPreferences(
+            persona=str(settings.value("ai_gen_system_prompt", DEFAULT_SYSTEM_PROMPT)),
+            max_tokens=cast(int, settings.value("ai_gen_max_tokens", 512, type=int)),
+            temperature_percent=cast(
+                int, settings.value("ai_gen_temperature", 70, type=int)
+            ),
+            rag_enabled=cast(
+                bool, settings.value("ai_gen_rag_enabled", True, type=bool)
+            ),
+            rag_limit=cast(int, settings.value("ai_gen_rag_limit", 3, type=int)),
+            spatial_enabled=cast(
+                bool, settings.value("ai_gen_spatial_enabled", False, type=bool)
+            ),
+            filter_reasoning=cast(
+                bool, settings.value("ai_gen_filter_reasoning", True, type=bool)
+            ),
+            audit_enabled=cast(
+                bool, settings.value("ai_gen_audit_log", False, type=bool)
+            ),
+            selected_entity_template_id=str(
+                settings.value("ai_gen_entity_template_id", "") or ""
+            ),
+            selected_event_template_id=str(
+                settings.value("ai_gen_event_template_id", "") or ""
+            ),
+            entity_prompt_draft=str(settings.value("ai_gen_entity_prompt", "") or ""),
+            event_prompt_draft=str(settings.value("ai_gen_event_prompt", "") or ""),
+            custom_task_templates=self._custom_task_templates,
         )
+        from src.app.coordinators.settings_coordinator import SettingsCoordinator
+
+        coordinator = getattr(
+            getattr(self.window, "app_coordinator", None), "settings", None
+        )
+        if isinstance(coordinator, SettingsCoordinator) and coordinator.world_data.get(
+            "writable"
+        ):
+            coordinator.set_contextual("world.ai", preferences.to_dict())
+        else:
+            self.window.worker_manager.save_ai_preferences_requested.emit(
+                preferences.to_dict()
+            )
 
     @Slot(str)
     def on_ai_settings_rebuild_requested(self, object_type: str) -> None:
@@ -368,25 +322,14 @@ class AISearchManager(QObject):
                 logger.warning("Worker not ready for rebuild.")
                 return
 
-            self.window.status_bar.showMessage(
-                f"Rebuilding {object_type} index...", 0
-            )
+            self.window.status_bar.showMessage(f"Rebuilding {object_type} index...", 0)
 
             # Disable the rebuild button in the dialog while running
-            dlg = getattr(self.window, "ai_settings_dialog", None)
+            dlg = self._settings_form()
             if dlg is not None:
                 dlg.set_rebuild_in_progress(True)
 
-            # Get excluded attributes from QSettings
-            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-            excluded_text = str(
-                settings.value("ai_search_excluded_attrs", "", type=str) or ""
-            )
-            excluded = [
-                attr.strip()
-                for attr in excluded_text.split(",")
-                if attr.strip()
-            ]
+            excluded = list(getattr(self, "index_excluded_attributes", []))
 
             # Dispatch to worker thread via WorkerManager signal
             self.window.worker_manager.rebuild_index_requested.emit(
@@ -398,9 +341,7 @@ class AISearchManager(QObject):
             self._set_status(f"Rebuild failed: {e}")
 
     @Slot(int, int, int)
-    def on_index_rebuild_progress(
-        self, done: int, total: int, pct: int
-    ) -> None:
+    def on_index_rebuild_progress(self, done: int, total: int, pct: int) -> None:
         """Handle progress updates from the worker thread.
 
         Args:
@@ -409,10 +350,8 @@ class AISearchManager(QObject):
             pct: Percentage complete.
 
         """
-        self.window.status_bar.showMessage(
-            f"Indexing {done}/{total} ({pct}%)...", 0
-        )
-        dlg = getattr(self.window, "ai_settings_dialog", None)
+        self.window.status_bar.showMessage(f"Indexing {done}/{total} ({pct}%)...", 0)
+        dlg = self._settings_form()
         if dlg is not None:
             dlg.update_rebuild_progress(done, total, pct)
 
@@ -440,7 +379,7 @@ class AISearchManager(QObject):
             msg = f"Index rebuilt: {indexed} indexed, {unchanged} unchanged"
         self._set_status(msg)
 
-        dlg = getattr(self.window, "ai_settings_dialog", None)
+        dlg = self._settings_form()
         if dlg is not None:
             dlg.set_rebuild_in_progress(False)
 
@@ -474,9 +413,7 @@ class AISearchManager(QObject):
             model = qsettings.get("st_model") or qsettings.get("lm_model") or "default"
             count_value = stats.get("count", 0)
             count = (
-                int(count_value)
-                if isinstance(count_value, (int, float, str))
-                else 0
+                int(count_value) if isinstance(count_value, (int, float, str)) else 0
             )
             last_time = stats.get("last_updated")
             last_indexed = (
@@ -486,7 +423,7 @@ class AISearchManager(QObject):
                 if isinstance(last_time, (int, float))
                 else "Never"
             )
-            dialog = getattr(self.window, "ai_settings_dialog", None)
+            dialog = self._settings_form()
             if dialog is not None and dialog.isVisible():
                 dialog.update_status(
                     model=f"{provider}:{model}",

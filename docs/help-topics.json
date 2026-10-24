@@ -463,6 +463,17 @@
       "target": "help-authoring-templates",
       "level": "task",
       "related_ids": []
+    },
+    {
+      "id": "settings.center",
+      "source": "workspace.md",
+      "target": "help-settings-center",
+      "level": "task",
+      "related_ids": [
+        "workspace.navigation",
+        "settings.ai",
+        "writing.spelling"
+      ]
     }
   ]
 }

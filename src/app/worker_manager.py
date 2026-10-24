@@ -78,6 +78,7 @@ class WorkerManager(QObject):
         self.database_initialized: bool | None = None
         self.package_smoke_callback: Callable[[bool], None] | None = None
 
+        self.index_excluded_attributes: list[str] = []
         self._pending_indices: set[tuple[str, str]] = set()
         self._index_timer = QTimer(self)
         self._index_timer.setSingleShot(True)
@@ -480,12 +481,7 @@ class WorkerManager(QObject):
         if getattr(self.window, "worker", None) is None:
             return
 
-        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        excluded_text = cast(
-            str,
-            settings.value("ai_search_excluded_attrs", "", type=str),
-        )
-        excluded = [attr.strip() for attr in excluded_text.split(",") if attr.strip()]
+        excluded = list(getattr(self, "index_excluded_attributes", []))
 
         for object_type, object_id in pending:
             logger.debug(
@@ -592,7 +588,7 @@ class WorkerManager(QObject):
         try:
             from src.core.theme_manager import ThemeManager
 
-            ThemeManager().set_theme(theme_name)
+            ThemeManager().set_theme(theme_name, persist=False)
             logger.info("Restored world theme: %s", theme_name)
         except Exception:
             logger.warning("Failed to restore world theme", exc_info=True)

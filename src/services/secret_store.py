@@ -12,13 +12,18 @@ _SERVICE_NAME = "ProjektKraken.AI"
 
 def get_api_key(provider_id: str) -> str:
     """Read a provider key from the operating-system credential store."""
+    return read_api_key(provider_id) or ""
+
+
+def read_api_key(provider_id: str) -> str | None:
+    """Distinguish an absent credential from a failed secure-store read."""
     try:
         import keyring
 
         return keyring.get_password(_SERVICE_NAME, provider_id) or ""
     except Exception as exc:
         logger.warning("Could not read %s credentials: %s", provider_id, exc)
-        return ""
+        return None
 
 
 def set_api_key(provider_id: str, value: str) -> bool:

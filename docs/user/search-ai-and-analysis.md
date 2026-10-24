@@ -15,12 +15,12 @@ before treating generated text or search results as historical evidence.
 
 ## Configure LM Studio
 
-1. Open **Settings → AI Search Index and Settings…**.
+1. Open **Settings → Kraken → AI**.
 2. Enter the LM Studio server address, such as `http://localhost:1234`.
 3. Choose **Refresh Models** for the relevant provider.
 4. Choose a generation model and, when needed, a separate embedding model.
-5. Check the connection result and choose **OK**. Settings also save as their
-   fields are accepted; **Cancel** is not a rollback of settings already saved.
+5. Check the connection result and choose **Apply** or **OK**. Edits remain
+   pending until applied; **Cancel** discards unapplied changes.
 
 Enter the server address, not a `/completions` or `/embeddings` endpoint.
 Cloud-provider controls remain unavailable until their adapters are enabled.
@@ -29,7 +29,7 @@ Cloud-provider controls remain unavailable until their adapters are enabled.
 
 ## Search the world
 
-1. Open **Settings → AI Search Index and Settings… → Knowledge Base**.
+1. Open **Settings → Kraken → AI**.
    Choose **Rebuild Index** when the index needs rebuilding and wait for
    completion.
 2. Open **View → Panels → AI Search**.
@@ -130,9 +130,11 @@ event or entity; discarding changes restores the stored summary.
 
 ## Manage task templates
 
-Open the Task Templates area in AI settings. Bundled templates are read-only;
+Open **Settings → This World → AI** and find **World task templates**.
+Bundled templates are read-only;
 duplicate one into the active world before customizing it. World templates
-travel with that world.
+travel with that world. **Update template draft** prepares a template change;
+choose **Apply** to save it with the other world settings.
 
 (help-analysis-review)=
 
@@ -215,13 +217,13 @@ settings. Provider and indexing settings serve different purposes.
 
 (help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-init-cancel-btn)=
 
-**Cancel** — Close AI settings. Changes already saved automatically remain in effect;
-unfinished world-template edits use a separate discard confirmation.
+**Cancel** — Discard unapplied Settings Center changes and close. Changes acknowledged
+by an earlier Apply remain saved.
 
 (help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-init-ok-btn)=
 
-**OK** — Save the AI settings and close this dialog. Some settings also save when their
-fields change.
+**OK** — Validate and apply pending Settings Center edits, then close after successful
+persistence. Invalid or failed edits remain available for correction.
 
 (help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-self-gen-provider-combo)=
 
@@ -322,7 +324,8 @@ and edits in the active world folder.
 
 (help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-generative-ai-page-clear-btn)=
 
-**Clear All AI Settings** — Clear all stored API keys and settings.
+**Reset AI preferences** — Use Reset page in the Settings Center to stage eligible
+AI defaults. This does not remove credentials, world templates or world policies.
 
 (help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-provider-combo)=
 
@@ -438,7 +441,8 @@ templates, leaving the original available.
 
 (help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-templates-page-self-btn-save-template)=
 
-**Save template** — Save edits to this world task template. Saving a template does not
+**Update template draft** — Prepare edits to this world task template. Apply in the
+Settings Center persists them; Cancel discards unapplied changes. This does not
 generate or accept prose.
 
 (help-inspect-src-gui-dialogs-analysis-run-dialog-analysisrundialog-build-ui-self-scope-combo)=
@@ -654,7 +658,8 @@ entries and connections unchanged.
 
 (help-inspect-src-gui-widgets-graph-view-graph-filter-bar-graphfilterbar-setup-ui-self-lexicon-btn)=
 
-**Lexicon** — Edit visual styles for entity and relation types.
+**Graph styles** — Configure node and relation styles under **Settings →
+This World → Graph**. Choose Apply to update the graph.
 
 (help-inspect-src-gui-widgets-graph-view-graph-filter-bar-graphfilterbar-setup-ui-self-refresh-btn)=
 
@@ -823,8 +828,8 @@ settings. This is separate from generating its full description.
 
 (help-inspect-src-app-ui-manager-uimanager-create-settings-menu-search-settings-action)=
 
-**AI settings** — Configure text-generation providers, semantic-search embeddings,
-prompts and reusable AI tasks.
+**AI configuration** — Open **Settings → Kraken → AI** for local provider
+connections or **This World → AI** for world prompts and indexing exclusions.
 
 (help-inspect-src-gui-dialogs-lexicon-editor-dialog-lexiconeditordialog-setup-ui-button-box)=
 

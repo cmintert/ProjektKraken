@@ -362,7 +362,15 @@ def test_document_replacement_invalidates_pending_same_text(qtbot, monkeypatch):
 
 
 @pytest.mark.parametrize("save", [False, True])
-def test_settings_dialog_save_cancel_and_compatibility_export(qtbot, save):
+def test_settings_dialog_save_cancel_and_compatibility_export(qtbot, monkeypatch, save):
+    secrets = {}
+    monkeypatch.setattr(
+        "src.services.secret_store.get_api_key", lambda key: secrets.get(key, "")
+    )
+    monkeypatch.setattr(
+        "src.services.secret_store.set_api_key",
+        lambda key, value: secrets.__setitem__(key, value) is None,
+    )
     from src.gui.widgets.wiki_text_edit import SpellCheckSettingsDialog as Export
 
     assert Export is SpellCheckSettingsDialog
@@ -383,28 +391,40 @@ def test_settings_dialog_save_cancel_and_compatibility_export(qtbot, save):
     assert settings.value("SpellCheck/enabled", type=bool) == save
     assert settings.value("SpellCheck/language") == ("de-DE" if save else "en-US")
     if save:
-        assert settings.value("SpellCheck/username") == "test@example.invalid"
-        assert settings.value("SpellCheck/api_key") == "test-key"
+        assert secrets["languagetool.username"] == "test@example.invalid"
+        assert secrets["languagetool.api_key"] == "test-key"
+        assert not settings.contains("SpellCheck/api_key")
 
 
-@pytest.mark.parametrize("save", [False, True])
-def test_visible_settings_action_synchronizes_controller_and_check_state(
-    qtbot, monkeypatch, save
+def test_inline_spell_toggle_uses_shared_adapter_without_opening_settings(
+    qtbot, monkeypatch
 ):
+    from src.app.coordinators.settings_coordinator import SettingsCoordinator
+    from src.gui.utils.settings_navigation import settings_navigation
+    from src.services.local_settings import LocalSettingsAdapter
+
     monkeypatch.setattr(LanguageToolWorker, "check", lambda *a, **kw: None)
+    monkeypatch.setattr("src.services.secret_store.get_api_key", lambda key: "")
     QSettings().setValue("SpellCheck/enabled", False)
     widget = WikiTextEdit()
     qtbot.addWidget(widget)
+    coordinator = SettingsCoordinator(
+        lambda: {}, lambda command: None, widget, LocalSettingsAdapter(QSettings())
+    )
+    navigation = settings_navigation()
+    navigation.contextual_changed.connect(coordinator.set_contextual)
+    coordinator.preferences_changed.connect(
+        lambda _: widget.editor.spell_check.refresh_settings()
+    )
     widget.editor.setPlainText(TEXT)
-    widget.action_spell_check.trigger()
-    dialog = widget.findChild(SpellCheckSettingsDialog)
-    assert dialog is not None
-    assert not widget.action_spell_check.isChecked()
-    dialog._enabled_cb.setChecked(True)
-    if save:
-        dialog._save()
-    else:
-        dialog.reject()
-    assert widget.action_spell_check.isChecked() == save
-    assert widget.editor.spell_check._settings.enabled == save
-    assert (widget.editor.spell_check._pending is not None) == save
+    try:
+        widget.action_spell_check.trigger()
+        assert widget.editor.spell_check._settings.enabled
+        assert widget.action_spell_check.isChecked()
+        assert coordinator.view is None
+        widget.action_spell_check.trigger()
+        assert not widget.editor.spell_check._settings.enabled
+        assert not widget.action_spell_check.isChecked()
+        assert coordinator.view is None
+    finally:
+        navigation.contextual_changed.disconnect(coordinator.set_contextual)

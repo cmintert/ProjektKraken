@@ -7,7 +7,7 @@ from collections.abc import Mapping
 from typing import Any, Optional, cast
 
 from PySide6.QtCore import QObject, QSettings, Qt
-from PySide6.QtGui import QAction, QActionGroup
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QInputDialog, QMenuBar, QMessageBox, QWidget
 
 from src.app.constants import (
@@ -30,6 +30,7 @@ class UIManager:
         self._window_widget = cast(QWidget, main_window)
         self._zone_actions: dict[ZoneName, QAction] = {}
         self._panel_actions: dict[str, QAction] = {}
+        self._calendar_dialog_pending = False
 
     def create_file_menu(self, menu_bar: QMenuBar) -> None:
         """Create the File menu."""
@@ -92,14 +93,6 @@ class UIManager:
         location_action.triggered.connect(
             self.main_window.backup_coordinator.show_backup_location
         )
-        settings_action = declare_inspection(
-            backup_menu.addAction("Backup Settings..."),
-            "src-app-ui-manager-uimanager-create-file-menu-settings-action|world.backups|help-inspect-src-app-ui-manager-uimanager-create-file-menu-settings-action",
-        )
-        settings_action.triggered.connect(
-            self.main_window.backup_coordinator.show_backup_settings
-        )
-
         file_menu.addSeparator()
         exit_action = declare_inspection(
             file_menu.addAction("Exit"),
@@ -202,27 +195,6 @@ class UIManager:
         from src.gui.widgets.focus_writing import FocusWritingController
 
         self.focus_writing = FocusWritingController(self.main_window, view_menu)
-
-        view_menu.addSeparator()
-        theme_menu = declare_inspection(
-            view_menu.addMenu("Theme"),
-            "src-app-ui-manager-uimanager-create-view-menu-theme-menu|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-view-menu-theme-menu",
-        )
-        from src.core.theme_manager import ThemeManager
-
-        theme_manager = ThemeManager()
-        action_group = QActionGroup(self._window_widget)
-        for theme_name in theme_manager.get_available_themes():
-            action = declare_inspection(
-                theme_menu.addAction(theme_name.replace("_", " ").title()),
-                "workspace.theme|workspace.navigation|help-inspect-workspace-theme",
-            )
-            action.setCheckable(True)
-            action.setChecked(theme_name == theme_manager.current_theme_name)
-            action.triggered.connect(
-                lambda _checked=False, name=theme_name: theme_manager.set_theme(name)
-            )
-            action_group.addAction(action)
 
         view_menu.addSeparator()
         reset_action = declare_inspection(
@@ -373,17 +345,10 @@ class UIManager:
         self.main_window.workspace.reset_layout()
 
     def create_timeline_menu(self, menu_bar: QMenuBar) -> None:
-        """Create timeline grouping and calendar actions."""
+        """Keep deliberate timeline operations outside configuration."""
         timeline_menu = declare_inspection(
             menu_bar.addMenu("Timeline"),
             "src-app-ui-manager-uimanager-create-timeline-menu-timeline-menu|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-timeline-menu-timeline-menu",
-        )
-        self.grouping_config_action = declare_inspection(
-            timeline_menu.addAction("Configure Grouping..."),
-            "src-app-ui-manager-uimanager-create-timeline-menu-self-grouping-config-action|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-timeline-menu-self-grouping-config-action",
-        )
-        self.grouping_config_action.triggered.connect(
-            self.main_window.grouping_manager.on_configure_grouping_requested
         )
         self.grouping_clear_action = declare_inspection(
             timeline_menu.addAction("Clear Grouping"),
@@ -392,62 +357,16 @@ class UIManager:
         self.grouping_clear_action.triggered.connect(
             self.main_window.grouping_manager.on_clear_grouping_requested
         )
-        timeline_menu.addSeparator()
-        calendar_action = declare_inspection(
-            timeline_menu.addAction("Calendar Configuration..."),
-            "src-app-ui-manager-uimanager-create-timeline-menu-calendar-action|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-timeline-menu-calendar-action",
-        )
-        calendar_action.triggered.connect(self._open_calendar_config)
 
     def create_settings_menu(self, menu_bar: QMenuBar) -> None:
-        """Create AI and editing preference actions."""
-        settings_menu = declare_inspection(
-            menu_bar.addMenu("Settings"),
-            "src-app-ui-manager-uimanager-create-settings-menu-settings-menu|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-settings-menu-settings-menu",
+        """Expose one direct Settings action without a submenu."""
+        action = declare_inspection(
+            menu_bar.addAction("Settings"),
+            "settings.center.open|settings.center|help-inspect-settings-center-open",
         )
-        settings_menu.setToolTipsVisible(True)
-        search_settings_action = declare_inspection(
-            settings_menu.addAction("AI Search Index and Settings..."),
-            "src-app-ui-manager-uimanager-create-settings-menu-search-settings-action|settings.ai|help-inspect-src-app-ui-manager-uimanager-create-settings-menu-search-settings-action",
+        action.triggered.connect(
+            lambda: self.main_window.app_coordinator.settings.open_settings()
         )
-        search_settings_action.triggered.connect(
-            self.main_window.ai_search_manager.show_ai_settings_dialog
-        )
-        settings_menu.addSeparator()
-
-        from src.app.constants import SETTINGS_AUTO_RELATION_KEY
-
-        self.auto_relation_action = declare_inspection(
-            settings_menu.addAction("Auto-Create Relations from Wikilinks"),
-            "src-app-ui-manager-uimanager-create-settings-menu-self-auto-relation-action|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-settings-menu-self-auto-relation-action",
-        )
-        self.auto_relation_action.setCheckable(True)
-        self.auto_relation_action.setToolTip(
-            "When enabled, saving a wiki link creates a mentions relation to its target."
-        )
-        self.auto_relation_action.triggered.connect(
-            self.main_window.toggle_auto_relation_setting
-        )
-        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        self.auto_relation_action.setChecked(
-            cast(
-                bool,
-                settings.value(SETTINGS_AUTO_RELATION_KEY, False, type=bool),
-            )
-        )
-
-        self.longform_refresh_action = declare_inspection(
-            settings_menu.addAction("Auto-Refresh Longform Editor"),
-            "src-app-ui-manager-uimanager-create-settings-menu-self-longform-refresh-action|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-settings-menu-self-longform-refresh-action",
-        )
-        self.longform_refresh_action.setCheckable(True)
-        self.longform_refresh_action.triggered.connect(
-            self.main_window.toggle_longform_auto_refresh
-        )
-        self.longform_refresh_action.setChecked(
-            cast(bool, settings.value("longform_auto_refresh", True, type=bool))
-        )
-        self._calendar_dialog_pending = False
 
     def create_help_menu(self, menu_bar: QMenuBar) -> None:
         """Compose contextual Help and retain shortcut and About actions."""
@@ -510,30 +429,8 @@ class UIManager:
         )
 
     def show_calendar_dialog(self, current_config: Optional[Any]) -> None:
-        """Show calendar configuration after its worker snapshot arrives."""
+        """Reveal the shared calendar page after an explicit configuration request."""
         if not self._calendar_dialog_pending:
             return
         self._calendar_dialog_pending = False
-
-        from src.commands.base_command import BaseCommand
-        from src.commands.calendar_commands import (
-            CreateCalendarConfigCommand,
-            SetActiveCalendarCommand,
-            UpdateCalendarConfigCommand,
-        )
-        from src.gui.dialogs.calendar_config_dialog import CalendarConfigDialog
-
-        dialog = CalendarConfigDialog(self._window_widget, config=current_config)
-
-        def on_config_saved(config: Any) -> None:
-            command: BaseCommand
-            if current_config and current_config.id == config.id:
-                command = UpdateCalendarConfigCommand(config)
-            else:
-                command = CreateCalendarConfigCommand(config)
-            self.main_window.command_requested.emit(command)
-            self.main_window.command_requested.emit(SetActiveCalendarCommand(config.id))
-            self._request_calendar_config()
-
-        dialog.config_saved.connect(on_config_saved)
-        dialog.exec()
+        self.main_window.app_coordinator.settings.open_settings("world.calendar")

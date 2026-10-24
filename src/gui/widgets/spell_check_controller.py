@@ -27,12 +27,15 @@ class _Settings:
 
 
 def _settings() -> _Settings:
+    from src.services.language_tool_service import language_tool_credentials
+
     settings = QSettings()
+    username, api_key = language_tool_credentials(settings)
     return _Settings(
         cast(bool, settings.value("SpellCheck/enabled", False, type=bool)),
         cast(str, settings.value("SpellCheck/language", "auto")),
-        cast(str, settings.value("SpellCheck/username", "")),
-        cast(str, settings.value("SpellCheck/api_key", "")),
+        username,
+        api_key,
     )
 
 

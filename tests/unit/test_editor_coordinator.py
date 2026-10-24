@@ -7,13 +7,7 @@ extracted from MainWindow into a focused coordinator.
 from unittest.mock import MagicMock, patch
 
 import pytest
-from PySide6.QtCore import QObject, QSettings, Signal
-
-from src.app.constants import (
-    SETTINGS_AUTO_RELATION_KEY,
-    WINDOW_SETTINGS_APP,
-    WINDOW_SETTINGS_KEY,
-)
+from PySide6.QtCore import QObject, Signal
 
 
 class FakeMainWindow(QObject):
@@ -334,9 +328,7 @@ class TestUpdateOperations:
         self, coordinator, fake_window
     ):
         """Updating event with description should emit CompositeCommand."""
-        QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP).setValue(
-            SETTINGS_AUTO_RELATION_KEY, True
-        )
+        coordinator.auto_create_relations = True
         signals = []
         fake_window.command_requested.connect(lambda cmd: signals.append(cmd))
 
@@ -353,9 +345,7 @@ class TestUpdateOperations:
         self, coordinator, fake_window
     ):
         """Clearing a description must remove stale derived mentions on save."""
-        QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP).setValue(
-            SETTINGS_AUTO_RELATION_KEY, True
-        )
+        coordinator.auto_create_relations = True
         signals = []
         fake_window.command_requested.connect(lambda cmd: signals.append(cmd))
 
@@ -388,9 +378,7 @@ class TestUpdateOperations:
         self, coordinator, fake_window
     ):
         """Updating entity with description should emit CompositeCommand."""
-        QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP).setValue(
-            SETTINGS_AUTO_RELATION_KEY, True
-        )
+        coordinator.auto_create_relations = True
         signals = []
         fake_window.command_requested.connect(lambda cmd: signals.append(cmd))
 
@@ -603,9 +591,7 @@ class TestMapInlineCreation:
     ):
         from src.core.map import Map
 
-        db_service.insert_map(
-            Map(id="map-1", name="Test Map", image_path="test.png")
-        )
+        db_service.insert_map(Map(id="map-1", name="Test Map", image_path="test.png"))
         signals = []
         fake_window.command_requested.connect(lambda command: signals.append(command))
         coordinator.on_map_create_marker_object(
@@ -627,9 +613,7 @@ class TestMapInlineCreation:
         assert result.data["marker_map_ids"] == ["map-1"]
         assert db_service.get_entity("location-1") is not None
         assert (
-            db_service.get_marker_by_composite(
-                "map-1", "location-1", "entity"
-            )
+            db_service.get_marker_by_composite("map-1", "location-1", "entity")
             is not None
         )
 
@@ -637,8 +621,5 @@ class TestMapInlineCreation:
 
         assert db_service.get_entity("location-1") is None
         assert (
-            db_service.get_marker_by_composite(
-                "map-1", "location-1", "entity"
-            )
-            is None
+            db_service.get_marker_by_composite("map-1", "location-1", "entity") is None
         )

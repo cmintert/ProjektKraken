@@ -330,47 +330,10 @@ class GraphWidget(QWidget):
             self.filter_changed.emit()
 
     def show_lexicon_editor(self) -> None:
-        """Opens the Visual Lexicon Editor dialog.
+        """Reveal the embedded world graph style editor."""
+        from src.gui.utils.settings_navigation import request_settings
 
-        Lets the user configure per-type colors, shapes, icons (for entities)
-        and per-type colors, widths, dashes (for relations).  On accept the
-        updated raw config is emitted via *lexicon_save_requested* so the
-        coordinator can persist it and reload the graph.
-        """
-        from PySide6.QtWidgets import QDialog
-
-        from src.gui.dialogs.lexicon_editor_dialog import LexiconEditorDialog
-
-        # Cache current state for revert
-        original_raw = self._raw_lexicon
-
-        dialog = LexiconEditorDialog(
-            parent=self,
-            entity_types=self._available_entity_types,
-            relation_types=self._available_rel_types,
-            current_config=self._raw_lexicon,
-            assets_dir=self._world_assets_dir,
-        )
-        self._lexicon_editor = dialog
-        dialog.icon_picker_created.connect(self.icon_picker_created.emit)
-        self.lexicon_editor_created.emit(dialog)
-
-        # Connect for immediate preview
-        dialog.config_changed.connect(self._on_lexicon_preview_requested)
-
-        result = dialog.exec()
-        self._lexicon_editor = None
-
-        if result == QDialog.DialogCode.Accepted:
-            new_config = dialog.get_lexicon_config()
-            self._raw_lexicon = new_config
-            self._logger.info("Lexicon updated via editor dialog")
-            self.lexicon_save_requested.emit(new_config)
-            # Ensure final state is consistent (though preview should have updated it)
-            self._on_lexicon_preview_requested(new_config)
-        else:
-            # Revert to original state on Cancel
-            self._on_lexicon_preview_requested(original_raw)
+        request_settings("world.lexicon", "world")
 
     def _on_lexicon_preview_requested(self, config: dict[str, Any]) -> None:
         """Updates the graph display immediately based on new lexicon config.

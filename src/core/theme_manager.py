@@ -84,7 +84,13 @@ class ThemeManager(QObject, BaseThemeManager):
         # Emit Qt signal
         self.theme_changed.emit(theme_data)
 
-    def set_theme(self, theme_name: str, app: Optional[QApplication] = None) -> None:
+    def set_theme(
+        self,
+        theme_name: str,
+        app: Optional[QApplication] = None,
+        *,
+        persist: bool = True,
+    ) -> None:
         """Switches the current theme and updates the application.
 
         Args:
@@ -112,8 +118,9 @@ class ThemeManager(QObject, BaseThemeManager):
         # Persist selection
         from PySide6.QtCore import QSettings
 
-        settings = QSettings("ProjektKraken", "ThemeSettings")
-        settings.setValue("current_theme", theme_name)
+        if persist:
+            settings = QSettings("ProjektKraken", "ThemeSettings")
+            settings.setValue("current_theme", theme_name)
 
         logger.info(f"Theme switched to: {theme_name}")
 

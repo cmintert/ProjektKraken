@@ -1248,7 +1248,7 @@
       "source": "src/gui/dialogs/event_chronology_dialog.py",
       "symbol": "EventChronologyDialog._add_row",
       "binding": "more",
-      "label": "Gap\u2026",
+      "label": "Gap…",
       "kind": "QPushButton"
     },
     {
@@ -1488,7 +1488,7 @@
       "source": "src/gui/dialogs/generation_review_dialog.py",
       "symbol": "GenerationReviewDialog._setup_ui",
       "binding": "self.thumbs_up_btn",
-      "label": "\ud83d\udc4d",
+      "label": "👍",
       "kind": "QPushButton"
     },
     {
@@ -1498,7 +1498,7 @@
       "source": "src/gui/dialogs/generation_review_dialog.py",
       "symbol": "GenerationReviewDialog._setup_ui",
       "binding": "self.thumbs_down_btn",
-      "label": "\ud83d\udc4e",
+      "label": "👎",
       "kind": "QPushButton"
     },
     {
@@ -1588,7 +1588,7 @@
       "source": "src/gui/dialogs/grouping_config_dialog.py",
       "symbol": "GroupingConfigDialog._setup_ui",
       "binding": "self.btn_up",
-      "label": "\u25b2",
+      "label": "▲",
       "kind": "QPushButton"
     },
     {
@@ -1598,7 +1598,7 @@
       "source": "src/gui/dialogs/grouping_config_dialog.py",
       "symbol": "GroupingConfigDialog._setup_ui",
       "binding": "self.btn_down",
-      "label": "\u25bc",
+      "label": "▼",
       "kind": "QPushButton"
     },
     {
@@ -1668,7 +1668,7 @@
       "source": "src/gui/dialogs/icon_metadata_dialog.py",
       "symbol": "IconMetadataDialog.__init__",
       "binding": "self.anchor_x",
-      "label": "Anchor X (left \u2192 right)",
+      "label": "Anchor X (left → right)",
       "kind": "ScrollSafeDoubleSpinBox"
     },
     {
@@ -1678,7 +1678,7 @@
       "source": "src/gui/dialogs/icon_metadata_dialog.py",
       "symbol": "IconMetadataDialog.__init__",
       "binding": "self.anchor_y",
-      "label": "Anchor Y (top \u2192 bottom)",
+      "label": "Anchor Y (top → bottom)",
       "kind": "ScrollSafeDoubleSpinBox"
     },
     {
@@ -1708,7 +1708,7 @@
       "source": "src/gui/dialogs/icon_picker_dialog.py",
       "symbol": "ProjectIconCard._show_context_menu",
       "binding": "edit",
-      "label": "Edit Icon\u2026",
+      "label": "Edit Icon…",
       "kind": "addAction"
     },
     {
@@ -1718,7 +1718,7 @@
       "source": "src/gui/dialogs/icon_picker_dialog.py",
       "symbol": "ProjectIconCard._show_context_menu",
       "binding": "delete",
-      "label": "Delete Icon\u2026",
+      "label": "Delete Icon…",
       "kind": "addAction"
     },
     {
@@ -1748,7 +1748,7 @@
       "source": "src/gui/dialogs/icon_picker_dialog.py",
       "symbol": "IconPickerDialog._setup_ui",
       "binding": "self._import_btn",
-      "label": "Import Icons\u2026",
+      "label": "Import Icons…",
       "kind": "QPushButton"
     },
     {
@@ -2028,7 +2028,7 @@
       "source": "src/gui/dialogs/lexicon_editor_dialog.py",
       "symbol": "LexiconEditorDialog._add_node_row",
       "binding": "clear_btn",
-      "label": "\u2716",
+      "label": "✖",
       "kind": "QPushButton"
     },
     {
@@ -2118,7 +2118,7 @@
       "source": "src/gui/dialogs/map_object_picker_dialog.py",
       "symbol": "MapObjectPickerDialog.__init__",
       "binding": "self.new_entity_button",
-      "label": "+ New Entity\u2026",
+      "label": "+ New Entity…",
       "kind": "QPushButton"
     },
     {
@@ -2288,7 +2288,7 @@
       "source": "src/gui/dialogs/raster_query_dialog.py",
       "symbol": "RasterQueryDialog._build_ui",
       "binding": "self._btn_remove",
-      "label": "\u2212 Remove last",
+      "label": "− Remove last",
       "kind": "QPushButton"
     },
     {
@@ -2498,7 +2498,7 @@
       "source": "src/gui/dialogs/transfer_dialog.py",
       "symbol": "TransferDialog.__init__",
       "binding": "self.next",
-      "label": "Review\u2026",
+      "label": "Review…",
       "kind": "QPushButton"
     },
     {
@@ -2638,7 +2638,7 @@
       "source": "src/gui/dialogs/transfer_dialog.py",
       "symbol": "TransferDialog._build_export",
       "binding": "choose",
-      "label": "Choose destination\u2026",
+      "label": "Choose destination…",
       "kind": "QPushButton"
     },
     {
@@ -2668,7 +2668,7 @@
       "source": "src/gui/dialogs/transfer_dialog.py",
       "symbol": "TransferDialog._build_world",
       "binding": "self.package_button",
-      "label": "Choose package\u2026",
+      "label": "Choose package…",
       "kind": "QPushButton"
     },
     {
@@ -2798,7 +2798,7 @@
       "source": "src/gui/dialogs/transfer_dialog.py",
       "symbol": "TransferDialog._build_results",
       "binding": "save",
-      "label": "Save report\u2026",
+      "label": "Save report…",
       "kind": "QPushButton"
     },
     {
@@ -3098,7 +3098,7 @@
       "source": "src/gui/widgets/compact_date_widget.py",
       "symbol": "CompactDateWidget._setup_text_first",
       "binding": "self.date_fields_button",
-      "label": "Date details & uncertainty\u2026",
+      "label": "Date details & uncertainty…",
       "kind": "DisclosureButton"
     },
     {
@@ -3118,7 +3118,7 @@
       "source": "src/gui/widgets/compact_date_widget.py",
       "symbol": "CompactDateWidget._setup_text_first",
       "binding": "self.limits_button",
-      "label": "Possible date limits\u2026",
+      "label": "Possible date limits…",
       "kind": "WrappingPushButton"
     },
     {
@@ -3358,7 +3358,7 @@
       "source": "src/gui/widgets/context_tag_bar.py",
       "symbol": "ContextTagBar.__init__",
       "binding": "self.btn_edit",
-      "label": "Set\u2026",
+      "label": "Set…",
       "kind": "QPushButton"
     },
     {
@@ -4062,16 +4062,6 @@
       "kind": "QComboBox"
     },
     {
-      "id": "src-gui-widgets-graph-view-graph-filter-bar-graphfilterbar-setup-ui-self-lexicon-btn",
-      "topic_id": "graph.exploring",
-      "target": "help-inspect-src-gui-widgets-graph-view-graph-filter-bar-graphfilterbar-setup-ui-self-lexicon-btn",
-      "source": "src/gui/widgets/graph_view/graph_filter_bar.py",
-      "symbol": "GraphFilterBar._setup_ui",
-      "binding": "self._lexicon_btn",
-      "label": "Lexicon",
-      "kind": "QPushButton"
-    },
-    {
       "id": "src-gui-widgets-graph-view-graph-filter-bar-graphfilterbar-setup-ui-self-refresh-btn",
       "topic_id": "graph.exploring",
       "target": "help-inspect-src-gui-widgets-graph-view-graph-filter-bar-graphfilterbar-setup-ui-self-refresh-btn",
@@ -4108,7 +4098,7 @@
       "source": "src/gui/widgets/history_panel.py",
       "symbol": "HistoryPanelWidget._setup_ui",
       "binding": "self.undo_btn",
-      "label": "\u27f2 Undo",
+      "label": "⟲ Undo",
       "kind": "StandardButton"
     },
     {
@@ -4118,7 +4108,7 @@
       "source": "src/gui/widgets/history_panel.py",
       "symbol": "HistoryPanelWidget._setup_ui",
       "binding": "self.redo_btn",
-      "label": "\u27f3 Redo",
+      "label": "⟳ Redo",
       "kind": "StandardButton"
     },
     {
@@ -4128,7 +4118,7 @@
       "source": "src/gui/widgets/history_panel.py",
       "symbol": "HistoryPanelWidget._setup_ui",
       "binding": "self.clear_btn",
-      "label": "\u2715 Clear",
+      "label": "✕ Clear",
       "kind": "DestructiveButton"
     },
     {
@@ -4378,7 +4368,7 @@
       "source": "src/gui/widgets/longform/editor.py",
       "symbol": "LongformEditorWidget._setup_ui",
       "binding": "self.btn_add",
-      "label": "Add content\u2026",
+      "label": "Add content…",
       "kind": "QPushButton"
     },
     {
@@ -4648,7 +4638,7 @@
       "source": "src/gui/widgets/longform/outline.py",
       "symbol": "LongformOutlineWidget.populate_actions_menu",
       "binding": "delete_action",
-      "label": "Delete from world\u2026",
+      "label": "Delete from world…",
       "kind": "QAction"
     },
     {
@@ -4928,7 +4918,7 @@
       "source": "src/gui/widgets/map/map_layer_panel.py",
       "symbol": "MapLayerPanel._build_header",
       "binding": "self._temporal_count_button",
-      "label": "0 in date \u00b7 0 outside",
+      "label": "0 in date · 0 outside",
       "kind": "QPushButton"
     },
     {
@@ -5258,7 +5248,7 @@
       "source": "src/gui/widgets/map/map_layer_panel.py",
       "symbol": "MapLayerPanel._show_context_menu",
       "binding": "action_jump",
-      "label": "\u21b0 Jump Playhead Here",
+      "label": "↰ Jump Playhead Here",
       "kind": "addAction"
     },
     {
@@ -5278,7 +5268,7 @@
       "source": "src/gui/widgets/map/map_layer_panel.py",
       "symbol": "MapLayerPanel._show_context_menu",
       "binding": "action_del",
-      "label": "\ud83d\uddd1 Delete Snapshot",
+      "label": "🗑 Delete Snapshot",
       "kind": "addAction"
     },
     {
@@ -5308,7 +5298,7 @@
       "source": "src/gui/widgets/map/map_layer_panel.py",
       "symbol": "MapLayerPanel._show_context_menu",
       "binding": "action_rename",
-      "label": "Rename\u2026",
+      "label": "Rename…",
       "kind": "addAction"
     },
     {
@@ -5318,7 +5308,7 @@
       "source": "src/gui/widgets/map/map_layer_panel.py",
       "symbol": "MapLayerPanel._show_context_menu",
       "binding": "action_properties",
-      "label": "Properties\u2026",
+      "label": "Properties…",
       "kind": "addAction"
     },
     {
@@ -5328,7 +5318,7 @@
       "source": "src/gui/widgets/map/map_layer_panel.py",
       "symbol": "MapLayerPanel._show_context_menu",
       "binding": "temporal_action",
-      "label": "Temporal Validity\u2026",
+      "label": "Temporal Validity…",
       "kind": "addAction"
     },
     {
@@ -5348,7 +5338,7 @@
       "source": "src/gui/widgets/map/map_layer_panel.py",
       "symbol": "MapLayerPanel._show_context_menu",
       "binding": "action_group",
-      "label": "New Group\u2026",
+      "label": "New Group…",
       "kind": "addAction"
     },
     {
@@ -5358,7 +5348,7 @@
       "source": "src/gui/widgets/map/map_layer_panel.py",
       "symbol": "MapLayerPanel._show_context_menu",
       "binding": "action_raster",
-      "label": "New Raster Layer\u2026",
+      "label": "New Raster Layer…",
       "kind": "addAction"
     },
     {
@@ -5368,7 +5358,7 @@
       "source": "src/gui/widgets/map/map_layer_panel.py",
       "symbol": "MapLayerPanel._populate_feature_layer_actions",
       "binding": "properties",
-      "label": "Layer properties\u2026",
+      "label": "Layer properties…",
       "kind": "addAction"
     },
     {
@@ -5378,7 +5368,7 @@
       "source": "src/gui/widgets/map/map_layer_panel.py",
       "symbol": "MapLayerPanel._populate_feature_layer_actions",
       "binding": "rename",
-      "label": "Rename\u2026",
+      "label": "Rename…",
       "kind": "addAction"
     },
     {
@@ -5508,7 +5498,7 @@
       "source": "src/gui/widgets/map/raster_layer_dialog.py",
       "symbol": "RasterLayerDialog.__init__",
       "binding": "self._browse_btn",
-      "label": "Browse\u2026",
+      "label": "Browse…",
       "kind": "QPushButton"
     },
     {
@@ -5518,7 +5508,7 @@
       "source": "src/gui/widgets/map/raster_layer_dialog.py",
       "symbol": "RasterLayerDialog.__init__",
       "binding": "self._clear_btn",
-      "label": "\u2715",
+      "label": "✕",
       "kind": "QPushButton"
     },
     {
@@ -5578,7 +5568,7 @@
       "source": "src/gui/widgets/map/raster_palette_editor.py",
       "symbol": "RasterPaletteEditor._build_discrete_ui",
       "binding": "btn_auto_color",
-      "label": "\ud83c\udfa8 Auto-color",
+      "label": "🎨 Auto-color",
       "kind": "QPushButton"
     },
     {
@@ -5588,7 +5578,7 @@
       "source": "src/gui/widgets/map/raster_palette_editor.py",
       "symbol": "RasterPaletteEditor._build_discrete_ui",
       "binding": "btn_export",
-      "label": "\u2b06 Export\u2026",
+      "label": "⬆ Export…",
       "kind": "QPushButton"
     },
     {
@@ -5598,7 +5588,7 @@
       "source": "src/gui/widgets/map/raster_palette_editor.py",
       "symbol": "RasterPaletteEditor._build_discrete_ui",
       "binding": "btn_import",
-      "label": "\u2b07 Import\u2026",
+      "label": "⬇ Import…",
       "kind": "QPushButton"
     },
     {
@@ -5788,7 +5778,7 @@
       "source": "src/gui/widgets/map/raster_palette_editor.py",
       "symbol": "RasterPaletteEditor._add_stop_row",
       "binding": "del_btn",
-      "label": "\u2715",
+      "label": "✕",
       "kind": "QPushButton"
     },
     {
@@ -5848,7 +5838,7 @@
       "source": "src/gui/widgets/map/raster_palette_editor.py",
       "symbol": "RasterPaletteEditor._add_entry_row",
       "binding": "remove_btn",
-      "label": "\u2715",
+      "label": "✕",
       "kind": "QPushButton"
     },
     {
@@ -5938,7 +5928,7 @@
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._build_breadcrumb",
       "binding": "self.btn_parent",
-      "label": "\u2191",
+      "label": "↑",
       "kind": "QPushButton"
     },
     {
@@ -6028,7 +6018,7 @@
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._build_trajectory_date_controls",
       "binding": "self.btn_trajectory_date_previous",
-      "label": "\u22121 day",
+      "label": "−1 day",
       "kind": "QPushButton"
     },
     {
@@ -6308,7 +6298,7 @@
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._build_mode_controls",
       "binding": "self.mode_indicator",
-      "label": "\u25cf Normal",
+      "label": "● Normal",
       "kind": "QPushButton"
     },
     {
@@ -6338,7 +6328,7 @@
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._show_map_overflow_menu",
       "binding": "register_action",
-      "label": "Register as Detail Map\u2026",
+      "label": "Register as Detail Map…",
       "kind": "addAction"
     },
     {
@@ -6358,7 +6348,7 @@
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._show_map_overflow_menu",
       "binding": "edit_footprint_action",
-      "label": "Edit Footprint\u2026",
+      "label": "Edit Footprint…",
       "kind": "addAction"
     },
     {
@@ -6488,7 +6478,7 @@
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring.__init__",
       "binding": "addAction",
-      "label": "Add detailed relation\u2026",
+      "label": "Add detailed relation…",
       "kind": "addAction"
     },
     {
@@ -6498,7 +6488,7 @@
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring.__init__",
       "binding": "addAction",
-      "label": "Full relation editor\u2026",
+      "label": "Full relation editor…",
       "kind": "addAction"
     },
     {
@@ -6538,7 +6528,7 @@
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._progressive_form",
       "binding": "self.timing_disclosure",
-      "label": "Timing\u2026",
+      "label": "Timing…",
       "kind": "DisclosureButton"
     },
     {
@@ -6718,7 +6708,7 @@
       "source": "src/gui/widgets/relation_form.py",
       "symbol": "RelationForm._group_boundaries",
       "binding": "disclosure",
-      "label": "Event offset\u2026",
+      "label": "Event offset…",
       "kind": "DisclosureButton"
     },
     {
@@ -6838,7 +6828,7 @@
       "source": "src/gui/widgets/relation_item_widget.py",
       "symbol": "RelationItemWidget._setup_ui",
       "binding": "self.btn_go_to",
-      "label": "\u2192",
+      "label": "→",
       "kind": "StandardButton"
     },
     {
@@ -6978,7 +6968,7 @@
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._build_row_context_menu",
       "binding": "act",
-      "label": "\u2b06 Insert Row Above",
+      "label": "⬆ Insert Row Above",
       "kind": "addAction"
     },
     {
@@ -6988,7 +6978,7 @@
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._build_row_context_menu",
       "binding": "act",
-      "label": "\u2b07 Insert Row Below",
+      "label": "⬇ Insert Row Below",
       "kind": "addAction"
     },
     {
@@ -6998,7 +6988,7 @@
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._build_row_context_menu",
       "binding": "act",
-      "label": "\u2b1c Add Spacer to Row",
+      "label": "⬜ Add Spacer to Row",
       "kind": "addAction"
     },
     {
@@ -7008,7 +6998,7 @@
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._build_row_context_menu",
       "binding": "act",
-      "label": "\u2715 Remove Spacers from Row",
+      "label": "✕ Remove Spacers from Row",
       "kind": "addAction"
     },
     {
@@ -7038,7 +7028,7 @@
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._build_row_context_menu",
       "binding": "act",
-      "label": "\ud83d\uddd1 Delete Row",
+      "label": "🗑 Delete Row",
       "kind": "addAction"
     },
     {
@@ -7048,7 +7038,7 @@
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._build_row_context_menu",
       "binding": "act",
-      "label": "\u2500\u2500 Add Divider",
+      "label": "── Add Divider",
       "kind": "addAction"
     },
     {
@@ -7058,7 +7048,7 @@
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._build_row_context_menu",
       "binding": "act",
-      "label": "\ud835\udc13 Add Text",
+      "label": "𝐓 Add Text",
       "kind": "addAction"
     },
     {
@@ -7068,7 +7058,7 @@
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._build_row_context_menu",
       "binding": "act",
-      "label": "\ud835\udc07 Add Header",
+      "label": "𝐇 Add Header",
       "kind": "addAction"
     },
     {
@@ -7078,7 +7068,7 @@
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._build_empty_context_menu",
       "binding": "act",
-      "label": "\uff0b Add Attribute",
+      "label": "＋ Add Attribute",
       "kind": "addAction"
     },
     {
@@ -7088,7 +7078,7 @@
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._build_empty_context_menu",
       "binding": "act",
-      "label": "\u2500\u2500 Add Divider",
+      "label": "── Add Divider",
       "kind": "addAction"
     },
     {
@@ -7098,7 +7088,7 @@
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._build_empty_context_menu",
       "binding": "act",
-      "label": "\ud835\udc13 Add Text",
+      "label": "𝐓 Add Text",
       "kind": "addAction"
     },
     {
@@ -7108,7 +7098,7 @@
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._build_empty_context_menu",
       "binding": "act",
-      "label": "\ud835\udc07 Add Header",
+      "label": "𝐇 Add Header",
       "kind": "addAction"
     },
     {
@@ -7288,7 +7278,7 @@
       "source": "src/gui/widgets/temporal_range_widget.py",
       "symbol": "TemporalRangeWidget._setup_ui",
       "binding": "self.range_button",
-      "label": "End date / duration\u2026",
+      "label": "End date / duration…",
       "kind": "DisclosureButton"
     },
     {
@@ -7318,7 +7308,7 @@
       "source": "src/gui/widgets/temporal_range_widget.py",
       "symbol": "TemporalRangeWidget._setup_ui",
       "binding": "self.enter_end_button",
-      "label": "Specify an end date instead\u2026",
+      "label": "Specify an end date instead…",
       "kind": "QPushButton"
     },
     {
@@ -7328,7 +7318,7 @@
       "source": "src/gui/widgets/timeline/__init__.py",
       "symbol": "TimelineWidget.__init__",
       "binding": "self.btn_step_back",
-      "label": "\u25c4",
+      "label": "◄",
       "kind": "QPushButton"
     },
     {
@@ -7338,7 +7328,7 @@
       "source": "src/gui/widgets/timeline/__init__.py",
       "symbol": "TimelineWidget.__init__",
       "binding": "self.btn_play_pause",
-      "label": "\u25b6",
+      "label": "▶",
       "kind": "QPushButton"
     },
     {
@@ -7348,7 +7338,7 @@
       "source": "src/gui/widgets/timeline/__init__.py",
       "symbol": "TimelineWidget.__init__",
       "binding": "self.btn_step_forward",
-      "label": "\u25ba",
+      "label": "►",
       "kind": "QPushButton"
     },
     {
@@ -7408,7 +7398,7 @@
       "source": "src/gui/widgets/timeline/__init__.py",
       "symbol": "TimelineWidget.__init__",
       "binding": "self.enter_date_action",
-      "label": "Enter a date\u2026",
+      "label": "Enter a date…",
       "kind": "addAction"
     },
     {
@@ -7848,7 +7838,7 @@
       "source": "src/gui/widgets/wiki_text_edit.py",
       "symbol": "WikiTextEditView._add_link_menu_actions",
       "binding": "action",
-      "label": "Link to entry\u2026",
+      "label": "Link to entry…",
       "kind": "addAction"
     },
     {
@@ -7938,7 +7928,7 @@
       "source": "src/gui/widgets/wiki_text_edit.py",
       "symbol": "WikiTextEdit._setup_link_controls",
       "binding": "self.action_link_entry",
-      "label": "Link to entry\u2026",
+      "label": "Link to entry…",
       "kind": "QAction"
     },
     {
@@ -8132,16 +8122,6 @@
       "kind": "addAction"
     },
     {
-      "id": "src-app-ui-manager-uimanager-create-file-menu-settings-action",
-      "topic_id": "world.backups",
-      "target": "help-inspect-src-app-ui-manager-uimanager-create-file-menu-settings-action",
-      "source": "src/app/ui_manager.py",
-      "symbol": "UIManager.create_file_menu",
-      "binding": "settings_action",
-      "label": "Backup Settings...",
-      "kind": "addAction"
-    },
-    {
       "id": "src-app-ui-manager-uimanager-create-file-menu-exit-action",
       "topic_id": "workspace.navigation",
       "target": "help-inspect-src-app-ui-manager-uimanager-create-file-menu-exit-action",
@@ -8209,16 +8189,6 @@
       "symbol": "UIManager.create_view_menu",
       "binding": "zones_menu",
       "label": "Zones",
-      "kind": "addMenu"
-    },
-    {
-      "id": "src-app-ui-manager-uimanager-create-view-menu-theme-menu",
-      "topic_id": "workspace.navigation",
-      "target": "help-inspect-src-app-ui-manager-uimanager-create-view-menu-theme-menu",
-      "source": "src/app/ui_manager.py",
-      "symbol": "UIManager.create_view_menu",
-      "binding": "theme_menu",
-      "label": "Theme",
       "kind": "addMenu"
     },
     {
@@ -8302,16 +8272,6 @@
       "kind": "addMenu"
     },
     {
-      "id": "src-app-ui-manager-uimanager-create-timeline-menu-self-grouping-config-action",
-      "topic_id": "workspace.navigation",
-      "target": "help-inspect-src-app-ui-manager-uimanager-create-timeline-menu-self-grouping-config-action",
-      "source": "src/app/ui_manager.py",
-      "symbol": "UIManager.create_timeline_menu",
-      "binding": "self.grouping_config_action",
-      "label": "Configure Grouping...",
-      "kind": "addAction"
-    },
-    {
       "id": "src-app-ui-manager-uimanager-create-timeline-menu-self-grouping-clear-action",
       "topic_id": "workspace.navigation",
       "target": "help-inspect-src-app-ui-manager-uimanager-create-timeline-menu-self-grouping-clear-action",
@@ -8319,56 +8279,6 @@
       "symbol": "UIManager.create_timeline_menu",
       "binding": "self.grouping_clear_action",
       "label": "Clear Grouping",
-      "kind": "addAction"
-    },
-    {
-      "id": "src-app-ui-manager-uimanager-create-timeline-menu-calendar-action",
-      "topic_id": "workspace.navigation",
-      "target": "help-inspect-src-app-ui-manager-uimanager-create-timeline-menu-calendar-action",
-      "source": "src/app/ui_manager.py",
-      "symbol": "UIManager.create_timeline_menu",
-      "binding": "calendar_action",
-      "label": "Calendar Configuration...",
-      "kind": "addAction"
-    },
-    {
-      "id": "src-app-ui-manager-uimanager-create-settings-menu-settings-menu",
-      "topic_id": "workspace.navigation",
-      "target": "help-inspect-src-app-ui-manager-uimanager-create-settings-menu-settings-menu",
-      "source": "src/app/ui_manager.py",
-      "symbol": "UIManager.create_settings_menu",
-      "binding": "settings_menu",
-      "label": "Settings",
-      "kind": "addMenu"
-    },
-    {
-      "id": "src-app-ui-manager-uimanager-create-settings-menu-search-settings-action",
-      "topic_id": "settings.ai",
-      "target": "help-inspect-src-app-ui-manager-uimanager-create-settings-menu-search-settings-action",
-      "source": "src/app/ui_manager.py",
-      "symbol": "UIManager.create_settings_menu",
-      "binding": "search_settings_action",
-      "label": "AI Search Index and Settings...",
-      "kind": "addAction"
-    },
-    {
-      "id": "src-app-ui-manager-uimanager-create-settings-menu-self-auto-relation-action",
-      "topic_id": "workspace.navigation",
-      "target": "help-inspect-src-app-ui-manager-uimanager-create-settings-menu-self-auto-relation-action",
-      "source": "src/app/ui_manager.py",
-      "symbol": "UIManager.create_settings_menu",
-      "binding": "self.auto_relation_action",
-      "label": "Auto-Create Relations from Wikilinks",
-      "kind": "addAction"
-    },
-    {
-      "id": "src-app-ui-manager-uimanager-create-settings-menu-self-longform-refresh-action",
-      "topic_id": "workspace.navigation",
-      "target": "help-inspect-src-app-ui-manager-uimanager-create-settings-menu-self-longform-refresh-action",
-      "source": "src/app/ui_manager.py",
-      "symbol": "UIManager.create_settings_menu",
-      "binding": "self.longform_refresh_action",
-      "label": "Auto-Refresh Longform Editor",
       "kind": "addAction"
     },
     {
@@ -8687,8 +8597,8 @@
       "target": "help-inspect-empty-longformeditorwidget-setup-ui-289",
       "source": "src/gui/widgets/longform/editor.py",
       "symbol": "LongformEditorWidget._setup_ui",
-      "binding": "empty-state Add content\u2026",
-      "label": "Add content\u2026",
+      "binding": "empty-state Add content…",
+      "label": "Add content…",
       "kind": "EmptyStateAction"
     },
     {
@@ -8879,16 +8789,6 @@
       "symbol": "UIManager.create_view_menu",
       "binding": "workspace.show-zone",
       "label": "Workspace zone",
-      "kind": "semantic control/action"
-    },
-    {
-      "id": "workspace.theme",
-      "topic_id": "workspace.navigation",
-      "target": "help-inspect-workspace-theme",
-      "source": "src/app/ui_manager.py",
-      "symbol": "UIManager.create_view_menu",
-      "binding": "workspace.theme",
-      "label": "Interface theme",
       "kind": "semantic control/action"
     },
     {
@@ -9100,6 +9000,96 @@
       "binding": "self.compact_action",
       "label": "Compact lanes",
       "kind": "addAction"
+    },
+    {
+      "id": "settings.center.search",
+      "topic_id": "settings.center",
+      "target": "help-inspect-settings-center-search",
+      "source": "src/gui/widgets/settings_center.py",
+      "symbol": "SettingsCenter._build_shell",
+      "binding": "self.search",
+      "label": "Search all settings",
+      "kind": "QLineEdit"
+    },
+    {
+      "id": "settings.center.scope",
+      "topic_id": "settings.center",
+      "target": "help-inspect-settings-center-scope",
+      "source": "src/gui/widgets/settings_center.py",
+      "symbol": "SettingsCenter._build_shell",
+      "binding": "self.scope",
+      "label": "Scope",
+      "kind": "QComboBox"
+    },
+    {
+      "id": "settings.center.navigation",
+      "topic_id": "settings.center",
+      "target": "help-inspect-settings-center-navigation",
+      "source": "src/gui/widgets/settings_center.py",
+      "symbol": "SettingsCenter._build_shell",
+      "binding": "self.navigation",
+      "label": "Categories and search results",
+      "kind": "QListWidget"
+    },
+    {
+      "id": "settings.center.apply",
+      "topic_id": "settings.center",
+      "target": "help-inspect-settings-center-apply",
+      "source": "src/gui/widgets/settings_center.py",
+      "symbol": "SettingsCenter._build_shell",
+      "binding": "self.apply_button",
+      "label": "Apply",
+      "kind": "PrimaryButton"
+    },
+    {
+      "id": "settings.center.ok",
+      "topic_id": "settings.center",
+      "target": "help-inspect-settings-center-ok",
+      "source": "src/gui/widgets/settings_center.py",
+      "symbol": "SettingsCenter._build_shell",
+      "binding": "self.ok_button",
+      "label": "OK",
+      "kind": "StandardButton"
+    },
+    {
+      "id": "settings.center.cancel",
+      "topic_id": "settings.center",
+      "target": "help-inspect-settings-center-cancel",
+      "source": "src/gui/widgets/settings_center.py",
+      "symbol": "SettingsCenter._build_shell",
+      "binding": "self.cancel_button",
+      "label": "Cancel",
+      "kind": "StandardButton"
+    },
+    {
+      "id": "settings.center.preference",
+      "topic_id": "settings.center",
+      "target": "help-inspect-settings-center-preference",
+      "source": "src/gui/widgets/settings_center.py",
+      "symbol": "SettingsCenter._field",
+      "binding": "control",
+      "label": "Scoped preference",
+      "kind": "Generated preference"
+    },
+    {
+      "id": "settings.center.exclusions",
+      "topic_id": "settings.center",
+      "target": "help-inspect-settings-center-exclusions",
+      "source": "src/gui/widgets/settings_center.py",
+      "symbol": "SettingsCenter.build_world_pages",
+      "binding": "excluded",
+      "label": "Index exclusions",
+      "kind": "QLineEdit"
+    },
+    {
+      "id": "settings.center.open",
+      "topic_id": "settings.center",
+      "target": "help-inspect-settings-center-open",
+      "source": "src/app/ui_manager.py",
+      "symbol": "UIManager.create_settings_menu",
+      "binding": "action",
+      "label": "Settings",
+      "kind": "QAction"
     }
   ],
   "factory_exemptions": [
@@ -9222,8 +9212,8 @@
     {
       "source": "src/app/ui_manager.py",
       "symbol": "UIManager.create_file_menu",
-      "sha256": "aaff121390cacbab40c7dfb35a6584a396a873cc26acf74ef8f274a68c71e311",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "cf51fcd158d60f6e70d2b15256fbf0c88c03e83fc67cd35bb9d4a76878a2e422",
+      "review_note": "KRT-55: removed the duplicate Backup Settings launcher. Create, restore and locate remain explicit File operations. The retained canonical anchor now points readers to Settings, Kraken, Backups & storage."
     },
     {
       "source": "src/app/ui_manager.py",
@@ -9240,20 +9230,20 @@
     {
       "source": "src/app/ui_manager.py",
       "symbol": "UIManager.create_settings_menu",
-      "sha256": "18ab4eecc5909b657d9872fc4caff3a6ae38410e4b2f50ba0a1fc78e90b4a092",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "895ded8ca83200f647a89175ced18156131c354724e02cfb876d44d4f3180462",
+      "review_note": "KRT-55: owner requested one direct Settings action with no dropdown and no alternate launchers. The action opens or raises the shared Center; configuration changes still require Apply. Removed menu toggles are available on the Center pages."
     },
     {
       "source": "src/app/ui_manager.py",
       "symbol": "UIManager.create_timeline_menu",
-      "sha256": "84478000fe0640f7297b542f76b458bec29189b9b3f0e7923346e1e3d742acbf",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "734f123588ab558df68d901ac6edacf194d8967244d34e083aae6625c2463e6b",
+      "review_note": "KRT-55: removed calendar and grouping configuration launchers. Clear Grouping remains an explicit operation. Calendar and grouping references now direct readers to Settings, This World, Timeline."
     },
     {
       "source": "src/app/ui_manager.py",
       "symbol": "UIManager.create_view_menu",
-      "sha256": "6cec8d7443c36e527fe52684cdc453586247991d2987562f5eb0a33b17a5b369",
-      "review_note": "Reviewed checked View > Panels actions: checking opens and activates the existing panel; unchecking closes it without deleting content. Menu state follows layout changes. Updated canonical workspace task and panel visibility explanation; zone and theme meanings remain unchanged."
+      "sha256": "01fa420fae59ff11c3297222975016acbdab5812d1b19a1271f73ae1bf994886",
+      "review_note": "KRT-55: removed Appearance settings from View at owner request. View retains panel, zone, focus-writing and layout operations. Theme configuration is documented under the direct Settings action."
     },
     {
       "source": "src/app/ui_manager.py",
@@ -11712,8 +11702,8 @@
     {
       "source": "src/gui/widgets/analysis/main_analysis_panel.py",
       "symbol": "MainAnalysisPanel._init_ui",
-      "sha256": "563cffaef988185c58a84eb185fefb6b1ce6fd997ee0819d40440a6b6ba0ff3e",
-      "review_note": "Reviewed panel inset/margin changes only in MainAnalysisPanel._init_ui: existing control identities, labels, eligibility, keyboard actions, task destinations and authoring state are unchanged. Canonical control explanations remain accurate; no new interaction or exception is introduced."
+      "sha256": "9848a4e2d232080e311e6f2666d4f9a405b4057a73cf576dbcfd1b1371fa7bc2",
+      "review_note": "KRT-55: Editorial checks emits a shared contextual preference intent. It still controls the optional editorial advice for subsequent runs."
     },
     {
       "source": "src/gui/widgets/analysis/temporal_panel.py",
@@ -12630,8 +12620,8 @@
     {
       "source": "src/gui/widgets/graph_view/graph_filter_bar.py",
       "symbol": "GraphFilterBar._setup_ui",
-      "sha256": "94390feb1926258c8db13b633240064fb0043584ca573fdff30d2faf0013fead",
-      "review_note": "Reviewed panel inset/margin changes only in GraphFilterBar._setup_ui: existing control identities, labels, eligibility, keyboard actions, task destinations and authoring state are unchanged. Canonical control explanations remain accurate; no new interaction or exception is introduced."
+      "sha256": "4923e29416fa0486360d2bf8d615515312fbaba145f7455ec6f289a600691be5",
+      "review_note": "KRT-55: removed the duplicate Lexicon settings launcher. Graph filters and Refresh remain unchanged. The canonical styles reference directs readers to Settings, This World, Graph."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
@@ -12732,8 +12722,8 @@
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
       "symbol": "GraphWidget.show_lexicon_editor",
-      "sha256": "479fa382507ac5a72ac9169a281ba74d44fcd3c3677cd5337e01c6b204e015e7",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "11f46f77c4a425c9fad3690ac20116b1dea0acf7fe68f62b281b1d34143afd2f",
+      "review_note": "KRT-55: graph style editing now opens This World / Graph in the Center. Preview stays in the draft; Apply persists and Cancel discards."
     },
     {
       "source": "src/gui/widgets/history_panel.py",
@@ -15816,8 +15806,8 @@
     {
       "source": "src/gui/widgets/timeline/__init__.py",
       "symbol": "TimelineWidget.set_playhead_event_snapping",
-      "sha256": "78a229e243a6cf07cba5fef646647a5b24e9b8b9a1906fd3c4c95326ff4c40cd",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "3a685e2f83cbf8ce5f28a94612a8551c148aab3db56f3760290082a345d6967d",
+      "review_note": "KRT-55: snapping intent uses the shared local adapter, preserving representative-anchor snapping and immediate contextual action semantics."
     },
     {
       "source": "src/gui/widgets/timeline/__init__.py",
@@ -16116,8 +16106,8 @@
     {
       "source": "src/gui/dialogs/spell_check_settings_dialog.py",
       "symbol": "SpellCheckSettingsDialog.__init__",
-      "sha256": "433f8cb6745cfd0006e711890cfe9de9cd4e56b4a8885176850c3b073ef6782e",
-      "review_note": "KRT-39: relocated settings dialog; opt-in, language, optional credentials and Save/Cancel meanings are unchanged. Stable Help targets retained."
+      "sha256": "7d9c0c87c73c353a7d926920b0a3da2ca7b8548659b2e825af618b319da121b1",
+      "review_note": "KRT-55: compatibility form reads OS-backed LanguageTool credentials; the production spelling route opens the shared Center."
     },
     {
       "source": "src/gui/dialogs/spell_check_settings_dialog.py",
@@ -16128,8 +16118,8 @@
     {
       "source": "src/gui/dialogs/spell_check_settings_dialog.py",
       "symbol": "SpellCheckSettingsDialog._save",
-      "sha256": "c782b83a7d017e3204d49e839bec520166e0bbd7e133917da3d897aef9153d0f",
-      "review_note": "KRT-39: relocated settings dialog; opt-in, language, optional credentials and Save/Cancel meanings are unchanged. Stable Help targets retained."
+      "sha256": "a3ba95ac34b38d729c51a61073c04771e16eff8cc2e8a4b63ec3fa4445c986fb",
+      "review_note": "KRT-55: credentials are removed from legacy plaintext only after secure writes succeed. Production Apply/Cancel is described in the Center reference."
     },
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
@@ -16386,8 +16376,8 @@
     {
       "source": "src/gui/widgets/writing_toolbar.py",
       "symbol": "WritingToolbarPresentation._view_actions",
-      "sha256": "20832119f64027b0412bfd11794251879a7566c7f85ae644b92eb91b766a072d",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "da1f2e721a6bac5330a89617ed96c27d8d35892f7893e440183177160020a091",
+      "review_note": "KRT-55: spelling is an immediate checked toggle through the shared adapter, with no Settings launcher. The reference distinguishes toggling checking from configuring language and credentials in the Center."
     },
     {
       "source": "src/gui/widgets/writing_toolbar.py",
@@ -16574,6 +16564,24 @@
       "symbol": "PaneContainer.add_panel",
       "sha256": "9ff6f8cc942cc76bae68430c3ac1ae2527815866bc2b7481108d6275cb9375d7",
       "review_note": "Reviewed the declared close button for every panel instance. It requests closing the panel tab while retaining the live widget and draft; View > Panels reopens it in its current zone. The canonical close-panel explanation describes this operation. Reopening and moving panels recreate the same declared control meaning."
+    },
+    {
+      "source": "src/gui/widgets/settings_center.py",
+      "symbol": "SettingsCenter._build_shell",
+      "sha256": "f78ff4e5c669f3adf814cf611119d48bb51aef037c2175c185e12b42569ea130",
+      "review_note": "KRT-55: reviewed one modeless shell with cross-scope search, visible scope captions, category/status navigation, responsive narrow stacking and shared Apply/OK/Cancel. Explanations remain accurate; edits never save through navigation."
+    },
+    {
+      "source": "src/gui/widgets/settings_center.py",
+      "symbol": "SettingsCenter._field",
+      "sha256": "c073965ca6c8d099397292fcacefbb44a55cade27c704d696083c2f9625867be",
+      "review_note": "KRT-55: reviewed shared draft navigation, explicit scope, Apply/OK/Cancel acknowledgement, reset eligibility and cross-scope search. Canonical meanings are in workspace.md."
+    },
+    {
+      "source": "src/gui/widgets/settings_center.py",
+      "symbol": "SettingsCenter.build_world_pages",
+      "sha256": "553dab7f09523e6ab01d2233270f21f0b7872d8dd9509859c697533977091cd8",
+      "review_note": "KRT-55: reviewed actual embedded calendar/grouping/graph/AI forms and world index exclusions. Qt.Widget embedding prevents independent dialogs; page navigation retains drafts and external writes require Apply."
     }
   ],
   "review_status": {

@@ -135,9 +135,10 @@ midpoint end as an exact historical date.
 
 ## Group events
 
-1. Open **Timeline → Configure Grouping…**.
+1. Open **Settings → This World → Timeline**.
 2. Choose the tags used to form timeline bands.
-3. Confirm the grouping.
+3. Choose **Apply** in Settings Center to save the grouping. Tag colours and
+   grouping order remain pending until you apply them.
 4. Use **Timeline → Clear Grouping** to return to the ungrouped view.
 
 Group labels can be renamed, recolored, or removed from the current grouping
@@ -147,9 +148,9 @@ through their context menu.
 
 ## Configure the calendar
 
-1. Open **Timeline → Calendar Configuration…**.
-2. Review the calendar settings before changing them and accept only the
-   intended configuration.
+1. Open **Settings → This World → Timeline**.
+2. Review **This World → Timeline** in Settings Center. Change only the intended
+   configuration, then choose **Apply**. **Cancel** discards unapplied changes.
 3. Check a known Event date and the Timeline ruler using the resulting calendar.
 
 Calendar configuration controls how stored lore days are formatted throughout

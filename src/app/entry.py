@@ -175,13 +175,14 @@ def main() -> None:
         # Check for reset settings flag
         if "--reset-settings" in sys.argv:
             logger.info("Resetting Application Settings...")
-            from PySide6.QtCore import QSettings
+            from src.services.local_settings import LocalSettingsAdapter
 
-            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-            settings.clear()
-            settings.sync()
+            LocalSettingsAdapter().reset_preferences()
             logger.info("Settings cleared. Starting in default state.")
 
+        from src.services.local_settings import LocalSettingsAdapter
+
+        LocalSettingsAdapter().apply_pending_workspace_reset()
         window = MainWindow()
         if splash is not None:
             splash.set_status("Loading world data…")

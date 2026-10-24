@@ -9,7 +9,9 @@ import logging
 from dataclasses import dataclass
 
 import requests  # type: ignore[import-untyped]  # Package has no py.typed marker.
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QObject, QSettings, Signal, Slot
+
+from src.services.secret_store import get_api_key
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +20,16 @@ ENDPOINT = "https://api.languagetool.org/v2/check"
 # Public-API free tier caps each request at 20 KB. Leave a small margin so the
 # encoded form payload (language + credentials) still fits.
 MAX_TEXT_BYTES = 20_000 - 512
+
+
+def language_tool_credentials(settings: QSettings) -> tuple[str, str]:
+    """Read secure credentials, retaining unmigrated values after keyring failure."""
+    return (
+        get_api_key("languagetool.username")
+        or str(settings.value("SpellCheck/username", "") or ""),
+        get_api_key("languagetool.api_key")
+        or str(settings.value("SpellCheck/api_key", "") or ""),
+    )
 
 
 @dataclass
@@ -152,8 +164,12 @@ class LanguageToolWorker(QObject):
     ) -> None:
         """Carry the editor request identity through the worker response."""
         self.check(
-            text, language, username, api_key,
-            request_id=request_id, document_revision=document_revision,
+            text,
+            language,
+            username,
+            api_key,
+            request_id=request_id,
+            document_revision=document_revision,
         )
 
     def _emit_results(

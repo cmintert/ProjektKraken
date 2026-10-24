@@ -130,8 +130,14 @@ class SpellCheckSettingsDialog(QDialog):
             self._language_combo.setCurrentIndex(idx)
         else:
             self._language_combo.setCurrentText(lang)
-        self._username_edit.setText(cast(str, s.value("username", "")))
-        self._apikey_edit.setText(cast(str, s.value("api_key", "")))
+        from src.services.secret_store import get_api_key
+
+        self._username_edit.setText(
+            get_api_key("languagetool.username") or cast(str, s.value("username", ""))
+        )
+        self._apikey_edit.setText(
+            get_api_key("languagetool.api_key") or cast(str, s.value("api_key", ""))
+        )
         s.endGroup()
 
     def _apply_style(self) -> None:
@@ -150,7 +156,15 @@ class SpellCheckSettingsDialog(QDialog):
         s.beginGroup("SpellCheck")
         s.setValue("enabled", self._enabled_cb.isChecked())
         s.setValue("language", self._language_combo.currentText())
-        s.setValue("username", self._username_edit.text())
-        s.setValue("api_key", self._apikey_edit.text())
+        from src.services.secret_store import set_api_key
+
+        for key, value in (
+            ("username", self._username_edit.text()),
+            ("api_key", self._apikey_edit.text()),
+        ):
+            if not set_api_key(f"languagetool.{key}", value):
+                s.endGroup()
+                return
+            s.remove(key)
         s.endGroup()
         self.accept()

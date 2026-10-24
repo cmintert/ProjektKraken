@@ -8,7 +8,7 @@ import logging
 import uuid
 from typing import Optional, cast
 
-from PySide6.QtCore import Qt, QThread, QTimer, Signal, Slot
+from PySide6.QtCore import QObject, Qt, QThread, QTimer, Signal, Slot
 from PySide6.QtGui import QStandardItemModel
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -76,7 +76,7 @@ class LMStudioDiscoveryWorker(QThread):
         base_url: str,
         api_key: str,
         timeout: float,
-        parent: Optional[QWidget] = None,
+        parent: Optional[QObject] = None,
     ) -> None:
         """Initialize LM Studio discovery for a configured endpoint."""
         super().__init__(parent)

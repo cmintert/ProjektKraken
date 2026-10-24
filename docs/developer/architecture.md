@@ -378,6 +378,31 @@ retry. The retry checks the dependencies again before deleting. References
 outside attached relations remain unresolved rather than becoming unbounded;
 undo restores the event anchor. See [temporal acceptance](temporal-acceptance.md).
 
+## Settings configuration
+
+`SettingsCoordinator` owns the modeless Settings Center, detached drafts,
+conflicts and persistence acknowledgements. Widgets render snapshots and emit
+intents. The main menu bar has one direct Settings action; immediate contextual
+controls use the GUI intent bus and the same coordinator adapters.
+
+`settings_registry` defines stable IDs, scopes, defaults, validation, search
+aliases and reset eligibility. `LocalSettingsAdapter` owns the canonical
+QSettings preference allowlist and OS credential migration. Workspace resets
+are scheduled for startup so ordinary shutdown cannot overwrite their result.
+
+`SettingsSnapshotWorker` is a feature endpoint on the existing database thread.
+Its provider is called only there; explicitly queued signals carry detached
+values and the database/request identity. `SettingsRepository` owns the
+versioned `system_meta.world_preferences` record and exact metadata restoration.
+Migration provenance remains present through preference resets.
+
+One `ApplyWorldSettingsCommand` applies a world patch through normal command
+execution and its transaction boundary. It checks the originating database and
+expected values before mutation, and serializes exact prior values for undo.
+Local preferences, credentials and world changes have separate acknowledgements;
+only failed groups stay pending. Runtime AI/theme/indexing caches derive from
+committed snapshots. Index rebuilding remains an explicit operation.
+
 ## UI rules
 
 - Use `StyleHelper` and `ThemeManager`; do not hardcode widget colours.

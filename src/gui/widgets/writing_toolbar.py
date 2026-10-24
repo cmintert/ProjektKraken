@@ -102,14 +102,14 @@ class WritingToolbarPresentation(QObject):
         owner.action_toggle_toc.setToolTip("Toggle Table of Contents sidebar")
         owner.action_toggle_toc.triggered.connect(owner._toggle_toc)
         owner.action_spell_check = declare_inspection(
-            QAction("Spelling settings", owner),
+            QAction("Spell & grammar checking", owner),
             "src-gui-widgets-writing-toolbar-writingtoolbarpresentation-view-actions-owner-action-spell-check|writing.edit|help-inspect-src-gui-widgets-writing-toolbar-writingtoolbarpresentation-view-actions-owner-action-spell-check",
         )
         owner.action_spell_check.setCheckable(True)
         owner.action_spell_check.setToolTip(
-            "Spell & grammar check settings (LanguageTool)"
+            "Enable or disable spell and grammar checking"
         )
-        owner.action_spell_check.triggered.connect(owner._open_spell_settings)
+        owner.action_spell_check.triggered.connect(owner._set_spell_check_enabled)
         owner.action_spell_check.setChecked(
             cast(bool, QSettings().value("SpellCheck/enabled", False, type=bool))
         )

@@ -45,7 +45,6 @@ from src.app.constants import (
     DEFAULT_WINDOW_WIDTH,
     DEFAULT_WORLD_NAME,
     SETTINGS_ACTIVE_DB_KEY,
-    SETTINGS_AUTO_RELATION_KEY,
     SETTINGS_FILTER_CONFIG_KEY,
     SETTINGS_WORKSPACE_LAYOUT_KEY,
     UI_INIT_DELAY_MS,
@@ -774,6 +773,7 @@ class MainWindow(QMainWindow):
             Qt.ConnectionType.QueuedConnection,
         )
         self.app_coordinator.bind_icon_library()
+        self.app_coordinator.bind_settings()
         self.worker.command_finished.connect(
             self.app_coordinator.context_tags.on_command_finished,
             Qt.ConnectionType.QueuedConnection,
@@ -990,31 +990,21 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def toggle_auto_relation_setting(self) -> None:
-        """Toggles the auto-creation of relations from wikilinks."""
-        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        current = settings.value(SETTINGS_AUTO_RELATION_KEY, False, type=bool)
-        new_value = not current
-        settings.setValue(SETTINGS_AUTO_RELATION_KEY, new_value)
-        logger.info(f"Auto-relation setting set to: {new_value}")
+        """Apply a deliberate contextual change to the active world's policy."""
+        settings = self.app_coordinator.settings
+        settings.set_contextual(
+            "world.auto_relations",
+            not settings.world_values.get("world.auto_relations", False),
+        )
 
     @Slot()
     def toggle_longform_auto_refresh(self) -> None:
-        """Toggles the auto-refresh setting for Longform Editor."""
-        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        # Default to True
-        current = settings.value("longform_auto_refresh", True, type=bool)
-        new_value = not current
-        settings.setValue("longform_auto_refresh", new_value)
-
-        logger.info(f"Longform auto-refresh set to: {new_value}")
-
-        # Update UI state immediately
-        if hasattr(self, "longform_editor") and self.longform_editor:
-            self.longform_editor.set_refresh_button_visible(not new_value)
-
-        # If turned on, do an immediate refresh to ensure sync
-        if new_value:
-            self.longform_manager.load_longform_sequence()
+        """Apply the same local preference exposed in the Settings Center."""
+        settings = self.app_coordinator.settings
+        settings.set_contextual(
+            "longform_auto_refresh",
+            not settings.local.snapshot()["longform_auto_refresh"],
+        )
 
     @Slot()
     def _on_auto_refresh_longform(self) -> None:
@@ -1045,11 +1035,7 @@ class MainWindow(QMainWindow):
             _theme_dict: The new theme dictionary from ThemeManager (unused).
 
         """
-        from src.core.theme_manager import ThemeManager
-
-        self.worker_manager.save_world_theme_requested.emit(
-            ThemeManager().current_theme_name
-        )
+        # Effective refreshes are presentation; SettingsCoordinator owns persistence.
 
     def _on_theme_changed_for_titlebar(self, theme_dict: dict) -> None:
         """Update Windows title bar style when theme changes.
@@ -1105,6 +1091,15 @@ class MainWindow(QMainWindow):
                 "close Projekt Kraken", lambda: QTimer.singleShot(0, self.close)
             )
             return
+
+        if hasattr(self.app_coordinator, "settings"):
+            settings_center = self.app_coordinator.settings
+            if settings_center.has_pending_changes():
+                event.ignore()
+                settings_center.request_transition(
+                    lambda: QTimer.singleShot(0, self.close)
+                )
+                return
 
         # Check unsaved changes
         for editor in [self.event_editor, self.entity_editor]:

@@ -54,11 +54,12 @@ only the executable does not restore a world or its assets.
 ## AI models are not listed
 
 1. Confirm LM Studio is running and has the required model loaded.
-2. Open **Settings → AI Search Index and Settings…** and check that the server
+2. Open **Settings → Kraken → AI** and check that the server
    field contains the server address, not an individual API endpoint.
 3. Choose **Refresh Models** for the relevant provider and read the connection
    result. Generation and embedding may require different models.
-4. Follow {ref}`AI setup <help-settings-ai>` if either model remains unavailable.
+4. Choose **Apply** to save the connection settings. Follow
+   {ref}`AI setup <help-settings-ai>` if either model remains unavailable.
 
 Retry the original search or generation only after the connection succeeds.
 
