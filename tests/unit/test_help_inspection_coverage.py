@@ -61,6 +61,42 @@ def test_control_search_lands_on_concise_explanation(generated_root):
     )
 
 
+def test_activity_help_does_not_switch_workspace_or_change_draft(help_setup, qapp):
+    from src.gui.workspace.activity_bar import ActivityBar
+
+    coordinator, registry, owner, _, text = help_setup
+    rail = ActivityBar("Workspaces", owner)
+    rail.setOrientation(Qt.Orientation.Vertical)
+    rail.configure_workspaces()
+    rail.set_entries([("overview", "Overview"), ("writing", "Writing")], "overview")
+    owner.layout().addWidget(rail)
+    bindings = HelpSurfaceBindings(coordinator)
+    for widget in [rail, *rail.findChildren(QWidget)]:
+        bindings.bind(widget)
+    requests = []
+    rail.workspace_requested.connect(requests.append)
+    button = rail.widgetForAction(rail.workspace_actions["writing"])
+    assert registry.candidates(button)[0][0] == "workspace.navigation"
+    meaning = registry.inspection_for(button)[1]
+    assert meaning.meaning == "workspace.activity"
+    snapshot = text.toPlainText(), text.document(), text.document().availableUndoSteps()
+    owner.resize(700, 700)
+    owner.activateWindow()
+    qapp.processEvents()
+    button.setFocus()
+    qapp.processEvents()
+    assert button.hasFocus()
+    QTest.keyClick(button, Qt.Key.Key_F1)
+    qapp.processEvents()
+    assert coordinator.history[-1].uri.endswith("#help-workspace-navigation")
+    assert not requests
+    assert snapshot == (
+        text.toPlainText(),
+        text.document(),
+        text.document().availableUndoSteps(),
+    )
+
+
 @pytest.mark.parametrize("mode", ["pointer", "focused"])
 def test_workspace_close_inspection_preserves_live_panel_across_recreation(
     help_setup, qapp, mode

@@ -2,19 +2,12 @@
 
 from __future__ import annotations
 
-import json
-from collections.abc import Mapping
 from typing import Any, Optional, cast
 
-from PySide6.QtCore import QObject, QSettings, Qt
+from PySide6.QtCore import QObject, Qt
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QInputDialog, QMenuBar, QMessageBox, QWidget
+from PySide6.QtWidgets import QMenuBar, QWidget
 
-from src.app.constants import (
-    SETTINGS_LAYOUTS_KEY,
-    WINDOW_SETTINGS_APP,
-    WINDOW_SETTINGS_KEY,
-)
 from src.app.qt_invocation import invoke_queued
 from src.core.protocols import MainWindowProtocol
 from src.gui.utils.help_context import declare_inspection
@@ -196,9 +189,18 @@ class UIManager:
 
         self.focus_writing = FocusWritingController(self.main_window, view_menu)
 
+        from src.app.workspace_composition import compose_workspaces
+
+        self.main_window.workspace_coordinator = compose_workspaces(
+            workspace,
+            self._window_widget,
+            self.focus_writing,
+            getattr(self.main_window, "navigation_coordinator", None),
+        )
+
         view_menu.addSeparator()
         reset_action = declare_inspection(
-            view_menu.addAction("Reset Layout"),
+            view_menu.addAction("Reset workspace layout"),
             "src-app-ui-manager-uimanager-create-view-menu-reset-action|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-view-menu-reset-action",
         )
         reset_action.triggered.connect(self.reset_layout)
@@ -214,135 +216,15 @@ class UIManager:
             action.setChecked(workspace.is_panel_open(panel_id))
 
     def create_layouts_menu(self, menu_bar: QMenuBar) -> None:
-        """Create named workspace layout actions."""
-        self.layouts_menu = declare_inspection(
-            menu_bar.addMenu("Layouts"),
+        """Expose the same workspace destinations through the labeled menu bar."""
+        declare_inspection(
+            menu_bar.addMenu(self.main_window.workspace.activity_bar.workspace_menu),
             "src-app-ui-manager-uimanager-create-layouts-menu-self-layouts-menu|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-layouts-menu-self-layouts-menu",
         )
-        self._refresh_layouts_menu()
-
-    def _refresh_layouts_menu(self) -> None:
-        if not hasattr(self, "layouts_menu"):
-            return
-        self.layouts_menu.clear()
-        save_action = declare_inspection(
-            self.layouts_menu.addAction("Save Current Layout..."),
-            "src-app-ui-manager-uimanager-refresh-layouts-menu-save-action|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-refresh-layouts-menu-save-action",
-        )
-        save_action.triggered.connect(self.prompt_save_layout)
-        self.layouts_menu.addSeparator()
-
-        layouts = self.get_saved_layouts()
-        if not layouts:
-            no_layouts = declare_inspection(
-                self.layouts_menu.addAction("No Saved Layouts"),
-                "src-app-ui-manager-uimanager-refresh-layouts-menu-no-layouts|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-refresh-layouts-menu-no-layouts",
-            )
-            no_layouts.setEnabled(False)
-        for name in layouts:
-            layout_menu = declare_inspection(
-                self.layouts_menu.addMenu(name),
-                "workspace.saved-layout|workspace.navigation|help-inspect-workspace-saved-layout",
-            )
-            restore_action = declare_inspection(
-                layout_menu.addAction("Restore"),
-                "src-app-ui-manager-uimanager-refresh-layouts-menu-restore-action|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-refresh-layouts-menu-restore-action",
-            )
-            restore_action.triggered.connect(
-                lambda _checked=False, layout_name=name: self.restore_layout(
-                    layout_name
-                )
-            )
-            delete_action = declare_inspection(
-                layout_menu.addAction("Delete"),
-                "src-app-ui-manager-uimanager-refresh-layouts-menu-delete-action|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-refresh-layouts-menu-delete-action",
-            )
-            delete_action.triggered.connect(
-                lambda _checked=False, layout_name=name: self.delete_layout(layout_name)
-            )
-
-        self.layouts_menu.addSeparator()
-        reset_action = declare_inspection(
-            self.layouts_menu.addAction("Reset Layout"),
-            "src-app-ui-manager-uimanager-refresh-layouts-menu-reset-action|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-refresh-layouts-menu-reset-action",
-        )
-        reset_action.triggered.connect(self.reset_layout)
-
-    def prompt_save_layout(self) -> None:
-        """Ask for a name and save the current explicit workspace layout."""
-        name, accepted = QInputDialog.getText(
-            self._window_widget, "Save Layout", "Layout Name:"
-        )
-        if not accepted or not name:
-            return
-        if name in self.get_saved_layouts():
-            reply = QMessageBox.question(
-                self._window_widget,
-                "Overwrite Layout?",
-                f"Layout '{name}' already exists. Overwrite?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            )
-            if reply != QMessageBox.StandardButton.Yes:
-                return
-        self.save_layout(name)
-
-    def save_layout(self, name: str) -> None:
-        """Save panel membership, order, active tabs, sizes, and visibility."""
-        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        layouts = self._load_saved_layouts(settings)
-        layouts[name] = self.main_window.workspace.capture_layout()
-        settings.setValue(SETTINGS_LAYOUTS_KEY, json.dumps(layouts, sort_keys=True))
-        self._refresh_layouts_menu()
-
-    def restore_layout(self, name: str) -> None:
-        """Restore a named workspace layout without changing window geometry."""
-        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        layouts = self._load_saved_layouts(settings)
-        layout = layouts.get(name)
-        if layout is not None:
-            self.main_window.workspace.apply_layout(layout)
-
-    def delete_layout(self, name: str) -> None:
-        """Delete a named workspace layout after confirmation."""
-        reply = QMessageBox.question(
-            self._window_widget,
-            "Delete Layout",
-            f"Are you sure you want to delete layout '{name}'?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        )
-        if reply != QMessageBox.StandardButton.Yes:
-            return
-        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        layouts = self._load_saved_layouts(settings)
-        if name in layouts:
-            del layouts[name]
-            settings.setValue(
-                SETTINGS_LAYOUTS_KEY,
-                json.dumps(layouts, sort_keys=True),
-            )
-            self._refresh_layouts_menu()
-
-    def get_saved_layouts(self) -> list[str]:
-        """Return named layouts in display order."""
-        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        return sorted(self._load_saved_layouts(settings))
-
-    @staticmethod
-    def _load_saved_layouts(settings: QSettings) -> dict[str, object]:
-        """Load readable JSON layouts and tolerate the legacy mapping form."""
-        raw_layouts = settings.value(SETTINGS_LAYOUTS_KEY, {})
-        if isinstance(raw_layouts, str):
-            try:
-                raw_layouts = json.loads(raw_layouts)
-            except (TypeError, ValueError):
-                return {}
-        if isinstance(raw_layouts, Mapping):
-            return {str(name): layout for name, layout in raw_layouts.items()}
-        return {}
 
     def reset_layout(self) -> None:
-        """Restore the deterministic factory workspace only."""
-        self.main_window.workspace.reset_layout()
+        """Confirm a reset of only the currently active workspace."""
+        self.main_window.workspace_coordinator.manage("reset")
 
     def create_timeline_menu(self, menu_bar: QMenuBar) -> None:
         """Keep deliberate timeline operations outside configuration."""

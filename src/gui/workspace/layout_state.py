@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from copy import deepcopy
+from math import isfinite
 from typing import Any, cast
 
+from src.core.workspaces import WORKSPACE_LAYOUT_VERSION
 from src.gui.workspace.panel_registry import ZONE_NAMES, PanelRegistry, ZoneName
 
-WORKSPACE_LAYOUT_VERSION = 2
 _MIN_ZONE_SIZE = 80
 _MAX_ZONE_SIZE = 4096
 
@@ -49,6 +50,8 @@ def _default_size(zone: ZoneName) -> int:
 
 def _normalized_size(value: object, zone: ZoneName) -> int:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return _default_size(zone)
+    if isinstance(value, float) and not isfinite(value):
         return _default_size(zone)
     return max(_MIN_ZONE_SIZE, min(_MAX_ZONE_SIZE, int(value)))
 

@@ -76,6 +76,82 @@ def test_focus_mode_preserves_live_document_and_state(focus_setup, qtbot):
     assert window.workspace.active_panel("center") in {"event", "entity"}
 
 
+def test_workspace_switch_exits_focus_without_reloading_dirty_inspector(
+    focus_setup, qtbot, tmp_path
+):
+    from PySide6.QtCore import QSettings
+
+    from src.app.coordinators.workspace_coordinator import WorkspaceCoordinator
+    from src.services.workspace_store import WorkspaceStore
+
+    window, editor, focus = focus_setup
+    kind = "event" if editor is window.event_editor else "entity"
+    coordinator = WorkspaceCoordinator(
+        window.workspace,
+        WorkspaceStore(
+            QSettings(str(tmp_path / "focus.ini"), QSettings.Format.IniFormat)
+        ),
+        lambda: kind,
+        lambda: focus.exit(restore_focus=False) if focus.active else None,
+        window,
+    )
+    coordinator.restore()
+    window.workspace.show_panel(kind)
+    focus.enter(editor)
+    view = editor.desc_edit.editor
+    document = view.document()
+    qtbot.keyClicks(view, " draft")
+    text = view.toPlainText()
+    cursor = view.textCursor()
+    position, anchor = cursor.position(), cursor.anchor()
+    selected_id = editor._get_current_item_id()
+    assert editor.has_unsaved_changes()
+    coordinator.activate("writing")
+    coordinator.activate("chronology")
+    coordinator.activate("overview")
+    assert focus.active is None
+    assert view.document() is document
+    assert view.toPlainText() == text
+    assert view.textCursor().position() == position
+    assert view.textCursor().anchor() == anchor
+    assert editor._get_current_item_id() == selected_id
+    assert editor.has_unsaved_changes()
+    view.undo()
+    assert view.toPlainText() == "First paragraph"
+
+
+def test_workspace_roundtrip_retains_real_inspector_scroll(
+    focus_setup, qtbot, tmp_path
+):
+    from PySide6.QtCore import QSettings
+
+    from src.app.coordinators.workspace_coordinator import WorkspaceCoordinator
+    from src.services.workspace_store import WorkspaceStore
+
+    window, editor, focus = focus_setup
+    kind = "event" if editor is window.event_editor else "entity"
+    coordinator = WorkspaceCoordinator(
+        window.workspace,
+        WorkspaceStore(
+            QSettings(str(tmp_path / "scroll.ini"), QSettings.Format.IniFormat)
+        ),
+        lambda: kind,
+        lambda: focus.exit(restore_focus=False) if focus.active else None,
+        window,
+    )
+    coordinator.restore()
+    view = editor.desc_edit.editor
+    view.setPlainText("Paragraph with enough text for scrolling.\n" * 150)
+    qtbot.wait(1)
+    view.verticalScrollBar().setValue(100)
+    position = view.verticalScrollBar().value()
+    coordinator.activate("writing")
+    coordinator.activate("chronology")
+    coordinator.activate("overview")
+    qtbot.wait(1)
+    assert view.verticalScrollBar().value() == position
+
+
 def test_escape_and_local_button_restore_layout(focus_setup, qtbot):
     _window, editor, controller = focus_setup
     editor._presentation.focus_button.click()

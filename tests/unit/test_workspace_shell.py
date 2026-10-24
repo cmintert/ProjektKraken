@@ -64,6 +64,32 @@ def test_workspace_has_exactly_four_generic_panes(qtbot) -> None:
     assert shell.vertical_splitter.widget(1) is shell.panes["bottom"]
 
 
+def test_scrolled_tab_close_controls_are_hidden_until_reachable(qtbot):
+    shell = _shell(qtbot)
+    shell.resize(1280, 720)
+    shell.show()
+    pane = shell.panes["right"]
+    for identifier in ("map", "graph", "longform", "event"):
+        shell.move_panel(identifier, "right")
+    shell.horizontal_splitter.setSizes([270, 750, 200])
+    qtbot.wait(1)
+    bar = pane.tabs.tabBar()
+    buttons = [
+        bar.tabButton(index, QTabBar.ButtonPosition.RightSide)
+        for index in range(bar.count())
+    ]
+    assert any(button.isHidden() for button in buttons)
+    assert all(
+        bar.rect().contains(button.geometry())
+        for button in buttons
+        if not button.isHidden()
+    )
+    shell.show_panel("analysis")
+    qtbot.wait(1)
+    close = bar.tabButton(pane.index_of("analysis"), QTabBar.ButtonPosition.RightSide)
+    assert not close.isHidden()
+
+
 def test_workspace_splitter_sash_renders_rounded_theme_colors(qtbot) -> None:
     shell = _shell(qtbot)
     shell.resize(1200, 800)

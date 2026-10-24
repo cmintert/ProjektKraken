@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import QMimeData, QPoint, QSize, Qt, Signal
+from PySide6.QtCore import QEvent, QMimeData, QObject, QPoint, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import (
     QDrag,
     QDragEnterEvent,
@@ -57,6 +57,44 @@ class WorkspaceTabBar(QTabBar):
         self.setAcceptDrops(True)
         self._drag_start = QPoint()
         self._drag_panel_id: str | None = None
+        self._close_timer = QTimer(self)
+        self._close_timer.setSingleShot(True)
+        self._close_timer.timeout.connect(self._sync_close_controls)
+        self.currentChanged.connect(lambda _index: self._close_timer.start(0))
+
+    def tabLayoutChange(self) -> None:  # noqa: N802
+        """Keep scrolled-out close controls out of keyboard traversal.
+
+        Qt clips overflowing tab captions, but custom close widgets can remain
+        individually visible beneath the native scroll arrows. Keep their space
+        reserved and reveal them when scrolling makes the whole control usable.
+        """
+        super().tabLayoutChange()
+        if hasattr(self, "_close_timer"):
+            self._close_timer.start(0)
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:  # noqa: N802
+        """Refresh after native scrolling moves a custom tab button."""
+        if event.type() in (QEvent.Type.Move, QEvent.Type.Resize, QEvent.Type.Show):
+            self._close_timer.start(0)
+        return super().eventFilter(watched, event)
+
+    def _sync_close_controls(self) -> None:
+        arrows = [
+            child
+            for child in self.findChildren(QToolButton)
+            if child.objectName() in ("ScrollLeftButton", "ScrollRightButton")
+            and not child.isHidden()
+        ]
+        for index in range(self.count()):
+            button = self.tabButton(index, QTabBar.ButtonPosition.RightSide)
+            if not isinstance(button, QToolButton):
+                continue
+            available = self.rect().contains(button.geometry()) and not any(
+                button.geometry().intersects(arrow.geometry()) for arrow in arrows
+            )
+            if button.isHidden() == available:
+                button.setVisible(available)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:  # noqa: N802
         """Remember the start of a possible cross-zone tab drag."""
@@ -268,6 +306,7 @@ class PaneContainer(QWidget):
         self.tabs.tabBar().setTabButton(
             index, QTabBar.ButtonPosition.RightSide, close_button
         )
+        close_button.installEventFilter(self.tabs.tabBar())
         self._style_close_button(index)
         self.set_drag_target_active(False)
         return index

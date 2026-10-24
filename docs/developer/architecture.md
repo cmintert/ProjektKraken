@@ -1,5 +1,26 @@
 # Architecture and Threading
 
+## Activity workspace layouts
+
+`WorkspaceCoordinator` owns activity activation and custom workspace management.
+It receives the existing shell, a machine-local `WorkspaceStore`, a read-only
+selection-type provider and a Focus writing exit callback. It does not receive
+MainWindow, database services, workers or commands. Presets are detached data in
+`src/core/workspaces.py`; the GUI rail emits intent independently of panel registration.
+
+The local `activity_workspaces_v1` collection wraps existing layout-version-2
+snapshots, active ID, names, custom creation baselines and global rail display.
+Layouts are captured before switching, debounced after settled changes and flushed
+on close. Legacy current/named layouts migrate once; recovery keys remain intact.
+Workspace reset clears built-in arrangements while retaining custom named resources.
+This state is excluded from portable worlds and world command history.
+
+The shell suppresses intermediate panel activation during layout construction and
+publishes final visible panel activations once after all zones are ready. Existing
+deferred Graph/Longform hydration remains authoritative. Switching reuses widgets
+and documents; it never navigates to an object or prompts to save a retained draft.
+Only existing Focus writing presentation exits before an actual switch.
+
 ## Worker semantic indexing
 
 `WorkerSemanticIndexService` owns the pending embedding queue, cached

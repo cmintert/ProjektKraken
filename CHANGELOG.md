@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-24
-**Commit:** bf7335de7c4f1b351e932ef538dcaad86f520ad3
+**Commit:** cc1b98ea1a57329d537d9080438f63499ddadede
 ---
 
 # Changelog
@@ -12,6 +12,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-10-24)* **Activity workspaces (KRT-108)**: Added a collapsible six-activity
+  navigation rail, automatic per-workspace layout retention and custom workspace
+  management. Switching reuses live panels and preserves authoring context.
+  Existing named layouts migrate to custom workspaces; reset affects only the
+  active arrangement. Compact navigation starts collapsed with subtle icons;
+  View remains the route for individual panels. Added contextual Help, user and
+  architecture documentation, state-preservation regressions and capture tooling.
 
 - *(2026-10-24)* **Settings Center (KRT-55)**: Consolidated configuration into
   one searchable, modeless window with Kraken and This World scopes, shared

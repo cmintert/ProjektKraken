@@ -2,17 +2,34 @@
 
 ## What this does
 
-ProjektKraken uses one stable workspace with four destinations: Left, Center,
-Right, and Bottom. Feature panels can move between those zones as tabs, while
-the number of zones remains fixed.
+ProjektKraken offers activity workspaces: saved panel arrangements for different
+tasks. Each uses the same four zones: Left, Center, Right, and Bottom. Panels can
+move between zones as tabs.
 
-Use this guide to arrange panels, save a layout and find your entries. Begin
+Use this guide to arrange panels, save a workspace and find your entries. Begin
 with an open world. Layout changes affect application preferences; they do not
 reorganize the world's Events, Entities or chronology.
 
 (help-workspace-navigation)=
 
 ## Main workspace
+
+Choose an activity on the left: **Overview**, **Writing**, **Chronology**,
+**Cartography**, **Connections**, or **Research**. Switching rearranges the
+existing panels and remembers your changes to each arrangement. Your world,
+selected Event or Entity, unsaved edits and viewing time stay unchanged.
+
+Writing foregrounds the current Event or Entity inspector, with Longform as
+another tab. Cartography foregrounds Map; Connections foregrounds Graph;
+Research shows AI Search alongside the inspector. Timeline remains visible in
+Overview, Chronology and Cartography by default. Opening a tool through
+**View → Panels** changes only the current arrangement.
+
+Navigation starts collapsed, with smaller, borderless activity icons and names
+in tooltips. Use **Workspaces → Expand navigation** for labeled buttons, or
+**Collapse navigation** to reclaim horizontal space. Your choice is remembered.
+**Workspaces**, at the
+bottom of the rail or in the menu bar, always lists destinations with full names.
 
 - **Project** lists events, entities, and maps.
 - **Event** edits the selected event.
@@ -29,7 +46,8 @@ Use the checked entries under **View → Panels** to see which panels are open.
 Check an entry to open its panel and activate its tab in its current zone;
 uncheck it to close the panel. You can also close a panel with the close button
 on its tab. Closing retains the panel's live content and editing state. Reopen it
-from **View → Panels**, or use its activity-bar button where available.
+from **View → Panels**. Activity buttons switch arrangements rather than opening
+individual tools.
 
 Drag tabs within a zone's tab bar to change their order. Drag a tab onto another
 zone's tab bar to move it, placing it before or after the tab at the drop position.
@@ -54,18 +72,27 @@ previous useful size.
 ## Save a layout
 
 1. Arrange the panels and resize the four zones.
-2. Open **Layouts → Save Current Layout…**.
-3. Enter a layout name.
-4. Confirm the name, then use the layout's **Restore** entry under **Layouts**
-   to check the arrangement. Its **Delete** entry removes the saved layout.
+2. Open **Workspaces → Save as workspace…**.
+3. Enter a unique name and accept the dialog.
+4. Choose another activity, then choose your custom entry under **Workspaces**
+   to check the arrangement.
 
-Saved layouts contain panel locations, tab order, active tabs, closed panels,
-zone sizes, and zone visibility. They do not contain the outer window's screen
-coordinates.
+Each workspace remembers panel locations, tab order, active tabs, closed panels,
+zone sizes and visibility automatically, including across restarts. Custom
+workspaces appear in the Workspaces menu to keep the rail compact. Use
+**Rename workspace…** or **Delete workspace…** for the active custom entry.
+Built-in activities cannot be renamed or deleted. Deleting a custom workspace
+requires confirmation and returns to Overview; world content is retained.
 
-Use **Layouts → Reset Layout** or **View → Reset Layout** to restore the
-factory panel arrangement without moving or resizing the outer window. Layout
-changes affect only the interface, not world content.
+Use **Workspaces → Reset workspace layout** or **View → Reset workspace layout**
+and confirm to restore only the active arrangement. Built-ins return to their
+factory layout; custom entries return to the arrangement captured when created.
+Cancel leaves the arrangement unchanged. The outer window does not move or resize.
+
+Existing named layouts become custom workspaces on upgrade, and the previous
+session's arrangement becomes Overview. Workspaces are saved on this computer;
+they do not travel with exported worlds. Switching away from Focus writing exits
+that temporary presentation while retaining the draft and caret.
 
 ## Change the theme
 
@@ -120,7 +147,8 @@ Calendar contents, authored tag colours and task-template resources are excluded
 from generic resets. World theme reset restores inheritance from Kraken.
 
 **Reset workspace state…** requires confirmation and Apply, then takes effect on
-the next startup. It resets transient window/view state and filters. Worlds,
+the next startup. It resets built-in activity layouts, rail display, transient
+window/view state and filters. Custom workspaces are retained. Worlds,
 registered world locations and trust, credentials, named layouts, brush presets
 and recent colour history remain intact. The launcher option `--reset-settings`
 uses the same local preference boundary and does not clear those resources.
@@ -488,37 +516,41 @@ This World → Appearance**. The former View launcher is removed.
 
 (help-inspect-src-app-ui-manager-uimanager-create-view-menu-reset-action)=
 
-**Reset Layout** — Restore the factory panel arrangement. This changes the interface
-layout, not world content.
+**Reset workspace layout** — Confirm before restoring only the active workspace's
+default arrangement. Custom workspaces return to their creation arrangement.
+Other workspaces and world content are retained.
 
 (help-inspect-src-app-ui-manager-uimanager-create-layouts-menu-self-layouts-menu)=
 
-**Layouts** — Open the Layouts menu to choose a related operation. Opening the menu does
-not apply any of its actions.
+**Workspaces** — Choose a saved activity arrangement or manage custom workspaces.
+Opening this menu does not switch activities or save world content.
 
 (help-inspect-src-app-ui-manager-uimanager-refresh-layouts-menu-save-action)=
 
 **Save current layout** — Name and save the current workspace arrangement for later
-reuse. This does not save or back up world content.
+reuse through **Workspaces → Save as workspace…**. This does not save or back up world content.
 
 (help-inspect-src-app-ui-manager-uimanager-refresh-layouts-menu-no-layouts)=
 
-**No saved layouts** — No named workspace layouts are available yet. Save Current Layout
-creates one.
+**No saved layouts** — The former Layouts menu has been replaced by Workspaces.
+Use **Save as workspace…** to create a named arrangement.
 
 (help-inspect-src-app-ui-manager-uimanager-refresh-layouts-menu-restore-action)=
 
-**Restore layout** — Apply this saved workspace arrangement. World content is unchanged.
+**Restore layout** — Existing saved layouts are now custom entries under Workspaces.
+Choosing one applies its saved arrangement. World content is unchanged.
 
 (help-inspect-src-app-ui-manager-uimanager-refresh-layouts-menu-delete-action)=
 
 **Delete saved layout** — Remove this named workspace layout. The current world's
-content and backups are retained.
+content and backups are retained. Use **Workspaces → Delete workspace…** for the
+active custom entry.
 
 (help-inspect-src-app-ui-manager-uimanager-refresh-layouts-menu-reset-action)=
 
-**Reset Layout** — Restore the factory panel arrangement. This changes the interface
-layout, not world content.
+**Reset workspace layout** — Confirm a reset of only the active arrangement through
+Workspaces. Custom workspaces return to their creation arrangement; other
+workspaces and world content are retained.
 
 (help-inspect-src-app-ui-manager-uimanager-create-timeline-menu-timeline-menu)=
 
@@ -571,7 +603,9 @@ uncheck to close it. Its existing content and editing state are retained.
 
 **Close panel** — Close this panel's tab while retaining its live content and
 editing state. Reopen it from **View → Panels** in its current workspace zone.
-Closing a panel does not delete world content.
+When tabs overflow, scroll the tab into view to reach its close button, or
+uncheck the panel under **View → Panels**. Scrolled-out close buttons do not
+receive keyboard focus. Closing a panel does not delete world content.
 
 (help-inspect-workspace-show-zone)=
 
@@ -584,4 +618,23 @@ in the Settings Center. Applying a theme preserves the authoring origin.
 
 (help-inspect-workspace-saved-layout)=
 
-**Saved workspace layout** — Choose Restore to apply this saved panel arrangement, or Delete to remove the named layout. These actions do not restore or delete world content.
+**Saved workspace layout** — Existing named layouts appear as custom destinations
+under Workspaces. Choose one to activate it; Delete workspace removes only the
+active custom entry after confirmation. World content is retained.
+
+(help-inspect-workspace-activity)=
+
+**Activity workspace** — Switch to a saved arrangement of existing panels. The
+checked activity identifies the current workspace. Clicking it again leaves the
+layout unchanged. Switching retains the selected object, unsaved edits and viewing
+time. Workspaces opens the full-name destination and management menu; Collapse
+navigation or Expand navigation changes only the rail display.
+
+(help-inspect-workspace-manage)=
+
+**Manage workspaces** — Choose a destination by name, or save the current layout
+as a custom workspace. Rename and Delete apply only to custom entries. Delete
+requires confirmation and returns to Overview. Reset requires confirmation and
+restores only the active workspace: its factory layout for a built-in activity,
+or its creation layout for a custom entry. Collapse/Expand navigation changes the
+rail display. These local arrangements do not save, delete or export world content.

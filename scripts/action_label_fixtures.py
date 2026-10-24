@@ -13,7 +13,13 @@ from pathlib import Path
 from unittest.mock import patch
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QAbstractButton, QStackedWidget, QTabWidget, QWidget
+from PySide6.QtWidgets import (
+    QAbstractButton,
+    QApplication,
+    QStackedWidget,
+    QTabWidget,
+    QWidget,
+)
 
 
 @dataclass(frozen=True)
@@ -125,6 +131,7 @@ SURFACES = tuple(
         Surface("src.gui.widgets.compact_date_widget", "CalendarPopup", (360, 800)),
         Surface("src.gui.widgets.overflow_toolbar", "OverflowToolBar", (240, 360, 800)),
         Surface("src.gui.workspace.workspace_shell", "WorkspaceShell", (1280, 1600)),
+        Surface("src.gui.workspace.activity_bar", "ActivityBar", (1280, 1600)),
         Surface("src.gui.widgets.wiki_link_authoring", "EntryLinkPicker"),
     ]
 )
@@ -250,6 +257,8 @@ def make_surface(surface: Surface, temporary_root: Path) -> QWidget:
     """Construct one known surface without personal world/storage access."""
     if surface.name == "WorkspaceShell":
         return _workspace_surface()
+    if surface.name == "ActivityBar":
+        return _activity_surface(temporary_root)
     if surface.name == "SettingsCenter":
         from src.core.ai_generation import AIGenerationPreferences
         from src.core.calendar import CalendarConfig
@@ -326,6 +335,32 @@ def make_surface(surface: Surface, temporary_root: Path) -> QWidget:
     return factory(**_snapshot_arguments(surface.name))
 
 
+def _activity_surface(temporary_root: Path) -> QWidget:
+    """Exercise production workspace controls without unrelated authoring panels."""
+    from PySide6.QtCore import QSettings
+    from PySide6.QtWidgets import QLabel, QMainWindow
+
+    from src.app.coordinators.workspace_coordinator import WorkspaceCoordinator
+    from src.gui.workspace import WorkspaceShell
+    from src.services.workspace_store import WorkspaceStore
+
+    root = QMainWindow()
+    root.workspace = WorkspaceShell(root)
+    root.setCentralWidget(root.workspace)
+    for identifier, zone in (("project", "left"), ("entity", "center")):
+        root.workspace.register_panel(identifier, identifier.title(), QLabel(), zone)
+    root.workspace_coordinator = WorkspaceCoordinator(
+        root.workspace,
+        WorkspaceStore(QSettings("KrakenActivityFixture", "Layouts")),
+        lambda: "entity",
+        lambda: None,
+        root,
+    )
+    root.workspace_coordinator.restore()
+    root.menuBar().addMenu(root.workspace.activity_bar.workspace_menu)
+    return root
+
+
 def _workspace_surface() -> QWidget:
     """Build the production shell and menus around inert snapshot presenters."""
     from unittest.mock import Mock
@@ -348,9 +383,15 @@ def _workspace_surface() -> QWidget:
     )
     root.workspace.register_panel("event", "Event", root.event_editor, "right", "event")
     for identifier, title, zone in (
-        ("explorer", "Explorer", "left"),
-        ("timeline", "Timeline", "center"),
-        ("analysis", "Analysis", "bottom"),
+        ("project", "Project", "left"),
+        ("timeline", "Timeline", "bottom"),
+        ("analysis", "Analysis", "right"),
+        ("map", "Map", "center"),
+        ("graph", "Graph", "center"),
+        ("longform", "Longform", "center"),
+        ("ai_search", "AI Search", "right"),
+        ("wiki_peek", "Wiki Peek", "right"),
+        ("history", "History", "bottom"),
     ):
         root.workspace.register_panel(
             identifier, title, QLabel("Audit snapshot"), zone, identifier
@@ -367,14 +408,24 @@ def _workspace_surface() -> QWidget:
     root.toggle_longform_auto_refresh = lambda: None
     manager = UIManager(root)
     root._action_audit_manager = manager
-    for name in ("file", "edit", "view", "timeline", "settings", "help"):
+    for name in ("file", "edit", "view", "timeline", "settings"):
         getattr(manager, f"create_{name}_menu")(root.menuBar())
+    with patch("src.app.help_composition.compose_help", return_value=Mock()):
+        manager.create_help_menu(root.menuBar())
+    root.workspace_coordinator.restore()
     return root
 
 
 def surface_states(widget: QWidget, *, quick: bool = False) -> Iterator[str]:
     """Visit default and all production tab destinations without authoring clicks."""
     yield "default"
+    workspace = getattr(widget, "workspace", None)
+    if workspace is not None and hasattr(workspace.activity_bar, "workspace_actions"):
+        workspace.activity_bar.set_expanded(False)
+        QApplication.processEvents()
+        yield "collapsed-navigation"
+        workspace.activity_bar.set_expanded(True)
+        QApplication.processEvents()
     if not quick:
         yield from _navigation_states(widget)
         for number, button in enumerate(widget.findChildren(QAbstractButton)):

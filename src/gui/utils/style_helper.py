@@ -123,6 +123,24 @@ class StyleHelper:
         return "\n".join(rules)
 
     @staticmethod
+    def get_icon_navigation_style() -> str:
+        """Keep compact navigation quiet and borderless, with keyboard focus."""
+        theme = ThemeManager().get_theme()
+        rules = [StyleHelper.get_action_role_style("quiet", "QToolButton")]
+        for state in CONTROL_STATES:
+            suffix = "" if state == "normal" else f":{state}"
+            rules.append(
+                f"QToolButton{suffix} {{ border-color: "
+                f"{theme['action_quiet_normal_border']}; }}"
+            )
+        rules.append(
+            "QToolButton:focus:enabled {"
+            f" border-color: {theme['focus_ring']}; }}"
+            "QToolButton::menu-indicator { image: none; width: 0; height: 0; }"
+        )
+        return "\n".join(rules)
+
+    @staticmethod
     def get_inspector_focus_style() -> str:
         """Style inspector inputs; action roles already own their focus borders."""
         theme = ThemeManager().get_theme()

@@ -185,6 +185,9 @@ class LocalSettingsAdapter:
 
     def reset_workspace(self) -> None:
         """Reset transient view state, never named layouts or world content."""
+        from src.services.workspace_store import WorkspaceStore
+
+        WorkspaceStore(self.settings).reset_view_state()
         for key in WORKSPACE_KEYS:
             self.settings.remove(key)
         self.settings.sync()

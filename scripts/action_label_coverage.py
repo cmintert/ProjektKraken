@@ -29,6 +29,8 @@ COMPOSITE_OWNERS = {
     "src/gui/widgets/timeline/group_band_manager.py": "TimelineWidget",
     "src/gui/widgets/wiki_link_authoring.py": "EntryLinkPicker",
     "src/gui/workspace/pane_container.py": "WorkspaceShell",
+    "src/gui/workspace/activity_bar.py": "WorkspaceShell",
+    "src/app/coordinators/workspace_coordinator.py": "WorkspaceShell",
     "src/app/ui_manager.py": "WorkspaceShell",
     "src/app/main_window.py": "WorkspaceShell",
     "src/app/coordinators/wiki_link_navigation.py": "EntryLinkPicker",

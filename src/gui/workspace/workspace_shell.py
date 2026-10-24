@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, cast
 
 from PySide6.QtCore import QEvent, QRectF, Qt, Signal
-from PySide6.QtGui import QAction, QEnterEvent, QPainter, QPaintEvent, QResizeEvent
+from PySide6.QtGui import QEnterEvent, QPainter, QPaintEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QSizePolicy,
@@ -95,7 +95,6 @@ class WorkspaceShell(QWidget):
             "right": 340,
             "bottom": 210,
         }
-        self._activity_actions: dict[str, QAction] = {}
         self._closed_panels: set[str] = set()
         self._panel_titles: dict[str, str] = {}
         self._applying_layout = False
@@ -146,7 +145,7 @@ class WorkspaceShell(QWidget):
             pane.panel_drag_started.connect(self._begin_panel_drag)
             pane.panel_drag_finished.connect(self._finish_panel_drag)
             pane.panel_order_changed.connect(self.layout_changed)
-            pane.panel_activated.connect(self.panel_activated)
+            pane.panel_activated.connect(self._on_panel_activated)
             pane.panel_close_requested.connect(self.close_panel)
         self.horizontal_splitter.splitterMoved.connect(self._remember_horizontal_sizes)
         self.vertical_splitter.splitterMoved.connect(self._remember_vertical_sizes)
@@ -180,14 +179,12 @@ class WorkspaceShell(QWidget):
         self.registry.register(definition)
         self._panel_titles[panel_id] = title
         self.panes[default_zone].add_panel(panel_id, title, widget)
-        if activity_id is not None:
-            action = self.activity_bar.addAction(title)
-            action.setObjectName(f"Activity_{activity_id}")
-            action.setToolTip(f"Show {title}")
-            action.triggered.connect(
-                lambda _checked=False, target=panel_id: self.show_panel(target)
-            )
-            self._activity_actions[activity_id] = action
+
+    def _on_panel_activated(self, panel_id: str) -> None:
+        """Publish user tab changes, never intermediate layout construction."""
+        if not self._applying_layout:
+            self.panel_activated.emit(panel_id)
+            self.layout_changed.emit()
 
     def panel(self, panel_id: str) -> QWidget:
         """Return the registered feature widget."""
@@ -396,6 +393,12 @@ class WorkspaceShell(QWidget):
             self.vertical_splitter.setSizes([top_size, bottom_size])
         finally:
             self._applying_layout = False
+        for zone in ZONE_NAMES:
+            visible = bool(zones[zone]["visible"])
+            self.zone_visibility_changed.emit(zone, visible)
+            active = self.active_panel(zone)
+            if visible and active is not None:
+                self.panel_activated.emit(active)
         self.layout_changed.emit()
         return normalized
 

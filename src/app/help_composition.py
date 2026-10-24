@@ -46,6 +46,8 @@ class HelpSurfaceBindings(QObject):
         for action in widget.actions():
             bind_declared_action(registry, action, widget)
         name = type(widget).__name__
+        if name == "ActivityBar":
+            registry.register_panel(widget, "workspace.navigation")
         topic = self.DIALOG_TOPICS.get(name)
         if topic:
             registry.register_dialog(widget, topic)

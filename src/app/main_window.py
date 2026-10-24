@@ -6,7 +6,6 @@ signal/slot connections.
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, cast
 
@@ -46,7 +45,6 @@ from src.app.constants import (
     DEFAULT_WORLD_NAME,
     SETTINGS_ACTIVE_DB_KEY,
     SETTINGS_FILTER_CONFIG_KEY,
-    SETTINGS_WORKSPACE_LAYOUT_KEY,
     UI_INIT_DELAY_MS,
     WINDOW_SETTINGS_APP,
     WINDOW_SETTINGS_KEY,
@@ -81,6 +79,7 @@ from src.gui.workspace import WorkspaceShell
 if TYPE_CHECKING:
     from PySide6.QtCore import QThread
 
+    from src.app.coordinators.workspace_coordinator import WorkspaceCoordinator
     from src.services.worker import DatabaseWorker
 
 _COLOR_LIGHTNESS_MIDPOINT = 128
@@ -869,6 +868,8 @@ class MainWindow(QMainWindow):
 
         logger.debug("Initialization complete")
 
+    workspace_coordinator: WorkspaceCoordinator
+
     def _restore_window_state(self) -> None:
         """Restore outer geometry and explicit workspace state independently."""
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
@@ -882,17 +883,7 @@ class MainWindow(QMainWindow):
             else:
                 logger.warning("Failed to restore saved outer-window geometry")
 
-        saved_layout = settings.value(SETTINGS_WORKSPACE_LAYOUT_KEY)
-        if saved_layout is None:
-            self.workspace.reset_layout()
-        else:
-            if isinstance(saved_layout, str):
-                try:
-                    saved_layout = json.loads(saved_layout)
-                except (TypeError, ValueError):
-                    logger.warning("Ignoring malformed workspace layout settings")
-                    saved_layout = None
-            self.workspace.apply_layout(saved_layout)
+        self.workspace_coordinator.restore()
 
         if filter_config := settings.value(SETTINGS_FILTER_CONFIG_KEY):
             self.unified_list.set_advanced_filter(filter_config)
@@ -1110,10 +1101,7 @@ class MainWindow(QMainWindow):
         # Save outer geometry and machine-independent workspace state separately.
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         settings.setValue("geometry", self.saveGeometry())
-        settings.setValue(
-            SETTINGS_WORKSPACE_LAYOUT_KEY,
-            json.dumps(self.workspace.capture_layout(), sort_keys=True),
-        )
+        self.workspace_coordinator.flush()
 
         # Save Persistent Widget States
         if hasattr(self, "timeline"):

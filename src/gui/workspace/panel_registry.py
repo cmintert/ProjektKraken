@@ -20,7 +20,7 @@ class PanelDefinition:
         title: User-facing tab title.
         widget: Existing feature widget instance.
         default_zone: Factory location for the panel.
-        activity_id: Optional activity-bar identifier.
+        activity_id: Legacy registration metadata; activities are defined separately.
     """
 
     id: str

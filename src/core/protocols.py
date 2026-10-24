@@ -102,6 +102,7 @@ class MainWindowProtocol(Protocol):
     timeline: Any
     unified_list: Any
     workspace: Any
+    workspace_coordinator: Any
     worker_manager: Any
 
 

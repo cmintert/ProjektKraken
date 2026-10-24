@@ -86,7 +86,7 @@ remain in that chapter so their save and recovery instructions have one home.
 - A missing linked external database is never replaced with an empty database.
 - Do not edit the `.kraken` file while the world is open.
 - Use **File → Backup & Restore** before imports or large restructuring work.
-- Use **Layouts → Reset Layout** if saved panels make the workspace difficult
+- Use **Workspaces → Reset workspace layout** if saved panels make it difficult
   to use. This resets interface preferences, not the contents of your world.
 
 ## Interface control reference

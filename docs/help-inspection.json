@@ -8198,7 +8198,7 @@
       "source": "src/app/ui_manager.py",
       "symbol": "UIManager.create_view_menu",
       "binding": "reset_action",
-      "label": "Reset Layout",
+      "label": "Reset workspace layout",
       "kind": "addAction"
     },
     {
@@ -8208,58 +8208,8 @@
       "source": "src/app/ui_manager.py",
       "symbol": "UIManager.create_layouts_menu",
       "binding": "self.layouts_menu",
-      "label": "Layouts",
+      "label": "Workspaces",
       "kind": "addMenu"
-    },
-    {
-      "id": "src-app-ui-manager-uimanager-refresh-layouts-menu-save-action",
-      "topic_id": "workspace.navigation",
-      "target": "help-inspect-src-app-ui-manager-uimanager-refresh-layouts-menu-save-action",
-      "source": "src/app/ui_manager.py",
-      "symbol": "UIManager._refresh_layouts_menu",
-      "binding": "save_action",
-      "label": "Save Current Layout...",
-      "kind": "addAction"
-    },
-    {
-      "id": "src-app-ui-manager-uimanager-refresh-layouts-menu-no-layouts",
-      "topic_id": "workspace.navigation",
-      "target": "help-inspect-src-app-ui-manager-uimanager-refresh-layouts-menu-no-layouts",
-      "source": "src/app/ui_manager.py",
-      "symbol": "UIManager._refresh_layouts_menu",
-      "binding": "no_layouts",
-      "label": "No Saved Layouts",
-      "kind": "addAction"
-    },
-    {
-      "id": "src-app-ui-manager-uimanager-refresh-layouts-menu-restore-action",
-      "topic_id": "workspace.navigation",
-      "target": "help-inspect-src-app-ui-manager-uimanager-refresh-layouts-menu-restore-action",
-      "source": "src/app/ui_manager.py",
-      "symbol": "UIManager._refresh_layouts_menu",
-      "binding": "restore_action",
-      "label": "Restore",
-      "kind": "addAction"
-    },
-    {
-      "id": "src-app-ui-manager-uimanager-refresh-layouts-menu-delete-action",
-      "topic_id": "workspace.navigation",
-      "target": "help-inspect-src-app-ui-manager-uimanager-refresh-layouts-menu-delete-action",
-      "source": "src/app/ui_manager.py",
-      "symbol": "UIManager._refresh_layouts_menu",
-      "binding": "delete_action",
-      "label": "Delete",
-      "kind": "addAction"
-    },
-    {
-      "id": "src-app-ui-manager-uimanager-refresh-layouts-menu-reset-action",
-      "topic_id": "workspace.navigation",
-      "target": "help-inspect-src-app-ui-manager-uimanager-refresh-layouts-menu-reset-action",
-      "source": "src/app/ui_manager.py",
-      "symbol": "UIManager._refresh_layouts_menu",
-      "binding": "reset_action",
-      "label": "Reset Layout",
-      "kind": "addAction"
     },
     {
       "id": "src-app-ui-manager-uimanager-create-timeline-menu-timeline-menu",
@@ -8792,16 +8742,6 @@
       "kind": "semantic control/action"
     },
     {
-      "id": "workspace.saved-layout",
-      "topic_id": "workspace.navigation",
-      "target": "help-inspect-workspace-saved-layout",
-      "source": "src/app/ui_manager.py",
-      "symbol": "UIManager._refresh_layouts_menu",
-      "binding": "workspace.saved-layout",
-      "label": "Saved workspace layout",
-      "kind": "semantic control/action"
-    },
-    {
       "id": "map.stroke-width",
       "topic_id": "map.appearance",
       "target": "help-inspect-map-stroke-width",
@@ -9090,6 +9030,26 @@
       "binding": "action",
       "label": "Settings",
       "kind": "QAction"
+    },
+    {
+      "id": "workspace.activity",
+      "topic_id": "workspace.navigation",
+      "target": "help-inspect-workspace-activity",
+      "source": "src/gui/workspace/activity_bar.py",
+      "symbol": "ActivityBar._action",
+      "binding": "action",
+      "label": "Activity workspace",
+      "kind": "addAction"
+    },
+    {
+      "id": "workspace.manage",
+      "topic_id": "workspace.navigation",
+      "target": "help-inspect-workspace-manage",
+      "source": "src/gui/workspace/activity_bar.py",
+      "symbol": "ActivityBar._menu_action",
+      "binding": "action",
+      "label": "Manage workspaces",
+      "kind": "addAction"
     }
   ],
   "factory_exemptions": [
@@ -9163,20 +9123,8 @@
     },
     {
       "source": "src/app/ui_manager.py",
-      "symbol": "UIManager._load_saved_layouts",
-      "sha256": "a81ce6810e27c0a75dc8f60b3643f0fda840ef075e96bc9abbd530cf7c99a582",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
-    },
-    {
-      "source": "src/app/ui_manager.py",
       "symbol": "UIManager._open_calendar_config",
       "sha256": "153d3f55b0a9e3c43af2d38504c7c254d854dc57f0b9ecb0a82e817f6c49bf6d",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
-    },
-    {
-      "source": "src/app/ui_manager.py",
-      "symbol": "UIManager._refresh_layouts_menu",
-      "sha256": "47a2b902352a97921d7af0d36e16429ae084d1fa8cd4a5a421e799d1fb6292ea",
       "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
     },
     {
@@ -9224,8 +9172,8 @@
     {
       "source": "src/app/ui_manager.py",
       "symbol": "UIManager.create_layouts_menu",
-      "sha256": "07d534da5b10158284a8d2b4f10abca4eb64f36aa8adbee14e6909d38885af6f",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "4289dabfbd9e692dcf8df04764330e901db9b3d13fec9e436d9891af570a15c6",
+      "review_note": "KRT-108: reviewed activity/menu separation, accessible full-name menu, collapse/expand wording and icon, safe popup focus restoration, and confirmed layout-only management. Existing workspace Help destinations remain accurate."
     },
     {
       "source": "src/app/ui_manager.py",
@@ -9242,44 +9190,14 @@
     {
       "source": "src/app/ui_manager.py",
       "symbol": "UIManager.create_view_menu",
-      "sha256": "01fa420fae59ff11c3297222975016acbdab5812d1b19a1271f73ae1bf994886",
-      "review_note": "KRT-55: removed Appearance settings from View at owner request. View retains panel, zone, focus-writing and layout operations. Theme configuration is documented under the direct Settings action."
-    },
-    {
-      "source": "src/app/ui_manager.py",
-      "symbol": "UIManager.delete_layout",
-      "sha256": "183b024b53ad49aebe003c9ca3536029ffac58e1649ee506a7ecf789a404a63c",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
-    },
-    {
-      "source": "src/app/ui_manager.py",
-      "symbol": "UIManager.get_saved_layouts",
-      "sha256": "e62286f0d781360597287bc4616dff1f0cff40216fcbc20d868760f6b5bef451",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
-    },
-    {
-      "source": "src/app/ui_manager.py",
-      "symbol": "UIManager.prompt_save_layout",
-      "sha256": "fbbfe07dd46337848f51f0e5d6ab4a460c6350c1928f1ab8d60fc44d5bfcda11",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "99362e18c0ba12dd44a265b726e68c3746c74e49ed6f21d83922a3b200165a68",
+      "review_note": "KRT-108: View remains authoritative for panels and zones. Reset now confirms and resets only the active activity workspace; workspace composition retains Focus writing and its shortcut."
     },
     {
       "source": "src/app/ui_manager.py",
       "symbol": "UIManager.reset_layout",
-      "sha256": "70210ca938311f6c9fc021a6ebc477c0a7b98dc1ab276024141510694f8518ff",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
-    },
-    {
-      "source": "src/app/ui_manager.py",
-      "symbol": "UIManager.restore_layout",
-      "sha256": "4b5280b3c566e4789351291f1c57ddf1863f7a84d733eebdac8ba133b928fb86",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
-    },
-    {
-      "source": "src/app/ui_manager.py",
-      "symbol": "UIManager.save_layout",
-      "sha256": "b67f0430fe2ad74dccb6bfb799f160fafff140af2625f73f0bd861e82a53cd12",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "fbdc41801c911076fd7430a295e2f10d75739e818ec3dc41c86a2690df4fa0d3",
+      "review_note": "KRT-108: delegates to confirmed active-workspace reset; built-ins use factory layouts and custom entries use creation baselines. Other workspaces and world content are preserved."
     },
     {
       "source": "src/commands/analysis_commands.py",
@@ -16562,8 +16480,8 @@
     {
       "source": "src/gui/workspace/pane_container.py",
       "symbol": "PaneContainer.add_panel",
-      "sha256": "9ff6f8cc942cc76bae68430c3ac1ae2527815866bc2b7481108d6275cb9375d7",
-      "review_note": "Reviewed the declared close button for every panel instance. It requests closing the panel tab while retaining the live widget and draft; View > Panels reopens it in its current zone. The canonical close-panel explanation describes this operation. Reopening and moving panels recreate the same declared control meaning."
+      "sha256": "2bd26ed996a839cbae3fb140770d3bf41bea2762563c904ea3c9c490e08e990c",
+      "review_note": "KRT-108: same close intent and retained live widget/draft. Custom close controls now track tab scrolling and leave keyboard traversal while clipped or under scroll arrows. The close-panel explanation documents scrolling or View > Panels as the complete route."
     },
     {
       "source": "src/gui/widgets/settings_center.py",
@@ -16582,6 +16500,90 @@
       "symbol": "SettingsCenter.build_world_pages",
       "sha256": "553dab7f09523e6ab01d2233270f21f0b7872d8dd9509859c697533977091cd8",
       "review_note": "KRT-55: reviewed actual embedded calendar/grouping/graph/AI forms and world index exclusions. Qt.Widget embedding prevents independent dialogs; page navigation retains drafts and external writes require Apply."
+    },
+    {
+      "source": "src/gui/workspace/activity_bar.py",
+      "symbol": "ActivityBar._action",
+      "sha256": "36a77514a3c9cc09c8ba5a7fbd7b1f99787bca1de291123f6815bb4d99447584",
+      "review_note": "KRT-108: reviewed layout-only activity navigation, full-name management routes, independent reset and local persistence; canonical workspace explanations describe these effects without implying world mutations."
+    },
+    {
+      "source": "src/gui/workspace/activity_bar.py",
+      "symbol": "ActivityBar._menu_action",
+      "sha256": "a028fdc71809c4d9ae0ab4d4cc0a48da920aa1172e427962a268d9b2567f3ea2",
+      "review_note": "KRT-108: reviewed activity/menu separation, accessible full-name menu, collapse/expand wording and icon, safe popup focus restoration, and confirmed layout-only management. Existing workspace Help destinations remain accurate."
+    },
+    {
+      "source": "src/gui/workspace/activity_bar.py",
+      "symbol": "ActivityBar.configure_workspaces",
+      "sha256": "fc12ed02de5775770f5dfe56c6d5573331d2bb48b92b45fa6db8253d5e262e00",
+      "review_note": "KRT-108: reviewed activity/menu separation, accessible full-name menu, collapse/expand wording and icon, safe popup focus restoration, and confirmed layout-only management. Existing workspace Help destinations remain accurate."
+    },
+    {
+      "source": "src/gui/workspace/activity_bar.py",
+      "symbol": "ActivityBar.set_entries",
+      "sha256": "5018d089d949bd1af1a32559c9cb92d44147bcf09a02a47ccf6eff59a06a22f6",
+      "review_note": "KRT-108: reviewed layout-only activity navigation, full-name management routes, independent reset and local persistence; canonical workspace explanations describe these effects without implying world mutations."
+    },
+    {
+      "source": "src/gui/workspace/activity_bar.py",
+      "symbol": "ActivityBar.set_expanded",
+      "sha256": "08fcf152b190f5772baebde38733b05a3f73231ba875f032c158823e30fb15ef",
+      "review_note": "KRT-108 owner refinement: compact mode uses smaller muted borderless icons, with tooltip/accessibility names and a labeled Workspaces menu. Expansion restores labels. Collapsed is the new default; explicit subsequent expansion is retained."
+    },
+    {
+      "source": "src/app/coordinators/workspace_coordinator.py",
+      "symbol": "WorkspaceCoordinator.activate",
+      "sha256": "ede4c402ccb14f547e2642349f7e48fa62ca28450f1ce75e16b9ec930f2e2559",
+      "review_note": "KRT-108: reviewed layout-only activity navigation, full-name management routes, independent reset and local persistence; canonical workspace explanations describe these effects without implying world mutations."
+    },
+    {
+      "source": "src/app/coordinators/workspace_coordinator.py",
+      "symbol": "WorkspaceCoordinator._apply",
+      "sha256": "0cd41d2a8339d2984b88226b7c919411b8c45b58af2a53353b3c9e7f65aad263",
+      "review_note": "KRT-108: normalize layouts atomically and retain requested sizing before first show; settled visible layouts are captured on persistence. This preserves startup widths without changing authoring contents or navigation."
+    },
+    {
+      "source": "src/app/coordinators/workspace_coordinator.py",
+      "symbol": "WorkspaceCoordinator.reset",
+      "sha256": "e648d07f80547a2909dba1f8563a00a477dade89b1d72708ea5da009a4a002ad",
+      "review_note": "KRT-108: reviewed layout-only activity navigation, full-name management routes, independent reset and local persistence; canonical workspace explanations describe these effects without implying world mutations."
+    },
+    {
+      "source": "src/app/coordinators/workspace_coordinator.py",
+      "symbol": "WorkspaceCoordinator.manage",
+      "sha256": "1a938e9e57eca8f3b856fd95495226e8f30845cb6dc996282b25935e9c3a8e6b",
+      "review_note": "KRT-108: reviewed activity/menu separation, accessible full-name menu, collapse/expand wording and icon, safe popup focus restoration, and confirmed layout-only management. Existing workspace Help destinations remain accurate."
+    },
+    {
+      "source": "src/app/coordinators/workspace_coordinator.py",
+      "symbol": "WorkspaceCoordinator.save_as",
+      "sha256": "49a2053ea4ecc240bb813f69037aad624ffd11b63e265e1786a951feb5de02c7",
+      "review_note": "KRT-108: reviewed layout-only activity navigation, full-name management routes, independent reset and local persistence; canonical workspace explanations describe these effects without implying world mutations."
+    },
+    {
+      "source": "src/app/coordinators/workspace_coordinator.py",
+      "symbol": "WorkspaceCoordinator.rename",
+      "sha256": "21ac4049e1d9c84a75313c185c70c7049309374f1f34812aa80923c10efa56d8",
+      "review_note": "KRT-108: reviewed layout-only activity navigation, full-name management routes, independent reset and local persistence; canonical workspace explanations describe these effects without implying world mutations."
+    },
+    {
+      "source": "src/app/coordinators/workspace_coordinator.py",
+      "symbol": "WorkspaceCoordinator.delete",
+      "sha256": "17735831a16e192d7ab637bcec93ab08581d8e5073143a0c65f0092e4e64807f",
+      "review_note": "KRT-108: reviewed layout-only activity navigation, full-name management routes, independent reset and local persistence; canonical workspace explanations describe these effects without implying world mutations."
+    },
+    {
+      "source": "src/gui/workspace/pane_container.py",
+      "symbol": "WorkspaceTabBar._sync_close_controls",
+      "sha256": "1bc0b8c9c7c26bd0b44805816700dc2556e19ac10878387a1287a92fc44df2ad",
+      "review_note": "KRT-108: show close controls only when fully reachable, with native tab scrolling and View > Panels retaining access; no panel is closed or reordered by visibility updates."
+    },
+    {
+      "source": "src/app/help_composition.py",
+      "symbol": "HelpSurfaceBindings.bind",
+      "sha256": "f8ca97219694603587063e2f0a7b72d095b6a38a33daff423cf7d35e884d72f6",
+      "review_note": "KRT-108: ActivityBar is an explicit workspace.navigation F1 surface; existing control explanations, modal boundaries and authoring input ownership are preserved."
     }
   ],
   "review_status": {

@@ -15,6 +15,28 @@ _FORBIDDEN_IMPORT_ROOTS = {
 pytestmark = pytest.mark.ci_fast
 
 
+def test_activity_workspaces_have_no_world_mutation_dependencies():
+    """Keep local layouts separate from commands, workers and application facades."""
+    for relative in (
+        "core/workspaces.py",
+        "services/workspace_store.py",
+        "app/coordinators/workspace_coordinator.py",
+    ):
+        modules = {module for _, module in _imported_modules(_SOURCE_ROOT / relative)}
+        assert not any(
+            module.startswith(
+                ("src.commands", "src.services.worker", "src.services.db_service")
+            )
+            or module == "src.app.main_window"
+            for module in modules
+        )
+        if relative.startswith("core/"):
+            assert not any(
+                module.startswith(("PySide6", "src.gui", "src.services"))
+                for module in modules
+            )
+
+
 def test_semantic_index_has_one_service_owner_and_thin_worker_slots():
     """KRT-101 keeps indexing state below the public Qt worker boundary."""
     service_path = _SOURCE_ROOT / "services/worker_semantic_index_service.py"
