@@ -22,6 +22,9 @@ searches the focused text surface or Help rather than every open panel.
 | Undo | Ctrl+Z |
 | Redo | Ctrl+Y or Ctrl+Shift+Z |
 | Find in text | Ctrl+F |
+| Next / previous control within the current panel | Tab / Shift+Tab |
+| Next / previous visible panel region | F6 / Shift+F6 |
+| Accept highlighted wiki-link suggestion | Enter |
 | Open a wiki link | Ctrl+Click |
 | Choose relation type while dropping | Shift+Drop |
 | Bold | Ctrl+B |
@@ -48,3 +51,7 @@ buttons, menu actions and associated labels. Its targeting click explains the
 operation without running it, including when the control is disabled.
 Reordering and shifting are
 controls within the active date edit and do not add separate shortcuts.
+
+Tab dismisses wiki-link suggestions without accepting them. Use the writing
+**Format → Indent / Outdent** and **Insert → Tab character** commands for deliberate
+Source edits. See [panel keyboard navigation](workspace.md#move-between-panels-with-the-keyboard).

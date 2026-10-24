@@ -1,5 +1,13 @@
 # Authoring interaction audit v1 — KRT-46
 
+KRT-94 implementation (2026-10-24): Tab/Shift+Tab wrap within the visible pane's
+active panel and tab strip. F6/Shift+F6 move between visible regions; workspace
+activation stays explicit. Wiki suggestions dismiss on Tab and accept a
+highlighted entry on Enter. Source-only Indent/Outdent/Tab character commands
+retain deliberate edits and local undo. Focus writing keeps local Tab ownership;
+F6 exits before moving regions. Contracts 2/5/6/7/8/9 apply. Automated, native
+and owner evidence are separated in [KRT-94 evidence](evidence/krt94/README.md).
+
 KRT-48 implementation (2026-10-09): labeled **Feature actions** routes in the
 Map toolbar/native overflow and a compact Layers selection row expose the shared
 border/path, appearance, journey, historical geometry and visibility-date

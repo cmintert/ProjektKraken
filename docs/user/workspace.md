@@ -69,6 +69,27 @@ Use **View → Zones** to hide or show Left, Right, or Bottom. Center always
 remains available. Opening a panel in a hidden zone reopens that zone at its
 previous useful size.
 
+(help-workspace-keyboard)=
+
+### Move between panels with the keyboard
+
+Press **Tab** or **Shift+Tab** to move through controls in the current panel
+region. Traversal wraps within its tab strip and active panel. Hidden panels,
+closed sections and disabled controls are skipped. Focusing a workspace button
+does not activate it; press **Enter** or **Space** to choose that workspace.
+
+Press **F6** for the next visible region, or **Shift+F6** for the previous one.
+The order is navigation rail, left, center, right, bottom, skipping hidden or
+collapsed regions. Returning to a region restores its last available control;
+otherwise focus starts at its tab strip or the active workspace button.
+Use **View → Next panel region / Previous panel region** for the same actions.
+Tab does not change a description; intentional indentation uses the
+[writing menus](wiki-editor-markdown.md#indent-source-without-using-tab).
+
+Dialogs, open menus and Help keep their own keyboard navigation. In an editable
+table, Tab retains cell editing and navigation within the panel. In Focus writing,
+Tab remains in the writing surface; F6 exits Focus writing and moves regions.
+
 ## Save a layout
 
 1. Arrange the panels and resize the four zones.
@@ -593,6 +614,12 @@ recovery.
 **Include grouping tag** — Include this tag as a Timeline group. Its position in the
 list determines priority in First Match mode.
 
+
+(help-inspect-workspace-focus-region)=
+
+**Next / previous panel region** — Move keyboard focus between visible regions
+without activating another workspace or opening an inactive panel. The previous
+control is restored where available. F6 moves forward; Shift+F6 moves backward.
 
 (help-inspect-workspace-show-panel)=
 

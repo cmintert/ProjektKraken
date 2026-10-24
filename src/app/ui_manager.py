@@ -197,6 +197,11 @@ class UIManager:
             self.focus_writing,
             getattr(self.main_window, "navigation_coordinator", None),
         )
+        from src.app.workspace_composition import compose_focus_navigation
+
+        self.focus_navigation = compose_focus_navigation(
+            workspace, self._window_widget, self.focus_writing, view_menu
+        )
 
         view_menu.addSeparator()
         reset_action = declare_inspection(

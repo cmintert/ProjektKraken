@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-24
-**Commit:** cc1b98ea1a57329d537d9080438f63499ddadede
+**Commit:** 32259a2d4306798df89df737b3cb4570641ca706
 ---
 
 # Changelog
@@ -61,6 +61,15 @@ All notable changes to this project will be documented in this file.
   and panel menu state.
 
 ### Fixed
+
+- *(2026-10-24)* **Keyboard navigation (KRT-94)**: Kept Tab/Shift+Tab within
+  the active panel and added F6/Shift+F6 movement between visible regions.
+  Prevented completion Tab from editing descriptions; added explicit Source
+  indentation/tab commands with local keyboard undo. Preserved Focus writing,
+  drafts and restored focus after panel moves. Updated Help, contracts and
+  reviewed inspection bindings; added keyboard/workspace regressions, an isolated
+  native review probe and bounded owner-acceptance evidence. Aligned stale
+  workspace tests and ignored generated browser-review artifacts.
 
 - *(2026-10-23)* **History**: Used shared semantic panel, row, button and
   caption styles; preserved selection, scroll and focus across theme changes.

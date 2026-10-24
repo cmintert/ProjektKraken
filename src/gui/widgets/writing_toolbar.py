@@ -32,6 +32,17 @@ class WritingToolbarPresentation(QObject):
         self._name_actions()
         self._view_actions()
         self._build_menus()
+        from src.gui.widgets.wiki_keyboard import SourceEditingActions
+
+        self.source_actions = SourceEditingActions(view)
+        self._menus["Format"].addSeparator()
+        self._menus["Format"].addActions(
+            [self.source_actions.indent, self.source_actions.outdent]
+        )
+        self._menus["Insert"].addAction(self.source_actions.insert_tab)
+        for title in ("Format", "Insert"):
+            self._menus[title].aboutToShow.connect(self.source_actions.refresh)
+        self.source_actions.refresh()
 
         self.heading_button = declare_inspection(
             WritingMenuButton(owner.toolbar),

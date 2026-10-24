@@ -9050,6 +9050,26 @@
       "binding": "action",
       "label": "Manage workspaces",
       "kind": "addAction"
+    },
+    {
+      "id": "workspace.focus-region",
+      "topic_id": "workspace.navigation",
+      "target": "help-inspect-workspace-focus-region",
+      "source": "src/gui/workspace/focus_navigation.py",
+      "symbol": "FocusNavigationController.install_actions",
+      "binding": "workspace.focus-region",
+      "label": "Next / previous panel region",
+      "kind": "semantic control/action"
+    },
+    {
+      "id": "writing.source-edit",
+      "topic_id": "writing.edit",
+      "target": "help-inspect-writing-source-edit",
+      "source": "src/gui/widgets/wiki_keyboard.py",
+      "symbol": "SourceEditingActions._action",
+      "binding": "writing.source-edit",
+      "label": "Source indentation and tab character",
+      "kind": "semantic control/action"
     }
   ],
   "factory_exemptions": [
@@ -9190,8 +9210,8 @@
     {
       "source": "src/app/ui_manager.py",
       "symbol": "UIManager.create_view_menu",
-      "sha256": "99362e18c0ba12dd44a265b726e68c3746c74e49ed6f21d83922a3b200165a68",
-      "review_note": "KRT-108: View remains authoritative for panels and zones. Reset now confirms and resets only the active activity workspace; workspace composition retains Focus writing and its shortcut."
+      "sha256": "ab477a46ba4628fa70739d019442f8899539c979a81406aae1cb8c241379fb70",
+      "review_note": "KRT-94: View now exposes Next/Previous panel region; workspace keyboard prose documents focus-only movement and local Tab ownership. Existing panel/zone visibility meanings are unchanged."
     },
     {
       "source": "src/app/ui_manager.py",
@@ -10924,8 +10944,8 @@
     {
       "source": "src/gui/dialogs/keyboard_shortcuts_dialog.py",
       "symbol": "KeyboardShortcutsDialog.__init__",
-      "sha256": "47d32ef157bf7c02a8e8f4b05ef0bb63f66852f63e12ec04622def62f09dccd5",
-      "review_note": "Reviewed 2026-10-15: expose F1, pointer Shift+F1 and focused Ctrl+Shift+F1 metadata in General. Close remains dismiss-only and uses the shared secondary role; its existing canonical explanation remains accurate."
+      "sha256": "a43339c1aa9556507217b14301c2da77842f3569d79c52888ef389636e62c414",
+      "review_note": "KRT-94: reviewed F6/Shift+F6 reference entries; canonical shortcuts and workspace documentation describe the region order and local ownership."
     },
     {
       "source": "src/gui/dialogs/keyboard_shortcuts_dialog.py",
@@ -16264,8 +16284,8 @@
     {
       "source": "src/gui/widgets/writing_toolbar.py",
       "symbol": "WritingToolbarPresentation.__init__",
-      "sha256": "15e81e0971b060aee6430b3b5fa1811dcfc73fb66a7f7edfa6367eb0b9c49ce8",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "49a0e1e5ba79fba7708e4762c9dd20578b6a10c2c5e0c5acab587120935d2a69",
+      "review_note": "KRT-94: existing Format/Insert menus now expose source-only indentation and literal tab commands; writing Help documents permissions, selection boundaries and local undo."
     },
     {
       "source": "src/gui/widgets/writing_toolbar.py",
@@ -16584,6 +16604,54 @@
       "symbol": "HelpSurfaceBindings.bind",
       "sha256": "f8ca97219694603587063e2f0a7b72d095b6a38a33daff423cf7d35e884d72f6",
       "review_note": "KRT-108: ActivityBar is an explicit workspace.navigation F1 surface; existing control explanations, modal boundaries and authoring input ownership are preserved."
+    },
+    {
+      "source": "src/gui/workspace/focus_navigation.py",
+      "symbol": "FocusNavigationController.install_actions",
+      "sha256": "5dd368ee42a6e1c6465b92fd9b0221bd618282f6f05ea6498bef812d9cd60afc",
+      "review_note": "KRT-94: labeled View commands move focus among currently visible regions without workspace activation; canonical workspace excerpt and keyboard route added."
+    },
+    {
+      "source": "src/gui/workspace/focus_navigation.py",
+      "symbol": "FocusNavigationController.move_region",
+      "sha256": "3fd7fdd502a49847dd1883a1a450dd6f77ec4849a6ba865d6f3addea655e0357",
+      "review_note": "KRT-94: reviewed visible-region order, focus restoration and Focus writing exit; no data or selection changes."
+    },
+    {
+      "source": "src/gui/widgets/wiki_keyboard.py",
+      "symbol": "SourceEditingActions._action",
+      "sha256": "a4fe2eb639aa62427b0f1498aa7c0925057f0620ca6b000919060899e6b2d53a",
+      "review_note": "KRT-94: canonical writing source-edit excerpt covers Indent/Outdent/Tab character, mode restrictions and undo."
+    },
+    {
+      "source": "src/gui/widgets/wiki_keyboard.py",
+      "symbol": "SourceEditingActions._indent",
+      "sha256": "0ff7176c78a1d3ba4f2ea0a1ce45ffb4f162ff3a33a03553f923bce7bae602d4",
+      "review_note": "KRT-94: source-only editing permissions, line indentation/literal tab and one-step text undo are described in writing Help. Completed commands return focus to the live text view so Ctrl+Z remains local; source and selection are preserved."
+    },
+    {
+      "source": "src/gui/widgets/wiki_keyboard.py",
+      "symbol": "WritingKeyboardController.eventFilter",
+      "sha256": "9e3f63d805a55bb89294d1220d8473f1d440ea38251dafd0136145dd7921b249",
+      "review_note": "KRT-94: plain Tab dismisses completion and traverses; Enter accepts the highlighted row. Existing rich/source preservation is unchanged."
+    },
+    {
+      "source": "src/gui/widgets/wiki_keyboard.py",
+      "symbol": "SourceEditingActions._insert_tab",
+      "sha256": "2ec44edfa1b1bd719d1e8240e29bf6384a679608d7ff38874fc3efcece3ed983",
+      "review_note": "KRT-94: source-only editing permissions, line indentation/literal tab and one-step text undo are described in writing Help. Completed commands return focus to the live text view so Ctrl+Z remains local; source and selection are preserved."
+    },
+    {
+      "source": "src/gui/widgets/wiki_keyboard.py",
+      "symbol": "SourceEditingActions.refresh",
+      "sha256": "292990af12e16b8ac7f45723e1b9bd3dc423be84fda7b0acc68126e5a3ea0401",
+      "review_note": "KRT-94: source-only editing permissions, line indentation/literal tab and one-step text undo are described in writing Help. Completed commands return focus to the live text view so Ctrl+Z remains local; source and selection are preserved."
+    },
+    {
+      "source": "src/gui/workspace/focus_navigation.py",
+      "symbol": "FocusNavigationController._repair",
+      "sha256": "5242786ae971d15560f04d868ef3e1d8211f712e02f8bb32cdaae4795f5e7b1d",
+      "review_note": "KRT-94: repair hidden controls within the surviving region, preserving the coordinator-restored original control after a move. Forward/reverse and moved/closed/restored workspace regressions verify context preservation. Workspace Help describes focus-only movement and restoration."
     }
   ],
   "review_status": {

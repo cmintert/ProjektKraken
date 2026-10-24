@@ -179,6 +179,9 @@ class WikiTextEditView(QTextEdit):
         """
         super().__init__(parent)
         self._hovered_link = None
+        from src.gui.widgets.wiki_keyboard import WritingKeyboardController
+
+        self._keyboard = WritingKeyboardController(self)
         self._completer: Optional[QCompleter] = None
         self._completion_map: dict[str, tuple[str, str]] = {}
         self._completion_rows: list[tuple[str, str, str]] = []
@@ -469,6 +472,7 @@ class WikiTextEditView(QTextEdit):
                 self.insert_completion_index
             )
             self._completer = completer
+            self._keyboard.watch_completion()
         model = self._completer.model()
         if not isinstance(model, QStandardItemModel):
             model = QStandardItemModel(self._completer)

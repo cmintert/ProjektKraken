@@ -231,6 +231,26 @@ A passing automated matrix does not establish native Windows DPI behavior or
 reviewer approval. Record exceptions with a domain justification and explicit
 sign-off; assigned follow-up issues do not convert violations into acceptance.
 
+## Keyboard traversal interpretation — 2026-10-24, KRT-94
+
+Contracts 2/5/6/7/8/9 apply to keyboard movement. Tab and Shift+Tab traverse and
+wrap within the current visible pane's tab strip and active panel; nested
+inspector sections remain local. Hidden/inactive pages, disabled controls and
+unreachable overflow controls are excluded. Focusing a tab header or workspace
+button does not activate it. Explicit tab-selection gestures remain available.
+
+F6 and Shift+F6 deliberately cycle navigation rail, left, center, right, bottom,
+skipping unavailable regions and restoring each region's last eligible control.
+View exposes the same operations. Focus writing keeps Tab within its surface;
+F6 exits that presentation before moving regions. Dialogs, menus, Help and native
+table cell editing retain local ownership.
+
+Plain Tab never edits a description in Rich or Source mode. In wiki completion,
+Tab dismisses suggestions and traverses; Enter accepts the highlighted entry.
+Editable Source provides labeled Indent, Outdent and Tab character menu commands
+with local text undo. This deliberately replaces implicit Tab editing with
+explicit commands, preserving exact source, drafts, caret/selection and history.
+
 ## Version history
 
 - **1.1 — 2026-10-11:** KRT-82 adds the action-label integrity gate and explicit

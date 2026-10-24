@@ -84,16 +84,24 @@ def test_production_map_click_keeps_shared_workspace_active(
     loader.assert_not_called()
 
 
-def test_activity_action_follows_moved_panel(main_window) -> None:
+def test_view_panel_action_follows_moved_panel(main_window) -> None:
     main_window.workspace.move_panel("map", "right")
 
-    main_window.workspace._activity_actions["map"].trigger()
+    action = main_window.ui_manager._panel_actions["map"]
+    action.setChecked(False)
+    action.trigger()
 
     assert main_window.workspace.panel_zone("map") == "right"
     assert main_window.workspace.active_panel("right") == "map"
 
 
-def test_reset_layout_preserves_outer_window_geometry(main_window) -> None:
+def test_reset_layout_preserves_outer_window_geometry(main_window, monkeypatch) -> None:
+    from PySide6.QtWidgets import QMessageBox
+
+    main_window.workspace_coordinator.restore()
+    monkeypatch.setattr(
+        QMessageBox, "question", lambda *args: QMessageBox.StandardButton.Yes
+    )
     main_window.setGeometry(140, 110, 1110, 730)
     before = main_window.geometry()
     main_window.workspace.move_panel("timeline", "left")

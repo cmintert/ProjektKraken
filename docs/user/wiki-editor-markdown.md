@@ -44,6 +44,32 @@ effect. It still clears heading/bold/italic formatting; no new Body operation wa
 added. **View** contains Markdown source/Rendered view and Table of contents;
 **Tools** contains the Spell & grammar checking toggle. Narrow rows use labeled **More actions**.
 
+### Indent source without using Tab
+
+**Tab / Shift+Tab** move to the next or previous control in the current panel;
+they do not insert text. If wiki-link suggestions are open, Tab dismisses them
+and moves focus. Use the arrow keys and **Enter** to accept a highlighted suggestion.
+
+To edit indentation deliberately:
+
+1. Open the writing **View → Markdown source** command.
+2. Place the caret in a line, or select the lines you want to change.
+3. Choose **Format → Indent** to add four leading spaces, or **Outdent** to remove
+   one leading tab or up to four spaces from each affected line.
+
+A selection ending at the start of the next line leaves that next line unchanged.
+Use **Insert → Tab character** to insert a literal tab at the caret or replace
+selected text. These commands require editable Source view; they are disabled in
+Rich view and read-only descriptions. Each command can be reversed with one Undo.
+Save the description with its inspector's **Save Changes** action.
+
+(help-inspect-writing-source-edit)=
+
+**Source indentation and tab character** — In editable Markdown source, Indent
+adds four spaces to the current or selected lines; Outdent removes one leading
+tab or up to four spaces. Tab character inserts a literal tab or replaces the
+selection. Each command is one text Undo step. Plain Tab always moves focus.
+
 (help-writing-links)=
 
 ## Link to an entry without losing your writing

@@ -88,6 +88,8 @@ class KeyboardShortcutsDialog(QDialog):
             [
                 ShortcutManager.FIND,
                 ShortcutManager.NAVIGATE_LINK,
+                ShortcutManager.NEXT_PANEL_REGION,
+                ShortcutManager.PREVIOUS_PANEL_REGION,
             ],
         )
 

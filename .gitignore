@@ -92,6 +92,7 @@ worlds/
 
 # Temporary test logs
 /tmp/
+/output/playwright/
 failed_tests*.log
 pytest_no_qt.ini
 tests_conftest_qt_mock.py

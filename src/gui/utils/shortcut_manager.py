@@ -42,6 +42,12 @@ class ShortcutManager:
     CREATE_MAP = KeyboardShortcut("Create Map", "Ctrl+M", "Create a new map")
 
     # Search & Navigation
+    NEXT_PANEL_REGION = KeyboardShortcut(
+        "Next panel region", "F6", "Move to the next visible panel region"
+    )
+    PREVIOUS_PANEL_REGION = KeyboardShortcut(
+        "Previous panel region", "Shift+F6", "Move to the previous visible panel region"
+    )
     FIND = KeyboardShortcut("Find", "Ctrl+F", "Find text in document")
     NAVIGATE_LINK = KeyboardShortcut(
         "Navigate Link", "Ctrl+Click", "Open linked entity or event"
