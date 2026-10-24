@@ -2,15 +2,15 @@
   "schema": 1,
   "counts": {
     "smoke": 19,
-    "ci_fast": 2398,
+    "ci_fast": 2593,
     "slow": 1,
     "performance": 0,
-    "full": 6834,
-    "full_only": 4427
+    "full": 7103,
+    "full_only": 4501
   },
   "categories": {
     "architecture": 11,
-    "cli": 73,
+    "cli": 131,
     "gui": 15,
     "integration": 245,
     "packaging": 13,
@@ -18,7 +18,7 @@
     "repro": 2,
     "root": 15,
     "security": 5,
-    "unit": 6439
+    "unit": 6650
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -89,6 +89,30 @@
     "tests/cli/test_cli_calendar.py::test_calendar_set_active": [
       "ci_fast"
     ],
+    "tests/cli/test_cli_contract.py::test_backup_create_list_and_restore_new_target": [],
+    "tests/cli/test_cli_contract.py::test_both_group_entry_points_have_help[attachment]": [],
+    "tests/cli/test_cli_contract.py::test_both_group_entry_points_have_help[backup]": [],
+    "tests/cli/test_cli_contract.py::test_both_group_entry_points_have_help[calendar]": [],
+    "tests/cli/test_cli_contract.py::test_both_group_entry_points_have_help[entity]": [],
+    "tests/cli/test_cli_contract.py::test_both_group_entry_points_have_help[event]": [],
+    "tests/cli/test_cli_contract.py::test_both_group_entry_points_have_help[graph]": [],
+    "tests/cli/test_cli_contract.py::test_both_group_entry_points_have_help[index]": [],
+    "tests/cli/test_cli_contract.py::test_both_group_entry_points_have_help[info]": [],
+    "tests/cli/test_cli_contract.py::test_both_group_entry_points_have_help[longform]": [],
+    "tests/cli/test_cli_contract.py::test_both_group_entry_points_have_help[map]": [],
+    "tests/cli/test_cli_contract.py::test_both_group_entry_points_have_help[obsidian]": [],
+    "tests/cli/test_cli_contract.py::test_both_group_entry_points_have_help[relation]": [],
+    "tests/cli/test_cli_contract.py::test_both_group_entry_points_have_help[timeline]": [],
+    "tests/cli/test_cli_contract.py::test_both_group_entry_points_have_help[wiki]": [],
+    "tests/cli/test_cli_contract.py::test_import_active_world_fallback_uses_registered_manifest": [],
+    "tests/cli/test_cli_contract.py::test_import_targets_only_selected_world": [],
+    "tests/cli/test_cli_contract.py::test_index_action_usage_and_dispatch": [],
+    "tests/cli/test_cli_contract.py::test_index_handlers_run_from_both_parsers": [],
+    "tests/cli/test_cli_contract.py::test_json_create_empty_lists_and_existing_target": [],
+    "tests/cli/test_cli_contract.py::test_legacy_attachment_repair_is_previewed_and_backed_up": [],
+    "tests/cli/test_cli_contract.py::test_marker_bounds_and_partial_attachment": [],
+    "tests/cli/test_cli_contract.py::test_published_example_modules_and_flags": [],
+    "tests/cli/test_cli_contract.py::test_relation_calendar_timeline_wiki_and_exports": [],
     "tests/cli/test_cli_entity.py::test_entity_create_success": [
       "ci_fast"
     ],
@@ -179,6 +203,9 @@
     "tests/cli/test_graph_cli.py::test_export_graph_with_tags": [
       "ci_fast"
     ],
+    "tests/cli/test_info_cli.py::test_failed_stats_do_not_report_success": [
+      "ci_fast"
+    ],
     "tests/cli/test_info_cli.py::test_gather_stats_resolves_attachment_relative_to_world": [
       "ci_fast"
     ],
@@ -249,6 +276,105 @@
       "ci_fast"
     ],
     "tests/cli/test_preflight.py::test_release_checks_entire_suite_without_double_fast_run": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_artifact_path_traversal_rejected": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_case_sensitive_nodeids_and_collected_parameter_order_are_preserved": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_complete_evidence_combines_coverage_and_verifies_release": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_corrupt_coverage_never_publishes_complete_xml": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_cross_host_artifact_redirect_strips_authorization": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_environment_or_sha_drift_prevents_execution": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_failure_abort_and_timeout_preserve_later_module_results": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_invalid_cli_evidence_is_red": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_inventory_rejects_duplicates_before_dictionary_conversion": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_json_duplicate_keys_rejected": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_later_incomplete_attempt_never_falls_back_to_previous_pass": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_log_duration_estimates_omit_the_incomplete_last_module": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_missing_artifacts_fail_closed[coverage.data]": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_missing_artifacts_fail_closed[junit.xml]": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_missing_artifacts_fail_closed[progress.jsonl]": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_native_descendants_are_killed_on_completion_and_timeout[False]": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_native_descendants_are_killed_on_completion_and_timeout[True]": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_plain_smoke_success_cannot_certify_release": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_planner_exact_once_deterministic_and_automatically_includes_additions": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_planner_rejects_bad_assignment_even_with_new_digest[duplicate]": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_planner_rejects_bad_assignment_even_with_new_digest[empty]": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_planner_rejects_bad_assignment_even_with_new_digest[missing]": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_planner_rejects_bad_assignment_even_with_new_digest[path]": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_planner_rejects_bad_assignment_even_with_new_digest[stale]": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_recovery_approval_must_name_current_attempt_and_environment": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_recovery_rejects_runner_image_drift": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_recovery_requires_bound_review_and_retains_attempt_ledger": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_separate_runner_image_retains_provenance_without_blocking_shard": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_store_python_is_rejected_before_certifying_isolation": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_teardown_failure_is_not_a_passing_case": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_unittest_subtest_reports_are_complete_only_with_terminal_phases": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_verify_cli_does_not_require_pytest_in_packaging_environment": [
+      "ci_fast"
+    ],
+    "tests/cli/test_release_regression.py::test_workflow_upload_failure_blocks_otherwise_complete_evidence": [
       "ci_fast"
     ],
     "tests/gui/dialogs/test_about_dialog.py::test_about_dialog_has_close_button": [],
@@ -1569,6 +1695,9 @@
     "tests/unit/gui/widgets/test_spell_check_controller.py::test_ignore_and_theme_refresh_preserve_authoring_context": [
       "ci_fast"
     ],
+    "tests/unit/gui/widgets/test_spell_check_controller.py::test_inline_spell_toggle_uses_shared_adapter_without_opening_settings": [
+      "ci_fast"
+    ],
     "tests/unit/gui/widgets/test_spell_check_controller.py::test_old_menu_action_cannot_apply_to_equal_fresh_match": [
       "ci_fast"
     ],
@@ -1609,12 +1738,6 @@
       "ci_fast"
     ],
     "tests/unit/gui/widgets/test_spell_check_controller.py::test_suggestion_is_one_undoable_edit_and_stale_action_is_inert": [
-      "ci_fast"
-    ],
-    "tests/unit/gui/widgets/test_spell_check_controller.py::test_visible_settings_action_synchronizes_controller_and_check_state[False]": [
-      "ci_fast"
-    ],
-    "tests/unit/gui/widgets/test_spell_check_controller.py::test_visible_settings_action_synchronizes_controller_and_check_state[True]": [
       "ci_fast"
     ],
     "tests/unit/gui/widgets/test_wiki_peek_panel.py::test_peek_rethemes_visible_controls_without_losing_content": [],
@@ -2320,6 +2443,84 @@
     "tests/unit/test_action_label_integrity.py::test_wrapping_controls_use_complete_painted_label_geometry[tool]": [
       "ci_fast"
     ],
+    "tests/unit/test_activity_workspaces.py::test_atomic_activation_emits_only_final_visible_panels": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_cancelled_reset_leaves_layout_unchanged": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_custom_layout_survives_switch_and_restart": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_custom_reset_rename_and_delete_preserve_other_workspaces": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_debounced_tab_and_visibility_changes_are_saved": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_defaults_are_independent_and_foreground_current_inspector[cartography]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_defaults_are_independent_and_foreground_current_inspector[chronology]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_defaults_are_independent_and_foreground_current_inspector[connections]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_defaults_are_independent_and_foreground_current_inspector[overview]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_defaults_are_independent_and_foreground_current_inspector[research]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_defaults_are_independent_and_foreground_current_inspector[writing]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_duplicate_names_and_builtin_mutation_are_guarded": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_local_reset_retains_custom_resources": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_malformed_geometry_and_unknown_panels_are_normalized[10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_malformed_geometry_and_unknown_panels_are_normalized[inf]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_menu_bar_keeps_full_workspace_name": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_migration_and_invalid_entry_recovery": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_new_icon_default_applies_once_then_remembers_expansion": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_noop_and_view_panel_do_not_switch_workspaces": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_popup_return_respects_assistance_keyboard_ownership": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_rail_sizes_and_keyboard_activation": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_real_longform_retains_selection_scroll_and_cached_hydration": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_restore_before_show_does_not_save_provisional_splitter_sizes": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_selected_inspector_and_last_inspector_fallback": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_switch_roundtrip_retains_drafts_documents_caret_and_undo": [
+      "ci_fast"
+    ],
+    "tests/unit/test_activity_workspaces.py::test_workspace_popup_returns_focus_to_navigation": [
+      "ci_fast"
+    ],
     "tests/unit/test_ai_audit_logging.py::test_disabled_auditing_does_not_create_file": [],
     "tests/unit/test_ai_audit_logging.py::test_discard_is_recorded_as_refused": [],
     "tests/unit/test_ai_audit_logging.py::test_generation_event_is_one_parseable_json_line": [],
@@ -2556,6 +2757,18 @@
       "ci_fast"
     ],
     "tests/unit/test_attachment_service.py::test_add_images": [
+      "ci_fast"
+    ],
+    "tests/unit/test_attachment_service.py::test_rejects_noncanonical_owner_types[]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_attachment_service.py::test_rejects_noncanonical_owner_types[entities]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_attachment_service.py::test_rejects_noncanonical_owner_types[events]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_attachment_service.py::test_rejects_noncanonical_owner_types[map]": [
       "ci_fast"
     ],
     "tests/unit/test_attachment_service.py::test_remove_image": [
@@ -3542,6 +3755,12 @@
     "tests/unit/test_connections_overview.py::test_both_overview_perspectives_preserve_canonical_assertion[member_of]": [
       "ci_fast"
     ],
+    "tests/unit/test_connections_overview.py::test_connections_stay_one_line_at_narrow_and_wide_widths[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_connections_stay_one_line_at_narrow_and_wide_widths[event]": [
+      "ci_fast"
+    ],
     "tests/unit/test_connections_overview.py::test_counts_filters_and_uuid_refresh[entity-0]": [
       "ci_fast"
     ],
@@ -3600,6 +3819,12 @@
       "ci_fast"
     ],
     "tests/unit/test_connections_overview.py::test_editor_heading_is_plain_and_empty_meaning_stays_local[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_finished_inline_edit_releases_splitter_space[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_connections_overview.py::test_finished_inline_edit_releases_splitter_space[event]": [
       "ci_fast"
     ],
     "tests/unit/test_connections_overview.py::test_group_keyboard_never_removes_a_previously_selected_relation[entity]": [
@@ -4029,6 +4254,9 @@
     "tests/unit/test_dependency_contract.py::test_stale_projection_is_detected_and_regenerated": [
       "ci_fast"
     ],
+    "tests/unit/test_dependency_direction.py::test_activity_workspaces_have_no_world_mutation_dependencies": [
+      "ci_fast"
+    ],
     "tests/unit/test_dependency_direction.py::test_authored_relation_facade_only_delegates[_validate_relation_endpoint-validate_endpoint]": [
       "ci_fast"
     ],
@@ -4102,6 +4330,9 @@
       "ci_fast"
     ],
     "tests/unit/test_dependency_direction.py::test_semantic_index_has_one_service_owner_and_thin_worker_slots": [
+      "ci_fast"
+    ],
+    "tests/unit/test_dependency_direction.py::test_settings_forms_do_not_own_persistence": [
       "ci_fast"
     ],
     "tests/unit/test_dependency_direction.py::test_simple_load_reporter_cannot_execute_operations": [
@@ -4621,6 +4852,129 @@
     "tests/unit/test_filter_dialog.py::TestFilterDialog::test_init_populates_tags": [],
     "tests/unit/test_filter_dialog.py::TestFilterDialog::test_selection_generates_config": [],
     "tests/unit/test_filter_dialog_population.py::TestFilterDialogPopulation::test_dialog_populates_tags": [],
+    "tests/unit/test_focus_navigation.py::test_completion_enter_still_accepts": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_completion_tab_dismisses_without_accepting[False-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_completion_tab_dismisses_without_accepting[False-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_completion_tab_dismisses_without_accepting[True-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_completion_tab_dismisses_without_accepting[True-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_explicit_source_edits_and_literal_tab[- alpha\\n| x | y |]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_explicit_source_edits_and_literal_tab[\\talpha\\n  beta\\ngamma\\n- tail]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_f6_cycles_visible_regions_and_remembers_control": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_focus_writing_owns_tab_and_f6_exits[entity]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_focus_writing_owns_tab_and_f6_exits[event]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_hidden_disabled_and_inactive_controls_are_excluded": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_layout_move_retains_a_valid_restored_focus": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_layout_restore_close_and_collapsed_region": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_modal_and_help_keep_keyboard_ownership": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_production_navigation_keeps_workspace_and_draft": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_source_command_returns_text_ownership_for_keyboard_undo[indent]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_source_command_returns_text_ownership_for_keyboard_undo[insert_tab]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_source_command_returns_text_ownership_for_keyboard_undo[outdent]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_source_commands_disabled_in_rich_and_readonly": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_source_indentation_one_undo_and_selection_direction[False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_source_indentation_one_undo_and_selection_direction[True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_tab_cycles_active_region_without_edits[cartography-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_tab_cycles_active_region_without_edits[cartography-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_tab_cycles_active_region_without_edits[chronology-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_tab_cycles_active_region_without_edits[chronology-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_tab_cycles_active_region_without_edits[connections-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_tab_cycles_active_region_without_edits[connections-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_tab_cycles_active_region_without_edits[overview-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_tab_cycles_active_region_without_edits[overview-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_tab_cycles_active_region_without_edits[research-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_tab_cycles_active_region_without_edits[research-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_tab_cycles_active_region_without_edits[writing-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_tab_cycles_active_region_without_edits[writing-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_tab_reaches_fields_below_scroll_viewport": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_table_delegate_retains_commit_and_cell_navigation": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_theme_and_narrow_focus_preserve_writing[cyberpunk_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_theme_and_narrow_focus_preserve_writing[dark_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_theme_and_narrow_focus_preserve_writing[fantasy_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_theme_and_narrow_focus_preserve_writing[imperial_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_theme_and_narrow_focus_preserve_writing[light_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_focus_navigation.py::test_theme_and_narrow_focus_preserve_writing[muted_light_mode]": [
+      "ci_fast"
+    ],
     "tests/unit/test_focus_writing.py::test_escape_and_local_button_restore_layout[entity]": [],
     "tests/unit/test_focus_writing.py::test_escape_and_local_button_restore_layout[event]": [],
     "tests/unit/test_focus_writing.py::test_focus_action_uses_secondary_writing_row[entity]": [],
@@ -4657,6 +5011,10 @@
     "tests/unit/test_focus_writing.py::test_repeated_entry_restores_width_and_chrome[event]": [],
     "tests/unit/test_focus_writing.py::test_same_item_reload_keeps_focus_new_item_exits[entity]": [],
     "tests/unit/test_focus_writing.py::test_same_item_reload_keeps_focus_new_item_exits[event]": [],
+    "tests/unit/test_focus_writing.py::test_workspace_roundtrip_retains_real_inspector_scroll[entity]": [],
+    "tests/unit/test_focus_writing.py::test_workspace_roundtrip_retains_real_inspector_scroll[event]": [],
+    "tests/unit/test_focus_writing.py::test_workspace_switch_exits_focus_without_reloading_dirty_inspector[entity]": [],
+    "tests/unit/test_focus_writing.py::test_workspace_switch_exits_focus_without_reloading_dirty_inspector[event]": [],
     "tests/unit/test_full_text_search.py::test_search_matches_attributes": [],
     "tests/unit/test_full_text_search.py::test_search_matches_description": [],
     "tests/unit/test_full_text_search.py::test_search_matches_tags": [],
@@ -5069,6 +5427,9 @@
     "tests/unit/test_help_inspection_coverage.py::test_action_owner_teardown_releases_cached_native_handles": [
       "ci_fast"
     ],
+    "tests/unit/test_help_inspection_coverage.py::test_activity_help_does_not_switch_workspace_or_change_draft": [
+      "ci_fast"
+    ],
     "tests/unit/test_help_inspection_coverage.py::test_control_search_lands_on_concise_explanation": [
       "ci_fast"
     ],
@@ -5115,6 +5476,12 @@
       "ci_fast"
     ],
     "tests/unit/test_help_inspection_coverage.py::test_standard_dialog_buttons_use_roles_and_task_destination": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_inspection_coverage.py::test_workspace_close_inspection_preserves_live_panel_across_recreation[focused]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_help_inspection_coverage.py::test_workspace_close_inspection_preserves_live_panel_across_recreation[pointer]": [
       "ci_fast"
     ],
     "tests/unit/test_help_search_inspection.py::test_all_production_meanings_are_reachable": [
@@ -5770,7 +6137,7 @@
     "tests/unit/test_lexicon_editor.py::TestColorButton::test_init_stores_color": [],
     "tests/unit/test_lexicon_editor.py::TestColorButton::test_style_contains_color": [],
     "tests/unit/test_lexicon_editor.py::TestGraphFilterBarLexiconButton::test_has_lexicon_signal": [],
-    "tests/unit/test_lexicon_editor.py::TestGraphFilterBarLexiconButton::test_lexicon_button_exists": [],
+    "tests/unit/test_lexicon_editor.py::TestGraphFilterBarLexiconButton::test_lexicon_entry_point_is_removed": [],
     "tests/unit/test_lexicon_editor.py::TestGraphWidgetLexiconAPI::test_has_lexicon_save_signal": [],
     "tests/unit/test_lexicon_editor.py::TestGraphWidgetLexiconAPI::test_lexicon_passed_to_build_html": [],
     "tests/unit/test_lexicon_editor.py::TestGraphWidgetLexiconAPI::test_set_available_entity_types": [],
@@ -7302,6 +7669,105 @@
     "tests/unit/test_map_refactor_foundation.py::test_query_resamples_mixed_discrete_and_continuous_grids": [],
     "tests/unit/test_map_refactor_foundation.py::test_stroke_intent_crosses_worker_boundary_without_live_buffer": [],
     "tests/unit/test_map_refactor_foundation.py::test_uniform_image_produces_deterministic_single_color_gradient": [],
+    "tests/unit/test_map_space_pan.py::test_autorepeat_preserves_original_interaction_and_custom_cursor[False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_autorepeat_preserves_original_interaction_and_custom_cursor[True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_early_space_release_does_not_select_then_normal_click_still_works": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_lost_focus_or_mouse_grab_restores_state_and_ignores_late_release[187]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_lost_focus_or_mouse_grab_restores_state_and_ignores_late_release[18]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_lost_focus_or_mouse_grab_restores_state_and_ignores_late_release[25]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_lost_focus_or_mouse_grab_restores_state_and_ignores_late_release[9]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_missing_mouse_release_recovers_on_hover_and_next_pan": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_narrow_styled_map_restores_cursor_and_tool_across_themes[cyberpunk_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_narrow_styled_map_restores_cursor_and_tool_across_themes[dark_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_narrow_styled_map_restores_cursor_and_tool_across_themes[fantasy_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_narrow_styled_map_restores_cursor_and_tool_across_themes[imperial_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_narrow_styled_map_restores_cursor_and_tool_across_themes[light_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_narrow_styled_map_restores_cursor_and_tool_across_themes[muted_light_mode]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_normal_marker_drag_still_moves_marker_after_pan": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_pan_over_footprint_does_not_navigate_or_change_registration[False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_pan_over_footprint_does_not_navigate_or_change_registration[True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_pan_over_real_edit_handle_cannot_change_geometry_or_appearance[appearance]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_pan_over_real_edit_handle_cannot_change_geometry_or_appearance[vertices]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_pan_over_real_item_label_preserves_selection[marker]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_pan_over_real_item_label_preserves_selection[region]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_pan_preserves_tool_state_and_bypasses_all_edit_callbacks[calibration]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_pan_preserves_tool_state_and_bypasses_all_edit_callbacks[drawing]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_pan_preserves_tool_state_and_bypasses_all_edit_callbacks[placement]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_pan_preserves_tool_state_and_bypasses_all_edit_callbacks[raster]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_pan_preserves_tool_state_and_bypasses_all_edit_callbacks[vertices]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_pan_suppresses_double_click_and_context_menu_then_restores_menu": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_space_drag_scrolls_without_item_side_effects[empty]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_space_drag_scrolls_without_item_side_effects[marker]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_space_drag_scrolls_without_item_side_effects[path]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_space_drag_scrolls_without_item_side_effects[region]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_space_pan_cannot_paint_real_raster_buffer": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_space_pan.py::test_tool_change_during_pan_retains_new_mode_without_stray_placement": [
+      "ci_fast"
+    ],
     "tests/unit/test_map_temporal_rasters.py::TestPlayheadDebounce::test_debounce_prevents_redundant_apply_on_rapid_changes": [],
     "tests/unit/test_map_temporal_rasters.py::TestPlayheadDebounce::test_debounce_timer_started_on_change": [],
     "tests/unit/test_map_temporal_rasters.py::TestPlayheadImmediateApply::test_apply_called_immediately_on_first_change": [],
@@ -7730,13 +8196,14 @@
     "tests/unit/test_persistence_boundary.py::test_webserver_longform_reads_leave_world_unchanged": [
       "ci_fast"
     ],
-    "tests/unit/test_production_workspace.py::test_activity_action_follows_moved_panel": [],
     "tests/unit/test_production_workspace.py::test_factory_layout_matches_workspace_contract": [],
+    "tests/unit/test_production_workspace.py::test_panel_headers_match_project_gap_after_moving": [],
     "tests/unit/test_production_workspace.py::test_production_map_click_keeps_shared_workspace_active[entity]": [],
     "tests/unit/test_production_workspace.py::test_production_map_click_keeps_shared_workspace_active[event]": [],
     "tests/unit/test_production_workspace.py::test_production_window_registers_reused_feature_widgets": [],
     "tests/unit/test_production_workspace.py::test_production_window_uses_visible_central_workspace": [],
     "tests/unit/test_production_workspace.py::test_reset_layout_preserves_outer_window_geometry": [],
+    "tests/unit/test_production_workspace.py::test_view_panel_action_follows_moved_panel": [],
     "tests/unit/test_prompt_builder.py::TestPromptBuilder::test_build_context_string_basic": [],
     "tests/unit/test_prompt_builder.py::TestPromptBuilder::test_build_context_string_empty": [],
     "tests/unit/test_prompt_builder.py::TestPromptBuilder::test_build_context_string_extra_fields": [],
@@ -8865,6 +9332,102 @@
     "tests/unit/test_semantic_completions.py::TestWorkerSemanticQuery::test_probe_timeout_is_cached_and_emits_no_result": [],
     "tests/unit/test_set_layer_opacity_command.py::test_command_falls_back_to_current_opacity_if_none_provided": [],
     "tests/unit/test_set_layer_opacity_command.py::test_command_uses_explicit_previous_opacity": [],
+    "tests/unit/test_settings_center.py::test_acknowledgement_preserves_edit_made_while_saving": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_apply_waits_for_world_acknowledgement": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_center_uses_theme_surface_and_keeps_keyboard_ownership": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_credential_failure_retains_plaintext_and_failed_draft": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_draft_conflict_clears_when_external_value_returns_to_baseline": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_draft_merges_external_changes_and_resolves_conflicts": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_embedded_center_construction_has_no_persistence": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_embedded_world_forms_preserve_values": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_external_contextual_change_creates_conflict": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_graph_edits_preserve_styles_for_unused_types": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_invalid_calendar_blocks_local_writes": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_legacy_seed_is_frozen_across_worlds_and_resets": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_missing_calendar_does_not_create_pending_edit": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_open_navigate_search_and_cancel_write_nothing": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_partial_failure_keeps_only_failed_drafts": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_partial_local_failure_message_survives_world_ack": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_plaintext_is_retained_if_secure_store_cannot_be_read": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_policy_initialization_is_idempotent_and_undo_restores_absence": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_populated_tag_world_loads_and_tag_colors_undo_exactly": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_read_failure_disables_world_pages_and_contextual_writes": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_registry_search_never_uses_values_or_resets_credentials": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_settings_endpoint_uses_existing_database_thread": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_stale_world_patch_has_no_partial_writes": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_stale_world_snapshot_cannot_replace_active_draft": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_targeted_resets_preserve_resources_credentials_and_worlds": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_two_portable_worlds_keep_independent_policy": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_workspace_reset_runs_after_shutdown_state_is_saved": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_world_apply_failure_retains_world_draft": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_world_command_roundtrip_preserves_target_and_exact_undo": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_world_failure_rolls_back_earlier_metadata_writes": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_world_name_is_visible_before_snapshot_arrives": [
+      "ci_fast"
+    ],
+    "tests/unit/test_settings_center.py::test_world_scope_apply_preserves_kraken_draft": [
+      "ci_fast"
+    ],
     "tests/unit/test_sheet_builder.py::TestAttributePairWidget::test_get_parsed_value_boolean_false": [],
     "tests/unit/test_sheet_builder.py::TestAttributePairWidget::test_get_parsed_value_boolean_true": [],
     "tests/unit/test_sheet_builder.py::TestAttributePairWidget::test_get_parsed_value_number_float": [],
@@ -10547,10 +11110,16 @@
     "tests/unit/test_timeline_presentation.py::test_invalid_calendar_still_uses_actual_error_symbol": [
       "ci_fast"
     ],
+    "tests/unit/test_timeline_presentation.py::test_label_bounds_follow_text_instead_of_fixed_width": [
+      "ci_fast"
+    ],
     "tests/unit/test_timeline_presentation.py::test_manual_snap_publishes_target_without_modifying_assertions": [
       "ci_fast"
     ],
     "tests/unit/test_timeline_presentation.py::test_measure_threshold_is_independent_from_year_and_presence_thresholds": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_packing_reuses_space_between_short_labels": [
       "ci_fast"
     ],
     "tests/unit/test_timeline_presentation.py::test_production_group_duplicates_share_zoom_and_refresh_captions": [
@@ -10585,6 +11154,46 @@
     "tests/unit/test_timeline_rendering.py::test_event_item_paint": [],
     "tests/unit/test_timeline_rendering.py::test_event_item_paint_selected": [],
     "tests/unit/test_timeline_rendering.py::test_event_item_position": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[-0.05-0.5-1000]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[-0.05-0.5-320]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[-0.05-1.0-1000]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[-0.05-1.0-320]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[-0.05-2.0-1000]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[-0.05-2.0-320]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[-0.05-4.0-1000]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[-0.05-4.0-320]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.05-0.5-1000]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.05-0.5-320]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.05-1.0-1000]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.05-1.0-320]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.05-2.0-1000]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.05-2.0-320]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.05-4.0-1000]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.05-4.0-320]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.75-0.5-1000]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.75-0.5-320]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.75-1.0-1000]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.75-1.0-320]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.75-2.0-1000]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.75-2.0-320]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.75-4.0-1000]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.75-4.0-320]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.98-0.5-1000]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.98-0.5-320]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.98-1.0-1000]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.98-1.0-320]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.98-2.0-1000]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.98-2.0-320]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.98-4.0-1000]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[0.98-4.0-320]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[1.05-0.5-1000]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[1.05-0.5-320]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[1.05-1.0-1000]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[1.05-1.0-320]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[1.05-2.0-1000]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[1.05-2.0-320]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[1.05-4.0-1000]": [],
+    "tests/unit/test_timeline_rendering.py::test_playhead_handle_visibility_uses_viewport[1.05-4.0-320]": [],
     "tests/unit/test_timeline_rendering.py::test_timeline_scene_init": [],
     "tests/unit/test_timeline_rendering.py::test_timeline_scene_rect_is_zoom_relative": [],
     "tests/unit/test_timeline_rendering.py::test_timeline_scene_rect_is_zoom_relative_empty": [],
@@ -10629,6 +11238,51 @@
     "tests/unit/test_timeline_ruler.py::TestTickLevel::test_get_coarser_level": [],
     "tests/unit/test_timeline_ruler.py::TestTickLevel::test_get_finer_level": [],
     "tests/unit/test_timeline_ruler.py::TestTickLevel::test_tick_levels_ordered_by_granularity": [],
+    "tests/unit/test_timeline_stable_layout.py::test_chronology_uses_anchor_not_visual_start": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_stable_layout.py::test_compact_invalidates_active_worker_without_accepting_history": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_stable_layout.py::test_compact_menu_preserves_time_selection_and_fit_click": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_stable_layout.py::test_empty_menu_and_newly_available_compaction": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_stable_layout.py::test_equal_anchor_ties_ignore_reversed_history": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_stable_layout.py::test_future_reservations_and_compact_fallback": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_stable_layout.py::test_group_histories_are_independent_and_collapse_keeps_state": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_stable_layout.py::test_preserves_rows_even_when_visual_start_order_changes": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_stable_layout.py::test_repair_obeys_smaller_budget_when_old_reservations_block_it": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_stable_layout.py::test_seeded_zoom_cycles_are_safe_bounded_and_idempotent": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_stable_layout.py::test_small_cases_compact_row_count_matches_exhaustive_oracle": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_stable_layout.py::test_threshold_uses_accepted_history_and_empty_clears_it[49]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_stable_layout.py::test_threshold_uses_accepted_history_and_empty_clears_it[50]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_stable_layout.py::test_threshold_uses_accepted_history_and_empty_clears_it[51]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_stable_layout.py::test_zoom_in_reclaims_all_spare_rows_and_heights": [
+      "ci_fast"
+    ],
     "tests/unit/test_timeline_temporal.py::test_event_item_get_effective_color_future": [],
     "tests/unit/test_timeline_temporal.py::test_event_item_get_effective_color_present": [],
     "tests/unit/test_timeline_temporal.py::test_event_item_has_temporal_state_attributes": [],
@@ -10813,11 +11467,9 @@
     "tests/unit/test_trajectory_edit_shortcuts.py::test_escape_cancels_when_focus_is_outside_map": [],
     "tests/unit/test_tree_colors.py::test_outline_colors_update_on_theme_change": [],
     "tests/unit/test_tree_colors.py::test_unified_list_colors_update_on_theme_change": [],
-    "tests/unit/test_ui_manager_layout.py::test_auto_relation_setting_has_explanatory_tooltip": [],
-    "tests/unit/test_ui_manager_layout.py::test_delete_layout_removes_data": [],
-    "tests/unit/test_ui_manager_layout.py::test_get_saved_layouts_returns_sorted_list": [],
-    "tests/unit/test_ui_manager_layout.py::test_restore_layout_applies_data": [],
-    "tests/unit/test_ui_manager_layout.py::test_save_layout_stores_data": [],
+    "tests/unit/test_ui_manager_layout.py::test_reset_delegates_to_confirmed_active_workspace": [],
+    "tests/unit/test_ui_manager_layout.py::test_settings_is_one_direct_action_without_alternative_menu_routes": [],
+    "tests/unit/test_ui_manager_layout.py::test_view_panels_menu_tracks_open_and_closed_panels": [],
     "tests/unit/test_unified_list.py::test_apply_lore_effects_deleting_selected_row_clears_selection": [],
     "tests/unit/test_unified_list.py::test_apply_lore_effects_updates_rows_without_model_reset": [],
     "tests/unit/test_unified_list.py::test_context_menu_delete_signal[events0-entities0-expected0]": [],
@@ -11425,7 +12077,12 @@
       "ci_fast"
     ],
     "tests/unit/test_workspace_shell.py::test_capture_and_apply_layout_preserves_order_and_active_tabs": [],
+    "tests/unit/test_workspace_shell.py::test_close_button_closes_each_workspace_panel_without_destroying_it": [],
+    "tests/unit/test_workspace_shell.py::test_closed_panel_and_zone_survive_layout_restore": [],
+    "tests/unit/test_workspace_shell.py::test_drag_leaving_tab_strip_keeps_original_panel_identity": [],
+    "tests/unit/test_workspace_shell.py::test_drag_reorders_panels_in_same_pane_and_layout_remembers": [],
     "tests/unit/test_workspace_shell.py::test_drop_into_temporary_empty_zone_keeps_it_open": [],
+    "tests/unit/test_workspace_shell.py::test_drop_on_later_tab_places_panel_after_it": [],
     "tests/unit/test_workspace_shell.py::test_drop_tab_on_another_pane_moves_the_same_panel": [],
     "tests/unit/test_workspace_shell.py::test_empty_peripheral_zone_collapses_and_reopens_on_move": [],
     "tests/unit/test_workspace_shell.py::test_empty_zone_becomes_temporary_drop_target": [],
@@ -11436,7 +12093,9 @@
     "tests/unit/test_workspace_shell.py::test_outer_frame_encloses_activity_bar_and_tracks_theme": [],
     "tests/unit/test_workspace_shell.py::test_pane_corners_are_mirrored_over_content_after_resize": [],
     "tests/unit/test_workspace_shell.py::test_panel_activation_emits_for_tab_changes_and_reselection": [],
+    "tests/unit/test_workspace_shell.py::test_panel_close_button_click_and_theme_recolor": [],
     "tests/unit/test_workspace_shell.py::test_repeated_window_resize_keeps_center_available": [],
+    "tests/unit/test_workspace_shell.py::test_scrolled_tab_close_controls_are_hidden_until_reachable": [],
     "tests/unit/test_workspace_shell.py::test_show_panel_reopens_hidden_zone": [],
     "tests/unit/test_workspace_shell.py::test_workspace_has_exactly_four_generic_panes": [],
     "tests/unit/test_workspace_shell.py::test_workspace_splitter_sash_renders_rounded_theme_colors": [],

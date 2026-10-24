@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-24
-**Commit:** 32259a2d4306798df89df737b3cb4570641ca706
+**Commit:** 9890c50fd75b39645e5096a26f8bf86109607133
 ---
 
 # Changelog
@@ -61,6 +61,16 @@ All notable changes to this project will be documented in this file.
   and panel menu state.
 
 ### Fixed
+
+- *(2026-10-24)* **Reviewed test inventory (KRT-55, KRT-108, KRT-94)**:
+  Reconciled nine retired test IDs with the settings and workspace changes.
+  The two spell-dialog action cases now use shared inline-toggle coverage;
+  graph-button presence and settings-menu tooltip checks retire with those
+  launchers, with direct Settings navigation and Settings Center coverage.
+  Four legacy named-layout checks give way to activity-workspace persistence,
+  reset, rename and deletion tests; alphabetical legacy-menu ordering is retired.
+  The moved-panel action test now follows the View menu route. Recorded newly
+  collected tests and their current suite membership in the reviewed inventory.
 
 - *(2026-10-24)* **Keyboard navigation (KRT-94)**: Kept Tab/Shift+Tab within
   the active panel and added F6/Shift+F6 movement between visible regions.
