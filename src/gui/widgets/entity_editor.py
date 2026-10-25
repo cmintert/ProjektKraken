@@ -1393,12 +1393,20 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
                 - 'object_type' (str): Always ``"entity"``
 
         """
+        context_view = getattr(self, "authoring_context", None)
+        mode = (
+            context_view.mode_selector.mode
+            if context_view is not None
+            else "at_playhead"
+        )
         return {
             "name": self.name_edit.text(),
             "type": self.type_edit.currentText(),
             "existing_description": self.desc_edit.toPlainText(),
             "object_id": self._current_entity_id or "",
             "object_type": "entity",
+            "authoring_date": self._temporal_time,
+            "entity_context_mode": mode,
         }
 
     @Slot(object)

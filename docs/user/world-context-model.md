@@ -20,16 +20,26 @@ a historical claim. These options can be enabled independently.
 
 ## Entity history and viewed location
 
-Entity Context summarizes durable evidence about the Entity, including authored
-attributes, relations, Event appearances, references and history. It is not a
-current-state projection at the Timeline playhead. Date-bounded relations are
-shown as history. Optional Entity spatial context is a separate source evaluated
-at the playhead. Weak shared-tag or shared-map associations remain evidence,
-not asserted relationships.
+Entity Context defaults to **At playhead**, using saved state changes and the same
+relationship timing policy as the graph. It keeps definite facts separate from
+possible changes and unknown timing, and names the supporting Events. It cannot
+recover dates that were never authored or infer historical truth from prose.
+
+**History to playhead** adds prior occurrences and ended relationships without
+asserting them as current. **All history** retains the complete durable overview.
+Context and Entity generation share a session-only mode choice; changing worlds
+resets it. Undated baseline text and weaker shared-tag/shared-map associations
+remain explicitly limited evidence.
+
+Optional Entity spatial context is separately evaluated at the captured viewing
+date. All history is a historical overview, not a claim that every saved relation
+and map placement was simultaneously true.
 
 ## Review before applying
 
-Inspect the exact World Context block with **Show** after generation, then
+For Entity generation, **Generate** inside **Preview** sends the exact prepared
+messages. Changed context requires **Refresh** before sending. You can also inspect
+the exact World Context block with **Show** after generation, then
 review the proposed prose. **Replace** and **Append** deliberately apply the
 response; generation alone does not insert it. Explicit dates in AI-reviewed
 descriptions must be removed before those actions become available. Manually

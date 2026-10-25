@@ -93,13 +93,6 @@
       "reason": "Existing production complexity reviewed for KRT-36; untouched debt only, executable edits must strictly improve."
     },
     {
-      "id": "c901-a93f85e6d6ba",
-      "path": "src/services/authoring_context_builder.py",
-      "symbol": "AuthoringContextBuilder.build_entity_context",
-      "ceiling": 19,
-      "reason": "Existing production complexity reviewed for KRT-36; untouched debt only, executable edits must strictly improve."
-    },
-    {
       "id": "c901-b081a9c47494",
       "path": "src/services/migrations/relations.py",
       "symbol": "normalize_relations",

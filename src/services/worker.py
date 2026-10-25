@@ -531,31 +531,25 @@ class DatabaseWorker(QObject):
             self.error_occurred.emit(f"Failed to load entity {entity_id}")
 
     @Slot(str, str)
-    def load_entity_authoring_context(self, request_id: str, entity_id: str) -> None:
+    @Slot(str, str, str, float)
+    def load_entity_authoring_context(
+        self,
+        request_id: str,
+        entity_id: str,
+        mode: str = "all_history",
+        context_date: float = 0.0,
+    ) -> None:
         """Build and emit one serialized Entity authoring-context snapshot."""
-        if self.db_service is None:
-            self.entity_authoring_context_loaded.emit(request_id, entity_id, {})
-            return
-        try:
-            from src.services.authoring_context_builder import AuthoringContextBuilder
+        from src.services.entity_context_reader import read_entity_context_snapshot
 
-            self.db_service.ensure_fresh_view()
-            with self.db_service.transaction():
-                context = AuthoringContextBuilder(
-                    self.db_service,
-                    world_root=Path(self.db_path).resolve().parent,
-                ).build_entity_context(entity_id)
-            self.entity_authoring_context_loaded.emit(
-                request_id,
-                entity_id,
-                context.to_dict() if context is not None else {},
+        try:
+            snapshot = read_entity_context_snapshot(
+                self.db_service, self.db_path, entity_id, mode, context_date
             )
         except Exception:
-            logger.error(
-                "Failed to load Entity authoring context: %s",
-                traceback.format_exc(),
-            )
-            self.entity_authoring_context_loaded.emit(request_id, entity_id, {})
+            logger.exception("Failed to load Entity authoring context")
+            snapshot = {}
+        self.entity_authoring_context_loaded.emit(request_id, entity_id, snapshot)
 
     @Slot(str, str)
     def load_attachments(self, owner_type: str, owner_id: str) -> None:

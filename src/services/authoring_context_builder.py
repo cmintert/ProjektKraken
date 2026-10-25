@@ -26,6 +26,7 @@ from src.core.authoring_context import (
 )
 from src.core.calendar import CalendarConfig, CalendarConverter
 from src.core.entities import Entity
+from src.core.entity_context_mode import EntityContextMode
 from src.core.events import Event
 from src.core.map import Map
 from src.core.temporal_anchors import resolve_event_anchors
@@ -36,6 +37,10 @@ from src.core.temporal_window import (
     resolve_temporal_window,
 )
 from src.services.db_service import DatabaseService
+from src.services.entity_context_projection import (
+    EntityContextProjectionService,
+    public_value,
+)
 from src.services.map_nesting_service import MapNestingService
 from src.services.spatial_context_builder import SpatialContextBuilder
 
@@ -126,14 +131,18 @@ class AuthoringContextBuilder:
             rel_type = str(relation.get("rel_type", ""))
             is_outgoing = relation.get("source_id") == event_id
             if is_outgoing and rel_type in PARTICIPANT_REL_TYPES:
-                self._append_item(participants, resolve_item(str(relation["target_id"])))
+                self._append_item(
+                    participants, resolve_item(str(relation["target_id"]))
+                )
                 continue
             if is_outgoing and rel_type == "located_at":
                 self._append_item(locations, resolve_item(str(relation["target_id"])))
                 continue
             if rel_type == "mentions":
                 if is_outgoing:
-                    self._append_item(mentions, resolve_item(str(relation["target_id"])))
+                    self._append_item(
+                        mentions, resolve_item(str(relation["target_id"]))
+                    )
                 continue
             resolved = self._resolve_relation(
                 relation,
@@ -157,9 +166,7 @@ class AuthoringContextBuilder:
         )
         locations = self._limit("locations", locations, MAX_LOCATIONS, omitted)
         mentions = self._limit("mentions", mentions, MAX_MENTIONS, omitted)
-        direct = self._limit(
-            "direct_relations", direct, MAX_DIRECT_RELATIONS, omitted
-        )
+        direct = self._limit("direct_relations", direct, MAX_DIRECT_RELATIONS, omitted)
 
         previous, concurrent, following = self._event_neighbors(
             event_id, effective_date, omitted
@@ -200,13 +207,30 @@ class AuthoringContextBuilder:
             omitted_counts=tuple(sorted(omitted.items())),
         )
 
-    def build_entity_context(  # noqa: C901
-        self, entity_id: str
+    def build_entity_context(
+        self,
+        entity_id: str,
+        *,
+        mode: EntityContextMode = EntityContextMode.ALL_HISTORY,
+        context_date: float | None = None,
     ) -> EntityAuthoringContext | None:
         """Return deterministic durable persisted context around an Entity."""
         entity = self._db.get_entity(entity_id)
         if entity is None:
             return None
+
+        mode = EntityContextMode(mode)
+        self._entity_projection: EntityContextProjectionService | None = None
+        if mode != EntityContextMode.ALL_HISTORY:
+            if context_date is None:
+                raise ValueError("Select a viewing date for Entity context")
+            self._entity_projection = EntityContextProjectionService(
+                self._db,
+                mode,
+                context_date,
+                {item.id: item for item in self._db.get_all_events()},
+            )
+            entity = self._entity_projection.resolve_entity(entity)
 
         entities_by_id = {item.id: item for item in self._db.get_all_entities()}
         entities_by_id[entity.id] = entity
@@ -220,9 +244,7 @@ class AuthoringContextBuilder:
             related_entity = entities_by_id.get(item_id)
             result: ContextItem | None
             if related_entity is not None:
-                result = ContextItem(
-                    related_entity.id, "entity", related_entity.name
-                )
+                result = ContextItem(related_entity.id, "entity", related_entity.name)
             else:
                 related_event = events_by_id.get(item_id)
                 event_cache[item_id] = related_event
@@ -237,11 +259,11 @@ class AuthoringContextBuilder:
             return result
 
         omitted: dict[str, int] = {}
-        attributes = self._bounded_entity_attributes(entity.attributes, omitted)
-        tag_memberships = self._db.get_entity_tag_memberships()
-        tags = self._entity_tags(
-            entity, tag_memberships.get(entity.id, []), omitted
+        attributes = self._bounded_entity_attributes(
+            public_value(entity.attributes), omitted
         )
+        tag_memberships = self._db.get_entity_tag_memberships()
+        tags = self._entity_tags(entity, tag_memberships.get(entity.id, []), omitted)
 
         appearance_roles: dict[str, set[str]] = {}
         mentions: list[ContextEvent] = []
@@ -251,6 +273,12 @@ class AuthoringContextBuilder:
         seeds: list[ContextItem] = []
         relations_by_item: dict[str, list[dict[str, Any]]] = {}
         all_relations = sorted(self._db.get_all_relations(), key=self._relation_key)
+        if self._entity_projection is not None:
+            all_relations = [
+                rel
+                for rel in all_relations
+                if self._entity_projection.evaluate(rel) is not None
+            ]
         for relation in all_relations:
             source_id = str(relation.get("source_id", ""))
             target_id = str(relation.get("target_id", ""))
@@ -260,52 +288,19 @@ class AuthoringContextBuilder:
         for indexed in relations_by_item.values():
             indexed.sort(key=self._relation_key)
         relations = relations_by_item.get(entity_id, [])
-        for relation in relations:
-            rel_type = str(relation.get("rel_type", ""))
-            source_id = str(relation.get("source_id", ""))
-            target_id = str(relation.get("target_id", ""))
-            source = resolve_item(source_id)
-            target = resolve_item(target_id)
-            if source is None or target is None:
-                if rel_type == "mentions":
-                    omitted["linked_references"] = (
-                        omitted.get("linked_references", 0) + 1
-                    )
-                continue
-            if source.object_type == "event" and target_id == entity_id:
-                event = self._cached_event(source_id, event_cache)
-                if event is not None and rel_type == "mentions":
-                    self._append_event(mentions, event)
-                if event is not None and rel_type in (
-                    PARTICIPANT_REL_TYPES | {"located_at"}
-                ):
-                    appearance_roles.setdefault(event.id, set()).add(rel_type)
-                    self._append_item(seeds, source)
-                    continue
-            if rel_type == "mentions":
-                linked = self._resolve_relation_history(
-                    relation,
-                    hop=0,
-                    resolve_item=resolve_item,
-                    event_cache=event_cache,
-                )
-                if linked is not None:
-                    linked_references.append(linked)
-                continue
-            resolved = self._resolve_relation_history(
-                relation,
-                hop=0,
-                resolve_item=resolve_item,
-                event_cache=event_cache,
-            )
-            if resolved is None:
-                continue
-            if resolved.temporal_kind == "persistent":
-                direct.append(resolved)
-            else:
-                temporal.append(resolved)
-            opposite = target if source_id == entity_id else source
-            self._append_item(seeds, opposite)
+        self._collect_entity_relations(
+            relations,
+            entity_id,
+            resolve_item,
+            event_cache,
+            omitted,
+            appearance_roles,
+            mentions,
+            linked_references,
+            direct,
+            temporal,
+            seeds,
+        )
 
         appearances = [
             ContextEventAppearance(
@@ -330,9 +325,7 @@ class AuthoringContextBuilder:
             MAX_LINKED_REFERENCES,
             omitted,
         )
-        direct = self._limit(
-            "direct_relations", direct, MAX_DIRECT_RELATIONS, omitted
-        )
+        direct = self._limit("direct_relations", direct, MAX_DIRECT_RELATIONS, omitted)
         temporal = self._limit(
             "temporal_history", temporal, MAX_DIRECT_RELATIONS, omitted
         )
@@ -389,7 +382,7 @@ class AuthoringContextBuilder:
             attachments=attachments,
             omitted=omitted,
         )
-        return EntityAuthoringContext(
+        context = EntityAuthoringContext(
             entity_id=entity.id,
             attributes=tuple(attributes),
             tags=tuple(tags),
@@ -406,6 +399,72 @@ class AuthoringContextBuilder:
             attachments=tuple(attachments),
             omitted_counts=tuple(sorted(omitted.items())),
         )
+
+        if self._entity_projection is not None:
+            return self._entity_projection.finish(context)
+        return context
+
+    def _collect_entity_relations(
+        self,
+        relations: list[dict[str, Any]],
+        entity_id: str,
+        resolve_item: Callable[[str], ContextItem | None],
+        event_cache: dict[str, Event | None],
+        omitted: dict[str, int],
+        appearance_roles: dict[str, set[str]],
+        mentions: list[ContextEvent],
+        linked_references: list[ContextRelation],
+        direct: list[ContextRelation],
+        temporal: list[ContextRelation],
+        seeds: list[ContextItem],
+    ) -> None:
+        """Classify selected direct facts without loading or bounding them."""
+        for relation in relations:
+            rel_type = str(relation.get("rel_type", ""))
+            source_id = str(relation.get("source_id", ""))
+            target_id = str(relation.get("target_id", ""))
+            source = resolve_item(source_id)
+            target = resolve_item(target_id)
+            if source is None or target is None:
+                if rel_type == "mentions":
+                    omitted["linked_references"] = (
+                        omitted.get("linked_references", 0) + 1
+                    )
+                continue
+            if source.object_type == "event" and target_id == entity_id:
+                event = self._cached_event(source_id, event_cache)
+                if event is not None and rel_type == "mentions":
+                    self._append_event(mentions, event)
+                if event is not None and rel_type in (
+                    PARTICIPANT_REL_TYPES | {"located_at"}
+                ):
+                    appearance_roles.setdefault(event.id, set()).add(rel_type)
+                    self._append_item(seeds, source)
+                    continue
+            if rel_type == "mentions":
+                linked = self._resolve_relation_history(
+                    relation,
+                    hop=0,
+                    resolve_item=resolve_item,
+                    event_cache=event_cache,
+                )
+                if linked is not None:
+                    linked_references.append(linked)
+                continue
+            resolved = self._resolve_relation_history(
+                relation,
+                hop=0,
+                resolve_item=resolve_item,
+                event_cache=event_cache,
+            )
+            if resolved is None:
+                continue
+            if resolved.temporal_kind == "persistent":
+                direct.append(resolved)
+            else:
+                temporal.append(resolved)
+            opposite = target if source_id == entity_id else source
+            self._append_item(seeds, opposite)
 
     def _relation_anchors(
         self,
@@ -443,6 +502,9 @@ class AuthoringContextBuilder:
         target = resolve_item(str(relation.get("target_id", "")))
         if source is None or target is None:
             return None
+        projection = getattr(self, "_entity_projection", None)
+        if projection is not None:
+            return projection.relation(relation, source, target, hop)
         source_date: float | None = None
         source_event: Event | None = None
         if source.object_type == "event":
@@ -528,9 +590,7 @@ class AuthoringContextBuilder:
         results.sort(key=self._context_relation_key)
         return results
 
-    def _entity_map_appearances(
-        self, entity_id: str
-    ) -> list[ContextMapAppearance]:
+    def _entity_map_appearances(self, entity_id: str) -> list[ContextMapAppearance]:
         all_maps = self._db.get_all_maps()
         maps = {item.id: item for item in all_maps}
         appearances = []
@@ -582,7 +642,9 @@ class AuthoringContextBuilder:
             name = str(raw_name).strip()
             if name and name.casefold() not in by_name:
                 by_name[name.casefold()] = ContextTag("", name)
-        tags = sorted(by_name.values(), key=lambda item: (item.name.casefold(), item.id))
+        tags = sorted(
+            by_name.values(), key=lambda item: (item.name.casefold(), item.id)
+        )
         return self._limit("tags", tags, MAX_ENTITY_TAGS, omitted)
 
     def _entity_co_appearances(
@@ -614,7 +676,9 @@ class AuthoringContextBuilder:
         results = []
         for related_id, events in shared_events.items():
             related = entities_by_id[related_id]
-            ordered = sorted(events.values(), key=lambda item: (item.lore_date, item.id))
+            ordered = sorted(
+                events.values(), key=lambda item: (item.lore_date, item.id)
+            )
             results.append(
                 ContextCoAppearance(
                     item=ContextItem(related.id, "entity", related.name),
@@ -626,11 +690,13 @@ class AuthoringContextBuilder:
                 )
             )
         results.sort(
-            key=lambda item: (-item.event_count, item.item.name.casefold(), item.item.id)
+            key=lambda item: (
+                -item.event_count,
+                item.item.name.casefold(),
+                item.item.id,
+            )
         )
-        return self._limit(
-            "co_appearances", results, MAX_CO_APPEARANCES, omitted
-        )
+        return self._limit("co_appearances", results, MAX_CO_APPEARANCES, omitted)
 
     def _entity_shared_tags(
         self,
@@ -667,7 +733,11 @@ class AuthoringContextBuilder:
                     )
                 )
         results.sort(
-            key=lambda item: (-len(item.evidence), item.item.name.casefold(), item.item.id)
+            key=lambda item: (
+                -len(item.evidence),
+                item.item.name.casefold(),
+                item.item.id,
+            )
         )
         return self._limit("shared_tags", results, MAX_SHARED_ASSOCIATIONS, omitted)
 
@@ -696,7 +766,11 @@ class AuthoringContextBuilder:
             for item_id, evidence in evidence_by_entity.items()
         ]
         results.sort(
-            key=lambda item: (-len(item.evidence), item.item.name.casefold(), item.item.id)
+            key=lambda item: (
+                -len(item.evidence),
+                item.item.name.casefold(),
+                item.item.id,
+            )
         )
         return self._limit("shared_maps", results, MAX_SHARED_ASSOCIATIONS, omitted)
 
@@ -772,6 +846,7 @@ class AuthoringContextBuilder:
         omitted: dict[str, int],
     ) -> None:
         """Enforce one total prompt-size budget by dropping lowest-priority facts."""
+
         def size() -> int:
             return (
                 sum(len(item.name) + len(str(item.value)) for item in attributes)
@@ -782,7 +857,10 @@ class AuthoringContextBuilder:
                 )
                 + sum(len(item.name) + 24 for item in mentions)
                 + sum(
-                len(item.source.name) + len(item.target.name) + len(item.rel_type) + 32
+                    len(item.source.name)
+                    + len(item.target.name)
+                    + len(item.rel_type)
+                    + 32
                     for item in (
                         *direct,
                         *temporal,
@@ -908,9 +986,7 @@ class AuthoringContextBuilder:
                     )
                 return None
             kind = (
-                "instant"
-                if window.kind == TemporalWindowKind.INSTANT
-                else "interval"
+                "instant" if window.kind == TemporalWindowKind.INSTANT else "interval"
             )
 
         return ContextRelation(
@@ -949,10 +1025,7 @@ class AuthoringContextBuilder:
             omitted,
         )
         return (
-            [
-                self._context_event(item)
-                for item in previous_all[-MAX_SIDE_EVENTS:]
-            ],
+            [self._context_event(item) for item in previous_all[-MAX_SIDE_EVENTS:]],
             [self._context_event(item) for item in concurrent],
             [self._context_event(item) for item in next_all[:MAX_SIDE_EVENTS]],
         )
@@ -1035,9 +1108,7 @@ class AuthoringContextBuilder:
             ),
         )
         event_item = ContextItem(event.id, "event", event.name)
-        direct_text = builder.build(
-            event.id, "event", active_map_id, context_date
-        )
+        direct_text = builder.build(event.id, "event", active_map_id, context_date)
         if direct_text:
             return [SpatialAuthoringContext(event_item, direct_text)]
 
@@ -1152,29 +1223,55 @@ def format_event_authoring_context(context: EventAuthoringContext) -> str:
     return "\n".join(lines)
 
 
-def format_entity_authoring_context(context: EntityAuthoringContext) -> str:
+def _entity_temporal_context_lines(context: EntityAuthoringContext) -> list[str]:
     """Format the complete bounded durable Entity context."""
-    lines = ["[Authoritative Context]"]
+    lines: list[str] = []
+    if context.mode != "all_history":
+        lines.append(f"Entity context: {context.mode}; viewing {context.date_label}")
+        lines.append(
+            "Only qualified saved facts below are authoritative. Draft prose, "
+            "undated metadata and retrieved text do not establish dated state."
+        )
+    if context.effective_description is not None:
+        lines.append(
+            "Resolved description: "
+            + _format_context_attribute(context.effective_description)
+        )
+    if context.possible_changes:
+        lines.append("Possible changes (not established):")
+        lines.extend(
+            _format_context_attribute(item) for item in context.possible_changes
+        )
+    lines.extend("Timing notice: " + item for item in context.temporal_notices)
+    return lines
+
+
+def format_entity_authoring_context(context: EntityAuthoringContext) -> str:
+    """Format one bounded, qualified Entity context for the provider."""
+    lines = ["[Authoritative Context]", *_entity_temporal_context_lines(context)]
     if context.attributes:
         lines.append("Structured attributes:")
-        lines.extend(
-            f"- {item.name}: {_format_attribute_value(item.value)}"
-            for item in context.attributes
-        )
+        lines.extend(_format_context_attribute(item) for item in context.attributes)
     if context.tags:
         lines.append("Tags: " + ", ".join(item.name for item in context.tags))
     if context.event_appearances:
         lines.append("Event appearances and roles:")
         lines.extend(
-            f"- {item.event.name}: {', '.join(item.roles)}"
+            f"- {item.event.name}: {', '.join(item.roles)}; {item.event.temporal_label}"
             for item in context.event_appearances
         )
     if context.direct_relations:
-        lines.append("Durable direct relations:")
+        lines.append("Authored direct relations:")
         lines.extend(_format_relation(item) for item in context.direct_relations)
     if context.temporal_history:
-        lines.append("Temporal relation history (do not state as timeless):")
-        lines.extend(_format_relation_with_window(item) for item in context.temporal_history)
+        lines.append(
+            "Temporal relation history (do not state as timeless):"
+            if context.mode == "all_history"
+            else "Dated relationships (qualified at the viewing date):"
+        )
+        lines.extend(
+            _format_relation_with_window(item) for item in context.temporal_history
+        )
     if context.linked_references:
         lines.append("Explicit linked references:")
         lines.extend(_format_relation(item) for item in context.linked_references)
@@ -1186,7 +1283,9 @@ def format_entity_authoring_context(context: EntityAuthoringContext) -> str:
         )
     if context.mentions:
         lines.append("Mentioned in Events:")
-        lines.extend(f"- {item.name}" for item in context.mentions)
+        lines.extend(
+            f"- {item.name}; {item.temporal_label}" for item in context.mentions
+        )
     if context.map_appearances:
         lines.append("Durable map appearances:")
         lines.extend(
@@ -1209,7 +1308,13 @@ def format_entity_authoring_context(context: EntityAuthoringContext) -> str:
         lines.extend(
             f"- {item.item.name}: {item.event_count} shared Event(s)"
             + (
-                " (" + ", ".join(event.name for event in item.events) + ")"
+                " ("
+                + ", ".join(
+                    event.name
+                    + ("; " + event.temporal_label if event.temporal_label else "")
+                    for event in item.events
+                )
+                + ")"
                 if item.events
                 else ""
             )
@@ -1235,6 +1340,20 @@ def format_entity_authoring_context(context: EntityAuthoringContext) -> str:
     return "\n".join(lines)
 
 
+def _format_context_attribute(attribute: ContextAttribute) -> str:
+    source = attribute.source
+    text = f"- {attribute.name}: {_format_attribute_value(attribute.value)}"
+    if source is not None:
+        text += (
+            "; source: " + str(source.get("event_name", "Event"))
+            if source.get("event_id")
+            else "; undated baseline"
+        )
+    if attribute.temporal_status != "definite":
+        text += f"; {attribute.temporal_status}, not established"
+    return text
+
+
 def _format_relation(relation: ContextRelation) -> str:
     return (
         f"- {relation.source.name} --{relation.rel_type}--> "
@@ -1244,12 +1363,21 @@ def _format_relation(relation: ContextRelation) -> str:
             if relation.temporal_status in {"possible", "indeterminate"}
             else ""
         )
+        + (f" ({relation.temporal_summary})" if relation.temporal_summary else "")
+        + (
+            "; supported by "
+            + ", ".join(
+                item["name"] for item in relation.temporal_evidence.get("events", [])
+            )
+            if relation.temporal_evidence and relation.temporal_evidence.get("events")
+            else ""
+        )
     )
 
 
 def _format_relation_with_window(relation: ContextRelation) -> str:
     line = _format_relation(relation)
-    if relation.temporal_kind == "persistent":
+    if relation.temporal_kind == "persistent" or relation.temporal_summary:
         return line
     start = "?" if relation.valid_from is None else format(relation.valid_from, ".12g")
     end = "?" if relation.valid_to is None else format(relation.valid_to, ".12g")
@@ -1259,8 +1387,7 @@ def _format_relation_with_window(relation: ContextRelation) -> str:
 def _format_attribute_value(value: Any) -> str:
     if isinstance(value, dict):
         return ", ".join(
-            f"{key}={_format_attribute_value(nested)}"
-            for key, nested in value.items()
+            f"{key}={_format_attribute_value(nested)}" for key, nested in value.items()
         )
     if isinstance(value, list):
         return ", ".join(_format_attribute_value(item) for item in value)
@@ -1298,6 +1425,9 @@ def lookup_event_authoring_context(
 def lookup_entity_authoring_context(
     db_path: str,
     entity_id: str,
+    *,
+    mode: EntityContextMode = EntityContextMode.ALL_HISTORY,
+    context_date: float | None = None,
 ) -> EntityAuthoringContext | None:
     """Build Entity context using one short-lived read-only connection."""
     db: DatabaseService | None = None
@@ -1307,7 +1437,7 @@ def lookup_entity_authoring_context(
         with db.transaction():
             return AuthoringContextBuilder(
                 db, world_root=Path(db_path).parent
-            ).build_entity_context(entity_id)
+            ).build_entity_context(entity_id, mode=mode, context_date=context_date)
     except Exception:
         logger.error("Entity authoring-context lookup failed", exc_info=True)
         return None

@@ -101,7 +101,13 @@ class PromptBuilder:
         if "lore_date" in context:
             context_lines.append(f"Lore Date: {context['lore_date']}")
         if "existing_description" in context:
-            context_lines.append(f"Description: {context['existing_description']}")
+            label = (
+                "Author's draft (not established World Context)"
+                if context.get("object_type") == "entity"
+                and context.get("entity_context_mode")
+                else "Description"
+            )
+            context_lines.append(f"{label}: {context['existing_description']}")
 
         # Add any additional context fields not already handled
         known_keys = {

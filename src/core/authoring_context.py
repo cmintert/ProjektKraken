@@ -46,6 +46,8 @@ class ContextEvent:
     name: str
     lore_date: float
     event_type: str
+    temporal_status: str = "definite"
+    temporal_label: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-safe representation."""
@@ -54,6 +56,8 @@ class ContextEvent:
             "name": self.name,
             "lore_date": self.lore_date,
             "event_type": self.event_type,
+            "temporal_status": self.temporal_status,
+            "temporal_label": self.temporal_label,
         }
 
     @classmethod
@@ -64,6 +68,8 @@ class ContextEvent:
             name=str(data["name"]),
             lore_date=float(data["lore_date"]),
             event_type=str(data.get("event_type", "generic")),
+            temporal_status=str(data.get("temporal_status", "definite")),
+            temporal_label=str(data.get("temporal_label", "")),
         )
 
 
@@ -80,6 +86,9 @@ class ContextRelation:
     valid_from: float | None = None
     valid_to: float | None = None
     temporal_status: str = "definite"
+    temporal_behavior: str = ""
+    temporal_summary: str = ""
+    temporal_evidence: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-safe representation."""
@@ -93,6 +102,9 @@ class ContextRelation:
             "valid_from": self.valid_from,
             "valid_to": self.valid_to,
             "temporal_status": self.temporal_status,
+            "temporal_behavior": self.temporal_behavior,
+            "temporal_summary": self.temporal_summary,
+            "temporal_evidence": self.temporal_evidence,
         }
 
     @classmethod
@@ -113,6 +125,9 @@ class ContextRelation:
             hop=int(data.get("hop", 0)),
             temporal_kind=kind,
             temporal_status=str(data.get("temporal_status", "definite")),
+            temporal_behavior=str(data.get("temporal_behavior", "")),
+            temporal_summary=str(data.get("temporal_summary", "")),
+            temporal_evidence=data.get("temporal_evidence"),
             valid_from=(
                 float(data["valid_from"])
                 if data.get("valid_from") is not None
@@ -150,15 +165,27 @@ class ContextAttribute:
 
     name: str
     value: Any
+    source: dict[str, Any] | None = None
+    temporal_status: str = "definite"
 
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-safe representation."""
-        return {"name": self.name, "value": self.value}
+        return {
+            "name": self.name,
+            "value": self.value,
+            "source": self.source,
+            "temporal_status": self.temporal_status,
+        }
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ContextAttribute":
         """Restore an Entity attribute."""
-        return cls(name=str(data["name"]), value=data.get("value"))
+        return cls(
+            name=str(data["name"]),
+            value=data.get("value"),
+            source=data.get("source"),
+            temporal_status=str(data.get("temporal_status", "definite")),
+        )
 
 
 @dataclass(frozen=True)
@@ -259,8 +286,7 @@ class ContextCoAppearance:
         return cls(
             item=ContextItem.from_dict(dict(data["item"])),
             events=tuple(
-                ContextEvent.from_dict(dict(event))
-                for event in data.get("events", [])
+                ContextEvent.from_dict(dict(event)) for event in data.get("events", [])
             ),
             event_count=int(data.get("event_count", 0)),
         )
@@ -329,9 +355,7 @@ class EventAuthoringContext:
             "locations": [item.to_dict() for item in self.locations],
             "mentions": [item.to_dict() for item in self.mentions],
             "previous_events": [item.to_dict() for item in self.previous_events],
-            "concurrent_events": [
-                item.to_dict() for item in self.concurrent_events
-            ],
+            "concurrent_events": [item.to_dict() for item in self.concurrent_events],
             "next_events": [item.to_dict() for item in self.next_events],
             "direct_relations": [item.to_dict() for item in self.direct_relations],
             "neighborhood_relations": [
@@ -393,6 +417,12 @@ class EntityAuthoringContext:
     """Complete bounded durable context for authoring one Entity."""
 
     entity_id: str
+    mode: str = "all_history"
+    context_date: float | None = None
+    date_label: str = ""
+    effective_description: ContextAttribute | None = None
+    possible_changes: tuple[ContextAttribute, ...] = ()
+    temporal_notices: tuple[str, ...] = ()
     attributes: tuple[ContextAttribute, ...] = ()
     tags: tuple[ContextTag, ...] = ()
     event_appearances: tuple[ContextEventAppearance, ...] = ()
@@ -412,23 +442,27 @@ class EntityAuthoringContext:
         """Return a JSON-safe representation for queued Qt delivery."""
         return {
             "entity_id": self.entity_id,
+            "mode": self.mode,
+            "context_date": self.context_date,
+            "date_label": self.date_label,
+            "effective_description": (
+                self.effective_description.to_dict()
+                if self.effective_description is not None
+                else None
+            ),
+            "possible_changes": [item.to_dict() for item in self.possible_changes],
+            "temporal_notices": list(self.temporal_notices),
             "attributes": [item.to_dict() for item in self.attributes],
             "tags": [item.to_dict() for item in self.tags],
-            "event_appearances": [
-                item.to_dict() for item in self.event_appearances
-            ],
+            "event_appearances": [item.to_dict() for item in self.event_appearances],
             "mentions": [item.to_dict() for item in self.mentions],
-            "linked_references": [
-                item.to_dict() for item in self.linked_references
-            ],
+            "linked_references": [item.to_dict() for item in self.linked_references],
             "direct_relations": [item.to_dict() for item in self.direct_relations],
             "temporal_history": [item.to_dict() for item in self.temporal_history],
             "neighborhood_relations": [
                 item.to_dict() for item in self.neighborhood_relations
             ],
-            "map_appearances": [
-                item.to_dict() for item in self.map_appearances
-            ],
+            "map_appearances": [item.to_dict() for item in self.map_appearances],
             "co_appearances": [item.to_dict() for item in self.co_appearances],
             "shared_tags": [item.to_dict() for item in self.shared_tags],
             "shared_maps": [item.to_dict() for item in self.shared_maps],
@@ -442,6 +476,19 @@ class EntityAuthoringContext:
         omitted = data.get("omitted_counts") or {}
         return cls(
             entity_id=str(data["entity_id"]),
+            mode=str(data.get("mode", "all_history")),
+            context_date=data.get("context_date"),
+            date_label=str(data.get("date_label", "")),
+            effective_description=(
+                ContextAttribute.from_dict(data["effective_description"])
+                if data.get("effective_description") is not None
+                else None
+            ),
+            possible_changes=tuple(
+                ContextAttribute.from_dict(item)
+                for item in data.get("possible_changes", [])
+            ),
+            temporal_notices=tuple(str(x) for x in data.get("temporal_notices", [])),
             attributes=tuple(
                 ContextAttribute.from_dict(dict(item))
                 for item in data.get("attributes", [])
@@ -460,8 +507,7 @@ class EntityAuthoringContext:
                 for item in data.get("event_appearances", [])
             ),
             mentions=tuple(
-                ContextEvent.from_dict(dict(item))
-                for item in data.get("mentions", [])
+                ContextEvent.from_dict(dict(item)) for item in data.get("mentions", [])
             ),
             linked_references=tuple(
                 ContextRelation.from_dict(dict(item))

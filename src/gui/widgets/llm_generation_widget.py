@@ -31,14 +31,18 @@ from src.core.ai_generation import (
     GenerationApplyMode,
     GenerationRequest,
     ModelReply,
+    PreparedGeneration,
     TaskIntent,
     TaskTemplate,
 )
+from src.core.authoring_context import EntityAuthoringContext
 from src.core.description_date_policy import find_description_dates
+from src.core.entity_context_mode import EntityContextMode
 from src.core.logging_config import get_world_audit_log_path
 from src.core.operation_trace import safe_stack
 from src.core.theme_manager import ThemeManager
 from src.gui.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+from src.gui.dialogs.prepared_generation_dialog import PreparedGenerationDialog
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.settings_reader import (
     read_bool_setting,
@@ -46,6 +50,7 @@ from src.gui.utils.settings_reader import (
     read_str_setting,
 )
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.entity_context_mode_selector import EntityContextModeSelector
 from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 from src.gui.widgets.prompt_editor import PromptEditorWidget
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
@@ -129,6 +134,7 @@ class GenerationWorker(QThread):
     """
 
     # chunk_received = Signal(str)  # Removed as per user request
+    context_prepared = Signal(object)
     generation_complete = Signal(object)  # ModelReply
     generation_error = Signal(str)  # Error message
 
@@ -146,6 +152,7 @@ class GenerationWorker(QThread):
         active_map_id: Optional[str] = None,
         spatial_enabled: bool = False,
         request: GenerationRequest | None = None,
+        preview_only: bool = False,
     ) -> None:
         """Initialize generation worker.
 
@@ -168,6 +175,11 @@ class GenerationWorker(QThread):
 
         """
         super().__init__()
+        self.preview_only = preview_only
+        self.prepared = request.prepared if request else None
+        self.entity_context_mode = (
+            request.entity_context_mode if request else "all_history"
+        )
         self.provider = provider
         raw_prompt: object = request.prompt if request is not None else prompt
         self.prompt = _normalize_generation_prompt(raw_prompt)
@@ -286,6 +298,17 @@ class GenerationWorker(QThread):
         if rag_context:
             logger.debug(f"Applied RAG context: {len(rag_context)} chars")
 
+    def _lookup_entity_context(self) -> EntityAuthoringContext | None:
+        assert self.db_path is not None and self.object_id is not None
+        if self.entity_context_mode == "all_history":
+            return lookup_entity_authoring_context(self.db_path, self.object_id)
+        return lookup_entity_authoring_context(
+            self.db_path,
+            self.object_id,
+            mode=EntityContextMode(self.entity_context_mode),
+            context_date=self.authoring_date,
+        )
+
     def _apply_authoring_context_to_prompt(self) -> None:
         """Inject deterministic authoring context using a read-only connection."""
         placeholder = "{{AUTHORING_CONTEXT}}"
@@ -295,6 +318,13 @@ class GenerationWorker(QThread):
             return
 
         context_text: Optional[str] = None
+        if (
+            self.authoring_context_enabled
+            and self.object_type == "entity"
+            and self.entity_context_mode != "all_history"
+            and (not self.db_path or not self.object_id or self.authoring_date is None)
+        ):
+            raise ValueError("Select a saved Entity and viewing date for World Context")
         if (
             self.authoring_context_enabled
             and self.db_path
@@ -330,9 +360,11 @@ class GenerationWorker(QThread):
                     )
                     self.description_date_values = tuple(values)
             else:
-                entity_context = lookup_entity_authoring_context(
-                    self.db_path, self.object_id
-                )
+                entity_context = self._lookup_entity_context()
+                if entity_context is None and self.entity_context_mode != "all_history":
+                    raise ValueError(
+                        "World Context is unavailable. Refresh before generating."
+                    )
                 if entity_context is not None:
                     context_text = format_entity_authoring_context(entity_context)
                     values = [
@@ -354,6 +386,8 @@ class GenerationWorker(QThread):
                         for value in (relation.valid_from, relation.valid_to)
                         if value is not None
                     )
+                    if entity_context.context_date is not None:
+                        values.append(entity_context.context_date)
                     self.description_date_values = tuple(values)
 
         self.authoring_context_used = context_text
@@ -408,20 +442,40 @@ class GenerationWorker(QThread):
                 f"{self.object_type}={self.object_id} on map={self.active_map_id}"
             )
 
+    def prepare_context(self) -> PreparedGeneration:
+        """Resolve sources once, or restore the exact frozen reviewed messages."""
+        if self.prepared is None:
+            self._apply_authoring_context_to_prompt()
+            if not self._cancelled:
+                self._apply_rag_to_prompt()
+            if not self._cancelled:
+                self._apply_spatial_to_prompt()
+            prompt = (
+                self.prompt if isinstance(self.prompt, dict) else {"user": self.prompt}
+            )
+            self.prepared = PreparedGeneration(
+                dict(prompt),
+                self.authoring_context_used,
+                self.rag_context_used,
+                self.spatial_context_used,
+                self.description_date_values,
+            )
+        prepared = self.prepared
+        self.prompt = dict(prepared.prompt)
+        self.authoring_context_used = prepared.authoring_context
+        self.rag_context_used = prepared.rag_context
+        self.spatial_context_used = prepared.spatial_context
+        self.description_date_values = prepared.description_date_values
+        return prepared
+
     def run(self) -> None:
         """Run generation in background thread."""
         try:
-            # 1. Resolve authoritative Event or Entity context.
-            self._apply_authoring_context_to_prompt()
+            prepared = self.prepare_context()
             if self._cancelled:
                 return
-            # 2. Perform RAG if enabled (synchronous in this thread)
-            self._apply_rag_to_prompt()
-            if self._cancelled:
-                return
-            # 3. Inject Entity spatial context (also synchronous in this thread)
-            self._apply_spatial_to_prompt()
-            if self._cancelled:
+            if self.preview_only:
+                self.context_prepared.emit(prepared.to_dict())
                 return
 
             if isinstance(self.prompt, dict):
@@ -575,6 +629,7 @@ class LLMGenerationWidget(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
         self._worker: Optional[GenerationWorker] = None
+        self._init_context_preview()
         self._current_provider: Provider | None = None
         self._context_provider = context_provider
         self._current_db_path: Optional[str] = None
@@ -734,6 +789,7 @@ class LLMGenerationWidget(QWidget):
         self.world_context_cb.toggled.connect(self._save_settings)
         grid_layout.addWidget(self.world_context_cb, 3, 0, 1, 2)
 
+        self._build_entity_context_control(grid_layout)
         main_layout.addWidget(controls)
         self._control_positions = self._capture_control_positions()
         self._controls_compact: bool | None = None
@@ -883,6 +939,13 @@ class LLMGenerationWidget(QWidget):
             f"QPushButton {{ color: {accent}; border: none; font-size: 11px; "
             "padding: 0px 4px; } "
             "QPushButton:hover { text-decoration: underline; }"
+        )
+
+    def _build_entity_context_control(self, layout: QGridLayout) -> None:
+        self.entity_context_mode = EntityContextModeSelector(self)
+        layout.addWidget(self.entity_context_mode, 4, 0, 1, 4)
+        self.world_context_cb.toggled.connect(
+            lambda _checked: self._sync_context_controls()
         )
 
     def _capture_control_positions(
@@ -1198,6 +1261,8 @@ class LLMGenerationWidget(QWidget):
             context.get("object_type") in {"entity", "event"}
         )
         self.spatial_cb.setVisible(not is_event)
+        self.entity_context_mode.setVisible(context.get("object_type") == "entity")
+        self.entity_context_mode.setEnabled(self.world_context_cb.isChecked())
 
     def _get_provider_id(self) -> str:
         """Get provider ID from combo box selection."""
@@ -1382,8 +1447,9 @@ class LLMGenerationWidget(QWidget):
     def _hash_source_description(context: dict[str, Any]) -> str:
         """Hash draft fields that determine the generation request."""
         source = str(context.get("existing_description") or "")
-        if context.get("object_type") == "event":
+        if context.get("object_type") in {"event", "entity"}:
             source += f"\n{context.get('authoring_date')!r}"
+            source += f"\n{context.get('entity_context_mode')!r}"
         return hashlib.sha256(source.encode("utf-8")).hexdigest()
 
     def _get_audit_template_snapshot(self) -> dict[str, Any]:
@@ -1440,6 +1506,7 @@ class LLMGenerationWidget(QWidget):
         object_id: Optional[str] = None,
         object_type: Optional[str] = None,
         retrieval_query: str = "",
+        prepared_request: GenerationRequest | None = None,
     ) -> None:
         """Start generation in worker thread."""
         self._audit_interaction_id = new_interaction_id()
@@ -1457,6 +1524,41 @@ class LLMGenerationWidget(QWidget):
         self._last_world_context = None
         self._set_world_context_used_visible(False)
 
+        request = prepared_request or self._capture_generation_request(
+            prompt, temperature, db_path, object_id, object_type, retrieval_query
+        )
+        self._worker = GenerationWorker(
+            self._current_provider,
+            prompt,
+            self.max_tokens_spin.value(),
+            temperature,
+            request=request,
+        )
+
+        # Connect signals
+        self._worker.generation_complete.connect(
+            self._on_generation_complete, Qt.ConnectionType.QueuedConnection
+        )
+        self._worker.generation_error.connect(
+            self._on_generation_error, Qt.ConnectionType.QueuedConnection
+        )
+        self._worker.finished.connect(
+            self._on_worker_finished, Qt.ConnectionType.QueuedConnection
+        )
+
+        # Start worker
+        self._worker.start()
+
+    def _capture_generation_request(
+        self,
+        prompt: dict[str, str],
+        temperature: float,
+        db_path: str | None,
+        object_id: str | None,
+        object_type: str | None,
+        retrieval_query: str,
+    ) -> GenerationRequest:
+        """Capture identity, mode and one date for both preview and generation."""
         current_context = self._get_generation_context() or {}
         # Exact identity is preferred; names support legacy contexts without IDs.
         exclude_names = (
@@ -1472,10 +1574,14 @@ class LLMGenerationWidget(QWidget):
             if spatial_enabled or (authoring_enabled and current_object_type == "event")
             else None
         )
-        playhead_date = self._resolve_playhead_date() if spatial_enabled else None
+        playhead_date = (
+            self._resolve_playhead_date()
+            if spatial_enabled or authoring_enabled
+            else None
+        )
 
         # Create worker
-        request = GenerationRequest(
+        return GenerationRequest(
             prompt=dict(prompt),
             max_tokens=self.max_tokens_spin.value(),
             temperature=temperature,
@@ -1484,34 +1590,26 @@ class LLMGenerationWidget(QWidget):
             retrieval_query=retrieval_query,
             exclude_names=tuple(exclude_names),
             target_id=object_id,
-            source_hash=self._generation_source_hash,
+            source_hash=self._hash_source_description(current_context),
             object_type=object_type,
             active_map_id=active_map_id,
             playhead_date=playhead_date,
             spatial_enabled=spatial_enabled,
             rag_enabled=self.rag_cb.isChecked(),
             authoring_context_enabled=authoring_enabled,
+            entity_context_mode=(
+                self.entity_context_mode.mode
+                if current_object_type == "entity"
+                else "all_history"
+            ),
             authoring_date=(
-                float(current_context["authoring_date"])
+                playhead_date
+                if current_object_type == "entity"
+                else float(current_context["authoring_date"])
                 if current_context.get("authoring_date") is not None
                 else None
             ),
         )
-        self._worker = GenerationWorker(
-            self._current_provider,
-            prompt,
-            self.max_tokens_spin.value(),
-            temperature,
-            request=request,
-        )
-
-        # Connect signals
-        self._worker.generation_complete.connect(self._on_generation_complete)
-        self._worker.generation_error.connect(self._on_generation_error)
-        self._worker.finished.connect(self._on_worker_finished)
-
-        # Start worker
-        self._worker.start()
 
     def _preview_spatial_context(self, db_path: str, context: dict) -> Optional[str]:
         """Run the same spatial lookup the worker performs, for preview use."""
@@ -1531,6 +1629,13 @@ class LLMGenerationWidget(QWidget):
     def _resolve_playhead_date(self) -> Optional[float]:
         """Return the active timeline playhead when embedded in MainWindow."""
         try:
+            accepted = getattr(
+                getattr(self.window(), "time_coordinator", None),
+                "current_playhead_time",
+                None,
+            )
+            if accepted is not None:
+                return float(accepted)
             timeline = getattr(self.window(), "timeline", None)
             if timeline is None:
                 return None
@@ -2080,6 +2185,10 @@ class LLMGenerationWidget(QWidget):
 
     def _shutdown_worker(self) -> None:
         """Request cancellation and retain the thread until it has stopped."""
+        preview_worker = self._preview_worker
+        if preview_worker is not None and preview_worker.isRunning():
+            preview_worker.cancel()
+            preview_worker.wait()
         worker = self._worker
         if worker is None or not worker.isRunning():
             return
@@ -2093,9 +2202,169 @@ class LLMGenerationWidget(QWidget):
         super().closeEvent(event)
 
     @Slot()
+    def _init_context_preview(self) -> None:
+        """Initialize background preview ownership independently from controls."""
+        self._preview_worker: GenerationWorker | None = None
+        self._preview_dialog: PreparedGenerationDialog | None = None
+        self._preview_epoch = 0
+        self._preview_refresh_pending = False
+        self._prepared_request: GenerationRequest | None = None
+
+    def invalidate_context_preview(self) -> None:
+        """Invalidate frozen preparation after relevant saved-state changes."""
+        self._preview_epoch += 1
+        self._prepared_request = None
+        if self._preview_dialog is not None:
+            self._preview_dialog.invalidate()
+
+    def _open_entity_prompt_preview(self) -> None:
+        from src.gui.dialogs.prepared_generation_dialog import PreparedGenerationDialog
+
+        dialog = PreparedGenerationDialog(self)
+        self._preview_dialog = dialog
+        dialog.refresh_requested.connect(self._refresh_entity_prompt_preview)
+        dialog.generate_requested.connect(self._generate_prepared_preview)
+        self._refresh_entity_prompt_preview()
+        dialog.exec()
+        self._preview_dialog = None
+        self._preview_epoch += 1
+        if self._preview_worker is not None:
+            self._preview_worker.cancel()
+        dialog.deleteLater()
+
+    def _refresh_entity_prompt_preview(self) -> None:
+        if self._preview_worker is not None and self._preview_worker.isRunning():
+            self._preview_refresh_pending = True
+            return
+        context = self._get_generation_context() or {}
+        task = self.custom_prompt_edit.toPlainText().strip()
+        dialog = self._preview_dialog
+        if dialog is None:
+            return
+        if not task:
+            dialog.status.setText("Enter a prompt before preparing a preview.")
+            return
+        self.invalidate_context_preview()
+        dialog.status.setText("Preparing context…")
+        builder = PromptBuilder(system_prompt=self._get_system_prompt())
+        task = builder.substitute_variables(task, context)
+        prompt = builder.construct_prompt(
+            builder.build_context_string(context),
+            task,
+            include_rag_placeholder=self.rag_cb.isChecked(),
+            include_spatial_placeholder=self.spatial_cb.isChecked(),
+            include_authoring_placeholder=self.world_context_cb.isChecked(),
+            object_type="entity",
+        )
+        request = self._capture_generation_request(
+            prompt,
+            self.temperature_spin.value() / 100.0,
+            self._resolve_db_path(),
+            str(context.get("object_id") or "") or None,
+            "entity",
+            build_retrieval_query(task, context),
+        )
+        epoch = self._preview_epoch
+        worker = GenerationWorker(
+            None,
+            prompt,
+            request.max_tokens,
+            request.temperature,
+            request=request,
+            preview_only=True,
+        )
+        self._preview_worker = worker
+        worker.context_prepared.connect(
+            lambda snapshot: self._present_prepared_preview(request, epoch, snapshot),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        worker.generation_error.connect(
+            lambda error: self._preview_error(epoch, error),
+            Qt.ConnectionType.QueuedConnection,
+        )
+        worker.finished.connect(
+            self._on_preview_worker_finished, Qt.ConnectionType.QueuedConnection
+        )
+        worker.start()
+
+    def _preview_error(self, epoch: int, error: str) -> None:
+        if self._preview_dialog is not None and epoch == self._preview_epoch:
+            self._preview_dialog.status.setText(error)
+
+    @Slot()
+    def _on_preview_worker_finished(self) -> None:
+        worker = self.sender()
+        if isinstance(worker, GenerationWorker):
+            if worker is self._preview_worker:
+                self._preview_worker = None
+            worker.deleteLater()
+            if self._preview_refresh_pending and self._preview_dialog is not None:
+                self._preview_refresh_pending = False
+                self._refresh_entity_prompt_preview()
+
+    def _present_prepared_preview(
+        self, request: GenerationRequest, epoch: int, snapshot: dict[str, Any]
+    ) -> None:
+        if epoch != self._preview_epoch or self._preview_dialog is None:
+            return
+        try:
+            prepared = PreparedGeneration.from_dict(snapshot)
+        except (KeyError, TypeError, ValueError):
+            self._preview_error(epoch, "Prepared context is invalid. Choose Refresh.")
+            return
+        self._prepared_request = replace(request, prepared=prepared)
+        self._preview_dialog.present(
+            prepared.prompt,
+            self._prepared_preview_caption(request),
+        )
+
+    def _prepared_preview_caption(self, request: GenerationRequest) -> str:
+        label = self.entity_context_mode.combo.currentText()
+        converter = getattr(self.window(), "calendar_converter", None)
+        date = request.authoring_date
+        caption = f"Captured {label}"
+        if date is not None:
+            display = (
+                converter.format_datetime(date) if converter else format(date, ".12g")
+            )
+            caption += f"; viewing {display}"
+        return caption + ". Generate sends these exact messages."
+
+    def _generate_prepared_preview(self) -> None:
+        request = self._prepared_request
+        if request is None or self._preview_dialog is None:
+            return
+        context = self._get_generation_context() or {}
+        if (
+            request.source_hash != self._hash_source_description(context)
+            or request.target_id != context.get("object_id")
+            or request.db_path != self._resolve_db_path()
+        ):
+            self.invalidate_context_preview()
+            return
+        try:
+            self._current_provider = create_provider(self._get_provider_id())
+            self._generation_target_id = request.target_id
+            self._generation_source_hash = request.source_hash
+            self._start_generation(
+                request.prompt,
+                request.temperature,
+                request.db_path,
+                request.target_id,
+                request.object_type,
+                request.retrieval_query,
+                prepared_request=request,
+            )
+            self._preview_dialog.accept()
+        except Exception as error:
+            self._preview_dialog.status.setText(str(error))
+
     def _on_preview_clicked(self) -> None:
         """Show prompt preview dialog."""
         context = self._get_generation_context()
+        if context and context.get("object_type") == "entity":
+            self._open_entity_prompt_preview()
+            return
         if not context:
             QMessageBox.warning(
                 self,

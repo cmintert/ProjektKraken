@@ -489,3 +489,17 @@ def test_timeline_preparation_and_worker_dependencies(relative, allowed):
             for module in modules
             if module.startswith("PySide6")
         ), "Layout workers must not measure or manipulate GUI objects"
+
+
+def test_entity_context_projection_has_no_ui_or_mutation_dependencies():
+    for relative in (
+        "services/entity_context_projection.py",
+        "services/entity_context_reader.py",
+    ):
+        modules = {module for _, module in _imported_modules(_SOURCE_ROOT / relative)}
+        assert not any(
+            module.startswith(
+                ("src.gui", "src.app", "src.commands", "src.services.worker")
+            )
+            for module in modules
+        )

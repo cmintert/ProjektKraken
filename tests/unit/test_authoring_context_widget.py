@@ -73,9 +73,7 @@ def test_context_map_and_attachment_links_emit_typed_targets(qtbot) -> None:
     with qtbot.waitSignal(widget.map_requested) as map_signal:
         widget.primary_view.anchorClicked.emit(QUrl("kraken-map://map-id"))
     with qtbot.waitSignal(widget.attachment_requested) as attachment_signal:
-        widget.more_view.anchorClicked.emit(
-            QUrl("kraken-attachment://attachment-id")
-        )
+        widget.more_view.anchorClicked.emit(QUrl("kraken-attachment://attachment-id"))
 
     assert map_signal.args == ["map-id"]
     assert attachment_signal.args == ["attachment-id"]
@@ -101,9 +99,7 @@ def test_entity_context_primary_and_more_expose_every_section(qtbot) -> None:
             ContextRelation("rel", root, ally, "knows", 0, "persistent"),
         ),
         temporal_history=(
-            ContextRelation(
-                "history", root, ally, "served", 0, "interval", 2.0, 4.0
-            ),
+            ContextRelation("history", root, ally, "served", 0, "interval", 2.0, 4.0),
         ),
         map_appearances=(ContextMapAppearance("map", "Coast", "point"),),
         linked_references=(
@@ -136,3 +132,34 @@ def test_entity_context_primary_and_more_expose_every_section(qtbot) -> None:
     assert "Portrait at the docks" in more
     assert "Also placed on maps" in more
     assert "2 additional mentions omitted" in more
+
+
+def test_narrow_context_document_wraps_and_same_item_retains_scroll(qtbot):
+    widget = AuthoringContextWidget(object_label="Entity")
+    qtbot.addWidget(widget)
+    widget.resize(360, 220)
+    context = EntityAuthoringContext(
+        "person",
+        attributes=tuple(
+            ContextAttribute(
+                f"Field {i}", "Long readable source and attribute text " * 4
+            )
+            for i in range(24)
+        ),
+    )
+    widget.set_entity_context(context)
+    widget.more_button.setChecked(True)
+    widget.show()
+    qtbot.wait(20)
+    assert (
+        widget.primary_view.document().textWidth()
+        <= widget.primary_view.viewport().width()
+    )
+    scrollbar = widget.scroll_area.verticalScrollBar()
+    assert scrollbar.maximum() > 0
+    scrollbar.setValue(100)
+    widget.set_loading()
+    widget.set_entity_context(context)
+    qtbot.wait(20)
+    assert scrollbar.value() == 100
+    assert widget.more_button.isChecked()

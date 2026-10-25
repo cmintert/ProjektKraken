@@ -74,6 +74,7 @@ _DIALOGS = {
     "transfer_dialog": "TransferDialog",
     "transfer_csv_dialog": "TransferCsvDialog",
     "progress_dialog": "ProgressDialog",
+    "prepared_generation_dialog": "PreparedGenerationDialog",
 }
 _WIDGETS = {
     "settings_center": "SettingsCenter",
@@ -84,6 +85,7 @@ _WIDGETS = {
     "context_tag_bar": "ContextTagBar",
     "empty_state_widget": "EmptyStateWidget",
     "entity_list": "EntityListWidget",
+    "entity_context_mode_selector": "EntityContextModeSelector",
     "event_list": "EventListWidget",
     "filter_widget": "FilterWidget",
     "graph_view.graph_filter_bar": "GraphFilterBar",

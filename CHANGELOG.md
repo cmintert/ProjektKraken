@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-24
-**Commit:** 9890c50fd75b39645e5096a26f8bf86109607133
+**Last Updated:** 2026-10-25
+**Commit:** 444af08c6d37931a11021838557c1ed914729c09
 ---
 
 # Changelog
@@ -12,6 +12,16 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-10-25)* **Temporal Entity World Context (KRT-96)**: Added synchronized
+  At playhead, History to playhead and All history modes, saved-state provenance,
+  qualified uncertainty and named supporting Events. Entity prompt preview prepares
+  context in the background and can generate from the exact reviewed messages.
+  Existing history APIs and Event Context remain available without a world migration.
+  Added regression coverage, contextual Help, isolated rendering and action-label
+  fixtures, and recorded owner acceptance with explicit evidence limits. Extracted
+  temporal projection/read responsibilities and removed the improved builder's
+  complexity allowance.
 
 - *(2026-10-24)* **Activity workspaces (KRT-108)**: Added a collapsible six-activity
   navigation rail, automatic per-workspace layout retention and custom workspace

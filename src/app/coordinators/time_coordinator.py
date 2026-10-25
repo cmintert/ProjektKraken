@@ -3,7 +3,7 @@
 import logging
 from typing import TYPE_CHECKING, Any, Optional
 
-from PySide6.QtCore import Q_ARG, Slot
+from PySide6.QtCore import Q_ARG, Signal, Slot
 from PySide6.QtWidgets import QDialog, QMessageBox
 
 from src.app.coordinators.base_coordinator import BaseCoordinator
@@ -27,6 +27,8 @@ class TimeCoordinator(BaseCoordinator):
     - Return to Present logic.
     - Resolving temporal entity states.
     """
+
+    viewing_time_changed = Signal(float)
 
     def __init__(self, main_window: "MainWindow") -> None:
         """Initialize lore-time and playhead coordination."""
@@ -253,6 +255,8 @@ class TimeCoordinator(BaseCoordinator):
         self.resolve_selected_entity(after_save=True)
         self._center_accepted_go_to_date()
         self.main_window.timeline.accept_navigation_context()
+        if self._current_playhead_time is not None:
+            self.viewing_time_changed.emit(self._current_playhead_time)
 
     def on_temporal_save_failed(self) -> None:
         """Restore a pending exact-date jump when its draft save fails."""
@@ -317,6 +321,7 @@ class TimeCoordinator(BaseCoordinator):
         self._refresh_relation_time_context()
         self.resolve_selected_entity()
         self.main_window.data_coordinator.on_graph_playhead_changed()
+        self.viewing_time_changed.emit(time)
 
     def _refresh_relation_time_context(self) -> None:
         """Publish timeline context to relation authoring surfaces."""

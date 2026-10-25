@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from html import escape
 
-from PySide6.QtCore import Qt, QTimer, QUrl, Signal, Slot
-from PySide6.QtGui import QResizeEvent
+import shiboken6
+from PySide6.QtCore import QEvent, QObject, Qt, QTimer, QUrl, Signal, Slot
+from PySide6.QtGui import QResizeEvent, QTextOption
 from PySide6.QtWidgets import (
     QLabel,
     QScrollArea,
@@ -26,9 +27,11 @@ from src.core.authoring_context import (
     EventAuthoringContext,
     SpatialAuthoringContext,
 )
+from src.core.entity_context_mode import ENTITY_CONTEXT_LABELS, EntityContextMode
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.entity_context_mode_selector import EntityContextModeSelector
 
 _PRIMARY_RELATION_LIMIT = 6
 _PRIMARY_ATTRIBUTE_LIMIT = 6
@@ -47,14 +50,20 @@ class AuthoringContextWidget(QWidget):
     ) -> None:
         """Initialize the read-only context surface."""
         super().__init__(parent)
+        self._context_scroll = 0
         self._embedded = False
         self._context_id: str | None = None
         self._object_label = object_label
         layout = QVBoxLayout(self)
         StyleHelper.apply_compact_spacing(layout)
 
+        self.mode_selector = EntityContextModeSelector(self)
+        self.mode_selector.setVisible(object_label == "Entity")
+        layout.addWidget(self.mode_selector)
+
         self.scroll_area = QScrollArea(self)
         self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.viewport().installEventFilter(self)
         self.scroll_area.setFrameShape(QScrollArea.Shape.NoFrame)
         self.scroll_area.setHorizontalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff
@@ -116,6 +125,7 @@ class AuthoringContextWidget(QWidget):
 
     def _make_browser(self) -> QTextBrowser:
         browser = QTextBrowser(self)
+        browser.setWordWrapMode(QTextOption.WrapMode.WrapAtWordBoundaryOrAnywhere)
         browser.setOpenLinks(False)
         browser.setOpenExternalLinks(False)
         browser.setFrameShape(QTextBrowser.Shape.NoFrame)
@@ -148,7 +158,9 @@ class AuthoringContextWidget(QWidget):
             "p { margin: 5px 0; } "
             f"a {{ color: {theme['accent_secondary']}; "
             "text-decoration: none; }} "
-            f"a:hover {{ color: {theme['primary']}; text-decoration: underline; }}"
+            f"a.entity {{ color: {theme['link_entity']}; text-decoration: underline; }} "
+            f"a.event {{ color: {theme['link_event']}; text-decoration: underline; }} "
+            "a:hover { text-decoration: underline; }"
         )
         for browser in (self.primary_view, self.more_view):
             browser.setStyleSheet(browser_style)
@@ -156,6 +168,8 @@ class AuthoringContextWidget(QWidget):
 
     def set_loading(self) -> None:
         """Show a non-blocking loading state."""
+        if not self.primary_view.isHidden():
+            self._context_scroll = self.scroll_area.verticalScrollBar().value()
         self.status_label.setText(f"Loading {self._object_label} context…")
         self.status_label.show()
         self.primary_view.hide()
@@ -198,7 +212,10 @@ class AuthoringContextWidget(QWidget):
 
     def _present_context(self, item_id: str, primary: str, more: str) -> None:
         """Keep the bounded-context disclosure during same-object refreshes."""
-        expanded = self._context_id == item_id and self.more_button.isChecked()
+        same_item = self._context_id == item_id
+        expanded = same_item and self.more_button.isChecked()
+        if not same_item:
+            self._context_scroll = 0
         self._context_id = item_id
         self.status_label.hide()
         self.primary_view.setHtml(primary)
@@ -209,6 +226,11 @@ class AuthoringContextWidget(QWidget):
         self.more_button.setVisible(bool(more))
         self.more_button.setChecked(expanded)
         self.more_view.setVisible(expanded and bool(more))
+        QTimer.singleShot(0, self._restore_context_scroll)
+
+    def _restore_context_scroll(self) -> None:
+        if shiboken6.isValid(self) and shiboken6.isValid(self.scroll_area):
+            self.scroll_area.verticalScrollBar().setValue(self._context_scroll)
 
     def _empty_text(self) -> str:
         return f"Select an {self._object_label} to view its context."
@@ -219,6 +241,15 @@ class AuthoringContextWidget(QWidget):
         self.more_view.setVisible(checked)
         if checked:
             QTimer.singleShot(0, lambda: self._fit_browser_height(self.more_view))
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Refit after a scrollbar changes the available content width."""
+        if (
+            watched is self.scroll_area.viewport()
+            and event.type() == QEvent.Type.Resize
+        ):
+            QTimer.singleShot(0, self._fit_visible_browsers)
+        return super().eventFilter(watched, event)
 
     def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
         """Reflow rich text to the available inspector width."""
@@ -303,8 +334,26 @@ class AuthoringContextWidget(QWidget):
         return "".join(primary), "".join(more)
 
     def _render_entity(self, context: EntityAuthoringContext) -> tuple[str, str]:
-        primary: list[str] = ["<h3>Known Entity context</h3>"]
+        label = ENTITY_CONTEXT_LABELS[EntityContextMode(context.mode)]
+        heading = "Known Entity context" if context.mode == "all_history" else label
+        primary: list[str] = [f"<h3>{escape(heading)}</h3>"]
+        if context.context_date is not None:
+            primary.append(f"<p>{escape(context.date_label)} · Saved facts</p>")
+        if context.effective_description is not None:
+            self._append_section(
+                primary,
+                "Resolved description",
+                [self._attribute_html(context.effective_description)],
+            )
         more: list[str] = []
+        self._append_section(
+            more,
+            "Possible changes — not established",
+            [self._attribute_html(item) for item in context.possible_changes],
+        )
+        self._append_section(
+            more, "Timing notices", [escape(item) for item in context.temporal_notices]
+        )
         self._append_section(
             primary,
             "Attributes",
@@ -319,11 +368,18 @@ class AuthoringContextWidget(QWidget):
             [escape(item.name) for item in context.tags],
         )
         relations = list(context.direct_relations)
+        if context.mode == "at_playhead":
+            relations.extend(context.temporal_history)
         self._append_section(
             primary,
             "Relations",
             [self._relation_html(item) for item in relations[:_PRIMARY_RELATION_LIMIT]],
         )
+        if context.mode == "at_playhead" and not relations:
+            primary.append(
+                "<p>No authored current relationships at this date. "
+                "Choose a history mode to inspect other dated relationships.</p>"
+            )
         recent_events = list(context.event_appearances[-_PRIMARY_EVENT_LIMIT:])
         self._append_section(
             primary,
@@ -378,6 +434,7 @@ class AuthoringContextWidget(QWidget):
             [
                 self._relation_html(item, include_window=True)
                 for item in context.temporal_history
+                if context.mode != "at_playhead"
             ],
         )
         self._append_section(
@@ -462,10 +519,16 @@ class AuthoringContextWidget(QWidget):
 
     @staticmethod
     def _item_link(item: ContextItem) -> str:
-        return f'<a href="kraken://{escape(item.id)}">{escape(item.name)}</a>'
+        return (
+            f'<a class="{escape(item.object_type)}" href="kraken://{escape(item.id)}">'
+            f"{escape(item.name)}</a>"
+        )
 
     def _event_link(self, event: ContextEvent) -> str:
-        return self._item_link(ContextItem(event.id, "event", event.name))
+        text = self._item_link(ContextItem(event.id, "event", event.name))
+        if event.temporal_label:
+            text += " · " + escape(event.temporal_label)
+        return text
 
     def _relation_html(
         self, relation: ContextRelation, *, include_window: bool = False
@@ -474,7 +537,18 @@ class AuthoringContextWidget(QWidget):
             f"{self._item_link(relation.source)} → "
             f"{escape(relation.rel_type)} → {self._item_link(relation.target)}"
         )
-        if include_window and relation.temporal_kind != "persistent":
+        if relation.temporal_summary:
+            result += f" — {escape(relation.temporal_summary)}"
+            evidence = relation.temporal_evidence or {}
+            for event in evidence.get("events", []):
+                result += " · " + self._item_link(
+                    ContextItem(event["id"], "event", event["name"])
+                )
+        if (
+            include_window
+            and not relation.temporal_summary
+            and relation.temporal_kind != "persistent"
+        ):
             start = (
                 "?"
                 if relation.valid_from is None
@@ -488,7 +562,22 @@ class AuthoringContextWidget(QWidget):
 
     @staticmethod
     def _attribute_html(attribute: ContextAttribute) -> str:
-        return f"{escape(attribute.name)}: {escape(str(attribute.value))}"
+        text = f"{escape(attribute.name)}: {escape(str(attribute.value))}"
+        source = attribute.source
+        if source is not None:
+            if source.get("event_id"):
+                text += " · Source: " + AuthoringContextWidget._item_link(
+                    ContextItem(
+                        str(source["event_id"]),
+                        "event",
+                        str(source.get("event_name", "Event")),
+                    )
+                )
+            else:
+                text += " · Undated baseline"
+        if attribute.temporal_status != "definite":
+            text += f" · {escape(attribute.temporal_status)}"
+        return text
 
     def _map_appearance_html(self, appearance: ContextMapAppearance) -> str:
         feature = appearance.feature_type.strip().casefold()
@@ -513,6 +602,5 @@ class AuthoringContextWidget(QWidget):
     def _fit_browser_height(browser: QTextBrowser) -> None:
         """Fit all rich text; the surrounding context surface owns scrolling."""
         browser.document().setTextWidth(max(1, browser.viewport().width()))
-        browser.document().adjustSize()
         document_height = int(browser.document().size().height()) + 12
         browser.setFixedHeight(max(32, document_height))

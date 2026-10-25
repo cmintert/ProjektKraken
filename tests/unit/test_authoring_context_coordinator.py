@@ -35,6 +35,8 @@ class _Window(QObject):
         self.event_editor = _Editor()
         self.entity_editor = MagicMock()
         self.entity_editor.current_entity_id = "entity-id"
+        self.time_coordinator = MagicMock()
+        self.time_coordinator.current_playhead_time = 10.0
         self.worker = QObject()
         self.map_widget = MagicMock()
         self.map_widget.get_selected_map_id.return_value = "map-id"
@@ -44,11 +46,14 @@ def test_date_refresh_is_debounced_and_captures_draft_inputs(qtbot) -> None:
     window = _Window()
     coordinator = AuthoringContextCoordinator(window)  # type: ignore[arg-type]
 
-    with patch(
-        "src.app.coordinators.authoring_context_coordinator.invoke_queued"
-    ) as invoke, patch(
-        "src.app.coordinators.authoring_context_coordinator.Q_ARG",
-        side_effect=lambda _type, value: value,
+    with (
+        patch(
+            "src.app.coordinators.authoring_context_coordinator.invoke_queued"
+        ) as invoke,
+        patch(
+            "src.app.coordinators.authoring_context_coordinator.Q_ARG",
+            side_effect=lambda _type, value: value,
+        ),
     ):
         coordinator.schedule_refresh()
         coordinator.schedule_refresh()
@@ -71,9 +76,7 @@ def test_stale_result_cannot_replace_newer_context(qapp) -> None:
     coordinator._active_request_id = "new-request"
     snapshot = EventAuthoringContext("event-id", 10.0).to_dict()
 
-    coordinator.on_context_loaded(
-        "old-request", "event-id", 10.0, "map-id", snapshot
-    )
+    coordinator.on_context_loaded("old-request", "event-id", 10.0, "map-id", snapshot)
 
     window.event_editor.set_authoring_context.assert_not_called()
 
@@ -84,9 +87,7 @@ def test_matching_serialized_snapshot_is_rendered(qapp) -> None:
     coordinator._active_request_id = "request-id"
     snapshot = EventAuthoringContext("event-id", 10.0).to_dict()
 
-    coordinator.on_context_loaded(
-        "request-id", "event-id", 10.0, "map-id", snapshot
-    )
+    coordinator.on_context_loaded("request-id", "event-id", 10.0, "map-id", snapshot)
 
     rendered = window.event_editor.set_authoring_context.call_args.args[0]
     assert isinstance(rendered, EventAuthoringContext)
@@ -116,11 +117,14 @@ def test_entity_refresh_is_debounced_and_serialized(qtbot) -> None:
     window = _Window()
     coordinator = AuthoringContextCoordinator(window)  # type: ignore[arg-type]
 
-    with patch(
-        "src.app.coordinators.authoring_context_coordinator.invoke_queued"
-    ) as invoke, patch(
-        "src.app.coordinators.authoring_context_coordinator.Q_ARG",
-        side_effect=lambda _type, value: value,
+    with (
+        patch(
+            "src.app.coordinators.authoring_context_coordinator.invoke_queued"
+        ) as invoke,
+        patch(
+            "src.app.coordinators.authoring_context_coordinator.Q_ARG",
+            side_effect=lambda _type, value: value,
+        ),
     ):
         coordinator.schedule_entity_refresh()
         coordinator.schedule_entity_refresh()
@@ -131,6 +135,8 @@ def test_entity_refresh_is_debounced_and_serialized(qtbot) -> None:
         "load_entity_authoring_context",
         invoke.call_args.args[2],
         "entity-id",
+        "at_playhead",
+        10.0,
     )
 
 
@@ -159,3 +165,32 @@ def test_database_worker_emits_serialized_entity_snapshot(qtbot) -> None:
 
     assert signal.args == ["request-id", "entity-id", context.to_dict()]
     assert isinstance(signal.args[2], dict)
+
+
+def test_entity_inputs_change_before_debounce_rejects_old_response(qapp):
+    window = _Window()
+    coordinator = AuthoringContextCoordinator(window)
+    coordinator._active_entity_request_id = "old"
+    coordinator._entity_inputs = coordinator._entity_query()
+    window.time_coordinator.current_playhead_time = 135.0
+    coordinator.schedule_entity_refresh()
+    coordinator.on_entity_context_loaded(
+        "old", "entity-id", EntityAuthoringContext("entity-id").to_dict()
+    )
+    window.entity_editor.set_authoring_context.assert_not_called()
+
+
+def test_mode_selection_is_shared_and_world_change_resets_it(qapp):
+    window = _Window()
+    window.db_path = "one.kraken"
+    coordinator = AuthoringContextCoordinator(window)
+    coordinator.set_entity_mode("history_to_playhead")
+    for selector in (
+        window.entity_editor.authoring_context.mode_selector,
+        window.entity_editor.llm_generator.entity_context_mode,
+    ):
+        selector.set_mode.assert_called_with("history_to_playhead")
+    window.db_path = "two.kraken"
+    query = coordinator._entity_query()
+    assert query[:3] == ("two.kraken", "at_playhead", 10.0)
+    assert coordinator._active_entity_request_id == ""

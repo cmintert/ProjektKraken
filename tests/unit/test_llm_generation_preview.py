@@ -5,6 +5,7 @@ from PySide6.QtCore import QSettings
 from PySide6.QtWidgets import QPlainTextEdit
 
 from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+from src.core.authoring_context import EntityAuthoringContext
 from src.gui.widgets.llm_generation_widget import GenerationWorker, LLMGenerationWidget
 from src.services.prompt_builder import PromptBuilder, build_retrieval_query
 
@@ -30,15 +31,17 @@ def widget(qtbot, tmp_path):
 @patch("src.gui.widgets.llm_generation_widget.RAGService")
 def test_preview_rag_success(mock_rag_cls, widget, qtbot):
     """Verify preview works correctly with RAGService."""
-    _assert_preview_rag_success(mock_rag_cls, widget, world_context_enabled=False)
+    _assert_preview_rag_success(
+        mock_rag_cls, widget, qtbot, world_context_enabled=False
+    )
 
 
 @patch("src.gui.widgets.llm_generation_widget.RAGService")
-def test_preview_rag_with_world_context(mock_rag_cls, widget):
-    _assert_preview_rag_success(mock_rag_cls, widget, world_context_enabled=True)
+def test_preview_rag_with_world_context(mock_rag_cls, widget, qtbot):
+    _assert_preview_rag_success(mock_rag_cls, widget, qtbot, world_context_enabled=True)
 
 
-def _assert_preview_rag_success(mock_rag_cls, widget, world_context_enabled):
+def _assert_preview_rag_success(mock_rag_cls, widget, qtbot, world_context_enabled):
     # 1. Setup RAG Mock
     mock_service = MagicMock()
     mock_rag_cls.return_value = mock_service
@@ -48,6 +51,7 @@ def _assert_preview_rag_success(mock_rag_cls, widget, world_context_enabled):
     widget.rag_cb.setChecked(True)
     widget.rag_limit_input.setText("2")
     widget.world_context_cb.setChecked(world_context_enabled)
+    widget._resolve_playhead_date = MagicMock(return_value=10.0)
     widget._get_generation_context = MagicMock(
         return_value={
             "name": "Northwatch",
@@ -70,6 +74,7 @@ def _assert_preview_rag_success(mock_rag_cls, widget, world_context_enabled):
     captured = {}
 
     def capture_preview(dialog):
+        qtbot.waitUntil(lambda: widget._prepared_request is not None)
         text_edits = dialog.findChildren(QPlainTextEdit)
         assert len(text_edits) == 1
         captured["display_text"] = text_edits[0].toPlainText()
@@ -85,10 +90,9 @@ def _assert_preview_rag_success(mock_rag_cls, widget, world_context_enabled):
         patch(
             "src.gui.widgets.llm_generation_widget.QMessageBox.warning"
         ) as mock_warning,
-        patch.object(
-            widget,
-            "_preview_authoring_context",
-            return_value="[Authoritative Context]\nKnown fact",
+        patch(
+            "src.gui.widgets.llm_generation_widget.lookup_entity_authoring_context",
+            return_value=EntityAuthoringContext("northwatch-id"),
         ),
     ):
         widget._on_preview_clicked()
@@ -116,6 +120,7 @@ def _assert_preview_rag_success(mock_rag_cls, widget, world_context_enabled):
 def test_preview_skips_retrieval_when_disabled_or_zero(
     mock_rag_cls, widget, rag_enabled, rag_limit
 ):
+    widget.world_context_cb.setChecked(False)
     widget.rag_cb.setChecked(rag_enabled)
     widget.rag_limit_input.setText(rag_limit)
     widget.custom_prompt_edit.setPlainText("Find conflicts")
@@ -131,7 +136,10 @@ def test_preview_skips_retrieval_when_disabled_or_zero(
 
 
 @patch("src.gui.widgets.llm_generation_widget.RAGService")
-def test_preview_and_generation_use_identical_retrieval_arguments(mock_rag_cls, widget):
+def test_preview_and_generation_use_identical_retrieval_arguments(
+    mock_rag_cls, widget, qtbot
+):
+    widget.world_context_cb.setChecked(False)
     context = {
         "name": "Northwatch",
         "object_id": "northwatch-id",
@@ -145,7 +153,13 @@ def test_preview_and_generation_use_identical_retrieval_arguments(mock_rag_cls, 
     widget.custom_prompt_edit.setPlainText("Find past conflicts with {name}")
     mock_rag_cls.return_value.get_context.return_value = "Relevant conflict"
 
-    with patch("src.gui.widgets.llm_generation_widget.QDialog.exec", return_value=0):
+    def finish_preview(_dialog):
+        qtbot.waitUntil(lambda: widget._prepared_request is not None)
+        return 0
+
+    with patch(
+        "src.gui.widgets.llm_generation_widget.QDialog.exec", new=finish_preview
+    ):
         widget._on_preview_clicked()
     preview_call = mock_rag_cls.return_value.get_context.call_args
 

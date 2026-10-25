@@ -459,3 +459,23 @@ must not infer a panel's current physical zone. Workspace persistence is the
 explicit versioned panel/order/visibility/size structure in
 `src/gui/workspace/layout_state.py`; outer window geometry is stored
 separately.
+
+
+## Temporal Entity World Context
+
+Entity World Context is a read-only projection. The builder retains legacy
+All history defaults; explicit date-scoped calls use EntityContextProjectionService,
+fresh TemporalManager resolution, and the pure shared relation temporal policy.
+Graph's existing evaluator remains a compatibility facade. Date eligibility is
+applied before neighborhood traversal, counts and limits. Facts retain canonical
+relation identity, source Events, uncertainty and boundary evidence; private
+candidate values are filtered before serialization. Projection budgets remove
+whole facts together with their provenance.
+
+AuthoringContextCoordinator owns the shared session-only Entity mode, accepted
+viewing-time refreshes and stale-request rejection. The existing database-worker
+slot delegates its read transaction to the feature reader. GenerationWorker's
+preparation path runs context, RAG and spatial lookups off the GUI thread. An
+immutable prepared-generation record freezes final messages for explicit generation
+from preview, including date-policy inputs and disclosed blocks. No projection is
+persisted and these operations do not enter world command history.

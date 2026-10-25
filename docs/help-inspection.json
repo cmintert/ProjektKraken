@@ -9070,6 +9070,56 @@
       "binding": "writing.source-edit",
       "label": "Source indentation and tab character",
       "kind": "semantic control/action"
+    },
+    {
+      "id": "entity-world-context-mode",
+      "topic_id": "writing.ai",
+      "target": "help-entity-world-context-mode",
+      "source": "src/gui/widgets/entity_context_mode_selector.py",
+      "symbol": "EntityContextModeSelector.__init__",
+      "binding": "self.combo",
+      "label": "Context mode",
+      "kind": "WrappingComboBox"
+    },
+    {
+      "id": "prepared-generation-text",
+      "topic_id": "writing.ai",
+      "target": "help-prepared-generation-text",
+      "source": "src/gui/dialogs/prepared_generation_dialog.py",
+      "symbol": "PreparedGenerationDialog.__init__",
+      "binding": "self.text",
+      "label": "Exact prepared prompt",
+      "kind": "QPlainTextEdit"
+    },
+    {
+      "id": "prepared-generation-generate-button",
+      "topic_id": "writing.ai",
+      "target": "help-prepared-generation-generate-button",
+      "source": "src/gui/dialogs/prepared_generation_dialog.py",
+      "symbol": "PreparedGenerationDialog.__init__",
+      "binding": "self.generate_button",
+      "label": "Generate",
+      "kind": "StandardButton"
+    },
+    {
+      "id": "prepared-generation-refresh-button",
+      "topic_id": "writing.ai",
+      "target": "help-prepared-generation-refresh-button",
+      "source": "src/gui/dialogs/prepared_generation_dialog.py",
+      "symbol": "PreparedGenerationDialog.__init__",
+      "binding": "self.refresh_button",
+      "label": "Refresh",
+      "kind": "StandardButton"
+    },
+    {
+      "id": "prepared-generation-close",
+      "topic_id": "writing.ai",
+      "target": "help-prepared-generation-close",
+      "source": "src/gui/dialogs/prepared_generation_dialog.py",
+      "symbol": "PreparedGenerationDialog.__init__",
+      "binding": "close",
+      "label": "Close",
+      "kind": "StandardButton"
     }
   ],
   "factory_exemptions": [
@@ -11724,14 +11774,14 @@
     {
       "source": "src/gui/widgets/authoring_context_widget.py",
       "symbol": "AuthoringContextWidget.__init__",
-      "sha256": "a7236011f46e589d7ff428c476bbe4a0b19d2d57884442a9b461b74a9020b4dd",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "2050c7877e592b72a6c2cfcb40aa4a0f0c013e5a0e2db8e95c7d27cdb8081d5f",
+      "review_note": "KRT-96: the Entity-only mode selector is documented in Context mode Help. Same-object refresh retains the Context scroll/disclosure state and source links remain read-only navigation."
     },
     {
       "source": "src/gui/widgets/authoring_context_widget.py",
       "symbol": "AuthoringContextWidget._apply_theme",
-      "sha256": "a34ebc8e253f0ca33723503777855594dc5ae0e58b9fe5f3a23e24f3dbfb326b",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "9bd5907fb0647f4692fbe807ea27614e7e8a2d37543285a2ee960d9665a872cd",
+      "review_note": "KRT-96: typed source links use Entity/Event link roles and live theme refresh; navigation and disclosure meanings are unchanged."
     },
     {
       "source": "src/gui/widgets/authoring_context_widget.py",
@@ -11742,14 +11792,14 @@
     {
       "source": "src/gui/widgets/authoring_context_widget.py",
       "symbol": "AuthoringContextWidget._fit_browser_height",
-      "sha256": "b0488ea3f8ac1850cb1fdd31a693f23032905f71544e3237c6b1647a10d65e16",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "c05681c88e7baab80a005a5ca454a548a41b1754ec39a5a3fcbb872aab9eafd7",
+      "review_note": "KRT-96: fit the document to the real viewport without adjustSize expanding it past the visible width. Context owns scrolling; narrow source names now wrap without changing their navigation meaning."
     },
     {
       "source": "src/gui/widgets/authoring_context_widget.py",
       "symbol": "AuthoringContextWidget._make_browser",
-      "sha256": "0e470dbecf4c85f63c67cb98f1f2f4995f22c032f29f97dfcf1fff8e71943be8",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "caa7ef03f73441eb6b9d049b4acf0dca0360f0ce4aba7d1463a724ec18e12bea",
+      "review_note": "KRT-96: source names wrap within the inspector. Read-only content and named-target navigation remain as documented."
     },
     {
       "source": "src/gui/widgets/authoring_context_widget.py",
@@ -12678,8 +12728,8 @@
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
       "symbol": "LLMGenerationWidget.__init__",
-      "sha256": "ccb87b3ce390442a4d1735c59e5a4226d614d404c36738887d3d6bcb141b3eaa",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "98b6f85879dca46d74a198ad4979bab83dbb216eca5fe2836d44955861eed39e",
+      "review_note": "KRT-96: Entity generation adds the documented shared session Context mode and prepared-preview state; existing provider, task and review controls remain unchanged."
     },
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
@@ -12750,8 +12800,8 @@
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
       "symbol": "LLMGenerationWidget._hash_source_description",
-      "sha256": "e828127101bec2cd4b1ff613f563cb06dd6033c812632478f67165e32accac09",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "5268fea78619d70f7adfdd734f75e5c93e1e980f62fdae83aba6fb6c6d872ad6",
+      "review_note": "KRT-96: applying a response now guards Entity viewing date and mode as well as draft text; review Help retains explicit Replace/Append ownership."
     },
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
@@ -12792,8 +12842,8 @@
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
       "symbol": "LLMGenerationWidget._on_preview_clicked",
-      "sha256": "8e123386469ec19aef667699e47cd1916b18258e4859471cd99cfc28548d2875",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "ac1c5d8aa483c9b67adb02105ab2c730d100c7d45696ac8da001dd364a22c539",
+      "review_note": "KRT-96: Entity Preview prepares messages in the background and exposes Generate/Refresh/Close; canonical World Context instructions and new inspection targets describe frozen send and stale refresh. Event preview retains its existing behavior."
     },
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
@@ -12870,8 +12920,8 @@
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
       "symbol": "LLMGenerationWidget._resolve_playhead_date",
-      "sha256": "dff83b43d85f5bb1f341a344ba9198e9f24693f47e218422a8bd62e7d4679322",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "f5189d62247647a666e09ee24c584ba1ea74fc4ee001d6dcccec57e60f3b6cd0",
+      "review_note": "KRT-96: context uses accepted viewing time after draft guards; spatial and World Context use the same captured date, as described in the generation chapter."
     },
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
@@ -12900,14 +12950,14 @@
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
       "symbol": "LLMGenerationWidget._shutdown_worker",
-      "sha256": "b2ba69e126611ac6cea39e5ff6de7be2e2dab703ff248e85890435ba7c855bc4",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "30f82ba73c2d75358cf23cb6b337d650fe1ccdb547dbaaa0f2d732e0a5077090",
+      "review_note": "KRT-96: shutdown also cancels and joins background preparation; Close preview does not generate or apply lore, as documented."
     },
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
       "symbol": "LLMGenerationWidget._start_generation",
-      "sha256": "33e2f8bcf5ceccf2b282ed9702434719053f25061d7edee5960bde36651afe7d",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "3e12191bf2059f8e678070458cf76b3b3260bfb3ccfd61d89242bd2984fa5449",
+      "review_note": "KRT-96: ordinary Generate captures fresh context; Generate from preview retains exact prepared messages. Completion/error/finished notifications are explicitly queued to the GUI and explicit response review remains unchanged."
     },
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
@@ -12918,8 +12968,8 @@
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
       "symbol": "LLMGenerationWidget._sync_context_controls",
-      "sha256": "81af507b0e03fe2f58133abcfc576534a8d93387f2a89ca1d8eaf41f7b12e983",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "a3fe1e83d93ad2f30de09f71644a71cefaf297d980d23e0d10a5fa7fd65bca86",
+      "review_note": "KRT-96: shared mode control is Entity-only and disabled when World Context is off; Event spatial/context behavior remains unchanged."
     },
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
@@ -16652,6 +16702,48 @@
       "symbol": "FocusNavigationController._repair",
       "sha256": "5242786ae971d15560f04d868ef3e1d8211f712e02f8bb32cdaae4795f5e7b1d",
       "review_note": "KRT-94: repair hidden controls within the surviving region, preserving the coordinator-restored original control after a move. Forward/reverse and moved/closed/restored workspace regressions verify context preservation. Workspace Help describes focus-only movement and restoration."
+    },
+    {
+      "source": "src/gui/widgets/entity_context_mode_selector.py",
+      "symbol": "EntityContextModeSelector.__init__",
+      "sha256": "aab893d0ea93123baa65c5f4485a569204739fb0e647968f66dd55a063297b98",
+      "review_note": "KRT-96: three complete mode labels map to the new canonical Context mode Help paragraph; the control emits intent and edits no lore."
+    },
+    {
+      "source": "src/gui/widgets/entity_context_mode_selector.py",
+      "symbol": "EntityContextModeSelector.set_mode",
+      "sha256": "64b9ae66be74f9addee7a57b870f273809d6f527f5122595da283c5f647fa80d",
+      "review_note": "KRT-96: synchronized mode reflection changes no authored state and emits no repeated intent; session behavior is documented."
+    },
+    {
+      "source": "src/gui/dialogs/prepared_generation_dialog.py",
+      "symbol": "PreparedGenerationDialog.__init__",
+      "sha256": "b6aac2d4aa32b0f9d827ed01422362530b09bf909db65d06834bbeabf353f038",
+      "review_note": "KRT-96: new inspection paragraphs describe exact read-only messages, Generate from the frozen snapshot, Refresh, and Close without generation."
+    },
+    {
+      "source": "src/gui/dialogs/prepared_generation_dialog.py",
+      "symbol": "PreparedGenerationDialog.invalidate",
+      "sha256": "76a2c7309fb35e88aac8676cee243d75269cd0a74ec156e422b8bfbe6314eaa2",
+      "review_note": "KRT-96: changed context retains the displayed text while disabling Generate until Refresh; documented in the World Context procedure."
+    },
+    {
+      "source": "src/gui/dialogs/prepared_generation_dialog.py",
+      "symbol": "PreparedGenerationDialog.present",
+      "sha256": "a97ba19925c6b18b5caec00e6aff4409d5e0838a035a848250ea539f2e596d67",
+      "review_note": "KRT-96: presentation exposes the exact prepared messages and enables explicit Generate; it performs no lookup or mutation."
+    },
+    {
+      "source": "src/gui/widgets/authoring_context_widget.py",
+      "symbol": "AuthoringContextWidget.set_loading",
+      "sha256": "d27b7ab8d1bceec67154cce8df57dbc2ac5cb559f4ec247b0d83a82cc98af47c",
+      "review_note": "KRT-96: loading retains same-Entity scroll before hiding old content. Saved facts are replaced only after the current request is accepted; loading does not alter authored drafts."
+    },
+    {
+      "source": "src/gui/widgets/authoring_context_widget.py",
+      "symbol": "AuthoringContextWidget._present_context",
+      "sha256": "b590394cd1bd296ee47973dc0713da621e4656a6ea892ade98a9c26f88393dcb",
+      "review_note": "KRT-96: same-object updates retain More disclosure and restore Context scroll; navigating to a different object resets local Context presentation. No authoring history is changed."
     }
   ],
   "review_status": {

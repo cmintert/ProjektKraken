@@ -118,6 +118,7 @@ class AppCoordinator(QObject):
     def bind_date_navigation(self) -> None:
         """Compose selected-event time navigation after widget creation."""
         self.time.bind_date_navigation()
+        self.authoring_context.bind_session()
 
     def bind_longform_navigation(self) -> None:
         """Compose Longform navigation once its view is available."""

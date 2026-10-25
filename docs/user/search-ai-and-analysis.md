@@ -94,11 +94,37 @@ history, map placement and ancestry, shared Event appearances, authored image
 captions, and weaker shared-tag or shared-map associations. Weaker associations
 are labelled as evidence rather than relationships. Private attributes whose
 names begin with an underscore, sheet layout, generated summaries, raw image
-data, and inferred prose associations are never included. Entity Context is not
-tied to the timeline playhead. Date-bounded relations are shown as history
-rather than asserted as the Entity's current state. Entity World Context uses
-this same bounded snapshot during generation. Optional Entity spatial context
-remains a separate playhead-based source.
+data, and inferred prose associations are never included. Entity Context starts **At playhead**: it shows saved description and attribute
+changes and the relationships applicable at the selected Timeline date. Possible
+changes and unknown timing remain qualified, with links to supporting Events.
+Undated baseline text, tags, captions and map placements do not establish a dated
+state. Shared-tag and shared-map evidence does not establish a relationship.
+
+Choose **History to playhead** to include prior Events and ended relationships,
+while excluding definitely future occurrences. Choose **All history** for the
+durable overview across dates. The Context and Entity generation controls share
+this choice while navigating between Entities. Switching worlds resets it to
+At playhead. Choosing a mode does not move the playhead or edit your world.
+
+To inspect a changing Entity:
+
+1. Open its **Context** surface and choose **At playhead**.
+2. Move to the Timeline date you want to inspect, completing any existing draft
+   decision first. Check the date shown above the saved facts.
+3. Follow a named supporting Event to inspect the source, using the normal
+   navigation safeguards. Open **More** for possible changes and timing notices.
+4. Use a history mode to inspect relationships absent from the current view.
+   No current relationship means none is established by the available authored
+   records; it does not prove that no relationship existed.
+
+Entity generation uses the same mode and date policy. Its **Preview** prepares
+World Context, optional retrieved passages and optional spatial context in the
+background. **Generate** inside that preview sends the exact displayed messages.
+If the context changes, **Refresh** prepares a new snapshot before Generate becomes
+available again. Ordinary Generate prepares fresh context. Spatial context stays
+separately labeled and uses the captured viewing date, even in All history mode.
+The current description draft is author input, separate from saved World Context.
+Missing date-scoped context reports an error instead of silently using history.
 
 Generated Event and Entity descriptions cannot contain explicit dates. Kraken
 still uses timeline dates to select and organize factual context, but the model
@@ -888,3 +914,31 @@ navigate to its entry; inspection leaves selection and node positions unchanged.
 (help-inspect-analysis-findings)=
 
 **Analysis findings** — Read the reported findings and select a row to review its evidence or open its source. Findings do not automatically repair or rewrite lore.
+
+
+(help-entity-world-context-mode)=
+
+**Context mode** — Choose At playhead for saved state and applicable relationships,
+History to playhead for knowledge up to that date, or All history for the durable
+overview. Entity Context and generation share this session choice; it resets when
+switching worlds. This control changes only the read-only context view.
+
+(help-prepared-generation-text)=
+
+**Exact prepared prompt** — Read the complete prepared messages, including the
+qualified World Context and any enabled retrieved or spatial evidence.
+
+(help-prepared-generation-generate-button)=
+
+**Generate from preview** — Send the exact displayed messages for model generation.
+Generation does not apply the result to your Entity. Review the response and choose
+Replace or Append afterward. A stale or unfinished preview cannot be sent.
+
+(help-prepared-generation-refresh-button)=
+
+**Refresh preview** — Prepare new messages using the current saved facts, selected
+context mode and viewing date. Wait for preparation to finish before generating.
+
+(help-prepared-generation-close)=
+
+**Close prompt preview** — Leave the preview without generating or changing lore.

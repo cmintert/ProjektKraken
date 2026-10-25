@@ -78,6 +78,44 @@ class GenerationApplyMode(str, Enum):
 
 
 @dataclass(frozen=True)
+class PreparedGeneration:
+    """Exact prepared provider messages and their disclosed source blocks."""
+
+    prompt: dict[str, str]
+    authoring_context: str | None = None
+    rag_context: str | None = None
+    spatial_context: str | None = None
+    description_date_values: tuple[float, ...] = ()
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "PreparedGeneration":
+        """Restore a detached preparation snapshot on the receiving thread."""
+        prompt = data["prompt"]
+        if not isinstance(prompt, dict) or not all(
+            isinstance(key, str) and isinstance(value, str)
+            for key, value in prompt.items()
+        ):
+            raise ValueError("Prepared prompt must contain text messages")
+        return cls(
+            dict(prompt),
+            data.get("authoring_context"),
+            data.get("rag_context"),
+            data.get("spatial_context"),
+            tuple(float(value) for value in data.get("description_date_values", [])),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return a detached snapshot safe for queued delivery."""
+        return {
+            "prompt": dict(self.prompt),
+            "authoring_context": self.authoring_context,
+            "rag_context": self.rag_context,
+            "spatial_context": self.spatial_context,
+            "description_date_values": list(self.description_date_values),
+        }
+
+
+@dataclass(frozen=True)
 class GenerationRequest:
     """Serializable input contract for one description-generation task."""
 
@@ -97,6 +135,8 @@ class GenerationRequest:
     rag_enabled: bool = True
     authoring_context_enabled: bool = False
     authoring_date: float | None = None
+    entity_context_mode: str = "all_history"
+    prepared: PreparedGeneration | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Return a serialization-safe snapshot for queued boundaries."""
@@ -117,6 +157,8 @@ class GenerationRequest:
             "rag_enabled": self.rag_enabled,
             "authoring_context_enabled": self.authoring_context_enabled,
             "authoring_date": self.authoring_date,
+            "entity_context_mode": self.entity_context_mode,
+            "prepared": self.prepared.to_dict() if self.prepared is not None else None,
         }
 
 
