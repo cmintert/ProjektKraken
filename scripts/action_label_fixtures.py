@@ -257,6 +257,8 @@ def _snapshot_arguments(name: str) -> dict:
 
 def make_surface(surface: Surface, temporary_root: Path) -> QWidget:
     """Construct one known surface without personal world/storage access."""
+    if surface.name == "AuthoringContextWidget":
+        return _context_surface()
     if surface.name == "WorkspaceShell":
         return _workspace_surface()
     if surface.name == "ActivityBar":
@@ -418,9 +420,32 @@ def _workspace_surface() -> QWidget:
     return root
 
 
+def _context_surface() -> QWidget:
+    """Expose the real context disclosures with a bounded inert snapshot."""
+    from src.core.authoring_context import ContextAttribute, EntityAuthoringContext
+    from src.gui.widgets.authoring_context_widget import AuthoringContextWidget
+
+    widget = AuthoringContextWidget(object_label="Entity")
+    widget.set_entity_context(
+        EntityAuthoringContext(
+            "audit",
+            attributes=tuple(
+                ContextAttribute(f"Field {i}", "Saved value") for i in range(24)
+            ),
+            omitted_counts=(("relations", 12),),
+        )
+    )
+    return widget
+
+
 def surface_states(widget: QWidget, *, quick: bool = False) -> Iterator[str]:
     """Visit default and all production tab destinations without authoring clicks."""
     yield "default"
+    if type(widget).__name__ == "AuthoringContextWidget":
+        widget.more_button.setChecked(True)
+        QApplication.processEvents()
+        yield "expanded-context"
+        widget.more_button.setChecked(False)
     workspace = getattr(widget, "workspace", None)
     if workspace is not None and hasattr(workspace.activity_bar, "workspace_actions"):
         workspace.activity_bar.set_expanded(False)

@@ -1359,8 +1359,14 @@ corrects the displayed source; it does not automatically create a new dated stat
 
 (help-inspect-src-gui-widgets-authoring-context-widget-authoringcontextwidget-init-self-more-button)=
 
-**More actions** — Open the entry's additional authoring actions, including detailed
-relations and context-sensitive options.
+**Expand all / Collapse all** — Reveal every loaded World Context row, or return
+each section to its first three rows. Counts refer to loaded entries. This does
+not retrieve omitted facts, change the context mode or move the playhead.
+
+(help-context-section-show-all)=
+
+**Show all N / Show fewer** — Expand just this World Context section, or return
+to its three-row preview. Timing and supporting Events remain beneath each fact.
 
 (help-inspect-src-gui-widgets-focus-writing-focuswritingcontroller-init-self-action)=
 

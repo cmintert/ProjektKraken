@@ -7,7 +7,7 @@ is correct.
 
 ## Deterministic facts and retrieved passages
 
-An Event's **Context** tab provides a bounded, read-only snapshot of persisted
+An Event's **Overview → History & context** provides a bounded, read-only snapshot of persisted
 people, places, references, nearby Events, relations and active-map facts at
 the date shown in the editor. It does not ask a model to infer story meaning.
 For example, a path crossing a region establishes geometric overlap, not
@@ -26,10 +26,15 @@ possible changes and unknown timing, and names the supporting Events. It cannot
 recover dates that were never authored or infer historical truth from prose.
 
 **History to playhead** adds prior occurrences and ended relationships without
-asserting them as current. **All history** retains the complete durable overview.
+asserting them as current. **All history** shows a bounded overview across dates.
 Context and Entity generation share a session-only mode choice; changing worlds
 resets it. Undated baseline text and weaker shared-tag/shared-map associations
 remain explicitly limited evidence.
+
+Each displayed fact has its own row. Section counts describe loaded entries;
+**Show all N** and **Expand all** reveal those entries without retrieving omitted
+records. The **Not included in this snapshot** section names those omissions.
+Recorded state changes are separated from ordinary relationships.
 
 Optional Entity spatial context is separately evaluated at the captured viewing
 date. All history is a historical overview, not a claim that every saved relation

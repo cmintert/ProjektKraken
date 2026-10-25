@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-25
-**Commit:** 444af08c6d37931a11021838557c1ed914729c09
+**Commit:** f55da42c01ec054de377112bfc2e16a6746c344f
 ---
 
 # Changelog
@@ -10,6 +10,15 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Changed
+
+- *(2026-10-25)* **Readable World Context (KRT-110)**: Separate fact rows,
+  timing and source lines, counted sections, local Show all disclosures and
+  Expand all / Collapse all for loaded entries. State-change records and weak
+  associations are labelled separately; omitted records remain explicit. Updated
+  contextual Help and documentation, regression tests, action-label fixtures and
+  reproducible six-theme rendering evidence.
 
 ### Added
 

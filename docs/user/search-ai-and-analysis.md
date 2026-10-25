@@ -64,15 +64,20 @@ inserted until you explicitly apply it.
 
 ### World Context
 
-An Event's **Context** tab immediately shows the persisted people, places,
+An Event's **Overview → History & context** immediately shows persisted people, places,
 mentions, nearby Events, relations, and active-map facts that Kraken can
 determine at the date currently shown in the Event editor. This view is
 read-only and deterministic: it does not call a model or infer story meaning.
 Map facts use resolved point, path, and region geometry on north-up maps. They
 describe geometric evidence such as proximity, containment, crossing, and
 overlap, but do not infer access, political function, or narrative importance.
-Use **More** to reveal the rest of the bounded snapshot and any notices about
-facts omitted by display limits. Select a linked name to navigate to it.
+Each fact occupies its own row, with timing and source information beneath it.
+Section headings count the loaded entries. A section initially shows up to three
+rows; choose **Show all N** to reveal its remaining rows, or **Show fewer** to
+return to the preview. **Expand all / Collapse all** controls all sections.
+These controls reveal the loaded snapshot only. **Not included in this snapshot**
+lists omitted facts; expanding does not retrieve them. Select a linked name to
+navigate to it.
 
 **World Context** is enabled by default when generating Event text. It sends
 the same bounded factual snapshot to the model, evaluated at the Event's draft
@@ -87,7 +92,7 @@ authoritative block sent to the provider. Disable **World Context** when you
 want the model to receive only the Event itself and any independently enabled
 retrieved context.
 
-An Entity's **Context** tab answers what Kraken durably knows about that Entity:
+An Entity's **Overview → History & context** answers what Kraken durably knows about it:
 public structured attributes and tags, incoming and outgoing relations, Event
 appearances with their authored roles, explicit wiki-link references, temporal
 history, map placement and ancestry, shared Event appearances, authored image
@@ -108,11 +113,13 @@ At playhead. Choosing a mode does not move the playhead or edit your world.
 
 To inspect a changing Entity:
 
-1. Open its **Context** surface and choose **At playhead**.
+1. Open **Overview → History & context** and choose **At playhead**.
 2. Move to the Timeline date you want to inspect, completing any existing draft
    decision first. Check the date shown above the saved facts.
 3. Follow a named supporting Event to inspect the source, using the normal
-   navigation safeguards. Open **More** for possible changes and timing notices.
+   navigation safeguards. Check **Possible changes — not established** and
+   **Timing notices** when present. State-change records appear separately from
+   ordinary relationships.
 4. Use a history mode to inspect relationships absent from the current view.
    No current relationship means none is established by the available authored
    records; it does not prove that no relationship existed.

@@ -3088,7 +3088,7 @@
       "source": "src/gui/widgets/authoring_context_widget.py",
       "symbol": "AuthoringContextWidget.__init__",
       "binding": "self.more_button",
-      "label": "more_button",
+      "label": "Expand all / Collapse all",
       "kind": "QToolButton"
     },
     {
@@ -9120,6 +9120,16 @@
       "binding": "close",
       "label": "Close",
       "kind": "StandardButton"
+    },
+    {
+      "id": "context-section-show-all",
+      "topic_id": "authoring.tags",
+      "target": "help-context-section-show-all",
+      "source": "src/gui/widgets/context_fact_section.py",
+      "symbol": "ContextFactSection.__init__",
+      "binding": "self.disclosure",
+      "label": "Show all N / Show fewer",
+      "kind": "QToolButton"
     }
   ],
   "factory_exemptions": [
@@ -11774,14 +11784,14 @@
     {
       "source": "src/gui/widgets/authoring_context_widget.py",
       "symbol": "AuthoringContextWidget.__init__",
-      "sha256": "2050c7877e592b72a6c2cfcb40aa4a0f0c013e5a0e2db8e95c7d27cdb8081d5f",
-      "review_note": "KRT-96: the Entity-only mode selector is documented in Context mode Help. Same-object refresh retains the Context scroll/disclosure state and source links remain read-only navigation."
+      "sha256": "b35b743f21103d0fab84296876dbc7041e445364bbceb508e6d4b8ac2975101f",
+      "review_note": "KRT-110: preserved inspection anchor now documents Expand all / Collapse all for loaded fact rows, replacing the former More disclosure."
     },
     {
       "source": "src/gui/widgets/authoring_context_widget.py",
       "symbol": "AuthoringContextWidget._apply_theme",
-      "sha256": "9bd5907fb0647f4692fbe807ea27614e7e8a2d37543285a2ee960d9665a872cd",
-      "review_note": "KRT-96: typed source links use Entity/Event link roles and live theme refresh; navigation and disclosure meanings are unchanged."
+      "sha256": "3cb738990cd371d174c28a46751e59f77d699e24bc44d4b7e406c701748f86ad",
+      "review_note": "KRT-110: valid rich-text CSS applies typed Entity/Event link colors and neutral captions to every fact row; actual character-color regression verifies Qt rendering. Shared quiet controls retain their existing meaning."
     },
     {
       "source": "src/gui/widgets/authoring_context_widget.py",
@@ -11810,8 +11820,8 @@
     {
       "source": "src/gui/widgets/authoring_context_widget.py",
       "symbol": "AuthoringContextWidget._toggle_more",
-      "sha256": "9768062899b64720586bd5e503b1a9b46410f12b68422bf7c04f80931a6ea55c",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "1de268eb4a574f5e58ba6a852a70f16d6067f2538dba382455750d54861f974b",
+      "review_note": "KRT-110: Expand all reveals every loaded section; Collapse all restores three-row previews. Canonical Help explicitly distinguishes omitted records."
     },
     {
       "source": "src/gui/widgets/compact_date_widget.py",
@@ -16736,14 +16746,32 @@
     {
       "source": "src/gui/widgets/authoring_context_widget.py",
       "symbol": "AuthoringContextWidget.set_loading",
-      "sha256": "d27b7ab8d1bceec67154cce8df57dbc2ac5cb559f4ec247b0d83a82cc98af47c",
-      "review_note": "KRT-96: loading retains same-Entity scroll before hiding old content. Saved facts are replaced only after the current request is accepted; loading does not alter authored drafts."
+      "sha256": "34000b17b21f67728c5c6e896a5fcf024172eb9339f837573ce49d65c45cceac",
+      "review_note": "KRT-110: loading hides the row host temporarily; accepted same-object snapshots preserve section disclosure and scroll. Loading remains non-blocking and read-only."
     },
     {
       "source": "src/gui/widgets/authoring_context_widget.py",
       "symbol": "AuthoringContextWidget._present_context",
-      "sha256": "b590394cd1bd296ee47973dc0713da621e4656a6ea892ade98a9c26f88393dcb",
-      "review_note": "KRT-96: same-object updates retain More disclosure and restore Context scroll; navigating to a different object resets local Context presentation. No authoring history is changed."
+      "sha256": "89913ba1326ff388a6c7251faff7442ca27310a4a623b8f3b97e943bc19f619f",
+      "review_note": "KRT-110: reuse same-section controls on same-object refresh, retain expansion and scroll, reset on a different object. Canonical row/disclosure instructions cover the visible changes."
+    },
+    {
+      "source": "src/gui/widgets/context_fact_section.py",
+      "symbol": "ContextFactSection.__init__",
+      "sha256": "cd851759784539d98ec0a7608ba5f9c6fde028a1e54aa46e9d7e1ea44fd4a574",
+      "review_note": "KRT-110: native checkable section disclosure has a counted heading and three-row preview; explicit Help describes loaded-only expansion."
+    },
+    {
+      "source": "src/gui/widgets/context_fact_section.py",
+      "symbol": "ContextFactSection.visible_rows",
+      "sha256": "061d5f29de2b2cdc7873c70ed4723de68a05375d315dd855feee487221b9a982",
+      "review_note": "KRT-110: preview and expansion select only already loaded rows. No retrieval or temporal policy changes."
+    },
+    {
+      "source": "src/gui/widgets/context_fact_section.py",
+      "symbol": "ContextFactSection.update_label",
+      "sha256": "29786b7e770b20f79c1e299f207afd7420f5d67250f2fafd0c4c92bc2232201b",
+      "review_note": "KRT-110: Show all N and Show fewer wording matches state; accessible name includes section identity."
     }
   ],
   "review_status": {

@@ -10,6 +10,7 @@ from PySide6.QtGui import QFont, QFontDatabase, QTextCursor
 from PySide6.QtWidgets import QAbstractButton, QListWidgetItem, QWidget
 
 from src.core.authoring_context import (
+    ContextAttribute,
     ContextItem,
     EntityAuthoringContext,
     EventAuthoringContext,
@@ -396,13 +397,18 @@ def test_same_context_refresh_preserves_nested_disclosure(editor):
     renderer = editor.authoring_context
     if isinstance(editor, EntityEditorWidget):
         context = EntityAuthoringContext(
-            entity_id="person", omitted_counts=(("relations", 3),)
+            entity_id="person",
+            attributes=tuple(ContextAttribute(f"Field {i}", str(i)) for i in range(5)),
         )
         present = renderer.set_entity_context
         other = replace(context, entity_id="next")
     else:
         context = EventAuthoringContext(
-            event_id="event", context_date=0, omitted_counts=(("relations", 3),)
+            event_id="event",
+            context_date=0,
+            participants=tuple(
+                ContextItem(str(i), "entity", f"Person {i}") for i in range(5)
+            ),
         )
         present = renderer.set_context
         other = replace(context, event_id="next")
@@ -412,7 +418,7 @@ def test_same_context_refresh_preserves_nested_disclosure(editor):
     renderer.set_loading()
     present(context)
     assert renderer.more_button.isChecked()
-    assert not renderer.more_view.isHidden()
+    assert not renderer.sections_host.isHidden()
     editor.inspector.open_auxiliary_below("world_context")
     editor.inspector.return_auxiliary("world_context")
     assert renderer.more_button.isChecked()

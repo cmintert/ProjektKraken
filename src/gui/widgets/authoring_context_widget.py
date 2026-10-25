@@ -25,17 +25,13 @@ from src.core.authoring_context import (
     ContextRelation,
     EntityAuthoringContext,
     EventAuthoringContext,
-    SpatialAuthoringContext,
 )
 from src.core.entity_context_mode import ENTITY_CONTEXT_LABELS, EntityContextMode
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.context_fact_section import ContextFactSection, FactSection
 from src.gui.widgets.entity_context_mode_selector import EntityContextModeSelector
-
-_PRIMARY_RELATION_LIMIT = 6
-_PRIMARY_ATTRIBUTE_LIMIT = 6
-_PRIMARY_EVENT_LIMIT = 4
 
 
 class AuthoringContextWidget(QWidget):
@@ -54,6 +50,8 @@ class AuthoringContextWidget(QWidget):
         self._embedded = False
         self._context_id: str | None = None
         self._object_label = object_label
+        self.sections: dict[str, ContextFactSection] = {}
+        self._expanded_sections: set[str] = set()
         layout = QVBoxLayout(self)
         StyleHelper.apply_compact_spacing(layout)
 
@@ -86,17 +84,19 @@ class AuthoringContextWidget(QWidget):
             QToolButton(),
             "src-gui-widgets-authoring-context-widget-authoringcontextwidget-init-self-more-button|authoring.tags|help-inspect-src-gui-widgets-authoring-context-widget-authoringcontextwidget-init-self-more-button",
         )
-        self.more_button.setText("More…")
+        self.more_button.setText("Expand all")
         self.more_button.setCheckable(True)
-        self.more_button.setToolTip("Show additional bounded context")
+        self.more_button.setToolTip("Expand every section in the loaded context")
         self.more_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.more_button.toggled.connect(self._toggle_more)
         self.more_button.hide()
         content_layout.addWidget(self.more_button)
 
-        self.more_view = self._make_browser()
-        self.more_view.hide()
-        content_layout.addWidget(self.more_view)
+        self.sections_host = QWidget(self.scroll_content)
+        self.sections_layout = QVBoxLayout(self.sections_host)
+        StyleHelper.apply_compact_spacing(self.sections_layout)
+        self.sections_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.addWidget(self.sections_host)
         content_layout.addStretch()
 
         theme_manager = ThemeManager()
@@ -155,16 +155,22 @@ class AuthoringContextWidget(QWidget):
         document_style = (
             f"body {{ color: {theme['text_main']}; }} "
             "h3 { margin: 2px 0 10px 0; } "
-            "p { margin: 5px 0; } "
-            f"a {{ color: {theme['accent_secondary']}; "
-            "text-decoration: none; }} "
+            "p { margin: 5px 0; } p.fact { margin: 0 0 12px 0; } "
+            f".detail {{ color: {theme['supporting_caption']}; }} "
+            f"a {{ color: {theme['link_neutral']}; "
+            "text-decoration: underline; } "
             f"a.entity {{ color: {theme['link_entity']}; text-decoration: underline; }} "
             f"a.event {{ color: {theme['link_event']}; text-decoration: underline; }} "
             "a:hover { text-decoration: underline; }"
         )
-        for browser in (self.primary_view, self.more_view):
+        for section in self.sections.values():
+            section.apply_theme(theme)
+        for browser in self._browsers():
             browser.setStyleSheet(browser_style)
             browser.document().setDefaultStyleSheet(document_style)
+        for section in self.sections.values():
+            self._render_section(section)
+        QTimer.singleShot(0, self._fit_visible_browsers)
 
     def set_loading(self) -> None:
         """Show a non-blocking loading state."""
@@ -174,19 +180,19 @@ class AuthoringContextWidget(QWidget):
         self.status_label.show()
         self.primary_view.hide()
         self.more_button.hide()
-        self.more_view.hide()
+        self.sections_host.hide()
 
     def clear_context(self) -> None:
         """Reset the surface when no Event is selected."""
         self._context_id = None
+        self._expanded_sections.clear()
         self.more_button.setChecked(False)
         self.status_label.setText(self._empty_text())
         self.status_label.show()
         self.primary_view.clear()
         self.primary_view.hide()
         self.more_button.hide()
-        self.more_view.clear()
-        self.more_view.hide()
+        self.sections_host.hide()
 
     def set_unavailable(self) -> None:
         """Show a concise lookup-failure state."""
@@ -196,7 +202,7 @@ class AuthoringContextWidget(QWidget):
         self.status_label.show()
         self.primary_view.hide()
         self.more_button.hide()
-        self.more_view.hide()
+        self.sections_host.hide()
 
     def set_context(
         self, context: EventAuthoringContext, *, date_label: str = ""
@@ -210,23 +216,89 @@ class AuthoringContextWidget(QWidget):
         primary, more = self._render_entity(context)
         self._present_context(context.entity_id, primary, more)
 
-    def _present_context(self, item_id: str, primary: str, more: str) -> None:
-        """Keep the bounded-context disclosure during same-object refreshes."""
+    def _present_context(
+        self, item_id: str, heading: str, sections: list[FactSection]
+    ) -> None:
+        """Refresh rows while retaining same-object disclosure and scroll."""
         same_item = self._context_id == item_id
         expanded = same_item and self.more_button.isChecked()
         if not same_item:
             self._context_scroll = 0
+            self._expanded_sections.clear()
+        previous = dict(self.sections) if same_item else {}
+        for name, section in self.sections.items():
+            self.sections_layout.removeWidget(section)
+            if name not in previous:
+                section.hide()
+                section.deleteLater()
+        self.sections.clear()
         self._context_id = item_id
         self.status_label.hide()
-        self.primary_view.setHtml(primary)
-        self._fit_browser_height(self.primary_view)
+        self.primary_view.setHtml(heading)
         self.primary_view.show()
-        self.more_view.setHtml(more)
-        self._fit_browser_height(self.more_view)
-        self.more_button.setVisible(bool(more))
+        for data in sections:
+            existing = previous.pop(data.title, None)
+            if existing is None:
+                section = ContextFactSection(data, self._make_browser(), self)
+                section.expansion_changed.connect(self._section_changed)
+            else:
+                section = existing
+                section.set_section(data)
+            self.sections[data.title] = section
+            self.sections_layout.addWidget(section)
+            section.disclosure.blockSignals(True)
+            section.disclosure.setChecked(
+                expanded or data.title in self._expanded_sections
+            )
+            section.disclosure.blockSignals(False)
+            section.update_label()
+        for section in previous.values():
+            section.hide()
+            section.deleteLater()
+        self.sections_host.show()
+        self.more_button.blockSignals(True)
         self.more_button.setChecked(expanded)
-        self.more_view.setVisible(expanded and bool(more))
+        self.more_button.blockSignals(False)
+        self.more_button.setText("Collapse all" if expanded else "Expand all")
+        self.more_button.setVisible(
+            any(
+                len(section.rows) > ContextFactSection.PREVIEW_ROWS
+                for section in sections
+            )
+        )
+        self._apply_theme(ThemeManager().get_theme())
+        self._fit_visible_browsers()
         QTimer.singleShot(0, self._restore_context_scroll)
+
+    def _browsers(self) -> list[QTextBrowser]:
+        return [self.primary_view] + [s.browser for s in self.sections.values()]
+
+    def _render_section(self, section: ContextFactSection) -> None:
+        section.browser.setHtml(
+            "".join(f'<p class="fact">{row}</p>' for row in section.visible_rows())
+        )
+        self._fit_browser_height(section.browser)
+
+    @Slot()
+    def _section_changed(self) -> None:
+        self._expanded_sections = {
+            name
+            for name, section in self.sections.items()
+            if section.disclosure.isChecked()
+        }
+        for section in self.sections.values():
+            self._render_section(section)
+        expandable = [
+            s for s in self.sections.values() if len(s.section.rows) > s.PREVIEW_ROWS
+        ]
+        expanded = bool(expandable) and all(
+            s.disclosure.isChecked() for s in expandable
+        )
+        self.more_button.blockSignals(True)
+        self.more_button.setChecked(expanded)
+        self.more_button.setText("Collapse all" if expanded else "Expand all")
+        self.more_button.blockSignals(False)
+        QTimer.singleShot(0, self._fit_visible_browsers)
 
     def _restore_context_scroll(self) -> None:
         if shiboken6.isValid(self) and shiboken6.isValid(self.scroll_area):
@@ -237,10 +309,13 @@ class AuthoringContextWidget(QWidget):
 
     @Slot(bool)
     def _toggle_more(self, checked: bool) -> None:
-        self.more_button.setText("Less" if checked else "More…")
-        self.more_view.setVisible(checked)
-        if checked:
-            QTimer.singleShot(0, lambda: self._fit_browser_height(self.more_view))
+        """Expand or return every loaded section to its three-row preview."""
+        for section in self.sections.values():
+            section.disclosure.blockSignals(True)
+            section.disclosure.setChecked(checked)
+            section.disclosure.blockSignals(False)
+            section.update_label()
+        self._section_changed()
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         """Refit after a scrollbar changes the available content width."""
@@ -257,7 +332,7 @@ class AuthoringContextWidget(QWidget):
         QTimer.singleShot(0, self._fit_visible_browsers)
 
     def _fit_visible_browsers(self) -> None:
-        for browser in (self.primary_view, self.more_view):
+        for browser in self._browsers():
             if browser.isVisible():
                 self._fit_browser_height(browser)
 
@@ -272,192 +347,146 @@ class AuthoringContextWidget(QWidget):
 
     def _render(
         self, context: EventAuthoringContext, date_label: str
-    ) -> tuple[str, str]:
+    ) -> tuple[str, list[FactSection]]:
         display_date = date_label or format(context.context_date, ".12g")
-        primary: list[str] = [f"<h3>Context at {escape(display_date)}</h3>"]
-        more: list[str] = []
-
-        timeline_primary: list[str] = []
-        if context.previous_events:
-            timeline_primary.append(
-                "← " + self._event_link(context.previous_events[-1])
-            )
-        timeline_primary.extend(
-            "• " + self._event_link(item) for item in context.concurrent_events
-        )
-        if context.next_events:
-            timeline_primary.append("→ " + self._event_link(context.next_events[0]))
-        self._append_section(primary, "Timeline", timeline_primary)
-
-        people_places = [self._item_link(item) for item in context.participants]
-        people_places.extend(self._item_link(item) for item in context.locations)
-        self._append_section(primary, "People &amp; places", people_places)
-
-        relations = list(context.direct_relations) + list(
-            context.neighborhood_relations
+        sections: list[FactSection] = []
+        self._append_section(
+            sections,
+            "Earlier Events",
+            [self._event_link(item) for item in reversed(context.previous_events)],
         )
         self._append_section(
-            primary,
+            sections,
+            "Concurrent Events",
+            [self._event_link(item) for item in context.concurrent_events],
+        )
+        self._append_section(
+            sections,
+            "Later Events",
+            [self._event_link(item) for item in context.next_events],
+        )
+        self._append_section(
+            sections,
+            "People & places",
+            [
+                self._item_link(item)
+                for item in (*context.participants, *context.locations)
+            ],
+        )
+        self._append_section(
+            sections,
             "At this time",
-            [self._relation_html(item) for item in relations[:_PRIMARY_RELATION_LIMIT]],
-        )
-        if context.spatial:
-            self._append_spatial(primary, context.spatial[0])
-        if len(primary) == 1:
-            primary.append("<p>No related persisted facts at this date.</p>")
-
-        extra_timeline = [
-            "← " + self._event_link(item) for item in context.previous_events[:-1]
-        ]
-        extra_timeline.extend(
-            "→ " + self._event_link(item) for item in context.next_events[1:]
-        )
-        self._append_section(more, "Additional timeline", extra_timeline)
-        self._append_section(
-            more,
-            "Additional relations",
-            [self._relation_html(item) for item in relations[_PRIMARY_RELATION_LIMIT:]],
+            [
+                self._relation_html(item)
+                for item in (*context.direct_relations, *context.neighborhood_relations)
+            ],
         )
         self._append_section(
-            more,
-            "Mentioned",
-            [self._item_link(item) for item in context.mentions],
+            sections, "Mentioned", [self._item_link(item) for item in context.mentions]
         )
-        for spatial in context.spatial[1:]:
-            self._append_spatial(more, spatial)
-        if context.omitted_counts:
-            notices = [
-                f"{count} additional {escape(section.replace('_', ' '))} omitted"
-                for section, count in context.omitted_counts
-            ]
-            self._append_section(more, "Limits", notices)
-        return "".join(primary), "".join(more)
+        spatial_rows: list[str] = []
+        for spatial in context.spatial:
+            lines = spatial.text.splitlines()
+            if lines and lines[0].strip() == "[Spatial Context]":
+                lines = lines[1:]
+            spatial_rows.extend(
+                [
+                    self._item_link(spatial.anchor)
+                    + "<br>"
+                    + "<br>".join(escape(line) for line in lines)
+                ],
+            )
+        self._append_section(sections, "Spatial context", spatial_rows)
+        self._append_limits(sections, context.omitted_counts)
+        heading = f"<h3>Context at {escape(display_date)}</h3>"
+        if not sections:
+            heading += "<p>No related persisted facts at this date.</p>"
+        return heading, sections
 
-    def _render_entity(self, context: EntityAuthoringContext) -> tuple[str, str]:
+    def _render_entity(
+        self, context: EntityAuthoringContext
+    ) -> tuple[str, list[FactSection]]:
         label = ENTITY_CONTEXT_LABELS[EntityContextMode(context.mode)]
         heading = "Known Entity context" if context.mode == "all_history" else label
-        primary: list[str] = [f"<h3>{escape(heading)}</h3>"]
+        title = f"<h3>{escape(heading)}</h3>"
         if context.context_date is not None:
-            primary.append(f"<p>{escape(context.date_label)} · Saved facts</p>")
+            title += f"<p>{escape(context.date_label)} · Saved facts</p>"
+        sections: list[FactSection] = []
         if context.effective_description is not None:
             self._append_section(
-                primary,
+                sections,
                 "Resolved description",
                 [self._attribute_html(context.effective_description)],
             )
-        more: list[str] = []
         self._append_section(
-            more,
-            "Possible changes — not established",
-            [self._attribute_html(item) for item in context.possible_changes],
-        )
-        self._append_section(
-            more, "Timing notices", [escape(item) for item in context.temporal_notices]
-        )
-        self._append_section(
-            primary,
+            sections,
             "Attributes",
-            [
-                self._attribute_html(item)
-                for item in context.attributes[:_PRIMARY_ATTRIBUTE_LIMIT]
-            ],
+            [self._attribute_html(item) for item in context.attributes],
         )
-        self._append_section(
-            primary,
-            "Tags",
-            [escape(item.name) for item in context.tags],
-        )
+        self._append_section(sections, "Tags", [escape(i.name) for i in context.tags])
         relations = list(context.direct_relations)
         if context.mode == "at_playhead":
             relations.extend(context.temporal_history)
-        self._append_section(
-            primary,
-            "Relations",
-            [self._relation_html(item) for item in relations[:_PRIMARY_RELATION_LIMIT]],
-        )
+        self._append_relationships(sections, "Relations", relations)
         if context.mode == "at_playhead" and not relations:
-            primary.append(
+            title += (
                 "<p>No authored current relationships at this date. "
                 "Choose a history mode to inspect other dated relationships.</p>"
             )
-        recent_events = list(context.event_appearances[-_PRIMARY_EVENT_LIMIT:])
         self._append_section(
-            primary,
+            sections,
             "Event appearances",
             [
-                f"{self._event_link(item.event)} — " + escape(", ".join(item.roles))
-                for item in recent_events
+                self._event_link(item.event)
+                + '<br><span class="detail">Role: '
+                + escape(", ".join(item.roles))
+                + "</span>"
+                for item in reversed(context.event_appearances)
             ],
         )
         self._append_section(
-            primary,
+            sections,
             "Maps",
             [self._map_appearance_html(item) for item in context.map_appearances],
         )
         self._append_section(
-            primary,
+            sections,
             "Explicit references",
-            [self._relation_html(item) for item in context.linked_references[:6]],
-        )
-        if len(primary) == 1:
-            primary.append("<p>No related persisted facts.</p>")
-
-        self._append_section(
-            more,
-            "Additional attributes",
-            [
-                self._attribute_html(item)
-                for item in context.attributes[_PRIMARY_ATTRIBUTE_LIMIT:]
-            ],
+            [self._relation_html(item) for item in context.linked_references],
         )
         self._append_section(
-            more,
-            "Additional relations",
-            [self._relation_html(item) for item in relations[_PRIMARY_RELATION_LIMIT:]],
-        )
-        prior_events = (
-            context.event_appearances[: -len(recent_events)]
-            if recent_events
-            else context.event_appearances
+            sections,
+            "Possible changes — not established",
+            [self._attribute_html(item) for item in context.possible_changes],
         )
         self._append_section(
-            more,
-            "Earlier Event appearances",
-            [
-                f"{self._event_link(item.event)} — " + escape(", ".join(item.roles))
-                for item in prior_events
-            ],
+            sections,
+            "Timing notices",
+            [escape(item) for item in context.temporal_notices],
         )
+        if context.mode != "at_playhead":
+            self._append_relationships(
+                sections, "Temporal history", list(context.temporal_history)
+            )
         self._append_section(
-            more,
-            "Temporal history",
-            [
-                self._relation_html(item, include_window=True)
-                for item in context.temporal_history
-                if context.mode != "at_playhead"
-            ],
-        )
-        self._append_section(
-            more,
+            sections,
             "Mentioned in Events",
             [self._event_link(item) for item in context.mentions],
         )
         self._append_section(
-            more,
-            "Additional explicit references",
-            [self._relation_html(item) for item in context.linked_references[6:]],
-        )
-        self._append_section(
-            more,
+            sections,
             "Appears with in Events",
             [
-                f"{self._item_link(item.item)} — {item.event_count} shared; "
+                f"{self._item_link(item.item)}<br><span class='detail'>"
+                f"{item.event_count} shared Event(s): "
                 + ", ".join(self._event_link(event) for event in item.events)
+                + "</span>"
                 for item in context.co_appearances
             ],
+            "Shared participation; this does not establish a direct relationship.",
         )
         self._append_section(
-            more,
+            sections,
             "Attachment captions",
             [
                 f'<a href="kraken-attachment://{escape(item.id)}">'
@@ -466,68 +495,99 @@ class AuthoringContextWidget(QWidget):
             ],
         )
         self._append_section(
-            more,
+            sections,
             "Shares tags",
             [
-                f"{self._item_link(item.item)} — " + escape(", ".join(item.evidence))
+                self._item_link(item.item)
+                + '<br><span class="detail">Tags: '
+                + escape(", ".join(item.evidence))
+                + "</span>"
                 for item in context.shared_tags
             ],
+            "Matching tags; this does not establish a direct relationship.",
         )
         self._append_section(
-            more,
+            sections,
             "Also placed on maps",
             [
-                f"{self._item_link(item.item)} — " + escape(", ".join(item.evidence))
+                self._item_link(item.item)
+                + '<br><span class="detail">Maps: '
+                + escape(", ".join(item.evidence))
+                + "</span>"
                 for item in context.shared_maps
+            ],
+            "Shared maps; placements are not necessarily contemporaneous.",
+        )
+        self._append_relationships(
+            sections, "Surrounding relations", list(context.neighborhood_relations)
+        )
+        self._append_limits(sections, context.omitted_counts)
+        if not sections:
+            title += "<p>No related persisted facts.</p>"
+        return title, sections
+
+    def _append_relationships(
+        self,
+        sections: list[FactSection],
+        title: str,
+        relations: list[ContextRelation],
+    ) -> None:
+        self._append_section(
+            sections,
+            title,
+            [
+                self._relation_html(item, include_window=True)
+                for item in relations
+                if item.rel_type != "changes_state"
             ],
         )
         self._append_section(
-            more,
-            "Surrounding relations",
+            sections,
+            f"Recorded state changes · {title}",
             [
-                self._relation_html(item, include_window=True)
-                for item in context.neighborhood_relations
+                self._item_link(item.source)
+                + " → "
+                + self._item_link(item.target)
+                + self._relation_details(item, include_window=True)
+                for item in relations
+                if item.rel_type == "changes_state"
             ],
+            "Saved state-change records; inspect the source Event for its changes.",
         )
-        if context.omitted_counts:
-            self._append_section(
-                more,
-                "Limits",
-                [
-                    f"{count} additional {escape(section.replace('_', ' '))} omitted"
-                    for section, count in context.omitted_counts
-                ],
-            )
-        return "".join(primary), "".join(more)
 
     @staticmethod
-    def _append_section(target: list[str], title: str, items: list[str]) -> None:
-        if not items:
-            return
-        target.append(f"<p><b>{title}</b><br>{' · '.join(items)}</p>")
-
-    def _append_spatial(
-        self, target: list[str], spatial: SpatialAuthoringContext
+    def _append_section(
+        target: list[FactSection], title: str, items: list[str], hint: str = ""
     ) -> None:
-        lines = spatial.text.splitlines()
-        if lines and lines[0].strip() == "[Spatial Context]":
-            lines = lines[1:]
-        body = "<br>".join(escape(line) for line in lines)
-        target.append(
-            f"<p><b>Map · {self._item_link(spatial.anchor)}</b><br>{body}</p>"
+        if items:
+            target.append(FactSection(title, tuple(items), hint))
+
+    def _append_limits(
+        self, sections: list[FactSection], omitted: tuple[tuple[str, int], ...]
+    ) -> None:
+        self._append_section(
+            sections,
+            "Not included in this snapshot",
+            [
+                f"{count} additional {escape(name.replace('_', ' '))} omitted"
+                for name, count in omitted
+            ],
+            "Expand all reveals loaded entries only. Omitted entries remain omitted.",
         )
 
     @staticmethod
     def _item_link(item: ContextItem) -> str:
         return (
-            f'<a class="{escape(item.object_type)}" href="kraken://{escape(item.id)}">'
+            f'<a class="{escape(item.object_type)}" title="{escape(item.object_type.title())}: {escape(item.name)}" href="kraken://{escape(item.id)}">'
             f"{escape(item.name)}</a>"
         )
 
     def _event_link(self, event: ContextEvent) -> str:
         text = self._item_link(ContextItem(event.id, "event", event.name))
         if event.temporal_label:
-            text += " · " + escape(event.temporal_label)
+            text += (
+                '<br><span class="detail">' + escape(event.temporal_label) + "</span>"
+            )
         return text
 
     def _relation_html(
@@ -535,13 +595,19 @@ class AuthoringContextWidget(QWidget):
     ) -> str:
         result = (
             f"{self._item_link(relation.source)} → "
-            f"{escape(relation.rel_type)} → {self._item_link(relation.target)}"
+            f"<b>{escape(relation.rel_type)}</b> → {self._item_link(relation.target)}"
         )
+        return result + self._relation_details(relation, include_window=include_window)
+
+    def _relation_details(
+        self, relation: ContextRelation, *, include_window: bool
+    ) -> str:
+        result = ""
         if relation.temporal_summary:
-            result += f" — {escape(relation.temporal_summary)}"
+            result += f"{escape(relation.temporal_summary)}"
             evidence = relation.temporal_evidence or {}
             for event in evidence.get("events", []):
-                result += " · " + self._item_link(
+                result += "<br>Source: " + self._item_link(
                     ContextItem(event["id"], "event", event["name"])
                 )
         if (
@@ -550,31 +616,36 @@ class AuthoringContextWidget(QWidget):
             and relation.temporal_kind != "persistent"
         ):
             start = (
-                "?"
+                "not supplied"
                 if relation.valid_from is None
                 else format(relation.valid_from, ".12g")
             )
             end = (
-                "?" if relation.valid_to is None else format(relation.valid_to, ".12g")
+                "not supplied"
+                if relation.valid_to is None
+                else format(relation.valid_to, ".12g")
             )
-            result += f" ({escape(relation.temporal_kind)}: {start}–{end})"
-        return result
+            result += f"Timing: {escape(relation.temporal_kind)}; start: {start}; end: {end} (lore days)"
+        return f'<br><span class="detail">{result}</span>' if result else ""
 
     @staticmethod
     def _attribute_html(attribute: ContextAttribute) -> str:
-        text = f"{escape(attribute.name)}: {escape(str(attribute.value))}"
+        text = f"<b>{escape(attribute.name)}:</b> {escape(str(attribute.value))}"
         source = attribute.source
         if source is not None:
             if source.get("event_id"):
-                text += " · Source: " + AuthoringContextWidget._item_link(
-                    ContextItem(
-                        str(source["event_id"]),
-                        "event",
-                        str(source.get("event_name", "Event")),
+                text += (
+                    '<br><span class="detail">Source: </span>'
+                    + AuthoringContextWidget._item_link(
+                        ContextItem(
+                            str(source["event_id"]),
+                            "event",
+                            str(source.get("event_name", "Event")),
+                        )
                     )
                 )
             else:
-                text += " · Undated baseline"
+                text += '<br><span class="detail">Undated baseline</span>'
         if attribute.temporal_status != "definite":
             text += f" · {escape(attribute.temporal_status)}"
         return text
