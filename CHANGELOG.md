@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-25
-**Commit:** f55da42c01ec054de377112bfc2e16a6746c344f
+**Commit:** 584ead4cf151df212caa68cbff2243ec15ec44c4
 ---
 
 # Changelog
@@ -10,6 +10,16 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Fixed
+
+- *(2026-10-25)* **Control alignment**: Matched Name, Type and Fast Inject heights
+  after style/font changes, aligned Project filter fields with their actions,
+  and added 12 px between inspector tabs/actions and page content. Preserved
+  narrow writing space, added regression coverage and reviewed Help bindings.
+- *(2026-10-25)* **Menu themes**: Removed native split-dropdown chrome behind
+  Fit View's themed caret. Shared menu buttons now retain the active action
+  surface across themes and states while preserving separate action/menu clicks.
 
 ### Changed
 

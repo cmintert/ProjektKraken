@@ -282,10 +282,25 @@ class EditorPresentation(QObject):
         self._header_fit_timer.setSingleShot(True)
         self._header_fit_timer.timeout.connect(self._fit_header)
         self.editor.header_widget.installEventFilter(self)
+        self.editor.scroll_area.viewport().installEventFilter(self)
+        for control in (
+            self.editor.name_edit,
+            self.editor.type_edit,
+            self.editor.btn_inject,
+        ):
+            control.installEventFilter(self)
 
     def _fit_header(self) -> None:
         """Give the longest visible action enough height before capping fields."""
         editor = self.editor
+        header_controls = (editor.name_edit, editor.type_edit, editor.btn_inject)
+        control_height = max(
+            EDITOR_CONTROL_HEIGHT,
+            *(control.sizeHint().height() for control in header_controls),
+        )
+        for control in header_controls:
+            if control.minimumHeight() != control_height:
+                control.setMinimumHeight(control_height)
         layout = editor._content_widget.layout()
         width = max(1, editor.details_container.width())
         required = max(
@@ -319,6 +334,9 @@ class EditorPresentation(QObject):
             + details.bottom()
             + layout.spacing() * max(0, layout.count() - 1)
         )
+        status = getattr(editor, "save_status", None)
+        if status is not None and status.isVisibleTo(editor):
+            chrome += status.sizeHint().height()
         budget = editor._content_widget.height() - footer - corner - required - chrome
         header = editor.header_widget.layout()
         natural = header.totalHeightForWidth(self.header_scroll.viewport().width())
@@ -582,7 +600,8 @@ class EditorPresentation(QObject):
             QEvent.Type.FontChange,
             QEvent.Type.StyleChange,
         ):
-            self._header_fit_timer.start(0)
+            if not self._header_fit_timer.isActive():
+                self._header_fit_timer.start(0)
         return super().eventFilter(watched, event)
 
     def reflow(self) -> None:

@@ -15540,8 +15540,8 @@
     {
       "source": "src/gui/widgets/splitter_tab_inspector.py",
       "symbol": "DraggableTabWidget._style_overflow",
-      "sha256": "e5b0f5ce0004a9560525980726daaec1603e0b89c8a6dd66bf842a63e22385be",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "b60793c9ee5c799755ef3fab270d695f3ee1fe0823b1f793133aa7a2136723d5",
+      "review_note": "Reviewed shared 12 px inset below inspector tabs and More actions. Section navigation, split/return routes and keyboard behavior are unchanged; existing Help remains accurate."
     },
     {
       "source": "src/gui/widgets/splitter_tab_inspector.py",
@@ -15930,8 +15930,8 @@
     {
       "source": "src/gui/widgets/unified_list.py",
       "symbol": "UnifiedListWidget.__init__",
-      "sha256": "17bff7de02969f14970974bdd581dd22ec16ebf49fed13e54ab7333f5102b37a",
-      "review_note": "Reviewed panel inset/margin changes only in UnifiedListWidget.__init__: existing control identities, labels, eligibility, keyboard actions, task destinations and authoring state are unchanged. Canonical control explanations remain accurate; no new interaction or exception is introduced."
+      "sha256": "d14d5847d6788e411e99933b2b7f6f5d1c549e3971ecce621a59b9dad8c03c9d",
+      "review_note": "Reviewed uniform filter-row heights: category/sort fields align with Filter and Clear Filters through reflow. Existing labels, shortcuts, filtering, overflow routes and explanations remain accurate; no interaction change."
     },
     {
       "source": "src/gui/widgets/unified_list.py",

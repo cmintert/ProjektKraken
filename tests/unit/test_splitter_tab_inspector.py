@@ -21,6 +21,20 @@ def _tab_mime(index: object) -> QMimeData:
     return mime
 
 
+def test_inspector_page_has_padding_below_tabs_and_actions(qtbot):
+    tabs = DraggableTabWidget()
+    qtbot.addWidget(tabs)
+    page = QLabel("Page")
+    tabs.addTab(page, "Overview")
+    tabs.resize(600, 300)
+    tabs.show()
+    qtbot.waitUntil(lambda: page.mapTo(tabs, QPoint()).y() > 0)
+    row_bottom = max(
+        tabs.tabBar().geometry().bottom(), tabs.overflow_button.geometry().bottom()
+    )
+    assert page.mapTo(tabs, QPoint()).y() - row_bottom - 1 >= 12
+
+
 def test_move_tab_preserves_widget_metadata(qtbot):
     """A validated move transfers the same widget and its tab metadata."""
     source = DraggableTabWidget()

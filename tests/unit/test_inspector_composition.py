@@ -68,6 +68,42 @@ def editor(request, qtbot):
     return widget
 
 
+@pytest.mark.parametrize("font_size", [10, 20])
+def test_header_controls_align_after_theme_and_font_changes(editor, qtbot, font_size):
+    manager = ThemeManager()
+    editor.setFont(QFont("Segoe UI", font_size))
+    editor.name_edit.setText("Unsaved name")
+    for theme in manager.themes:
+        manager.set_theme(theme, persist=False)
+        editor.setStyleSheet(
+            manager.format_stylesheet(
+                Path("src/resources/main.qss").read_text("utf-8")
+            ).replace("font-size: 10pt;", f"font-size: {font_size}pt;")
+        )
+        for width in (360, 900):
+            editor.resize(width, 720)
+
+            def aligned():
+                heights = tuple(
+                    (control.height(), control.minimumHeight())
+                    for control in (
+                        editor.name_edit,
+                        editor.type_edit,
+                        editor.btn_inject,
+                    )
+                )
+                assert len({height for height, _minimum in heights}) == 1, (
+                    theme,
+                    width,
+                    heights,
+                )
+
+            qtbot.waitUntil(aligned)
+            assert editor.name_edit.font().pointSize() == font_size
+            assert editor.name_edit.text() == "Unsaved name"
+            assert editor.has_unsaved_changes()
+
+
 def test_large_inspector_allocates_spare_height_to_its_body(editor, qtbot):
     editor.setStyleSheet(
         ThemeManager().format_stylesheet(

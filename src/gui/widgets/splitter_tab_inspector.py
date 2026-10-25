@@ -327,6 +327,7 @@ class DraggableTabWidget(QTabWidget):
     def _style_overflow(self) -> None:
         from src.gui.utils.style_helper import StyleHelper
 
+        self.setStyleSheet(StyleHelper.get_inspector_tab_spacing_style())
         self.overflow_button.setStyleSheet(
             StyleHelper.get_tool_button_style()
             + StyleHelper.get_menu_caret_style()

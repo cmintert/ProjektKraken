@@ -1,7 +1,9 @@
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 from PySide6.QtCore import QPoint, Qt
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QMessageBox
 
 from src.core.entities import Entity
@@ -23,6 +25,35 @@ def test_init(unified_list):
     assert not unified_list.empty_state.isHidden()
     # Check default filter
     assert unified_list.filter_combo.currentText() == "All Items"
+
+
+def test_filter_fields_align_with_buttons_after_reflow(
+    unified_list, qtbot, isolated_theme_manager
+):
+    manager = isolated_theme_manager
+    unified_list.show()
+    for theme in manager.themes:
+        manager.set_theme(theme, persist=False)
+        for size in (10, 20):
+            unified_list.setFont(QFont("Segoe UI", size))
+            unified_list.setStyleSheet(
+                manager.format_stylesheet(
+                    Path("src/resources/main.qss").read_text("utf-8")
+                ).replace("font-size: 10pt;", f"font-size: {size}pt;")
+            )
+            for width in (360, 800):
+                unified_list.resize(width, 600)
+                qtbot.waitUntil(
+                    lambda: (
+                        unified_list.filter_combo.height()
+                        == unified_list.sort_combo.height()
+                        and (
+                            unified_list.btn_filter.isHidden()
+                            or unified_list.sort_combo.height()
+                            == unified_list.btn_filter.height()
+                        )
+                    )
+                )
 
 
 def test_empty_explorer_keeps_context_tag_bar_compact(unified_list, qtbot):
@@ -81,9 +112,7 @@ def test_apply_lore_effects_updates_rows_without_model_reset(unified_list):
                 "object_type": "event",
                 "operation": "upsert",
                 "object_id": "e1",
-                "snapshot": Event(
-                    id="e1", name="Alpha", lore_date=5.0
-                ).to_dict(),
+                "snapshot": Event(id="e1", name="Alpha", lore_date=5.0).to_dict(),
                 "relations_changed": True,
             }
         ]

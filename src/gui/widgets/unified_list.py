@@ -317,7 +317,7 @@ class UnifiedListWidget(QWidget):
         from src.gui.widgets.action_flow_layout import ActionFlowLayout
 
         filters = QWidget()
-        filter_row = ActionFlowLayout(filters)
+        filter_row = ActionFlowLayout(filters, uniform_height=True)
         filter_row.setContentsMargins(0, 0, 0, 0)
 
         # Category filter (Events/Entities)

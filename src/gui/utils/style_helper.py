@@ -423,6 +423,11 @@ class StyleHelper:
         """ + StyleHelper.get_action_role_style("secondary", "QToolButton")
 
     @staticmethod
+    def get_inspector_tab_spacing_style() -> str:
+        """Separate inspector tab actions from the page content by one inset."""
+        return "DraggableTabWidget::pane { padding-top: 12px; }"
+
+    @staticmethod
     def get_menu_caret_style() -> str:
         """Reserve text/caret separation without changing button role states."""
         return """
@@ -431,6 +436,16 @@ class StyleHelper:
             QToolButton[phosphorCaret="true"]::menu-indicator,
             QPushButton[phosphorCaret="true"]::menu-indicator {
                 image: none; width: 0px;
+            }
+            QToolButton[phosphorCaret="true"]::menu-button {
+                background: transparent;
+                border: none;
+                width: 20px;
+            }
+            QToolButton[phosphorCaret="true"]::menu-arrow {
+                image: none;
+                width: 0px;
+                height: 0px;
             }
         """
 
