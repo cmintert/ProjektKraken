@@ -495,6 +495,9 @@ def test_entity_context_projection_has_no_ui_or_mutation_dependencies():
     for relative in (
         "services/entity_context_projection.py",
         "services/entity_context_reader.py",
+        "services/entity_connection_browse_service.py",
+        "services/entity_connection_browse_task.py",
+        "services/repositories/entity_connection_browse_repository.py",
     ):
         modules = {module for _, module in _imported_modules(_SOURCE_ROOT / relative)}
         assert not any(

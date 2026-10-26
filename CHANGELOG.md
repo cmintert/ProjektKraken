@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-25
-**Commit:** 584ead4cf151df212caa68cbff2243ec15ec44c4
+**Last Updated:** 2026-10-26
+**Commit:** 5a5dda2557861a2cc1c04f40e93847fb1b1a12b8
 ---
 
 # Changelog
@@ -22,6 +22,15 @@ All notable changes to this project will be documented in this file.
   surface across themes and states while preserving separate action/menu clicks.
 
 ### Changed
+
+- *(2026-10-26)* **Connection browsing (KRT-109)**: Entity World Context can load
+  saved direct connections in batches, including custom predicates and both
+  directions, independently of bounded AI inputs. Counts and stale-page recovery
+  distinguish loaded facts from incomplete results. Attributes remain in the
+  Entity editor and description-generation input; human Context retains only
+  description changes, with timing and sources. Updated Help/manual guidance,
+  regression and dependency coverage, action-label fixtures, and reproducible
+  performance/rendering evidence with documented follow-up work.
 
 - *(2026-10-25)* **Readable World Context (KRT-110)**: Separate fact rows,
   timing and source lines, counted sections, local Show all disclosures and

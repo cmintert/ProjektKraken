@@ -9130,6 +9130,16 @@
       "binding": "self.disclosure",
       "label": "Show all N / Show fewer",
       "kind": "QToolButton"
+    },
+    {
+      "id": "context-load-connections",
+      "topic_id": "authoring.tags",
+      "target": "help-context-load-connections",
+      "source": "src/gui/widgets/authoring_context_widget.py",
+      "symbol": "AuthoringContextWidget.__init__",
+      "binding": "self.load_connections",
+      "label": "Load more connections / Retry connections",
+      "kind": "QToolButton"
     }
   ],
   "factory_exemptions": [
@@ -11784,14 +11794,14 @@
     {
       "source": "src/gui/widgets/authoring_context_widget.py",
       "symbol": "AuthoringContextWidget.__init__",
-      "sha256": "b35b743f21103d0fab84296876dbc7041e445364bbceb508e6d4b8ac2975101f",
-      "review_note": "KRT-110: preserved inspection anchor now documents Expand all / Collapse all for loaded fact rows, replacing the former More disclosure."
+      "sha256": "294d2b417589dd301606f88137a0e4ac2b341fe136784e6beacc7519fed9b4c9",
+      "review_note": "KRT-109: reviewed persistent Load more/Retry action beside direct rows, with its own canonical excerpt. Loaded-only disclosures keep their meaning; paging and human attribute exclusion are documented without changing AI generation."
     },
     {
       "source": "src/gui/widgets/authoring_context_widget.py",
       "symbol": "AuthoringContextWidget._apply_theme",
-      "sha256": "3cb738990cd371d174c28a46751e59f77d699e24bc44d4b7e406c701748f86ad",
-      "review_note": "KRT-110: valid rich-text CSS applies typed Entity/Event link colors and neutral captions to every fact row; actual character-color regression verifies Qt rendering. Shared quiet controls retain their existing meaning."
+      "sha256": "737b1f0a618beed355f12033e7bce059134b1312636e210666cc7d82af719f71",
+      "review_note": "KRT-109: browse actions use the shared quiet states and supporting captions; typed navigation and disclosure semantics are unchanged."
     },
     {
       "source": "src/gui/widgets/authoring_context_widget.py",
@@ -16752,8 +16762,8 @@
     {
       "source": "src/gui/widgets/authoring_context_widget.py",
       "symbol": "AuthoringContextWidget._present_context",
-      "sha256": "89913ba1326ff388a6c7251faff7442ca27310a4a623b8f3b97e943bc19f619f",
-      "review_note": "KRT-110: reuse same-section controls on same-object refresh, retain expansion and scroll, reset on a different object. Canonical row/disclosure instructions cover the visible changes."
+      "sha256": "bc5781fc7db92de2c8ddd49c7ef32ef2aff534ca5fe8330788a34539719a45c0",
+      "review_note": "KRT-109: the persistent browse footer follows direct links and separate state-change rows. Same-object rendering reuses controls and preserves focus/disclosure/scroll. Show all and Expand all still reveal loaded rows only; new excerpt explains actual retrieval."
     },
     {
       "source": "src/gui/widgets/context_fact_section.py",

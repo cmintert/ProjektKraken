@@ -40,6 +40,7 @@ class AuthoringContextWidget(QWidget):
     navigate_requested = Signal(str)
     map_requested = Signal(str)
     attachment_requested = Signal(str)
+    connections_more_requested = Signal()
 
     def __init__(
         self, parent: QWidget | None = None, *, object_label: str = "Event"
@@ -50,6 +51,11 @@ class AuthoringContextWidget(QWidget):
         self._embedded = False
         self._context_id: str | None = None
         self._object_label = object_label
+        self._browse_enabled = False
+        self._connection_rows: list[ContextRelation] = []
+        self._entity_context: EntityAuthoringContext | None = None
+        self._description_changes: tuple[ContextAttribute, ...] = ()
+        self._description_omitted = 0
         self.sections: dict[str, ContextFactSection] = {}
         self._expanded_sections: set[str] = set()
         layout = QVBoxLayout(self)
@@ -97,6 +103,24 @@ class AuthoringContextWidget(QWidget):
         StyleHelper.apply_compact_spacing(self.sections_layout)
         self.sections_layout.setContentsMargins(0, 0, 0, 0)
         content_layout.addWidget(self.sections_host)
+        self.connection_controls = QWidget(self.sections_host)
+        connection_layout = QVBoxLayout(self.connection_controls)
+        StyleHelper.apply_compact_spacing(connection_layout)
+        connection_layout.setContentsMargins(0, 0, 0, 0)
+        self.connection_status = QLabel(self.connection_controls)
+        self.connection_status.setWordWrap(True)
+        self.connection_status.hide()
+        connection_layout.addWidget(self.connection_status)
+        self.load_connections = declare_inspection(
+            QToolButton(self.connection_controls),
+            "context-load-connections|authoring.tags|help-context-load-connections",
+        )
+        self.load_connections.setText("Load more connections")
+        self.load_connections.setAccessibleName("Load more saved direct connections")
+        self.load_connections.clicked.connect(self.connections_more_requested)
+        self.load_connections.hide()
+        connection_layout.addWidget(self.load_connections)
+        self.connection_controls.hide()
         content_layout.addStretch()
 
         theme_manager = ThemeManager()
@@ -148,6 +172,8 @@ class AuthoringContextWidget(QWidget):
             f"color: {theme['text_dim']}; background: transparent;"
         )
         self.more_button.setStyleSheet(StyleHelper.get_flat_tool_button_style())
+        self.load_connections.setStyleSheet(StyleHelper.get_flat_tool_button_style())
+        self.connection_status.setStyleSheet(f"color: {theme['supporting_caption']};")
         browser_style = (
             f"QTextBrowser {{ background-color: {surface}; border: none; "
             f"color: {theme['text_main']}; }}"
@@ -185,6 +211,13 @@ class AuthoringContextWidget(QWidget):
     def clear_context(self) -> None:
         """Reset the surface when no Event is selected."""
         self._context_id = None
+        self._entity_context = None
+        self._connection_rows = []
+        self._description_changes = ()
+        self._description_omitted = 0
+        self.connection_status.hide()
+        self.load_connections.hide()
+        self.connection_controls.hide()
         self._expanded_sections.clear()
         self.more_button.setChecked(False)
         self.status_label.setText(self._empty_text())
@@ -213,8 +246,70 @@ class AuthoringContextWidget(QWidget):
 
     def set_entity_context(self, context: EntityAuthoringContext) -> None:
         """Render one complete serialized Entity context snapshot."""
+        if context.entity_id != self._context_id:
+            self._connection_rows = []
+        self._entity_context = context
         primary, more = self._render_entity(context)
         self._present_context(context.entity_id, primary, more)
+
+    def enable_connection_browsing(self) -> None:
+        """Replace bounded direct-link sections with independently loaded rows."""
+        self._browse_enabled = True
+
+    def set_description_changes(self, snapshot: dict) -> None:
+        """Accept description-only display facts, separate from the AI snapshot."""
+        self._description_changes = tuple(
+            ContextAttribute.from_dict(item) for item in snapshot.get("rows", [])
+        )
+        self._description_omitted = int(snapshot.get("omitted", 0))
+
+    def set_connection_page(
+        self,
+        rows: list[dict],
+        status: str,
+        can_load: bool,
+        *,
+        retry: bool = False,
+        reveal: bool = False,
+        entity_id: str | None = None,
+        loading: bool = False,
+    ) -> None:
+        """Render already-qualified rows without navigation or generation actions."""
+        self._connection_rows = [ContextRelation.from_dict(item) for item in rows]
+        self.connection_status.setText(status)
+        self.connection_controls.setVisible(self._browse_enabled)
+        self.connection_status.setVisible(self._browse_enabled)
+        self.load_connections.setText(
+            "Loading connections…"
+            if loading
+            else "Retry connections"
+            if retry
+            else "Load more connections"
+        )
+        self.load_connections.setAccessibleName(self.load_connections.text())
+        self.load_connections.setToolTip(
+            "A page is loading; repeated requests are ignored."
+            if loading
+            else "Load another page of saved direct connections."
+            if can_load
+            else "This action is unavailable while refreshing or after the scan finishes."
+        )
+        self.load_connections.setEnabled(can_load or loading)
+        self.load_connections.setVisible(self._browse_enabled)
+        if self._entity_context is None or (
+            entity_id is not None and self._entity_context.entity_id != entity_id
+        ):
+            return
+        self._context_scroll = self.scroll_area.verticalScrollBar().value()
+        if reveal:
+            self._expanded_sections.update(
+                (
+                    "Saved direct connections",
+                    "Recorded state changes · Saved direct connections",
+                )
+            )
+        primary, sections = self._render_entity(self._entity_context)
+        self._present_context(self._entity_context.entity_id, primary, sections)
 
     def _present_context(
         self, item_id: str, heading: str, sections: list[FactSection]
@@ -226,6 +321,7 @@ class AuthoringContextWidget(QWidget):
             self._context_scroll = 0
             self._expanded_sections.clear()
         previous = dict(self.sections) if same_item else {}
+        self.sections_layout.removeWidget(self.connection_controls)
         for name, section in self.sections.items():
             self.sections_layout.removeWidget(section)
             if name not in previous:
@@ -246,6 +342,15 @@ class AuthoringContextWidget(QWidget):
                 section.set_section(data)
             self.sections[data.title] = section
             self.sections_layout.addWidget(section)
+            state_title = "Recorded state changes · Saved direct connections"
+            if self._browse_enabled and (
+                data.title == state_title
+                or (
+                    data.title == "Saved direct connections"
+                    and not any(item.title == state_title for item in sections)
+                )
+            ):
+                self.sections_layout.addWidget(self.connection_controls)
             section.disclosure.blockSignals(True)
             section.disclosure.setChecked(
                 expanded or data.title in self._expanded_sections
@@ -418,17 +523,20 @@ class AuthoringContextWidget(QWidget):
                 "Resolved description",
                 [self._attribute_html(context.effective_description)],
             )
-        self._append_section(
-            sections,
-            "Attributes",
-            [self._attribute_html(item) for item in context.attributes],
-        )
         self._append_section(sections, "Tags", [escape(i.name) for i in context.tags])
-        relations = list(context.direct_relations)
-        if context.mode == "at_playhead":
+        relations = list(
+            self._connection_rows if self._browse_enabled else context.direct_relations
+        )
+        if context.mode == "at_playhead" and not self._browse_enabled:
             relations.extend(context.temporal_history)
-        self._append_relationships(sections, "Relations", relations)
-        if context.mode == "at_playhead" and not relations:
+        self._append_relationships(
+            sections,
+            "Saved direct connections" if self._browse_enabled else "Relations",
+            relations,
+        )
+        if self._browse_enabled and not relations:
+            sections.append(FactSection("Saved direct connections", ()))
+        if context.mode == "at_playhead" and not relations and not self._browse_enabled:
             title += (
                 "<p>No authored current relationships at this date. "
                 "Choose a history mode to inspect other dated relationships.</p>"
@@ -452,19 +560,21 @@ class AuthoringContextWidget(QWidget):
         self._append_section(
             sections,
             "Explicit references",
-            [self._relation_html(item) for item in context.linked_references],
+            []
+            if self._browse_enabled
+            else [self._relation_html(item) for item in context.linked_references],
         )
         self._append_section(
             sections,
-            "Possible changes — not established",
-            [self._attribute_html(item) for item in context.possible_changes],
+            "Possible description changes — not established",
+            [self._attribute_html(item) for item in self._description_changes],
         )
         self._append_section(
             sections,
             "Timing notices",
             [escape(item) for item in context.temporal_notices],
         )
-        if context.mode != "at_playhead":
+        if context.mode != "at_playhead" and not self._browse_enabled:
             self._append_relationships(
                 sections, "Temporal history", list(context.temporal_history)
             )
@@ -521,7 +631,19 @@ class AuthoringContextWidget(QWidget):
         self._append_relationships(
             sections, "Surrounding relations", list(context.neighborhood_relations)
         )
-        self._append_limits(sections, context.omitted_counts)
+        excluded_notices = {"attributes", "attribute_details", "possible_changes"}
+        if self._browse_enabled:
+            excluded_notices.update(
+                {"direct_relations", "temporal_history", "linked_references"}
+            )
+        omissions = tuple(
+            (name, count)
+            for name, count in context.omitted_counts
+            if name not in excluded_notices
+        )
+        if self._description_omitted:
+            omissions += (("possible_description_changes", self._description_omitted),)
+        self._append_limits(sections, omissions)
         if not sections:
             title += "<p>No related persisted facts.</p>"
         return title, sections
@@ -547,6 +669,7 @@ class AuthoringContextWidget(QWidget):
             [
                 self._item_link(item.source)
                 + " → "
+                + f"<b>{escape(item.rel_type)}</b> → "
                 + self._item_link(item.target)
                 + self._relation_details(item, include_window=True)
                 for item in relations
@@ -597,6 +720,11 @@ class AuthoringContextWidget(QWidget):
             f"{self._item_link(relation.source)} → "
             f"<b>{escape(relation.rel_type)}</b> → {self._item_link(relation.target)}"
         )
+        if (
+            relation.source.object_type == "event"
+            or relation.target.object_type == "event"
+        ):
+            result += '<br><span class="detail">Saved link; does not by itself establish Event occurrence.</span>'
         return result + self._relation_details(relation, include_window=include_window)
 
     def _relation_details(

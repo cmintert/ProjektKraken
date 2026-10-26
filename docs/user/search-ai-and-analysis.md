@@ -79,6 +79,16 @@ These controls reveal the loaded snapshot only. **Not included in this snapshot*
 lists omitted facts; expanding does not retrieve them. Select a linked name to
 navigate to it.
 
+For an Entity, **Saved direct connections** also provides **Load more
+connections**. Use it to browse saved links in either direction, including custom
+connection names, at the selected mode and date. **Retry connections** continues
+a failed read. Counts distinguish loaded links from an unknown total while
+checking continues. Other sections retain their bounded snapshots. Loading more
+does not expand the AI input or change a prepared Preview. Entity attributes stay
+in the Entity editor and remain available to description generation; World
+Context shows description-only possible changes, with sources and uncertainty.
+See [the World Context explanation](world-context-model.md) for temporal limits.
+
 **World Context** is enabled by default when generating Event text. It sends
 the same bounded factual snapshot to the model, evaluated at the Event's draft
 date. **Retrieved Context** is separate: it uses similarity search against the

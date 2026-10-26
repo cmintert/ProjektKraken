@@ -160,10 +160,18 @@ def test_database_worker_emits_serialized_entity_snapshot(qtbot) -> None:
         "src.services.authoring_context_builder.AuthoringContextBuilder"
     ) as builder_type:
         builder_type.return_value.build_entity_context.return_value = context
+        builder_type.return_value.description_changes_for_display.return_value = {
+            "rows": [],
+            "omitted": 0,
+        }
         with qtbot.waitSignal(worker.entity_authoring_context_loaded) as signal:
             worker.load_entity_authoring_context("request-id", "entity-id")
 
-    assert signal.args == ["request-id", "entity-id", context.to_dict()]
+    assert signal.args == [
+        "request-id",
+        "entity-id",
+        context.to_dict() | {"human_description_changes": {"rows": [], "omitted": 0}},
+    ]
     assert isinstance(signal.args[2], dict)
 
 

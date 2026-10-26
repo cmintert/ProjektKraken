@@ -8,6 +8,7 @@ import tempfile
 from pathlib import Path
 
 from PySide6.QtCore import QPoint, QSettings, Qt, qVersion
+from PySide6.QtGui import QFont, QFontDatabase
 from PySide6.QtWidgets import QApplication, QTextEdit, QVBoxLayout, QWidget
 
 from src.app.coordinators.help_coordinator import HelpCoordinator
@@ -25,6 +26,10 @@ def capture(
 ) -> None:
     """Render six palettes at normal/narrow widths and report label geometry."""
     app = QApplication.instance() or QApplication([])
+    font_path = Path("C:/Windows/Fonts/segoeui.ttf")
+    if font_path.exists():
+        QFontDatabase.addApplicationFont(str(font_path))
+    app.setFont(QFont("Segoe UI", 10))
     root = Path(__file__).resolve().parents[1]
     theme = ThemeManager(str(root / "themes.json"))
     output.mkdir(parents=True, exist_ok=True)
@@ -45,6 +50,20 @@ def capture(
         for widget in [explorer, *explorer.findChildren(QWidget)]:
             bindings.bind(widget)
         source = explorer.btn_new
+    elif include_assistance and inspection_example == "connections":
+        from src.app.help_composition import HelpSurfaceBindings
+        from src.core.authoring_context import EntityAuthoringContext
+        from src.gui.widgets.authoring_context_widget import AuthoringContextWidget
+
+        context = AuthoringContextWidget(owner, object_label="Entity")
+        context.enable_connection_browsing()
+        context.set_entity_context(EntityAuthoringContext("audit"))
+        context.set_connection_page([], "0 loaded; total not yet known.", True)
+        owner.layout().addWidget(context)
+        bindings = HelpSurfaceBindings(coordinator)
+        for widget in [context, *context.findChildren(QWidget)]:
+            bindings.bind(widget)
+        source = context.load_connections
     elif include_assistance:
         from src.gui.widgets.compact_duration_widget import CompactDurationWidget
 
@@ -181,7 +200,9 @@ def main() -> None:
     parser.add_argument("--search-inspection", action="store_true")
     parser.add_argument("--topic", default="writing.edit")
     parser.add_argument(
-        "--inspection-example", choices=("duration", "explorer"), default="duration"
+        "--inspection-example",
+        choices=("duration", "explorer", "connections"),
+        default="duration",
     )
     args = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix="kraken-help-capture-") as settings:

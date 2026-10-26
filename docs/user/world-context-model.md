@@ -26,15 +26,39 @@ possible changes and unknown timing, and names the supporting Events. It cannot
 recover dates that were never authored or infer historical truth from prose.
 
 **History to playhead** adds prior occurrences and ended relationships without
-asserting them as current. **All history** shows a bounded overview across dates.
+asserting them as current. **All history** shows saved connections across dates.
 Context and Entity generation share a session-only mode choice; changing worlds
 resets it. Undated baseline text and weaker shared-tag/shared-map associations
 remain explicitly limited evidence.
 
 Each displayed fact has its own row. Section counts describe loaded entries;
-**Show all N** and **Expand all** reveal those entries without retrieving omitted
-records. The **Not included in this snapshot** section names those omissions.
-Recorded state changes are separated from ordinary relationships.
+**Show all N** and **Expand all** reveal those entries without fetching more.
+In Entity World Context, **Load more connections** retrieves the next batch of
+saved direct connections. This includes either direction and custom connection
+names; you do not need to choose a special name to make a saved link discoverable.
+Recorded state changes remain separate from ordinary connections.
+
+The browser reports how many connections are loaded. The total remains unknown
+until it finishes checking the saved links for the selected mode and date.
+Date-excluded links are counted separately. A failed read offers **Retry
+connections**; a partial result never means that every eligible link was found.
+Editing, undo/redo or a change to the world or viewing date restarts the browser.
+Loading more preserves your description draft and does not change the playhead.
+
+Other sections still use a bounded snapshot. **Not included in this snapshot**
+names their omissions. These sections can overlap; their counts are not a unique
+total for the world. Loading more direct connections does not expand the AI input
+or change messages already prepared in Preview.
+
+Entity attributes, including statblocks, stay in the Entity editor. They are not
+shown as World Context facts or used to discover associations. Possible changes
+to the written description remain visible with their uncertainty and source
+Event. Description generation can still use relevant Entity attributes.
+
+A connection to an Event records a saved link; it does not by itself prove that
+the Event happened or that the Entity participated. An undated custom link can
+refer to a future Event. All history does not claim that its links were true at
+the same time.
 
 Optional Entity spatial context is separately evaluated at the captured viewing
 date. All history is a historical overview, not a claim that every saved relation

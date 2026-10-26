@@ -6,7 +6,7 @@ import logging
 import uuid
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Q_ARG, QObject, QTimer, Slot
+from PySide6.QtCore import Q_ARG, QObject, Qt, QTimer, Signal, Slot
 
 from src.app.qt_invocation import invoke_queued
 from src.core.authoring_context import EntityAuthoringContext, EventAuthoringContext
@@ -22,6 +22,9 @@ _REFRESH_DEBOUNCE_MS = 250
 
 class AuthoringContextCoordinator(QObject):
     """Request and validate Event context snapshots across thread boundaries."""
+
+    entity_context_invalidated = Signal()
+    entity_context_presented = Signal()
 
     def __init__(self, main_window: "MainWindow") -> None:
         """Initialize request identity and debounce state."""
@@ -60,6 +63,42 @@ class AuthoringContextCoordinator(QObject):
             lambda _config: self.schedule_entity_refresh()
         )
         window.map_widget.map_selected.connect(self.schedule_entity_refresh)
+        self._bind_connection_browsing()
+
+    def _bind_connection_browsing(self) -> None:
+        from src.app.coordinators.entity_connection_browse_coordinator import (
+            EntityConnectionBrowseCoordinator,
+        )
+        from src.services.entity_connection_browse_task import (
+            EntityConnectionBrowseTask,
+        )
+
+        window = self.main_window
+        worker = window.worker
+        view = window.entity_editor.authoring_context
+        view.enable_connection_browsing()
+
+        def query() -> dict:
+            world, mode, date, _map = self._entity_query()
+            return {
+                "world": world,
+                "entity_id": window.entity_editor.current_entity_id or "",
+                "mode": mode,
+                "date": date,
+            }
+
+        self._connection_browse = EntityConnectionBrowseCoordinator(view, query, self)
+        self._connection_task = EntityConnectionBrowseTask(lambda: worker.db_service)
+        self._connection_task.moveToThread(window.worker_thread)
+        queued = Qt.ConnectionType.QueuedConnection
+        self._connection_browse.requested.connect(self._connection_task.run, queued)
+        self._connection_task.finished.connect(self._connection_browse.accept, queued)
+        window.worker_thread.finished.connect(self._connection_task.deleteLater)
+        self.entity_context_invalidated.connect(self._connection_browse.invalidate)
+        self.entity_context_presented.connect(self._connection_browse.restart)
+        self._connection_browse.revision_changed.connect(self.schedule_entity_refresh)
+        worker.command_finished.connect(self._connection_browse.invalidate, queued)
+        worker.cleanup_finished.connect(self._connection_browse.stop, queued)
 
     @Slot(float)
     def on_viewing_time_changed(self, _date: float) -> None:
@@ -133,6 +172,7 @@ class AuthoringContextCoordinator(QObject):
     def schedule_entity_refresh(self, _unused: str = "") -> None:
         """Debounce a fresh saved-facts projection and invalidate older results."""
         self._active_entity_request_id = ""
+        self.entity_context_invalidated.emit()
         self._entity_inputs = None
         self._entity_query()
         generator = self.main_window.entity_editor.llm_generator
@@ -228,7 +268,11 @@ class AuthoringContextCoordinator(QObject):
         ):
             editor.set_authoring_context_unavailable()
             return
+        editor.authoring_context.set_description_changes(
+            snapshot.get("human_description_changes", {})
+        )
         editor.set_authoring_context(context)
+        self.entity_context_presented.emit()
 
     def _active_map_id(self) -> str:
         map_widget = getattr(self.main_window, "map_widget", None)

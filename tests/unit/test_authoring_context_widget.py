@@ -51,34 +51,36 @@ def test_local_and_global_disclosures_reveal_loaded_rows_only(qtbot) -> None:
     qtbot.addWidget(widget)
     context = EntityAuthoringContext(
         "root",
-        attributes=tuple(ContextAttribute(f"Field {i}", str(i)) for i in range(8)),
-        tags=tuple(ContextTag(str(i), f"Tag {i}") for i in range(5)),
-        omitted_counts=(("attributes", 20),),
+        tags=tuple(ContextTag(str(i), f"Tag {i}") for i in range(8)),
+        mentions=tuple(
+            ContextEvent(str(i), f"Mention {i}", float(i), "generic") for i in range(5)
+        ),
+        omitted_counts=(("mentions", 20),),
     )
     before = context.to_dict()
     widget.set_entity_context(context)
     widget.show()
-    attributes = widget.sections["Attributes"]
-    tags = widget.sections["Tags"]
-    assert attributes.heading.text() == "Attributes (8)"
-    assert "Field 2" in attributes.browser.toPlainText()
-    assert "Field 3" not in attributes.browser.toPlainText()
+    attributes = widget.sections["Tags"]
+    tags = widget.sections["Mentioned in Events"]
+    assert attributes.heading.text() == "Tags (8)"
+    assert "Tag 2" in attributes.browser.toPlainText()
+    assert "Tag 3" not in attributes.browser.toPlainText()
     attributes.disclosure.setFocus()
     qtbot.keyClick(attributes.disclosure, Qt.Key.Key_Space)
-    assert "Field 7" in attributes.browser.toPlainText()
-    assert "Tag 4" not in tags.browser.toPlainText()
+    assert "Tag 7" in attributes.browser.toPlainText()
+    assert "Mention 4" not in tags.browser.toPlainText()
     widget.set_loading()
     widget.set_entity_context(context)
-    assert widget.sections["Attributes"] is attributes
+    assert widget.sections["Tags"] is attributes
     assert attributes.disclosure.isChecked()
     assert not tags.disclosure.isChecked()
     qtbot.mouseClick(widget.more_button, Qt.MouseButton.LeftButton)
-    assert "Tag 4" in tags.browser.toPlainText()
+    assert "Mention 4" in tags.browser.toPlainText()
     assert widget.more_button.text() == "Collapse all"
     qtbot.mouseClick(widget.more_button, Qt.MouseButton.LeftButton)
-    assert "Field 3" not in attributes.browser.toPlainText()
+    assert "Tag 3" not in attributes.browser.toPlainText()
     limits = widget.sections["Not included in this snapshot"]
-    assert "20 additional attributes omitted" in limits.browser.toPlainText()
+    assert "20 additional mentions omitted" in limits.browser.toPlainText()
     assert context.to_dict() == before
 
 
@@ -237,7 +239,7 @@ def test_entity_context_primary_and_more_expose_every_section(qtbot) -> None:
 
     primary = "\n".join(s.browser.toPlainText() for s in widget.sections.values())
     more = primary
-    assert "Role: Navigator" in primary
+    assert "Role: Navigator" not in primary
     assert "Scholar" in primary
     assert "Arrival" in primary
     assert "Placed on Coast" in primary
@@ -255,10 +257,8 @@ def test_narrow_context_document_wraps_and_same_item_retains_scroll(qtbot):
     widget.resize(360, 220)
     context = EntityAuthoringContext(
         "person",
-        attributes=tuple(
-            ContextAttribute(
-                f"Field {i}", "Long readable source and attribute text " * 4
-            )
+        tags=tuple(
+            ContextTag(str(i), f"Long readable classification {i} " * 4)
             for i in range(24)
         ),
     )
@@ -267,8 +267,8 @@ def test_narrow_context_document_wraps_and_same_item_retains_scroll(qtbot):
     widget.show()
     qtbot.wait(20)
     assert (
-        widget.sections["Attributes"].browser.document().textWidth()
-        <= widget.sections["Attributes"].browser.viewport().width()
+        widget.sections["Tags"].browser.document().textWidth()
+        <= widget.sections["Tags"].browser.viewport().width()
     )
     scrollbar = widget.scroll_area.verticalScrollBar()
     assert scrollbar.maximum() > 0

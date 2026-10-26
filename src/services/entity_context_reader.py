@@ -28,4 +28,8 @@ def read_entity_context_snapshot(
             context = builder.build_entity_context(
                 entity_id, mode=EntityContextMode(mode), context_date=context_date
             )
-    return context.to_dict() if context is not None else {}
+        if context is None:
+            return {}
+        return context.to_dict() | {
+            "human_description_changes": builder.description_changes_for_display()
+        }

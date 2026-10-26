@@ -422,18 +422,35 @@ def _workspace_surface() -> QWidget:
 
 def _context_surface() -> QWidget:
     """Expose the real context disclosures with a bounded inert snapshot."""
-    from src.core.authoring_context import ContextAttribute, EntityAuthoringContext
+    from src.core.authoring_context import (
+        ContextItem,
+        ContextRelation,
+        EntityAuthoringContext,
+    )
     from src.gui.widgets.authoring_context_widget import AuthoringContextWidget
 
     widget = AuthoringContextWidget(object_label="Entity")
+    widget.enable_connection_browsing()
     widget.set_entity_context(
         EntityAuthoringContext(
             "audit",
-            attributes=tuple(
-                ContextAttribute(f"Field {i}", "Saved value") for i in range(24)
-            ),
             omitted_counts=(("relations", 12),),
         )
+    )
+    widget.set_connection_page(
+        [
+            ContextRelation(
+                str(i),
+                ContextItem("audit", "entity", "Root"),
+                ContextItem("other", "entity", "Other"),
+                f"custom {i}",
+                0,
+                "persistent",
+            ).to_dict()
+            for i in range(25)
+        ],
+        "25 loaded; total not yet known.",
+        True,
     )
     return widget
 
@@ -446,6 +463,20 @@ def surface_states(widget: QWidget, *, quick: bool = False) -> Iterator[str]:
         QApplication.processEvents()
         yield "expanded-context"
         widget.more_button.setChecked(False)
+        rows = [item.to_dict() for item in widget._connection_rows]
+        widget.set_connection_page(
+            rows, "Loading saved connections…", False, loading=True
+        )
+        yield "loading-connections"
+        widget.set_connection_page(
+            rows,
+            "Connections could not be loaded. Retry to continue.",
+            True,
+            retry=True,
+        )
+        yield "retry-connections"
+        widget.set_connection_page(rows, "All eligible connections loaded.", False)
+        yield "exhausted-connections"
     workspace = getattr(widget, "workspace", None)
     if workspace is not None and hasattr(workspace.activity_bar, "workspace_actions"):
         workspace.activity_bar.set_expanded(False)

@@ -404,6 +404,12 @@ class AuthoringContextBuilder:
             return self._entity_projection.finish(context)
         return context
 
+    def description_changes_for_display(self) -> dict[str, Any]:
+        """Return a human-only sidecar without changing the bounded AI context."""
+        if self._entity_projection is None:
+            return {"rows": [], "omitted": 0}
+        return self._entity_projection.description_changes_for_display()
+
     def _collect_entity_relations(
         self,
         relations: list[dict[str, Any]],

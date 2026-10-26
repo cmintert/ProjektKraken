@@ -1368,6 +1368,15 @@ not retrieve omitted facts, change the context mode or move the playhead.
 **Show all N / Show fewer** — Expand just this World Context section, or return
 to its three-row preview. Timing and supporting Events remain beneath each fact.
 
+(help-context-load-connections)=
+
+**Load more connections / Retry connections** — Load another batch of saved
+direct connections for the selected Entity, mode and date. Both directions and
+custom names are included. Show all reveals loaded rows only; it does not fetch
+another batch. The total stays unknown until checking finishes. Retry continues
+a failed read; changed saved data restarts the browser. Loading does not edit
+your description, move the playhead or add facts to AI Preview or Generate.
+
 (help-inspect-src-gui-widgets-focus-writing-focuswritingcontroller-init-self-action)=
 
 **Focus writing** — Enter or leave the focused writing presentation while retaining the

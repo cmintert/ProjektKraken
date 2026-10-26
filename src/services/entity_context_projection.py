@@ -55,6 +55,7 @@ MAX_DESCRIPTION_CHARS = 2400
 MAX_PROJECTION_CHARS = 12000
 MAX_POSSIBLE_CHANGES = 24
 MAX_TIMING_NOTICES = 12
+MAX_DESCRIPTION_CHANGE_CHARS = 400
 
 
 def bound_projection(context: EntityAuthoringContext) -> EntityAuthoringContext:
@@ -295,6 +296,36 @@ class EntityContextProjectionService:
                 omitted_counts=tuple(sorted(omitted.items())),
             )
         )
+
+    def description_changes_for_display(self) -> dict[str, Any]:
+        """Project description payloads before budgeting, without attribute facts."""
+        assert self._state is not None
+        rows = []
+        for effect in self._state.possible_effects:
+            if "description" not in effect["payload"]:
+                continue
+            source = fact_source(
+                effect["provenance"]
+                | {"kind": "relation", "relation_id": effect["relation_id"]}
+            )
+            rows.append(
+                ContextAttribute(
+                    "Description",
+                    str(effect["payload"]["description"])[:MAX_DESCRIPTION_CHANGE_CHARS]
+                    + (
+                        "… (shortened; inspect the source Event)"
+                        if len(str(effect["payload"]["description"]))
+                        > MAX_DESCRIPTION_CHANGE_CHARS
+                        else ""
+                    ),
+                    source,
+                    effect["validity"],
+                ).to_dict()
+            )
+        return {
+            "rows": rows[:MAX_POSSIBLE_CHANGES],
+            "omitted": max(0, len(rows) - MAX_POSSIBLE_CHANGES),
+        }
 
     def _qualify_event(self, event: ContextEvent) -> ContextEvent:
         source = self._events[event.id]
