@@ -4,9 +4,15 @@ import json
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import QPoint, Qt
+from PySide6.QtCore import QEvent, QPoint, Qt
 from PySide6.QtGui import QColor, QFont, QFontDatabase, QPalette
-from PySide6.QtWidgets import QGridLayout, QPushButton, QToolButton, QWidget
+from PySide6.QtWidgets import (
+    QApplication,
+    QGridLayout,
+    QPushButton,
+    QToolButton,
+    QWidget,
+)
 
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
@@ -84,11 +90,14 @@ def test_secondary_actions_share_rendered_states_and_keep_other_roles(
                 qtbot.mouseMove(button, button.rect().center())
             else:
                 qtbot.mouseMove(host, host.rect().bottomRight())
+                # Offscreen windows can retain the previous synthetic hover
+                # across tests even when the global pointer hasn't moved.
+                QApplication.sendEvent(button, QEvent(QEvent.Type.Leave))
             qtbot.wait(1)
             image = button.grab().toImage()
             assert image.pixelColor(button.width() // 2, 5) == QColor(
                 theme[f"action_secondary_{state}_bg"]
-            )
+            ), (name, state, button.text(), button.underMouse(), button.hasFocus())
             assert image.pixelColor(button.width() // 2, 1) == QColor(
                 theme[f"action_secondary_{state}_border"]
             )

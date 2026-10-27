@@ -368,6 +368,20 @@ preserve that identity.
 **Example:** Ada succeeds Borin at a coronation known only to 962. Bind Borin’s role end
 and Ada’s role start to that coronation Event, rather than inventing an exact day.
 
+Named Event boundaries share the same **Endpoint and offset…** controls as
+{ref}`map visibility dates <help-map-visibility>`. Choose **Occurrence / start**
+or **Authored end**; a missing authored end remains unresolved. Signed offsets
+support fractional lore days or whole calendar months/years. Invalid target
+dates remain unresolved, including coarse occurrence dates with any invalid
+possible target.
+
+**At event endpoint** shares a transition. **Date before endpoint** and **Date
+after endpoint** describe independently unknown dates strictly before/after the
+shifted endpoint; they are not visibility switches at that Event. Existing
+relative-date records retain their saved semantics until explicitly edited.
+An equal start/end state interval is empty, not an occurrence: choose
+**Occurrence** deliberately when that is the intended meaning.
+
 **Related:** {ref}`Chronology <help-event-chronology>` · {ref}`Date precision
 <help-date-precision>` · {ref}`Create relations <help-relations-create>` ·
 {ref}`Timeline viewing <help-timeline-viewing>`
@@ -1098,8 +1112,9 @@ accepting this new relation. This is a deliberate choice, not automatic synchron
 
 (help-inspect-src-gui-widgets-relation-form-relationform-group-boundaries-disclosure)=
 
-**Event offset details** — Expand the Event-relative boundary options, including signed
-lore-day offsets.
+**Endpoint and offset…** — Expand the Event endpoint and relative-date options,
+including signed lore-day or whole calendar-month/year offsets. Collapsing
+these controls preserves their values.
 
 (help-inspect-src-gui-widgets-relation-form-relationform-setup-now-actions-self-starts-now-button)=
 
@@ -1149,13 +1164,27 @@ this side of the relation.
 
 (help-inspect-src-gui-widgets-relation-form-relationform-setup-boundary-choices-relative)=
 
-**Event-relative boundary** — Choose how this boundary relates to the source Event's
-transition. A shared binding preserves correlated uncertainty.
+**Event-relative boundary** — At the endpoint shares its transition. Before/after
+records an independently unknown date strictly before/after the selected endpoint
+plus offset. Separate constrained dates do not imply a shared transition.
 
 (help-inspect-src-gui-widgets-relation-form-relationform-setup-boundary-choices-offset)=
 
-**Offset** — Zero shares the event's exact transition. A signed offset shifts both
-evidence bounds by this many lore days.
+**Offset** — Shift the selected endpoint by a signed number of lore days,
+calendar months or calendar years. Zero shares the original transition. Calendar
+offsets require whole numbers; invalid targets remain unresolved.
+
+(help-inspect-event-anchor-endpoint)=
+
+**Event endpoint** — Follow occurrence/start or the authored end. An independent
+end date takes precedence over duration. Without either, an end reference stays
+unresolved rather than following the start.
+
+(help-inspect-event-anchor-unit)=
+
+**Offset unit** — Lore days have a fixed length and can be fractional. Calendar
+months and years follow the bound calendar's actual lengths and require whole
+numbers. Missing target dates and unsupported precision remain unresolved.
 
 (help-inspect-src-gui-widgets-relation-item-widget-relationitemwidget-setup-ui-self-btn-go-to)=
 

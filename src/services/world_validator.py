@@ -85,6 +85,7 @@ class WorldValidator:
         self._check_wikilinks(entities, events)
         self._check_dates(events)
         self._check_temporal_windows(relations, events)
+        self._check_map_temporal_windows(maps, events)
         self._check_attachments(attachments, entities, events)
         self._check_map_assets(maps)
         if self.editorial_checks:
@@ -469,6 +470,22 @@ class WorldValidator:
                 )
             )
 
+    def _check_map_temporal_windows(self, maps: list, events: list[Event]) -> None:
+        """Use the same detached context as relation and map previews."""
+        from src.core.calendar import CalendarConfig, CalendarConverter
+        from src.core.temporal_context import TemporalResolutionContext
+        from src.services.map_temporal_validation import map_temporal_issues
+
+        config = self.db_service.get_active_calendar_config()
+        converter = (
+            CalendarConverter(config) if isinstance(config, CalendarConfig) else None
+        )
+        self.issues.extend(
+            map_temporal_issues(
+                maps, TemporalResolutionContext.build(events, converter)
+            )
+        )
+
     def _check_attachments(
         self,
         attachments: list[Any],
@@ -476,9 +493,7 @@ class WorldValidator:
         events: list[Event],
     ) -> None:
         """Flag orphaned, unsafe, or missing attachment files."""
-        valid_ids = {entity.id for entity in entities} | {
-            event.id for event in events
-        }
+        valid_ids = {entity.id for entity in entities} | {event.id for event in events}
         db_path = Path(str(self.db_service.db_path))
         check_files = str(db_path) != ":memory:"
         world_root = db_path.parent.resolve() if check_files else None

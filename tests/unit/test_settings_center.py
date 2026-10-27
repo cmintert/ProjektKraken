@@ -16,6 +16,15 @@ from src.services.settings_snapshot import world_snapshot
 pytestmark = pytest.mark.ci_fast
 
 
+def test_world_refresh_uses_the_graph_coordinator():
+    from src.app.settings_composition import _refresh_world_consumers
+
+    window = Mock()
+    _refresh_world_consumers(window, {})
+    window.data_coordinator.load_graph_data.assert_called_once_with()
+    window.worker.load_graph_data.assert_not_called()
+
+
 def test_center_uses_theme_surface_and_keeps_keyboard_ownership(
     qtbot, init_theme_manager
 ):

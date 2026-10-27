@@ -16,6 +16,7 @@ from src.core.calendar import CalendarConverter
 
 TEMPORAL_SCHEMA_VERSION = 1
 TEMPORAL_ATTRIBUTE = "_temporal_v2"
+MAX_LORE_DAY = 1e12
 
 
 class TemporalPrecision(str, Enum):
@@ -51,6 +52,14 @@ class ResolvedTemporalBounds:
     anchor_id: str | None = None
     error: str | None = None
     label: str | None = None
+    lower_inclusive: bool = True
+    upper_inclusive: bool = False
+    transition: tuple[str, str, str] | None = None
+    base_anchor: str | None = None
+    day_offset: float = 0.0
+    possible_ranges: tuple[tuple[float, float], ...] | None = None
+    relative_to: ResolvedTemporalBounds | None = None
+    relative_relation: str | None = None
 
     @property
     def has_hard_bounds(self) -> bool:
@@ -101,6 +110,8 @@ class TemporalExpression:
             )
         try:
             nominal_start, nominal_end = converter.resolve_precision_bounds(self)
+            if max(abs(nominal_start), abs(nominal_end)) > MAX_LORE_DAY:
+                raise ValueError("Date is outside the supported ±10^12 lore-day range")
             start, end = self.explicit_outer_start, self.explicit_outer_end
             for bound in (start, end):
                 if bound is not None and not math.isfinite(bound):

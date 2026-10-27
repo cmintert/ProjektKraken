@@ -101,12 +101,18 @@ def test_playhead_attributes_survive_command_undo_redo(qtbot, converter, db_serv
     update = UpdateRelationCommand(
         relation["id"], target.id, "owns", dialog.get_data()[3]
     )
+    assert not update.execute(db_service).success
+    dialog.form._playhead_time = 126.512345
+    dialog.ends_now_button.click()
+    update = UpdateRelationCommand(
+        relation["id"], target.id, "owns", dialog.get_data()[3]
+    )
     assert update.execute(db_service).success
     update.undo(db_service)
     assert db_service.get_relation(relation["id"])["attributes"] == attrs
     assert update.execute(db_service).success
     assert db_service.get_relation(relation["id"])["attributes"]["temporal"]["end"] == {
-        "exact": 125.512345
+        "exact": 126.512345
     }
 
 

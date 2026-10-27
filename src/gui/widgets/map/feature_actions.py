@@ -48,6 +48,7 @@ class FeatureContext:
     can_paste: bool = False
     can_reset_anchor: bool = False
     can_reset_size: bool = False
+    can_jump: bool = True
 
 
 @dataclass(frozen=True)
@@ -70,7 +71,14 @@ def feature_actions(context: FeatureContext) -> tuple[FeatureAction, ...]:
         return tuple(
             common
             + [
-                FeatureAction("jump", "Jump to valid time"),
+                FeatureAction(
+                    "jump",
+                    "Jump to valid time",
+                    enabled=context.can_jump,
+                    reason=""
+                    if context.can_jump
+                    else "No definitely valid date is known.",
+                ),
                 FeatureAction("validity", "Visibility dates…"),
                 FeatureAction("layers", "Show in Layers"),
             ]
@@ -371,6 +379,7 @@ class FeatureActionPresenter(QObject):
                 locked=node.locked,
                 outside_date=not self.panel.feature_valid(node.id),
                 canvas_available=False,
+                can_jump=self.panel.feature_jump_available(node.id),
             )
         context = item_context(item, self.view)
         if node is not None:
@@ -381,6 +390,7 @@ class FeatureActionPresenter(QObject):
                 locked=node.locked,
                 outside_date=context.outside_date
                 or not self.panel.feature_valid(node.id),
+                can_jump=self.panel.feature_jump_available(node.id),
             )
         return context
 

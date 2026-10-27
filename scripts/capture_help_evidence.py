@@ -85,6 +85,12 @@ def capture(
                 )
                 app.processEvents()
                 viewer = coordinator.viewer
+                # Reflow changes pixel positions; topic reopening restores history's
+                # previous pixels rather than seeking its anchor again.
+                viewer.browser.scrollToAnchor(
+                    coordinator.service.resolve_topic(topic_id).fragment
+                )
+                app.processEvents()
                 geometry = {
                     label: {
                         "width": button.width(),

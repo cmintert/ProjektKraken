@@ -4,6 +4,11 @@ This checklist maps the original temporal uncertainty and graph validity plan
 to implementation and regression evidence. A representative lore-day coordinate
 is a layout position, not an assertion of an exact historical date.
 
+The [KRT-111 implementation record](../ux/evidence/krt111/README.md) extends this
+matrix to map Event endpoints, strict relative boundaries, calendar offsets,
+shared parent/child transitions, lossless editing and import recovery. Its
+automated and bounded native observations are separate from pending human review.
+
 Test files below are under `tests/unit/`. The graph layout check additionally
 uses a rendered QtWebEngine scene: edge-only updates must retain node positions,
 camera scale/position, and selection.

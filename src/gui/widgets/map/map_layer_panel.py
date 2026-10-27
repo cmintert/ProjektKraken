@@ -45,7 +45,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.calendar import CalendarConverter
-from src.core.map import VECTOR_LAYER_TYPES, MapLayerNode
+from src.core.map import VECTOR_LAYER_TYPES, MapLayerNode, layer_temporal_ancestors
 from src.core.style_constants import DEFAULT_RASTER_PAINT_COLOR
 from src.core.theme_manager import ThemeManager
 from src.gui.constants import (
@@ -77,6 +77,7 @@ from src.gui.widgets.numeric_inputs import (
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 if TYPE_CHECKING:
+    from src.core.temporal_context import TemporalResolutionContext
     from src.gui.dialogs.layer_properties_dialog import LayerPropertiesDialog
     from src.gui.dialogs.temporal_validity_dialog import TemporalValidityDialog
     from src.gui.widgets.map.map_layer_model import MapLayerModel
@@ -1509,6 +1510,12 @@ class MapLayerPanel(QWidget):
             model.set_date_formatter(self._calendar_converter.format_date)
             model.calendar_converter = self._calendar_converter
         model.set_current_time(self._playhead_time)
+        if hasattr(self, "_temporal_context"):
+            model.set_temporal_context(self._temporal_context)
+        if self._temporal_dialog is not None and self._temporal_node_id is not None:
+            self._temporal_dialog.set_ancestor_windows(
+                layer_temporal_ancestors(model.root, self._temporal_node_id)
+            )
         if had_model:
             self._restore_expanded_nodes(expanded_node_ids)
         else:
@@ -1612,6 +1619,14 @@ class MapLayerPanel(QWidget):
                 if node.layer_type == MAP_LAYER_TYPE_RASTER:
                     layer_meta = self._raster_meta_by_id.get(self._selected_node_id)
                     self._refresh_snapshot_list(self._selected_node_id, layer_meta)
+
+    def set_temporal_context(self, context: "TemporalResolutionContext") -> None:
+        """Refresh the model and open draft using one immutable snapshot."""
+        self._temporal_context = context
+        if self._model is not None:
+            self._model.set_temporal_context(context)
+        if self._temporal_dialog is not None:
+            self._temporal_dialog.set_temporal_context(context)
 
     def select_node(self, node_id: str) -> None:
         """Highlight and scroll to the node with the given ID.
@@ -2017,13 +2032,12 @@ class MapLayerPanel(QWidget):
                         lambda: self._edit_temporal_validity(node)
                     )
                     state = self._model.temporal_validity(node)
-                    if not state.valid and state.boundary is not None:
-                        jump_text = (
-                            "Jump to Start"
-                            if state.status.value == "before_start"
-                            else "Jump to Last Valid Day"
-                        )
+                    if not state.valid:
+                        jump_text = "Jump to valid time"
                         jump_action = menu.addAction(jump_text)
+                        jump_action.setEnabled(state.valid_time is not None)
+                        if state.valid_time is None:
+                            jump_action.setToolTip("No definitely valid date is known.")
                         jump_action.triggered.connect(
                             lambda: self.jump_to_valid_time(node.id)
                         )
@@ -2158,6 +2172,10 @@ class MapLayerPanel(QWidget):
             self,
             calendar_converter=self._calendar_converter,
             playhead_time=self._playhead_time,
+            temporal_context=getattr(self, "_temporal_context", None),
+            ancestor_windows=layer_temporal_ancestors(self._model.root, node.id)
+            if self._model
+            else (),
         )
         self._temporal_dialog = dialog
         self._temporal_node_id = node.id
@@ -2224,6 +2242,15 @@ class MapLayerPanel(QWidget):
         self._close_properties_dialog()
         self._close_temporal_dialog()
 
+    def feature_jump_available(self, node_id: str) -> bool:
+        """Explain navigation availability using resolved, inherited evidence."""
+        node = self._model.find_node_by_id(node_id) if self._model else None
+        return bool(
+            node
+            and self._model
+            and self._model.temporal_validity(node).valid_time is not None
+        )
+
     def jump_to_valid_time(self, node_id: str) -> None:
         """Jump to a deterministic date inside a feature's valid interval."""
         if self._model is None:
@@ -2232,20 +2259,9 @@ class MapLayerPanel(QWidget):
         if node is None:
             return
         state = self._model.temporal_validity(node)
-        if state.valid or state.boundary is None:
+        if state.valid or state.valid_time is None:
             return
-        if state.status.value == "before_start":
-            target = state.boundary
-        else:
-            target = state.boundary - 1.0
-            source = (
-                self._model.find_node_by_id(state.source_node_id)
-                if state.source_node_id
-                else node
-            )
-            if source is not None and source.start_date is not None:
-                target = max(source.start_date, target)
-        self.temporal_jump_requested.emit(float(target))
+        self.temporal_jump_requested.emit(state.valid_time)
 
     def _toggle_visibility(self, node: "MapLayerNode") -> None:
         """Toggle a node's visibility via the model.

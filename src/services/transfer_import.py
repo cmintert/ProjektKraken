@@ -6,6 +6,8 @@ import copy
 import math
 from typing import Any
 
+from src.core.events import Event
+from src.core.temporal_references import remap_temporal_references
 from src.core.transfer import LORE_KINDS
 from src.services.db_service import DatabaseService
 from src.services.import_service import ImportResult, ImportService
@@ -67,6 +69,8 @@ def _prepare_payload(
                 token, options.get("mode", "skip")
             )
             if options.get("matches", {}).get(token):
+                if row.get("id"):
+                    row["_transfer_original_id"] = row["id"]
                 row["id"] = options["matches"][token]
             item_id = str(row.get("id", ""))
             if kind != "relations" and item_id and item_id in item_ids:
@@ -86,7 +90,10 @@ def _prepare_payload(
 
 
 def _import_records(
-    parser: ImportService, payload: dict[str, Any], options: dict[str, Any]
+    parser: ImportService,
+    payload: dict[str, Any],
+    options: dict[str, Any],
+    db: DatabaseService,
 ) -> ImportResult:
     # Resolve identities first, then remap all cross-file endpoint references.
     relations = payload.pop("relations", [])
@@ -95,7 +102,7 @@ def _import_records(
     for kind in ("entities", "events"):
         for row in payload[kind]:
             if row.get("id"):
-                original_ids[id(row)] = row["id"]
+                original_ids[id(row)] = row.pop("_transfer_original_id", row["id"])
             nested.append((row, row.pop("relations", [])))
     result = parser.import_batch(payload, {**options, "dry_run": False})
     remap = {
@@ -104,11 +111,15 @@ def _import_records(
         if id(row) in original_ids and row.get("id")
     }
     for row, row_relations in nested:
+        _remap_imported_record(db, row, remap, result.actions)
         for relation in row_relations:
             relation["source_id"] = row.get("id")
             relation.setdefault("import_action", row["import_action"])
             relations.append(relation)
     for relation in relations:
+        relation["attributes"] = remap_temporal_references(
+            relation.get("attributes", {}), remap
+        )
         for endpoint in ("source_id", "target_id"):
             if relation.get(endpoint) in remap:
                 relation[endpoint] = remap[relation[endpoint]]
@@ -120,6 +131,34 @@ def _import_records(
     result.warnings.extend(linked.warnings)
     result.actions.extend(linked.actions)
     return result
+
+
+def _remap_imported_record(
+    db: DatabaseService,
+    row: dict[str, Any],
+    remap: dict[str, str],
+    actions: list[dict[str, Any]],
+) -> None:
+    """Change only metadata supplied by an accepted incoming record."""
+    action = next((item for item in actions if item.get("id") == row.get("id")), {})
+    if not action or action.get("action") == "skip":
+        return
+    event = action.get("type") == "event"
+    record = db.get_event(row["id"]) if event else db.get_entity(row["id"])
+    if record is None:
+        return
+    incoming = row.get("attributes", {})
+    revised = remap_temporal_references(incoming, remap)
+    changed = False
+    for key in ("temporal", "_temporal_v2"):
+        if key in incoming and incoming[key] != revised[key]:
+            record.attributes[key] = revised[key]
+            changed = True
+    if changed:
+        if isinstance(record, Event):
+            db.insert_event(record)
+        else:
+            db.insert_entity(record)
 
 
 def prepare_import(
@@ -146,7 +185,7 @@ def prepare_import(
                 "actions": [],
                 "options": options,
             }
-        result = _import_records(parser, payload, options)
+        result = _import_records(parser, payload, options, clone)
         after = snapshot(target)
         errors.extend(
             f"Ambiguous {item['type']} '{item['name']}': "

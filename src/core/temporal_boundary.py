@@ -15,6 +15,9 @@ class TemporalAnchorRef:
     anchor_id: str
     relation: str = "at"
     offset_days: float = 0.0
+    endpoint: str = "start"
+    offset: dict[str, Any] | None = None
+    semantics: str = "legacy_v1"
 
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-safe reference."""

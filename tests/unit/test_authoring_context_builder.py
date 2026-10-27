@@ -103,7 +103,7 @@ def test_temporal_relations_use_shared_active_window_semantics(db_service) -> No
     root = _event(db_service, "Root", 10.0, event_id="root")
     targets = [
         _entity(db_service, f"Target {index}", entity_id=f"target-{index}")
-        for index in range(5)
+        for index in range(6)
     ]
     db_service.insert_relation(root.id, targets[0].id, "persistent")
     db_service.insert_relation(
@@ -130,6 +130,12 @@ def test_temporal_relations_use_shared_active_window_semantics(db_service) -> No
         "instant",
         {"valid_at_event": True},
     )
+    db_service.insert_relation(
+        root.id,
+        targets[5].id,
+        "unresolved",
+        {"valid_from": "unreadable"},
+    )
 
     result = AuthoringContextBuilder(db_service).build_event_context(root.id)
 
@@ -138,9 +144,10 @@ def test_temporal_relations_use_shared_active_window_semantics(db_service) -> No
         "active",
         "instant",
         "persistent",
-        "invalid",
+        "unresolved",
     }
-    unresolved = next(r for r in result.direct_relations if r.rel_type == "invalid")
+    # A provably reversed interval is inactive; unavailable evidence is retained.
+    unresolved = next(r for r in result.direct_relations if r.rel_type == "unresolved")
     assert unresolved.temporal_status == "indeterminate"
 
 
@@ -159,11 +166,7 @@ def test_neighborhood_stops_at_two_hops_and_excludes_root_and_mentions(
     db_service.reconcile_mentions(
         seed.id,
         "description",
-        {
-            hop_two.id: [
-                {"field": "description", "start_offset": 0, "end_offset": 3}
-            ]
-        },
+        {hop_two.id: [{"field": "description", "start_offset": 0, "end_offset": 3}]},
     )
 
     result = AuthoringContextBuilder(db_service).build_event_context(root.id)
@@ -235,9 +238,7 @@ def test_entity_context_classifies_durable_facts_and_round_trips(db_service) -> 
     db_service.insert_relation(root.id, ally.id, "knows")
     db_service.insert_relation(appearance.id, root.id, "involved")
     occurrence = {"field": "description", "start_offset": 0, "end_offset": 3}
-    db_service.reconcile_mentions(
-        mention.id, "description", {root.id: [occurrence]}
-    )
+    db_service.reconcile_mentions(mention.id, "description", {root.id: [occurrence]})
 
     result = AuthoringContextBuilder(db_service).build_entity_context(root.id)
 
@@ -271,9 +272,9 @@ def test_entity_context_keeps_valid_temporal_relations_as_history(db_service) ->
     result = AuthoringContextBuilder(db_service).build_entity_context(root.id)
 
     assert result is not None
-    assert [(item.rel_type, item.temporal_kind) for item in result.temporal_history] == [
-        ("appointed", "instant")
-    ]
+    assert [
+        (item.rel_type, item.temporal_kind) for item in result.temporal_history
+    ] == [("appointed", "instant")]
     assert not result.direct_relations
 
 
@@ -388,9 +389,7 @@ def test_entity_context_aggregates_public_structured_knowledge(db_service) -> No
     assert result.shared_tags[0].evidence == ("coastal",)
     assert result.shared_maps[0].evidence == ("Coast",)
     assert result.map_appearances[0].marker_label == "Old Harbour"
-    assert [item.name for item in result.map_appearances[0].parent_maps] == [
-        "World"
-    ]
+    assert [item.name for item in result.map_appearances[0].parent_maps] == ["World"]
     assert [item.caption for item in result.attachments] == ["The harbour seal"]
     assert "private/path.webp" not in str(result.to_dict())
     formatted = format_entity_authoring_context(result)

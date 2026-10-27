@@ -60,10 +60,23 @@ class AuthoringContextCoordinator(QObject):
             self.schedule_entity_refresh
         )
         window.worker.calendar_config_loaded.connect(
-            lambda _config: self.schedule_entity_refresh()
+            self.on_calendar_config_loaded, Qt.ConnectionType.QueuedConnection
         )
         window.map_widget.map_selected.connect(self.schedule_entity_refresh)
         self._bind_connection_browsing()
+
+    @Slot(object)
+    def on_calendar_config_loaded(self, _config: object) -> None:
+        """Refresh UI-owned timers on this coordinator's GUI thread."""
+        self.schedule_entity_refresh()
+
+    @Slot(str, str, list)
+    def on_attachments_loaded(
+        self, owner_type: str, _owner_id: str, _items: list
+    ) -> None:
+        """Filter worker attachment snapshots on the GUI-affine receiver."""
+        if owner_type == "entity":
+            self.schedule_entity_refresh()
 
     def _bind_connection_browsing(self) -> None:
         from src.app.coordinators.entity_connection_browse_coordinator import (

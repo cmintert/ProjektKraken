@@ -539,8 +539,6 @@ class CalendarConverter:
 
         """
         self._config = config
-        # Cache for year start positions (year -> absolute_day)
-        self._year_cache: Dict[int, float] = {}
 
     def start_of_year(self, year: int) -> float:
         """Return the first coordinate of a calendar year."""
@@ -602,7 +600,10 @@ class CalendarConverter:
             + (expression.second or 0)
         ) / 86400
         width = {"day": 1.0, "hour": 1 / 24, "minute": 1 / 1440, "second": 1 / 86400}
-        return start, start + width[precision]
+        end = start + width[precision]
+        if end <= start or math.ulp(start) > width[precision]:
+            raise ValueError("Date precision cannot be represented at this lore date")
+        return start, end
 
     def to_float(self, date: CalendarDate) -> float:
         """Converts a structured date to an absolute day float.
@@ -618,10 +619,11 @@ class CalendarConverter:
             Negative years produce negative floats.
 
         """
-        if date.year >= 1:
-            return self._to_float_positive(date)
-        else:
-            return self._to_float_negative(date)
+        from src.core.calendar_index import year_span
+
+        return float(year_span(self._config, 1, date.year)) + self._days_within_year(
+            date
+        )
 
     def _days_within_year(self, date: CalendarDate) -> float:
         """Returns the 0-based day offset of date within its year (including time fraction).
@@ -641,55 +643,6 @@ class CalendarConverter:
         offset += date.time_fraction
         return offset
 
-    def _to_float_positive(self, date: CalendarDate) -> float:
-        """Converts a positive-year date to float.
-
-        Args:
-            date: Date with year >= 1.
-
-        Returns:
-            float: Absolute day value.
-
-        """
-        total_days = 0.0
-
-        # Use highest cached year below target as starting point
-        cached_years = sorted(self._year_cache.keys())
-        current_year = 1
-
-        for y in reversed(cached_years):
-            if y < date.year:
-                current_year = y
-                total_days = self._year_cache[y]
-                break
-
-        for y in range(current_year, date.year):
-            if y not in self._year_cache:
-                self._year_cache[y] = total_days
-            total_days += self._config.get_year_length(y)
-
-        if date.year not in self._year_cache:
-            self._year_cache[date.year] = total_days
-
-        return total_days + self._days_within_year(date)
-
-    def _to_float_negative(self, date: CalendarDate) -> float:
-        """Converts a negative/zero-year date to float.
-
-        Pre-Epoch dates (year <= 0) produce negative floats.
-
-        Args:
-            date: Date with year <= 0.
-
-        Returns:
-            float: Negative absolute day value.
-
-        """
-        total_years_days = 0.0
-        for y in range(date.year, 1):
-            total_years_days += self._config.get_year_length(y)
-        return -total_years_days + self._days_within_year(date)
-
     def from_float(self, absolute_day: float) -> CalendarDate:
         """Converts an absolute day float to a structured date.
 
@@ -704,139 +657,22 @@ class CalendarConverter:
             Negative values produce pre-Epoch dates.
 
         """
-        if absolute_day >= 0:
-            return self._from_float_positive(absolute_day)
-        else:
-            return self._from_float_negative(absolute_day)
+        from src.core.calendar_index import locate_year
 
-    def _from_float_positive(self, absolute_day: float) -> CalendarDate:
-        """Converts a non-negative float to date.
-
-        Args:
-            absolute_day: Float >= 0.
-
-        Returns:
-            CalendarDate: Structured date.
-
-        """
-        remaining = absolute_day
-        year = 1
-
-        # Optimization: Check cache for closest starting point
-        # Sorted keys from cache
-        cached_years = sorted(self._year_cache.keys())
-        # Find highest cached year <= needed
-        # Since we don't know the exact year yet, we check absolute_days
-        # But wait, cache is year -> absolute_day.
-        # We need absolute_day -> year lookup for this.
-
-        # Let's use a simple linear scan of cached items for now or bisect if we invert it
-        # Or just remember the last queried year?
-
-        # Better: Iterate cached years in reverse to find where cache[y] <= absolute_day
-        for y in reversed(cached_years):
-            start_of_y = self._year_cache[y]
-            if start_of_y <= absolute_day:
-                year = y
-                remaining = absolute_day - start_of_y
-                break
-
-        # Find the year
-        while True:
-            # Add to cache
-            if year not in self._year_cache:
-                self._year_cache[year] = absolute_day - remaining
-
-            year_length = self._config.get_year_length(year)
-            if remaining < year_length:
-                break
-            remaining -= year_length
-            year += 1
-
-        # Find the month
+        year = locate_year(absolute_day, self.start_of_year)
+        remaining = absolute_day - self.start_of_year(year)
         months = self._config.get_months_for_year(year)
-        month = 1
-        for m_idx, month_def in enumerate(months):
-            if remaining < month_def.days:
-                month = m_idx + 1  # 1-indexed
-                break
-            remaining -= month_def.days
-        else:
-            # Edge case: exactly at year boundary
-            month = len(months)
-            remaining = months[-1].days - 1
-
-        # Extract day and time fraction
-        day = int(remaining) + 1  # 1-indexed
-        time_fraction = remaining - int(remaining)
-
-        # Resolve names
-        month_name = months[month - 1].name if month <= len(months) else None
-
-        return CalendarDate(
-            year=year,
-            month=month,
-            day=day,
-            time_fraction=time_fraction,
-            month_name=month_name,
-        )
-
-    def _from_float_negative(self, absolute_day: float) -> CalendarDate:
-        """Converts a negative float to pre-Epoch date.
-
-        Args:
-            absolute_day: Float < 0.
-
-        Returns:
-            CalendarDate: Structured date with year <= 0.
-
-        """
-        # absolute_day is negative
-        # -1.0 = last day of Year 0
-        # -360.0 = first day of Year 0 (for 360-day calendar)
-
-        remaining = -absolute_day  # Make it positive for calculation
-        year = 0
-
-        # Find the year (going backwards)
-        while True:
-            year_length = self._config.get_year_length(year)
-            if remaining <= year_length:
-                break
-            remaining -= year_length
-            year -= 1
-
-        # Now remaining is the offset from the END of this year
-        # We need to convert to offset from START
-        year_length = self._config.get_year_length(year)
-        from_start = year_length - remaining
-
-        # Find the month
-        months = self._config.get_months_for_year(year)
-        month = 1
-        current = from_start
-        for m_idx, month_def in enumerate(months):
-            if current < month_def.days:
-                month = m_idx + 1
-                break
-            current -= month_def.days
-        else:
-            month = len(months)
-            current = months[-1].days - 1
-
-        # Extract day and time fraction
-        day = int(current) + 1
-        time_fraction = current - int(current)
-
-        month_name = months[month - 1].name if month <= len(months) else None
-
-        return CalendarDate(
-            year=year,
-            month=month,
-            day=day,
-            time_fraction=time_fraction,
-            month_name=month_name,
-        )
+        for index, month in enumerate(months):
+            if remaining < month.days:
+                return CalendarDate(
+                    year,
+                    index + 1,
+                    int(remaining) + 1,
+                    remaining - int(remaining),
+                    month.name,
+                )
+            remaining -= month.days
+        raise ValueError("Calendar has no date at this coordinate")
 
     def format_date(self, absolute_day: float, format_str: Optional[str] = None) -> str:
         """Formats a float date as a human-readable string.

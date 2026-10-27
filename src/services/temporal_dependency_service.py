@@ -2,23 +2,15 @@
 
 from typing import Any
 
+from src.core.temporal_references import event_reference_ids
 from src.services.db_service import DatabaseService
 
 
 def event_temporal_dependencies(db: DatabaseService, event_id: str) -> list[str]:
     """Return stable dependency descriptions from the worker-owned database."""
-    anchor = f"event:{event_id}"
 
     def references(value: Any) -> bool:
-        if isinstance(value, dict):
-            return any(
-                (key in {"anchor_id", "anchor_a", "anchor_b"} and item == anchor)
-                or references(item)
-                for key, item in value.items()
-            )
-        if isinstance(value, list):
-            return any(references(item) for item in value)
-        return False
+        return event_id in event_reference_ids(value)
 
     dependencies = []
     for relation in db.get_all_relations():

@@ -16,7 +16,7 @@ from src.gui.workspace import WorkspaceShell
 def main_window(qtbot):
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
-        patch("src.app.worker_manager.QThread"),
+        patch("src.app.worker_manager.QThread.start"),
         patch("src.app.main_window.QTimer"),
     ):
         window = MainWindow()

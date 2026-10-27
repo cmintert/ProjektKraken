@@ -32,6 +32,7 @@ from src.core.map import (
     TemporalValidityStatus,
     resolve_layer_temporal_validity,
 )
+from src.core.temporal_context import TemporalResolutionContext
 from src.core.theme_manager import ThemeManager
 from src.gui.constants import (
     MAP_LAYER_DEFAULT_OPACITY,
@@ -106,6 +107,8 @@ class MapLayerModel(QAbstractItemModel):
 
         """
         super().__init__(parent)
+        self._temporal_anchors = TemporalResolutionContext().anchors()
+        self._temporal_constraints = TemporalResolutionContext().constraints()
         self._root: MapLayerNode = root or MapLayerNode(
             name="Root", layer_type=MAP_LAYER_TYPE_GROUP
         )
@@ -789,8 +792,22 @@ class MapLayerModel(QAbstractItemModel):
                 status=TemporalValidityStatus.VALID,
             )
         return resolve_layer_temporal_validity(
-            self._root, node.id, self._current_time, self.calendar_converter
+            self._root,
+            node.id,
+            self._current_time,
+            self.calendar_converter,
+            anchors=self._temporal_anchors,
+            constraints=self._temporal_constraints,
         )
+
+    def set_temporal_context(self, context: TemporalResolutionContext) -> None:
+        """Replace resolved event evidence and invalidate all dependent views."""
+        self._temporal_anchors = context.anchors()
+        self._temporal_constraints = context.constraints()
+        self.calendar_converter = context.converter()
+        self.invalidate_cache()
+        self._emit_all_data_changed()
+        self._emit_subtree_opacity(self._root)
 
     def visible_at_time(self, node: MapLayerNode, current_time: float) -> bool:
         """Check whether *node* should be visible at the given lore time.
@@ -881,6 +898,8 @@ class MapLayerModel(QAbstractItemModel):
         """Build an authoring tooltip that distinguishes visibility causes."""
         lines: List[str] = []
         state = self.temporal_validity(node)
+        if state.explanation:
+            lines.append(state.explanation)
         if state.status in {
             TemporalValidityStatus.POSSIBLE,
             TemporalValidityStatus.INDETERMINATE,
@@ -1223,7 +1242,12 @@ class MapLayerModel(QAbstractItemModel):
                 and node.layer_type in VECTOR_LAYER_TYPES
             ):
                 vis = resolve_layer_temporal_validity(
-                    self._root, node.id, current_time, self.calendar_converter
+                    self._root,
+                    node.id,
+                    current_time,
+                    self.calendar_converter,
+                    anchors=self._temporal_anchors,
+                    constraints=self._temporal_constraints,
                 ).valid
             result[node.id] = vis
             # Group temporal bounds affect vector descendants through the

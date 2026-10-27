@@ -273,9 +273,7 @@ class ConnectionManager:
                 (
                     self.window.worker,
                     "attachments_loaded",
-                    lambda owner_type, _owner_id, _items: (
-                        refresh_entity_context() if owner_type == "entity" else None
-                    ),
+                    self.window.app_coordinator.authoring_context.on_attachments_loaded,
                     "DatabaseWorker",
                     Qt.ConnectionType.QueuedConnection,
                 ),

@@ -1732,6 +1732,9 @@ class MapGraphicsView(QGraphicsView):
                 self._layer_model.layer_lock_changed.disconnect(
                     self._on_layer_lock_changed
                 )
+                self._layer_model.temporal_state_changed.disconnect(
+                    self._apply_effective_layer_visibility
+                )
             except RuntimeError:
                 pass
 
@@ -1741,6 +1744,7 @@ class MapGraphicsView(QGraphicsView):
         model.layer_opacity_changed.connect(self._on_layer_opacity_changed)
         model.layer_order_changed.connect(self._on_layer_order_changed)
         model.layer_lock_changed.connect(self._on_layer_lock_changed)
+        model.temporal_state_changed.connect(self._apply_effective_layer_visibility)
         model.set_current_time(self._playhead_time)
         self._apply_effective_layer_opacity()
         self._apply_effective_layer_visibility()

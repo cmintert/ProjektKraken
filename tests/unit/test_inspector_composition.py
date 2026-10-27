@@ -10,8 +10,8 @@ from PySide6.QtGui import QFont, QFontDatabase, QTextCursor
 from PySide6.QtWidgets import QAbstractButton, QListWidgetItem, QWidget
 
 from src.core.authoring_context import (
-    ContextAttribute,
     ContextItem,
+    ContextTag,
     EntityAuthoringContext,
     EventAuthoringContext,
 )
@@ -434,7 +434,7 @@ def test_same_context_refresh_preserves_nested_disclosure(editor):
     if isinstance(editor, EntityEditorWidget):
         context = EntityAuthoringContext(
             entity_id="person",
-            attributes=tuple(ContextAttribute(f"Field {i}", str(i)) for i in range(5)),
+            tags=tuple(ContextTag(str(i), f"Tag {i}") for i in range(5)),
         )
         present = renderer.set_entity_context
         other = replace(context, entity_id="next")

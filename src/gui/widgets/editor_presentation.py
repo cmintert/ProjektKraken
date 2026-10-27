@@ -122,6 +122,9 @@ class EditorPresentation(QObject):
         super().__init__(editor)
         self.editor = editor
         self._compact: bool | None = None
+        self._reflow_timer = QTimer(self)
+        self._reflow_timer.setSingleShot(True)
+        self._reflow_timer.timeout.connect(self.reflow)
         self._name_layout = editor.header_form.itemAt(
             0, QFormLayout.ItemRole.FieldRole
         ).layout()
@@ -592,7 +595,10 @@ class EditorPresentation(QObject):
             ) and shiboken6.isValid(self._source_label):
                 self._source_label.setVisible(event.type() == QEvent.Type.Show)
         if event.type() in (QEvent.Type.Resize, QEvent.Type.Show):
-            self.reflow()
+            # Qt may be iterating these layouts while delivering resize/show.
+            # Moving Inject between rows here invalidates that native traversal.
+            if not self._reflow_timer.isActive():
+                self._reflow_timer.start(0)
         if event.type() in (
             QEvent.Type.Resize,
             QEvent.Type.Show,

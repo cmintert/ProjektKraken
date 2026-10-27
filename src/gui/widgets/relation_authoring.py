@@ -330,6 +330,8 @@ class RelationAuthoring(QFrame):
             calendar_converter=getattr(self.editor, "_relation_calendar", None)
             or getattr(self.editor, "_calendar_converter", None),
             playhead_time=getattr(self.editor, "_relation_playhead_time", None),
+            temporal_context=getattr(self.editor, "_temporal_context", None),
+            source_event_id=self.source_id if source_date is not None else None,
         )
         self._progressive_form()
         self._actions("Apply")

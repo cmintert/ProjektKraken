@@ -22,17 +22,21 @@ from PySide6.QtWidgets import (
     QListWidget,
     QMessageBox,
     QScrollArea,
-    QSizePolicy,
     QTextEdit,
     QVBoxLayout,
     QWidget,
 )
 
 from src.core.relation_presentation import form_type_choices
+from src.core.temporal_context import TemporalResolutionContext
+from src.core.temporal_editing import edit_error, supported_boundary, updated_spec
+from src.core.temporal_window import resolve_temporal_window
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.compact_date_widget import CompactDateWidget
+from src.gui.widgets.event_anchor_controls import EventAnchorControls
+from src.gui.widgets.event_offset_input import EventOffsetInput
 from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
 from src.gui.widgets.relation_target import RelationTargetEdit
 from src.gui.widgets.standard_buttons import DestructiveButton, StandardButton
@@ -81,6 +85,8 @@ class RelationForm(QWidget):
         source_name: Optional[str] = None,
         target_kind: Optional[str] = None,
         playhead_time: float | None = None,
+        temporal_context: TemporalResolutionContext | None = None,
+        source_event_id: str | None = None,
     ) -> None:
         """Initializes the dialog.
 
@@ -107,6 +113,16 @@ class RelationForm(QWidget):
         self._playhead_time = playhead_time
         self._fixed_now: dict[str, float] = {}
         self.calendar_converter = calendar_converter
+        ancestor = parent
+        while ancestor is not None and temporal_context is None:
+            temporal_context = getattr(ancestor, "_temporal_context", None)
+            if source_event_id is None:
+                source_event_id = getattr(ancestor, "_current_event_id", None)
+            ancestor = ancestor.parentWidget()
+        self._temporal_context = temporal_context or TemporalResolutionContext.build(
+            [], calendar_converter
+        )
+        self._source_event_id = source_event_id
         self.source_event_date = source_event_date
         self.source_event_name = source_event_name
         self._source_name = source_name or "Source"
@@ -269,7 +285,6 @@ class RelationForm(QWidget):
 
         # Connect checkbox
         self.check_from.toggled.connect(self.valid_from.setEnabled)
-        temp_layout.addRow(self.check_from, self.valid_from)
 
         # Valid To
         self.check_to = declare_inspection(
@@ -290,16 +305,23 @@ class RelationForm(QWidget):
 
         # Connect checkbox
         self.check_to.toggled.connect(self.valid_to.setEnabled)
-        temp_layout.addRow(self.check_to, self.valid_to)
 
         from src.core.temporal_expression import TemporalExpression
 
         spec = self.attributes.get("temporal", {})
+        self._unsupported_sides = {
+            side
+            for side in ("start", "end")
+            if not supported_boundary(spec.get(side, {}))
+            or spec.get("schema", 1) not in {1, 2}
+        }
         for side, widget, checkbox in (
             ("start", self.valid_from, self.check_from),
             ("end", self.valid_to, self.check_to),
         ):
             boundary = spec.get(side, {})
+            if side in self._unsupported_sides:
+                continue
             if "exact" in boundary:
                 checkbox.setChecked(True)
                 widget.set_value(boundary["exact"])
@@ -311,7 +333,7 @@ class RelationForm(QWidget):
                     TemporalExpression.from_dict(boundary["expression"])
                 )
 
-        self._setup_boundary_choices(temp_layout, suggestion_items or [])
+        self._setup_boundary_choices(suggestion_items or [])
         self.temporal_group.setLayout(temp_layout)
         self._setup_now_actions()
         self.form_layout.addRow(self.temporal_group)
@@ -373,15 +395,8 @@ class RelationForm(QWidget):
 
     def _group_boundaries(self) -> None:
         """Keep each boundary's intent, input and shortcut in one visual block."""
-        from src.gui.widgets.editor_presentation import DisclosureButton
-
         layout = self.temporal_group.layout()
         assert isinstance(layout, QFormLayout)
-        while layout.rowCount():
-            label, _field = take_form_row(layout, 0)
-            label_widget = label.widget() if label is not None else None
-            if label_widget is not None:
-                label_widget.hide()
         layout.addRow("Meaning", self.temporal_behavior)
         self.boundary_previews: dict[str, QLabel] = {}
         for side, widget, check, button in (
@@ -414,26 +429,7 @@ class RelationForm(QWidget):
             preview.setWordWrap(True)
             self.boundary_previews[side] = preview
             fields.addRow(preview)
-            advanced = QWidget()
-            extra = QFormLayout(advanced)
-            extra.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
-            extra.addRow("Relative to event", self._anchor_relations[side])
-            extra.addRow("Offset", self._boundary_offsets[side])
-            self._boundary_offsets[side].setSizePolicy(
-                QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed
-            )
-            disclosure = declare_inspection(
-                DisclosureButton("Event offset…"),
-                "src-gui-widgets-relation-form-relationform-group-boundaries-disclosure|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-group-boundaries-disclosure",
-            )
-            disclosure.toggled.connect(advanced.setVisible)
-            fields.addRow(disclosure)
-            fields.addRow(advanced)
-            has_offset = bool(self._boundary_offsets[side].value()) or (
-                self._anchor_relations[side].currentData() != "at"
-            )
-            disclosure.setChecked(has_offset)
-            advanced.setVisible(has_offset)
+            fields.addRow(self._anchor_controls[side])
             layout.addRow(group)
             choice.currentIndexChanged.connect(self._refresh_boundary_previews)
             widget.value_changed.connect(self._refresh_boundary_previews)
@@ -455,21 +451,35 @@ class RelationForm(QWidget):
                 text = f"Follows {choice.currentText()} when rescheduled."
             elif value == "manual":
                 widget = self.valid_from if side == "start" else self.valid_to
-                date = (
-                    self.calendar_converter.format_datetime(widget.get_value())
-                    if self.calendar_converter
-                    else str(widget.get_value())
+                expression = widget.get_expression()
+                converter = self.calendar_converter
+                matching = converter is not None and (
+                    expression is None or expression.calendar_id == converter._config.id
                 )
+                date = (
+                    expression.display_text(converter if matching else None)
+                    if expression
+                    else (
+                        self.calendar_converter.format_datetime(widget.get_value())
+                        if self.calendar_converter
+                        else str(widget.get_value())
+                    )
+                )
+                if expression and not matching:
+                    date += " (calendar unavailable)"
                 text = f"Fixed date: {date}. Event rescheduling will not move it."
             elif value == "unknown":
                 text = "The boundary exists, but its date is unknown."
             else:
-                text = "No date limit on this side."
+                text = (
+                    "Unsupported saved date is preserved; choose another boundary mode to replace it."
+                    if value == "preserved"
+                    else "No date limit on this side."
+                )
             preview.setText(text)
 
     def _setup_now_actions(self) -> None:
         """Offer fixed boundaries using the opening playhead snapshot."""
-        row = QHBoxLayout()
         time = self._playhead_time
         available = time is not None and isfinite(time) and self.calendar_converter
         self.now_label = QLabel(
@@ -478,7 +488,6 @@ class RelationForm(QWidget):
             else "Playhead date unavailable"
         )
         self.now_label.setWordWrap(True)
-        row.addWidget(self.now_label, 1)
         self.starts_now_button = declare_inspection(
             WrappingPushButton("Use viewed date for start"),
             "src-gui-widgets-relation-form-relationform-setup-now-actions-self-starts-now-button|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-setup-now-actions-self-starts-now-button",
@@ -502,8 +511,7 @@ class RelationForm(QWidget):
             widget.draft_changed.connect(
                 lambda dirty, s=side: self._fixed_now.pop(s, None) if dirty else None
             )
-            row.addWidget(button)
-        self.form_layout.addRow(row)
+        self.form_layout.addRow(self.now_label)
 
     def _use_now(self, side: str) -> None:
         """Replace one boundary while retaining the opposite source binding."""
@@ -562,6 +570,7 @@ class RelationForm(QWidget):
                 self._boundary_choices[side].currentIndexChanged,
                 self._boundary_offsets[side].valueChanged,
                 self._anchor_relations[side].currentIndexChanged,
+                self._anchor_controls[side].changed,
             ):
                 signal.connect(lambda *args, field=side: track(field))
         if hasattr(self, "logic_btn_group"):
@@ -815,7 +824,6 @@ class RelationForm(QWidget):
 
     def _setup_boundary_choices(
         self,
-        layout: QFormLayout,
         suggestions: list[tuple[str, str, str]],
     ) -> None:
         """Expose unknown/open intent and named event anchors without numeric bounds."""
@@ -841,10 +849,10 @@ class RelationForm(QWidget):
         self.temporal_behavior.setToolTip(
             "Active states follow their validity dates. Historical facts remain available after they happen. Occurrences appear in history views. Timeless associations do not depend on the playhead."
         )
-        layout.addRow("Meaning", self.temporal_behavior)
         self._boundary_choices: dict[str, QComboBox] = {}
-        self._boundary_offsets: dict[str, ScrollSafeDoubleSpinBox] = {}
+        self._boundary_offsets: dict[str, EventOffsetInput] = {}
         self._anchor_relations: dict[str, QComboBox] = {}
+        self._anchor_controls: dict[str, EventAnchorControls] = {}
         temporal = self.attributes.get("temporal", {})
         for side, widget, checked in (
             ("start", self.valid_from, self.check_from),
@@ -862,8 +870,16 @@ class RelationForm(QWidget):
             for event_id, name, kind in suggestions:
                 if kind.casefold() == "event":
                     choice.addItem(f"At event: {name}", f"event:{event_id}")
+            for event in self._temporal_context.events():
+                if choice.findData(f"event:{event.id}") < 0:
+                    choice.addItem(f"Event: {event.name}", f"event:{event.id}")
             boundary = temporal.get(side, {})
+            if not isinstance(boundary, dict) or side in self._unsupported_sides:
+                boundary = {}
             selected = boundary.get("anchor", {}).get("anchor_id")
+            if side in self._unsupported_sides:
+                choice.addItem("Unsupported date (preserved)", "preserved")
+                selected = "preserved"
             if boundary.get("binding") == "source_event":
                 selected = "source_event"
             if selected is None:
@@ -878,55 +894,16 @@ class RelationForm(QWidget):
                 index = choice.count() - 1
             choice.setCurrentIndex(index)
             choice.setAccessibleName(f"Relation {side} boundary")
-            layout.insertRow(
-                0 if side == "start" else 1,
-                "Starts" if side == "start" else "Ends",
-                choice,
-            )
             self._boundary_choices[side] = choice
-            relative = declare_inspection(
-                ScrollSafeComboBox(),
-                "src-gui-widgets-relation-form-relationform-setup-boundary-choices-relative|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-setup-boundary-choices-relative",
-            )
-            for title, value in (
-                ("At event", "at"),
-                ("Before event", "before"),
-                ("After event", "after"),
-            ):
-                relative.addItem(title, value)
-            relative.setCurrentIndex(
-                max(
-                    0,
-                    relative.findData(boundary.get("anchor", {}).get("relation", "at")),
-                )
-            )
-            relative.setAccessibleName(f"{side.title()} relative to event")
-            relative.setEnabled(str(choice.currentData()).startswith("event:"))
+            controls = EventAnchorControls(boundary.get("anchor"), self)
+            controls.set_context(self._temporal_context)
+            self._anchor_controls[side] = controls
+            self._anchor_relations[side] = controls.relative
+            self._boundary_offsets[side] = controls.offset
+            controls.setVisible(str(choice.currentData()).startswith("event:"))
             choice.currentIndexChanged.connect(
-                lambda _index, c=choice, r=relative: r.setEnabled(
-                    str(c.currentData()).startswith("event:")
-                )
-            )
-            layout.addRow(f"{side.title()} relative to event", relative)
-            self._anchor_relations[side] = relative
-            offset = declare_inspection(
-                ScrollSafeDoubleSpinBox(),
-                "src-gui-widgets-relation-form-relationform-setup-boundary-choices-offset|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-setup-boundary-choices-offset",
-            )
-            offset.setRange(-1e12, 1e12)
-            offset.setDecimals(6)
-            offset.setSuffix(" days")
-            offset.setValue(float(boundary.get("anchor", {}).get("offset_days", 0)))
-            offset.setAccessibleName(f"{side.title()} event offset")
-            offset.setToolTip(
-                "Zero shares the event's exact transition. A signed offset shifts both evidence bounds by this many lore days."
-            )
-            self._boundary_offsets[side] = offset
-            layout.addRow(f"{side.title()} event offset", offset)
-            offset.setEnabled(str(choice.currentData()).startswith("event:"))
-            choice.currentIndexChanged.connect(
-                lambda _index, c=choice, o=offset: o.setEnabled(
-                    str(c.currentData()).startswith("event:")
+                lambda _index, c=choice, box=controls: self._select_anchor_controls(
+                    c, box
                 )
             )
             choice.currentIndexChanged.connect(
@@ -1007,6 +984,18 @@ class RelationForm(QWidget):
             self.valid_to.set_value(event_date)
             self.valid_to.setEnabled(False)
 
+    def _collect_manual_bounds(self, attrs: dict[str, Any]) -> None:
+        """Copy available numeric projections without replacing unresolved assertions."""
+        for key, check, widget in (
+            ("valid_from", self.check_from, self.valid_from),
+            ("valid_to", self.check_to, self.valid_to),
+        ):
+            if check.isChecked():
+                try:
+                    attrs[key] = widget.get_value()
+                except ValueError:
+                    continue  # The semantic boundary retains its original calendar.
+
     def _get_attributes(self) -> Dict[str, Any]:
         """Collects attributes from UI fields."""
         managed = {
@@ -1049,19 +1038,7 @@ class RelationForm(QWidget):
         if payload:
             attrs["payload"] = payload
 
-        # Temporal Keys
-        if self.check_from.isChecked():
-            attrs["valid_from"] = self.valid_from.get_value()
-
-        if self.check_to.isChecked():
-            v_to = self.valid_to.get_value()
-            # Simple validation: To must be > From if both exist
-            # If only To exists, it's valid (start = -inf)
-            if "valid_from" in attrs and v_to < attrs["valid_from"]:
-                # Just clamp it? Or maybe don't save invalid ranges?
-                # For now let's trust user or they will fix it.
-                pass
-            attrs["valid_to"] = v_to
+        self._collect_manual_bounds(attrs)
 
         # Save Dynamic Flags
         if self.source_event_date is not None and hasattr(self, "rb_at_event"):
@@ -1138,6 +1115,10 @@ class RelationForm(QWidget):
             attrs.get(key)
             for key in ("valid_from_event", "valid_to_event", "valid_at_event")
         )
+        if temporal.get("schema", 1) not in {1, 2} and all(
+            value != "preserved" for value in choices.values()
+        ):
+            temporal = {}
         if (
             temporal
             or dynamic
@@ -1154,7 +1135,9 @@ class RelationForm(QWidget):
                 ("end", self.valid_to, self.check_to.isChecked(), "to"),
             ):
                 expression = widget.get_expression()
-                if attrs.get(f"valid_{legacy}_event"):
+                if choices[side] == "preserved":
+                    spec[side] = deepcopy(temporal.get(side, {}))
+                elif attrs.get(f"valid_{legacy}_event"):
                     spec[side] = {"binding": "source_event"}
                 elif choices[side] == "source_event":
                     spec[side] = {"binding": "source_event"}
@@ -1167,13 +1150,7 @@ class RelationForm(QWidget):
                     spec[side] = {"status": "unknown"}
                     attrs.pop(f"valid_{legacy}", None)
                 elif str(choices[side]).startswith("event:"):
-                    spec[side] = {
-                        "anchor": {
-                            "anchor_id": choices[side],
-                            "relation": self._anchor_relations[side].currentData(),
-                            "offset_days": self._boundary_offsets[side].value(),
-                        }
-                    }
+                    spec[side] = {"anchor": self._anchor_controls[side].anchor()}
                     attrs.pop(f"valid_{legacy}", None)
                 elif checked and isinstance(expression, TemporalExpression):
                     spec[side] = {"expression": expression.to_dict()}
@@ -1188,8 +1165,49 @@ class RelationForm(QWidget):
                 spec["at"] = spec["start"]
             else:
                 spec.pop("at", None)
-            attrs["temporal"] = spec
+            attrs["temporal"] = updated_spec(temporal, spec)
         return attrs
+
+    @staticmethod
+    def _select_anchor_controls(
+        choice: QComboBox, controls: EventAnchorControls
+    ) -> None:
+        """Render event-specific fields only for an explicit event selection."""
+        event = str(choice.currentData()).startswith("event:")
+        controls.setVisible(event)
+        if event:
+            controls.set_anchor_id(str(choice.currentData()))
+
+    def set_temporal_context(self, context: TemporalResolutionContext) -> None:
+        """Replace reference labels without overwriting the relation draft."""
+        self._temporal_context = context
+        self.calendar_converter = context.converter()
+        for widget in (self.valid_from, self.valid_to):
+            widget.set_calendar_converter(self.calendar_converter)
+        source = next(
+            (event for event in context.events() if event.id == self._source_event_id),
+            None,
+        )
+        if source:
+            self.source_event_date, self.source_event_name = (
+                source.lore_date,
+                source.name,
+            )
+        for side, controls in self._anchor_controls.items():
+            choice = self._boundary_choices[side]
+            current = choice.currentData()
+            choice.blockSignals(True)
+            for index in range(choice.count() - 1, -1, -1):
+                if str(choice.itemData(index)).startswith("event:"):
+                    choice.removeItem(index)
+            for event in context.events():
+                choice.addItem(f"Event: {event.name}", f"event:{event.id}")
+            if str(current).startswith("event:") and choice.findData(current) < 0:
+                choice.addItem("Referenced event (unavailable)", current)
+            choice.setCurrentIndex(max(0, choice.findData(current)))
+            choice.blockSignals(False)
+            controls.set_context(context)
+        self._refresh_boundary_previews()
 
     def get_data(self) -> tuple[str, str, bool, Dict[str, Any]]:
         """Returns the dialog data.
@@ -1217,7 +1235,18 @@ class RelationForm(QWidget):
         if not self.valid_from.commit_draft() or not self.valid_to.commit_draft():
             return False
 
-        target_id, rel_type, _, _ = self.get_data()
+        target_id, rel_type, _, attributes = self.get_data()
+        window = resolve_temporal_window(
+            attributes,
+            self.source_event_date,
+            source_event_id=self._source_event_id,
+            converter=self._temporal_context.converter(),
+            anchors=self._temporal_context.anchors(),
+        )
+        error = edit_error(window)
+        if error:
+            QMessageBox.warning(self, "Invalid dates", error)
+            return False
         if not target_id:
             QMessageBox.warning(
                 self,

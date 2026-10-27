@@ -15,7 +15,7 @@ def main_window(qtbot):
 
     with patch("src.app.worker_manager.DatabaseWorker") as MockWorker:
         with (
-            patch("src.app.worker_manager.QThread"),
+            patch("src.app.worker_manager.QThread.start"),
             patch("src.app.main_window.QTimer"),
             patch(
                 "src.app.coordinators.editor_coordinator.QMessageBox.warning",

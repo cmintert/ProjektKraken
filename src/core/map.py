@@ -6,9 +6,10 @@ layer tree used for organising markers, paths, and regions on the map.
 
 import time
 import uuid
+from copy import deepcopy
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from src.core.calendar import CalendarConverter
 from src.core.map_constants import (
@@ -20,11 +21,20 @@ from src.core.map_constants import (
     MAP_LAYER_TYPE_PATH,
     MAP_LAYER_TYPE_REGION,
 )
-from src.core.temporal_window import TemporalValidity, resolve_temporal_window
+from src.core.temporal_expression import ResolvedTemporalBounds
+from src.core.temporal_window import (
+    TemporalValidity,
+    definite_window_time,
+    intersect_window_status,
+    resolve_temporal_window,
+)
 
 VECTOR_LAYER_TYPES = frozenset(
     {MAP_LAYER_TYPE_MARKER, MAP_LAYER_TYPE_PATH, MAP_LAYER_TYPE_REGION}
 )
+
+if TYPE_CHECKING:
+    from src.core.temporal_constraints import TemporalConstraint
 
 
 class TemporalValidityStatus(str, Enum):
@@ -35,6 +45,7 @@ class TemporalValidityStatus(str, Enum):
     AT_OR_AFTER_END = "at_or_after_end"
     POSSIBLE = "possible"
     INDETERMINATE = "indeterminate"
+    EMPTY = "empty"
 
 
 @dataclass(frozen=True)
@@ -47,6 +58,9 @@ class ResolvedLayerTemporalValidity:
     source_node_id: Optional[str] = None
     source_node_name: Optional[str] = None
     boundary: Optional[float] = None
+    explanation: str | None = None
+    contributing_nodes: tuple[str, ...] = ()
+    valid_time: float | None = None
 
 
 @dataclass
@@ -183,6 +197,9 @@ def resolve_layer_temporal_validity(
     node_id: str,
     lore_date: float,
     converter: CalendarConverter | None = None,
+    *,
+    anchors: dict[str, ResolvedTemporalBounds] | None = None,
+    constraints: tuple["TemporalConstraint", ...] = (),
 ) -> ResolvedLayerTemporalValidity:
     """Resolve half-open temporal validity for a vector feature.
 
@@ -211,7 +228,7 @@ def resolve_layer_temporal_validity(
         )
 
     # The root is an invisible container rather than an authored layer.
-    uncertain: ResolvedLayerTemporalValidity | None = None
+    windows = []
     for node in path[1:]:
         window = resolve_temporal_window(
             {
@@ -220,20 +237,13 @@ def resolve_layer_temporal_validity(
                 "valid_to": node.end_date,
             },
             converter=converter,
+            anchors=anchors,
         )
+        windows.append(window)
+    valid_time = definite_window_time(windows, lore_date)
+    for node, window in zip(path[1:], windows, strict=True):
         status = window.status_at(lore_date)
-        if status in {TemporalValidity.POSSIBLE, TemporalValidity.INDETERMINATE}:
-            if uncertain and uncertain.status == TemporalValidityStatus.INDETERMINATE:
-                continue
-            uncertain = ResolvedLayerTemporalValidity(
-                applicable=True,
-                valid=True,
-                status=TemporalValidityStatus(status.value),
-                source_node_id=node.id,
-                source_node_name=node.name,
-            )
-            continue
-        if status == TemporalValidity.DEFINITE:
+        if status != TemporalValidity.INACTIVE:
             continue
         if window.start is not None and lore_date < window.start:
             return ResolvedLayerTemporalValidity(
@@ -242,7 +252,10 @@ def resolve_layer_temporal_validity(
                 status=TemporalValidityStatus.BEFORE_START,
                 source_node_id=node.id,
                 source_node_name=node.name,
-                boundary=node.start_date,
+                boundary=window.start,
+                valid_time=valid_time,
+                explanation=window.start_bounds.label if window.start_bounds else None,
+                contributing_nodes=tuple(item.id for item in path[1:]),
             )
         if window.end is not None and lore_date >= window.end:
             return ResolvedLayerTemporalValidity(
@@ -251,13 +264,55 @@ def resolve_layer_temporal_validity(
                 status=TemporalValidityStatus.AT_OR_AFTER_END,
                 source_node_id=node.id,
                 source_node_name=node.name,
-                boundary=node.end_date,
+                boundary=window.end,
+                valid_time=valid_time,
+                explanation=window.end_bounds.label if window.end_bounds else None,
+                contributing_nodes=tuple(item.id for item in path[1:]),
             )
-
-    return uncertain or ResolvedLayerTemporalValidity(
+    status = intersect_window_status(windows, lore_date, constraints)
+    explanation = next((w.error for w in windows if w.error), None)
+    labels = [
+        b.label
+        for w in windows
+        for b in (w.start_bounds, w.end_bounds)
+        if b and b.label
+    ]
+    return ResolvedLayerTemporalValidity(
         applicable=True,
-        valid=True,
-        status=TemporalValidityStatus.VALID,
+        valid=status != TemporalValidity.INACTIVE,
+        status=(
+            TemporalValidityStatus.VALID
+            if status == TemporalValidity.DEFINITE
+            else TemporalValidityStatus.EMPTY
+            if status == TemporalValidity.INACTIVE
+            else TemporalValidityStatus(status.value)
+        ),
+        explanation=explanation
+        or (
+            "No joint presence: inherited dates do not overlap."
+            if status == TemporalValidity.INACTIVE
+            else "; ".join(labels) or None
+        ),
+        contributing_nodes=tuple(node.id for node in path[1:]),
+        valid_time=valid_time,
+    )
+
+
+def layer_temporal_ancestors(
+    root: MapLayerNode, node_id: str
+) -> tuple[tuple[str, dict[str, Any]], ...]:
+    """Capture ancestor presence assertions independently of an active draft."""
+    path = _find_layer_path(root, node_id) or []
+    return tuple(
+        (
+            node.name,
+            {
+                **deepcopy(node.attributes),
+                "valid_from": node.start_date,
+                "valid_to": node.end_date,
+            },
+        )
+        for node in path[1:-1]
     )
 
 

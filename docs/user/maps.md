@@ -150,7 +150,8 @@ of its shape and ordinary layer visibility.
 
 1. Select the feature on the map or in **Layers**.
 2. Choose **Feature actions → Visibility dates…**.
-3. Set **Exists from** and **Exists until**, choosing **Manual date**, **Date not known**, or **Unbounded** for each side.
+3. Set **Exists from** and **Exists until**. Choose **Manual date**, a named
+   **Event**, **Date not known**, or **Unbounded** independently for each side.
 4. Confirm the changes.
 
 View dates on either side of an exact boundary to check the result. If the
@@ -171,6 +172,53 @@ hiding.
 **Example:** An old fortress ceases to exist when its replacement begins. Give the old
 feature an end boundary matching the replacement’s start to avoid an overlap or gap.
 
+### Follow a foundation or destruction event
+
+Choose the Foundation Event for **Exists from** and the Destruction Event for
+**Exists until**, then confirm with **OK**. The feature follows those Events when
+their dates change. Reopening this editor retains the references; renaming an
+Event updates its displayed name without changing the binding.
+
+The default endpoint is **Occurrence / start**. Open **Endpoint and offset…** to
+choose **Authored end**, a constrained date, or a signed offset. An Event's
+authored end date takes precedence over its duration. Otherwise, a positive
+duration determines the end relative to its uncertain start. An Event without
+either has no known end: the reference stays unresolved until that information
+is authored or you choose another boundary.
+
+**Date before endpoint** and **Date after endpoint** record an independently
+unknown boundary strictly before or after the shifted endpoint. They do not
+mean “switch visibility at this Event.” **At event endpoint** shares the actual
+transition. Use that choice when an old feature ends exactly when its successor
+begins. Equal dates on different Events do not assert a shared transition.
+
+Offsets can use fractional **Lore days**, whole **Calendar months**, or whole
+**Calendar years**. Calendar offsets use the bound calendar's actual months,
+leap rules and year variants; a month is not a fixed number of days. If the
+target day or month does not exist, the binding remains unresolved. For coarse
+dates, every possible occurrence must shift validly: a year-only date plus one
+month can therefore remain unresolved until you refine its date.
+
+**Use Playhead** instead copies a fixed exact lore date. It does not follow an
+Event when that Event moves. A manually entered day or year retains its supplied
+precision; it is not silently converted into an exact instant.
+
+Group and feature dates apply together. A parent ending at the same uncertain
+Event where its child begins has no joint presence. An empty interval is not an
+occurrence; change its boundaries rather than expecting it to appear briefly.
+
+Deleting a referenced Event lists its dependencies before confirmation. Its map
+references remain saved but unresolved; **Undo** restores their resolution.
+Missing calendars and unsupported date metadata also remain saved, with an
+explanation. Replace a boundary deliberately to change its meaning.
+For an unsupported whole-window format, explicitly choose both boundary modes
+to replace that format; changing only one side preserves it unresolved.
+
+Event bindings resolve within ±10¹² lore days. At distant dates, a second or a
+small fractional offset may be too fine for the stored coordinate to represent.
+Kraken reports that limitation instead of inventing precision. **Jump to valid
+time** is unavailable when no definitely valid date is known.
+
 Changing existence dates does not redraw a border or path. Use historical geometry for
 shape changes.
 
@@ -180,6 +228,40 @@ viewing <help-timeline-viewing>` · {ref}`Map features <help-map-features>`
 (help-control-map-visibility)=
 
 > Exists from and Exists until describe when a map feature is present, independently of its border or path geometry. An unknown boundary records unresolved timing; an unbounded side has no limit. Exists until is an exclusive boundary, so the feature is no longer present at that transition. Choose a date or boundary meaning appropriate to the world instead of changing geometry to hide a feature. A dated geometry state changes its shape, not its existence dates. Inspection does not move the playhead, toggle a layer or apply an unfinished map edit.
+
+(help-inspect-map-anchor-options)=
+
+**Endpoint and offset…** — Reveal the event endpoint, constrained-date meaning,
+signed offset and unit. Collapsing these options retains their authored values.
+
+(help-inspect-map-anchor-endpoint)=
+
+**Event endpoint** — Follow the Event's occurrence/start or its authored end.
+An authored end date takes precedence over a duration. Without either, an end
+binding stays unresolved; it never falls back to the start.
+
+(help-inspect-map-anchor-relative)=
+
+**Boundary date** — At the endpoint shares its transition. Before/after means an
+independently unknown date strictly before/after the endpoint plus offset.
+These constrained dates do not share an identity merely because their Event matches.
+
+(help-inspect-map-anchor-offset)=
+
+**Signed offset** — Shift the selected Event endpoint before applying the chosen
+boundary-date meaning. Zero retains the original transition. Lore days can be
+fractional; calendar months and years must be whole numbers.
+
+(help-inspect-map-anchor-unit)=
+
+**Offset unit** — Choose lore days, calendar months or calendar years. Calendar
+offsets follow the bound calendar. Invalid target dates remain unresolved,
+including when only some possible occurrence dates would be invalid.
+
+(help-inspect-map-visibility-scroll)=
+
+**Visibility date fields** — Scroll to reach advanced boundary options. OK and
+Cancel remain outside the scrolling fields; scrolling does not apply the draft.
 
 Group dates apply to their vector features. **Use Playhead** copies the active lore date
 into either boundary.
@@ -671,7 +753,9 @@ this side, existence is unbounded on that side.
 (help-inspect-src-gui-dialogs-temporal-validity-dialog-temporalvaliditydialog-optional-date-mode)=
 
 **Boundary meaning** — Choose how the existence boundary relates to its date. This
-affects presence at the boundary, independently of geometry states.
+affects presence at the boundary, independently of geometry states. A named Event
+follows its occurrence/start or authored end when that Event changes. A manual
+date stays fixed; Date not known and Unbounded remain distinct choices.
 
 (help-inspect-src-gui-dialogs-temporal-validity-dialog-temporalvaliditydialog-optional-date-use-playhead)=
 
@@ -1462,7 +1546,8 @@ Unlock the feature so its supported editing actions can be used again.
 (help-inspect-feature-jump)=
 
 Move Viewing time to a date when this feature is present. World current time stays
-unchanged.
+unchanged. This action is unavailable when no definitely valid date is known,
+including empty inherited windows. Inspect Visibility dates to resolve the cause.
 
 (help-inspect-feature-validity)=
 

@@ -14,6 +14,7 @@ from PySide6.QtCore import QPoint
 from PySide6.QtGui import QDragEnterEvent, QDragLeaveEvent, QDragMoveEvent, QTextCursor
 from PySide6.QtWidgets import QAbstractButton, QWidget
 
+from src.core.temporal_context import TemporalResolutionContext
 from src.gui.mixins.autosave_mixin import AutoSaveManager
 
 if TYPE_CHECKING:
@@ -57,6 +58,14 @@ class BaseEditorMixin:
     autosave_manager: AutoSaveManager
     dirty_changed: Any
     desc_edit: Any
+
+    def set_temporal_context(self, context: TemporalResolutionContext) -> None:
+        """Refresh dependent relation forms without replacing their drafts."""
+        from src.gui.widgets.relation_form import RelationForm
+
+        self._temporal_context = context
+        for form in cast(QWidget, self).findChildren(RelationForm):
+            form.set_temporal_context(context)
 
     def _get_current_item_id(self) -> Optional[str]:
         """Returns the current item ID or None if no item is loaded.

@@ -547,9 +547,7 @@ class DeleteLayerSubtreeCommand(BaseCommand):
         return None
 
     @staticmethod
-    def _find_node(
-        root: MapLayerNode, node_id: str
-    ) -> Optional[MapLayerNode]:
+    def _find_node(root: MapLayerNode, node_id: str) -> Optional[MapLayerNode]:
         if root.id == node_id:
             return root
         for child in root.children:
@@ -596,9 +594,7 @@ class DeleteLayerSubtreeCommand(BaseCommand):
         parent, row, node = found
         nodes = self._collect_nodes(node)
         node_ids = {item.id for item in nodes}
-        raster_ids = {
-            item.id for item in nodes if item.layer_type == "raster"
-        }
+        raster_ids = {item.id for item in nodes if item.layer_type == "raster"}
         markers = [
             marker
             for marker in db_service.get_markers_for_map(self.map_id)
@@ -614,22 +610,14 @@ class DeleteLayerSubtreeCommand(BaseCommand):
                 db_service.feature_geometry_repo.snapshot_by_marker(marker.id)
             )
 
-        all_rasters = list(
-            (map_obj.attributes or {}).get("raster_layers", [])
-        )
+        all_rasters = list((map_obj.attributes or {}).get("raster_layers", []))
         deleted_rasters = [
-            dict(item)
-            for item in all_rasters
-            if item.get("node_id") in raster_ids
+            dict(item) for item in all_rasters if item.get("node_id") in raster_ids
         ]
         kept_rasters = [
-            dict(item)
-            for item in all_rasters
-            if item.get("node_id") not in raster_ids
+            dict(item) for item in all_rasters if item.get("node_id") not in raster_ids
         ]
-        raster_files = RasterAssetService.owned_files_from_metadata(
-            deleted_rasters
-        )
+        raster_files = RasterAssetService.owned_files_from_metadata(deleted_rasters)
         self._snapshot = LayerSubtreeSnapshot(
             parent_id=parent.id,
             row=row,
@@ -647,9 +635,7 @@ class DeleteLayerSubtreeCommand(BaseCommand):
             else Path(db_service.get_db_file_path()).parent
         )
         artifacts = CommandArtifactStore(world_root)
-        self._artifact_manifest = artifacts.stash(
-            self.command_id, raster_files
-        )
+        self._artifact_manifest = artifacts.stash(self.command_id, raster_files)
         try:
             with db_service.transaction():
                 for marker in markers:
@@ -665,11 +651,7 @@ class DeleteLayerSubtreeCommand(BaseCommand):
             success=True,
             message=f"Deleted layer '{node.name}'.",
             command_name=self.__class__.__name__,
-            data={
-                "effects": [
-                    {"kind": "map_state_changed", "map_id": self.map_id}
-                ]
-            },
+            data={"effects": [{"kind": "map_state_changed", "map_id": self.map_id}]},
         )
 
     def undo(self, db_service: DatabaseService) -> None:
@@ -686,9 +668,7 @@ class DeleteLayerSubtreeCommand(BaseCommand):
         node = MapLayerNode.from_dict(self._snapshot.node)
         row = min(self._snapshot.row, len(parent.children))
         parent.children.insert(row, node)
-        current_rasters = list(
-            (map_obj.attributes or {}).get("raster_layers", [])
-        )
+        current_rasters = list((map_obj.attributes or {}).get("raster_layers", []))
         current_rasters.extend(copy.deepcopy(self._snapshot.raster_layers))
         world_root = (
             Path(self.world_root)
@@ -746,14 +726,12 @@ class DeleteLayerSubtreeCommand(BaseCommand):
 class UpdateLayerPropertiesCommand(BaseCommand):
     """Update common, temporal, and zoom properties for one layer."""
 
-    def __init__(
-        self, map_id: str, node_id: str, properties: dict[str, Any]
-    ) -> None:
+    def __init__(self, map_id: str, node_id: str, properties: dict[str, Any]) -> None:
         """Initialize a layer-properties update."""
         super().__init__()
         self.map_id = map_id
         self.node_id = node_id
-        self.properties = dict(properties)
+        self.properties = copy.deepcopy(properties)
         self._previous: dict[str, Any] = {}
 
     @staticmethod
@@ -770,6 +748,7 @@ class UpdateLayerPropertiesCommand(BaseCommand):
             "max_zoom": node.max_zoom,
             "zoom_basis": node.attributes.get("zoom_basis"),
             "temporal": node.attributes.get("temporal"),
+            "_attributes": copy.deepcopy(node.attributes),
         }
 
     @staticmethod
@@ -817,27 +796,25 @@ class UpdateLayerPropertiesCommand(BaseCommand):
         node.attributes = attributes
 
     def _persist(
-        self, db_service: DatabaseService, properties: dict[str, Any]
+        self,
+        db_service: DatabaseService,
+        properties: dict[str, Any],
+        *,
+        validate: bool = True,
     ) -> None:
         map_obj = db_service.map_repo.get_map(self.map_id)
         if map_obj is None or map_obj.layers is None:
             raise ValueError("Map or layer tree not found")
-        node = DeleteLayerSubtreeCommand._find_node(
-            map_obj.layers, self.node_id
-        )
+        node = DeleteLayerSubtreeCommand._find_node(map_obj.layers, self.node_id)
         if node is None:
             raise ValueError("Layer not found")
         self._apply(node, properties)
-        if "temporal" in node.attributes:
-            from src.core.calendar import CalendarConverter
-            from src.core.temporal_window import resolve_temporal_window
+        if not validate and "_attributes" in properties:
+            node.attributes = copy.deepcopy(properties["_attributes"])
+        if validate and "temporal" in node.attributes:
+            from src.services.temporal_edit_validation import validate_temporal_edit
 
-            config = db_service.get_active_calendar_config()
-            window = resolve_temporal_window(
-                node.attributes, converter=CalendarConverter(config) if config else None
-            )
-            if not window.is_valid:
-                raise ValueError(window.error or "Invalid layer validity interval")
+            validate_temporal_edit(db_service, node.attributes)
         attrs = dict(map_obj.attributes or {})
         attrs["layers"] = map_obj.layers.to_dict()
         map_obj.attributes = attrs
@@ -852,9 +829,7 @@ class UpdateLayerPropertiesCommand(BaseCommand):
                 "Map or layer tree not found.",
                 command_name=self.__class__.__name__,
             )
-        node = DeleteLayerSubtreeCommand._find_node(
-            map_obj.layers, self.node_id
-        )
+        node = DeleteLayerSubtreeCommand._find_node(map_obj.layers, self.node_id)
         if node is None:
             return CommandResult(
                 False,
@@ -862,13 +837,11 @@ class UpdateLayerPropertiesCommand(BaseCommand):
                 command_name=self.__class__.__name__,
             )
         if not self._previous:
-            self._previous = self._state(node)
+            self._previous = copy.deepcopy(self._state(node))
         try:
             self._persist(db_service, self.properties)
         except ValueError as exc:
-            return CommandResult(
-                False, str(exc), command_name=self.__class__.__name__
-            )
+            return CommandResult(False, str(exc), command_name=self.__class__.__name__)
         self._is_executed = True
         return CommandResult(
             True,
@@ -879,7 +852,7 @@ class UpdateLayerPropertiesCommand(BaseCommand):
     def undo(self, db_service: DatabaseService) -> None:
         """Restore the preceding property values."""
         if self._is_executed:
-            self._persist(db_service, self._previous)
+            self._persist(db_service, self._previous, validate=False)
             self._is_executed = False
 
     def to_dict(self) -> Dict[str, Any]:

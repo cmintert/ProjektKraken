@@ -20,7 +20,7 @@ def session(qtbot, monkeypatch):
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.main_window.QTimer"),
-        patch("src.app.worker_manager.QThread"),
+        patch("src.app.worker_manager.QThread.start"),
     ):
         window = MainWindow()
         qtbot.addWidget(window)

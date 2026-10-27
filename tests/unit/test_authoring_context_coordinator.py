@@ -2,7 +2,8 @@
 
 from unittest.mock import MagicMock, patch
 
-from PySide6.QtCore import QObject
+import pytest
+from PySide6.QtCore import QMetaObject, QObject, Qt, QThread, Signal, Slot
 
 from src.app.coordinators.authoring_context_coordinator import (
     AuthoringContextCoordinator,
@@ -40,6 +41,17 @@ class _Window(QObject):
         self.worker = QObject()
         self.map_widget = MagicMock()
         self.map_widget.get_selected_map_id.return_value = "map-id"
+
+
+class _CalendarEmitter(QObject):
+    calendar_config_loaded = Signal(object)
+    attachments_loaded = Signal(str, str, list)
+
+    @Slot()
+    def load(self):
+        self.calendar_config_loaded.emit(None)
+        self.attachments_loaded.emit("event", "event-id", [])
+        self.attachments_loaded.emit("entity", "entity-id", [])
 
 
 def test_date_refresh_is_debounced_and_captures_draft_inputs(qtbot) -> None:
@@ -202,3 +214,37 @@ def test_mode_selection_is_shared_and_world_change_resets_it(qapp):
     query = coordinator._entity_query()
     assert query[:3] == ("two.kraken", "at_playhead", 10.0)
     assert coordinator._active_entity_request_id == ""
+
+
+@pytest.mark.ci_fast
+@pytest.mark.real_qt_invoke
+def test_calendar_refresh_reaches_the_gui_thread(qtbot, qapp, monkeypatch):
+    window = _Window()
+    window.data_coordinator = MagicMock()
+    worker = _CalendarEmitter()
+    window.worker = worker
+    coordinator = AuthoringContextCoordinator(window)
+    monkeypatch.setattr(coordinator, "_bind_connection_browsing", lambda: None)
+    deliveries = []
+    monkeypatch.setattr(
+        coordinator,
+        "schedule_entity_refresh",
+        lambda: deliveries.append(QThread.currentThread()),
+    )
+    coordinator.bind_session()
+    worker.attachments_loaded.connect(
+        coordinator.on_attachments_loaded, Qt.ConnectionType.QueuedConnection
+    )
+    thread = QThread()
+    worker.moveToThread(thread)
+    thread.finished.connect(worker.deleteLater)
+    thread.start()
+    try:
+        assert QMetaObject.invokeMethod(
+            worker, "load", Qt.ConnectionType.QueuedConnection
+        )
+        qtbot.waitUntil(lambda: len(deliveries) == 2)
+        assert deliveries == [qapp.thread(), qapp.thread()]
+    finally:
+        thread.quit()
+        assert thread.wait(3000)

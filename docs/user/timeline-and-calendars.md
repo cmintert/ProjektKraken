@@ -71,7 +71,9 @@ Current Time** takes you back.
 
 (help-date-precision)=
 
-## Dates with incomplete information
+(dates-with-incomplete-information)=
+
+## Dates with incomplete information: year-only and uncertain dates
 
 Record only the date precision your sources support. A year-only date means the
 occurrence is known to that year; it does not assert January 1 or a year-long duration.
@@ -97,6 +99,16 @@ unless the ceremony’s elapsed length is separately known.
 **Related:** {ref}`Event dates and duration <help-event-timing>` · {ref}`Date evidence
 <help-date-evidence>` · {ref}`Chronology <help-event-chronology>` · {ref}`Timeline
 viewing <help-timeline-viewing>`
+
+An asserted year-only date means the Event occurred somewhere within that year;
+it does not mean the Event lasted a year. An uncertain or approximate date keeps
+its qualification separately and supplies no hard limits unless you author them.
+When a map or relation follows this Event, refining its date updates the binding
+without copying the timeline's representative position into an exact boundary.
+
+Very distant dates may not support second precision or very small offsets.
+Kraken explains unrepresentable precision instead of silently rounding an
+assertion into a different meaning.
 
 (help-control-date-precision)=
 

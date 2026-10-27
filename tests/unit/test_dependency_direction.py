@@ -15,6 +15,43 @@ _FORBIDDEN_IMPORT_ROOTS = {
 pytestmark = pytest.mark.ci_fast
 
 
+@pytest.mark.parametrize(
+    "relative",
+    [
+        "core/calendar_index.py",
+        "core/temporal_context.py",
+        "core/temporal_shift.py",
+        "core/temporal_joint.py",
+        "core/temporal_editing.py",
+        "core/temporal_references.py",
+        "core/temporal_boundary_resolver.py",
+    ],
+)
+def test_event_anchor_domain_has_no_ui_or_persistence_dependencies(relative):
+    """KRT-111 keeps calendar and temporal interpretation below presentation."""
+    modules = {module for _, module in _imported_modules(_SOURCE_ROOT / relative)}
+    assert not any(
+        module.startswith(
+            ("PySide6", "src.app", "src.gui", "src.services", "src.commands")
+        )
+        for module in modules
+    )
+
+
+def test_map_temporal_coordinator_keeps_narrow_snapshot_dependencies():
+    modules = {
+        module
+        for _, module in _imported_modules(
+            _SOURCE_ROOT / "app/coordinators/map_temporal_coordinator.py"
+        )
+    }
+    assert not any(
+        module.startswith(("src.gui", "src.services", "src.commands"))
+        or module == "src.app.main_window"
+        for module in modules
+    )
+
+
 def test_activity_workspaces_have_no_world_mutation_dependencies():
     """Keep local layouts separate from commands, workers and application facades."""
     for relative in (

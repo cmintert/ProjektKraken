@@ -119,6 +119,25 @@ class AppCoordinator(QObject):
         """Compose selected-event time navigation after widget creation."""
         self.time.bind_date_navigation()
         self.authoring_context.bind_session()
+        from PySide6.QtCore import Qt
+
+        from src.app.coordinators.map_temporal_coordinator import MapTemporalCoordinator
+
+        window = self.main_window
+        self.map_temporal = MapTemporalCoordinator(
+            lambda: self.data.cached_events,
+            [
+                window.map_widget.layer_panel.set_temporal_context,
+                window.event_editor.set_temporal_context,
+                window.entity_editor.set_temporal_context,
+            ],
+            self,
+        )
+        self.data.events_cache_changed.connect(self.map_temporal.refresh)
+        self.data.lore_mutation_applied.connect(self.map_temporal.lore_changed)
+        window.worker.calendar_config_loaded.connect(
+            self.map_temporal.set_calendar, Qt.ConnectionType.QueuedConnection
+        )
 
     def bind_longform_navigation(self) -> None:
         """Compose Longform navigation once its view is available."""

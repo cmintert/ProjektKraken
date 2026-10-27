@@ -8,7 +8,6 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
 from src.app.coordinators.settings_coordinator import SettingsCoordinator
-from src.app.qt_invocation import invoke_queued
 from src.core.calendar import CalendarConfig
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.settings_navigation import settings_navigation
@@ -157,7 +156,7 @@ def _refresh_world_consumers(window: MainWindow, values: dict[str, Any]) -> None
         current = getattr(window, "calendar_converter", None)
         if current is None or current._config.to_dict() != config.to_dict():
             window.time_coordinator.on_calendar_config_loaded(config)
-    invoke_queued(window.worker, "load_graph_data")
+    window.data_coordinator.load_graph_data()
 
 
 def _operation(

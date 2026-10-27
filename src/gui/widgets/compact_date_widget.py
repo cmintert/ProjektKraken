@@ -745,13 +745,20 @@ class CompactDateWidget(QWidget):
         if parent is not None:
             parent.updateGeometry()
 
-    def set_calendar_converter(self, converter: CalendarConverter) -> None:
+    def set_calendar_converter(self, converter: CalendarConverter | None) -> None:
         """Sets the calendar converter for date calculations.
 
         Args:
             converter: CalendarConverter instance.
 
         """
+        text = self.txt_date.text()
+        cursor = self.txt_date.cursorPosition()
+        selection = self.txt_date.selectionStart()
+        selected_length = len(self.txt_date.selectedText())
+        foreign = self._expression is not None and (
+            converter is None or self._expression.calendar_id != converter._config.id
+        )
         self._converter = converter
         if self._converter and self._converter._config:
             self._parser = DateParser(self._converter._config)
@@ -761,7 +768,18 @@ class CompactDateWidget(QWidget):
         self._populate_months()
         self._populate_days()
         self._update_preview()
-        self._sync_entry_availability()
+        try:
+            self._sync_entry_availability()
+        except ValueError:
+            self.feedback.setText(
+                "The saved date's calendar is unavailable. Edit the date to replace it."
+            )
+        if self._draft_pending or foreign:
+            self.txt_date.setText(text)
+            if selection >= 0:
+                self.txt_date.setSelection(selection, selected_length)
+            else:
+                self.txt_date.setCursorPosition(cursor)
 
     def _populate_months(self) -> None:
         """Populates month dropdown from calendar."""

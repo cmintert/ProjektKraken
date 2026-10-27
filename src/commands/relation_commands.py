@@ -16,6 +16,7 @@ from typing import Any, Dict, Optional
 from src.commands.base_command import BaseCommand, CommandResult
 from src.services.authored_relation_service import AuthoredRelationService
 from src.services.db_service import DatabaseService
+from src.services.temporal_edit_validation import validate_temporal_edit
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +76,7 @@ class AddRelationCommand(BaseCommand):
             )
             service.validate_endpoint(self.source_id)
             service.validate_endpoint(self.target_id)
+            validate_temporal_edit(db_service, self.attributes, self.source_id)
             count = 2 if self.bidirectional else 1
             if not self._created_rel_ids:
                 self._created_rel_ids = [str(uuid.uuid4()) for _ in range(count)]
@@ -283,6 +285,11 @@ class UpdateRelationCommand(BaseCommand):
 
         try:
             logger.info(f"Updating relation {self.rel_id}")
+            validate_temporal_edit(
+                db_service,
+                self.attributes or {},
+                self.source_id or current["source_id"],
+            )
             service = _relation_service(db_service)
             if self.source_id is not None:
                 service.validate_endpoint(self.source_id)

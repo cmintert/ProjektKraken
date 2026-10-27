@@ -42,6 +42,54 @@ pytestmark = pytest.mark.ci_fast
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def test_map_event_endpoint_inspection_keeps_the_reference_draft(help_setup, qapp):
+    from src.core.events import Event
+    from src.core.map import MapLayerNode
+    from src.core.temporal_context import TemporalResolutionContext
+    from src.gui.dialogs.temporal_validity_dialog import TemporalValidityDialog
+
+    coordinator, _registry, owner, _, _ = help_setup
+    node = MapLayerNode(
+        "Castle",
+        "marker",
+        attributes={
+            "temporal": {
+                "schema": 2,
+                "start": {"anchor": {"anchor_id": "event:e", "endpoint": "start"}},
+                "end": {"status": "open"},
+            }
+        },
+    )
+    dialog = TemporalValidityDialog(
+        node,
+        owner,
+        temporal_context=TemporalResolutionContext.build(
+            [Event("Foundation", id="e", lore_date=100)], None
+        ),
+    )
+    bindings = HelpSurfaceBindings(coordinator)
+    for widget in [dialog, *dialog.findChildren(QWidget)]:
+        bindings.bind(widget)
+    dialog._event_controls["start"].disclosure.setChecked(True)
+    dialog.show()
+    dialog.activateWindow()
+    target = dialog._event_controls["start"].endpoint
+    target.setFocus()
+    qapp.processEvents()
+    before = dialog.properties()
+    QTest.keyClick(
+        target,
+        Qt.Key.Key_F1,
+        Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier,
+    )
+    qapp.processEvents()
+    assert coordinator.inspection._topic_id == "map.visibility"
+    assert coordinator.inspection._excerpt_target == "help-inspect-map-anchor-endpoint"
+    assert dialog.properties() == before
+    coordinator.inspection.dismiss()
+    dialog.close()
+
+
 def test_every_declared_explanation_is_generated_and_bounded(generated_root):
     inventory = json.loads((ROOT / "docs/help-inspection.json").read_text("utf-8"))
     service = HelpBundleService(root=generated_root / "docs/_build/help")

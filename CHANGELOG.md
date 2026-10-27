@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-26
-**Commit:** 5a5dda2557861a2cc1c04f40e93847fb1b1a12b8
+**Last Updated:** 2026-10-27
+**Commit:** 28e3a764c3a9e8b94f493d09038a55d08a107a77
 ---
 
 # Changelog
@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-10-27)* **Stability (KRT-112)**: Deferred inspector reflow until Qt
+  finishes layout traversal, fixing the reproduced resize crash. Routed Context
+  calendar/attachment callbacks to GUI-thread slots and Graph settings refresh
+  through its coordinator. Corrected thread and UI test fixtures; the complete
+  `ci_fast` run passed 2,721 tests with 3 skipped. Recorded crash-log analysis
+  and disposable real-worker runtime evidence.
 
 - *(2026-10-25)* **Control alignment**: Matched Name, Type and Fast Inject heights
   after style/font changes, aligned Project filter fields with their actions,
@@ -40,6 +47,15 @@ All notable changes to this project will be documented in this file.
   reproducible six-theme rendering evidence.
 
 ### Added
+
+- *(2026-10-27)* **Map timing (KRT-111)**: Added Event start/end bindings for
+  feature and group presence, shared Map/Relation endpoint and offset controls,
+  calendar month/year shifts, lossless fractional offsets and precision limits.
+  Preserved uncertainty, legacy metadata, inherited transition identity and
+  unresolved references through live refresh, undo and portable transfers.
+  Added worker-owned validation, regression/dependency coverage, contextual Help,
+  user documentation and reproducible theme/native evidence. This is a
+  development checkpoint; feature clarification and human acceptance remain open.
 
 - *(2026-10-25)* **Temporal Entity World Context (KRT-96)**: Added synchronized
   At playhead, History to playhead and All history modes, saved-state provenance,

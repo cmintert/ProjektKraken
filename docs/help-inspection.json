@@ -6705,10 +6705,10 @@
       "id": "src-gui-widgets-relation-form-relationform-group-boundaries-disclosure",
       "topic_id": "relations.timing",
       "target": "help-inspect-src-gui-widgets-relation-form-relationform-group-boundaries-disclosure",
-      "source": "src/gui/widgets/relation_form.py",
-      "symbol": "RelationForm._group_boundaries",
-      "binding": "disclosure",
-      "label": "Event offset…",
+      "source": "src/gui/widgets/event_anchor_controls.py",
+      "symbol": "EventAnchorControls.__init__",
+      "binding": "self.disclosure",
+      "label": "Endpoint and offset…",
       "kind": "DisclosureButton"
     },
     {
@@ -6805,21 +6805,21 @@
       "id": "src-gui-widgets-relation-form-relationform-setup-boundary-choices-relative",
       "topic_id": "relations.timing",
       "target": "help-inspect-src-gui-widgets-relation-form-relationform-setup-boundary-choices-relative",
-      "source": "src/gui/widgets/relation_form.py",
-      "symbol": "RelationForm._setup_boundary_choices",
-      "binding": "relative",
-      "label": "relative",
+      "source": "src/gui/widgets/event_anchor_controls.py",
+      "symbol": "EventAnchorControls.__init__",
+      "binding": "self.relative",
+      "label": "Boundary date",
       "kind": "ScrollSafeComboBox"
     },
     {
       "id": "src-gui-widgets-relation-form-relationform-setup-boundary-choices-offset",
       "topic_id": "relations.timing",
       "target": "help-inspect-src-gui-widgets-relation-form-relationform-setup-boundary-choices-offset",
-      "source": "src/gui/widgets/relation_form.py",
-      "symbol": "RelationForm._setup_boundary_choices",
-      "binding": "offset",
-      "label": "offset",
-      "kind": "ScrollSafeDoubleSpinBox"
+      "source": "src/gui/widgets/event_anchor_controls.py",
+      "symbol": "EventAnchorControls.__init__",
+      "binding": "self.offset",
+      "label": "Signed offset",
+      "kind": "EventOffsetInput"
     },
     {
       "id": "src-gui-widgets-relation-item-widget-relationitemwidget-setup-ui-self-btn-go-to",
@@ -9140,6 +9140,86 @@
       "binding": "self.load_connections",
       "label": "Load more connections / Retry connections",
       "kind": "QToolButton"
+    },
+    {
+      "id": "event-anchor-endpoint",
+      "topic_id": "relations.timing",
+      "target": "help-inspect-event-anchor-endpoint",
+      "source": "src/gui/widgets/event_anchor_controls.py",
+      "symbol": "EventAnchorControls.__init__",
+      "binding": "self.endpoint",
+      "label": "Event endpoint",
+      "kind": "WrappingComboBox"
+    },
+    {
+      "id": "event-anchor-unit",
+      "topic_id": "relations.timing",
+      "target": "help-inspect-event-anchor-unit",
+      "source": "src/gui/widgets/event_anchor_controls.py",
+      "symbol": "EventAnchorControls.__init__",
+      "binding": "self.unit",
+      "label": "Offset unit",
+      "kind": "WrappingComboBox"
+    },
+    {
+      "id": "map-visibility-scroll",
+      "topic_id": "map.visibility",
+      "target": "help-inspect-map-visibility-scroll",
+      "source": "src/gui/dialogs/temporal_validity_dialog.py",
+      "symbol": "TemporalValidityDialog.__init__",
+      "binding": "scroll",
+      "label": "Visibility date fields",
+      "kind": "QScrollArea"
+    },
+    {
+      "id": "map-anchor-options",
+      "topic_id": "map.visibility",
+      "target": "help-inspect-map-anchor-options",
+      "source": "src/gui/widgets/event_anchor_controls.py",
+      "symbol": "EventAnchorControls.use_map_help",
+      "binding": "self.disclosure",
+      "label": "Endpoint and offset…",
+      "kind": "DisclosureButton"
+    },
+    {
+      "id": "map-anchor-endpoint",
+      "topic_id": "map.visibility",
+      "target": "help-inspect-map-anchor-endpoint",
+      "source": "src/gui/widgets/event_anchor_controls.py",
+      "symbol": "EventAnchorControls.use_map_help",
+      "binding": "self.endpoint",
+      "label": "Event endpoint",
+      "kind": "WrappingComboBox"
+    },
+    {
+      "id": "map-anchor-relative",
+      "topic_id": "map.visibility",
+      "target": "help-inspect-map-anchor-relative",
+      "source": "src/gui/widgets/event_anchor_controls.py",
+      "symbol": "EventAnchorControls.use_map_help",
+      "binding": "self.relative",
+      "label": "Boundary date",
+      "kind": "WrappingComboBox"
+    },
+    {
+      "id": "map-anchor-offset",
+      "topic_id": "map.visibility",
+      "target": "help-inspect-map-anchor-offset",
+      "source": "src/gui/widgets/event_anchor_controls.py",
+      "symbol": "EventAnchorControls.use_map_help",
+      "binding": "self.offset",
+      "label": "Signed offset",
+      "kind": "EventOffsetInput"
+    },
+    {
+      "id": "map-anchor-unit",
+      "topic_id": "map.visibility",
+      "target": "help-inspect-map-anchor-unit",
+      "source": "src/gui/widgets/event_anchor_controls.py",
+      "symbol": "EventAnchorControls.use_map_help",
+      "binding": "self.unit",
+      "label": "Offset unit",
+      "kind": "WrappingComboBox"
     }
   ],
   "factory_exemptions": [
@@ -9640,14 +9720,14 @@
     {
       "source": "src/commands/layer_commands.py",
       "symbol": "UpdateLayerPropertiesCommand.execute",
-      "sha256": "cd405fbaa488cb78ab3a3be8f3a23730a7c0f28f85e276e934206a4603aa6e5d",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "8515869aa948ba25ca8413e530e65f280717a0b66079dfc35ffa9b64b8ef7ad7",
+      "review_note": "KRT-111: Fresh worker-owned event/calendar evidence validates edits; unresolved references remain savable and impossible intervals are rejected."
     },
     {
       "source": "src/commands/layer_commands.py",
       "symbol": "UpdateLayerPropertiesCommand.undo",
-      "sha256": "e74fd6b26d6b25e050078e832f79b4517ab9d6c9048230608ebd2acd722aa49f",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "9e28c0b1cff2588a1bc8e07449347644fa5b2812710f53bc5fac0bec833fe399",
+      "review_note": "KRT-111: Undo restores exact attribute snapshots without revalidating unavailable references; maps Help explains deletion recovery."
     },
     {
       "source": "src/commands/layer_commands.py",
@@ -9940,8 +10020,8 @@
     {
       "source": "src/commands/relation_commands.py",
       "symbol": "AddRelationCommand.execute",
-      "sha256": "5df810932a5bd06d7abc1ddbdd012567000b96eb0f4b1521030395df16918642",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "1731be3de47cb4c3ed9b8e16170d7927a3c432ffcf1ef7332db5cc9fbee4a30f",
+      "review_note": "KRT-111: Fresh context rejects impossible authored intervals before persistence; existing direction and occurrence flags remain supported."
     },
     {
       "source": "src/commands/relation_commands.py",
@@ -9964,8 +10044,8 @@
     {
       "source": "src/commands/relation_commands.py",
       "symbol": "UpdateRelationCommand.execute",
-      "sha256": "03f2a59790f457e15e618aa695e2a975aef26b9bd4ca5f9f13aef027fa314b8e",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "c4a6b24c077105d76609f4a0e8816e76ef2f90df520604f52ad62ff98d6c579c",
+      "review_note": "KRT-111: Apply validates temporal edits against worker-owned events; relation Help now distinguishes empty states from deliberate occurrences."
     },
     {
       "source": "src/commands/relation_commands.py",
@@ -11308,8 +11388,8 @@
     {
       "source": "src/gui/dialogs/temporal_validity_dialog.py",
       "symbol": "TemporalValidityDialog.__init__",
-      "sha256": "697149fc31dd5d5741772136d2b73b002f9cc89ed856291245560371ef4a2bb9",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "b878d1f6778e1e985640061b99e2c0569492dc2ec4e431d0f80297bab3a68600",
+      "review_note": "KRT-111: Modeless scrollable fields retain a fixed OK/Cancel footer and shared event controls. Source and map-specific explanations match current widgets."
     },
     {
       "source": "src/gui/dialogs/temporal_validity_dialog.py",
@@ -11332,8 +11412,8 @@
     {
       "source": "src/gui/dialogs/temporal_validity_dialog.py",
       "symbol": "TemporalValidityDialog._date_value",
-      "sha256": "44b68f33a8ecd336e22ef6afc002262f672493b8043311b2a3c2e0a3de237209",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "1883e8eae2e77eb64846d809527322b10bf7e02f42903da71a21b9eddc7c1ba1",
+      "review_note": "KRT-111: An unavailable calendar has no numeric projection. The editor retains the expression and its calendar identity instead of producing a copied date or an open boundary; map Help explains this unresolved state."
     },
     {
       "source": "src/gui/dialogs/temporal_validity_dialog.py",
@@ -11344,8 +11424,8 @@
     {
       "source": "src/gui/dialogs/temporal_validity_dialog.py",
       "symbol": "TemporalValidityDialog._optional_date",
-      "sha256": "71bd3a3f5f2ee736a171fd117a07c87bb32648ec134633179e506a283860948e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "a28e5e5efe3fe857855680ec7aec5ec8509319327f2bb8308ffc5b798ee817bd",
+      "review_note": "KRT-111: Named Event UUID choices, preserved unsupported dates, shared endpoint/offset options and fixed Use Playhead are described in maps Help."
     },
     {
       "source": "src/gui/dialogs/temporal_validity_dialog.py",
@@ -11356,20 +11436,20 @@
     {
       "source": "src/gui/dialogs/temporal_validity_dialog.py",
       "symbol": "TemporalValidityDialog._update_temporal_feedback",
-      "sha256": "22e2f56af27f1e8e509489d76668d4d5d6c4054830fc5c18d970103b4ecd773b",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "842ec1c107b0360f6b8780561bfe9cc67525298bca7681d31bbb369849330123",
+      "review_note": "KRT-111: Feedback distinguishes event provenance and unavailable evidence, shows the joint group-date presence status, and requires both modes to replace an unsupported whole-window format. It does not commit dates."
     },
     {
       "source": "src/gui/dialogs/temporal_validity_dialog.py",
       "symbol": "TemporalValidityDialog._valid_window",
-      "sha256": "349f45f09ce9fa2a54a5042c79fb788592c04c62c06928ff6ef4d733284355c5",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "9d3cec035618f448a73cd4526c1f75eab9d56729f4e89a75d14a880ac1dcd642",
+      "review_note": "KRT-111: Shared evaluator permits unknown and unavailable references while rejecting proven empty or malformed edits. Maps Help explains these differences."
     },
     {
       "source": "src/gui/dialogs/temporal_validity_dialog.py",
       "symbol": "TemporalValidityDialog.properties",
-      "sha256": "8c663d5f733fabcf5587d5fa938b1193e62d6d1456d7caa984892d9d315d694e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "0b1e2e2be15f90c9e7c1b11c1c664b522fdaa07658a193ffe93576849378686b",
+      "review_note": "KRT-111: Untouched sides and unknown metadata survive acceptance; explicit advanced edits use versioned references rather than copied dates."
     },
     {
       "source": "src/gui/dialogs/transfer_csv_dialog.py",
@@ -13300,8 +13380,8 @@
     {
       "source": "src/gui/widgets/map/feature_actions.py",
       "symbol": "FeatureActionPresenter.context",
-      "sha256": "9ba9e31434119dc8f256d5833937f5724f843b17a2f415c22582acc310e66899",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "1c812a9bc75a39e6046d00f6395411c2fca86bfcbac4121c7190ca3dec655f96",
+      "review_note": "KRT-111: The shared Feature actions route now disables date navigation when the inherited window has no guaranteed witness; the reason is explicit and all other selection guards remain."
     },
     {
       "source": "src/gui/widgets/map/feature_actions.py",
@@ -13594,8 +13674,8 @@
     {
       "source": "src/gui/widgets/map/map_layer_panel.py",
       "symbol": "MapLayerPanel._edit_temporal_validity",
-      "sha256": "a7ab45f98e746f4afb200983b82d53e314f2badcc7f57de7396e5a6042066b97",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "3d98838de624ef0ea4c904b6c999419a7b8a46782581b7f7822984f69118b0ca",
+      "review_note": "KRT-111: The existing Visibility dates route passes detached context to its modeless draft; captured target guards remain."
     },
     {
       "source": "src/gui/widgets/map/map_layer_panel.py",
@@ -13882,8 +13962,8 @@
     {
       "source": "src/gui/widgets/map/map_layer_panel.py",
       "symbol": "MapLayerPanel._show_context_menu",
-      "sha256": "cee09d92ab3976371db2039a9978b7eab6df34cab1753c308f64573dbed21d44",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "dd6729e869294848216a5a17933d15535b117f2d39919138cafbe9d98e5728c2",
+      "review_note": "KRT-111: Date navigation is named Jump to valid time and remains visible but disabled when no guaranteed date exists; other layer routes are unchanged."
     },
     {
       "source": "src/gui/widgets/map/map_layer_panel.py",
@@ -13978,8 +14058,8 @@
     {
       "source": "src/gui/widgets/map/map_layer_panel.py",
       "symbol": "MapLayerPanel.jump_to_valid_time",
-      "sha256": "8cf8f6df7171bfd418fd153eb18dbf4d91b346e105be002428abc01287731f7e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "e194199409a03245eeae117548f990be14af41658f694eed77a43ecfda3302d4",
+      "review_note": "KRT-111: Navigation uses a guaranteed inherited-window witness, preserving world time; Help now explains unavailable navigation."
     },
     {
       "source": "src/gui/widgets/map/map_layer_panel.py",
@@ -15034,8 +15114,8 @@
     {
       "source": "src/gui/widgets/relation_form.py",
       "symbol": "RelationForm.__init__",
-      "sha256": "86510281fc1a0f371ccf8f08403fcfaba793dc9384e1d331af06d233a9518e28",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "d2d4f57d15aae354f16f7686263e96e9e423236e4a7f0da543c8e49032ce0921",
+      "review_note": "KRT-111: Shared form receives immutable context for complete event precision and endpoint previews; unrelated form controls retain their meanings."
     },
     {
       "source": "src/gui/widgets/relation_form.py",
@@ -15058,8 +15138,8 @@
     {
       "source": "src/gui/widgets/relation_form.py",
       "symbol": "RelationForm._group_boundaries",
-      "sha256": "cc27c3aae99161d4e9e3738911fa8e8e5a1c3786ef2b609a0399a06c3394d210",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "20e65b6de02d9a3de02f0dd942f78af78873005712a75db2e2c8ef6cd887132f",
+      "review_note": "KRT-111: The same endpoint/offset component now supplies advanced controls. Existing disclosure inspection identity is retained at its new source."
     },
     {
       "source": "src/gui/widgets/relation_form.py",
@@ -15076,8 +15156,8 @@
     {
       "source": "src/gui/widgets/relation_form.py",
       "symbol": "RelationForm._refresh_boundary_previews",
-      "sha256": "6e0e670d925be1fc94d79bde8774e2fb641295b4025549f4be7b29d6e55ce0e6",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "bfe39f34526eda4b979b6fd5b05222bba8aaded4454468402fec4b77d65a6a7d",
+      "review_note": "KRT-111: Manual expressions show authored precision rather than a representative date; unsupported boundaries show an explicit preservation explanation. Event choices still follow stable UUIDs."
     },
     {
       "source": "src/gui/widgets/relation_form.py",
@@ -15112,14 +15192,14 @@
     {
       "source": "src/gui/widgets/relation_form.py",
       "symbol": "RelationForm._setup_boundary_choices",
-      "sha256": "61c413174fcbb67db9a78d775908755b78e22be3f1aed38755016a8b2f7541c2",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "4877201f548f8bb7ce18ae4926be07317cf5939fff0587809ec12e273170d976",
+      "review_note": "KRT-111: Named choices retain stable UUIDs and share endpoint/month/year controls with Maps; the old relative/offset identities move to the shared component."
     },
     {
       "source": "src/gui/widgets/relation_form.py",
       "symbol": "RelationForm._setup_now_actions",
-      "sha256": "a5f6eed3f2eea9acdf98510b6df268845d5dc69e8e0db743a373cbd6137e6f4e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "f45fcc9c0d0742deb368dc53a04b58714b1ce53d687bcd6e2590fd203e6b51f0",
+      "review_note": "KRT-111: The viewed-date caption stays in the main form; each fixed-date action is inserted only into its final boundary group, avoiding stale duplicate layout items. Its label, fixed-date meaning and local apply behavior remain described by the existing control excerpt."
     },
     {
       "source": "src/gui/widgets/relation_form.py",
@@ -15142,8 +15222,8 @@
     {
       "source": "src/gui/widgets/relation_form.py",
       "symbol": "RelationForm._track_changes",
-      "sha256": "2df6081edf3c23c4078b2d98acda8763c5e7b3531536bcb7f3841fe3ea6ccb46",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "69e3c89b28c23c64f620c6b89a84407947088f2aae2bfb3ed7f8056a8fe70a0e",
+      "review_note": "KRT-111: Only explicit advanced edits dirty a side. Context/name refreshes preserve drafts and stored metadata as documented."
     },
     {
       "source": "src/gui/widgets/relation_form.py",
@@ -16782,6 +16862,30 @@
       "symbol": "ContextFactSection.update_label",
       "sha256": "29786b7e770b20f79c1e299f207afd7420f5d67250f2fafd0c4c92bc2232201b",
       "review_note": "KRT-110: Show all N and Show fewer wording matches state; accessible name includes section identity."
+    },
+    {
+      "source": "src/gui/widgets/event_anchor_controls.py",
+      "symbol": "EventAnchorControls.__init__",
+      "sha256": "52e4369c16824b124d0b06f294e463b784badd8fb718646a6f8c358b1b516c04",
+      "review_note": "KRT-111: All shared controls have reviewed explanations: authored end precedence, independently unknown strict before/after dates, signed offsets and actual calendar units."
+    },
+    {
+      "source": "src/gui/widgets/event_anchor_controls.py",
+      "symbol": "EventAnchorControls.use_map_help",
+      "sha256": "2ddd2d5e4213054f738d5664b0c3e19bf45b250d371c2a01231a33a2f0d3c286",
+      "review_note": "KRT-111: Map instances receive map-specific inspection IDs and canonical maps explanations without changing the preserved Relation IDs."
+    },
+    {
+      "source": "src/gui/widgets/compact_date_widget.py",
+      "symbol": "CompactDateWidget.set_calendar_converter",
+      "sha256": "9cc6e71212ecde7c533241c8f7a2e26386b272640f08a75003f406191772c234",
+      "review_note": "KRT-111: Replacing event/calendar evidence preserves unfinished manual text, caret and selection. A saved assertion from an unavailable calendar is explained and retained until the creator edits it; map/date Help already distinguishes unavailable dates from unbounded boundaries."
+    },
+    {
+      "source": "src/gui/widgets/relation_form.py",
+      "symbol": "RelationForm._get_attributes",
+      "sha256": "1d288ed6dd569797741c96fd86a62f8ebb3b1fd223dde6cb7887595546343f80",
+      "review_note": "KRT-111: Unavailable calendar projections are omitted from numeric compatibility fields while their semantic boundaries and untouched values remain preserved. No copied zero/open fallback is introduced."
     }
   ],
   "review_status": {

@@ -3,16 +3,18 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from src.core.calendar import CalendarConverter
-from src.core.temporal_expression import (
-    ResolvedTemporalBounds,
-    TemporalExpression,
-    expression_from_attributes,
-)
+from src.core.temporal_boundary_resolver import BoundaryResolver as _BoundaryResolver
+from src.core.temporal_expression import ResolvedTemporalBounds
+
+STRICT_TEMPORAL_SCHEMA = 2
+
+if TYPE_CHECKING:
+    from src.core.temporal_constraints import TemporalConstraint
 
 
 class TemporalValidity(str, Enum):
@@ -47,7 +49,11 @@ class TemporalWindow:
 
     def status_at(self, lore_time: float) -> TemporalValidity:
         """Evaluate shared half-open semantics using evidence bounds only."""
-        if not math.isfinite(lore_time) or self.error:
+        if not math.isfinite(lore_time):
+            return TemporalValidity.INDETERMINATE
+        if self.kind == TemporalWindowKind.INTERVAL and self.is_empty:
+            return TemporalValidity.INACTIVE
+        if self.error:
             return TemporalValidity.INDETERMINATE
         if self.kind == TemporalWindowKind.UNRESOLVED:
             return TemporalValidity.INDETERMINATE
@@ -59,36 +65,44 @@ class TemporalWindow:
                 if self._legacy_active(lore_time)
                 else TemporalValidity.INACTIVE
             )
+        if self.kind == TemporalWindowKind.INTERVAL:
+            from src.core.temporal_joint import jointly_possible
+
+            if not jointly_possible([self], lore_time):
+                return TemporalValidity.INACTIVE
         start, end = self.start_bounds, self.end_bounds
         if self.kind == TemporalWindowKind.INSTANT:
-            if start is None:
-                return TemporalValidity.INDETERMINATE
-            if start.hard_start is not None and lore_time < start.hard_start:
-                return TemporalValidity.INACTIVE
-            if start.hard_end is not None and lore_time >= start.hard_end:
-                if start.hard_start == start.hard_end == lore_time:
-                    return TemporalValidity.DEFINITE
-                return TemporalValidity.INACTIVE
-            return (
-                TemporalValidity.POSSIBLE
-                if start.has_hard_bounds
-                else TemporalValidity.INDETERMINATE
-            )
-        if start and end and start.anchor_id and start.anchor_id == end.anchor_id:
-            return TemporalValidity.INACTIVE
+            return _instant_validity(start, lore_time)
         smin = start.hard_start if start else float("-inf")
         smax = start.hard_end if start else float("-inf")
         emin = end.hard_start if end else float("inf")
         emax = end.hard_end if end else float("inf")
-        if smin is not None and lore_time < smin:
+        if _outside_possible(start, end, lore_time):
             return TemporalValidity.INACTIVE
-        if emax is not None and lore_time >= emax:
-            return TemporalValidity.INACTIVE
-        if smax is not None and emin is not None and smax <= lore_time < emin:
+        end_certain = emin is not None and (
+            lore_time < emin
+            or (lore_time == emin and end is not None and not end.lower_inclusive)
+        )
+        if smax is not None and smax <= lore_time and end_certain:
             return TemporalValidity.DEFINITE
         if None in (smin, smax, emin, emax):
             return TemporalValidity.INDETERMINATE
         return TemporalValidity.POSSIBLE
+
+    @property
+    def is_empty(self) -> bool:
+        """Prove empty intervals without turning them into occurrences."""
+        if self.kind != TemporalWindowKind.INTERVAL:
+            return False
+        start, end = self.start_bounds, self.end_bounds
+        if start and end:
+            from src.core.temporal_joint import definitely_reversed
+
+            if definitely_reversed(start, end):
+                return True
+        return (
+            self.start is not None and self.end is not None and self.start >= self.end
+        )
 
     def is_definitely_active(self, lore_time: float) -> bool:
         """Explicit strict policy for consumers requiring certain state."""
@@ -115,11 +129,150 @@ class TemporalWindow:
     @property
     def is_valid(self) -> bool:
         """Return whether the window has usable semantics."""
-        if self.error or self.kind == TemporalWindowKind.UNRESOLVED:
+        if self.error or self.kind == TemporalWindowKind.UNRESOLVED or self.is_empty:
             return False
         if self.kind == TemporalWindowKind.INTERVAL:
             return self.end is None or self.start is None or self.start < self.end
         return True
+
+
+def _instant_validity(
+    bounds: ResolvedTemporalBounds | None, time: float
+) -> TemporalValidity:
+    """Classify occurrences without losing strict constraint endpoint flags."""
+    if bounds is None:
+        return TemporalValidity.INDETERMINATE
+    if bounds.possible_ranges is not None and not any(
+        start <= time < end or start == end == time
+        for start, end in bounds.possible_ranges
+    ):
+        return TemporalValidity.INACTIVE
+    lower, upper = bounds.hard_start, bounds.hard_end
+    if lower is not None and (
+        time < lower or (time == lower and not bounds.lower_inclusive)
+    ):
+        return TemporalValidity.INACTIVE
+    if lower == upper == time:
+        return TemporalValidity.DEFINITE
+    if upper is not None and (
+        time > upper or (time == upper and not bounds.upper_inclusive)
+    ):
+        return TemporalValidity.INACTIVE
+    return (
+        TemporalValidity.POSSIBLE
+        if bounds.has_hard_bounds
+        else TemporalValidity.INDETERMINATE
+    )
+
+
+def intersect_window_status(
+    windows: list[TemporalWindow],
+    lore_time: float,
+    constraints: tuple[TemporalConstraint, ...] = (),
+) -> TemporalValidity:
+    """Intersect inherited windows while retaining shared uncertain transitions."""
+    for first in windows:
+        for second in windows:
+            if (
+                first.kind != TemporalWindowKind.INTERVAL
+                or second.kind != TemporalWindowKind.INTERVAL
+            ):
+                continue
+            start, end = first.start_bounds, second.end_bounds
+            if start is None or end is None or start.error or end.error:
+                continue
+            if constraints and _ordered_transitions(start, end, constraints):
+                return TemporalValidity.INACTIVE
+            if start.anchor_id and start.anchor_id == end.anchor_id:
+                return TemporalValidity.INACTIVE
+            if start.base_anchor and start.base_anchor == end.base_anchor:
+                if start.day_offset >= end.day_offset:
+                    return TemporalValidity.INACTIVE
+            if (
+                start.hard_start is not None
+                and end.hard_end is not None
+                and start.hard_start >= end.hard_end
+            ):
+                return TemporalValidity.INACTIVE
+    from src.core.temporal_joint import jointly_possible
+
+    if not jointly_possible(windows, lore_time):
+        return TemporalValidity.INACTIVE
+    statuses = [window.status_at(lore_time) for window in windows]
+    for status in (
+        TemporalValidity.INACTIVE,
+        TemporalValidity.INDETERMINATE,
+        TemporalValidity.POSSIBLE,
+    ):
+        if status in statuses:
+            return status
+    return TemporalValidity.DEFINITE
+
+
+def _ordered_transitions(
+    start: ResolvedTemporalBounds,
+    end: ResolvedTemporalBounds,
+    constraints: tuple[TemporalConstraint, ...],
+) -> bool:
+    """Reuse asserted chronology without treating coincident dates as aliases."""
+    from src.core.temporal_constraints import anchor_precedes, anchors_share_transition
+
+    if start.anchor_id and end.anchor_id:
+        rules = list(constraints)
+        return anchors_share_transition(
+            end.anchor_id, start.anchor_id, rules
+        ) or anchor_precedes(end.anchor_id, start.anchor_id, rules)
+    return False
+
+
+def definite_window_time(windows: list[TemporalWindow], current: float) -> float | None:
+    """Choose a navigation coordinate only if every inherited window guarantees it."""
+    starts, ends = [], []
+    for window in windows:
+        if window.semantic:
+            for bounds in (window.start_bounds, window.end_bounds):
+                if bounds is not None and not bounds.has_hard_bounds:
+                    return None
+            lower = window.start_bounds.hard_end if window.start_bounds else -math.inf
+            upper = window.end_bounds.hard_start if window.end_bounds else math.inf
+            if lower is None or upper is None:
+                return None
+            starts.append(lower)
+            ends.append(upper)
+        else:
+            starts.append(window.start if window.start is not None else -math.inf)
+            ends.append(window.end if window.end is not None else math.inf)
+    start, end = max(starts, default=-math.inf), min(ends, default=math.inf)
+    preferred = start if current < start else max(start, end - 1)
+    candidates = (preferred, start, math.nextafter(end, -math.inf), 0.0)
+    return next(
+        (
+            value
+            for value in candidates
+            if math.isfinite(value)
+            and all(window.is_definitely_active(value) for window in windows)
+        ),
+        None,
+    )
+
+
+def _outside_possible(
+    start: ResolvedTemporalBounds | None,
+    end: ResolvedTemporalBounds | None,
+    time: float,
+) -> bool:
+    """Honor strict lower bounds and both exact and half-open upper bounds."""
+    if start and start.hard_start is not None:
+        if time < start.hard_start or (
+            time == start.hard_start and not start.lower_inclusive
+        ):
+            return True
+    if end and end.hard_end is not None:
+        if time > end.hard_end:
+            return True
+        if time == end.hard_end:
+            return not end.upper_inclusive or end.hard_start == end.hard_end
+    return False
 
 
 def resolve_temporal_window(
@@ -227,8 +380,11 @@ def _resolve_semantic_window(
                 attributes.get("valid_from_event") and attributes.get("valid_to_event")
             ):
                 spec["at"] = {"binding": "source_event"}
-        if not isinstance(spec, dict) or spec.get("schema", 1) != 1:
+        if not isinstance(spec, dict) or spec.get("schema", 1) not in {1, 2}:
             raise ValueError("Unsupported temporal relation metadata")
+        resolver.default_semantics = (
+            "strict_v2" if spec.get("schema") == STRICT_TEMPORAL_SCHEMA else "legacy_v1"
+        )
         instant = "at" in spec
         start = resolver.boundary(
             spec.get("at", spec.get("start", {"status": "unknown"}))
@@ -261,102 +417,3 @@ def _resolve_semantic_window(
         return TemporalWindow(
             TemporalWindowKind.UNRESOLVED, error=str(exc), semantic=True
         )
-
-
-@dataclass
-class _BoundaryResolver:
-    """Resolve one boundary against an immutable query context."""
-
-    source_date: float | None
-    source_attributes: dict[str, Any]
-    source_id: str | None
-    converter: CalendarConverter | None
-    anchors: dict[str, ResolvedTemporalBounds]
-
-    def expression_bounds(self, data: dict[str, Any]) -> ResolvedTemporalBounds:
-        if self.converter is None:
-            return ResolvedTemporalBounds(error="Calendar unavailable for this date.")
-        return TemporalExpression.from_dict(data).resolve_bounds(self.converter)
-
-    def source_bounds(self) -> ResolvedTemporalBounds:
-        expression = expression_from_attributes(self.source_attributes)
-        anchor_id = f"event:{self.source_id}" if self.source_id else None
-        if expression is not None:
-            return replace(
-                self.expression_bounds(expression.to_dict()), anchor_id=anchor_id
-            )
-        if self.source_date is None:
-            return ResolvedTemporalBounds(
-                anchor_id=anchor_id, error="Source event unavailable."
-            )
-        return ResolvedTemporalBounds(
-            self.source_date, self.source_date, anchor_id=anchor_id
-        )
-
-    def boundary(self, data: dict[str, Any]) -> ResolvedTemporalBounds | None:
-        if not isinstance(data, dict):
-            raise ValueError("Temporal boundary must be an object")
-        status = data.get("status", "known")
-        if status in {"open", "not_applicable"}:
-            return None
-        if status == "unknown":
-            return ResolvedTemporalBounds()
-        if status != "known":
-            raise ValueError("Invalid temporal boundary status")
-        if "expression" in data:
-            return self.expression_bounds(data["expression"])
-        if "exact" in data:
-            exact = float(data["exact"])
-            if not math.isfinite(exact):
-                raise ValueError("Temporal coordinate must be finite")
-            return ResolvedTemporalBounds(exact, exact)
-        if data.get("binding") == "source_event":
-            return self.source_bounds()
-        if "anchor" in data:
-            ref = data["anchor"]
-            anchor_id = ref["anchor_id"]
-            result = (
-                self.source_bounds()
-                if anchor_id == f"event:{self.source_id}"
-                else self.anchors.get(
-                    anchor_id,
-                    ResolvedTemporalBounds(
-                        anchor_id=anchor_id, error="Referenced event unavailable."
-                    ),
-                )
-            )
-            offset = float(ref.get("offset_days", 0))
-            if not math.isfinite(offset):
-                raise ValueError("Anchor offset must be finite")
-            relation = ref.get("relation", "at")
-            if relation not in {"at", "before", "after"}:
-                raise ValueError("Unsupported event boundary relation")
-            shifted = replace(
-                result,
-                label=f"{result.label} (offset {offset:+g} days)"
-                if offset and result.label
-                else result.label,
-                soft_start=None
-                if result.soft_start is None
-                else result.soft_start + offset,
-                soft_end=None if result.soft_end is None else result.soft_end + offset,
-                hard_start=None
-                if result.hard_start is None
-                else result.hard_start + offset,
-                hard_end=None if result.hard_end is None else result.hard_end + offset,
-                anchor_id=anchor_id if offset == 0 else f"{anchor_id}+{offset:g}",
-            )
-            if relation == "at":
-                return shifted
-            # Relative bounds constrain one side only. Two independent dates before
-            # the same event are not the same transition.
-            return replace(
-                shifted,
-                anchor_id=None,
-                soft_start=None,
-                soft_end=None,
-                hard_start=shifted.hard_start if relation == "after" else None,
-                hard_end=shifted.hard_end if relation == "before" else None,
-                label=f"{relation.title()} {shifted.label or anchor_id}",
-            )
-        return ResolvedTemporalBounds()
