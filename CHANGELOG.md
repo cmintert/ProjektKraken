@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-28
-**Commit:** 2b0dddf09153048691fd4cfaaec7fa360ac78df3
+**Commit:** 94c22f49d336b5bd83b7af8f1bea19d83b4abd35
 ---
 
 # Changelog
@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-10-28)* **Timeline dependency strands (KRT-114)**: Show dependencies
+  toggles colored, directional connections between Events with Follow Event
+  timing sources. Connections meet event sides; branches and merges share a
+  strand color. The preference is remembered and available in Settings → Timeline.
+  Includes endpoint/routing regression coverage, a reproducible capture tool,
+  six-theme evidence, and updated manual, contextual Help and visual vocabulary.
 
 - *(2026-10-27)* **Event timing (KRT-113)**: Event starts and independent ends can
   follow another Event's start or end with day or calendar offsets. Joint timing

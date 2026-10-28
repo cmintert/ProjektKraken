@@ -2,6 +2,14 @@
 
 DEFAULT_THEMES: dict[str, dict[str, str]] = {
     "dark_mode": {
+        "timeline_dependency_0": "#74C69D",
+        "timeline_dependency_1": "#7CB8ED",
+        "timeline_dependency_2": "#D6A5E8",
+        "timeline_dependency_3": "#E0AC69",
+        "timeline_dependency_4": "#E5849F",
+        "timeline_dependency_5": "#64C4C8",
+        "timeline_dependency_6": "#B8BC70",
+        "timeline_dependency_7": "#B3B9CE",
         "app_bg": "#2B2B2B",
         "surface": "#323232",
         "border": "#454545",
@@ -95,6 +103,14 @@ DEFAULT_THEMES: dict[str, dict[str, str]] = {
         "action_destructive_disabled_border": "#9E9E9E",
     },
     "light_mode": {
+        "timeline_dependency_0": "#276749",
+        "timeline_dependency_1": "#245EA0",
+        "timeline_dependency_2": "#78449C",
+        "timeline_dependency_3": "#8C5420",
+        "timeline_dependency_4": "#A33E61",
+        "timeline_dependency_5": "#216F74",
+        "timeline_dependency_6": "#666B20",
+        "timeline_dependency_7": "#525D7D",
         "app_bg": "#F5F5F5",
         "surface": "#FFFFFF",
         "border": "#E0E0E0",

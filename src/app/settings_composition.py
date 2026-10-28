@@ -121,6 +121,12 @@ def _refresh_local_consumers(window: MainWindow, values: dict[str, Any]) -> None
         control.setChecked(values["timeline/snap_playhead_to_events"])
         control.blockSignals(blocked)
         window.timeline.view.set_playhead_event_snapping(control.isChecked())
+    if "timeline/show_dependencies" in values:
+        control = window.timeline.chk_show_dependencies
+        blocked = control.blockSignals(True)
+        control.setChecked(values["timeline/show_dependencies"])
+        control.blockSignals(blocked)
+        window.timeline.view.set_dependencies_visible(control.isChecked())
     panel = window.analysis_panel
     if panel is not None and "analysis/editorial_checks" in values:
         control = panel.editorial_checks

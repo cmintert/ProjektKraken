@@ -158,3 +158,33 @@ collapsed-group refresh must preserve selection, drafts, playhead/world-time
 separation and undo. Review normal/future, selected/unselected, focus, disabled,
 hover/drag, six palettes and narrow overflow. Screenshot evidence establishes
 rendering; fresh unprompted interpretation is required before claiming usability.
+
+## Timeline dependency strands — 2026-10-28 (KRT-114)
+
+- `timeline_dependency_0` through `timeline_dependency_7` identify connected
+  chains of authored Follow Event timing references. All eight roles meet 3:1
+  contrast against timeline backgrounds in every palette and recovery theme.
+  They are categorical identity, not success, warning, chronology or Event type.
+- Branches and merges share one strand color. The smallest Event UUID identifies
+  a component, hashed deterministically into the eight slots. Colors may repeat;
+  adding or removing a reference may recolor a merged or split chain. Hidden
+  Events remain part of strand identity, so layout changes do not recolor it.
+- Noninteractive curves meet event sides with horizontal endpoint tangents and
+  arrowheads pointing from the source endpoint to the dependent endpoint.
+  Endpoint rows and duration caps retain their temporal meaning. Detached
+  duration measures never serve as endpoint ports; representative uncertain
+  positions remain uncertain. Text, group headers and the ruler are protected.
+- Output sockets use actual painted row/text extents rather than reserved label
+  width. Prefer a single smooth cubic, with horizontal output/input handles.
+  Obstructed routes use deterministic routing points and rounded, separated
+  tracks. Sort branches by displayed source/target order and stable identities;
+  penalize crossings and overlapping tracks without changing event placement.
+  Route around text and marks instead of clipping out label-sized wire fragments.
+  Ports and paths are presentation, not additional dates or authoring handles.
+- Selection increases the width of incident connections without replacing their
+  strand identity. Direction and endpoint geometry supplement color. Hidden or
+  unresolved endpoint geometry does not acquire substitute group connections.
+- Show dependencies is an enabled-by-default contextual preference beside Snap
+  to Events, with the same overflow route and Settings → Timeline synchronization.
+  It changes presentation only, preserving lane order, drafts, selection,
+  keyboard ownership, Viewing/World current time and undo (contracts 2/5/6/8/9).

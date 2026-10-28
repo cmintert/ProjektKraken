@@ -263,6 +263,7 @@ class SettingsCenter(QDialog):
             self._field(writing, key)
         timeline = self._simple_page("kraken", "Timeline")
         self._field(timeline, "timeline/snap_playhead_to_events")
+        self._field(timeline, "timeline/show_dependencies")
         analysis = self._simple_page("kraken", "Analysis")
         self._field(analysis, "analysis/editorial_checks")
         self.ai = AISettingsForm(self)

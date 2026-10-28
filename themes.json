@@ -95,7 +95,15 @@
         "timeline_world_time": "#E0E0E0",
         "timeline_grid": "#454545",
         "timeline_halo_opacity": "0.25",
-        "timeline_window_opacity": "0.14"
+        "timeline_window_opacity": "0.14",
+        "timeline_dependency_0": "#74C69D",
+        "timeline_dependency_1": "#7CB8ED",
+        "timeline_dependency_2": "#D6A5E8",
+        "timeline_dependency_3": "#E0AC69",
+        "timeline_dependency_4": "#E5849F",
+        "timeline_dependency_5": "#64C4C8",
+        "timeline_dependency_6": "#B8BC70",
+        "timeline_dependency_7": "#B3B9CE"
     },
     "light_mode": {
         "app_bg": "#F5F5F5",
@@ -193,7 +201,15 @@
         "timeline_world_time": "#212121",
         "timeline_grid": "#E0E0E0",
         "timeline_halo_opacity": "0.25",
-        "timeline_window_opacity": "0.14"
+        "timeline_window_opacity": "0.14",
+        "timeline_dependency_0": "#276749",
+        "timeline_dependency_1": "#245EA0",
+        "timeline_dependency_2": "#78449C",
+        "timeline_dependency_3": "#8C5420",
+        "timeline_dependency_4": "#A33E61",
+        "timeline_dependency_5": "#216F74",
+        "timeline_dependency_6": "#666B20",
+        "timeline_dependency_7": "#525D7D"
     },
     "fantasy_mode": {
         "app_bg": "#24211C",
@@ -291,7 +307,15 @@
         "timeline_world_time": "#E6DCC3",
         "timeline_grid": "#453F36",
         "timeline_halo_opacity": "0.25",
-        "timeline_window_opacity": "0.14"
+        "timeline_window_opacity": "0.14",
+        "timeline_dependency_0": "#74C69D",
+        "timeline_dependency_1": "#7CB8ED",
+        "timeline_dependency_2": "#D6A5E8",
+        "timeline_dependency_3": "#E0AC69",
+        "timeline_dependency_4": "#E5849F",
+        "timeline_dependency_5": "#64C4C8",
+        "timeline_dependency_6": "#B8BC70",
+        "timeline_dependency_7": "#B3B9CE"
     },
     "imperial_mode": {
         "app_bg": "#0D0D0D",
@@ -389,7 +413,15 @@
         "timeline_world_time": "#E0E0E0",
         "timeline_grid": "#3E3E3E",
         "timeline_halo_opacity": "0.25",
-        "timeline_window_opacity": "0.14"
+        "timeline_window_opacity": "0.14",
+        "timeline_dependency_0": "#74C69D",
+        "timeline_dependency_1": "#7CB8ED",
+        "timeline_dependency_2": "#D6A5E8",
+        "timeline_dependency_3": "#E0AC69",
+        "timeline_dependency_4": "#E5849F",
+        "timeline_dependency_5": "#64C4C8",
+        "timeline_dependency_6": "#B8BC70",
+        "timeline_dependency_7": "#B3B9CE"
     },
     "cyberpunk_mode": {
         "app_bg": "#0A0A12",
@@ -487,7 +519,15 @@
         "timeline_world_time": "#D1D1FF",
         "timeline_grid": "#2E2E48",
         "timeline_halo_opacity": "0.25",
-        "timeline_window_opacity": "0.14"
+        "timeline_window_opacity": "0.14",
+        "timeline_dependency_0": "#74C69D",
+        "timeline_dependency_1": "#7CB8ED",
+        "timeline_dependency_2": "#D6A5E8",
+        "timeline_dependency_3": "#E0AC69",
+        "timeline_dependency_4": "#E5849F",
+        "timeline_dependency_5": "#64C4C8",
+        "timeline_dependency_6": "#B8BC70",
+        "timeline_dependency_7": "#B3B9CE"
     },
     "muted_light_mode": {
         "app_bg": "#EAE7E0",
@@ -585,6 +625,14 @@
         "timeline_world_time": "#45433E",
         "timeline_grid": "#D6D3CC",
         "timeline_halo_opacity": "0.25",
-        "timeline_window_opacity": "0.14"
+        "timeline_window_opacity": "0.14",
+        "timeline_dependency_0": "#276749",
+        "timeline_dependency_1": "#245EA0",
+        "timeline_dependency_2": "#78449C",
+        "timeline_dependency_3": "#8C5420",
+        "timeline_dependency_4": "#A33E61",
+        "timeline_dependency_5": "#216F74",
+        "timeline_dependency_6": "#666B20",
+        "timeline_dependency_7": "#525D7D"
     }
 }

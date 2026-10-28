@@ -37,7 +37,9 @@ from src.core.events import Event
 from src.core.temporal_presentation import event_navigation_context
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
+from src.gui.widgets.timeline.dependency_layer import TimelineDependencyLayer
 from src.gui.widgets.timeline.event_item import EventItem
+from src.gui.widgets.timeline.group_band_item import GroupBandItem
 from src.gui.widgets.timeline.group_band_manager import GroupBandManager
 from src.gui.widgets.timeline.group_label_overlay import GroupLabelOverlay
 from src.gui.widgets.timeline.layout_history import TimelineLayoutHistory
@@ -169,6 +171,7 @@ class TimelineView(QGraphicsView):
 
         self.events: list[Event] = []
         self._event_items: dict[str, EventItem] = {}
+        self._dependencies = TimelineDependencyLayer()
         self.scale_factor = 20.0
         self._initial_fit_pending = False
         self._has_done_initial_fit = False  # Only fit_all on first load
@@ -406,6 +409,32 @@ class TimelineView(QGraphicsView):
     # Height allocated for sticky parent context tier
     CONTEXT_TIER_HEIGHT = 14
 
+    def set_dependencies_visible(self, enabled: bool) -> None:
+        """Toggle strands without changing layout, authoring state or history."""
+        self._dependencies.enabled = enabled
+        self.viewport().update()
+
+    def are_dependencies_visible(self) -> bool:
+        """Return the effective display preference."""
+        return self._dependencies.enabled
+
+    def drawBackground(self, painter: QPainter, rect: QRectF | QRect) -> None:
+        """Draw noninteractive timing strands beneath event content."""
+        super().drawBackground(painter, rect)
+        viewport = QRectF(self.viewport().rect())
+        viewport.setTop(self.RULER_HEIGHT)
+        self._dependencies.paint(
+            painter,
+            [*self._event_items.values(), *self._duplicate_event_items],
+            [
+                item
+                for item in self.graphics_scene.items()
+                if isinstance(item, GroupBandItem)
+            ],
+            viewport,
+            ThemeManager().get_theme(),
+        )
+
     def drawForeground(self, painter: QPainter, rect: QRectF | QRect) -> None:
         """Draws a semantic zoom ruler at the top of the viewport.
 
@@ -615,11 +644,16 @@ class TimelineView(QGraphicsView):
 
         """
         self._ruler.set_calendar_converter(converter)
+        self._dependencies.set_display_events(self.events, converter)
         self._layout_generation += 1
         self.viewport().update()
 
     def set_events(self, events: list[Event]) -> None:
         """Reconcile event items on the GUI thread, then request their layout."""
+        context = getattr(self, "_temporal_context", None)
+        self._dependencies.set_world_events(
+            context.events() if context is not None else events
+        )
         self._incremental_layout_timer.stop()
         self._clear_duplicates()
         existing = {
@@ -645,6 +679,9 @@ class TimelineView(QGraphicsView):
         """Apply a data-only plan without transferring scene ownership."""
         self.events = list(prepared.events)
         self._unplaced_events = list(prepared.unplaced)
+        self._dependencies.set_display_events(
+            self.events, EventItem._calendar_converter
+        )
         if prepared.unplaced:
             self._empty_state.set_message("No resolved Event starts")
             self._empty_state.set_description(
@@ -707,6 +744,7 @@ class TimelineView(QGraphicsView):
 
     def apply_event_effects(self, effects: list[LoreMutationEffect]) -> None:
         """Patch surviving items and coalesce geometric changes into one repack."""
+        self._dependencies.apply_effects(effects)
         prepared = TimelineEventPreparationService.apply_effects(
             [*self.events, *getattr(self, "_unplaced_events", [])], effects
         )
@@ -939,6 +977,7 @@ class TimelineView(QGraphicsView):
                         else first_y
                     )
                     item = existing_items[event.id]
+                    item.setData(0, "standard")
 
                     # Update zoom level for duration bar scaling
                     item.set_zoom(self._current_zoom)
@@ -1155,6 +1194,7 @@ class TimelineView(QGraphicsView):
                         placed_event_ids.add(event.id)
 
                     lane_idx = layout_map[event.id]
+                    item.setData(0, "tag:" + tag)
 
                     # Calculate Y offset within group
                     y_offset = 0
@@ -1246,9 +1286,11 @@ class TimelineView(QGraphicsView):
                     duplicate_item.on_drag_complete = self._on_event_drag_complete
                     self.graphics_scene.addItem(duplicate_item)
                     self._duplicate_event_items.append(duplicate_item)
+                    duplicate_item.setData(0, "all")
                     self._position_event_item(duplicate_item, target_y)
                 elif event.id in event_items:
                     item = event_items[event.id]
+                    item.setData(0, "all")
                     self._position_event_item(item, target_y, drop_lines)
 
             if lane_heights:
@@ -1448,6 +1490,9 @@ class TimelineView(QGraphicsView):
             found_item.event.lore_duration = event_data["lore_duration"]
 
         found_item.setToolTip(f"{found_item.event.name} ({found_item.event.lore_date})")
+        self._dependencies.update_preview(
+            found_item.event, EventItem._calendar_converter
+        )
 
         # Repack to handle position/size changes
         self.repack_events()
@@ -1605,6 +1650,11 @@ class TimelineView(QGraphicsView):
 
         # Standard move handling
         super().mouseMoveEvent(event)
+        grabber = self.graphics_scene.mouseGrabberItem()
+        if isinstance(grabber, EventItem) and grabber._is_dragging:
+            self._dependencies.update_preview(
+                grabber.event, EventItem._calendar_converter
+            )
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Handles mouse release.

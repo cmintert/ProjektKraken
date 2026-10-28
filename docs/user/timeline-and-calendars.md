@@ -46,6 +46,10 @@ Current Time** takes you back.
 - Select an event to open its inspector.
 - Move supported event items to update their date.
 - Use the playhead controls to inspect another point in history.
+- Enable **Show dependencies** beside **Snap to Events** to see which Events
+  follow other Events' dates. On narrow timelines, use **More actions**. This
+  setting takes effect immediately and is remembered on this computer; it is
+  also available in **Settings → Timeline**.
 - Open **Go to date** above the timeline and choose **Go to selected event**
   to move the playhead to the selected event's saved date and center the view.
   This option is disabled when the selected object is not an available event.
@@ -560,6 +564,37 @@ calendar date.
 
 **Snap to Events** — Snap manual playhead movement to nearby event dates. This does not
 add precision to partial event dates or affect playback jumps.
+
+(help-inspect-timeline-show-dependencies)=
+
+**Show dependencies** — Show colored arrows for saved **Follow Event** date
+sources. Lines meet the sides of the referenced starts or ends; each connected
+chain, including branches and merges, shares a color. Colors may repeat and do
+not make uncertain dates exact. It starts enabled. Clear it to hide the
+connections; the Events' dates, selection, Viewing time and undo history stay
+unchanged.
+
+Arrows run from the source Event's start or end to the endpoint that follows it.
+Connections meet the sides of the relevant endpoint row or duration cap. Select
+an Event to thicken its incoming and outgoing connections. These lines are visual
+guides; edit the Event's date source in its inspector.
+
+Small sockets identify the wire outputs; arrows identify the dependent inputs.
+Clear routes use smooth node-editor curves with horizontal side connections.
+Crowded routes use stable routing tracks around labels and other event marks,
+instead of cutting a wire into visible fragments. Branches follow the displayed
+event order. Wires can still cross where the fixed timeline positions require it;
+select an Event to follow its connections more easily.
+
+Each connected chain shares a color, including branches and merges. Separate
+chains use a theme-aware palette whose colors can repeat. Color does not indicate
+chronology, Event type or an error. Changing a date source can merge or split
+chains and change their colors; zooming or collapsing groups does not.
+
+A line does not make an uncertain date exact. Connections are omitted when an
+endpoint cannot be placed or its Event is collapsed. Grouped copies connect to
+a source in the same group when available, otherwise to the nearest visible
+source. Ordinary Relations do not create these lines.
 
 (help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-btn-fit)=
 

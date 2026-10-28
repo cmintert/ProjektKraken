@@ -190,6 +190,18 @@ class TimelineWidget(QWidget):
             priority=20,
         )
 
+        self.chk_show_dependencies = declare_inspection(
+            QCheckBox("Show dependencies"),
+            "timeline.show-dependencies|timeline.viewing|help-inspect-timeline-show-dependencies",
+        )
+        self.chk_show_dependencies.setToolTip(
+            "Show colored connections between events whose dates follow other events."
+        )
+        self.chk_show_dependencies.setChecked(
+            cast(bool, settings.value("timeline/show_dependencies", True, type=bool))
+        )
+        self.action_toolbar.add_button(self.chk_show_dependencies, priority=20)
+
         self.btn_fit = declare_inspection(
             PhosphorToolMenuButton(self),
             "src-gui-widgets-timeline-init-timelinewidget-init-self-btn-fit|timeline.viewing|help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-btn-fit",
@@ -220,6 +232,8 @@ class TimelineWidget(QWidget):
             "view.src-gui-widgets-timeline-init-timelinewidget-init-self-view|timeline.viewing|help-inspect-view-src-gui-widgets-timeline-init-timelinewidget-init-self-view",
         )
         self.view.set_playhead_event_snapping(snap_to_events)
+        self.view.set_dependencies_visible(self.chk_show_dependencies.isChecked())
+        self.chk_show_dependencies.toggled.connect(self.set_dependencies_visible)
         self.chk_snap_playhead_to_events.toggled.connect(
             self.set_playhead_event_snapping
         )
@@ -326,6 +340,15 @@ class TimelineWidget(QWidget):
 
         settings_navigation().contextual_changed.emit(
             "timeline/snap_playhead_to_events", enabled
+        )
+
+    def set_dependencies_visible(self, enabled: bool) -> None:
+        """Apply and persist the dependency-strand display preference."""
+        self.view.set_dependencies_visible(enabled)
+        from src.gui.utils.settings_navigation import settings_navigation
+
+        settings_navigation().contextual_changed.emit(
+            "timeline/show_dependencies", enabled
         )
 
     def set_playhead_time(

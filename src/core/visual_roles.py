@@ -9,6 +9,7 @@ SRGB_LINEAR_THRESHOLD = 0.04045
 
 CONTROL_ROLES = ("primary", "secondary", "quiet", "destructive")
 CONTROL_STATES = ("normal", "hover", "pressed", "checked", "disabled")
+DEPENDENCY_ROLES = tuple(f"timeline_dependency_{index}" for index in range(8))
 SEMANTIC_ROLES = (
     "app_bg",
     "surface",
@@ -34,11 +35,15 @@ SEMANTIC_ROLES = (
     "supporting_text",
     "supporting_caption",
 )
-REQUIRED_VISUAL_ROLES = SEMANTIC_ROLES + tuple(
-    f"action_{role}_{state}_{part}"
-    for role in CONTROL_ROLES
-    for state in CONTROL_STATES
-    for part in ("bg", "text", "border")
+REQUIRED_VISUAL_ROLES = (
+    SEMANTIC_ROLES
+    + DEPENDENCY_ROLES
+    + tuple(
+        f"action_{role}_{state}_{part}"
+        for role in CONTROL_ROLES
+        for state in CONTROL_STATES
+        for part in ("bg", "text", "border")
+    )
 )
 
 
@@ -82,7 +87,7 @@ def validate_visual_roles(name: str, theme: Mapping[str, str]) -> None:
 
 def contrast_failures(theme: Mapping[str, str]) -> list[str]:
     """Describe failures for the backgrounds used by the shared authoring UI."""
-    failures = []
+    failures = _dependency_contrast_failures(theme)
     for background in ("app_bg", "surface"):
         for foreground in (
             "link_entity",
@@ -123,3 +128,13 @@ def contrast_failures(theme: Mapping[str, str]) -> list[str]:
         if contrast(theme[fg], theme[bg]) < minimum:
             failures.append(f"{fg}/{bg}: contrast < {minimum}")
     return failures
+
+
+def _dependency_contrast_failures(theme: Mapping[str, str]) -> list[str]:
+    """Keep strand strokes readable without treating them as text or status."""
+    return [
+        f"{foreground}/{background}: contrast < 3"
+        for background in ("app_bg", "surface")
+        for foreground in DEPENDENCY_ROLES
+        if contrast(theme[foreground], theme[background]) < CONTROL_CONTRAST
+    ]

@@ -108,6 +108,7 @@ def _definitions() -> tuple[SettingDefinition, ...]:
         ("SpellCheck/enabled", "Spell & grammar checking", "Writing", False),
         ("SpellCheck/language", "Spelling language", "Writing", "auto"),
         ("timeline/snap_playhead_to_events", "Snap to Events", "Timeline", False),
+        ("timeline/show_dependencies", "Show dependencies", "Timeline", True),
         ("analysis/editorial_checks", "Editorial checks", "Analysis", False),
         ("ai_auto_index_on_save", "Automatically index saved entries", "AI", False),
         ("ai_embedding_provider", "Embedding provider", "AI", "sentence-transformers"),

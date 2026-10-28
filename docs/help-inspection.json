@@ -9320,6 +9320,16 @@
       "binding": "self.button_box",
       "label": "Apply changes / Cancel",
       "kind": "ResponsiveDialogButtonBox"
+    },
+    {
+      "id": "timeline.show-dependencies",
+      "topic_id": "timeline.viewing",
+      "target": "help-inspect-timeline-show-dependencies",
+      "source": "src/gui/widgets/timeline/__init__.py",
+      "symbol": "TimelineWidget.__init__",
+      "binding": "self.chk_show_dependencies",
+      "label": "Show dependencies",
+      "kind": "QCheckBox"
     }
   ],
   "factory_exemptions": [
@@ -15940,8 +15950,8 @@
     {
       "source": "src/gui/widgets/timeline/__init__.py",
       "symbol": "TimelineWidget.__init__",
-      "sha256": "5dfdc3ffe147c079fa504264cb4edf574c448e170e8991f43f9980fb11a76222",
-      "review_note": "KRT-107 compact-first revision: zoom automatically uses minimum row count. Compact lanes keeps its anchor and optionally resets placement preferences; tooltip and canonical explanation now describe that behavior. Fit View direct activation, selection and time remain unchanged."
+      "sha256": "ccf23e00294239f135dbcf82a35575db89c7b9226b3520c070200d12dbb469be",
+      "review_note": "KRT-114: adds enabled-by-default Show dependencies beside Snap to Events; shared overflow and contextual persistence, with a new canonical inspection explanation."
     },
     {
       "source": "src/gui/widgets/timeline/__init__.py",
@@ -17016,6 +17026,30 @@
       "symbol": "EventTimingReviewDialog.__init__",
       "sha256": "a07412b116d67dae7d2ea032a37d433ec08e26993df6bee25dc234ab3bf53dcb",
       "review_note": "KRT-113 owner-reported review repair: Before/After consequences and uncertainty are visible in scrollable cards, with one shared Apply changes/Cancel action row. The completed calculation progress is retired before this window opens. Existing Event timing Help owns this modal boundary; Cancel and Escape retain the draft."
+    },
+    {
+      "source": "src/gui/widgets/timeline/__init__.py",
+      "symbol": "TimelineWidget.set_dependencies_visible",
+      "sha256": "cfa12dacfa57b5b36aad5d74119e03a102386c61e51574dafbdfcd510bf9a7f6",
+      "review_note": "KRT-114: display-only toggle emits the registered contextual setting without changing dates, layout or history."
+    },
+    {
+      "source": "src/gui/widgets/timeline/dependency_layer.py",
+      "symbol": "TimelineDependencyLayer.paint",
+      "sha256": "ffb170c3c81569d14c679cea96e4ec61a614090f7570afb9a5b1c0e64eb2445e",
+      "review_note": "KRT-114: noninteractive complete node-editor wires with side sockets, endpoint arrows, categorical strand colors and selection width; only viewport/group headers clip routes. Text is protected by obstacle routing."
+    },
+    {
+      "source": "src/core/timeline_dependencies.py",
+      "symbol": "timeline_dependencies",
+      "sha256": "27abde5458201e8cb40981620a39e831f0250a090f1af45ed01d3fdba1674245",
+      "review_note": "KRT-114: complete accepted-world Follow Event references define undirected components; authored direction and endpoint identity are preserved."
+    },
+    {
+      "source": "src/gui/widgets/timeline/wire_router.py",
+      "symbol": "route_wires",
+      "sha256": "5ada5392342252e7e0645392065bae0d7ce6494a45eff4fe59d29a6080620c11",
+      "review_note": "KRT-114: stable branch order, smooth side-tangent cubics and obstacle-aware routing tracks; no manual rerouting gesture or data mutation. Canonical timeline explanation records unavoidable crossings."
     }
   ],
   "review_status": {
