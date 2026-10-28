@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock
 
+from PySide6.QtGui import QFont, QFontMetricsF
 from PySide6.QtWidgets import QWidget
 
 from src.core.events import Event
@@ -55,10 +56,11 @@ class TestEventDuration:
         item = EventItem(event, scale_factor=scale)
 
         rect = item.boundingRect()
-        # Duration events use MAX_WIDTH for text label space
-        expected_width = max(duration * scale, EventItem.MAX_WIDTH)
-
-        # The paint bounds include padding around the bar and its label.
-        assert rect.width() >= expected_width
+        # Bounds contain the elapsed-time measure and the measured name.
+        font = QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        assert rect.width() >= duration * scale
+        assert rect.width() >= QFontMetricsF(font).horizontalAdvance(event.name)
         assert rect.height() >= 50
         assert rect.top() <= -10

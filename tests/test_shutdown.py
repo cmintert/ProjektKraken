@@ -34,7 +34,7 @@ def test_logging_shutdown():
         mock_shutdown.assert_called_once()
 
 
-def test_mainwindow_close_event_cleanups_worker(qapp, mock_db_service):
+def test_mainwindow_close_event_cleanups_worker(qapp, qtbot, mock_db_service):
     """
     Test that MainWindow.closeEvent triggers worker cleanup and thread quit.
     Note: We need the 'qapp' fixture (pytest-qt) or a manual generic setup.
@@ -46,7 +46,10 @@ def test_mainwindow_close_event_cleanups_worker(qapp, mock_db_service):
         mock_worker.cleanup = MagicMock()
 
         # Configure the thread to simulate running
-        mock_thread = MagicMock(spec=QThread)
+        mock_thread = QThread()
+        mock_thread.start = MagicMock()
+        mock_thread.quit = MagicMock(wraps=mock_thread.quit)
+        mock_thread.wait = MagicMock()
         mock_thread.wait.return_value = True  # Simulate successful wait
 
         # Instantiate MainWindow
@@ -56,6 +59,7 @@ def test_mainwindow_close_event_cleanups_worker(qapp, mock_db_service):
             patch("src.app.main_window.QTimer"),
         ):
             window = MainWindow()
+            qtbot.addWidget(window)
             # Manually inject our specific mock worker if the constructor didn't use it
             # (It instantiates DatabaseWorker inside __init__, so our patch above handles it)
 
@@ -69,24 +73,18 @@ def test_mainwindow_close_event_cleanups_worker(qapp, mock_db_service):
 
             window.closeEvent(event)
 
-            # Assertions
-            # 1. Check worker cleanup invoked
-            # Use QMetaObject.invokeMethod, so we can't easily assert assert_called
-            # on the slot directly if it's invoked via Qt meta system, UNLESS we
-            # patch QMetaObject.invokeMethod.
-            # However, since we are in python, invokeMethod usually works on the
-            # python object.
-            # Let's verify via patching QMetaObject.
-            pass
+            event.accept.assert_called_once()
+            mock_thread.quit.assert_called_once()
+            mock_thread.wait.assert_called_once()
 
 
-def test_mainwindow_close_calls_worker_cleanup_logic(qapp):
+def test_mainwindow_close_calls_worker_cleanup_logic(qapp, qtbot):
     """
     More direct test of cleanup logic without full Qt event loop if possible.
     """
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
-        patch("src.app.worker_manager.QThread"),
+        patch("src.app.worker_manager.QThread.start"),
         patch("src.app.main_window.QTimer"),
         patch("src.app.main_window.invoke_method") as mock_invoke,
         patch("src.app.main_window.QSettings") as MockSettings,
@@ -102,7 +100,10 @@ def test_mainwindow_close_calls_worker_cleanup_logic(qapp):
         mock_settings_instance.value.side_effect = settings_value_side_effect
 
         window = MainWindow()
+        qtbot.addWidget(window)
         window.check_unsaved_changes = MagicMock(return_value=True)
+        window.worker_thread.quit = MagicMock(wraps=window.worker_thread.quit)
+        window.worker_thread.wait = MagicMock(wraps=window.worker_thread.wait)
 
         event = MagicMock()
         window.closeEvent(event)

@@ -87,7 +87,9 @@ def test_queued_worker_reports_snapshot_on_main_thread(qtbot, tmp_path):
     try:
         qtbot.waitUntil(lambda: receiver.initialized is not None, timeout=10000)
         assert receiver.initialized is True
-        assert receiver.report["detected_version"] == 3
+        from src.services.migrations.steps import CURRENT_VERSION
+
+        assert receiver.report["detected_version"] == CURRENT_VERSION
         assert receiver.thread_seen == receiver.thread()
     finally:
         QMetaObject.invokeMethod(worker, "cleanup", Qt.ConnectionType.QueuedConnection)

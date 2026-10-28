@@ -12,7 +12,7 @@ Lock behaviour:
 import logging
 from typing import Any, Optional
 
-from PySide6.QtCore import QEvent, QSize, Signal, Slot
+from PySide6.QtCore import QEvent, QSize, Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QButtonGroup,
     QFrame,
@@ -23,6 +23,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.event_timing.definitions import EndpointDefinition, EventTimingDefinition
+from src.core.events import Event
+from src.core.temporal_context import TemporalResolutionContext
 from src.core.temporal_expression import move_expression
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
@@ -30,6 +33,7 @@ from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.compact_duration_widget import CompactDurationWidget
 from src.gui.widgets.editor_presentation import DisclosureButton
+from src.gui.widgets.event_timing_source import EventTimingSource
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 from src.gui.widgets.wrapping_choices import WrappingCheckBox as QCheckBox
 
@@ -71,6 +75,10 @@ class TemporalRangeWidget(QWidget):
         super().__init__(parent)
         self._lock_mode = self.LOCK_DURATION
         self._updating = False
+        self._timing_loaded = False
+        self._unsupported_timing = False
+        self._loaded_definition: EventTimingDefinition | None = None
+        self._loaded_controls_definition: EventTimingDefinition | None = None
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self._setup_ui()
@@ -129,10 +137,12 @@ class TemporalRangeWidget(QWidget):
         start_row.addWidget(lbl_start)
         self.date_start = CompactDateWidget(text_first=True)
         self.date_start.allow_duration_range = True
+        self.source_start = EventTimingSource(self.date_start, "start", self)
+        start_row.addWidget(self.source_start)
         start_row.addWidget(self.date_start)
         card_layout.addLayout(start_row)
         self.has_duration = declare_inspection(
-            QCheckBox("Event has duration"),
+            QCheckBox("Event has an end"),
             "src-gui-widgets-temporal-range-widget-temporalrangewidget-setup-ui-self-has-duration|event.timing|help-inspect-src-gui-widgets-temporal-range-widget-temporalrangewidget-setup-ui-self-has-duration",
         )
         self.has_duration.setToolTip(
@@ -148,12 +158,30 @@ class TemporalRangeWidget(QWidget):
         self.range_summary = QLabel()
         self.range_summary.setWordWrap(True)
         card_layout.addWidget(self.range_summary)
+        self.calculated_timing = QLabel()
+        self.calculated_timing.setWordWrap(True)
+        card_layout.addWidget(self.calculated_timing)
+        self.calculated_timing.hide()
+        self.calculation_details = declare_inspection(
+            DisclosureButton("Evidence and timing constraints…"),
+            "event-timing-evidence|event.timing|help-inspect-event-timing-evidence",
+        )
+        card_layout.addWidget(self.calculation_details)
+        self.calculation_evidence = QLabel()
+        self.calculation_evidence.setWordWrap(True)
+        self.calculation_evidence.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByKeyboard
+            | Qt.TextInteractionFlag.TextSelectableByMouse
+        )
+        card_layout.addWidget(self.calculation_evidence)
+        self.calculation_evidence.hide()
+        self.calculation_details.toggled.connect(self.calculation_evidence.setVisible)
         self.range_content = QWidget()
         card_layout.addWidget(self.range_content)
         range_layout = QVBoxLayout(self.range_content)
         range_layout.setContentsMargins(0, 0, 0, 0)
         range_layout.setSpacing(8)
-        range_layout.addWidget(QLabel("When changing start, keep:"))
+        range_layout.addWidget(QLabel("Define the end using:"))
         self.range_button.toggled.connect(self.range_content.setVisible)
         self.range_content.hide()
 
@@ -204,8 +232,8 @@ class TemporalRangeWidget(QWidget):
 
         range_layout.addLayout(lock_row)
         explanation = QLabel(
-            "Keep the duration to move the whole event; "
-            "keep the end date to adjust its duration."
+            "Duration derives the end from the start. "
+            "End Date keeps its own date source."
         )
         explanation.setWordWrap(True)
         range_layout.addWidget(explanation)
@@ -214,6 +242,7 @@ class TemporalRangeWidget(QWidget):
         span_row = QVBoxLayout()
         span_row.setSpacing(6)
         lbl_span = QLabel("Span")
+        self._duration_label = lbl_span
         span_row.addWidget(lbl_span)
         self.duration_widget = CompactDurationWidget()
         for spin in (
@@ -240,9 +269,13 @@ class TemporalRangeWidget(QWidget):
         end_row = QVBoxLayout()
         end_row.setSpacing(6)
         lbl_end = QLabel("End")
+        self._section_labels = (lbl_start, lbl_span, lbl_end)
+        self._explanation = explanation
         end_row.addWidget(lbl_end)
         self.date_end = CompactDateWidget(text_first=True)
         self.date_end.txt_date.setAccessibleName("End date")
+        self.source_end = EventTimingSource(self.date_end, "end", self)
+        end_row.addWidget(self.source_end)
         end_row.addWidget(self.date_end)
         self.enter_end_button = declare_inspection(
             QPushButton("Specify an end date instead…"),
@@ -262,8 +295,15 @@ class TemporalRangeWidget(QWidget):
         self._card.setStyleSheet(StyleHelper.get_temporal_card_style())
 
         label_style = StyleHelper.get_temporal_label_style()
-        for lbl in self._card.findChildren(QLabel):
+        for lbl in self._section_labels:
             lbl.setStyleSheet(label_style)
+        for label in (
+            self.range_summary,
+            self.calculated_timing,
+            self.calculation_evidence,
+            self._explanation,
+        ):
+            label.setStyleSheet(StyleHelper.get_supporting_caption_style())
 
         sep_style = StyleHelper.get_temporal_separator_style()
         for frame in self._card.findChildren(QFrame):
@@ -298,6 +338,9 @@ class TemporalRangeWidget(QWidget):
         self.duration_widget.value_changed.connect(self._on_duration_changed)
         self.date_end.value_changed.connect(self._on_end_changed)
         self.has_duration.toggled.connect(self._on_duration_mode_changed)
+        self.source_start.changed.connect(self._source_changed)
+        self.source_end.changed.connect(self._source_changed)
+        self.has_duration.toggled.connect(self._source_changed)
         self.btn_lock_end.toggled.connect(self._on_lock_toggled)
         ThemeManager().theme_changed.connect(self._on_theme_changed)
         self.start_changed.connect(self._update_range_summary)
@@ -313,8 +356,16 @@ class TemporalRangeWidget(QWidget):
 
     def commit_drafts(self) -> bool:
         """Validate date drafts before an explicit save."""
-        start_valid = self.date_start.commit_draft()
-        end_valid = self.date_end.commit_draft()
+        start_valid = (
+            self.source_start.mode.currentData() == "event"
+            or self.date_start.commit_draft()
+        )
+        end_valid = (
+            self.source_end.mode.currentData() == "event"
+            or self._lock_mode == self.LOCK_DURATION
+            or not self.has_duration.isChecked()
+            or self.date_end.commit_draft()
+        )
         return start_valid and end_valid
 
     def cancel_drafts(self) -> None:
@@ -342,6 +393,21 @@ class TemporalRangeWidget(QWidget):
             else "Single occurrence; date precision does not imply duration."
         )
         self.range_summary.setVisible(True)
+        if self._timing_loaded:
+            independent = self._lock_mode == self.LOCK_END
+            self.date_start.setVisible(self.source_start.mode.currentData() == "manual")
+            self.date_end.setVisible(
+                independent and self.source_end.mode.currentData() == "manual"
+            )
+            self.enter_end_button.hide()
+            if self.has_duration.isChecked() and independent:
+                self.range_summary.setText(
+                    "The end has its own date source; duration is calculated when saved."
+                )
+            elif self.has_duration.isChecked() and duration == 0:
+                self.range_summary.setText(
+                    "Duration: 0 days. The authored end equals the start."
+                )
 
     def _enter_end_date(self) -> None:
         """Request an authored endpoint instead of showing a fabricated exact end."""
@@ -378,6 +444,7 @@ class TemporalRangeWidget(QWidget):
         if not isinstance(expression, TemporalExpression):
             return
         self._show_duration_mode(True)
+        self.btn_lock_end.setChecked(True)
         self.date_end.set_expression(expression)
         self._on_end_changed(self.date_end.get_value())
         self.range_button.setChecked(True)
@@ -440,7 +507,7 @@ class TemporalRangeWidget(QWidget):
             start = self.date_start.get_value()
             self.date_end.blockSignals(True)
             self.date_end.set_value(start + duration)
-            self._show_duration_mode(duration > 0)
+            self._show_duration_mode(duration > 0 or self.has_duration.isChecked())
             self.range_button.setChecked(duration != 0)
             self._update_range_summary()
             self.date_end.blockSignals(False)
@@ -480,6 +547,143 @@ class TemporalRangeWidget(QWidget):
         """
         self._lock_mode = self.LOCK_END if checked else self.LOCK_DURATION
         self._update_segment_styles()
+        self._source_changed()
+
+    def _source_changed(self) -> None:
+        """Expose authoring modes without calculating business results in the UI."""
+        if not self._timing_loaded or self._updating:
+            return
+        independent = self._lock_mode == self.LOCK_END
+        self.source_end.setVisible(independent)
+        self.duration_widget.setVisible(not independent)
+        self._duration_label.setVisible(not independent)
+        self.date_start.setVisible(self.source_start.mode.currentData() == "manual")
+        self.date_end.setVisible(
+            independent and self.source_end.mode.currentData() == "manual"
+        )
+        self.enter_end_button.hide()
+        self.start_changed.emit(self.get_start())
+
+    def set_temporal_context(
+        self, context: TemporalResolutionContext, owner: str
+    ) -> None:
+        """Refresh references and saved results without replacing source drafts."""
+        self.source_start.set_context(context, owner)
+        self.source_end.set_context(context, owner)
+        event = next((item for item in context.events() if item.id == owner), None)
+        if event is not None:
+            from src.core.event_timing.projection import project_event
+            from src.core.temporal_display import event_temporal_display
+
+            projected = project_event(event, context.resolution)
+            display = event_temporal_display(projected, context.converter())
+            self.calculated_timing.setText(
+                "Saved calculation: "
+                + display.caption
+                + "\nAuthored evidence is retained; interval and chronology rules can narrow its possible dates."
+            )
+            self.calculated_timing.show()
+            from src.core.event_timing.presentation import explain_timing
+
+            self.calculation_evidence.setText(
+                explain_timing(
+                    event, context.resolution, context.events(), context.converter()
+                )
+            )
+
+    def load_timing(self, event: Event, context: TemporalResolutionContext) -> None:
+        """Hydrate authoritative definitions separately from nullable projections."""
+        self._timing_loaded = False
+        self._unsupported_timing = False
+        self._card.setEnabled(True)
+        self.source_start.show()
+        self.has_duration.show()
+        self.calculation_details.show()
+        self._loaded_definition = None
+        self._loaded_controls_definition = None
+        self.set_temporal_context(context, event.id)
+        try:
+            definition = EventTimingDefinition.from_event(event)
+            definition.require_supported_expressions()
+        except (ValueError, TypeError, KeyError) as exc:
+            self._unsupported_timing = True
+            self._card.setEnabled(False)
+            for widget in (
+                self.source_start,
+                self.date_start,
+                self.has_duration,
+                self.range_button,
+                self.range_content,
+                self.calculated_timing,
+                self.calculation_details,
+                self.calculation_evidence,
+            ):
+                widget.hide()
+            self.range_summary.setText(f"Timing preserved for repair: {exc}")
+            return
+        self._loaded_definition = definition
+        if definition.duration_days is not None:
+            blocked = self.duration_widget.blockSignals(True)
+            self.duration_widget.set_value(definition.duration_days)
+            self.duration_widget.blockSignals(blocked)
+        self.source_start.load(definition.start)
+        end = definition.end or EndpointDefinition(instant=self.get_end())
+        self.source_end.load(end)
+        from src.core.temporal_expression import TemporalExpression
+
+        if definition.start.expression is not None:
+            self.date_start.set_expression(
+                TemporalExpression.from_dict(definition.start.expression)
+            )
+        elif definition.start.instant is not None:
+            self.date_start.set_value(definition.start.instant)
+        if definition.end is not None:
+            if definition.end.expression is not None:
+                self.date_end.set_expression(
+                    TemporalExpression.from_dict(definition.end.expression)
+                )
+            elif definition.end.instant is not None:
+                self.date_end.set_value(definition.end.instant)
+        self._lock_mode = (
+            self.LOCK_END
+            if definition.end_mode == "independent"
+            else self.LOCK_DURATION
+        )
+        self.btn_lock_end.setChecked(self._lock_mode == self.LOCK_END)
+        self.btn_lock_duration.setChecked(self._lock_mode == self.LOCK_DURATION)
+        self._show_duration_mode(definition.end_mode != "none")
+        self._timing_loaded = True
+        updating = self._updating
+        self._updating = False
+        blocked = self.blockSignals(True)
+        self._source_changed()
+        self.blockSignals(blocked)
+        self._updating = updating
+        self._loaded_controls_definition = self.timing_definition()
+
+    def has_timing_changes(self) -> bool:
+        """Compare controls to their hydrated values, preserving stored precision."""
+        if self.has_pending_draft():
+            return True
+        if self._loaded_controls_definition is None:
+            return False
+        try:
+            return self.timing_definition() != self._loaded_controls_definition
+        except ValueError:
+            return True
+
+    def timing_definition(self) -> EventTimingDefinition:
+        """Collect the explicit source and end authority for a reviewed save."""
+        start = self.source_start.definition()
+        if not self.has_duration.isChecked():
+            return EventTimingDefinition(start)
+        if self._lock_mode == self.LOCK_END:
+            return EventTimingDefinition(
+                start, "independent", self.source_end.definition()
+            )
+        return EventTimingDefinition(
+            start, "duration", duration_days=self.get_duration()
+        )
 
     @Slot(dict)
     def _on_theme_changed(self, theme: dict) -> None:

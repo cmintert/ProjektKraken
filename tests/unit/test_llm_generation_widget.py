@@ -1,5 +1,3 @@
-import importlib
-import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -15,13 +13,6 @@ from src.core.ai_generation import (
     TaskTemplate,
     TaskTemplateSource,
 )
-
-# Reload the widget module after QSettings is mocked to ensure it uses MockQSettings
-if "src.gui.widgets.llm_generation_widget" in sys.modules:
-    import src.gui.widgets.llm_generation_widget
-
-    importlib.reload(src.gui.widgets.llm_generation_widget)
-
 from src.gui.widgets.llm_generation_widget import GenerationWorker, LLMGenerationWidget
 
 

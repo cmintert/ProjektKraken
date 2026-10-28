@@ -15,7 +15,7 @@ def main_window(qtbot):
     with patch("src.app.worker_manager.DatabaseWorker"):
         # Avoid thread start in test and prevent deferred init crash
         with (
-            patch("src.app.worker_manager.QThread"),
+            patch("src.app.worker_manager.QThread.start"),
             patch("src.app.main_window.QTimer"),
         ):
             window = MainWindow()

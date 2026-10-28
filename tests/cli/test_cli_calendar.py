@@ -9,7 +9,13 @@ pytestmark = pytest.mark.ci_fast
 
 @pytest.fixture
 def mock_db():
-    with patch("src.cli.calendar.DatabaseService") as MockDB:
+    with (
+        patch("src.cli.calendar.DatabaseService") as MockDB,
+        patch(
+            "src.cli.calendar.execute_timing",
+            side_effect=lambda command, db, confirmation: command.execute(db),
+        ),
+    ):
         mock_instance = MockDB.return_value
         mock_instance.connect.return_value = None
         yield mock_instance

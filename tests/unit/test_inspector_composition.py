@@ -510,7 +510,13 @@ def test_invalid_date_and_newer_prose_survive_section_navigation(editor, qtbot):
     assert editor.temporal_widget.has_pending_draft()
     assert editor.desc_edit.get_wiki_text().endswith(" again")
     assert not editor.btn_save.isEnabled()
-    assert not editor.autosave_manager._autosave_timer.isActive()
+    requests = []
+    editor.save_requested.connect(requests.append)
+    editor.autosave_manager._perform_autosave()
+    assert len(requests) == 1
+    assert requests[0]["__preserve_timing"] is True
+    assert "lore_date" not in requests[0]
+    assert editor.temporal_widget.has_pending_draft()
     qtbot.keyClick(field, Qt.Key.Key_Escape)
     assert editor.has_unsaved_changes()
 

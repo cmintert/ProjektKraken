@@ -32,6 +32,17 @@ class MigrationCoordinator(QObject):
                     "a new undo history.\n\nRecovery bundle: "
                     f"{report.get('recovery_path')}",
                 )
+            elif report.get("upgraded_from") is not None and report.get(
+                "recovery_path"
+            ):
+                QMessageBox.information(
+                    self._dialog_parent,
+                    "World upgraded",
+                    "Your world was upgraded safely. Authored records and undo "
+                    "history were retained. Older Kraken versions cannot open "
+                    "this upgraded world.\n\nRecovery bundle: "
+                    f"{report['recovery_path']}",
+                )
             return
         box = QMessageBox(self._dialog_parent)
         box.setIcon(QMessageBox.Icon.Critical)

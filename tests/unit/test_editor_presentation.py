@@ -129,7 +129,10 @@ def test_invalid_date_draft_blocks_save_and_survives_reload(event_editor, qtbot)
     saved = []
     editor.save_requested.connect(saved.append)
     assert editor.has_unsaved_changes()
-    assert not editor.autosave_manager._autosave_timer.isActive()
+    requests = []
+    editor.save_requested.connect(requests.append)
+    editor.autosave_manager._perform_autosave()
+    assert not requests  # A Date-frame draft is never submitted by autosave.
     editor._on_save()
     assert saved == []
     assert "not recognized" in editor.date_edit.feedback.text()

@@ -108,7 +108,7 @@ class EventItem(QGraphicsItem):
         self.refresh_theme(ThemeManager().get_theme())
 
         # Position is handled by parent/layout, but X is strictly date-based
-        self.setPos(event.lore_date * scale_factor, 0)
+        self.setPos(event.require_date() * scale_factor, 0)
 
         # Flags: Movable and fixed size on screen
         self.setFlags(
@@ -117,6 +117,9 @@ class EventItem(QGraphicsItem):
             | QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations
             | QGraphicsItem.GraphicsItemFlag.ItemIsMovable
             | QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges
+        )
+        self.setFlag(
+            QGraphicsItem.GraphicsItemFlag.ItemIsMovable, not event.start_follows_event
         )
 
         # Enable caching for improved rendering performance
@@ -205,7 +208,10 @@ class EventItem(QGraphicsItem):
         self.prepareGeometryChange()
         self.event = event
         self.refresh_theme(ThemeManager().get_theme())
-        self.setPos(event.lore_date * self.scale_factor, self.y())
+        self.setPos(event.require_date() * self.scale_factor, self.y())
+        self.setFlag(
+            QGraphicsItem.GraphicsItemFlag.ItemIsMovable, not event.start_follows_event
+        )
         self._update_temporal_tooltip()
 
     def _update_temporal_tooltip(self) -> None:
@@ -218,6 +224,11 @@ class EventItem(QGraphicsItem):
             "Solid bar: certainly ongoing. ?: timing unresolved.\n"
             "Detached Duration ruler measures length, not a start/end date. "
             "A broken ruler is shorter than the scale can show."
+            + (
+                "\nStart follows another Event. Edit its offset or detach it in the inspector to move it."
+                if self.event.start_follows_event
+                else ""
+            )
         )
 
     def _geometry(self, display: TemporalDisplay) -> TemporalGeometry:
@@ -271,7 +282,9 @@ class EventItem(QGraphicsItem):
         super().mousePressEvent(event)
         # Mark that user initiated a drag - used by itemChange to know
         # when to apply constraints vs allowing programmatic moves
-        self._is_dragging = True
+        self._is_dragging = bool(
+            self.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsMovable
+        )
         # Capture current Y as the constraint value at drag start
         self._initial_y = self.y()
 

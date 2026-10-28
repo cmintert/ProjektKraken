@@ -202,9 +202,7 @@ class DataHandler(QObject):
         # Emit signal for editors to update
         self.suggestions_update_requested.emit(items)
 
-    def _apply_lore_effects_to_cache(
-        self, effects: list[LoreMutationEffect]
-    ) -> None:
+    def _apply_lore_effects_to_cache(self, effects: list[LoreMutationEffect]) -> None:
         """Patch worker-confirmed lore snapshots into local caches."""
         for effect in effects:
             object_id = effect["object_id"]
@@ -216,7 +214,7 @@ class DataHandler(QObject):
                     snapshot = effect["snapshot"]
                     assert snapshot is not None
                     self._cached_events.append(Event.from_dict(snapshot))
-                    self._cached_events.sort(key=lambda event: event.lore_date)
+                    self._cached_events.sort(key=lambda event: event.date_sort_key())
             else:
                 self._cached_entities = [
                     entity for entity in self._cached_entities if entity.id != object_id
@@ -431,16 +429,12 @@ class DataHandler(QObject):
             logger.warning("Unknown lore object type for reload: %s", object_type)
 
     @Slot(str, list)
-    def on_trajectories_loaded(
-        self, map_id: str, trajectories: List[Any]
-    ) -> None:
+    def on_trajectories_loaded(self, map_id: str, trajectories: List[Any]) -> None:
         """Forward map-scoped serializable trajectory snapshots."""
         self.trajectories_ready.emit(map_id, trajectories)
 
     @Slot(str, list)
-    def on_feature_geometry_states_loaded(
-        self, map_id: str, states: List[Any]
-    ) -> None:
+    def on_feature_geometry_states_loaded(self, map_id: str, states: List[Any]) -> None:
         """Forward map-scoped dated geometry snapshots."""
         self.feature_geometry_states_ready.emit(map_id, states)
 
@@ -666,9 +660,7 @@ class DataHandler(QObject):
                             )
                             if obj_id:
                                 object_type = _INDEX_COMMANDS[sub_name]
-                                self.index_object_requested.emit(
-                                    object_type, obj_id
-                                )
+                                self.index_object_requested.emit(object_type, obj_id)
                                 self._schedule_marker_after_lore(object_type)
                                 break
 

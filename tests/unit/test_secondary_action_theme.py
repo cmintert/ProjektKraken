@@ -94,6 +94,14 @@ def test_secondary_actions_share_rendered_states_and_keep_other_roles(
                 # across tests even when the global pointer hasn't moved.
                 QApplication.sendEvent(button, QEvent(QEvent.Type.Leave))
             qtbot.wait(1)
+            # Style polish can finish after the synthetic input event on Windows.
+            # Wait for the state under test, retaining the exact pixel contract.
+            expected_background = QColor(theme[f"action_secondary_{state}_bg"])
+            qtbot.waitUntil(
+                lambda: button.grab().toImage().pixelColor(button.width() // 2, 5)
+                == expected_background,
+                timeout=2000,
+            )
             image = button.grab().toImage()
             assert image.pixelColor(button.width() // 2, 5) == QColor(
                 theme[f"action_secondary_{state}_bg"]

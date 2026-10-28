@@ -40,6 +40,25 @@ class ApplyTransferCommand(BaseCommand):
                         )
             if self.preview.get("errors"):
                 raise ValueError("Resolve all import errors before applying.")
+            from src.services.event_timing.guards import is_applying_plan
+            from src.services.event_timing.transfer import requires_prepared_import
+
+            if (
+                not self.applied_once
+                and not is_applying_plan()
+                and requires_prepared_import(db_service, self.preview["delta"])
+            ):
+                raise ValueError(
+                    "Prepare and confirm this import's Event timing plan before applying."
+                )
+            if (
+                (self.preview.get("timing_review") or {}).get("needs_review")
+                and not self.applied_once
+                and not is_applying_plan()
+            ):
+                raise ValueError(
+                    "Calculate and confirm the timing cascade before applying this import."
+                )
             apply_changes(connection, self.preview["delta"])
             self.applied_once = True
             self._is_executed = True

@@ -36,6 +36,7 @@ from src.commands.relation_commands import (
 )
 from src.commands.temporal_entity_edit_command import TemporalEntityEditCommand
 from src.commands.wiki_commands import ProcessWikiLinksCommand
+from src.core.command import parse_lore_mutation_effects
 from src.core.map import Map
 from src.core.operation_trace import event as trace_event
 from src.core.temporal_entity_checkpoint import parse_temporal_entity_checkpoint
@@ -139,9 +140,27 @@ class EditorCoordinator(BaseCoordinator):
                     event_editor.current_event_id == item_id
                     and event_editor.draft_generation == generation
                 ):
-                    complete = event_editor.finish_save(save_revision, result.success)
-                    if result.success and complete:
-                        event_editor.mark_temporal_saved()
+                    if result.success:
+                        effects = (
+                            parse_lore_mutation_effects(result.data.get("lore_effects"))
+                            or []
+                        )
+                        accepted = next(
+                            (
+                                effect["snapshot"]
+                                for effect in reversed(effects)
+                                if effect["object_type"] == "event"
+                                and effect["object_id"] == item_id
+                                and effect["snapshot"] is not None
+                            ),
+                            snapshot,
+                        )
+                        event_editor.mark_temporal_saved(accepted)
+                    complete = event_editor.finish_save(
+                        save_revision,
+                        result.success,
+                        cancelled=bool(result.data.get("cancelled", False)),
+                    )
                     self.editor_save_finished.emit(
                         item_type,
                         item_id,

@@ -36,7 +36,19 @@ def event_temporal_display(
 ) -> TemporalDisplay:
     """Project all events without converting a layout anchor into evidence."""
     metadata = event.attributes.get("_temporal_v2", {})
-    is_duration = event.lore_duration > 0 or bool(metadata.get("end_expression"))
+    if metadata.get("projection"):
+        from src.core.event_timing.presentation import projection_display
+
+        return projection_display(event, converter)
+    if event.lore_date is None:
+        return TemporalDisplay(
+            None,
+            None,
+            caption="Start unresolved — edit Event timing to repair",
+            error=True,
+        )
+    duration = event.lore_duration if event.lore_duration is not None else 0.0
+    is_duration = duration > 0 or bool(metadata.get("end_expression"))
     kind: Literal["point", "duration"] = "duration" if is_duration else "point"
     if not metadata.get("expression") and not metadata.get("end_expression"):
         try:
@@ -48,13 +60,13 @@ def event_temporal_display(
         except (ValueError, TypeError, IndexError, OverflowError):
             caption = f"{event.lore_date:,.1f}"
         if is_duration:
-            legacy_end = event.lore_date + event.lore_duration
+            legacy_end = event.lore_date + duration
             return TemporalDisplay(
                 event.lore_date,
                 legacy_end,
                 event.lore_date,
                 legacy_end,
-                f"Starts: {caption} · Duration: {event.lore_duration:g} days",
+                f"Starts: {caption} · Duration: {duration:g} days",
                 kind=kind,
                 anchor=event.lore_date,
             )
@@ -100,7 +112,7 @@ def event_temporal_display(
             if expression is not None
             else event.lore_date
         )
-        if not end_data and event.lore_duration <= 0:
+        if not end_data and duration <= 0:
             day_is_known = expression is None or (
                 expression.precision
                 in {
@@ -136,7 +148,6 @@ def event_temporal_display(
             end = end_expression.resolve_bounds(converter)
             caption = f"Starts: {text} · Ends: {end_expression.display_text(converter)}"
         else:
-            duration = event.lore_duration
             end = ResolvedTemporalBounds(
                 None if start.hard_start is None else start.hard_start + duration,
                 None if start.hard_end is None else start.hard_end + duration,

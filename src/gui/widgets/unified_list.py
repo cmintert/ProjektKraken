@@ -537,7 +537,7 @@ class UnifiedListWidget(QWidget):
                     assert snapshot is not None
                     event = Event.from_dict(snapshot)
                     self._events.append(event)
-                    self._events.sort(key=lambda value: value.lore_date)
+                    self._events.sort(key=lambda value: value.date_sort_key())
                     if filter_mode in {"All Items", "Events Only"}:
                         item = ("event", event)
             else:

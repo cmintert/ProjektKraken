@@ -285,6 +285,7 @@ class DataCoordinator(BaseCoordinator):
             self._patch_lore_cache(effect)
         if any(effect["object_type"] == "event" for effect in effects):
             self.main_window.event_editor.update_chronology_events(self._cached_events)
+            self.events_cache_changed.emit()
 
         self.main_window.unified_list.apply_lore_effects(effects)
         event_effects = [
@@ -316,7 +317,7 @@ class DataCoordinator(BaseCoordinator):
                 snapshot = effect["snapshot"]
                 assert snapshot is not None
                 self._cached_events.append(Event.from_dict(snapshot))
-                self._cached_events.sort(key=lambda event: event.lore_date)
+                self._cached_events.sort(key=lambda event: event.date_sort_key())
             return
 
         self._cached_entities = [

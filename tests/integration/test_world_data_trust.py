@@ -50,13 +50,18 @@ def test_longform_preview_loads_world_relative_image(qtbot, tmp_path, extension)
     Image.new("RGB", (4, 4), "red").save(image_path, lossless=True)
     editor = LongformEditorWidget(db_path=str(world / "Trust World.kraken"))
     qtbot.addWidget(editor)
-    editor.load_sequence([
-        {
-            "table": "entities", "id": "portrait", "name": "Portrait",
-            "heading_level": 1, "meta": {},
-            "content": f"![portrait]({relative_path})",
-        }
-    ])
+    editor.load_sequence(
+        [
+            {
+                "table": "entities",
+                "id": "portrait",
+                "name": "Portrait",
+                "heading_level": 1,
+                "meta": {},
+                "content": f"![portrait]({relative_path})",
+            }
+        ]
+    )
     resource = editor.content.document().resource(
         QTextDocument.ResourceType.ImageResource, QUrl(relative_path)
     )
@@ -96,8 +101,14 @@ def test_markdown_create_output_through_dialog_and_coordinator(
     worker = DatabaseWorker(db.db_path, get_command_types(), world_root=root)
     worker.db_service = db
     coordinator = TransferCoordinator(
-        dialog, worker, lambda: {}, lambda command: None, lambda: True,
-        lambda: None, lambda: [], {},
+        dialog,
+        worker,
+        lambda: {},
+        lambda command: None,
+        lambda: True,
+        lambda: None,
+        lambda: [],
+        {},
     )
     coordinator.dialog = dialog
     coordinator._world = {"db_path": db.db_path, "path": str(root)}
@@ -113,9 +124,7 @@ def test_markdown_create_output_through_dialog_and_coordinator(
     qtbot.waitUntil(lambda: dialog.pages.currentIndex() == 1)
     with qtbot.waitSignal(coordinator._worker.finished):
         qtbot.mouseClick(dialog.next, Qt.MouseButton.LeftButton)
-    qtbot.waitUntil(
-        lambda: dialog.pages.currentIndex() == 2 or dialog.next.isEnabled()
-    )
+    qtbot.waitUntil(lambda: dialog.pages.currentIndex() == 2 or dialog.next.isEnabled())
     assert dialog.pages.currentIndex() == 2, dialog.status.text()
     content = destination.read_text(encoding="utf-8")
     assert "Portrait" in content
@@ -240,7 +249,8 @@ def test_relation_links_use_actual_export_filenames(trust_world):
     db.insert_entity(second)
     db.insert_relation(second.id, first.id, "linked")
     destination = root / "vault"
-    assert export(TransferWorker(lambda: db), db, root, destination, "notes")["success"]
+    result = export(TransferWorker(lambda: db), db, root, destination, "notes")
+    assert result["success"], result
     notes = {path: path.read_text("utf-8") for path in destination.glob("*.md")}
     source = next(text for text in notes.values() if second.id in text)
     target = next(path for path, text in notes.items() if first.id in text)

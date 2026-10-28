@@ -88,7 +88,7 @@ meanings are easy to confuse.
 | Explanation | Where to find the supported controls |
 | --- | --- |
 | {ref}`Date precision <help-date-precision>` | Expand **Date details & uncertainty…**: qualification, month, day and **Possible date limits…**. |
-| {ref}`Event timing <help-event-timing>` | Enable **Event has duration**, then open **End date / duration…**: Duration and the Duration / End Date choices. |
+| {ref}`Event timing <help-event-timing>` | Choose **Manual date** or **Follow Event**. Enable **Event has an end**, then choose **Duration** or **End Date**. |
 | {ref}`Historical Entity editing <help-entity-historical-editing>` | The destination prompt when adding an attribute: **Entity baseline** and **At this time**. |
 | {ref}`Value Source <help-entity-value-source>` | The Entity description's **Source** label and the attribute table's Source column. |
 | {ref}`Relation creation <help-relations-create>` | **More actions → Add detailed relation…**: the direction/reverse-connection control. |

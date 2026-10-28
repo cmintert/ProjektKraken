@@ -237,5 +237,7 @@ def import_world(
         (stage / "assets").mkdir(exist_ok=True)
         World(stage, manifest).resolve_database_path()
         check_cancel(cancelled)
-        stage.rename(destination)
+        from src.services.file_publication import publish_with_retry
+
+        publish_with_retry(lambda: stage.rename(destination))
     return destination

@@ -52,6 +52,7 @@ def _init_registry() -> None:
         DeleteEventCommand,
         UpdateEventCommand,
     )
+    from src.commands.event_timing_commands import ApplyEventTimingPlanCommand
     from src.commands.feature_geometry_commands import (
         ReplaceFeatureGeometryStatesCommand,
         UpdateFeatureBaseGeometryCommand,
@@ -126,6 +127,7 @@ def _init_registry() -> None:
         {
             "IconLibraryCommand": IconLibraryCommand,
             "ApplyChronologyCommand": ApplyChronologyCommand,
+            "ApplyEventTimingPlanCommand": ApplyEventTimingPlanCommand,
             "CreateEventCommand": CreateEventCommand,
             "UpdateEventCommand": UpdateEventCommand,
             "DeleteEventCommand": DeleteEventCommand,

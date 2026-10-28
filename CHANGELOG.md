@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-27
-**Commit:** 28e3a764c3a9e8b94f493d09038a55d08a107a77
+**Last Updated:** 2026-10-28
+**Commit:** 2b0dddf09153048691fd4cfaaec7fa360ac78df3
 ---
 
 # Changelog
@@ -11,7 +11,32 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- *(2026-10-27)* **Event timing (KRT-113)**: Event starts and independent ends can
+  follow another Event's start or end with day or calendar offsets. Joint timing
+  validation preserves uncertain evidence, reviews cascades, and applies each
+  accepted change with its projections as one undoable operation. Source and end
+  removal is blocked while timing references remain.
+
+### Storage
+
+- World schema 4 supports unresolved Event coordinates without inventing dates.
+  The backed-up migration preserves authored records and command history. Older
+  application versions reject upgraded worlds; retain the reported recovery
+  bundle when upgrading.
+
 ### Fixed
+
+- *(2026-10-28)* **Event timing drafts (KRT-113)**: Autosave saves fields outside
+  the Date frame while date, time, source, endpoint, offset and interval edits
+  wait for Save Changes. Cascade review no longer interrupts those multi-step
+  edits; saving other fields retains the timing draft.
+
+- *(2026-10-28)* **Event timing (KRT-113)**: Follow Event edits remain saveable
+  after accepted Timeline changes without losing writing or finer stored date
+  precision. Completed calculations close their progress window before a single
+  readable date-change review; Cancel retains the draft.
 
 - *(2026-10-27)* **Stability (KRT-112)**: Deferred inspector reflow until Qt
   finishes layout traversal, fixing the reproduced resize crash. Routed Context
@@ -29,6 +54,11 @@ All notable changes to this project will be documented in this file.
   surface across themes and states while preserving separate action/menu clicks.
 
 ### Changed
+
+- *(2026-10-28)* **Event timing verification (KRT-113)**: Updated migration,
+  architecture, manual and contextual Help documentation, retained six-theme
+  rendering evidence, and added solver, command, history and authoring coverage.
+  Isolated Qt test lifecycles and waited for exact rendered button states.
 
 - *(2026-10-26)* **Connection browsing (KRT-109)**: Entity World Context can load
   saved direct connections in batches, including custom predicates and both

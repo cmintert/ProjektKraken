@@ -55,15 +55,19 @@ def mock_settings():
 
 
 @pytest.fixture
-def main_window(qapp, qtbot, mock_settings):
+def main_window(qapp, qtbot, mock_settings, tmp_path):
     """Fixture to create a MainWindow instance."""
-    # Patch UIManager and DataHandler to avoid complex init
+    # Build the real workspace; shutdown must own the same shell as startup.
     with (
-        patch("src.app.main_window.UIManager"),
-        patch("src.app.main_window.DataHandler"),
-        patch("src.app.main_window.ConnectionManager"),
+        patch("src.app.worker_manager.DatabaseWorker"),
+        patch("src.app.worker_manager.QThread.start"),
+        patch("src.app.worker_manager.WorldManager") as worlds,
         patch("src.app.main_window.QTimer"),
     ):
+        world = worlds.return_value.get_world.return_value
+        world.name = "Persistence test"
+        world.path = tmp_path
+        world.db_path = str(tmp_path / "world.kraken")
         window = MainWindow()
         qtbot.addWidget(window)
 

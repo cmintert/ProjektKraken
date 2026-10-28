@@ -75,12 +75,14 @@ class TimelineLanePacker:
         self._ensure_font_metrics()
         measured = []
         for event in events:
+            if event.lore_date is None:
+                continue
             layout = timeline_item_layout(
                 event_temporal_presentation(event, EventItem._calendar_converter),
                 event.name,
                 self.scale_factor,
             )
-            start = event.lore_date + layout.bounds.left() / self.scale_factor
+            start = event.require_date() + layout.bounds.left() / self.scale_factor
             visual_duration = layout.bounds.width() / self.scale_factor
             gap_duration = self.GAP_PIXELS / self.scale_factor
             measured.append(

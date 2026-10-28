@@ -315,16 +315,20 @@ class TimelineView(QGraphicsView):
             self.time_indicators.queue({}, round(candidate, 4))
             return round(candidate, 4)
 
-        nearest = min(self.events, key=lambda event: abs(event.lore_date - candidate))
+        nearest = min(
+            self.events, key=lambda event: abs(event.require_date() - candidate)
+        )
         distance_px = (
-            abs(nearest.lore_date - candidate) * self.scale_factor * self._current_zoom
+            abs(nearest.require_date() - candidate)
+            * self.scale_factor
+            * self._current_zoom
         )
         if distance_px <= self.PLAYHEAD_EVENT_SNAP_DISTANCE_PX:
             self.time_indicators.queue(
                 event_navigation_context(nearest, EventItem._calendar_converter),
-                nearest.lore_date,
+                nearest.require_date(),
             )
-            return float(nearest.lore_date)
+            return nearest.require_date()
         self.time_indicators.queue({}, round(candidate, 4))
         return round(candidate, 4)
 
@@ -624,7 +628,9 @@ class TimelineView(QGraphicsView):
             if isinstance(item, EventItem)
         }
         prepared = TimelineEventPreparationService.replace(
-            events, set(existing) | set(self._drop_lines)
+            events,
+            set(existing) | set(self._drop_lines),
+            getattr(self, "_temporal_context", None),
         )
         self._event_items = existing
         self._reconcile_event_items(prepared)
@@ -638,6 +644,15 @@ class TimelineView(QGraphicsView):
     def _reconcile_event_items(self, prepared: PreparedTimelineEvents) -> None:
         """Apply a data-only plan without transferring scene ownership."""
         self.events = list(prepared.events)
+        self._unplaced_events = list(prepared.unplaced)
+        if prepared.unplaced:
+            self._empty_state.set_message("No resolved Event starts")
+            self._empty_state.set_description(
+                "Events with unresolved starts remain in the Explorer. Open their timing controls to repair their references."
+            )
+        else:
+            self._empty_state.set_message("Timeline Empty")
+            self._empty_state.set_description("Your world's history begins here.")
         for event_id in prepared.removed_ids:
             item = self._event_items.pop(event_id, None)
             if item is not None:
@@ -679,7 +694,7 @@ class TimelineView(QGraphicsView):
         self._update_scene_rect_from_events(self.events)
         if self._playhead._time == 0:
             self.set_playhead_time(
-                (self.events[0].lore_date + self.events[-1].lore_date) / 2
+                (self.events[0].require_date() + self.events[-1].require_date()) / 2
             )
         if not self._has_done_initial_fit:
             if self.isVisible() and self.width() > 0 and self.height() > 0:
@@ -692,7 +707,9 @@ class TimelineView(QGraphicsView):
 
     def apply_event_effects(self, effects: list[LoreMutationEffect]) -> None:
         """Patch surviving items and coalesce geometric changes into one repack."""
-        prepared = TimelineEventPreparationService.apply_effects(self.events, effects)
+        prepared = TimelineEventPreparationService.apply_effects(
+            [*self.events, *getattr(self, "_unplaced_events", [])], effects
+        )
         if prepared.layout_changed:
             self._clear_duplicates()
             self._layout_generation += 1
@@ -1034,7 +1051,7 @@ class TimelineView(QGraphicsView):
         """
         self._lane_packer.scale_factor = self.scale_factor * self._current_zoom
         # Sort events by date first for proper packing
-        self.events.sort(key=lambda e: e.lore_date)
+        self.events.sort(key=lambda e: e.date_sort_key())
 
         # Build map of existing items (now clean of duplicates)
         event_items: dict[str, EventItem] = {}
@@ -1274,10 +1291,10 @@ class TimelineView(QGraphicsView):
         if self.events:
             for event in self.events:
                 # Include start date
-                dates.append(event.lore_date)
+                dates.append(event.require_date())
                 # Include end date if event has duration
-                if event.lore_duration > 0:
-                    dates.append(event.lore_date + event.lore_duration)
+                if event.lore_duration is not None and event.lore_duration > 0:
+                    dates.append(event.require_date() + event.lore_duration)
 
         # 2. Include Playhead
         # Playhead is always present
@@ -1620,7 +1637,7 @@ class TimelineView(QGraphicsView):
 
         for item in self.graphics_scene.items():
             if isinstance(item, EventItem) and item.event.id == event_id:
-                self._set_horizontal_window(float(item.event.lore_date))
+                self._set_horizontal_window(item.event.require_date())
                 self.centerOn(item.x(), item.sceneBoundingRect().center().y())
                 item.setSelected(True)
                 return
@@ -1762,6 +1779,14 @@ class TimelineView(QGraphicsView):
         playhead position.
         """
         playhead_time = self.get_playhead_time()
+        from src.core.temporal_anchors import resolve_event_anchors
+
+        context = getattr(self, "_temporal_context", None)
+        anchors = (
+            context.anchors()
+            if context is not None
+            else resolve_event_anchors(self.events, EventItem._calendar_converter)
+        )
 
         # Iterate through all EventItems in the scene
         for item in self.graphics_scene.items():
@@ -1770,11 +1795,17 @@ class TimelineView(QGraphicsView):
                 from src.core.temporal_anchors import event_position_at
 
                 is_future, is_past = event_position_at(
-                    item.event, playhead_time, item._calendar_converter
+                    item.event, playhead_time, item._calendar_converter, anchors
                 )
 
                 # Update the item's temporal state
                 item.set_temporal_state(is_future=is_future, is_past=is_past)
+
+    def set_temporal_context(self, context: Any) -> None:
+        """Use complete world endpoints even when some Events are unplaced."""
+        self._temporal_context = context
+        self.set_events(context.view_events())
+        self.update_events_temporal_state()
 
     # -------------------------------------------------------------------------
     # Timeline Grouping Methods (Milestone 3)
@@ -2055,8 +2086,8 @@ class TimelineView(QGraphicsView):
     def _update_scene_rect_from_events(self, sorted_events: list[Event]) -> None:
         """Updates the scene rectangle based on event bounds."""
         # Calculate content bounds (Events + Playhead + Current Time)
-        min_date = sorted_events[0].lore_date
-        max_date = sorted_events[-1].lore_date
+        min_date = sorted_events[0].require_date()
+        max_date = sorted_events[-1].require_date()
 
         # Include playhead
         ph_time = self.get_playhead_time()

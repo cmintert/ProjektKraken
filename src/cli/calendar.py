@@ -6,6 +6,7 @@ import sys
 import uuid
 from typing import List
 
+from src.cli.event_timing import execute_timing
 from src.cli.utils import validate_database_path
 from src.commands.calendar_commands import (
     CreateCalendarConfigCommand,
@@ -93,7 +94,7 @@ def create_calendar(args: argparse.Namespace) -> int:
             return 1
 
         cmd = CreateCalendarConfigCommand(config)
-        result = cmd.execute(db_service)
+        result = execute_timing(cmd, db_service, getattr(args, "confirm_timing", None))
 
         if result.success:
             print(f"OK Created calendar: {config.id}")
@@ -201,7 +202,7 @@ def set_active_calendar(args: argparse.Namespace) -> int:
         db_service.connect()
 
         cmd = SetActiveCalendarCommand(args.id)
-        result = cmd.execute(db_service)
+        result = execute_timing(cmd, db_service, getattr(args, "confirm_timing", None))
 
         if result.success:
             print(f"OK Calendar {args.id} is now active.")
@@ -234,7 +235,7 @@ def delete_calendar(args: argparse.Namespace) -> int:
                 return 0
 
         cmd = DeleteCalendarConfigCommand(args.id)
-        result = cmd.execute(db_service)
+        result = execute_timing(cmd, db_service, getattr(args, "confirm_timing", None))
 
         if result.success:
             print(f"OK Deleted calendar: {args.id}")
@@ -265,6 +266,9 @@ def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: 
     create_p.add_argument("--week", help="Week day names (Day1,Day2,...)")
     create_p.add_argument("--epoch", help="Epoch name (e.g. DR, AD)")
     create_p.set_defaults(func=create_calendar)
+    create_p.add_argument(
+        "--confirm-timing", help="Fingerprint of the reviewed timing cascade"
+    )
 
     # List
     list_p = subparsers.add_parser("list", help="List all calendars")
@@ -284,6 +288,9 @@ def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: 
     active_p.add_argument("--database", "-d", required=True)
     active_p.add_argument("--id", required=True)
     active_p.set_defaults(func=set_active_calendar)
+    active_p.add_argument(
+        "--confirm-timing", help="Fingerprint of the reviewed timing cascade"
+    )
 
     # Delete
     del_p = subparsers.add_parser("delete", help="Delete a calendar")
@@ -291,6 +298,9 @@ def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: 
     del_p.add_argument("--id", required=True)
     del_p.add_argument("--force", "-f", action="store_true")
     del_p.set_defaults(func=delete_calendar)
+    del_p.add_argument(
+        "--confirm-timing", help="Fingerprint of the reviewed timing cascade"
+    )
 
 
 def main() -> None:

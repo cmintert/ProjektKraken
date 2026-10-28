@@ -57,6 +57,11 @@ class TemporalWindow:
             return TemporalValidity.INDETERMINATE
         if self.kind == TemporalWindowKind.UNRESOLVED:
             return TemporalValidity.INDETERMINATE
+        from src.core.event_timing.window_queries import joint_window_status
+
+        joint_status = joint_window_status([self], lore_time)
+        if joint_status is not None:
+            return TemporalValidity(joint_status)
         if not self.semantic:
             if self.kind == TemporalWindowKind.UNBOUNDED:
                 return TemporalValidity.DEFINITE

@@ -130,14 +130,45 @@ class AppCoordinator(QObject):
                 window.map_widget.layer_panel.set_temporal_context,
                 window.event_editor.set_temporal_context,
                 window.entity_editor.set_temporal_context,
+                window.timeline.view.set_temporal_context,
             ],
             self,
         )
         self.data.events_cache_changed.connect(self.map_temporal.refresh)
-        self.data.lore_mutation_applied.connect(self.map_temporal.lore_changed)
         window.worker.calendar_config_loaded.connect(
             self.map_temporal.set_calendar, Qt.ConnectionType.QueuedConnection
         )
+
+    def bind_event_timing(self) -> None:
+        """Compose timing preparation after the command coordinator exists."""
+        from PySide6.QtCore import Qt
+
+        window = self.main_window
+        from PySide6.QtWidgets import QApplication
+
+        from src.app.coordinators.event_timing_coordinator import EventTimingCoordinator
+
+        thread = window.worker_thread
+        assert thread is not None
+        self.event_timing = EventTimingCoordinator(
+            window,
+            thread,
+            lambda: window.worker.db_service,
+            lambda: str(window.db_path),
+            window.command_coordinator.execute_command,
+        )
+        window.command_coordinator.defer_command = self.event_timing.intercept
+        self.event_timing.failed.connect(self.editor.on_temporal_command_result)
+        self.event_timing.resolution_prepared.connect(
+            self.map_temporal.prime_resolution
+        )
+        self.event_timing.failed.connect(lambda _result: self.data.load_events())
+        window.worker.initialized.connect(
+            self.event_timing.cancel, Qt.ConnectionType.QueuedConnection
+        )
+        application = QApplication.instance()
+        if application is not None:
+            application.aboutToQuit.connect(self.event_timing.shutdown)
 
     def bind_longform_navigation(self) -> None:
         """Compose Longform navigation once its view is available."""

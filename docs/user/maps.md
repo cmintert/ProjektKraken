@@ -207,8 +207,9 @@ Group and feature dates apply together. A parent ending at the same uncertain
 Event where its child begins has no joint presence. An empty interval is not an
 occurrence; change its boundaries rather than expecting it to appear briefly.
 
-Deleting a referenced Event lists its dependencies before confirmation. Its map
-references remain saved but unresolved; **Undo** restores their resolution.
+Deleting a referenced Event is blocked while Map, Relation, Event, or chronology
+references still use it. Replace or remove those references deliberately first.
+Removing a referenced Event end is blocked in the same way.
 Missing calendars and unsupported date metadata also remain saved, with an
 explanation. Replace a boundary deliberately to change its meaning.
 For an unsupported whole-window format, explicitly choose both boundary modes

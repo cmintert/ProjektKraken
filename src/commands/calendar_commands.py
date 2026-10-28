@@ -35,6 +35,8 @@ class CreateCalendarConfigCommand(BaseCommand):
         """
         super().__init__()
         self._config = config
+        self._recorded_history = False
+        self._previous_active_id: str | None = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Creates the calendar configuration.
@@ -47,8 +49,22 @@ class CreateCalendarConfigCommand(BaseCommand):
 
         """
         try:
+            if self._config.is_active or self._recorded_history:
+                from src.services.event_timing.guards import require_world_plan
+
+                rejected = require_world_plan(
+                    db_service,
+                    {"kind": "config", "id": self._config.id, "config": None}
+                    if self._recorded_history
+                    else None,
+                )
+                if rejected is not None:
+                    return rejected
+            previous = db_service.get_active_calendar_config()
+            self._previous_active_id = previous.id if previous else None
             db_service.insert_calendar_config(self._config)
             self._is_executed = True
+            self._recorded_history = True
             logger.info(f"Created calendar config: {self._config.id}")
             return CommandResult(
                 success=True,
@@ -73,6 +89,8 @@ class CreateCalendarConfigCommand(BaseCommand):
         """
         if self._is_executed:
             db_service.delete_calendar_config(self._config.id)
+            if self._config.is_active and self._previous_active_id:
+                db_service.set_active_calendar_config(self._previous_active_id)
             self._is_executed = False
             logger.info(f"Undid creation of calendar config: {self._config.id}")
 
@@ -86,6 +104,8 @@ class CreateCalendarConfigCommand(BaseCommand):
         return {
             "config": self._config.to_dict(),
             "is_executed": self._is_executed,
+            "recorded_history": self._recorded_history,
+            "previous_active_id": self._previous_active_id,
         }
 
     @classmethod
@@ -102,6 +122,8 @@ class CreateCalendarConfigCommand(BaseCommand):
         config = CalendarConfig.from_dict(data["config"])
         cmd = cls(config)
         cmd._is_executed = data.get("is_executed", False)
+        cmd._recorded_history = data.get("recorded_history", cmd._is_executed)
+        cmd._previous_active_id = data.get("previous_active_id")
         return cmd
 
 
@@ -121,6 +143,9 @@ class UpdateCalendarConfigCommand(BaseCommand):
         super().__init__()
         self._config = config
         self._original_config: Optional[CalendarConfig] = None
+        self._recorded_history = False
+        self._previous_active_id: str | None = None
+        self._has_active_snapshot = False
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Updates the calendar configuration.
@@ -133,11 +158,31 @@ class UpdateCalendarConfigCommand(BaseCommand):
 
         """
         try:
+            from src.services.event_timing.guards import require_world_plan
+
+            recorded = (
+                {
+                    "kind": "config",
+                    "id": self._config.id,
+                    "config": self._original_config.to_dict()
+                    if self._original_config
+                    else None,
+                }
+                if self._recorded_history
+                else None
+            )
+            rejected = require_world_plan(db_service, recorded)
+            if rejected is not None:
+                return rejected
             # Store original for undo
             self._original_config = db_service.get_calendar_config(self._config.id)
+            active = db_service.get_active_calendar_config()
+            self._previous_active_id = active.id if active else None
+            self._has_active_snapshot = True
 
             db_service.insert_calendar_config(self._config)
             self._is_executed = True
+            self._recorded_history = True
             logger.info(f"Updated calendar config: {self._config.id}")
             return CommandResult(
                 success=True,
@@ -162,6 +207,11 @@ class UpdateCalendarConfigCommand(BaseCommand):
         """
         if self._is_executed and self._original_config:
             db_service.insert_calendar_config(self._original_config)
+            if self._has_active_snapshot:
+                if self._previous_active_id:
+                    db_service.set_active_calendar_config(self._previous_active_id)
+                else:
+                    db_service._calendar_repo.clear_active()
             self._is_executed = False
             logger.info(f"Undid update of calendar config: {self._config.id}")
 
@@ -178,6 +228,8 @@ class UpdateCalendarConfigCommand(BaseCommand):
         }
         if self._original_config:
             result["original_config"] = self._original_config.to_dict()
+        if self._has_active_snapshot:
+            result["previous_active_id"] = self._previous_active_id
         return result
 
     @classmethod
@@ -196,6 +248,9 @@ class UpdateCalendarConfigCommand(BaseCommand):
         cmd._is_executed = data.get("is_executed", False)
         if "original_config" in data:
             cmd._original_config = CalendarConfig.from_dict(data["original_config"])
+            cmd._recorded_history = True
+        cmd._has_active_snapshot = "previous_active_id" in data
+        cmd._previous_active_id = data.get("previous_active_id")
         return cmd
 
 
@@ -215,6 +270,7 @@ class DeleteCalendarConfigCommand(BaseCommand):
         super().__init__()
         self._config_id = config_id
         self._deleted_config: Optional[CalendarConfig] = None
+        self._recorded_history = False
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Deletes the calendar configuration.
@@ -227,11 +283,28 @@ class DeleteCalendarConfigCommand(BaseCommand):
 
         """
         try:
+            from src.services.event_timing.guards import require_world_plan
+
+            recorded = (
+                {
+                    "kind": "config",
+                    "id": self._config_id,
+                    "config": self._deleted_config.to_dict()
+                    if self._deleted_config
+                    else None,
+                }
+                if self._recorded_history
+                else None
+            )
+            rejected = require_world_plan(db_service, recorded)
+            if rejected is not None:
+                return rejected
             # Store for undo
             self._deleted_config = db_service.get_calendar_config(self._config_id)
 
             db_service.delete_calendar_config(self._config_id)
             self._is_executed = True
+            self._recorded_history = True
             logger.info(f"Deleted calendar config: {self._config_id}")
             return CommandResult(
                 success=True,
@@ -289,6 +362,7 @@ class DeleteCalendarConfigCommand(BaseCommand):
         cmd._is_executed = data.get("is_executed", False)
         if "deleted_config" in data:
             cmd._deleted_config = CalendarConfig.from_dict(data["deleted_config"])
+            cmd._recorded_history = True
         return cmd
 
 
@@ -308,6 +382,7 @@ class SetActiveCalendarCommand(BaseCommand):
         super().__init__()
         self._config_id = config_id
         self._previous_active_id: Optional[str] = None
+        self._recorded_history = False
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Sets the calendar as active.
@@ -320,12 +395,25 @@ class SetActiveCalendarCommand(BaseCommand):
 
         """
         try:
+            from src.services.event_timing.guards import require_world_plan
+
+            recorded = (
+                {"kind": "active", "id": self._previous_active_id}
+                if self._recorded_history
+                else None
+            )
+            rejected = require_world_plan(db_service, recorded)
+            if rejected is not None:
+                return rejected
             # Store previous active for undo
             previous = db_service.get_active_calendar_config()
             self._previous_active_id = previous.id if previous else None
+            if db_service.get_calendar_config(self._config_id) is None:
+                raise ValueError("The selected calendar is unavailable")
 
             db_service.set_active_calendar_config(self._config_id)
             self._is_executed = True
+            self._recorded_history = True
             logger.info(f"Set active calendar config: {self._config_id}")
             return CommandResult(
                 success=True,
@@ -348,8 +436,13 @@ class SetActiveCalendarCommand(BaseCommand):
             db_service: The database service to use.
 
         """
-        if self._is_executed and self._previous_active_id:
-            db_service.set_active_calendar_config(self._previous_active_id)
+        if self._is_executed:
+            from src.services.repositories.calendar_repository import CalendarRepository
+
+            if self._previous_active_id is not None:
+                db_service.set_active_calendar_config(self._previous_active_id)
+            else:
+                CalendarRepository(db_service.get_connection()).clear_active()
             self._is_executed = False
             logger.info(f"Undid set active, restored: {self._previous_active_id}")
 
@@ -364,6 +457,7 @@ class SetActiveCalendarCommand(BaseCommand):
             "config_id": self._config_id,
             "previous_active_id": self._previous_active_id,
             "is_executed": self._is_executed,
+            "recorded_history": self._recorded_history,
         }
 
     @classmethod
@@ -380,4 +474,7 @@ class SetActiveCalendarCommand(BaseCommand):
         cmd = cls(data["config_id"])
         cmd._is_executed = data.get("is_executed", False)
         cmd._previous_active_id = data.get("previous_active_id")
+        cmd._recorded_history = data.get(
+            "recorded_history", cmd._is_executed or cmd._previous_active_id is not None
+        )
         return cmd

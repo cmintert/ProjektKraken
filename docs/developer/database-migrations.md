@@ -31,6 +31,21 @@ including tags without color, history without timestamp, and markers without
 geometry/style fields. Frozen SQL fixtures under `tests/fixtures/migrations/`
 identify the historical commits used to verify those contracts.
 
+Migration `004_event_timing` makes calculated Event dates nullable (duration is
+also nullable). Contracts for versions 0–3 retain their historical NOT NULL date
+requirement during inspection. The runner disables foreign-key enforcement before
+opening the upgrade transaction when isolation is needed, restores it afterward,
+and validates foreign keys and database integrity. The Event rebuild copies
+columns by name and restores existing indexes and triggers. Referring records,
+IDs, timestamps, attributes, tags, and compatible command history are retained.
+New worlds start at schema 4; earlier applications reject that version.
+
+The startup upgrade report identifies the verified recovery bundle. Failure
+rolls back the original schema and records the recovery location; preserve both
+the world and bundle for diagnosis. The Event timing step does not archive or
+clear history. Earlier relation-format migrations can still require their
+documented history archive when upgrading a much older world.
+
 ## Upgrade guarantees
 
 `DatabaseService.connect()` delegates to the subsystem before binding repositories.

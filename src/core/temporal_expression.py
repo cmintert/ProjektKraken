@@ -8,11 +8,15 @@ cannot silently reinterpret an assertion from a different calendar.
 from __future__ import annotations
 
 import math
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass, field, replace
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from src.core.event_timing.resolution import JointModelHandle
 
 from src.core.calendar import CalendarConverter
+from src.core.event_timing.definitions import EVENT_TIMING_SCHEMA
 
 TEMPORAL_SCHEMA_VERSION = 1
 TEMPORAL_ATTRIBUTE = "_temporal_v2"
@@ -60,6 +64,11 @@ class ResolvedTemporalBounds:
     possible_ranges: tuple[tuple[float, float], ...] | None = None
     relative_to: ResolvedTemporalBounds | None = None
     relative_relation: str | None = None
+    joint: JointModelHandle | None = field(default=None, compare=False, repr=False)
+    joint_node: str | None = None
+    joint_offset: float = 0.0
+    joint_transform: tuple[tuple[str, float, str | None], ...] = ()
+    possible_inclusivity: tuple[tuple[bool, bool], ...] | None = None
 
     @property
     def has_hard_bounds(self) -> bool:
@@ -190,9 +199,13 @@ def expression_from_attributes(attributes: dict[str, Any]) -> TemporalExpression
     metadata = attributes.get(TEMPORAL_ATTRIBUTE)
     if metadata is None:
         return None
-    if not isinstance(metadata, dict) or metadata.get("schema") != 1:
+    if not isinstance(metadata, dict) or metadata.get("schema") not in {1, 2}:
         raise ValueError("Unsupported temporal metadata")
-    data = metadata.get("expression")
+    if metadata.get("schema") == EVENT_TIMING_SCHEMA:
+        start = metadata.get("timing", {}).get("start", {})
+        data = start.get("expression") if start.get("kind") == "manual" else None
+    else:
+        data = metadata.get("expression")
     return TemporalExpression.from_dict(data) if data is not None else None
 
 

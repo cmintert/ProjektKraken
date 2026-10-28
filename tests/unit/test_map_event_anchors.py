@@ -276,8 +276,14 @@ def test_map_command_save_history_missing_event_and_undo(db_service):
     serialized = json.loads(json.dumps(command.to_dict()))
     restored = UpdateLayerPropertiesCommand.from_dict(serialized)
     deletion = DeleteEventCommand("e").execute(db_service)
-    assert not deletion.success and deletion.data["temporal_dependencies"]
-    delete = DeleteEventCommand("e", deletion.data["temporal_dependencies"])
+    assert not deletion.success and deletion.data["blocked_temporal_dependencies"]
+    delete = DeleteEventCommand("e", deletion.data["blocked_temporal_dependencies"])
+    assert not delete.execute(db_service).success
+    assert (
+        UpdateLayerPropertiesCommand("map", "castle", {"temporal": None})
+        .execute(db_service)
+        .success
+    )
     assert delete.execute(db_service).success
     assert (
         UpdateLayerPropertiesCommand("map", "castle", {"notes": "Still editable"})

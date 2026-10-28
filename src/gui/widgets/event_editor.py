@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
 from src.core.ai_generation import GenerationReviewResult, apply_reviewed_generation
 from src.core.authoring_context import EventAuthoringContext
 from src.core.command import LoreMutationEffect
+from src.core.event_timing.definitions import EVENT_TIMING_SCHEMA, EventTimingDefinition
 from src.core.events import Event
 from src.core.summary_data import (
     SummaryData,
@@ -136,8 +137,17 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         QWidget.__init__(self, parent)
         self._current_event_id: str | None = None
         self._temporal_metadata: dict[str, Any] = {}
+        self._saved_temporal_metadata: dict[str, Any] = {}
+        self._pending_timing_controls: EventTimingDefinition | None = None
+        self._pending_timing_metadata: dict[str, Any] | None = None
+        self._saved_content_payload: dict[str, Any] | None = None
+        self._pending_content_payload: dict[str, Any] | None = None
+        self._content_only_save = False
+        self._timing_awaiting_save = False
         self._chronology_events: list[Event] = []
-        self._loaded_temporal_state: tuple[Any, float, float] | None = None
+        self._loaded_temporal_state: tuple[Any, float | None, float | None] | None = (
+            None
+        )
         self.autosave_manager = AutoSaveManager(self)
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
@@ -161,8 +171,6 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self._build_action_buttons(main_layout)
         self._initialize_editor_state()
         self._date_draft_active = False
-        self._date_draft_base_dirty = False
-        self._date_draft_other_changes = False
         self.temporal_widget.draft_changed.connect(self._on_date_draft_changed)
         self._presentation = EditorPresentation(self)
 
@@ -172,12 +180,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             return
         if pending and not self._date_draft_active:
             self._date_draft_active = True
-            self._date_draft_base_dirty = self._is_dirty
-            self._date_draft_other_changes = False
         super().set_dirty(self._is_dirty or pending)
         self._refresh_save_status()
         if pending:
-            self.autosave_manager.stop_timer()
             self.btn_save.setEnabled(False)
             self.btn_save.setToolTip(
                 "Apply or correct the date, or press Esc to restore."
@@ -186,7 +191,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             if self._date_draft_active:
                 self._date_draft_active = False
                 self.set_dirty(
-                    self._date_draft_base_dirty or self._date_draft_other_changes
+                    self._has_content_changes() or self.has_unsaved_temporal_changes()
                 )
             self.btn_save.setEnabled(self._is_dirty)
             self.btn_save.setToolTip("")
@@ -194,17 +199,12 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
                 self.autosave_manager.start_timer()
 
     def set_dirty(self, dirty: bool) -> None:
-        """Keep autosave paused whenever a date draft is outstanding."""
-        if dirty and getattr(self, "_date_draft_active", False):
-            # Actual fields also call set_dirty; draft tracking uses the base
-            # method below to distinguish cancellation from a real edit.
-            self._date_draft_other_changes = True
+        """Track edits while keeping unfinished date text out of manual saves."""
         super().set_dirty(dirty)
         if dirty:
             self._save_failed = False
         self._refresh_save_status()
         if self.temporal_widget.has_pending_draft():
-            self.autosave_manager.stop_timer()
             self.btn_save.setEnabled(False)
 
     def _refresh_save_status(self) -> None:
@@ -215,6 +215,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             text = "Saving…"
         elif getattr(self, "_save_failed", False):
             text = "Save failed — changes retained"
+        elif self._timing_awaiting_save and self.has_unsaved_temporal_changes():
+            text = "Timing not saved — choose Save Changes"
         elif self._is_dirty or self.temporal_widget.has_pending_draft():
             text = "Unsaved changes"
         else:
@@ -229,18 +231,42 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self._refresh_save_status()
         return revision
 
-    def finish_save(self, revision: int, success: bool) -> bool:
+    def finish_save(
+        self, revision: int, success: bool, *, cancelled: bool = False
+    ) -> bool:
         """Ignore stale acknowledgements and retain newer local drafts."""
         if getattr(self, "_pending_save_revision", None) != revision:
             return False
-        complete = super().finish_save(revision, success)
-        self._save_failed = not success
+        if success and self._pending_content_payload is not None:
+            self._saved_content_payload = self._pending_content_payload
+        if success and self._content_only_save and self.has_unsaved_temporal_changes():
+            self._pending_save_revision = None
+            self.autosave_manager.stop_timer()
+            if self._has_content_changes():
+                self.autosave_manager.start_timer()
+            complete = False
+        else:
+            complete = super().finish_save(revision, success)
+        self._pending_content_payload = None
+        self._content_only_save = False
+        if not success:
+            self._pending_timing_controls = None
+            self._pending_timing_metadata = None
+        self._save_failed = not success and not cancelled
         self._refresh_save_status()
         return complete
 
     def reset_draft_tracking(self) -> None:
         """Clear delivery feedback when deliberately loading another snapshot."""
         super().reset_draft_tracking()
+        self._pending_timing_controls = None
+        self._pending_timing_metadata = None
+        self._pending_content_payload = None
+        self._content_only_save = False
+        self._timing_awaiting_save = False
+        self._saved_content_payload = (
+            self._content_payload() if self._current_event_id else None
+        )
         self._save_failed = False
         self._refresh_save_status()
 
@@ -783,7 +809,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             and self._loaded_temporal_state[0] is None
         ):
             _, start, duration = self._loaded_temporal_state
-            self.temporal_widget.set_values(start, duration)
+            if start is not None and duration is not None:
+                self.temporal_widget.set_values(start, duration)
 
     def _edit_temporal_evidence(self) -> None:
         """Edit a local evidence snapshot; the ordinary save command persists it."""
@@ -797,10 +824,18 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             return
         if not self.temporal_widget.commit_drafts():
             return
-        metadata = deepcopy(self._temporal_metadata)
-        expression = self.temporal_widget.date_start.get_expression()
-        if expression is not None:
-            metadata.update(schema=1, expression=expression.to_dict())
+        if self.temporal_widget._unsupported_timing:
+            return
+        try:
+            definition = self.temporal_widget.timing_definition()
+        except ValueError as exc:
+            self.temporal_widget.range_summary.setText(str(exc))
+            return
+        metadata = definition.apply(
+            {"_temporal_v2": deepcopy(self._temporal_metadata)}
+        )["_temporal_v2"]
+        if definition.start.kind == "event":
+            metadata.pop("preferred_claim_id", None)
         dialog = TemporalEvidenceDialog(
             self._current_event_id,
             metadata,
@@ -810,9 +845,13 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         )
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self._temporal_metadata = dialog.result_metadata
-            if "expression" in self._temporal_metadata:
+            authored = EventTimingDefinition.from_dict(
+                self._temporal_metadata["timing"]
+            )
+            self.temporal_widget.source_start.load(authored.start)
+            if authored.start.expression is not None:
                 self.temporal_widget.date_start.set_expression(
-                    TemporalExpression.from_dict(self._temporal_metadata["expression"])
+                    TemporalExpression.from_dict(authored.start.expression)
                 )
                 self.temporal_widget._on_start_changed(
                     self.temporal_widget.date_start.get_value()
@@ -826,6 +865,14 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         count = len(claims)
         self.temporal_evidence_button.setText(
             f"Date evidence… ({count} sources)" if count else "Date evidence…"
+        )
+        self.temporal_evidence_button.setEnabled(
+            not self.temporal_widget._unsupported_timing
+        )
+        self.temporal_evidence_button.setToolTip(
+            "Timing metadata is unsupported and preserved for repair."
+            if self.temporal_widget._unsupported_timing
+            else "Record source dates without changing timing unless you choose a preferred date."
         )
         if count > 1:
             from src.core.temporal_authoring import conflicting_claims
@@ -870,6 +917,19 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
     def has_unsaved_temporal_changes(self) -> bool:
         """Compare authored timing, ignoring a semantic date's layout coordinate."""
+        if self.temporal_widget._unsupported_timing:
+            return self._temporal_metadata != self._saved_temporal_metadata
+        if self.temporal_widget._loaded_definition is not None:
+            ignored = {"projection", "constraints"}
+            return self.temporal_widget.has_timing_changes() or {
+                key: value
+                for key, value in self._temporal_metadata.items()
+                if key not in ignored
+            } != {
+                key: value
+                for key, value in self._saved_temporal_metadata.items()
+                if key not in ignored
+            }
         if self.temporal_widget.has_pending_draft():
             return True
         if self._loaded_temporal_state is None:
@@ -884,19 +944,46 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             return True
         return current_expression is None and not math.isclose(
             self.temporal_widget.get_start(),
-            loaded_start,
+            loaded_start
+            if loaded_start is not None
+            else self.temporal_widget.get_start(),
             rel_tol=0,
             abs_tol=1e-9,
         )
 
-    def mark_temporal_saved(self) -> None:
-        """Advance the date baseline after an acknowledged editor save."""
-        expression = self.temporal_widget.date_start.get_expression()
-        self._loaded_temporal_state = (
-            expression.to_dict() if expression else None,
-            self.temporal_widget.get_start(),
-            self.temporal_widget.get_duration(),
+    def mark_temporal_saved(self, snapshot: dict[str, Any]) -> None:
+        """Adopt the accepted snapshot while retaining edits made during saving."""
+        saved = Event(
+            id=str(snapshot.get("id") or self._current_event_id),
+            name=str(snapshot.get("name", "")),
+            lore_date=snapshot.get("lore_date"),
+            lore_duration=snapshot.get("lore_duration"),
+            attributes=deepcopy(snapshot.get("attributes", {})),
         )
+        if self._content_only_save:
+            if not self.has_unsaved_temporal_changes():
+                self._adopt_saved_timing(saved)
+            return
+        try:
+            definition = EventTimingDefinition.from_event(saved)
+        except (ValueError, TypeError, KeyError):
+            definition = None
+        self.temporal_widget._loaded_definition = definition
+        if self._pending_timing_controls is not None:
+            self.temporal_widget._loaded_controls_definition = (
+                self._pending_timing_controls
+            )
+        metadata = deepcopy(saved.attributes.get("_temporal_v2", {}))
+        if self._temporal_metadata == self._pending_timing_metadata:
+            self._temporal_metadata = deepcopy(metadata)
+        self._saved_temporal_metadata = metadata
+        self._loaded_temporal_state = (
+            definition.start.expression if definition else None,
+            saved.lore_date,
+            saved.lore_duration,
+        )
+        self._pending_timing_controls = None
+        self._pending_timing_metadata = None
 
     def _edit_chronology(self) -> None:
         """Open the event-centered order editor from a persisted date state."""
@@ -1168,16 +1255,32 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         if self.name_edit.text() != event.name:
             self.name_edit.setText(event.name)
 
+        self._load_event_timing_fields(event)
+
+        if self.type_edit.currentText() != event.type:
+            self.type_edit.setCurrentText(event.type)
+        if self.desc_edit.get_wiki_text() != event.description:
+            self.desc_edit.set_wiki_text(event.description)
+
+    def _load_event_timing_fields(self, event: Event) -> None:
+        """Hydrate only timing so generation refreshes preserve writing context."""
+
         # Load temporal fields in one call; TemporalRangeWidget handles
         # internal signal suppression and end-date recalculation.
-        self.temporal_widget.set_values(event.lore_date, event.lore_duration)
+        self.temporal_widget.set_values(
+            event.lore_date if event.lore_date is not None else 0.0,
+            event.lore_duration if event.lore_duration is not None else 0.0,
+        )
         from src.core.temporal_expression import (
             TemporalExpression,
             expression_from_attributes,
         )
 
         self._temporal_metadata = deepcopy(event.attributes.get("_temporal_v2", {}))
-        expression = expression_from_attributes(event.attributes)
+        try:
+            expression = expression_from_attributes(event.attributes)
+        except (ValueError, TypeError, KeyError):
+            expression = None
         if expression is not None:
             self.temporal_widget.date_start.set_expression(expression)
             end_data = event.attributes["_temporal_v2"].get("end_expression")
@@ -1186,20 +1289,60 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
                     TemporalExpression.from_dict(end_data)
                 )
             self.temporal_widget._update_range_summary()
-        self._loaded_temporal_state = (
-            expression.to_dict() if expression else None,
-            event.lore_date,
-            event.lore_duration,
+        from src.core.temporal_context import TemporalResolutionContext
+
+        self.temporal_widget.load_timing(
+            event, getattr(self, "_temporal_context", TemporalResolutionContext())
         )
+        self._remember_saved_timing(event)
         if self._chronology_events:
             self.update_chronology_events(self._chronology_events)
         self._show_temporal_evidence_summary()
 
-        if self.type_edit.currentText() != event.type:
-            self.type_edit.setCurrentText(event.type)
+    def _remember_saved_timing(self, event: Event) -> None:
+        """Remember saved facts without replacing any authoring controls."""
+        self._temporal_metadata = deepcopy(event.attributes.get("_temporal_v2", {}))
+        self._saved_temporal_metadata = deepcopy(self._temporal_metadata)
+        definition = self.temporal_widget._loaded_definition
+        self._loaded_temporal_state = (
+            definition.start.expression if definition else None,
+            event.lore_date,
+            event.lore_duration,
+        )
 
-        if self.desc_edit.get_wiki_text() != event.description:
-            self.desc_edit.set_wiki_text(event.description)
+    def set_temporal_context(self, context: Any) -> None:
+        """Refresh references while retaining timing and description drafts."""
+        super().set_temporal_context(context)
+        self.temporal_widget.set_temporal_context(context, self._current_event_id or "")
+        if self._is_loading or self.save_pending or self.has_unsaved_temporal_changes():
+            return
+        saved = next(
+            (event for event in context.events() if event.id == self._current_event_id),
+            None,
+        )
+        if saved is None:
+            return
+        self._adopt_saved_timing(saved)
+
+    def _adopt_saved_timing(self, saved: Event) -> None:
+        """Refresh clean timing from accepted facts without replacing other fields."""
+        try:
+            definition = EventTimingDefinition.from_event(saved)
+        except (ValueError, TypeError, KeyError):
+            definition = None
+        if definition == self.temporal_widget._loaded_definition:
+            self._remember_saved_timing(saved)
+            self._show_temporal_evidence_summary()
+            return
+        expanded = self.temporal_widget.range_button.isChecked()
+        blocked = self.temporal_widget.blockSignals(True)
+        self._is_loading = True
+        try:
+            self._load_event_timing_fields(saved)
+            self.temporal_widget.range_button.setChecked(expanded)
+        finally:
+            self.temporal_widget.blockSignals(blocked)
+            self._is_loading = False
 
     def _load_event_attributes(self, event: Event) -> None:
         """Loads attributes, tags, summary, and gallery from the event.
@@ -1291,6 +1434,74 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         # Update Checkboxes
         # StandardCheckbox handles its own styling on theme change
 
+    def _content_payload(self) -> dict[str, Any]:
+        """Collect fields outside the Date frame without accepting date text."""
+        attrs = deepcopy(self.attribute_editor.get_attributes())
+        attrs["_tags"] = self.tag_editor.get_tags()
+        self._merge_hidden_attributes(attrs)
+        attrs.pop("_temporal_v2", None)
+        if self._pending_summary_changed:
+            if self._pending_summary_data is None:
+                attrs.pop("_summary_data", None)
+            else:
+                attrs["_summary_data"] = deepcopy(self._pending_summary_data)
+        sheet_layout = self.sheet_builder.get_layout()
+        if sheet_layout:
+            attrs["_sheet_layout"] = deepcopy(sheet_layout)
+        return {
+            "id": self._current_event_id,
+            "name": self.name_edit.text(),
+            "type": self.type_edit.currentText(),
+            "description": self.desc_edit.get_wiki_text(),
+            "attributes": attrs,
+            "tags": self.tag_editor.get_tags(),
+        }
+
+    def _has_content_changes(self) -> bool:
+        """Compare the current writing/details with their acknowledged baseline."""
+        return (
+            self._saved_content_payload is not None
+            and self._content_payload() != self._saved_content_payload
+        )
+
+    def _submit_event_save(
+        self, payload: dict[str, Any], *, content_only: bool = False
+    ) -> None:
+        """Capture the exact submitted scope before queued command delivery."""
+        controls = (
+            self.temporal_widget.timing_definition()
+            if not content_only and not self.temporal_widget._unsupported_timing
+            else None
+        )
+        revision = self.begin_save()
+        if revision is None:
+            return
+        self._content_only_save = content_only
+        self._pending_content_payload = deepcopy(self._content_payload())
+        self._pending_timing_controls = controls
+        self._pending_timing_metadata = (
+            None if content_only else deepcopy(self._temporal_metadata)
+        )
+        payload["__editor_revision"] = revision
+        payload["__editor_generation"] = self.draft_generation
+        self.save_requested.emit(payload)
+
+    def _on_autosave(self) -> None:
+        """Save writing/details without submitting any part of the Date frame."""
+        if not self._current_event_id or self.save_pending:
+            return
+        self._timing_awaiting_save = self.has_unsaved_temporal_changes()
+        if not self._has_content_changes():
+            self._refresh_save_status()
+            return
+        payload = {
+            key: value
+            for key, value in self._content_payload().items()
+            if key == "id" or value != (self._saved_content_payload or {}).get(key)
+        }
+        payload["__preserve_timing"] = True
+        self._submit_event_save(payload, content_only=True)
+
     @Slot()
     def _on_save(self) -> None:
         """Collects data from form fields and emits the `save_requested` signal.
@@ -1311,72 +1522,52 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             return
 
         try:
-            # Merge tags into attributes
-            base_attrs = self.attribute_editor.get_attributes()
-            base_attrs["_tags"] = self.tag_editor.get_tags()
-
-            self._merge_hidden_attributes(base_attrs)
+            event_data = self._content_payload()
+            base_attrs = event_data["attributes"]
             if self._temporal_metadata:
                 base_attrs["_temporal_v2"] = deepcopy(self._temporal_metadata)
-            expression = self.temporal_widget.date_start.get_expression()
-            if expression is not None:
-                base_attrs["_temporal_v2"] = {
-                    **base_attrs.get("_temporal_v2", {}),
-                    "schema": 1,
-                    "expression": expression.to_dict(),
+            else:
+                base_attrs.pop("_temporal_v2", None)
+            controls_changed = self.temporal_widget.has_timing_changes()
+            if not self.temporal_widget._unsupported_timing:
+                definition = (
+                    self.temporal_widget.timing_definition()
+                    if controls_changed
+                    else self.temporal_widget._loaded_definition
+                )
+                if definition is not None and (
+                    definition != self.temporal_widget._loaded_definition
+                    or self._temporal_metadata.get("schema") == EVENT_TIMING_SCHEMA
+                ):
+                    base_attrs = definition.apply(base_attrs)
+            event_data.update(
+                {
+                    "lore_date": self.temporal_widget.get_start(),
+                    "lore_duration": self.temporal_widget.get_duration(),
+                    "attributes": base_attrs,
                 }
-            end_expression = self.temporal_widget.date_end.get_expression()
-            metadata = base_attrs.get("_temporal_v2", {})
-            preferred = next(
-                (
-                    claim
-                    for claim in metadata.get("claims", [])
-                    if claim.get("id") == metadata.get("preferred_claim_id")
-                ),
-                None,
             )
-            if preferred is not None and preferred.get("expression") != metadata.get(
-                "expression"
-            ):
-                metadata.pop("preferred_claim_id", None)
-            if expression is not None and end_expression is not None:
-                base_attrs["_temporal_v2"]["end_expression"] = end_expression.to_dict()
-            elif "_temporal_v2" in base_attrs:
-                base_attrs["_temporal_v2"].pop("end_expression", None)
-            if self._pending_summary_changed:
-                if self._pending_summary_data is None:
-                    base_attrs.pop("_summary_data", None)
-                else:
-                    base_attrs["_summary_data"] = self._pending_summary_data
-
-            # Persist the sheet layout arrangement
-            sheet_layout = self.sheet_builder.get_layout()
-            if sheet_layout:
-                base_attrs["_sheet_layout"] = sheet_layout
-
-            event_data = {
-                "id": self._current_event_id,
-                "name": self.name_edit.text(),
-                "lore_date": self.temporal_widget.get_start(),
-                "lore_duration": self.temporal_widget.get_duration(),
-                "type": self.type_edit.currentText(),
-                "description": self.desc_edit.get_wiki_text(),
-                "attributes": base_attrs,
-                "tags": self.tag_editor.get_tags(),
-            }
+            if not controls_changed and self._loaded_temporal_state is not None:
+                _, event_data["lore_date"], event_data["lore_duration"] = (
+                    self._loaded_temporal_state
+                )
+            if self.temporal_widget._loaded_definition is not None:
+                event_data["__expected_timing"] = (
+                    self.temporal_widget._loaded_definition.to_dict()
+                )
 
             logger.info(
                 f"[EventEditor] Emitting save_requested for event "
                 f"'{event_data['name']}' (id={event_data['id']})"
             )
-            revision = self.begin_save()
-            if revision is None:
-                return
-            event_data["__editor_revision"] = revision
-            event_data["__editor_generation"] = self.draft_generation
-            self.save_requested.emit(event_data)
+            self._timing_awaiting_save = False
+            self._submit_event_save(event_data)
             logger.debug("[EventEditor] Awaiting save acknowledgement")
 
+        except ValueError as exc:
+            self.temporal_widget.range_summary.setText(str(exc))
+            self.temporal_widget.range_summary.show()
+            self.btn_save.setToolTip(str(exc))
         except Exception as e:
             logger.error(
                 f"[EventEditor] Exception in _on_save: {e}\n{traceback.format_exc()}"
@@ -1390,6 +1581,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             return
 
         self.temporal_widget.cancel_drafts()
+        self.relation_authoring.cancel()
+        self.reset_draft_tracking()
+        self.set_dirty(False)
         self.discard_requested.emit(self._current_event_id)
 
     def _populate_inject_menu(self) -> None:

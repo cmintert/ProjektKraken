@@ -21,12 +21,15 @@ import json
 import logging
 import sys
 
+from src.cli.event_timing import execute_timing
 from src.cli.utils import validate_database_path
 from src.commands.event_commands import (
     CreateEventCommand,
     DeleteEventCommand,
     UpdateEventCommand,
 )
+from src.core.calendar import CalendarConfig, CalendarConverter
+from src.core.event_timing.queries import canonical_events
 from src.services.db_service import DatabaseService
 
 # Setup logging
@@ -59,7 +62,7 @@ def create_event(args: argparse.Namespace) -> int:
             event_data["attributes"] = {"_tags": tags_list}
 
         cmd = CreateEventCommand(event_data)
-        result = cmd.execute(db_service)
+        result = execute_timing(cmd, db_service, getattr(args, "confirm_timing", None))
         if result.success:
             if args.json:
                 print(
@@ -98,6 +101,11 @@ def list_events(args: argparse.Namespace) -> int:
         db_service.connect()
 
         events = db_service.get_all_events()
+        config = db_service.get_active_calendar_config()
+        events = canonical_events(
+            events,
+            CalendarConverter(config) if isinstance(config, CalendarConfig) else None,
+        )
 
         if not events and not args.json:
             print("No events found.")
@@ -110,9 +118,17 @@ def list_events(args: argparse.Namespace) -> int:
             name_lower = args.name_contains.lower()
             events = [e for e in events if name_lower in e.name.lower()]
         if args.date_min is not None:
-            events = [e for e in events if e.lore_date >= args.date_min]
+            events = [
+                e
+                for e in events
+                if e.lore_date is not None and e.lore_date >= args.date_min
+            ]
         if args.date_max is not None:
-            events = [e for e in events if e.lore_date <= args.date_max]
+            events = [
+                e
+                for e in events
+                if e.lore_date is not None and e.lore_date <= args.date_max
+            ]
         if args.tags:
             required_tags = {t.strip() for t in args.tags.split(",") if t.strip()}
             events = [
@@ -124,7 +140,7 @@ def list_events(args: argparse.Namespace) -> int:
             ]
 
         # Sort
-        events.sort(key=lambda e: e.lore_date)
+        events.sort(key=lambda e: e.date_sort_key())
 
         # Output format
         if args.json:
@@ -136,7 +152,9 @@ def list_events(args: argparse.Namespace) -> int:
             for event in events:
                 print(f"ID: {event.id}")
                 print(f"  Name: {event.name}")
-                print(f"  Date: {event.lore_date}")
+                print(
+                    f"  Date: {event.lore_date if event.lore_date is not None else 'Unresolved'}"
+                )
                 print(f"  Type: {event.type}")
                 if event.description:
                     desc_preview = (
@@ -172,6 +190,13 @@ def show_event(args: argparse.Namespace) -> int:
             print(f"ERROR Event not found: {args.id}", file=sys.stderr)
             return 1
 
+        config = db_service.get_active_calendar_config()
+        resolved = canonical_events(
+            db_service.get_all_events(),
+            CalendarConverter(config) if isinstance(config, CalendarConfig) else None,
+        )
+        event = next((item for item in resolved if item.id == event.id), event)
+
         # Output format
         if args.json:
             import json
@@ -182,8 +207,12 @@ def show_event(args: argparse.Namespace) -> int:
             print(f"ID: {event.id}")
             print(f"Name: {event.name}")
             print(f"Type: {event.type}")
-            print(f"Date: {event.lore_date}")
-            print(f"Duration: {event.lore_duration}")
+            print(
+                f"Date: {event.lore_date if event.lore_date is not None else 'Unresolved'}"
+            )
+            print(
+                f"Duration: {event.lore_duration if event.lore_duration is not None else 'Uncertain or unresolved'}"
+            )
             print("\nDescription:")
             print(event.description if event.description else "(none)")
             print("\nAttributes:")
@@ -248,7 +277,7 @@ def update_event(args: argparse.Namespace) -> int:
             return 1
 
         cmd = UpdateEventCommand(args.id, update_data)
-        result = cmd.execute(db_service)
+        result = execute_timing(cmd, db_service, getattr(args, "confirm_timing", None))
 
         if result.success:
             print(f"OK Updated event: {args.id}")
@@ -334,6 +363,9 @@ def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: 
         "--json", action="store_true", help="Output created ID as JSON"
     )
     create_parser.set_defaults(func=create_event)
+    create_parser.add_argument(
+        "--confirm-timing", help="Fingerprint of the reviewed timing cascade"
+    )
 
     # List command
     list_parser = subparsers.add_parser("list", help="List all events")
@@ -378,6 +410,9 @@ def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: 
     update_parser.add_argument("--duration", type=float, help="New duration")
     update_parser.add_argument("--tags", help="Comma-separated list of tags")
     update_parser.set_defaults(func=update_event)
+    update_parser.add_argument(
+        "--confirm-timing", help="Fingerprint of the reviewed timing cascade"
+    )
 
     # Delete command
     delete_parser = subparsers.add_parser("delete", help="Delete an event")

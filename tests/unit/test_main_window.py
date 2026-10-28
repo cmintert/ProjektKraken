@@ -30,7 +30,7 @@ def main_window(qtbot):
         patch("src.app.build_identity.get_commit_id", return_value="12345678"),
         patch("src.app.worker_manager.DatabaseWorker") as MockWorker,
         patch("src.app.main_window.QTimer"),
-        patch("src.app.worker_manager.QThread"),
+        patch("src.app.worker_manager.QThread.start"),
         patch(
             "src.app.coordinators.editor_coordinator.QMessageBox.warning",
             return_value=QMessageBox.Discard,
@@ -74,9 +74,7 @@ def main_window(qtbot):
 def test_init_window(main_window):
     from src.app.constants import WINDOW_TITLE
 
-    assert main_window.windowTitle() == (
-        f"{WINDOW_TITLE} - 12345678 - world.kraken"
-    )
+    assert main_window.windowTitle() == (f"{WINDOW_TITLE} - 12345678 - world.kraken")
     assert main_window.timeline is not None
 
 

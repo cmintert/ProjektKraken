@@ -20,7 +20,7 @@ SCHEMA_SQL = """
             id TEXT PRIMARY KEY,
             type TEXT NOT NULL,
             name TEXT NOT NULL,
-            lore_date REAL NOT NULL,
+            lore_date REAL,
             lore_duration REAL DEFAULT 0.0,
             description TEXT,
             attributes JSON DEFAULT '{}',

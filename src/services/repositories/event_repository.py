@@ -6,11 +6,8 @@ Handles CRUD operations for Event entities in the database.
 import logging
 from typing import List, Optional
 
-from src.core.calendar import CalendarConverter
 from src.core.events import Event
-from src.core.temporal_expression import TemporalExpression, expression_from_attributes
 from src.services.repositories.base_repository import BaseRepository
-from src.services.repositories.calendar_repository import CalendarRepository
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +29,6 @@ class EventRepository(BaseRepository):
             sqlite3.Error: If the database operation fails.
 
         """
-        self._sync_temporal_projection(event)
         sql = """
             INSERT INTO events (id, type, name, lore_date, lore_duration,
                                 description, attributes, created_at, modified_at)
@@ -61,23 +57,6 @@ class EventRepository(BaseRepository):
                     event.modified_at,
                 ),
             )
-
-    def _sync_temporal_projection(self, event: Event) -> None:
-        """Generate compatibility floats from assertions at the persistence boundary."""
-        expression = expression_from_attributes(event.attributes)
-        if expression is None:
-            return
-        config = CalendarRepository(self._connection).get(expression.calendar_id)
-        if config is None:
-            raise ValueError("The event's calendar is unavailable")
-        converter = CalendarConverter(config)
-        event.lore_date = expression.representative_time(converter)
-        end_data = event.attributes["_temporal_v2"].get("end_expression")
-        if end_data:
-            end = TemporalExpression.from_dict(end_data).representative_time(converter)
-            if end < event.lore_date:
-                raise ValueError("Event end must not precede its start")
-            event.lore_duration = end - event.lore_date
 
     def get(self, event_id: str) -> Optional[Event]:
         """Retrieve a single event by its UUID.
@@ -111,7 +90,7 @@ class EventRepository(BaseRepository):
             List of all Event objects in the database.
 
         """
-        sql = "SELECT * FROM events ORDER BY lore_date ASC"
+        sql = "SELECT * FROM events ORDER BY lore_date IS NULL, lore_date ASC, id ASC"
 
         if not self._connection:
             raise RuntimeError("Database connection not initialized")
@@ -148,8 +127,6 @@ class EventRepository(BaseRepository):
             sqlite3.Error: If the database operation fails.
 
         """
-        for event in events:
-            self._sync_temporal_projection(event)
         sql = """
             INSERT INTO events (id, type, name, lore_date, lore_duration,
                                 description, attributes, created_at, modified_at)
@@ -193,23 +170,17 @@ class EventRepository(BaseRepository):
             List of Event objects within the date range.
 
         """
-        sql = """
-            SELECT * FROM events
-            WHERE lore_date >= ? AND lore_date <= ?
-            ORDER BY lore_date ASC
-        """
-
         if not self._connection:
             raise RuntimeError("Database connection not initialized")
+        from src.core.calendar import CalendarConverter
+        from src.core.event_timing.queries import canonical_events, starts_in_range
+        from src.services.repositories.calendar_repository import CalendarRepository
 
-        cursor = self._connection.execute(sql, (start_date, end_date))
-        events = []
-        for row in cursor.fetchall():
-            data = dict(row)
-            if data.get("attributes"):
-                data["attributes"] = self._deserialize_json(data["attributes"])
-            events.append(Event.from_dict(data))
-        return events
+        config = CalendarRepository(self._connection).get_active()
+        converter = CalendarConverter(config) if config else None
+        return starts_in_range(
+            canonical_events(self.get_all(), converter), start_date, end_date
+        )
 
     def get_by_type(self, event_type: str) -> List[Event]:
         """Retrieve events by type.

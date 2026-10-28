@@ -16,11 +16,10 @@ from src.gui.utils.shortcut_manager import ShortcutManager
 # Similar patches to wiring test
 MAIN_WINDOW_PATCHES = [
     patch("src.app.worker_manager.DatabaseWorker"),
-    patch("src.app.worker_manager.QThread"),
+    patch("src.app.worker_manager.QThread.start"),
     patch("src.app.ui_manager.UIManager.create_timeline_menu"),
     patch("src.app.ui_manager.UIManager.create_settings_menu"),
     patch("src.app.ui_manager.UIManager.create_file_menu"),
-    patch("src.app.ui_manager.UIManager.create_view_menu"),
     patch("src.app.ui_manager.UIManager.create_layouts_menu"),
     patch("src.app.ui_manager.UIManager.create_help_menu"),
 ]

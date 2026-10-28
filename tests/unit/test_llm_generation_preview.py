@@ -171,7 +171,7 @@ def test_preview_and_generation_use_identical_retrieval_arguments(
         builder.build_context_string(context), task, include_rag_placeholder=True
     )
     widget._current_provider = MagicMock()
-    with patch.object(GenerationWorker, "start"):
+    with patch.object(GenerationWorker, "start") as start:
         widget._start_generation(
             prompt,
             0.7,
@@ -180,8 +180,10 @@ def test_preview_and_generation_use_identical_retrieval_arguments(
             object_type=context["object_type"],
             retrieval_query=build_retrieval_query(task, context),
         )
+        start.assert_called_once()
     worker = widget._worker
     assert worker is not None
+    assert not worker.isRunning()
     worker._apply_rag_to_prompt()
 
     assert preview_call == mock_rag_cls.return_value.get_context.call_args

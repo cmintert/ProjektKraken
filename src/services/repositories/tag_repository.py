@@ -681,8 +681,14 @@ class TagRepository(BaseRepository):
             count = len(all_events)
 
             # Get min/max dates
-            earliest = min((e.lore_date for e in all_events), default=0.0)
-            latest = max((e.lore_date for e in all_events), default=0.0)
+            earliest = min(
+                (e.require_date() for e in all_events if e.lore_date is not None),
+                default=0.0,
+            )
+            latest = max(
+                (e.require_date() for e in all_events if e.lore_date is not None),
+                default=0.0,
+            )
 
             metadata.append(
                 {

@@ -183,7 +183,9 @@ def test_existing_conflict_does_not_block_unrelated_ordering(db_service) -> None
     assert result.success
 
 
-def test_preferred_source_and_timeline_move_revalidate_dates(db_service) -> None:
+def test_preferred_source_and_timeline_move_revalidate_dates(
+    db_service, prepare_timing_command
+) -> None:
     config = CalendarConfig.create_default()
     config.is_active = True
     db_service.insert_calendar_config(config)
@@ -204,7 +206,9 @@ def test_preferred_source_and_timeline_move_revalidate_dates(db_service) -> None
     db_service.insert_event(a)
     db_service.insert_event(b)
     assert (
-        ApplyChronologyCommand([{"kind": "create", "data": before(a, b)}])
+        prepare_timing_command(
+            ApplyChronologyCommand([{"kind": "create", "data": before(a, b)}])
+        )
         .execute(db_service)
         .success
     )

@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from src.core.calendar import CalendarConverter
 from src.core.date_parser import DateParser
+from src.core.event_timing.definitions import EVENT_TIMING_SCHEMA
 from src.core.temporal_constraints import TemporalConstraint, validate_constraints
 from src.core.temporal_expression import TemporalExpression, TemporalPrecision
 
@@ -108,15 +109,36 @@ def author_temporal_evidence(
     )
     if errors:
         raise ValueError(" ".join(errors))
-    result.update(schema=1, claims=records, constraints=deepcopy(constraints))
+    schema = metadata.get("schema", 1)
+    if schema not in {1, 2}:
+        raise ValueError("Unsupported Event timing metadata is preserved for repair")
+    result.update(schema=schema, claims=records, constraints=deepcopy(constraints))
     if preferred >= 0:
         if preferred >= len(records):
             raise ValueError("Choose an existing preferred claim.")
         result["preferred_claim_id"] = records[preferred]["id"]
-        result["expression"] = deepcopy(records[preferred]["expression"])
+        result = _prefer_claim(result, records[preferred]["expression"])
     else:
         result.pop("preferred_claim_id", None)
     return result
+
+
+def _prefer_claim(
+    metadata: dict[str, Any], expression: dict[str, Any]
+) -> dict[str, Any]:
+    """An explicit evidence choice replaces only the authoritative start source."""
+    if metadata.get("schema") == EVENT_TIMING_SCHEMA:
+        from src.core.event_timing.definitions import (
+            EndpointDefinition,
+            EventTimingDefinition,
+        )
+
+        timing = EventTimingDefinition.from_dict(metadata["timing"])
+        return replace(
+            timing, start=EndpointDefinition(expression=deepcopy(expression))
+        ).apply({"_temporal_v2": metadata})["_temporal_v2"]
+    metadata["expression"] = deepcopy(expression)
+    return metadata
 
 
 def conflicting_claims(metadata: dict[str, Any], converter: CalendarConverter) -> bool:

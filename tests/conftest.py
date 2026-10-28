@@ -5,6 +5,26 @@ import tempfile
 
 import pytest
 
+
+@pytest.fixture
+def prepare_timing_command(db_service):
+    """Exercise the real prepared-plan boundary with the shared database fixture."""
+
+    def prepare(command):
+        from src.commands.event_timing_commands import ApplyEventTimingPlanCommand
+        from src.commands.event_timing_intents import request_for_command
+        from src.services.event_timing.planning import prepare_change
+        from src.services.event_timing.store import capture, register
+
+        snapshot = capture(db_service)
+        plan = prepare_change(snapshot, request_for_command(command, snapshot))
+        assert not plan.errors, plan.errors
+        register(db_service, plan)
+        return ApplyEventTimingPlanCommand(command, plan.identity, plan.fingerprint)
+
+    return prepare
+
+
 # Set Qt to use offscreen platform for headless testing
 # This must be set BEFORE any Qt imports
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -76,10 +96,15 @@ def qapp():
 
 @pytest.fixture(autouse=True)
 def isolate_qsettings(qapp):
-    """Isolate settings and complete deferred Qt teardown for every test."""
+    """Isolate settings and application presentation; finish deferred Qt teardown."""
     if QApplication is None:
         yield
         return
+
+    existing_widgets = set(qapp.topLevelWidgets())
+    saved_stylesheet = qapp.styleSheet()
+    saved_font = qapp.font()
+    saved_palette = qapp.palette()
 
     settings_dir = tempfile.mkdtemp(
         prefix="case-",
@@ -93,6 +118,17 @@ def isolate_qsettings(qapp):
     TestQSettings.setDefaultFormat(TestQSettings.Format.IniFormat)
     yield
 
+    # Older component tests construct unparented editors without qtbot ownership.
+    # Their singleton theme connections otherwise retain closed authoring trees
+    # across thousands of cases, making later theme changes traverse every tree.
+    # Preserve outer-scoped fixtures and application infrastructure. Main-window
+    # fixtures own their worker and application-filter shutdown explicitly.
+    for widget in qapp.topLevelWidgets():
+        if widget not in existing_widgets and type(widget).__module__.startswith(
+            "src.gui.widgets."
+        ):
+            widget.deleteLater()
+
     # pytest-qt schedules widgets for deferred deletion. Flush those events
     # before the next test so singleton signals (notably ThemeManager) cannot
     # accumulate connections to closed widgets across the full serial suite.
@@ -101,6 +137,15 @@ def isolate_qsettings(qapp):
         QtCore.QEvent.Type.DeferredDelete,
     )
     qapp.processEvents()
+
+    # Theme/font tests change QApplication as well as their own widgets. Restore
+    # those values so later component tests do not inherit another case's QSS.
+    if qapp.styleSheet() != saved_stylesheet:
+        qapp.setStyleSheet(saved_stylesheet)
+    if qapp.font() != saved_font:
+        qapp.setFont(saved_font)
+    if qapp.palette() != saved_palette:
+        qapp.setPalette(saved_palette)
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -128,9 +173,9 @@ def init_theme_manager():
     assert "surface" in theme, "ThemeManager failed to load valid theme"
 
 
-@pytest.fixture
-def isolated_theme_manager(qapp, monkeypatch, init_theme_manager):
-    """Give a component test its own real theme singleton and signal receivers."""
+@pytest.fixture(autouse=True)
+def isolated_theme_manager(qapp, monkeypatch, init_theme_manager, isolate_qsettings):
+    """Give each case a real theme sender with no earlier-case signal receivers."""
     from src.core.theme_manager import ThemeManager
 
     monkeypatch.setattr(ThemeManager, "_instance", None)

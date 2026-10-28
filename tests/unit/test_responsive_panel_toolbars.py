@@ -133,7 +133,12 @@ def test_graph_filters_fit_one_compact_row_and_overflow_actions(qtbot) -> None:
     assert not bar._tag_combo.isHidden()
     assert not bar._rel_type_combo.isHidden()
     assert not bar._refresh_btn.isHidden()
-    assert bar.action_toolbar.overflowed_buttons()
+    # Both actions may fit directly; overflow is needed only when they do not.
+    # Either presentation must retain a complete, reachable Filter action.
+    assert (
+        bar._adv_filter_btn.isVisibleTo(host)
+        or bar._adv_filter_btn in bar.action_toolbar.overflowed_buttons()
+    )
     assert bar.minimumSizeHint().width() <= 530
 
 

@@ -4,10 +4,17 @@ from __future__ import annotations
 
 import math
 from dataclasses import replace
+from fractions import Fraction
 from typing import Any
 
 from src.core.calendar import CalendarConverter, CalendarDate
 from src.core.calendar_index import locate_year, month_span
+from src.core.event_timing.constraints import (
+    Cancel,
+    Interval,
+    checkpoint,
+    merge_intervals,
+)
 from src.core.temporal_expression import MAX_LORE_DAY, ResolvedTemporalBounds
 
 
@@ -27,7 +34,12 @@ def calendar_shift(
 
 
 def _calendar_domain(
-    start: float, end: float, amount: int, unit: str, converter: CalendarConverter
+    start: float,
+    end: float,
+    amount: int,
+    unit: str,
+    converter: CalendarConverter,
+    cancel: Cancel | None = None,
 ) -> tuple[tuple[float, float], ...]:
     """Validate calendar pieces while preserving gaps in their possible image."""
     shifted_start = calendar_shift(start, amount, unit, converter)
@@ -37,11 +49,12 @@ def _calendar_domain(
         return ((shifted_start, shifted_start + (end - start)),)
     pieces = []
     for lower, upper, regular in _calendar_regions(start, end, amount, unit, converter):
+        checkpoint(cancel)
         if regular:
             target = calendar_shift(lower, amount, unit, converter)
             pieces.append((target, target + upper - lower))
         else:
-            pieces.extend(_month_images(lower, upper, amount, unit, converter))
+            pieces.extend(_month_images(lower, upper, amount, unit, converter, cancel))
     merged: list[tuple[float, float]] = []
     for lower, upper in pieces:
         if merged and lower <= merged[-1][1]:
@@ -52,12 +65,18 @@ def _calendar_domain(
 
 
 def _month_images(
-    start: float, end: float, amount: int, unit: str, converter: CalendarConverter
+    start: float,
+    end: float,
+    amount: int,
+    unit: str,
+    converter: CalendarConverter,
+    cancel: Cancel | None = None,
 ) -> list[tuple[float, float]]:
     """A month piece is affine; checking its extreme days covers every candidate."""
     pieces = []
     cursor = start
     while cursor < end:
+        checkpoint(cancel)
         date = converter.from_float(cursor)
         upper = min(end, converter.start_of_next_month(date.year, date.month))
         target = calendar_shift(cursor, amount, unit, converter)
@@ -124,6 +143,7 @@ def shift_anchor(
     bounds: ResolvedTemporalBounds,
     ref: dict[str, Any],
     converter: CalendarConverter | None,
+    cancel: Cancel | None = None,
 ) -> ResolvedTemporalBounds:
     """Apply a versioned offset with identity independent of caption rounding."""
     offset = ref.get("offset", {"unit": "days", "value": ref.get("offset_days", 0)})
@@ -151,6 +171,7 @@ def shift_anchor(
         )
     try:
         if unit == "days":
+            inclusivity = bounds.possible_inclusivity
             ranges = (
                 tuple(
                     (lower + value, upper + value)
@@ -175,7 +196,9 @@ def shift_anchor(
                     raise ValueError("Offset cannot be represented at this lore date")
         else:
             assert converter is not None
-            shifted, ranges = _calendar_values(bounds, int(value), unit, converter)
+            shifted, ranges, inclusivity = _calendar_values(
+                bounds, int(value), unit, converter, cancel
+            )
         if any(
             v is not None and (not math.isfinite(v) or abs(v) > MAX_LORE_DAY)
             for v in shifted
@@ -196,24 +219,43 @@ def shift_anchor(
         soft_start=shifted[2],
         soft_end=shifted[3],
         possible_ranges=ranges,
+        possible_inclusivity=inclusivity,
+        joint_offset=0.0,
+        joint_transform=(
+            *bounds.joint_transform,
+            (unit, value, offset.get("calendar_id")),
+        )
+        if bounds.joint is not None
+        else (),
         **identity,
         label=f"{bounds.label or bounds.anchor_id} ({value:+.17g} {unit})",
     )
 
 
 def _calendar_values(
-    bounds: ResolvedTemporalBounds, amount: int, unit: str, converter: CalendarConverter
-) -> tuple[list[float | None], tuple[tuple[float, float], ...] | None]:
+    bounds: ResolvedTemporalBounds,
+    amount: int,
+    unit: str,
+    converter: CalendarConverter,
+    cancel: Cancel | None = None,
+) -> tuple[
+    list[float | None],
+    tuple[tuple[float, float], ...] | None,
+    tuple[tuple[bool, bool], ...] | None,
+]:
     """Project evidence pairs independently, never filling an unknown side."""
     shifted: list[float | None] = []
     hard_ranges = None
+    inclusivity = None
     for index, (start, end) in enumerate(
         (
             (bounds.hard_start, bounds.hard_end),
             (bounds.soft_start, bounds.soft_end),
         )
     ):
-        if start is None and end is None:
+        if index == 1:
+            shifted.extend(_soft_calendar_pair(start, end, amount, unit, converter))
+        elif start is None and end is None:
             shifted.extend((None, None))
         elif start is None or end is None:
             if not _globally_affine(amount, unit, converter):
@@ -225,11 +267,70 @@ def _calendar_values(
                 for v in (start, end)
             )
         else:
-            ranges = _calendar_domain(start, end, amount, unit, converter)
-            shifted.extend((ranges[0][0], ranges[-1][1]))
-            if index == 0:
-                hard_ranges = ranges
-    return shifted, hard_ranges
+            images = _calendar_images(bounds, amount, unit, converter, cancel)
+            hard_ranges = tuple(
+                (float(part.lower), float(part.upper))
+                for part in images
+                if part.lower is not None and part.upper is not None
+            )
+            inclusivity = tuple(
+                (part.lower_closed, part.upper_closed) for part in images
+            )
+            shifted.extend((hard_ranges[0][0], hard_ranges[-1][1]))
+    return shifted, hard_ranges, inclusivity
+
+
+def _soft_calendar_pair(
+    start: float | None,
+    end: float | None,
+    amount: int,
+    unit: str,
+    converter: CalendarConverter,
+) -> tuple[float | None, float | None]:
+    """Nominal layout preferences cannot invalidate otherwise feasible evidence."""
+    try:
+        first, last = (
+            None if value is None else calendar_shift(value, amount, unit, converter)
+            for value in (start, end)
+        )
+        return first, last
+    except (ValueError, OverflowError, IndexError):
+        return None, None
+
+
+def _calendar_images(
+    bounds: ResolvedTemporalBounds,
+    amount: int,
+    unit: str,
+    converter: CalendarConverter,
+    cancel: Cancel | None,
+) -> tuple[Interval, ...]:
+    """Transform actual feasible pieces without filling their excluded gaps."""
+    assert bounds.hard_start is not None and bounds.hard_end is not None
+    sources = bounds.possible_ranges or ((bounds.hard_start, bounds.hard_end),)
+    flags = bounds.possible_inclusivity or tuple(
+        (
+            bounds.lower_inclusive if index == 0 else True,
+            bounds.upper_inclusive if index == len(sources) - 1 else False,
+        )
+        for index in range(len(sources))
+    )
+    pieces: list[Interval] = []
+    for (start, end), (lower_closed, upper_closed) in zip(sources, flags, strict=True):
+        images = _calendar_domain(start, end, amount, unit, converter, cancel)
+        pieces.extend(
+            Interval(
+                Fraction(lower),
+                Fraction(upper),
+                lower_closed if index == 0 else True,
+                start == end,
+            )
+            for index, (lower, upper) in enumerate(images)
+        )
+        if upper_closed and start != end:
+            point = Fraction(calendar_shift(end, amount, unit, converter))
+            pieces.append(Interval(point, point, True, True))
+    return merge_intervals(pieces)
 
 
 def _identity(

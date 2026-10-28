@@ -40,6 +40,8 @@ class CalendarRepository(BaseRepository):
                 modified_at=excluded.modified_at;
         """
         with self.transaction() as conn:
+            if config.is_active:
+                conn.execute("UPDATE calendar_config SET is_active = 0")
             conn.execute(
                 sql,
                 (
@@ -72,7 +74,7 @@ class CalendarRepository(BaseRepository):
 
         if row:
             data = dict(row)
-            return CalendarConfig.from_json(data["config_json"])
+            return self._decode(data)
         return None
 
     def get_all(self) -> List[CalendarConfig]:
@@ -91,7 +93,7 @@ class CalendarRepository(BaseRepository):
         configs = []
         for row in cursor.fetchall():
             data = dict(row)
-            configs.append(CalendarConfig.from_json(data["config_json"]))
+            configs.append(self._decode(data))
         return configs
 
     def get_active(self) -> Optional[CalendarConfig]:
@@ -111,8 +113,15 @@ class CalendarRepository(BaseRepository):
 
         if row:
             data = dict(row)
-            return CalendarConfig.from_json(data["config_json"])
+            return self._decode(data)
         return None
+
+    @staticmethod
+    def _decode(data: dict) -> CalendarConfig:
+        """The strict active column is authoritative over historical JSON caches."""
+        config = CalendarConfig.from_json(data["config_json"])
+        config.is_active = bool(data["is_active"])
+        return config
 
     def set_active(self, config_id: str) -> None:
         """Set a calendar configuration as active (deactivates all others).
@@ -132,6 +141,11 @@ class CalendarRepository(BaseRepository):
                 "UPDATE calendar_config SET is_active = 1 WHERE id = ?",
                 (config_id,),
             )
+
+    def clear_active(self) -> None:
+        """Restore a recorded state with no active calendar."""
+        with self.transaction() as conn:
+            conn.execute("UPDATE calendar_config SET is_active = 0")
 
     def delete(self, config_id: str) -> None:
         """Delete a calendar configuration permanently.

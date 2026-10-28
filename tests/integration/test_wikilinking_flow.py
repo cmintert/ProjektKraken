@@ -17,9 +17,10 @@ def mock_window(qtbot):
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.main_window.QTimer"),
-        patch("src.app.worker_manager.QThread"),
+        patch("src.app.worker_manager.QThread.start"),
     ):
         window = MainWindow()
+        qtbot.addWidget(window)
         window.worker = MagicMock()
         yield window
         window.close()
@@ -30,19 +31,13 @@ def test_update_event_toggle_off_no_wiki_command(qtbot):
     UpdateEventCommand — no ProcessWikiLinksCommand is attached.
     """
 
-    mock_settings = MagicMock()
-    mock_settings.value.return_value = False
-
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.main_window.QTimer"),
-        patch("src.app.worker_manager.QThread"),
-        patch(
-            "src.app.coordinators.editor_coordinator.QSettings",
-            return_value=mock_settings,
-        ),
+        patch("src.app.worker_manager.QThread.start"),
     ):
         window = MainWindow()
+        qtbot.addWidget(window)
         try:
             mock_slot = MagicMock()
             window.editor_coordinator.command_requested.connect(mock_slot)
@@ -65,19 +60,14 @@ def test_update_event_toggle_on_includes_wiki_command(qtbot):
     """
     from src.commands.composite_command import CompositeCommand
 
-    mock_settings = MagicMock()
-    mock_settings.value.return_value = True
-
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.main_window.QTimer"),
-        patch("src.app.worker_manager.QThread"),
-        patch(
-            "src.app.coordinators.editor_coordinator.QSettings",
-            return_value=mock_settings,
-        ),
+        patch("src.app.worker_manager.QThread.start"),
     ):
         window = MainWindow()
+        qtbot.addWidget(window)
+        window.editor_coordinator.auto_create_relations = True
         try:
             mock_slot = MagicMock()
             window.editor_coordinator.command_requested.connect(mock_slot)
@@ -103,19 +93,13 @@ def test_update_entity_toggle_off_no_wiki_command(qtbot):
     """When the toggle is OFF, update_entity emits only UpdateEntityCommand."""
     from src.commands.entity_commands import UpdateEntityCommand
 
-    mock_settings = MagicMock()
-    mock_settings.value.return_value = False
-
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.main_window.QTimer"),
-        patch("src.app.worker_manager.QThread"),
-        patch(
-            "src.app.coordinators.editor_coordinator.QSettings",
-            return_value=mock_settings,
-        ),
+        patch("src.app.worker_manager.QThread.start"),
     ):
         window = MainWindow()
+        qtbot.addWidget(window)
         try:
             mock_slot = MagicMock()
             window.editor_coordinator.command_requested.connect(mock_slot)
@@ -135,19 +119,14 @@ def test_update_entity_toggle_on_includes_wiki_command(qtbot):
     from src.commands.composite_command import CompositeCommand
     from src.commands.entity_commands import UpdateEntityCommand
 
-    mock_settings = MagicMock()
-    mock_settings.value.return_value = True
-
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.main_window.QTimer"),
-        patch("src.app.worker_manager.QThread"),
-        patch(
-            "src.app.coordinators.editor_coordinator.QSettings",
-            return_value=mock_settings,
-        ),
+        patch("src.app.worker_manager.QThread.start"),
     ):
         window = MainWindow()
+        qtbot.addWidget(window)
+        window.editor_coordinator.auto_create_relations = True
         try:
             mock_slot = MagicMock()
             window.editor_coordinator.command_requested.connect(mock_slot)

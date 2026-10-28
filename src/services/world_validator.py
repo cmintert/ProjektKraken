@@ -84,6 +84,7 @@ class WorldValidator:
         self._check_duplicate_relations(relations)
         self._check_wikilinks(entities, events)
         self._check_dates(events)
+        self._check_event_timing(events)
         self._check_temporal_windows(relations, events)
         self._check_map_temporal_windows(maps, events)
         self._check_attachments(attachments, entities, events)
@@ -375,16 +376,31 @@ class WorldValidator:
             ):
                 self.issues.append(
                     ValidationIssue(
-                        severity=SeverityLevel.CRITICAL,
+                        severity=SeverityLevel.WARNING
+                        if event.lore_date is None
+                        else SeverityLevel.CRITICAL,
                         issue_type=IssueType.INVALID_DATE,
                         object_id=event.id,
                         object_type="event",
                         object_name=event.name,
-                        message="Event has a non-finite lore date.",
-                        suggestion="Set a valid lore date.",
+                        message="Event start is unresolved."
+                        if event.lore_date is None
+                        else "Event has a non-finite lore date.",
+                        suggestion="Open Event timing and repair its date source.",
                         fingerprint=f"invalid-date:{event.id}",
                     )
                 )
+            if event.lore_duration is None:
+                from src.core.event_timing.definitions import EventTimingDefinition
+
+                try:
+                    if (
+                        EventTimingDefinition.from_event(event).end_mode
+                        == "independent"
+                    ):
+                        continue  # A ranged duration has no authoritative scalar.
+                except (ValueError, TypeError, KeyError):
+                    pass
             if not isinstance(event.lore_duration, (int, float)) or not math.isfinite(
                 float(event.lore_duration)
             ):
@@ -413,6 +429,18 @@ class WorldValidator:
                         fingerprint=f"invalid-duration:{event.id}",
                     )
                 )
+
+    def _check_event_timing(self, events: list[Event]) -> None:
+        """Include whole-network feasibility and structural timing diagnostics."""
+        from src.core.calendar import CalendarConfig, CalendarConverter
+        from src.core.event_timing.solver import resolve_world
+        from src.services.event_timing.validation import timing_issues
+
+        config = self.db_service.get_active_calendar_config()
+        converter = (
+            CalendarConverter(config) if isinstance(config, CalendarConfig) else None
+        )
+        self.issues.extend(timing_issues(events, resolve_world(events, converter)))
 
     def _check_temporal_windows(
         self,

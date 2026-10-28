@@ -25,16 +25,40 @@ class Event:
     """
 
     name: str
-    lore_date: float
+    lore_date: float | None
     description: str = ""
     type: str = "generic"
-    lore_duration: float = 0.0
+    lore_duration: float | None = 0.0
     attributes: Dict[str, Any] = field(default_factory=dict)
 
     # Metadata
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     created_at: float = field(default_factory=time.time)
     modified_at: float = field(default_factory=time.time)
+
+    def require_date(self) -> float:
+        """Return a usable coordinate or reject dated work on an unplaced Event."""
+        if self.lore_date is None:
+            raise ValueError(f"Event '{self.name}' has no resolved start date")
+        return self.lore_date
+
+    def date_sort_key(self) -> tuple[bool, float]:
+        """Order unplaced Events after dated Events without assigning them a date."""
+        return (
+            self.lore_date is None,
+            self.lore_date if self.lore_date is not None else float("inf"),
+        )
+
+    @property
+    def start_follows_event(self) -> bool:
+        """Expose the source mode for deliberate editing affordances."""
+        return (
+            self.attributes.get("_temporal_v2", {})
+            .get("timing", {})
+            .get("start", {})
+            .get("kind")
+            == "event"
+        )
 
     def to_dict(self) -> Dict[str, Any]:
         """Converts the Event instance to a dictionary for storage or serialization.

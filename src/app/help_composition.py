@@ -26,6 +26,7 @@ class HelpSurfaceBindings(QObject):
         "TemporalValidityDialog": "map.visibility",
         "TemporalEvidenceDialog": "date.evidence",
         "EventChronologyDialog": "event.chronology",
+        "EventTimingReviewDialog": "event.timing",
         "KeyboardShortcutsDialog": "manual.shortcuts",
         "FeatureGeometryStatesDialog": "map.historical-geometry",
     }

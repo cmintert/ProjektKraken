@@ -16,7 +16,9 @@ pytestmark = pytest.mark.ci_fast
 
 
 @pytest.mark.parametrize("text", ["961", "January 961", "c. 961", "961?"])
-def test_editor_save_reload_export_and_undo(qtbot, db_service, text):
+def test_editor_save_reload_export_and_undo(
+    qtbot, db_service, text, prepare_timing_command
+):
     config = CalendarConfig.create_default()
     config.is_active = True
     db_service.insert_calendar_config(config)
@@ -35,7 +37,7 @@ def test_editor_save_reload_export_and_undo(qtbot, db_service, text):
     date._on_draft_edited(text)
     with qtbot.waitSignal(editor.save_requested) as signal:
         editor._on_save()
-    command = UpdateEventCommand(event.id, signal.args[0])
+    command = prepare_timing_command(UpdateEventCommand(event.id, signal.args[0]))
     assert command.execute(db_service).success
     saved = db_service.get_event(event.id)
     assert saved.lore_duration == 0
@@ -99,7 +101,9 @@ def test_drag_preserves_year_and_undo(db_service):
 
 
 @pytest.mark.parametrize("duration", [False, True])
-def test_range_meaning_survives_editor_save(qtbot, db_service, monkeypatch, duration):
+def test_range_meaning_survives_editor_save(
+    qtbot, db_service, monkeypatch, duration, prepare_timing_command
+):
     from PySide6.QtWidgets import QInputDialog
 
     config = CalendarConfig.create_default()
@@ -122,24 +126,28 @@ def test_range_meaning_survives_editor_save(qtbot, db_service, monkeypatch, dura
     date._on_draft_edited("961-964")
     with qtbot.waitSignal(editor.save_requested) as signal:
         editor._on_save()
-    command = UpdateEventCommand(event.id, signal.args[0])
+    command = prepare_timing_command(UpdateEventCommand(event.id, signal.args[0]))
     assert command.execute(db_service).success
     saved = db_service.get_event(event.id)
-    metadata = saved.attributes["_temporal_v2"]
-    assert (saved.lore_duration > 0) == duration
-    assert ("end_expression" in metadata) == duration
+    from src.core.event_timing.definitions import EventTimingDefinition
+
+    definition = EventTimingDefinition.from_event(saved)
+    assert (definition.end_mode == "independent") == duration
+    assert saved.lore_duration is None if duration else saved.lore_duration == 0
     editor.load_event(saved)
     if duration:
         assert editor.temporal_widget.date_end.get_expression().year == 964
-        move = UpdateEventCommand(
-            event.id, {"lore_date": CalendarConverter(config).start_of_year(970)}
+        move = prepare_timing_command(
+            UpdateEventCommand(
+                event.id, {"lore_date": CalendarConverter(config).start_of_year(962)}
+            )
         )
         assert move.execute(db_service).success
         assert (
-            db_service.get_event(event.id).attributes["_temporal_v2"]["end_expression"][
-                "year"
-            ]
-            == 973
+            EventTimingDefinition.from_event(
+                db_service.get_event(event.id)
+            ).end.expression["year"]
+            == 964
         )
     else:
         assert (

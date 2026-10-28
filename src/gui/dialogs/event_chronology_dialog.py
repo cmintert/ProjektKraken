@@ -245,6 +245,8 @@ class EventChronologyDialog(HelpAwareDialog):
         expression = expression_from_attributes(event.attributes)
         if expression is not None:
             return expression.display_text(self.converter)
+        if event.lore_date is None:
+            return "Date unresolved"
         if self.converter is not None:
             return self.converter.format_date(event.lore_date)
         return str(event.lore_date)

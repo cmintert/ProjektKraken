@@ -191,7 +191,7 @@ class TimeCoordinator(BaseCoordinator):
     def _navigate_to_saved_event(self, event_id: str) -> None:
         """Share saved-date navigation across inspector and toolbar routes."""
         event = self._saved_event(event_id)
-        if event is not None:
+        if event is not None and event.lore_date is not None:
             self.go_to_date(
                 event.lore_date,
                 event_navigation_context(event, self.main_window.calendar_converter),

@@ -6,6 +6,7 @@ import copy
 import math
 from typing import Any
 
+from src.core.event_timing.definitions import EVENT_TIMING_SCHEMA
 from src.core.events import Event
 from src.core.temporal_references import remap_temporal_references
 from src.core.transfer import LORE_KINDS
@@ -28,6 +29,16 @@ def _validate_record(
     ):
         errors.append("Tags must be a JSON list of names.")
     if kind != "events":
+        return errors
+    metadata = row.get("attributes", {}).get("_temporal_v2", {})
+    if isinstance(metadata, dict) and metadata.get("schema", 1) != 1:
+        if metadata.get("schema") == EVENT_TIMING_SCHEMA:
+            from src.core.event_timing.definitions import EventTimingDefinition
+
+            try:
+                EventTimingDefinition.from_dict(metadata["timing"])
+            except (ValueError, TypeError, KeyError) as exc:
+                errors.append(str(exc))
         return errors
     raw_date = row.get("lore_date")
     if raw_date is None or str(raw_date).strip() == "":
@@ -187,6 +198,12 @@ def prepare_import(
             }
         result = _import_records(parser, payload, options, clone)
         after = snapshot(target)
+        from src.services.event_timing.transfer import project_import
+
+        timing_review = project_import(db, changes(before, after), clone)
+        if timing_review is not None:
+            errors.extend(timing_review["errors"])
+            after = snapshot(target)
         errors.extend(
             f"Ambiguous {item['type']} '{item['name']}': "
             "select a match or exclude the record."
@@ -217,6 +234,7 @@ def prepare_import(
             "revision": revision(before),
             "db_path": db.db_path,
             "source_hashes": data.get("source_hashes", {}),
+            "timing_review": timing_review,
             "options": options,
         }
     finally:

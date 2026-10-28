@@ -44,7 +44,7 @@ class ContextEvent:
 
     id: str
     name: str
-    lore_date: float
+    lore_date: float | None
     event_type: str
     temporal_status: str = "definite"
     temporal_label: str = ""
@@ -66,7 +66,9 @@ class ContextEvent:
         return cls(
             id=str(data["id"]),
             name=str(data["name"]),
-            lore_date=float(data["lore_date"]),
+            lore_date=float(data["lore_date"])
+            if data["lore_date"] is not None
+            else None,
             event_type=str(data.get("event_type", "generic")),
             temporal_status=str(data.get("temporal_status", "definite")),
             temporal_label=str(data.get("temporal_label", "")),

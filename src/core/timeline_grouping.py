@@ -29,10 +29,11 @@ def events_for_group(
     matching = [
         event
         for event in events
-        if start_date <= event.lore_date <= end_date
+        if event.lore_date is not None
+        and start_date <= event.lore_date <= end_date
         and tag_name in set(event.tags)
     ]
-    return sorted(matching, key=lambda event: event.lore_date)
+    return sorted(matching, key=lambda event: event.date_sort_key())
 
 
 def build_group_metadata(
@@ -62,7 +63,7 @@ def build_group_metadata(
     ]
     for tag_name in regular_tags:
         grouped_events = events_for_group(events, tag_name, date_range)
-        dates = [event.lore_date for event in grouped_events]
+        dates = [event.require_date() for event in grouped_events]
         metadata.append(
             {
                 "tag_name": tag_name,
@@ -73,7 +74,9 @@ def build_group_metadata(
             }
         )
     if ALL_EVENTS_GROUP_NAME in tag_order:
-        all_dates = [event.lore_date for event in events]
+        all_dates = [
+            event.require_date() for event in events if event.lore_date is not None
+        ]
         metadata.append(
             {
                 "tag_name": ALL_EVENTS_GROUP_NAME,

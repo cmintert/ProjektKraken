@@ -26,13 +26,16 @@ def event_temporal_dependencies(db: DatabaseService, event_id: str) -> list[str]
                 f"Relation {relation.get('id')}: {relation.get('rel_type', '')}"
             )
     for event in db.get_all_events():
-        if event.id != event_id and references(
-            event.attributes.get("_temporal_v2", {})
-        ):
+        if references(event.attributes.get("_temporal_v2", {})):
             dependencies.append(f"Event {event.id}: {event.name}")
     for map_obj in db.get_all_maps():
         if references(map_obj.attributes) or (
             map_obj.layers is not None and references(map_obj.layers.to_dict())
         ):
             dependencies.append(f"Map {map_obj.id}: {map_obj.name}")
+        for marker in db.get_markers_for_map(map_obj.id):
+            if references(marker.attributes):
+                dependencies.append(
+                    f"Map feature {marker.id}: {marker.label or map_obj.name}"
+                )
     return sorted(dependencies)

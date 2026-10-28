@@ -348,6 +348,7 @@ class GenerationWorker(QThread):
                             *event_context.concurrent_events,
                             *event_context.next_events,
                         )
+                        if item.lore_date is not None
                     )
                     values.extend(
                         value
@@ -370,12 +371,18 @@ class GenerationWorker(QThread):
                     values = [
                         item.event.lore_date
                         for item in entity_context.event_appearances
+                        if item.event.lore_date is not None
                     ]
-                    values.extend(item.lore_date for item in entity_context.mentions)
+                    values.extend(
+                        item.lore_date
+                        for item in entity_context.mentions
+                        if item.lore_date is not None
+                    )
                     values.extend(
                         event.lore_date
                         for item in entity_context.co_appearances
                         for event in item.events
+                        if event.lore_date is not None
                     )
                     values.extend(
                         value

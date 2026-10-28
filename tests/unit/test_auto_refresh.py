@@ -43,10 +43,11 @@ def test_auto_refresh_logic(qtbot):
     # Setup
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
-        patch("src.app.worker_manager.QThread"),
+        patch("src.app.worker_manager.QThread.start"),
         patch("src.app.main_window.QTimer"),
     ):
         main_window = MainWindow()
+        main_window._complete_initialization()
     qtbot.addWidget(main_window)
 
     # Mock components to isolate logic

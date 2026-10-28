@@ -95,6 +95,8 @@ class AuthoringContextBuilder:
         if event is None:
             return None
         effective_date = event.lore_date if context_date is None else context_date
+        if effective_date is None:
+            return None  # No date-scoped facts can be asserted for an unplaced Event.
 
         item_cache: dict[str, ContextItem | None] = {}
         event_cache: dict[str, Event | None] = {event.id: event}
@@ -310,8 +312,16 @@ class AuthoringContextBuilder:
             for event_id, roles in appearance_roles.items()
             if event_id in events_by_id
         ]
-        appearances.sort(key=lambda item: (item.event.lore_date, item.event.id))
-        mentions.sort(key=lambda item: (item.lore_date, item.id))
+        appearances.sort(
+            key=lambda item: (
+                item.event.lore_date is None,
+                item.event.lore_date or 0,
+                item.event.id,
+            )
+        )
+        mentions.sort(
+            key=lambda item: (item.lore_date is None, item.lore_date or 0, item.id)
+        )
         linked_references.sort(key=self._context_relation_key)
         direct.sort(key=self._context_relation_key)
         temporal.sort(key=self._context_relation_key)
@@ -683,7 +693,7 @@ class AuthoringContextBuilder:
         for related_id, events in shared_events.items():
             related = entities_by_id[related_id]
             ordered = sorted(
-                events.values(), key=lambda item: (item.lore_date, item.id)
+                events.values(), key=lambda item: (item.date_sort_key(), item.id)
             )
             results.append(
                 ContextCoAppearance(
@@ -1014,12 +1024,18 @@ class AuthoringContextBuilder:
         omitted: dict[str, int],
     ) -> tuple[list[ContextEvent], list[ContextEvent], list[ContextEvent]]:
         events = sorted(
-            (event for event in self._db.get_all_events() if event.id != event_id),
-            key=lambda item: (item.lore_date, item.id),
+            (
+                event
+                for event in self._db.get_all_events()
+                if event.id != event_id and event.lore_date is not None
+            ),
+            key=lambda item: (item.require_date(), item.id),
         )
-        previous_all = [event for event in events if event.lore_date < context_date]
+        previous_all = [
+            event for event in events if event.require_date() < context_date
+        ]
         concurrent_all = [event for event in events if event.lore_date == context_date]
-        next_all = [event for event in events if event.lore_date > context_date]
+        next_all = [event for event in events if event.require_date() > context_date]
         if len(previous_all) > MAX_SIDE_EVENTS:
             omitted["previous_events"] = len(previous_all) - MAX_SIDE_EVENTS
         if len(next_all) > MAX_SIDE_EVENTS:
@@ -1161,7 +1177,14 @@ class AuthoringContextBuilder:
 
     @staticmethod
     def _context_event(event: Event) -> ContextEvent:
-        return ContextEvent(event.id, event.name, event.lore_date, event.type)
+        return ContextEvent(
+            event.id,
+            event.name,
+            event.lore_date,
+            event.type,
+            "indeterminate" if event.lore_date is None else "definite",
+            "Start unresolved" if event.lore_date is None else "",
+        )
 
     @staticmethod
     def _limit(

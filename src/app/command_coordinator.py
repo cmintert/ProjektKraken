@@ -5,6 +5,7 @@ database worker thread.
 """
 
 import logging
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Dict, List, Optional, cast
 
 from PySide6.QtCore import QObject, Signal, Slot
@@ -63,6 +64,7 @@ class CommandCoordinator(QObject):
         self._pending_commands: Dict[str, "BaseCommand"] = {}
         self._history_epoch = 0
         self.mutations_suspended = False
+        self.defer_command: Callable[["BaseCommand"], bool] | None = None
         logger.debug("CommandCoordinator initialized with undo/redo support")
 
     # ------------------------------------------------------------------
@@ -199,6 +201,8 @@ class CommandCoordinator(QObject):
         """
         if self.mutations_suspended:
             logger.warning("Command rejected during database shutdown")
+            return
+        if self.defer_command is not None and self.defer_command(command):
             return
         logger.debug(f"Executing command: {command.__class__.__name__}")
         self.command_preparing.emit(command)

@@ -79,17 +79,29 @@ def test_legacy_world_relations_are_normalized_and_rebuilt(tmp_path, monkeypatch
         f"[[id:{target.id}|Foggenburg]] borders [[id:{target.id}|the old city]]."
     )
 
-    initial = DatabaseService(str(db_path))
-    initial.connect()
-    for entity in (source, target, stale):
-        initial.insert_entity(entity)
-    initial.close()
+    from src.services.migrations.steps import schema_statements
+
+    with sqlite3.connect(db_path) as connection:
+        connection.executescript("".join(schema_statements(version=3)))
+        for entity in (source, target, stale):
+            connection.execute(
+                "INSERT INTO entities (id,type,name,description,attributes,created_at,modified_at) VALUES (?,?,?,?,?,?,?)",
+                (
+                    entity.id,
+                    entity.type,
+                    entity.name,
+                    entity.description,
+                    json.dumps(entity.attributes),
+                    entity.created_at,
+                    entity.modified_at,
+                ),
+            )
 
     now = time.time()
     with sqlite3.connect(db_path) as connection:
         # This fixture represents a pre-ledger world, not damaged current schema.
         connection.execute("DELETE FROM system_meta WHERE key='schema_version'")
-        connection.execute("DROP TABLE migration_history")
+        connection.execute("DROP TABLE IF EXISTS migration_history")
         connection.execute(
             "DELETE FROM system_meta WHERE key = 'wikilink_relations_schema_version'"
         )

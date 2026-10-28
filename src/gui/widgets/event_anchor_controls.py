@@ -28,7 +28,11 @@ class EventAnchorControls(QWidget):
     changed = Signal()
 
     def __init__(
-        self, anchor: dict[str, Any] | None = None, parent: QWidget | None = None
+        self,
+        anchor: dict[str, Any] | None = None,
+        parent: QWidget | None = None,
+        *,
+        calculated_only: bool = False,
     ) -> None:
         """Initialize common advanced choices without changing loaded metadata."""
         super().__init__(parent)
@@ -53,8 +57,10 @@ class EventAnchorControls(QWidget):
             WrappingComboBox(self),
             "event-anchor-endpoint|relations.timing|help-inspect-event-anchor-endpoint",
         )
-        self.endpoint.addItem("Occurrence / start", "start")
-        self.endpoint.addItem("Authored end", "end")
+        self.endpoint.addItem(
+            "Start" if calculated_only else "Occurrence / start", "start"
+        )
+        self.endpoint.addItem("End" if calculated_only else "Authored end", "end")
         self.relative = declare_inspection(
             WrappingComboBox(self),
             "src-gui-widgets-relation-form-relationform-setup-boundary-choices-relative|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-setup-boundary-choices-relative",
@@ -64,7 +70,8 @@ class EventAnchorControls(QWidget):
             ("Date before endpoint", "before"),
             ("Date after endpoint", "after"),
         ):
-            self.relative.addItem(caption, value)
+            if not calculated_only or value == "at":
+                self.relative.addItem(caption, value)
         self.offset = declare_inspection(
             EventOffsetInput(self),
             "src-gui-widgets-relation-form-relationform-setup-boundary-choices-offset|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-setup-boundary-choices-offset",
@@ -76,7 +83,7 @@ class EventAnchorControls(QWidget):
             "event-anchor-unit|relations.timing|help-inspect-event-anchor-unit",
         )
         for caption, value in (
-            ("Lore days", "days"),
+            ("Days" if calculated_only else "Lore days", "days"),
             ("Calendar months", "months"),
             ("Calendar years", "years"),
         ):
@@ -103,11 +110,17 @@ class EventAnchorControls(QWidget):
             ("Offset unit", self.unit),
         ):
             field_control.setAccessibleName(caption)
-            form.addRow(caption, field_control)
+            if field_control is not self.relative or not calculated_only:
+                form.addRow(caption, field_control)
+            else:
+                field_control.hide()
         hint = QLabel("Before/after records an unknown date.")
         hint.setWordWrap(True)
         hint.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
-        form.addRow(hint)
+        if not calculated_only:
+            form.addRow(hint)
+        else:
+            hint.hide()
         layout.addWidget(advanced)
         self.disclosure.toggled.connect(advanced.setVisible)
         expanded = bool(
@@ -155,6 +168,24 @@ class EventAnchorControls(QWidget):
             self._anchor_id = anchor_id
             self._edited()
 
+    def use_event_help(self) -> None:
+        """Explain calculated Event endpoints without implying before/after dates."""
+        declare_inspection(
+            self.disclosure,
+            "event-follow-options|event.timing|help-inspect-event-follow-options",
+        )
+        declare_inspection(
+            self.endpoint,
+            "event-follow-endpoint|event.timing|help-inspect-event-follow-endpoint",
+        )
+        declare_inspection(
+            self.offset,
+            "event-follow-offset|event.timing|help-inspect-event-follow-offset",
+        )
+        declare_inspection(
+            self.unit, "event-follow-unit|event.timing|help-inspect-event-follow-unit"
+        )
+
     def anchor(self) -> dict[str, Any]:
         """Preserve the complete reference until an explicit edit occurs."""
         if not self.dirty and self._original:
@@ -187,6 +218,28 @@ class EventAnchorControls(QWidget):
         try:
             result = resolver.anchor(self.anchor())
             text = result.error or result.label or "Date unknown"
+            if (
+                not result.error
+                and result.hard_start is not None
+                and result.hard_end is not None
+            ):
+                converter = self._context.converter()
+                first = (
+                    converter.format_date(result.hard_start)
+                    if converter
+                    else f"{result.hard_start:g} days"
+                )
+                last = (
+                    converter.format_date(result.hard_end)
+                    if converter
+                    else f"{result.hard_end:g} days"
+                )
+                date = (
+                    first
+                    if result.hard_start == result.hard_end
+                    else f"{first} to {last} (possible dates)"
+                )
+                text = f"{text} · {date}"
         except (ValueError, TypeError, KeyError) as exc:
             text = str(exc)
         self.summary.setText(f"Follows event changes. {text}")

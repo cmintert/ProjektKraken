@@ -428,8 +428,10 @@ class ObsidianExporter:
             for tag in tags:
                 lines.append(f"  - {tag}")
 
-        lines.append(f"lore_date: {event.lore_date}")
-        if event.lore_duration > 0:
+        lines.append(
+            f"lore_date: {event.lore_date if event.lore_date is not None else 'null'}"
+        )
+        if event.lore_duration is not None and event.lore_duration > 0:
             lines.append(f"lore_duration: {event.lore_duration}")
 
         # User-defined attributes

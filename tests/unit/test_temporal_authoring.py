@@ -70,7 +70,7 @@ def test_evidence_dialog_preserves_chronology_without_displaying_it(qtbot):
 
 
 def test_preferred_source_survives_editor_save_reload_export_and_undo(
-    qtbot, db_service, monkeypatch
+    qtbot, db_service, monkeypatch, prepare_timing_command
 ):
     from src.gui.widgets.event_editor import EventEditorWidget
 
@@ -104,13 +104,13 @@ def test_preferred_source_survives_editor_save_reload_export_and_undo(
     assert editor.temporal_widget.date_start.txt_date.text() == "964"
     with qtbot.waitSignal(editor.save_requested) as intent:
         editor._on_save()
-    command = UpdateEventCommand(event.id, intent.args[0])
+    command = prepare_timing_command(UpdateEventCommand(event.id, intent.args[0]))
     assert command.execute(db_service).success
     saved = Event.from_dict(db_service.get_event(event.id).to_dict())
     metadata = saved.attributes["_temporal_v2"]
     assert [claim["expression"]["year"] for claim in metadata["claims"]] == [961, 964]
     assert metadata["preferred_claim_id"] == metadata["claims"][1]["id"]
-    assert metadata["expression"]["explicit_outer_start"] is None
+    assert expression_from_attributes(saved.attributes).explicit_outer_start is None
     assert saved.lore_duration == 0
     reopened = EventEditorWidget(parent)
     reopened.set_calendar_converter(CalendarConverter(config))
@@ -235,6 +235,7 @@ def test_conflicting_sources_are_distinct_from_coarse_precision():
 
 
 def test_anchor_deletion_requires_dependency_confirmation_and_undo(db_service):
+    """Legacy confirmation cannot bypass the new guard; detach, delete and undo."""
     from src.commands.event_commands import DeleteEventCommand
 
     anchor = Event(name="Execution", lore_date=1)
@@ -260,8 +261,13 @@ def test_anchor_deletion_requires_dependency_confirmation_and_undo(db_service):
     assert not rejected.success
     assert db_service.get_event(anchor.id) is not None
     confirmed = DeleteEventCommand.from_dict(
-        DeleteEventCommand(anchor.id, rejected.data["temporal_dependencies"]).to_dict()
+        DeleteEventCommand(
+            anchor.id, rejected.data["blocked_temporal_dependencies"]
+        ).to_dict()
     )
+    assert not confirmed.execute(db_service).success
+    follower.attributes = {}
+    db_service.insert_event(follower)
     assert confirmed.execute(db_service).success
     assert db_service.get_event(anchor.id) is None
     assert db_service.get_event(follower.id).attributes == follower.attributes

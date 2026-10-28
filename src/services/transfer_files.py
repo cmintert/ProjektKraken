@@ -9,6 +9,8 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
+from src.services.file_publication import publish_with_retry
+
 
 @contextmanager
 def staged_output(
@@ -31,15 +33,15 @@ def staged_output(
             raise InterruptedError("Transfer cancelled. Existing output is unchanged.")
         if directory and destination.exists():
             previous = root / "previous"
-            destination.rename(previous)
+            publish_with_retry(lambda: destination.rename(previous))
             try:
-                stage.rename(destination)
+                publish_with_retry(lambda: stage.rename(destination))
             except BaseException:
-                previous.rename(destination)
+                publish_with_retry(lambda: previous.rename(destination))
                 raise
             shutil.rmtree(previous)
         else:
-            os.replace(stage, destination)
+            publish_with_retry(lambda: os.replace(stage, destination))
 
 
 @contextmanager

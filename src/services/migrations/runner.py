@@ -109,7 +109,9 @@ def _inspect_database(conn: sqlite3.Connection) -> dict[str, Any]:
             raise MigrationError("Schema version and migration ledger disagree")
     elif "migration_history" in objects:
         raise MigrationError("Migration ledger has no authoritative schema version")
-    steps.validate_structure(conn, legacy=version == 0)
+    steps.validate_structure(
+        conn, legacy=version == 0, version=max(version, steps.RELATION_VERSION)
+    )
     if version >= steps.TRAJECTORY_VERSION:
         steps.validate_trajectories(conn, convert=False)
     if version == steps.CURRENT_VERSION:
@@ -143,7 +145,7 @@ def _stamp(conn: sqlite3.Connection, version: int, step: str, origin: str) -> No
 
 def _apply(conn: sqlite3.Connection, version: int) -> bool:
     if version == steps.STRUCTURAL_VERSION:
-        steps.structural_compatibility(conn)
+        steps.structural_compatibility(conn, version=steps.RELATION_VERSION)
     elif version == steps.TRAJECTORY_VERSION:
         steps.validate_trajectories(conn, convert=True)
         steps.validate_trajectories(conn, convert=False)
@@ -164,6 +166,10 @@ def _apply(conn: sqlite3.Connection, version: int) -> bool:
             return had_history
         relations.install_relation_integrity(conn)
         steps.validate_integrity(conn)
+    elif version == steps.EVENT_TIMING_VERSION:
+        from src.services.migrations.event_timing import migrate_event_timing
+
+        migrate_event_timing(conn)
     return False
 
 
@@ -186,8 +192,8 @@ def prepare_database(
         if conn.in_transaction:
             raise MigrationError("Cannot upgrade inside an existing transaction")
         if (
-            status["detected_version"] == 0
-            and steps.legacy_foreign_key_tables(conn)
+            not status["empty"]
+            and status["detected_version"] < steps.EVENT_TIMING_VERSION
             and conn.execute("PRAGMA foreign_keys").fetchone()[0]
         ):
             conn.execute("PRAGMA foreign_keys=OFF")

@@ -494,7 +494,12 @@ def test_connection_browser_has_no_editor_or_persistence_dependencies():
     [
         (
             "services/timeline_event_preparation_service.py",
-            {"src.core.command", "src.core.events"},
+            {
+                "src.core.command",
+                "src.core.events",
+                "src.core.temporal_context",
+                "src.core.event_timing.projection",
+            },
         ),
         ("core/timeline_layout.py", set()),
         (

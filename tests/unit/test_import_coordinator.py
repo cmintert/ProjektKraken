@@ -131,8 +131,14 @@ class TestDatabaseManager:
         fake_window.app_coordinator = MagicMock()
         coordinator.show_database_manager()
         mock_dialog.exec.assert_called_once()
-        assert mock_dialog.edit_transition_handler == (
-            fake_window.app_coordinator.map_edits.request_transition
+        continuation = MagicMock()
+        mock_dialog.edit_transition_handler("change world", continuation)
+        settings = fake_window.app_coordinator.settings
+        settings.request_world_transition.assert_called_once()
+        fake_window.app_coordinator.map_edits.request_transition.assert_not_called()
+        settings.request_world_transition.call_args.args[0]()
+        fake_window.app_coordinator.map_edits.request_transition.assert_called_once_with(
+            "change world", continuation
         )
 
 

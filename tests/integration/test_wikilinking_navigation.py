@@ -15,9 +15,10 @@ def test_navigate_to_entity_success(qtbot):
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.main_window.QTimer"),
-        patch("src.app.worker_manager.QThread"),
+        patch("src.app.worker_manager.QThread.start"),
     ):
         window = MainWindow()
+        qtbot.addWidget(window)
         # Mock worker
         window.worker = MagicMock()
 
@@ -44,9 +45,10 @@ def test_navigate_to_entity_case_insensitive(qtbot):
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.main_window.QTimer"),
-        patch("src.app.worker_manager.QThread"),
+        patch("src.app.worker_manager.QThread.start"),
     ):
         window = MainWindow()
+        qtbot.addWidget(window)
         window.worker = MagicMock()
         window.data_coordinator._cached_entities = [
             Entity(id="ent-1", name="Gandalf", type="Character")
@@ -66,9 +68,10 @@ def test_navigate_to_entity_not_found(qtbot, monkeypatch):
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.main_window.QTimer"),
-        patch("src.app.worker_manager.QThread"),
+        patch("src.app.worker_manager.QThread.start"),
     ):
         window = MainWindow()
+        qtbot.addWidget(window)
         window.worker = MagicMock()
         window.data_coordinator._cached_entities = []
         window.data_coordinator._cached_events = []  # Also need to mock events cache
@@ -92,9 +95,10 @@ def test_peek_keeps_dirty_entity_authoring_context(qtbot):
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.main_window.QTimer"),
-        patch("src.app.worker_manager.QThread"),
+        patch("src.app.worker_manager.QThread.start"),
     ):
         window = MainWindow()
+        qtbot.addWidget(window)
         window.worker = MagicMock()
         try:
             source = Entity(id="source", name="Source", type="Concept")
@@ -131,9 +135,10 @@ def test_provisional_materialization_is_undoable_without_navigation(qtbot, db_se
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.main_window.QTimer"),
-        patch("src.app.worker_manager.QThread"),
+        patch("src.app.worker_manager.QThread.start"),
     ):
         window = MainWindow()
+        qtbot.addWidget(window)
         window.worker = MagicMock()
         try:
             window.navigation_coordinator.selected_type = "entity"

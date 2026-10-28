@@ -209,7 +209,7 @@ def test_hydration_rejects_old_save_feedback(timing_editor):
 
 @pytest.mark.parametrize("acceptance", ["enter", "blur", "autosave", "calendar"])
 def test_january_entry_survives_command_and_reopening(
-    timing_editor, qtbot, db_service, acceptance, monkeypatch
+    timing_editor, qtbot, db_service, acceptance, monkeypatch, prepare_timing_command
 ):
     """Reproduce the recorded suffix edit, then enter the requested full date."""
     editor = timing_editor
@@ -247,6 +247,9 @@ def test_january_entry_survives_command_and_reopening(
     editor.save_requested.connect(requested.append)
     if acceptance == "autosave":
         editor.autosave_manager._perform_autosave()
+        assert not requested
+        assert "Save Changes" in editor.save_status.text()
+        editor._on_save()
     else:
         editor._on_save()
     assert len(requested) == 1
@@ -256,7 +259,8 @@ def test_january_entry_survives_command_and_reopening(
     assert "1 January 1187" in field.text()
     assert editor.save_status.text() == "Saving…"
     changes = {k: v for k, v in payload.items() if not k.startswith("__")}
-    assert UpdateEventCommand(event.id, changes).execute(db_service).success
+    command = prepare_timing_command(UpdateEventCommand(event.id, changes))
+    assert command.execute(db_service).success
     assert editor.finish_save(payload["__editor_revision"], True)
     persisted = db_service.get_event(event.id)
     assert persisted.lore_date == payload["lore_date"]

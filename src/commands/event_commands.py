@@ -12,6 +12,7 @@ import logging
 from typing import Optional
 
 from src.commands.base_command import BaseCommand, CommandResult
+from src.core.event_timing.definitions import EVENT_TIMING_SCHEMA
 from src.core.events import Event
 from src.services.db_service import DatabaseService
 
@@ -66,6 +67,11 @@ class CreateEventCommand(BaseCommand):
         """
         try:
             logger.info(f"Executing CreateEvent: {self.event.name}")
+            from src.services.event_timing.guards import require_plan
+
+            rejected = require_plan(db_service, None, self.event)
+            if rejected is not None:
+                return rejected
             db_service.insert_event(self.event)
 
             # Sync tags to normalized tables
@@ -164,6 +170,7 @@ class UpdateEventCommand(BaseCommand):
         self.update_data = update_data
         self._previous_event: Optional[Event] = None
         self._new_event: Optional[Event] = None  # Store result for logs/UI
+        self._recorded_update = False
 
     def get_description(self) -> str:
         """Get a human-readable description of this command.
@@ -197,6 +204,10 @@ class UpdateEventCommand(BaseCommand):
                 command_name="UpdateEventCommand",
             )
 
+        from src.services.event_timing.guards import is_applying_plan
+
+        if self._recorded_update and not is_applying_plan():
+            return self._restore_recorded_update(db_service)
         self._previous_event = current
 
         # 2. Apply Updates
@@ -217,23 +228,24 @@ class UpdateEventCommand(BaseCommand):
             clean_data = {
                 k: v for k, v in self.update_data.items() if k in valid_fields
             }
+            from src.core.calendar import CalendarConverter
+            from src.services.event_timing.patches import normalize_scalar_patch
+
+            config = db_service.get_active_calendar_config()
+            clean_data = normalize_scalar_patch(
+                current,
+                clean_data,
+                CalendarConverter(config) if config else None,
+                preserve_timing=self.update_data.get("__preserve_timing") is True,
+            )
 
             self._new_event = dataclasses.replace(current, **clean_data)
             if "attributes" in clean_data:
                 # Chronology is edited by its own multi-event command. An editor
                 # snapshot may predate that command, so keep the worker's rules.
-                from copy import deepcopy
+                from src.services.event_timing.guards import preserve_chronology
 
-                attributes = deepcopy(self._new_event.attributes)
-                stored = current.attributes.get("_temporal_v2", {}).get(
-                    "constraints", []
-                )
-                if stored:
-                    metadata = deepcopy(attributes.get("_temporal_v2", {}))
-                    metadata.update(schema=1, constraints=deepcopy(stored))
-                    attributes["_temporal_v2"] = metadata
-                elif "_temporal_v2" in attributes:
-                    attributes["_temporal_v2"].pop("constraints", None)
+                attributes = preserve_chronology(self._new_event.attributes, current)
                 self._new_event = dataclasses.replace(
                     self._new_event, attributes=attributes
                 )
@@ -242,7 +254,11 @@ class UpdateEventCommand(BaseCommand):
                 from src.core.temporal_expression import expression_from_attributes
                 from src.services.event_temporal_service import move_temporal_event
 
-                if expression_from_attributes(current.attributes) is not None:
+                if (
+                    expression_from_attributes(current.attributes) is not None
+                    or current.attributes.get("_temporal_v2", {}).get("schema")
+                    == EVENT_TIMING_SCHEMA
+                ):
                     config = db_service.get_active_calendar_config()
                     if config is None:
                         raise ValueError("The event's calendar is unavailable")
@@ -253,14 +269,28 @@ class UpdateEventCommand(BaseCommand):
                     )
             from src.core.calendar import CalendarConverter
             from src.services.chronology_service import new_issues, world_issues
+            from src.services.event_timing.guards import (
+                preserve_unchanged_projection,
+                require_plan,
+            )
 
+            self._new_event = preserve_unchanged_projection(current, self._new_event)
+            rejected = require_plan(db_service, current, self._new_event)
+            if rejected is not None:
+                return rejected
             previous_metadata = current.attributes.get("_temporal_v2", {})
             updated_metadata = self._new_event.attributes.get("_temporal_v2", {})
             if (
-                current.lore_date != self._new_event.lore_date
-                or current.lore_duration != self._new_event.lore_duration
-                or previous_metadata.get("expression")
-                != updated_metadata.get("expression")
+                not is_applying_plan()
+                and self.update_data.get("__preserve_timing") is not True
+                and (
+                    current.lore_date != self._new_event.lore_date
+                    or current.lore_duration != self._new_event.lore_duration
+                    or previous_metadata.get("expression")
+                    != updated_metadata.get("expression")
+                    or previous_metadata.get("end_expression")
+                    != updated_metadata.get("end_expression")
+                )
             ):
                 config = db_service.get_active_calendar_config()
                 converter = CalendarConverter(config) if config else None
@@ -317,6 +347,35 @@ class UpdateEventCommand(BaseCommand):
                 command_name="UpdateEventCommand",
             )
 
+    def _restore_recorded_update(self, db_service: DatabaseService) -> CommandResult:
+        """Keep old history usable without treating a replay as a new timing edit."""
+        from src.services.event_timing.history import recorded_event
+
+        assert self._previous_event is not None and self._new_event is not None
+        try:
+            event = recorded_event(db_service, self._previous_event, self._new_event)
+            self._sync_tags(db_service, event.id, set(event.tags), "event")
+        except ValueError as exc:
+            return CommandResult(False, str(exc), command_name="UpdateEventCommand")
+        self._is_executed = True
+        return CommandResult(
+            True,
+            "Recorded Event update restored.",
+            command_name="UpdateEventCommand",
+            data={
+                "id": event.id,
+                "lore_effects": [
+                    {
+                        "object_type": "event",
+                        "operation": "upsert",
+                        "object_id": event.id,
+                        "snapshot": event.to_dict(),
+                        "relations_changed": False,
+                    }
+                ],
+            },
+        )
+
     def undo(self, db_service: DatabaseService) -> None:
         """Reverts the update by restoring the previous state of the event."""
         if self._is_executed and self._previous_event:
@@ -363,6 +422,9 @@ class UpdateEventCommand(BaseCommand):
             cmd._previous_event = Event.from_dict(data["previous_event"])
         if data.get("new_event"):
             cmd._new_event = Event.from_dict(data["new_event"])
+        cmd._recorded_update = (
+            cmd._previous_event is not None and cmd._new_event is not None
+        )
         cmd._is_executed = data.get("is_executed", False)
         return cmd
 
@@ -384,6 +446,7 @@ class DeleteEventCommand(BaseCommand):
         self._backup_event: Optional[Event] = None
         self._backup_relations: list[dict] = []
         self.confirmed_dependencies = confirmed_dependencies
+        self._recorded_delete = False
 
     def get_description(self) -> str:
         """Get a human-readable description of this command.
@@ -406,6 +469,20 @@ class DeleteEventCommand(BaseCommand):
             CommandResult: Result object indicating success or fail (e.g. not found).
 
         """
+        if self._recorded_delete and self._backup_event:
+            from src.services.event_timing.history import check_recorded_deletion
+
+            try:
+                check_recorded_deletion(
+                    db_service,
+                    self._backup_event,
+                    self._backup_relations,
+                    self.confirmed_dependencies or [],
+                )
+            except ValueError as exc:
+                return CommandResult(
+                    success=False, message=str(exc), command_name="DeleteEventCommand"
+                )
         # Backup before delete
         self._backup_event = db_service.get_event(self.event_id)
         if not self._backup_event:
@@ -419,13 +496,13 @@ class DeleteEventCommand(BaseCommand):
         from src.services.temporal_dependency_service import event_temporal_dependencies
 
         dependencies = event_temporal_dependencies(db_service, self.event_id)
-        if dependencies and dependencies != self.confirmed_dependencies:
+        if dependencies and not self._recorded_delete:
             return CommandResult(
                 success=False,
                 command_name="DeleteEventCommand",
-                message="Confirm deletion of this temporal anchor.",
+                message="Resolve timing references before deleting this Event.",
                 data={
-                    "temporal_dependencies": dependencies,
+                    "blocked_temporal_dependencies": dependencies,
                     "event_id": self.event_id,
                     "event_name": self._backup_event.name,
                 },
@@ -435,6 +512,7 @@ class DeleteEventCommand(BaseCommand):
         try:
             db_service.delete_relations_for_item(self.event_id)
             db_service.delete_event(self.event_id)
+            self._recorded_delete = True
             self._is_executed = True
             return CommandResult(
                 success=True,
@@ -520,6 +598,7 @@ class DeleteEventCommand(BaseCommand):
         cmd = cls(data["event_id"], data.get("confirmed_dependencies"))
         if data.get("backup_event"):
             cmd._backup_event = Event.from_dict(data["backup_event"])
+            cmd._recorded_delete = True
         cmd._backup_relations = data.get("backup_relations", [])
         cmd._is_executed = data.get("is_executed", False)
         return cmd

@@ -7,12 +7,11 @@ from src.core.events import Event
 # Common patches needed for headless MainWindow testing
 MAIN_WINDOW_PATCHES = [
     patch("src.app.worker_manager.DatabaseWorker"),
-    patch("src.app.worker_manager.QThread"),
+    patch("src.app.worker_manager.QThread.start"),
     patch("src.app.main_window.QTimer"),
     patch("src.app.ui_manager.UIManager.create_timeline_menu"),
     patch("src.app.ui_manager.UIManager.create_settings_menu"),
     patch("src.app.ui_manager.UIManager.create_file_menu"),
-    patch("src.app.ui_manager.UIManager.create_view_menu"),
     patch("src.app.ui_manager.UIManager.create_layouts_menu"),
 ]
 

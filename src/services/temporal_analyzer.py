@@ -233,6 +233,7 @@ class TemporalAnalyzer:
         self, events: list[Event]
     ) -> list[TemporalConflict]:
         """Report impossible chronology independently of reduced date precision."""
+        from src.core.event_timing.solver import resolve_world
         from src.core.temporal_anchors import resolve_event_anchors
         from src.core.temporal_constraints import (
             TemporalConstraint,
@@ -250,6 +251,16 @@ class TemporalAnalyzer:
         anchors = resolve_event_anchors(
             events, self._date_parser.converter if self._date_parser else None
         )
+        messages = [
+            *validate_constraints(constraints, anchors),
+            *(
+                issue.message
+                for issue in resolve_world(
+                    events, self._date_parser.converter if self._date_parser else None
+                ).issues
+                if issue.code == "infeasible"
+            ),
+        ]
         return [
             TemporalConflict(
                 conflict_type="chronological_constraint",
@@ -262,7 +273,7 @@ class TemporalAnalyzer:
                 related_ids=[],
                 fingerprint=f"chronology:{message}",
             )
-            for message in validate_constraints(constraints, anchors)
+            for message in dict.fromkeys(messages)
         ]
 
     def _detect_temporal_conflicts(
@@ -596,9 +607,7 @@ class TemporalAnalyzer:
                                     lore_date=event_date,
                                 )
                             ],
-                            fingerprint=(
-                                f"lifespan:{entity.id}:{event.id}"
-                            ),
+                            fingerprint=(f"lifespan:{entity.id}:{event.id}"),
                         )
                     )
 

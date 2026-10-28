@@ -19,7 +19,7 @@
       "id": "c901-2a61d75c48e8",
       "path": "src/services/import_service.py",
       "symbol": "ImportService._import_single_event_internal",
-      "ceiling": 32,
+      "ceiling": 29,
       "reason": "Existing production complexity reviewed for KRT-36; untouched debt only, executable edits must strictly improve."
     },
     {

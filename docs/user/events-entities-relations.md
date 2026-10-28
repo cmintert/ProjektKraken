@@ -119,25 +119,82 @@ The table is a comparison reference. For the conceptual model, see
 
 ## Set an event date or duration
 
-An event’s date records when it happens. Its duration records how long it lasts. An
-uncertain date does not, by itself, mean the event has a duration.
+An Event's start and end each have a date source. **Manual date** records your
+date evidence. **Follow Event** calculates a date from another Event's start or
+end and an offset. Date uncertainty does not, by itself, imply duration.
 
-1. Select the Event and enter its date using the world’s calendar.
-2. Press **Enter**, or leave the date field, to validate the input.
-3. Use **Date details & uncertainty…** for separate year, month and day controls.
-4. If the event lasts over time, enable **Event has duration** and open **End date / duration…**.
+Everything in the **Date** frame is saved together with **Save Changes**. You can
+adjust the date, time, uncertainty, sources, endpoints, offsets and duration without
+autosave opening a timing review partway through. Other fields continue to
+autosave separately; that does not save or replace your timing draft. The status
+**Timing not saved — choose Save Changes** identifies the remaining draft.
 
-Choose **Duration** to preserve the elapsed length when changing the start. Choose **End
-Date** to preserve the end and recalculate the duration. For a year-only start with a
-separately known end, use **Specify an end date instead…**.
+1. Select the Event. Leave its start source as **Manual date** and enter a date
+   using the world's calendar. Press **Enter**, or leave the field, to validate it.
+2. Use **Date details & uncertainty…** for separate components or uncertain dates.
+3. To record an interval, enable **Event has an end** and expand
+   **End date / duration…**. Choose **Duration** for a fixed elapsed length, or
+   **End Date** for an independently authored end.
+4. Choose **Save Changes**. Wait for timing validation to finish. If a cascade
+   review appears, inspect the changed Events and affected uses, then choose
+   **Apply changes** to save the whole change together.
+5. Check the save status and the calculated timing shown in the inspector.
 
-Validation accepts the date locally; it does not confirm a save. Check the separate save
-status, or use **Save Changes**. Invalid or unfinished date input is not saved. Press
-**Escape** in an unaccepted date field to restore its last accepted value.
+**Duration** keeps the elapsed length when the start changes. **End Date** keeps
+the end's own source and recalculates the possible duration. An explicit
+zero-day duration has an end that other Events can follow. An occurrence with
+**Event has an end** unchecked has no referenceable end.
 
-**Example:** A coronation known only to have occurred in 962 needs a year-only date, not
-a year-long duration. A siege lasting thirty days needs a duration as well as a start
-date.
+Validation accepts a date locally; it does not confirm a save. Invalid or
+unfinished input is not saved. Press **Escape** in an unaccepted date field to
+restore its last accepted value. Cancelling validation or cascade review leaves
+your draft available for correction. **Undo** reverses the accepted cascade as
+one operation.
+
+### Make one Event follow another
+
+First save the source Event. For example, a fictional siege can end when a
+treaty begins; this example does not require changing the demo world.
+
+1. Select the siege, enable **Event has an end**, and choose **End Date**.
+2. Change the end's source from **Manual date** to **Follow Event**.
+3. Choose the treaty from the Event list. Expand the follow options and choose
+   its **Start** or **End** endpoint.
+4. Enter an offset. **Days** accepts signed fractional values; calendar months
+   and years require whole numbers and use the selected calendar's actual rules.
+5. Choose **Save Changes**, review any cascade, and choose **Apply changes**. Reopen the
+   Event and check the saved reference and calculated result.
+
+The same controls are available for the start. All four start/end combinations
+are supported. A source without an authored end cannot supply an end date.
+Self references and endpoint dependency cycles are rejected; use **Duration**
+to define an Event's end relative to its own start.
+
+Changing a source recalculates its dependents, including Map and Relation date
+windows. Interval ordering and chronology may narrow the feasible dates without
+replacing your authored evidence. The saved calculation and reference summary
+show the result; **Date details & uncertainty…**, **Date evidence…**, and
+**Chronology…** retain the underlying authoring routes. A change with no jointly
+possible interpretation cannot be saved. Calendar offsets must work for every
+otherwise possible source date; refine the source evidence if a candidate date
+has no corresponding day or month.
+
+To detach, choose **Manual date**. An exact result can be copied into the field.
+For uncertain timing, enter an explicit replacement date or uncertainty before
+saving. A followed start cannot be dragged on the Timeline: edit its offset or
+detach it in the inspector. Resolve all timing references before deleting a
+source Event or removing its referenced end.
+
+Accepted Timeline moves and Undo/Redo refresh timing that you are not editing,
+while keeping your writing draft. A timing draft stays intact if its saved date
+changes elsewhere. In that case, saving reports the conflict. **Discard** reloads
+the saved Event and replaces its unsaved changes; preserve any draft you need
+before discarding, then reapply the intended timing change.
+
+Imported broken references remain editable. A known start with an unresolved
+end has no invented duration bar; an entirely unplaced Event remains accessible
+in Explorer. Unsupported timing metadata is preserved and its timing controls
+are unavailable until it can be repaired safely.
 
 **Related:** {ref}`Date precision <help-date-precision>` · {ref}`Date evidence
 <help-date-evidence>` · {ref}`Chronology <help-event-chronology>` · {ref}`Timeline
@@ -145,7 +202,61 @@ viewing <help-timeline-viewing>`
 
 (help-control-event-timing)=
 
-> Duration records how long an event lasts, independently of how precisely its start is known. Enable Event has duration to enter a duration or a separately known end date. Keep Duration preserves the elapsed length when you change the start; Keep End Date preserves the end and changes the elapsed length. A year-only occurrence does not need a duration merely because its exact day is unknown. Removing a duration retains the start's date precision. Validate the date locally, then check the separate save status before treating an edit as saved.
+> Choose Manual date to author date evidence, or Follow Event to calculate a start or end from another Event. Event has an end distinguishes an interval from an occurrence. Duration fixes elapsed length; End Date gives the end its own source. Date-frame edits wait for Save Changes; autosave saves other fields separately. Save Changes validates the joint timing and asks you to review dependent changes. Cancelling keeps your draft. A followed start cannot be dragged. Detaching uncertain timing requires a replacement date. Resolve references before deleting a source or removing its end.
+
+(help-inspect-event-start-source)=
+
+**Start date source** — Choose Manual date or Follow Event. Changing to Manual
+date requires a deliberate replacement when the calculated date is uncertain.
+
+(help-inspect-event-start-reference)=
+
+**Event followed by start** — Select the saved Event supplying this start.
+Unavailable imported targets remain visible for repair.
+
+(help-inspect-event-end-source)=
+
+**End date source** — Choose the independent end's Manual date or Follow Event
+source. Select End Date first to author an independent end.
+
+(help-inspect-event-timing-review-actions)=
+
+**Review date changes** — Read each affected Event or use, including its Before
+and After dates, uncertainty and interval duration. Dates retain their clock time
+when one is set; possible ranges retain their boundaries. **Apply changes** saves the
+reviewed operation with one Undo. **Cancel** returns to your intact draft.
+
+(help-inspect-event-end-reference)=
+
+**Event followed by end** — Select the saved Event supplying this end. The end
+must remain jointly feasible with this Event's start.
+
+(help-inspect-event-follow-options)=
+
+**Follow options** — Expand the source endpoint and offset controls. Opening
+these options does not save a timing change.
+
+(help-inspect-event-follow-endpoint)=
+
+**Source endpoint** — Follow the source Event's Start or authored End. An
+occurrence without an end cannot supply End; a zero-duration interval can.
+
+(help-inspect-event-follow-offset)=
+
+**Offset** — Add a signed amount to the source endpoint. Negative values place
+the calculated date earlier. Fractional values are available for Days.
+
+(help-inspect-event-follow-unit)=
+
+**Offset unit** — Choose Days, Calendar months, or Calendar years. Calendar
+units require whole amounts and valid target dates for every possible source.
+
+(help-inspect-event-timing-evidence)=
+
+**Evidence and timing constraints** — Inspect saved authored evidence separately
+from feasible dates, including gaps and excluded bounds. Applicable interval,
+reference, and chronology rules explain the connected timing group. Opening this
+disclosure preserves your draft and does not save changes.
 
 (help-entity-historical-editing)=
 
@@ -908,6 +1019,8 @@ meanings.
 
 **Save Changes** — Save the Event’s current changes. Invalid or incomplete dates must be
 corrected before they can be saved; check the save status for confirmation.
+Everything in the Date frame requires this explicit save. Autosaving other fields
+keeps the timing draft available for further editing.
 
 (help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-action-buttons-self-btn-discard)=
 
@@ -934,7 +1047,8 @@ does not create another Event.
 (help-inspect-src-gui-widgets-event-list-eventlistwidget-init-self-btn-delete)=
 
 **Delete Event** — Delete the selected Event from the world after confirmation. Review
-affected connections before accepting.
+affected connections before accepting. Timing references block deletion until you
+replace or remove them; confirmation cannot leave those references broken.
 
 (help-inspect-src-gui-widgets-gallery-widget-gallerywidget-init-ui-self-btn-add)=
 
@@ -1320,8 +1434,8 @@ authored connections.
 
 (help-inspect-src-gui-widgets-temporal-range-widget-temporalrangewidget-setup-ui-self-has-duration)=
 
-**Event has duration** — Leave unchecked for a single occurrence, even when its date is
-only known to a year.
+**Event has an end** — Enable an authored end, including an explicit zero-duration
+interval. Leave unchecked for an occurrence with no end. Referenced ends cannot be removed.
 
 (help-inspect-src-gui-widgets-temporal-range-widget-temporalrangewidget-setup-ui-self-range-button)=
 
@@ -1330,16 +1444,17 @@ Date uncertainty remains a separate setting.
 
 (help-inspect-src-gui-widgets-temporal-range-widget-temporalrangewidget-setup-ui-self-btn-lock-duration)=
 
-**Duration** — Start changes move the end date (span stays fixed).
+**Duration** — Define the end by a fixed elapsed length from the start.
 
 (help-inspect-src-gui-widgets-temporal-range-widget-temporalrangewidget-setup-ui-self-btn-lock-end)=
 
-**End Date** — Start changes adjust the span (end date stays fixed).
+**End Date** — Give the end its own Manual date or Follow Event source. Changing
+the start recalculates duration while preserving this end source.
 
 (help-inspect-src-gui-widgets-temporal-range-widget-temporalrangewidget-setup-ui-self-enter-end-button)=
 
-**Specify end date** — Show the Event end-date input as an alternative way to define its
-duration.
+**Specify end date** — Switch to an independently authored end date instead of a
+fixed duration.
 
 (help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-btn-new)=
 

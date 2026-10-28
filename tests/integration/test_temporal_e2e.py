@@ -45,9 +45,7 @@ def test_entity_state_evolution_over_time(db_service, temporal_manager):
     3. Event 2 (3019.1): Returns -> Status: White.
     """
     # 1. Base Entity
-    gandalf = Entity(
-        name="Gandalf", type="Wizard", attributes={"color": "Grey"}
-    )
+    gandalf = Entity(name="Gandalf", type="Wizard", attributes={"color": "Grey"})
     db_service.insert_entity(gandalf)
 
     # 2. Events
@@ -74,9 +72,7 @@ def test_entity_state_evolution_over_time(db_service, temporal_manager):
         rel_type="involved",
         attributes={
             "valid_from": 3019.1,
-            "payload": {
-                "attributes": {"color": "White", "status": "Active"}
-            },
+            "payload": {"attributes": {"color": "White", "status": "Active"}},
         },
     )
 
@@ -99,7 +95,9 @@ def test_entity_state_evolution_over_time(db_service, temporal_manager):
     assert state_late.attributes["status"] == "Active"
 
 
-def test_upstream_event_change_propagates(db_service, temporal_manager):
+def test_upstream_event_change_propagates(
+    db_service, temporal_manager, prepare_timing_command
+):
     """
     Scenario: Changing an event's date shifts when the state change happens.
     Flow:
@@ -126,9 +124,9 @@ def test_upstream_event_change_propagates(db_service, temporal_manager):
     )
 
     # Check initial state
-    assert "health" not in temporal_manager.get_entity_state_at(
-        hero.id, 90.0
-    ).attributes
+    assert (
+        "health" not in temporal_manager.get_entity_state_at(hero.id, 90.0).attributes
+    )
     assert (
         temporal_manager.get_entity_state_at(hero.id, 110.0).attributes["health"]
         == "Low"
@@ -141,7 +139,7 @@ def test_upstream_event_change_propagates(db_service, temporal_manager):
     # The `valid_from_event` flag tells resolver to use event.lore_date.
 
     cmd = UpdateEventCommand(event.id, {"lore_date": 80.0})
-    cmd.execute(db_service)
+    assert prepare_timing_command(cmd).execute(db_service).success
 
     # Manually trigger invalidation (in real app, signals handle this)
     temporal_manager.on_event_changed(event.id)

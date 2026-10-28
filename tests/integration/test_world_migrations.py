@@ -368,8 +368,8 @@ def test_fault_injection_restores_original_database(tmp_path, monkeypatch, phase
     if phase == "structure":
         original = steps.structural_compatibility
 
-        def partial(conn):
-            original(conn)
+        def partial(conn, **kwargs):
+            original(conn, **kwargs)
             fail()
 
         monkeypatch.setattr(steps, "structural_compatibility", partial)
@@ -628,7 +628,7 @@ def test_worker_failure_emits_recovery_and_clears_database(qapp, tmp_path):
     assert outcomes and outcomes[0].success is False
 
 
-@pytest.mark.parametrize("version", [1, 2])
+@pytest.mark.parametrize("version", [1, 2, 3])
 def test_versioned_upgrade_preserves_already_normalized_history(tmp_path, version):
     path = legacy_world(tmp_path)
     with closing(sqlite3.connect(path)) as conn:
@@ -637,6 +637,7 @@ def test_versioned_upgrade_preserves_already_normalized_history(tmp_path, versio
         )
         conn.execute(runner.LEDGER_SQL)
         for applied in range(1, version + 1):
+            runner._apply(conn, applied)
             runner._stamp(conn, applied, steps.MIGRATION_IDS[applied - 1], "upgraded")
         conn.execute(
             "INSERT INTO command_history "
@@ -655,6 +656,83 @@ def test_versioned_upgrade_preserves_already_normalized_history(tmp_path, versio
         == 1
     )
     service.close()
+
+
+def test_event_timing_upgrade_keeps_custom_objects_and_nullable_history(tmp_path):
+    path = legacy_world(tmp_path)
+    with closing(sqlite3.connect(path)) as conn:
+        conn.row_factory = sqlite3.Row
+        conn.execute(runner.LEDGER_SQL)
+        for version in range(1, 4):
+            runner._apply(conn, version)
+            runner._stamp(conn, version, steps.MIGRATION_IDS[version - 1], "upgraded")
+        conn.execute("CREATE INDEX custom_event_name ON events(name)")
+        conn.execute(
+            "CREATE TRIGGER custom_event_update AFTER UPDATE ON events BEGIN INSERT OR REPLACE INTO system_meta VALUES ('event_updated','yes'); END"
+        )
+        conn.execute(
+            "INSERT INTO command_history (world_id,session_id,command_type,command_data,timestamp) VALUES ('world','session','CreateEventCommand','{\"legacy\":true}',1)"
+        )
+        before = dict(
+            zip(
+                [row[1] for row in conn.execute("PRAGMA table_info(events)")],
+                conn.execute("SELECT * FROM events").fetchone(),
+                strict=True,
+            )
+        )
+        conn.commit()
+    service = DatabaseService(str(path))
+    service.connect()
+    connection = service.get_connection()
+    assert service.migration_status["upgraded_from"] == 3
+    assert dict(connection.execute("SELECT * FROM events").fetchone()) == before
+    assert (
+        connection.execute("SELECT command_data FROM command_history").fetchone()[0]
+        == '{"legacy":true}'
+    )
+    assert {
+        row[0]
+        for row in connection.execute(
+            "SELECT name FROM sqlite_master WHERE name LIKE 'custom_event_%'"
+        )
+    } == {"custom_event_name", "custom_event_update"}
+    connection.execute("UPDATE events SET lore_date=NULL,lore_duration=NULL")
+    assert (
+        connection.execute(
+            "SELECT value FROM system_meta WHERE key='event_updated'"
+        ).fetchone()[0]
+        == "yes"
+    )
+    assert connection.execute("PRAGMA foreign_keys").fetchone()[0] == 1
+    assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
+    assert connection.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+    connection.commit()
+    service.close()
+    service.connect()
+    assert service.get_event(TARGET_ID).lore_date is None
+    assert service.get_event(TARGET_ID).lore_duration is None
+    service.close()
+
+
+def test_interrupted_event_timing_upgrade_rolls_back_original(tmp_path, monkeypatch):
+    from src.services.migrations import event_timing
+
+    path = legacy_world(tmp_path)
+    original = database_dump(path)
+    migrate = event_timing.migrate_event_timing
+
+    def fail_after_rebuild(connection):
+        migrate(connection)
+        raise RuntimeError("Interrupted Event table rebuild")
+
+    monkeypatch.setattr(event_timing, "migrate_event_timing", fail_after_rebuild)
+    service = DatabaseService(str(path))
+    with pytest.raises(MigrationError, match="Interrupted Event") as caught:
+        service.connect()
+    assert database_dump(path) == original
+    bundle = Path(caught.value.recovery_path)
+    assert database_dump(bundle / "database.kraken") == original
+    assert (bundle / "recovery.json").is_file()
 
 
 def test_new_world_stamps_current_without_replaying_migrations(db_service, monkeypatch):

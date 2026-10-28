@@ -13,13 +13,12 @@ from src.commands.base_command import CommandResult
 # Patches to prevent full UI/DB spinup
 MAIN_WINDOW_PATCHES = [
     patch("src.app.worker_manager.DatabaseWorker"),
-    patch("src.app.worker_manager.QThread"),
+    patch("src.app.worker_manager.QThread.start"),
     # We allow QTimer to run so _complete_initialization fires
     # patch("src.app.main_window.QTimer"),
     patch("src.app.ui_manager.UIManager.create_timeline_menu"),
     patch("src.app.ui_manager.UIManager.create_settings_menu"),
     patch("src.app.ui_manager.UIManager.create_file_menu"),
-    patch("src.app.ui_manager.UIManager.create_view_menu"),
     patch("src.app.ui_manager.UIManager.create_layouts_menu"),
     patch("src.app.ui_manager.UIManager.create_help_menu"),
 ]

@@ -9220,6 +9220,106 @@
       "binding": "self.unit",
       "label": "Offset unit",
       "kind": "WrappingComboBox"
+    },
+    {
+      "id": "event-end-reference",
+      "topic_id": "event.timing",
+      "target": "help-inspect-event-end-reference",
+      "source": "src/gui/widgets/event_timing_source.py",
+      "symbol": "EventTimingSource.__init__",
+      "binding": "self.events",
+      "label": "Event followed by end",
+      "kind": "WrappingComboBox"
+    },
+    {
+      "id": "event-end-source",
+      "topic_id": "event.timing",
+      "target": "help-inspect-event-end-source",
+      "source": "src/gui/widgets/event_timing_source.py",
+      "symbol": "EventTimingSource.__init__",
+      "binding": "self.mode",
+      "label": "End date source",
+      "kind": "WrappingComboBox"
+    },
+    {
+      "id": "event-follow-endpoint",
+      "topic_id": "event.timing",
+      "target": "help-inspect-event-follow-endpoint",
+      "source": "src/gui/widgets/event_anchor_controls.py",
+      "symbol": "EventAnchorControls.use_event_help",
+      "binding": "self.endpoint",
+      "label": "Source endpoint",
+      "kind": "WrappingComboBox"
+    },
+    {
+      "id": "event-follow-offset",
+      "topic_id": "event.timing",
+      "target": "help-inspect-event-follow-offset",
+      "source": "src/gui/widgets/event_anchor_controls.py",
+      "symbol": "EventAnchorControls.use_event_help",
+      "binding": "self.offset",
+      "label": "Offset",
+      "kind": "NumericTextInput"
+    },
+    {
+      "id": "event-follow-options",
+      "topic_id": "event.timing",
+      "target": "help-inspect-event-follow-options",
+      "source": "src/gui/widgets/event_anchor_controls.py",
+      "symbol": "EventAnchorControls.use_event_help",
+      "binding": "self.disclosure",
+      "label": "Follow options",
+      "kind": "QToolButton"
+    },
+    {
+      "id": "event-follow-unit",
+      "topic_id": "event.timing",
+      "target": "help-inspect-event-follow-unit",
+      "source": "src/gui/widgets/event_anchor_controls.py",
+      "symbol": "EventAnchorControls.use_event_help",
+      "binding": "self.unit",
+      "label": "Offset unit",
+      "kind": "WrappingComboBox"
+    },
+    {
+      "id": "event-start-reference",
+      "topic_id": "event.timing",
+      "target": "help-inspect-event-start-reference",
+      "source": "src/gui/widgets/event_timing_source.py",
+      "symbol": "EventTimingSource.__init__",
+      "binding": "self.events",
+      "label": "Event followed by start",
+      "kind": "WrappingComboBox"
+    },
+    {
+      "id": "event-start-source",
+      "topic_id": "event.timing",
+      "target": "help-inspect-event-start-source",
+      "source": "src/gui/widgets/event_timing_source.py",
+      "symbol": "EventTimingSource.__init__",
+      "binding": "self.mode",
+      "label": "Start date source",
+      "kind": "WrappingComboBox"
+    },
+    {
+      "id": "event-timing-evidence",
+      "topic_id": "event.timing",
+      "target": "help-inspect-event-timing-evidence",
+      "source": "src/gui/widgets/temporal_range_widget.py",
+      "symbol": "TemporalRangeWidget._setup_ui",
+      "binding": "self.calculation_details",
+      "label": "Evidence and timing constraints",
+      "kind": "DisclosureButton"
+    },
+    {
+      "id": "event-timing-review-actions",
+      "topic_id": "event.timing",
+      "target": "help-inspect-event-timing-review-actions",
+      "source": "src/gui/dialogs/event_timing_review_dialog.py",
+      "symbol": "EventTimingReviewDialog.__init__",
+      "binding": "self.button_box",
+      "label": "Apply changes / Cancel",
+      "kind": "ResponsiveDialogButtonBox"
     }
   ],
   "factory_exemptions": [
@@ -9408,20 +9508,20 @@
     {
       "source": "src/commands/calendar_commands.py",
       "symbol": "CreateCalendarConfigCommand.execute",
-      "sha256": "2596fa995f5493f8d4866747b425dfea50b8772e401b57c59539ab86a4c7b0da",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "5335bcba8fd82897169c86ebba29739d8be2f53cb9ce0ace3560b1945a425447",
+      "review_note": "KRT-113: New active calendars require reviewed timing preparation. Persisted redo checks its recorded calendar state; it does not bypass validation for new edits."
     },
     {
       "source": "src/commands/calendar_commands.py",
       "symbol": "CreateCalendarConfigCommand.undo",
-      "sha256": "3f2b872dd5e9bb641b1b5171095f1c0b8ab8fa0f07a37b12b2708d2d4a481adb",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "b67b059cb84dc66e46bcc2e0f287811539d298666e7525e61317970ba7399084",
+      "review_note": "KRT-113: Undo removes the created calendar and restores the previous active selection, including no active calendar. The documented single Undo reverses the complete cascade."
     },
     {
       "source": "src/commands/calendar_commands.py",
       "symbol": "DeleteCalendarConfigCommand.execute",
-      "sha256": "927f5ab53f050c94559663390c26f10ec7c1cdec505bc80c4f14c81ba996059f",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "a4726f21b34831587fab8caf35aa589c45157a2bb8f5313cd8957929c23be758",
+      "review_note": "KRT-113: New deletion requires timing preparation in semantic worlds. Recorded legacy redo checks the restored calendar snapshot and preserves historical operations."
     },
     {
       "source": "src/commands/calendar_commands.py",
@@ -9432,32 +9532,32 @@
     {
       "source": "src/commands/calendar_commands.py",
       "symbol": "SetActiveCalendarCommand.execute",
-      "sha256": "77462475b666be89935cb231766634e8602ed5e988fa9f0b79ab778e5338b3ef",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "2f15cce6e5d34f65aa9e7b4aa54d41c4ab56560332d39b9b9a9451e6d8dffcbd",
+      "review_note": "KRT-113: New activation validates dependent timing before Apply. Legacy redo verifies the previous active identity; a missing target cannot activate."
     },
     {
       "source": "src/commands/calendar_commands.py",
       "symbol": "SetActiveCalendarCommand.undo",
-      "sha256": "4011927b138b6d741722b1a4c4f054e2499b85cdb08154c3a998d4959ebfe69c",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "258970f0accce5cc98a22b5f5372d14e7f0700ce307750146a237d282db54e0a",
+      "review_note": "KRT-113: Undo restores the previous active calendar or clears the selection when none was active. The calendar Apply and Undo route remains accurate."
     },
     {
       "source": "src/commands/calendar_commands.py",
       "symbol": "UpdateCalendarConfigCommand.execute",
-      "sha256": "fcf6d780ee254937438de2114f69277f6d621d81753529f7e51c130e46d1db43",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "e9427aeede085d888397cd1e93ee710e154bbf0d12555245769a202c81bcafa3",
+      "review_note": "KRT-113: Updating calendar activation records and restores the previous active selection, including none, through persisted Undo and Redo. New edits require reviewed timing preparation; legacy replay checks its recorded configuration. The single Undo documentation remains accurate."
     },
     {
       "source": "src/commands/calendar_commands.py",
       "symbol": "UpdateCalendarConfigCommand.undo",
-      "sha256": "901a9b3240a91d121ab5e33bf8ea4165d2856156ddb8c5e9039324c637a7d94c",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "1b02ddc424b6195496c92e9d6a9dc7d4b00a8a4e6a192f0e69ad45ec112bc1e9",
+      "review_note": "KRT-113: Updating calendar activation records and restores the previous active selection, including none, through persisted Undo and Redo. New edits require reviewed timing preparation; legacy replay checks its recorded configuration. The single Undo documentation remains accurate."
     },
     {
       "source": "src/commands/chronology_commands.py",
       "symbol": "ApplyChronologyCommand.execute",
-      "sha256": "36aac0c2a9100483e27b81f30481c03cbb8e038ef749a94fd6d37f130eb9f34f",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "406e679158094016213b0a3417055efab8c337477dcf8092f8831598450ad919",
+      "review_note": "KRT-113: New chronology restrictions require joint timing validation. Historical redo restores recorded snapshots only after checking all owners; ordinary authoring still uses the reviewed dialog route."
     },
     {
       "source": "src/commands/chronology_commands.py",
@@ -9516,8 +9616,8 @@
     {
       "source": "src/commands/event_commands.py",
       "symbol": "CreateEventCommand.execute",
-      "sha256": "0b006de793d328d8516352caf5ac80a3cb7226e9c3e0cda7d29acb160c5fbd66",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "1076551957bd674f74dd9239439ae22dec4571778bc460b462b8cbc4fb29e368",
+      "review_note": "KRT-113: Event creation participates in timing preparation. Manual dates remain the default and Save Changes is distinguished from local field validation."
     },
     {
       "source": "src/commands/event_commands.py",
@@ -9528,8 +9628,8 @@
     {
       "source": "src/commands/event_commands.py",
       "symbol": "DeleteEventCommand.execute",
-      "sha256": "26e8c1670deccd4c79600fcc933d58693862876561b582262803e449139f1d8e",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "b8d81048b164e6e0ba9cfc2cffea8d91f1b3d677771833c251cc70dde75c06a6",
+      "review_note": "KRT-113: New deletion blocks every timing reference. Historical confirmed deletions remain replayable only with matching restored Event, relations and dependency list; this is not a new confirm-and-break route."
     },
     {
       "source": "src/commands/event_commands.py",
@@ -9540,8 +9640,8 @@
     {
       "source": "src/commands/event_commands.py",
       "symbol": "UpdateEventCommand.execute",
-      "sha256": "d275a05e1f0fbd5c5883521e9510e50e635e3c6789791e0ad49b8882f9381215",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "6956a8b84d7e0c9aeb7ce33ab6b9457abb2e5d3f33a27cf4663cbe100c9dfdf6",
+      "review_note": "KRT-113 content-only autosave: preserve the authoritative Date-frame metadata and calculated scalars; reject scalar fields in a content-only request. Ordinary manual timing changes still require prepared validation and cascade review."
     },
     {
       "source": "src/commands/event_commands.py",
@@ -10116,8 +10216,8 @@
     {
       "source": "src/commands/transfer_commands.py",
       "symbol": "ApplyTransferCommand.execute",
-      "sha256": "fd33b6611172848adc891dae0f48dd7bd4fd7949c19fc21b6b6ed49857023c43",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "3f2aedfd53236cee066159efba7be28792fba3f38892f2d29d724c1a4c74df9e",
+      "review_note": "KRT-113: New Event imports require joint timing preparation and explicit cascade review. Previously accepted import redo retains its exact row preconditions instead of re-entering forward validation, preserving the documented persistent Undo/Redo route."
     },
     {
       "source": "src/commands/transfer_commands.py",
@@ -10716,8 +10816,8 @@
     {
       "source": "src/gui/dialogs/event_chronology_dialog.py",
       "symbol": "EventChronologyDialog._date_label",
-      "sha256": "0166fe42f21b24396182295aeaef1064117544edf0cf7b5bad9c6fb82da22245",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "0952a869d38704e870f0b1139a50df3ebeabcc612f0f28065b39d28630a6e3e3",
+      "review_note": "KRT-113: Unplaced dates now read as unresolved rather than day zero. Chronology remains a separate evidence authoring route."
     },
     {
       "source": "src/gui/dialogs/fast_inject_dialog.py",
@@ -12390,8 +12490,8 @@
     {
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget._edit_temporal_evidence",
-      "sha256": "b8e1c3f675d4e37ae7f39ff33ba2b8142d17bcefb1f0a1495976916d7becfcae",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "2c43be66fa5cc897d44df3eb96c679720627cc678e9935e7119ad27ecc601623",
+      "review_note": "KRT-113: Date evidence preserves the authoritative source and end definition; only an explicit preferred source date switches a followed start to Manual date. Other claims and interval authority survive. Unsupported timing cannot be reinterpreted."
     },
     {
       "source": "src/gui/widgets/event_editor.py",
@@ -12402,14 +12502,14 @@
     {
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget._on_date_draft_changed",
-      "sha256": "4f0de121247d9b43dd112a0426d5da08bf40a94a810d158a6f932a7227acd2a2",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "149316283ef90f963f1a7cc79d8dec859d6a0f53afe7cb6142e5b2695c20e55f",
+      "review_note": "KRT-113: incomplete date text blocks explicit whole-form saving but not independent content autosave. Escape restores the date without losing other edits or treating an acknowledged content save as a timing save."
     },
     {
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget._on_discard",
-      "sha256": "030a02e8feb8e825e699ed6ec0b0a94015a90be95866d2107fbb727fdf7bc9ba",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "048eddd78a6513e6b85d5fe52c41a62c5e17f88d1cf72f667faac0f705a5841d",
+      "review_note": "KRT-113 refresh correction: deliberate Discard cancels local field/relation drafts and resets dirty/revision tracking before reloading the saved Event, so the ordinary draft-preservation guard cannot block explicit recovery from a real timing conflict. The Event timing how-to states that unsaved changes are replaced."
     },
     {
       "source": "src/gui/widgets/event_editor.py",
@@ -12432,8 +12532,8 @@
     {
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget._on_save",
-      "sha256": "5a03cd2158a0650092184c7e6abb9f9907d580cac79c88f8d13946881e1ec0c9",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "706ae91498d5b27d0e0e553d8473379d7052e41461f93703a0c69e925a9e84a4",
+      "review_note": "KRT-113: Save Changes explicitly submits the completed Date-frame draft, validates raw text and retains cascade review. Independent content autosave excludes all Date-frame fields and preserves their authoritative worker-owned values."
     },
     {
       "source": "src/gui/widgets/event_editor.py",
@@ -12486,14 +12586,14 @@
     {
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget._refresh_save_status",
-      "sha256": "d7ae62fcc9de99aeb4a0f0bdd6972ac5c6a1ade68b2066395b4ffd58f5e2b844",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "ca07189549ac60e566f63fef2fd2c72a76018d7e16a6c6c1b0e446adbbc72c16",
+      "review_note": "KRT-113: existing status feedback distinguishes timing awaiting Save Changes from content delivery; independently autosaved fields never imply that the Date-frame draft was saved. No additional control or dialog."
     },
     {
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget._show_temporal_evidence_summary",
-      "sha256": "af1e001d9dc148f038be0164e32408b2f4b5da01ae1f4ed790db2f25d798b72a",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "46eddfac27900ab74dbe127cd6943b3b674dc00d9e9599a6f1f1e9bce590b8f6",
+      "review_note": "KRT-113: The Date evidence route retains claim counts/conflict feedback and visibly disables unsupported timing editing with a repair explanation."
     },
     {
       "source": "src/gui/widgets/event_editor.py",
@@ -12510,14 +12610,14 @@
     {
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget.has_unsaved_temporal_changes",
-      "sha256": "0905f98cb3c32b158447e042699e458df412ee255e443150741d4966610e452b",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "cf6a886fe9c3431dd595928c02800af13885930a068378c9e6fcbeef27923956",
+      "review_note": "KRT-113: compare authored timing with its hydrated baseline; preserve unsupported metadata verbatim without treating disabled placeholder controls as edits. Independent content autosave never accepts a timing draft."
     },
     {
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget.set_dirty",
-      "sha256": "fb3757b3c6001cfbbee55a7be9f681ccf9893f434bf2b88416d076815393145e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "6e84c5acb7dc8925cf783a1f5ef78ab184a62def19b639dcc6c8c90510de80ce",
+      "review_note": "KRT-113: track edits without blocking independent content autosave; incomplete raw date text still disables the explicit whole-form save until accepted or restored."
     },
     {
       "source": "src/gui/widgets/event_list.py",
@@ -15804,8 +15904,8 @@
     {
       "source": "src/gui/widgets/temporal_range_widget.py",
       "symbol": "TemporalRangeWidget._apply_styles",
-      "sha256": "57c55a2d31c5ff86f6021145ce149b1e8f250e080bc59445b9344e02e76e5d1e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "baa9dcb836b48b4ba8f9c5cf12f2e2e08aad874dc77cf5ed31903077ff766c3c",
+      "review_note": "KRT-113: Section captions alone use the temporal heading style. Calculation and evidence feedback use shared supporting-text roles; source controls retain shared focus/disabled semantics without changing their Help meanings."
     },
     {
       "source": "src/gui/widgets/temporal_range_widget.py",
@@ -15822,8 +15922,8 @@
     {
       "source": "src/gui/widgets/temporal_range_widget.py",
       "symbol": "TemporalRangeWidget._setup_ui",
-      "sha256": "2be9df44357c4ea86478cde423fbcacc63855b81ce7b29ce1867c9bf6ed9a68b",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "7c4a16f9f1bff31d2224e1cc50e929645020cf7b961b30d411c4022328a896c6",
+      "review_note": "KRT-113: Revised checkbox to Event has an end, explicit Duration/End Date authority, and independent source selectors. Existing inspection anchors retained with corrected explanations."
     },
     {
       "source": "src/gui/widgets/temporal_range_widget.py",
@@ -16866,8 +16966,8 @@
     {
       "source": "src/gui/widgets/event_anchor_controls.py",
       "symbol": "EventAnchorControls.__init__",
-      "sha256": "52e4369c16824b124d0b06f294e463b784badd8fb718646a6f8c358b1b516c04",
-      "review_note": "KRT-111: All shared controls have reviewed explanations: authored end precedence, independently unknown strict before/after dates, signed offsets and actual calendar units."
+      "sha256": "e504a4285e729084ed7828967c5f52b344e06c2f5e1c78633431f7267da68307",
+      "review_note": "KRT-113: Shared controls keep Map/Relation before-after semantics; calculated Event mode limits references to endpoint plus offset. Existing Map/Relation explanations remain valid."
     },
     {
       "source": "src/gui/widgets/event_anchor_controls.py",
@@ -16886,6 +16986,36 @@
       "symbol": "RelationForm._get_attributes",
       "sha256": "1d288ed6dd569797741c96fd86a62f8ebb3b1fd223dde6cb7887595546343f80",
       "review_note": "KRT-111: Unavailable calendar projections are omitted from numeric compatibility fields while their semantic boundaries and untouched values remain preserved. No copied zero/open fallback is introduced."
+    },
+    {
+      "source": "src/gui/widgets/event_anchor_controls.py",
+      "symbol": "EventAnchorControls.use_event_help",
+      "sha256": "8b3df440900cffd3d4b72860e87e3c7953ef09744a456ebd6e7c20821abd9d4f",
+      "review_note": "KRT-113: Distinct Event follow meanings explain source endpoint availability, signed offsets, whole calendar units and disclosure without saving."
+    },
+    {
+      "source": "src/gui/widgets/event_timing_source.py",
+      "symbol": "EventTimingSource.__init__",
+      "sha256": "01002118734d1e4a9ec65711620b21fd283d617534ed69585f6487b2929933c7",
+      "review_note": "KRT-113: Visible Manual date/Follow Event sources and target selectors have separate start/end meanings; uncertain detachment explicitly requires replacement evidence. Same-Event hydration also preserves the follow-options disclosure state."
+    },
+    {
+      "source": "src/core/temporal_authoring.py",
+      "symbol": "author_temporal_evidence",
+      "sha256": "90e6b6895aad0b428c7f6d25216253195db442a79ce0691d75ef43523cc32e97",
+      "review_note": "KRT-113: Schema-2 evidence edits preserve the authoritative timing definition. Selecting a preferred claim explicitly replaces only its start, while Keep current date retains references."
+    },
+    {
+      "source": "src/gui/widgets/temporal_range_widget.py",
+      "symbol": "TemporalRangeWidget.load_timing",
+      "sha256": "35ff6e09d432bebc72921e7fda05a5961541da5fdd8ca7a6cc09a11715084013",
+      "review_note": "KRT-113 refresh correction: hydration records a separate control baseline and restores prior signal blocking. Authored precision stays separate from displayed controls; source/end semantics and saved-calculation Help remain unchanged."
+    },
+    {
+      "source": "src/gui/dialogs/event_timing_review_dialog.py",
+      "symbol": "EventTimingReviewDialog.__init__",
+      "sha256": "a07412b116d67dae7d2ea032a37d433ec08e26993df6bee25dc234ab3bf53dcb",
+      "review_note": "KRT-113 owner-reported review repair: Before/After consequences and uncertainty are visible in scrollable cards, with one shared Apply changes/Cancel action row. The completed calculation progress is retired before this window opens. Existing Event timing Help owns this modal boundary; Cancel and Escape retain the draft."
     }
   ],
   "review_status": {

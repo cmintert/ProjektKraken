@@ -226,7 +226,11 @@ class ExplorerModel(QAbstractListModel):
                 if self._calendar_converter and obj.lore_date is not None:
                     date_str = self._format_compact_date(obj.lore_date)
                 else:
-                    date_str = str(obj.lore_date)
+                    date_str = (
+                        str(obj.lore_date)
+                        if obj.lore_date is not None
+                        else "Unresolved date"
+                    )
                 return f"[{date_str}] {obj.name}"
 
         elif role == Qt.ItemDataRole.ForegroundRole:

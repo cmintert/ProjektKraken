@@ -51,12 +51,16 @@ def test_failed_calendar_write_does_not_publish_temporary_config(qtbot):
 
 
 @pytest.mark.parametrize("text", ["961", "January 961", "c. 961"])
-def test_startup_calendar_to_editor_to_serialized_save(qtbot, db_service, text):
+def test_startup_calendar_to_editor_to_serialized_save(
+    qtbot, db_service, text, prepare_timing_command
+):
     """Exercise the previously missing no-calendar world path with real widgets."""
     assert db_service.get_active_calendar_config() is None
     window = QWidget()
     qtbot.addWidget(window)
-    worker = DatabaseWorker(":memory:", {"UpdateEventCommand": UpdateEventCommand})
+    from src.commands.registry import get_command_types
+
+    worker = DatabaseWorker(":memory:", get_command_types())
     worker.db_service = db_service
     window.worker = worker
     window.calendar_converter = None
@@ -92,19 +96,22 @@ def test_startup_calendar_to_editor_to_serialized_save(qtbot, db_service, text):
     date._on_draft_edited(text)
     with qtbot.waitSignal(editor.save_requested) as intent:
         editor._on_save()
-    command = UpdateEventCommand(event.id, intent.args[0])
+    command = prepare_timing_command(UpdateEventCommand(event.id, intent.args[0]))
     with qtbot.waitSignal(worker.command_finished) as finished:
         worker.run_command(
             {
-                "type": "UpdateEventCommand",
+                "type": type(command).__name__,
                 "data": command.to_dict(),
                 "base": command.base_state_dict(),
             }
         )
     assert finished.args[0].success, finished.args[0].message
     saved = db_service.get_event(event.id)
-    assert saved.attributes["_temporal_v2"]["expression"]["calendar_id"] == config.id
-    assert saved.attributes["_temporal_v2"]["expression"]["original_text"] == text
+    from src.core.temporal_expression import expression_from_attributes
+
+    expression = expression_from_attributes(saved.attributes)
+    assert expression.calendar_id == config.id
+    assert expression.original_text == text
     with qtbot.waitSignal(worker.calendar_config_loaded) as reload:
         worker.load_calendar_config()
     assert reload.args[0].id == config.id

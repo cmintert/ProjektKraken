@@ -31,11 +31,21 @@ class ApplyChronologyCommand(BaseCommand):
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Re-read, validate, and update all touched owners in one transaction."""
+        from src.services.event_timing.guards import (
+            is_applying_plan,
+            require_world_plan,
+        )
+
+        if self._previous and self._updated and not is_applying_plan():
+            return self._restore_recorded(db_service)
+        rejected = require_world_plan(db_service)
+        if rejected is not None:
+            return rejected
         events = db_service.get_all_events()
         by_id = {event.id: event for event in events}
         converter_config = db_service.get_active_calendar_config()
         converter = CalendarConverter(converter_config) if converter_config else None
-        before = world_issues(events, converter)
+        before = [] if is_applying_plan() else world_issues(events, converter)
         records = {record.reference: record for record in collect_chronology(events)}
         revised = {event.id: deepcopy(event) for event in events}
         removals: dict[str, set[int]] = {}
@@ -70,7 +80,7 @@ class ApplyChronologyCommand(BaseCommand):
             attributes = deepcopy(event.attributes)
             metadata = deepcopy(attributes.get("_temporal_v2", {}))
             original = metadata.get("constraints", [])
-            metadata.update(schema=1)
+            metadata.setdefault("schema", 1)
             metadata["constraints"] = [
                 item
                 for index, item in enumerate(original)
@@ -78,7 +88,11 @@ class ApplyChronologyCommand(BaseCommand):
             ] + additions.get(owner_id, [])
             attributes["_temporal_v2"] = metadata
             revised[owner_id] = replace(event, attributes=attributes)
-        after = world_issues(list(revised.values()), converter)
+        after = (
+            []
+            if is_applying_plan()
+            else world_issues(list(revised.values()), converter)
+        )
         introduced = new_issues(before, after)
         if introduced:
             return CommandResult(
@@ -105,6 +119,34 @@ class ApplyChronologyCommand(BaseCommand):
                         "relations_changed": False,
                     }
                     for owner in touched
+                ]
+            },
+        )
+
+    def _restore_recorded(self, db_service: DatabaseService) -> CommandResult:
+        from src.services.event_timing.history import restore_recorded_chronology
+
+        try:
+            restore_recorded_chronology(db_service, self._previous, self._updated)
+        except ValueError as exc:
+            return CommandResult(
+                success=False, message=str(exc), command_name="ApplyChronologyCommand"
+            )
+        self._is_executed = True
+        return CommandResult(
+            success=True,
+            message="Recorded chronology restored.",
+            command_name="ApplyChronologyCommand",
+            data={
+                "lore_effects": [
+                    {
+                        "object_type": "event",
+                        "operation": "upsert",
+                        "object_id": identity,
+                        "snapshot": snapshot,
+                        "relations_changed": False,
+                    }
+                    for identity, snapshot in self._updated.items()
                 ]
             },
         )

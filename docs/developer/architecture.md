@@ -461,6 +461,29 @@ explicit versioned panel/order/visibility/size structure in
 separately.
 
 
+## Event timing
+
+`src/core/event_timing/` owns schema-2 endpoint definitions, exact difference
+constraints, calendar translations, joint queries and detached projections.
+Derivation cycles and constraint infeasibility are separate diagnostics. The
+retained joint model supports observing Map/Relation windows without turning
+those windows into evidence about Event dates.
+
+`src/services/event_timing/` captures worker-owned snapshots and prepares pure
+change plans. Its database-thread adapter registers completed plans and checks
+content fingerprints at application. `EventTimingCoordinator` runs cancellable
+calculation outside the database transaction, presents cascades, and rejects stale
+world/job results. Existing command dispatch and history overlap guards remain in
+use. No timing feature slot is added to DatabaseWorker.
+
+`ApplyEventTimingPlanCommand` verifies the registered intent, delegates the root
+command, and writes all compatibility projections atomically. Undo restores exact
+snapshots; redo verifies its expected inputs. Repositories persist supplied
+projections and do not independently recalculate Event expressions. Nullable
+coordinates represent unresolved placement; authored definitions remain evidence.
+The immutable `TemporalResolutionContext` carries a shared solved generation to
+presentation consumers, including serialized exact branches for cache reuse.
+
 ## Temporal Entity World Context
 
 Entity World Context is a read-only projection. The builder retains legacy

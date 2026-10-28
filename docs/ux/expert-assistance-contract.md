@@ -294,7 +294,7 @@ not claimed to exist yet. Concept explanations share these reviewed sections.
 | `writing.links` | Link, peek and return to writing | [Wiki editor Markdown and links](../user/wiki-editor-markdown.md) |
 | `writing.focus` | Enter and leave Focus writing | [Focus on writing](../user/events-entities-relations.md#focus-on-writing) |
 | `event.timing` | Set a date and duration | [Set an event date or duration](../user/events-entities-relations.md#set-an-event-date-or-duration) |
-| `date.precision` | Enter incomplete or qualified dates | [Dates with incomplete information](../user/timeline-and-calendars.md#dates-with-incomplete-information) |
+| `date.precision` | Enter incomplete or qualified dates | {ref}`Dates with incomplete information <dates-with-incomplete-information>` |
 | `date.evidence` | Record conflicting date sources | {ref}`Record date evidence <help-date-evidence>` |
 | `event.chronology` | Record ordering and shared transitions | {ref}`Record chronology <help-event-chronology>` |
 | `timeline.viewing` | Explore time without changing world time | [Use the timeline](../user/timeline-and-calendars.md#use-the-timeline) |

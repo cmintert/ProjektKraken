@@ -48,6 +48,10 @@ class _Restriction:
 
 def jointly_possible(windows: list[TemporalWindow], time: float) -> bool:
     """Conjoin playhead constraints on each identifiable underlying transition."""
+    from src.core.event_timing.window_queries import joint_window_status
+
+    if joint_window_status(windows, time) == "inactive":
+        return False
     restrictions: dict[str, _Restriction] = {}
     for window in windows:
         if not window.semantic:

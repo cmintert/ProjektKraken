@@ -15,11 +15,13 @@ MIGRATION_IDS = (
     "001_structural_compatibility",
     "002_mfjson_trajectories",
     "003_canonical_relations",
+    "004_event_timing",
 )
 CURRENT_VERSION = len(MIGRATION_IDS)
 STRUCTURAL_VERSION = 1
 TRAJECTORY_VERSION = 2
 RELATION_VERSION = 3
+EVENT_TIMING_VERSION = 4
 LEGACY_POINT_FIELDS = 3
 COORDINATE_FIELDS = 2
 LEGACY_FOREIGN_KEY_TABLES = ("markers", "event_tags", "entity_tags")
@@ -34,10 +36,15 @@ LEGACY_ADDITIONS = {
 }
 
 
-def schema_statements() -> Iterator[str]:
+def schema_statements(version: int = CURRENT_VERSION) -> Iterator[str]:
     """Split schema SQL without implicitly committing an active transaction."""
     statement = ""
-    for line in SCHEMA_SQL.splitlines(keepends=True):
+    sql = (
+        SCHEMA_SQL
+        if version >= EVENT_TIMING_VERSION
+        else SCHEMA_SQL.replace("lore_date REAL,", "lore_date REAL NOT NULL,")
+    )
+    for line in sql.splitlines(keepends=True):
         statement += line
         if sqlite3.complete_statement(statement):
             yield statement
@@ -51,12 +58,14 @@ def columns(conn: sqlite3.Connection, table: str) -> set[str]:
     return {str(row[1]) for row in conn.execute(f'PRAGMA table_info("{table}")')}
 
 
-@lru_cache(maxsize=1)
-def reference_schema() -> tuple[dict[str, set[str]], dict[str, str]]:
+@lru_cache(maxsize=4)
+def reference_schema(
+    version: int = CURRENT_VERSION,
+) -> tuple[dict[str, set[str]], dict[str, str]]:
     """Build expected table columns and integrity objects from canonical SQL."""
     conn = sqlite3.connect(":memory:")
     try:
-        for statement in schema_statements():
+        for statement in schema_statements(version):
             conn.execute(statement)
         install_relation_integrity(conn)
         tables = {
@@ -99,19 +108,21 @@ def _table_contract(conn: sqlite3.Connection, table: str) -> dict[str, Any]:
     return {"columns": info, "foreign_keys": foreign_keys, "unique_keys": unique_keys}
 
 
-@lru_cache(maxsize=1)
-def reference_contracts() -> dict[str, dict[str, Any]]:
+@lru_cache(maxsize=4)
+def reference_contracts(version: int = CURRENT_VERSION) -> dict[str, dict[str, Any]]:
     """Cache stable column, foreign-key and uniqueness contracts."""
     conn = sqlite3.connect(":memory:")
     try:
-        for statement in schema_statements():
+        for statement in schema_statements(version):
             conn.execute(statement)
         return {table: _table_contract(conn, table) for table in reference_schema()[0]}
     finally:
         conn.close()
 
 
-def validate_structure(conn: sqlite3.Connection, *, legacy: bool) -> None:
+def validate_structure(
+    conn: sqlite3.Connection, *, legacy: bool, version: int = CURRENT_VERSION
+) -> None:
     """Reject unsupported layouts rather than silently repairing arbitrary files."""
     expected, _ = reference_schema()
     actual = {
@@ -139,7 +150,7 @@ def validate_structure(conn: sqlite3.Connection, *, legacy: bool) -> None:
                 f"Unsupported {table} layout; missing columns: {sorted(missing)}"
             )
         contract = _table_contract(conn, table)
-        reference = reference_contracts()[table]
+        reference = reference_contracts(version)[table]
         if (
             any(
                 column not in names or details != reference["columns"][column]
@@ -214,9 +225,11 @@ def _restore_legacy_foreign_keys(conn: sqlite3.Connection) -> None:
             conn.execute(row[0])
 
 
-def structural_compatibility(conn: sqlite3.Connection) -> None:
+def structural_compatibility(
+    conn: sqlite3.Connection, *, version: int = CURRENT_VERSION
+) -> None:
     """Create missing tables, add supported columns, then install indexes."""
-    statements = list(schema_statements())
+    statements = list(schema_statements(version))
     for statement in statements:
         if "CREATE TABLE" in statement:
             conn.execute(statement)
@@ -229,7 +242,7 @@ def structural_compatibility(conn: sqlite3.Connection) -> None:
     for statement in statements:
         if "CREATE TABLE" not in statement:
             conn.execute(statement)
-    validate_structure(conn, legacy=False)
+    validate_structure(conn, legacy=False, version=version)
 
 
 def _finite(value: Any) -> bool:

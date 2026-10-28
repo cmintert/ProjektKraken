@@ -82,8 +82,10 @@ occurrence is known to that year; it does not assert January 1 or a year-long du
 2. Leave unknown month and day components unspecified. In the separate date controls, **Delete** clears the selected component.
 3. Add a qualification when needed: for example, `c. 961` for approximate or `961?` for uncertain.
 4. If you know actual bounds, enter an expression such as `between 959 and 963`, or use **Possible date limits…**.
-5. Validate the date, then use **Save Changes** or check the separate save
-   status. Reopen the Event and confirm that unknown components remain unknown.
+5. Validate the date, then choose **Save Changes** and check the separate save
+   status. Everything in the Event's Date frame waits for this explicit save;
+   autosaving other fields does not apply it. Reopen the Event and confirm that
+   unknown components remain unknown.
 
 Approximate and uncertain qualifications do not establish hard limits by themselves. An
 occurrence window describes when something happened, not how long it lasted.
@@ -139,11 +141,22 @@ is a layout value, not an assertion of an exact number of elapsed days.
 Existing numeric dates remain exact. Kraken does not reinterpret an old
 January 1 date as a year-only assertion.
 
-Leave **Event has duration** unchecked for a single occurrence sometime within
-a year. Check it only when the event actually lasted over time. Clearing it
+Leave **Event has an end** unchecked for a single occurrence sometime within
+a year. Enable it to author an end, including an explicit zero-duration interval. Clearing it
 removes the duration without changing the date precision. An uncertain start
 and known duration can coexist; the editor does not present their derived
 midpoint end as an exact historical date.
+
+A start that follows another Event cannot be dragged. Open that Event's inspector
+to edit its reference or offset, or choose Manual date and supply a replacement.
+Timing constraints can narrow uncertain dates across connected Events while
+preserving the original evidence. A resolved start with an unresolved end is
+shown without an invented duration bar. Events without a usable start remain
+accessible through Explorer instead of being placed at day zero.
+
+Source, chronology, and calendar changes are validated together. Review any
+dependent changes before applying them; an incomplete or cancelled validation
+does not authorize saving. See {ref}`Event timing <help-event-timing>`.
 
 ## Group events
 
@@ -192,6 +205,11 @@ without losing alternative accounts.
 Editing or removing one source date preserves the other claims. Conflicting dates are
 not automatically merged into a broad range. A conflict between sources is different
 from a single source giving only a year.
+
+For an Event that follows another Event, **Keep the current event date** retains
+that reference. Explicitly choosing a source date replaces the start with that
+source's manual date evidence; the Event's end authority is preserved. Save Changes
+still validates and reviews the resulting cascade.
 
 Date evidence records what the sources say. Use **Chronology…** separately to record
 that one event happened before or after another.

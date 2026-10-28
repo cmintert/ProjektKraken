@@ -172,11 +172,7 @@ class ImportService:
         """Extract tags from accepted import keys and return presence metadata."""
         attrs = data.get("attributes")
         attrs_dict = attrs if isinstance(attrs, dict) else {}
-        has_tag_field = (
-            "tags" in data
-            or "_tags" in data
-            or "_tags" in attrs_dict
-        )
+        has_tag_field = "tags" in data or "_tags" in data or "_tags" in attrs_dict
 
         merged: list[str] = []
         seen: set[str] = set()
@@ -439,9 +435,7 @@ class ImportService:
                             rel_data["source_id"] = event_id
                             try:
                                 rel_id, was_created, is_deferred = (
-                                    self._import_relation_internal(
-                                        rel_data, result
-                                    )
+                                    self._import_relation_internal(rel_data, result)
                                 )
                                 if is_deferred:
                                     deferred_relations.append(dict(rel_data))
@@ -476,7 +470,9 @@ class ImportService:
                 # PASS 4: Retry Unresolved Relations
                 # ------------------------------------------------------------------
                 if deferred_relations:
-                    self._retry_unresolved_relations(deferred_relations, result, options)
+                    self._retry_unresolved_relations(
+                        deferred_relations, result, options
+                    )
 
         except _ImportRollback:
             result.success = False
@@ -961,19 +957,22 @@ class ImportService:
             "seen_at": time.time(),
         }
 
+        date_was_explicit: bool | None
         if action == ImportAction.SKIP:
             pass
 
         elif action == ImportAction.CREATE:
-            lore_date_float, parsed_duration, date_was_explicit = self._parse_lore_date(
-                data.get("lore_date"), result
+            from src.services.event_timing.importing import imported_coordinates
+
+            lore_date_float, parsed_duration, date_was_explicit = imported_coordinates(
+                data, self._parse_lore_date, result
             )
             new_event = Event(
                 id=event_id,
                 name=str(name).strip(),
                 type=str(data.get("type", "generic")).strip(),
                 lore_date=lore_date_float,
-                lore_duration=parsed_duration or parsed_duration or float(data.get("lore_duration", 0.0)),
+                lore_duration=parsed_duration,
                 description=str(data.get("description", "")).strip(),
                 attributes=data.get("attributes", {}),
                 created_at=data.get("created_at") or time.time(),
@@ -995,15 +994,17 @@ class ImportService:
 
         elif action == ImportAction.OVERWRITE:
             if existing_event:
-                lore_date_float, parsed_duration, date_was_explicit = self._parse_lore_date(
-                    data.get("lore_date"), result
+                from src.services.event_timing.importing import imported_coordinates
+
+                lore_date_float, parsed_duration, date_was_explicit = (
+                    imported_coordinates(data, self._parse_lore_date, result)
                 )
                 overwritten = Event(
                     id=event_id,
                     name=str(name).strip(),
                     type=str(data.get("type", existing_event.type)).strip(),
                     lore_date=lore_date_float,
-                    lore_duration=parsed_duration or parsed_duration or float(data.get("lore_duration", 0.0)),
+                    lore_duration=parsed_duration,
                     description=str(data.get("description", "")).strip(),
                     attributes=data.get("attributes", {}),
                     created_at=existing_event.created_at,
@@ -1026,18 +1027,11 @@ class ImportService:
         elif action == ImportAction.UPDATE:
             if existing_event:
                 existing_tags_before_merge = set(existing_event.tags)
-                if "lore_date" in data:
-                    lore_date_float, parsed_duration, date_was_explicit = self._parse_lore_date(
-                        data["lore_date"], result
-                    )
-                    data["lore_date"] = lore_date_float
-                    if parsed_duration:
-                        data["lore_duration"] = parsed_duration
-                    if parsed_duration:
-                        data["lore_duration"] = parsed_duration
-                else:
-                    date_was_explicit = None
-                    data["lore_date"] = None
+                from src.services.event_timing.importing import prepare_merge_timing
+
+                date_was_explicit = prepare_merge_timing(
+                    data, self._parse_lore_date, result
+                )
                 merged = self._merge_events(existing_event, data)
                 if has_tag_field:
                     merged_tags = existing_tags_before_merge | set(imported_tags)
@@ -1156,11 +1150,17 @@ class ImportService:
             if str(uuid.UUID(rel_id)) != rel_id:
                 raise ValueError("Relation ID must be a canonical UUID")
             self._db._relation_repo.insert(
-                rel_id, source_id, target_id, rel_type, attributes,
+                rel_id,
+                source_id,
+                target_id,
+                rel_type,
+                attributes,
                 float(data.get("created_at") or time.time()),
             )
         else:
-            rel_id = self._db.insert_relation(source_id, target_id, rel_type, attributes)
+            rel_id = self._db.insert_relation(
+                source_id, target_id, rel_type, attributes
+            )
         return rel_id, True, False
 
     def _retry_unresolved_relations(

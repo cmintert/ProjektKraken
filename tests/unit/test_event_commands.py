@@ -19,7 +19,10 @@ pytestmark = pytest.mark.ci_fast
 @pytest.fixture
 def mock_db():
     """Mock database service."""
-    return MagicMock()
+    mock = MagicMock()
+    mock.get_active_calendar_config.return_value = None
+    mock.get_all_events.return_value = []
+    return mock
 
 
 @pytest.fixture

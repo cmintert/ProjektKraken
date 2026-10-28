@@ -48,6 +48,22 @@ def event_temporal_presentation(
 ) -> TemporalPresentation:
     """Resolve presentation through existing semantics, without modifying data."""
     metadata = event.attributes.get("_temporal_v2", {})
+    if metadata.get("projection"):
+        from src.core.event_timing.presentation import projection_display
+
+        projection = metadata["projection"]
+        start = projection_display(event, converter, "start")
+        end = (
+            projection_display(event, converter, "end")
+            if projection.get("has_end") and not projection.get("duration_authored")
+            else None
+        )
+        authored = (
+            projection.get("duration") if projection.get("duration_authored") else None
+        )
+        return TemporalPresentation(
+            start, end, authored, projection_display(event, converter)
+        )
     start_metadata = {**metadata}
     end_data = start_metadata.pop("end_expression", None)
     start_event = replace(
@@ -66,7 +82,9 @@ def event_temporal_presentation(
     return TemporalPresentation(
         start,
         end,
-        event.lore_duration if event.lore_duration > 0 and not end_data else None,
+        event.lore_duration
+        if event.lore_duration is not None and event.lore_duration > 0 and not end_data
+        else None,
         event_temporal_display(event, converter),
     )
 
