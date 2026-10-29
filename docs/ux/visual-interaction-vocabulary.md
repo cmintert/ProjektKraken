@@ -184,7 +184,16 @@ rendering; fresh unprompted interpretation is required before claiming usability
 - Selection increases the width of incident connections without replacing their
   strand identity. Direction and endpoint geometry supplement color. Hidden or
   unresolved endpoint geometry does not acquire substitute group connections.
-- Show dependencies is an enabled-by-default contextual preference beside Snap
-  to Events, with the same overflow route and Settings → Timeline synchronization.
-  It changes presentation only, preserving lane order, drafts, selection,
-  keyboard ownership, Viewing/World current time and undo (contracts 2/5/6/8/9).
+- Dependencies: [mode] is a contextual menu beside Snap to Events, with the same
+  overflow route and Settings → Timeline synchronization. KRT-115 replaces the
+  Boolean preference with All / Selected / Show dependency trail / Off. Selected
+  is the fresh default; saved enabled/disabled choices become All/Off. Selected
+  shows direct incident connections; Trail shows the entire selected Event's
+  connected strand, including branches/merges across tag bands. Both show no
+  connections without an accepted selected Event. Match strand identity, never
+  the repeatable color slot. Route the full eligible set before filtering paint;
+  changing mode or selection does not reshuffle paths. All Events remain visible
+  under the existing timeline rules. The neutral secondary menu uses shared
+  action/focus roles; strand colors retain categorical meaning. Preserve lane
+  order, drafts, selection, keyboard ownership, Viewing/World current time and
+  undo (contracts 1/2/4/5/6/7/8/9).

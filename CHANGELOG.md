@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-29
-**Commit:** 9b6554bebce91f086c45bbcbca27e7c7beb68b98
+**Commit:** d6cc01390b1aa68562e3a84453634aa5a103e01d
 ---
 
 # Changelog
@@ -12,6 +12,15 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-10-29)* **Dependency visibility and trails (KRT-115)**: Choose All,
+  Selected, Show dependency trail or Off from the Timeline or Settings. Selected
+  shows direct connections; Trail follows the selected Event's whole connected
+  Follow Event network, including branches and merges. Modes preserve event
+  placement and wire routes. New installations start in Selected; existing
+  enabled/disabled preferences become All/Off. Includes synchronized toolbar,
+  overflow and Settings controls, updated manual/contextual Help, regression
+  coverage, reproducible capture tooling and six-theme evidence.
 
 - *(2026-10-28)* **Timeline dependency strands (KRT-114)**: Show dependencies
   toggles colored, directional connections between Events with Follow Event

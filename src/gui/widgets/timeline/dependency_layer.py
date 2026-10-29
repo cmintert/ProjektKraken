@@ -26,6 +26,7 @@ from src.core.timeline_dependencies import (
     TimelineDependency,
     timeline_dependencies,
 )
+from src.core.timeline_visibility import DependencyVisibility
 from src.gui.widgets.timeline.event_item import EventItem
 from src.gui.widgets.timeline.group_band_item import GroupBandItem
 from src.gui.widgets.timeline.item_layout import (
@@ -185,8 +186,9 @@ class TimelineDependencyLayer:
     """Own presentation caches, without scene objects, timers or database access."""
 
     def __init__(self) -> None:
-        """Start with enabled strands and no retained world or scene objects."""
-        self.enabled = True
+        """Start in Selected mode without retained world or scene objects."""
+        self.visibility = DependencyVisibility.SELECTED
+        self.selected_event_id: str | None = None
         self.dependencies: tuple[TimelineDependency, ...] = ()
         self._world: dict[str, Event] = {}
         self._display: dict[str, _DisplaySnapshot] = {}
@@ -198,6 +200,8 @@ class TimelineDependencyLayer:
         """Replace topology only from a complete accepted generation."""
         self._world = {event.id: event for event in events}
         self.dependencies = timeline_dependencies(events)
+        if self.selected_event_id not in self._world:
+            self.selected_event_id = None
 
     def apply_effects(self, effects: list[LoreMutationEffect]) -> None:
         """Include deletions and repairs even when an event has no visible start."""
@@ -207,6 +211,29 @@ class TimelineDependencyLayer:
             if effect["operation"] == "upsert" and effect["snapshot"] is not None:
                 self._world[identity] = Event.from_dict(effect["snapshot"])
         self.dependencies = timeline_dependencies(list(self._world.values()))
+        if self.selected_event_id not in self._world:
+            self.selected_event_id = None
+
+    def visible_dependencies(self) -> frozenset[TimelineDependency]:
+        """Filter topology by Event identity, independent of geometry and colors."""
+        if self.visibility == DependencyVisibility.OFF:
+            return frozenset()
+        if self.visibility == DependencyVisibility.ALL:
+            return frozenset(self.dependencies)
+        selected = self.selected_event_id
+        if selected is None:
+            return frozenset()
+        incident = frozenset(
+            edge
+            for edge in self.dependencies
+            if selected in (edge.source_id, edge.target_id)
+        )
+        if self.visibility == DependencyVisibility.SELECTED:
+            return incident
+        strands = {edge.strand_id for edge in incident}
+        return frozenset(
+            edge for edge in self.dependencies if edge.strand_id in strands
+        )
 
     def set_display_events(
         self, events: list[Event], converter: CalendarConverter | None
@@ -396,7 +423,7 @@ class TimelineDependencyLayer:
             source_side,
             target_side,
             dependency,
-            source.isSelected() or target.isSelected(),
+            self.selected_event_id in (dependency.source_id, dependency.target_id),
         )
 
     def paint(
@@ -410,7 +437,8 @@ class TimelineDependencyLayer:
         prepared_only: bool = False,
     ) -> None:
         """Paint clipped, constant-width strands behind all interactive content."""
-        if not self.enabled or not self.dependencies:
+        eligible = self.visible_dependencies()
+        if not eligible:
             return
         curves, _ = self.curves(
             items, painter, viewport.top(), viewport, prepare=not prepared_only
@@ -428,6 +456,8 @@ class TimelineDependencyLayer:
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
             painter.setBrush(Qt.BrushStyle.NoBrush)
             for curve in curves:
+                if curve.dependency not in eligible:
+                    continue
                 color = QColor(
                     theme[f"timeline_dependency_{curve.dependency.palette_index}"]
                 )

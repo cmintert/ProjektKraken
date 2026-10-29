@@ -9327,9 +9327,9 @@
       "target": "help-inspect-timeline-show-dependencies",
       "source": "src/gui/widgets/timeline/__init__.py",
       "symbol": "TimelineWidget.__init__",
-      "binding": "self.chk_show_dependencies",
-      "label": "Show dependencies",
-      "kind": "QCheckBox"
+      "binding": "self.dependency_control",
+      "label": "Dependencies",
+      "kind": "DependencyVisibilityButton"
     }
   ],
   "factory_exemptions": [
@@ -15950,8 +15950,8 @@
     {
       "source": "src/gui/widgets/timeline/__init__.py",
       "symbol": "TimelineWidget.__init__",
-      "sha256": "ccf23e00294239f135dbcf82a35575db89c7b9226b3520c070200d12dbb469be",
-      "review_note": "KRT-114: adds enabled-by-default Show dependencies beside Snap to Events; shared overflow and contextual persistence, with a new canonical inspection explanation."
+      "sha256": "bfd89e29178008aba007e416f571d814d76384dd62e70bede36947c7f59a985a",
+      "review_note": "KRT-115: replaces Show dependencies with the four-mode Dependencies menu. The existing canonical anchor now explains All, Selected, Show dependency trail and Off, the Selected default and migration. Other toolbar routes are unchanged. Accepted selection forwarding restores the same Event after visual deselection without bypassing navigation guards."
     },
     {
       "source": "src/gui/widgets/timeline/__init__.py",
@@ -17029,15 +17029,15 @@
     },
     {
       "source": "src/gui/widgets/timeline/__init__.py",
-      "symbol": "TimelineWidget.set_dependencies_visible",
-      "sha256": "cfa12dacfa57b5b36aad5d74119e03a102386c61e51574dafbdfcd510bf9a7f6",
-      "review_note": "KRT-114: display-only toggle emits the registered contextual setting without changing dates, layout or history."
+      "symbol": "TimelineWidget.set_dependency_visibility",
+      "sha256": "11379c1281630a6173671fb601aff0a3f5298f94b17e6a77ef075435ba03f49e",
+      "review_note": "KRT-115: publishes the new local string preference only for user changes; Settings refresh changes presentation without a feedback write. Manual describes immediate synchronized saving and unchanged dates/history."
     },
     {
       "source": "src/gui/widgets/timeline/dependency_layer.py",
       "symbol": "TimelineDependencyLayer.paint",
-      "sha256": "b0abdf213691c23400a643f13219a75a7b94a0457758781139598066f944ab9e",
-      "review_note": "KRT-116: prepared complete paths keep side sockets, endpoint arrows, categorical colors and selection width. Production paint waits for coalesced preparation; viewport/header clipping is unchanged. The Show dependencies reference now explains separated tracks and omitted unsafe routes."
+      "sha256": "7c8a0f18ba03d32bb64e4880444ee8e5b8e69bcc5412b4cbdda6f3fb3aad83b5",
+      "review_note": "KRT-115: filters completed full-set routes by accepted Event/strand identity. Selected is incident-only; Trail includes the full connected strand; Off and empty selection skip painting. Endpoint arrows, colors and current safe-route omission remain described accurately."
     },
     {
       "source": "src/core/timeline_dependencies.py",
@@ -17050,6 +17050,12 @@
       "symbol": "route_wires",
       "sha256": "1f06cea64d5361b44d6afa9d05d3c80e7674379cdda3c30488065820862644a6",
       "review_note": "KRT-116: retain direct cubics, add validated smooth cluster bypasses and ordered compact corridors. Shared runs are rejected outside common sockets; point crossings remain possible. The canonical timeline reference explains broad curves, crowded turns, safe-route limits and zoom recovery."
+    },
+    {
+      "source": "src/gui/widgets/timeline/dependency_control.py",
+      "symbol": "DependencyVisibilityButton.__init__",
+      "sha256": "aa5435258b93bcda5bf0b0d6a1cc5b08c85292ae665f30a1677cef966a02be44",
+      "review_note": "KRT-115: exclusive All/Selected/Show dependency trail/Off menu is shared by the toolbar and overflow; every action retains the existing dependency explanation and timeline task."
     }
   ],
   "review_status": {

@@ -27,11 +27,16 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.core.timeline_visibility import (
+    DEPENDENCY_VISIBILITY_KEY,
+    dependency_visibility,
+)
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.menu_caret import PhosphorPushMenuButton, PhosphorToolMenuButton
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
+from src.gui.widgets.timeline.dependency_control import DependencyVisibilityButton
 from src.gui.widgets.timeline.event_item import EventItem
 from src.gui.widgets.timeline.time_indicators import TimelineTimeStatus
 from src.gui.widgets.timeline.timeline_scene import (
@@ -40,6 +45,7 @@ from src.gui.widgets.timeline.timeline_scene import (
     TimelineScene,
 )
 from src.gui.widgets.timeline.timeline_view import TimelineView
+from src.services.local_settings import read_dependency_visibility
 
 
 class TimelineWidget(QWidget):
@@ -190,17 +196,12 @@ class TimelineWidget(QWidget):
             priority=20,
         )
 
-        self.chk_show_dependencies = declare_inspection(
-            QCheckBox("Show dependencies"),
+        self.dependency_control = declare_inspection(
+            DependencyVisibilityButton(self),
             "timeline.show-dependencies|timeline.viewing|help-inspect-timeline-show-dependencies",
         )
-        self.chk_show_dependencies.setToolTip(
-            "Show colored connections between events whose dates follow other events."
-        )
-        self.chk_show_dependencies.setChecked(
-            cast(bool, settings.value("timeline/show_dependencies", True, type=bool))
-        )
-        self.action_toolbar.add_button(self.chk_show_dependencies, priority=20)
+        self.dependency_control.set_mode(read_dependency_visibility(settings))
+        self.action_toolbar.add_button(self.dependency_control, priority=20)
 
         self.btn_fit = declare_inspection(
             PhosphorToolMenuButton(self),
@@ -232,12 +233,12 @@ class TimelineWidget(QWidget):
             "view.src-gui-widgets-timeline-init-timelinewidget-init-self-view|timeline.viewing|help-inspect-view-src-gui-widgets-timeline-init-timelinewidget-init-self-view",
         )
         self.view.set_playhead_event_snapping(snap_to_events)
-        self.view.set_dependencies_visible(self.chk_show_dependencies.isChecked())
-        self.chk_show_dependencies.toggled.connect(self.set_dependencies_visible)
+        self.view.set_dependency_visibility(self.dependency_control.mode)
+        self.dependency_control.mode_changed.connect(self.set_dependency_visibility)
         self.chk_snap_playhead_to_events.toggled.connect(
             self.set_playhead_event_snapping
         )
-        self.view.event_selected.connect(self.event_selected.emit)
+        self.view.event_selected.connect(self._publish_event_selection)
         self.view.playhead_time_changed.connect(self.playhead_time_changed.emit)
         self.view.current_time_changed.connect(self.current_time_changed.emit)
         self.view.navigation_context_changed.connect(
@@ -257,6 +258,12 @@ class TimelineWidget(QWidget):
     def _compact_lanes(self) -> None:
         """Forward the deliberate presentation-only compaction request."""
         self.view.compact_lanes()
+
+    def _publish_event_selection(self, event_id: str) -> None:
+        """Restore a reselected accepted target even if global selection is unchanged."""
+        self.event_selected.emit(event_id)
+        if event_id == self._selected_navigation_event_id:
+            self.view.set_dependency_selection(event_id)
 
     def _update_layout_menu(self) -> None:
         """Explain and disable compaction when there are no events."""
@@ -309,6 +316,7 @@ class TimelineWidget(QWidget):
     def clear_event_selection(self) -> None:
         """Clear a timeline click rejected by guarded navigation."""
         self.view.graphics_scene.clearSelection()
+        self.view.set_dependency_selection(None)
 
     def fit_view(self) -> None:
         """Fits all events within the view."""
@@ -342,13 +350,18 @@ class TimelineWidget(QWidget):
             "timeline/snap_playhead_to_events", enabled
         )
 
-    def set_dependencies_visible(self, enabled: bool) -> None:
-        """Apply and persist the dependency-strand display preference."""
-        self.view.set_dependencies_visible(enabled)
+    def set_dependency_visibility(self, value: str, *, persist: bool = True) -> None:
+        """Synchronize presentation and optionally publish a user preference."""
+        mode = dependency_visibility(value)
+        self.dependency_control.set_mode(mode)
+        self.view.set_dependency_visibility(mode)
+        self.action_toolbar.refresh()
+        if not persist:
+            return
         from src.gui.utils.settings_navigation import settings_navigation
 
         settings_navigation().contextual_changed.emit(
-            "timeline/show_dependencies", enabled
+            DEPENDENCY_VISIBILITY_KEY, mode.value
         )
 
     def set_playhead_time(
@@ -427,6 +440,7 @@ class TimelineWidget(QWidget):
     def set_selected_event_navigation(self, event_id: str | None, caption: str) -> None:
         """Render a coordinator-prepared saved navigation target."""
         self._selected_navigation_event_id = event_id
+        self.view.set_dependency_selection(event_id)
         self.selected_event_date_action.setEnabled(event_id is not None)
         self.selected_event_date_action.setToolTip(caption)
         self._refresh_date_navigation_enabled()

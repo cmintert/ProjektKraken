@@ -110,6 +110,7 @@ def main() -> int:
                 for crowded in (False, True):
                     for width, zoom in ((1200, 2.0), (400, 0.8)):
                         panel = TimelineWidget()
+                        panel.set_dependency_visibility("all", persist=False)
                         panel.resize(width, 850 if crowded else 600)
                         panel.show()
                         _settle(app, panel)
@@ -124,6 +125,7 @@ def main() -> int:
                         panel.view.center_on_date(7 if crowded else 3.5)
                         panel.view.verticalScrollBar().setValue(0)
                         panel.view._event_items["b"].setSelected(True)
+                        panel.set_selected_event_navigation("b", "Hardwood Battle")
                         _settle(app, panel)
                         scene = "crowded" if crowded else "sparse"
                         name = f"{theme}-{scene}-{width}.png"

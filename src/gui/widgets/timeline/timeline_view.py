@@ -37,6 +37,7 @@ from src.core.command import LoreMutationEffect
 from src.core.events import Event
 from src.core.temporal_presentation import event_navigation_context
 from src.core.theme_manager import ThemeManager
+from src.core.timeline_visibility import DependencyVisibility
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.timeline.dependency_layer import TimelineDependencyLayer
 from src.gui.widgets.timeline.event_item import EventItem
@@ -414,16 +415,24 @@ class TimelineView(QGraphicsView):
     # Height allocated for sticky parent context tier
     CONTEXT_TIER_HEIGHT = 14
 
-    def set_dependencies_visible(self, enabled: bool) -> None:
-        """Toggle strands without changing layout, authoring state or history."""
-        self._dependencies.enabled = enabled
-        if enabled:
+    def set_dependency_visibility(self, mode: DependencyVisibility) -> None:
+        """Filter painting without invalidating routes or changing authoring state."""
+        self._dependencies.visibility = mode
+        if mode != DependencyVisibility.OFF:
             self._schedule_dependency_routes()
+        else:
+            self._dependency_route_timer.stop()
         self.viewport().update()
 
-    def are_dependencies_visible(self) -> bool:
-        """Return the effective display preference."""
-        return self._dependencies.enabled
+    def dependency_visibility(self) -> DependencyVisibility:
+        """Return the current presentation choice."""
+        return self._dependencies.visibility
+
+    def set_dependency_selection(self, event_id: str | None) -> None:
+        """Receive accepted selection without navigating or selecting scene items."""
+        self._dependencies.selected_event_id = event_id
+        self._schedule_dependency_routes()
+        self.viewport().update()
 
     def drawBackground(self, painter: QPainter, rect: QRectF | QRect) -> None:
         """Draw noninteractive timing strands beneath event content."""
@@ -448,17 +457,16 @@ class TimelineView(QGraphicsView):
     @Slot()
     def _schedule_dependency_routes(self) -> None:
         """Coalesce geometry changes; drawing never starts a cold routing batch."""
-        if self._dependencies.enabled and not self._dependency_route_timer.isActive():
+        if (
+            self._dependencies.visible_dependencies()
+            and not self._dependency_route_timer.isActive()
+        ):
             self._dependency_route_timer.start(0)
 
     @Slot()
     def _prepare_dependency_routes(self) -> None:
         """Measure and cache the settled generation outside the paint callback."""
-        if (
-            not self._dependencies.enabled
-            or not self._dependencies.dependencies
-            or self._layout_in_progress
-        ):
+        if not self._dependencies.visible_dependencies() or self._layout_in_progress:
             return
         image = QImage(1, 1, QImage.Format.Format_ARGB32)
         painter = QPainter(image)
@@ -1592,6 +1600,8 @@ class TimelineView(QGraphicsView):
             self.graphics_scene.clearSelection()
             item.setSelected(True)
             self.event_selected.emit(item.event.id)
+        elif not self.graphics_scene.selectedItems():
+            self.set_dependency_selection(None)
 
     def _press_overlapping_anchor(self, event: QMouseEvent) -> bool:
         """Let occurrence marks receive clicks through the wide playhead hit area."""

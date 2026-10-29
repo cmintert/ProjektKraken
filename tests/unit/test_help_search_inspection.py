@@ -51,12 +51,30 @@ def test_search_normalization_prefix_deduplication_and_snippets():
         ("visible value source correction", "entity.value-source"),
         ("attributes relations mentions", "authoring.representations"),
         ("Longform recover removed document", "longform.recovery"),
+        ("Show dependency trail", "timeline.viewing"),
     ],
 )
 def test_expert_queries_find_canonical_topics(generated_root, query, topic):
     bundle = HelpBundleService(root=generated_root / "docs/_build/help")
     results = HelpSearchService(bundle.search_documents()).search(query)
     assert any(topic in result.topic_ids for result in results[:5])
+
+
+def test_dependency_inspection_excerpt_describes_every_mode(generated_root):
+    bundle = HelpBundleService(root=generated_root / "docs/_build/help")
+    excerpt = bundle.load_inspection_excerpt(
+        "timeline.viewing", "help-inspect-timeline-show-dependencies"
+    )
+    assert excerpt is not None
+    for phrase in (
+        "All",
+        "Selected",
+        "Show dependency trail",
+        "Off",
+        "branches and merges",
+        "without a selected Event",
+    ):
+        assert phrase in excerpt
 
 
 def test_search_flush_enter_retains_query_and_local_escape(help_setup, qapp):

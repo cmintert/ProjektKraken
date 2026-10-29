@@ -6,6 +6,8 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
+from src.core.timeline_visibility import DEPENDENCY_VISIBILITY_KEY, DependencyVisibility
+
 Scope = Literal["kraken", "world"]
 
 
@@ -35,6 +37,8 @@ class SettingDefinition:
         """Reject incompatible scalar snapshots before any backend is written."""
         if self.default is not None and type(value) is not type(self.default):
             raise ValueError(f"{self.label}: invalid value type.")
+        if self.id == DEPENDENCY_VISIBILITY_KEY:
+            DependencyVisibility(value)
         if self.id == "world.excluded_attributes" and any(
             not isinstance(item, str) for item in value
         ):
@@ -108,7 +112,7 @@ def _definitions() -> tuple[SettingDefinition, ...]:
         ("SpellCheck/enabled", "Spell & grammar checking", "Writing", False),
         ("SpellCheck/language", "Spelling language", "Writing", "auto"),
         ("timeline/snap_playhead_to_events", "Snap to Events", "Timeline", False),
-        ("timeline/show_dependencies", "Show dependencies", "Timeline", True),
+        (DEPENDENCY_VISIBILITY_KEY, "Dependencies", "Timeline", "selected"),
         ("analysis/editorial_checks", "Editorial checks", "Analysis", False),
         ("ai_auto_index_on_save", "Automatically index saved entries", "AI", False),
         ("ai_embedding_provider", "Embedding provider", "AI", "sentence-transformers"),

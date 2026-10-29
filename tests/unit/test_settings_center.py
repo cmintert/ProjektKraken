@@ -517,6 +517,26 @@ def test_draft_conflict_clears_when_external_value_returns_to_baseline():
     assert not draft.conflicts
 
 
+def test_dependency_mode_draft_conflict_preserves_user_edit(
+    settings_coordinator, local
+):
+    from src.core.timeline_visibility import DEPENDENCY_VISIBILITY_KEY
+
+    coordinator, _ = settings_coordinator
+    view = coordinator.view
+    assert view is not None
+    control = view.controls[DEPENDENCY_VISIBILITY_KEY]
+    assert control.currentData() == "selected"
+    control.setCurrentIndex(control.findData("off"))
+    coordinator.set_contextual(DEPENDENCY_VISIBILITY_KEY, "trail")
+    coordinator._sync()
+    assert local.snapshot()[DEPENDENCY_VISIBILITY_KEY] == "trail"
+    assert control.currentData() == "off"
+    assert coordinator.draft.conflicts[DEPENDENCY_VISIBILITY_KEY] == "trail"
+    coordinator.draft.resolve(DEPENDENCY_VISIBILITY_KEY, keep_edit=True)
+    assert coordinator.draft.changes()[DEPENDENCY_VISIBILITY_KEY] == "off"
+
+
 @pytest.mark.real_qt_invoke
 def test_settings_endpoint_uses_existing_database_thread(qtbot, tmp_path):
     from PySide6.QtCore import QObject, Qt, QThread, Signal

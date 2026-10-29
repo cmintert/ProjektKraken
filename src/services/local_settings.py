@@ -10,6 +10,12 @@ from PySide6.QtCore import QSettings
 
 from src.core.settings import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 from src.core.settings_registry import SETTINGS
+from src.core.timeline_visibility import (
+    DEPENDENCY_VISIBILITY_KEY,
+    LEGACY_DEPENDENCY_VISIBILITY_KEY,
+    DependencyVisibility,
+    dependency_visibility,
+)
 from src.services import secret_store
 
 SEED_KEY = "settings_center/legacy_policy_seed_v1"
@@ -30,6 +36,19 @@ LEGACY_SECRETS = {
     "languagetool.username": "SpellCheck/username",
     "languagetool.api_key": "SpellCheck/api_key",
 }
+
+
+def read_dependency_visibility(settings: QSettings) -> DependencyVisibility:
+    """Resolve new and legacy preferences without writing during a read."""
+    if settings.contains(DEPENDENCY_VISIBILITY_KEY):
+        return dependency_visibility(settings.value(DEPENDENCY_VISIBILITY_KEY))
+    if settings.contains(LEGACY_DEPENDENCY_VISIBILITY_KEY):
+        legacy = settings.value(LEGACY_DEPENDENCY_VISIBILITY_KEY)
+        if legacy in (True, 1, "true", "1", "yes", "on"):
+            return DependencyVisibility.ALL
+        if legacy in (False, 0, "false", "0", "no", "off"):
+            return DependencyVisibility.OFF
+    return DependencyVisibility.SELECTED
 
 
 class LocalSettingsAdapter:
@@ -103,6 +122,8 @@ class LocalSettingsAdapter:
                 result[definition.id] = secret_store.get_api_key(provider) or str(
                     self.settings.value(LEGACY_SECRETS[provider], "") or ""
                 )
+            elif definition.id == DEPENDENCY_VISIBILITY_KEY:
+                result[definition.id] = read_dependency_visibility(self.settings).value
             elif definition.id == "appearance.theme":
                 result[definition.id] = self.settings.value(
                     definition.id,
@@ -179,6 +200,7 @@ class LocalSettingsAdapter:
         for definition in SETTINGS:
             if definition.scope == "kraken" and definition.resettable:
                 self.settings.remove(definition.id)
+        self.settings.remove(LEGACY_DEPENDENCY_VISIBILITY_KEY)
         QSettings("ProjektKraken", "ThemeSettings").remove("current_theme")
         self.settings.setValue("appearance.theme", "dark_mode")
         self.settings.sync()

@@ -22,6 +22,10 @@ from PySide6.QtWidgets import (
 
 from src.core.settings_registry import BY_ID, SETTINGS
 from src.core.theme_manager import ThemeManager
+from src.core.timeline_visibility import (
+    DEPENDENCY_VISIBILITY_KEY,
+    DEPENDENCY_VISIBILITY_LABELS,
+)
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.responsive_form import scrollable_form_page
@@ -263,7 +267,13 @@ class SettingsCenter(QDialog):
             self._field(writing, key)
         timeline = self._simple_page("kraken", "Timeline")
         self._field(timeline, "timeline/snap_playhead_to_events")
-        self._field(timeline, "timeline/show_dependencies")
+        layout_of(timeline).addWidget(QLabel("Dependencies"))
+        self._field(
+            timeline, DEPENDENCY_VISIBILITY_KEY, list(DEPENDENCY_VISIBILITY_LABELS)
+        )
+        dependency_control = cast(QComboBox, self.controls[DEPENDENCY_VISIBILITY_KEY])
+        for index, label in enumerate(DEPENDENCY_VISIBILITY_LABELS.values()):
+            dependency_control.setItemText(index, label)
         analysis = self._simple_page("kraken", "Analysis")
         self._field(analysis, "analysis/editorial_checks")
         self.ai = AISettingsForm(self)

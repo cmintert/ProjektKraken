@@ -209,6 +209,7 @@ def test_production_paint_defers_cold_routing_and_reuses_preparation(
     view = TimelineView()
     qtbot.addWidget(view)
     view.set_events(sample())
+    view.set_dependency_selection("a")
     image = QImage(1200, 900, QImage.Format.Format_ARGB32)
     painter = QPainter(image)
     try:
@@ -302,6 +303,7 @@ def test_routing_cache_survives_selection_and_panning(qtbot, monkeypatch):
         items = list(view._event_items.values())
         initial = view._dependencies.curves(items, painter)[0]
         view._event_items["a"].setSelected(True)
+        view.set_dependency_selection("a")
         view._dependencies.curves(items, painter)
         painter.setWorldTransform(QTransform.fromTranslate(30, 40))
         panned = view._dependencies.curves(items, painter)[0]

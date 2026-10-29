@@ -46,10 +46,11 @@ Current Time** takes you back.
 - Select an event to open its inspector.
 - Move supported event items to update their date.
 - Use the playhead controls to inspect another point in history.
-- Enable **Show dependencies** beside **Snap to Events** to see which Events
-  follow other Events' dates. On narrow timelines, use **More actions**. This
-  setting takes effect immediately and is remembered on this computer; it is
-  also available in **Settings → Timeline**.
+- Open **Dependencies: Selected** beside **Snap to Events** to choose which
+  Follow Event connections appear. On narrow timelines, open **More actions**
+  and the **Dependencies** submenu. The current mode appears in its label.
+  Choices take effect immediately and are remembered on this computer; the
+  same choices are available in **Settings → Timeline**.
 - Open **Go to date** above the timeline and choose **Go to selected event**
   to move the playhead to the selected event's saved date and center the view.
   This option is disabled when the selected object is not an available event.
@@ -567,12 +568,38 @@ add precision to partial event dates or affect playback jumps.
 
 (help-inspect-timeline-show-dependencies)=
 
-**Show dependencies** — Show colored arrows for saved **Follow Event** date
-sources. Lines meet the sides of the referenced starts or ends; each connected
-chain, including branches and merges, shares a color. Colors may repeat and do
-not make uncertain dates exact. It starts enabled. Clear it to hide the
-connections; the Events' dates, selection, Viewing time and undo history stay
-unchanged.
+**Dependencies** — Choose which colored arrows appear for saved **Follow Event**
+date sources. **All** shows every eligible connection. **Selected** shows only
+direct connections to the selected Event. **Show dependency trail** (**Trail**)
+shows its whole connected network, including branches and merges. **Off** hides
+connections. Selected is the default for new installations; Selected and Trail
+show none without a selected Event. The choice is saved on this computer and
+synchronized with **Settings → Timeline**. Changing modes preserves Event dates,
+placement, selection, Viewing time and undo history.
+
+| Choice | Connections shown |
+| --- | --- |
+| **All** | All connections eligible to appear in the current timeline. |
+| **Selected** | Only connections directly entering or leaving the selected Event. |
+| **Show dependency trail** | The selected Event's whole connected network, including earlier sources, later dependents, branches and merges. The toolbar calls this mode **Trail**. |
+| **Off** | No connections. |
+
+Selected is the default on a new installation. Selected and Trail show no
+connections without a selected Event, or when that Event has no Follow Event
+connections. A trail follows selection and can cross tag bands. All Events stay
+in place; these choices do not hide Events or select the whole trail.
+
+To follow a trail, select an Event, open **Dependencies: Selected**, then choose
+**Show dependency trail**. Select another Event to follow its network. To return
+to direct connections, choose **Selected**. In a narrow panel, use the same
+submenu under **More actions**. The choice is saved immediately on this computer
+and stays synchronized with **Settings → Timeline**. Existing installations
+retain their previous display choice: enabled becomes All and disabled becomes
+Off.
+
+Changing modes leaves Event dates, selection, Viewing time, event placement and
+undo history unchanged. Shared connections keep their routes when only the mode
+or selection changes.
 
 Arrows run from the source Event's start or end to the endpoint that follows it.
 Connections meet the sides of the relevant endpoint row or duration cap. Select
