@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-28
-**Commit:** 94c22f49d336b5bd83b7af8f1bea19d83b4abd35
+**Last Updated:** 2026-10-29
+**Commit:** 9b6554bebce91f086c45bbcbca27e7c7beb68b98
 ---
 
 # Changelog
@@ -34,6 +34,14 @@ All notable changes to this project will be documented in this file.
   bundle when upgrading.
 
 ### Fixed
+
+- *(2026-10-29)* **Timeline wire routing (KRT-116)**: Added smooth bypasses around
+  intervening Event clusters and separate crowded tracks without modulo reuse.
+  Shared-source branches fan out; paths preserve endpoint sides and protect
+  labels, selected strokes and arrowheads. Panning reuses prepared routes, and
+  cold routing is coalesced outside background painting. Added reproducible
+  multi-blocker, real-widget and 5/20/50/100-wire comparisons, routing regressions
+  and updated contextual Help.
 
 - *(2026-10-28)* **Event timing drafts (KRT-113)**: Autosave saves fields outside
   the Date frame while date, time, source, endpoint, offset and interval edits

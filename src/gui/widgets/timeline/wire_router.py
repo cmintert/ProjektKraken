@@ -7,7 +7,23 @@ from itertools import count
 from PySide6.QtCore import QPointF, QRectF
 from PySide6.QtGui import QPainterPath, QPainterPathStroker
 
-WIRE_GAP = 8.0
+from src.gui.widgets.timeline.wire_bypass import (
+    blocking_envelope,
+    bypass_candidates,
+    compact_corridor,
+    extra_bypasses,
+    fan_candidates,
+    side_candidates,
+)
+from src.gui.widgets.timeline.wire_geometry import (
+    WIRE_GAP,
+    Candidate,
+    candidate_rank,
+    path_point,
+    route_conflicts,
+    valid_candidate,
+)
+
 CORNER_RADIUS = 24.0
 BEND_COST = 24.0
 CROSSING_COST = 48.0
@@ -16,6 +32,8 @@ MIN_FORWARD_GAP = 32.0
 MIN_POLYLINE_POINTS = 2
 LOCAL_ROUTE_SPAN = 1024.0
 WIRE_CLEARANCE = 1.75
+MAX_BYPASS_ALTERNATIVES = 8
+SINGLE_CUBIC_ELEMENTS = 4
 
 
 @dataclass(frozen=True)
@@ -42,66 +60,6 @@ def smooth_wire(wire: Wire) -> QPainterPath:
         wire.target,
     )
     return path
-
-
-def _best_spline(
-    wire: Wire, obstacles: list[QRectF], previous: list[QPainterPath]
-) -> QPainterPath | None:
-    """Prefer one smooth, non-self-intersecting cubic over routed bends."""
-    vertical = abs(wire.target.y() - wire.source.y())
-    forward = (wire.target.x() - wire.source.x()) * wire.source_side
-    if vertical < MIN_FORWARD_GAP and forward < MIN_FORWARD_GAP:
-        return None
-    distance = abs(wire.target.x() - wire.source.x())
-    handles = sorted(
-        {
-            max(16.0, min(120.0, distance / 2)),
-            32.0,
-            64.0,
-            96.0,
-            144.0,
-            216.0,
-            324.0,
-            486.0,
-        }
-    )
-    stroker = QPainterPathStroker()
-    stroker.setWidth(3.0)
-    sockets = QPainterPath()
-    sockets.addEllipse(wire.source, 24, 24)
-    sockets.addEllipse(wire.target, 24, 24)
-    default = smooth_wire(wire)
-    default_stroke = stroker.createStroke(default)
-    if not any(default_stroke.intersects(rect) for rect in obstacles) and not any(
-        earlier.intersects(default_stroke.subtracted(sockets)) for earlier in previous
-    ):
-        return default
-    best: tuple[float, QPainterPath] | None = None
-    for outgoing in handles:
-        for incoming in handles:
-            if (
-                forward > 0
-                and wire.target_side == -wire.source_side
-                and outgoing + incoming > distance
-            ):
-                continue
-            path = QPainterPath(wire.source)
-            path.cubicTo(
-                wire.source + QPointF(wire.source_side * outgoing, 0),
-                wire.target + QPointF(wire.target_side * incoming, 0),
-                wire.target,
-            )
-            stroke = stroker.createStroke(path)
-            if any(stroke.intersects(rect) for rect in obstacles):
-                continue
-            cost = path.length() + (outgoing + incoming) * 0.05
-            away_from_sockets = stroke.subtracted(sockets)
-            cost += CROSSING_COST * sum(
-                earlier.intersects(away_from_sockets) for earlier in previous
-            )
-            if best is None or cost < best[0]:
-                best = cost, path
-    return best[1] if best is not None else None
 
 
 def _blocked(first: QPointF, second: QPointF, obstacles: list[QRectF]) -> bool:
@@ -166,6 +124,12 @@ def _axes(
     gap = CORNER_RADIUS + track * WIRE_GAP
     xs = {wire.source.x(), wire.target.x()}
     ys = {wire.source.y(), wire.target.y()}
+    # Let forks separate near their shared socket instead of following the
+    # first wire as far as the next obstacle-derived grid line.
+    port_gap = WIRE_GAP * (track + 1)
+    for port in (wire.source, wire.target):
+        xs.update((port.x() - port_gap, port.x() + port_gap))
+        ys.update((port.y() - port_gap, port.y() + port_gap))
     # A long cross-world wire needs local port corridors and outside gutters,
     # not a quadratic grid of every intervening event's label corners.
     critical = [
@@ -211,11 +175,15 @@ def _neighbors(
 ) -> list[tuple[int, int, int]]:
     x, y, direction = node
     result = []
-    for dx, dy, axis in ((-1, 0, 1), (1, 0, 1), (0, -1, 2), (0, 1, 2)):
+    for dx, dy, axis in ((-1, 0, -1), (1, 0, 1), (0, -1, -2), (0, 1, 2)):
         nx, ny = x + dx, y + dy
         if not (0 <= nx < len(xs) and 0 <= ny < len(ys)):
             continue
         if direction == 0 and (dy or dx != wire.source_side):
+            continue
+        if direction == -axis:
+            # A search must not satisfy its initial side with an out-and-back
+            # stub, which simplification would turn into a false vertical port.
             continue
         if (nx, ny) == destination and (dy or dx != -wire.target_side):
             continue
@@ -312,45 +280,164 @@ def _safe_rounding(points: list[QPointF], obstacles: list[QRectF]) -> QPainterPa
     return QPainterPath()
 
 
+def _select_candidate(
+    wire: Wire,
+    paths: list[QPainterPath],
+    obstacles: list[QRectF],
+    previous: list[Candidate],
+    floor: float | None,
+) -> Candidate | None:
+    candidates = []
+    for path in paths:
+        candidate = valid_candidate(wire, path, obstacles, floor)
+        if candidate is None:
+            continue
+        overlapping, crossings = route_conflicts(candidate, previous)
+        if not overlapping:
+            candidates.append((candidate_rank(candidate, crossings), candidate))
+    return min(candidates, key=lambda entry: entry[0])[1] if candidates else None
+
+
+def _fallback(
+    wire: Wire,
+    obstacles: list[QRectF],
+    reserved: list[tuple[QPointF, QPointF]],
+    previous: list[Candidate],
+    floor: float | None,
+) -> Candidate | None:
+    region = QRectF(wire.source, wire.target).normalized().adjusted(-160, -80, 160, 80)
+    nearby = [rect for rect in obstacles if rect.intersects(region)]
+    for blockers in [nearby, obstacles] if nearby != obstacles else [obstacles]:
+        for track in (0, 1, 2):
+            points = _orthogonal_route(wire, blockers, track, reserved, floor)
+            if points:
+                selected = _select_candidate(
+                    wire,
+                    [_safe_rounding(points, obstacles)],
+                    obstacles,
+                    previous,
+                    floor,
+                )
+                if selected is not None:
+                    return selected
+    return None
+
+
+def _first_bypass(
+    wire: Wire,
+    envelope: QRectF,
+    obstacles: list[QRectF],
+    previous: list[Candidate],
+    floor: float | None,
+) -> Candidate | None:
+    """Stop at a separated alternative instead of evaluating every outer track."""
+    occupied = {
+        line.y1()
+        for earlier in previous
+        for line in earlier.segments
+        if line.dy() == 0 and line.length() >= envelope.width()
+    }
+    attempts = 0
+    for path in extra_bypasses(wire, envelope):
+        if path.isEmpty() or path_point(path, 3).y() in occupied:
+            continue
+        attempts += 1
+        selected = _select_candidate(wire, [path], obstacles, previous, floor)
+        if selected is not None:
+            return selected
+        if attempts >= MAX_BYPASS_ALTERNATIVES:
+            break
+    return None
+
+
+def _ordered_envelopes(
+    wires: list[Wire], obstacles: list[QRectF]
+) -> tuple[list[QRectF | None], list[tuple[int, int]]]:
+    envelopes = [
+        blocking_envelope(wire, smooth_wire(wire), obstacles) for wire in wires
+    ]
+    groups: dict[tuple[float, ...], list[int]] = {}
+    for index, envelope in enumerate(envelopes):
+        if envelope is not None:
+            key = (envelope.x(), envelope.y(), envelope.width(), envelope.height())
+            groups.setdefault(key, []).append(index)
+    order = [(0, 1)] * len(wires)
+    for indices in groups.values():
+        for rank, index in enumerate(indices):
+            order[index] = (rank, len(indices))
+    return envelopes, order
+
+
+def _reduce_crossings(
+    wire: Wire,
+    selected: Candidate,
+    obstacles: list[QRectF],
+    previous: list[Candidate],
+    floor: float | None,
+) -> Candidate:
+    """Compare bounded alternatives when an otherwise clear cubic crosses a wire."""
+    if not route_conflicts(selected, previous)[1]:
+        return selected
+    return (
+        _select_candidate(
+            wire, [selected.path, *fan_candidates(wire)], obstacles, previous, floor
+        )
+        or selected
+    )
+
+
 def route_wires(
     wires: list[Wire], obstacles: list[QRectF], minimum_y: float | None = None
 ) -> list[QPainterPath]:
-    """Route in caller's stable branch order, separating overlapping wire tracks."""
+    """Keep direct cubics; bypass clusters on ordered tracks without shared runs."""
+    obstacles = sorted(obstacles, key=lambda r: (r.x(), r.y(), r.width(), r.height()))
+    envelopes, order = _ordered_envelopes(wires, obstacles)
     reserved: list[tuple[QPointF, QPointF]] = []
+    previous: list[Candidate] = []
     paths = []
-    previous: list[QPainterPath] = []
-    stroker = QPainterPathStroker()
-    stroker.setWidth(3.0)
-    intervals: list[tuple[float, float]] = []
-    for wire in wires:
-        # Offscreen endpoints may legitimately be above the sticky ruler. Their
-        # path stays world-relative; viewport clipping then hides only that part.
+    for index, wire in enumerate(wires):
         floor = minimum_y
         if floor is not None and min(wire.source.y(), wire.target.y()) < floor:
             floor = None
-        direct = _best_spline(wire, obstacles, previous)
-        if direct is not None:
-            paths.append(direct)
-            previous.append(stroker.createStroke(direct))
-            continue
-        lower, upper = sorted((wire.source.y(), wire.target.y()))
-        track = sum(not (end < lower or start > upper) for start, end in intervals) % 8
-        intervals.append((lower, upper))
-        region = (
-            QRectF(wire.source, wire.target).normalized().adjusted(-160, -80, 160, 80)
+        selected = _select_candidate(
+            wire, [smooth_wire(wire)], obstacles, previous, floor
         )
-        nearby = [rect for rect in obstacles if rect.intersects(region)]
-        points = _orthogonal_route(wire, nearby, track, reserved, floor)
-        if points:
-            path = _safe_rounding(points, obstacles)
-            if path.isEmpty():
-                points = _orthogonal_route(wire, obstacles, track, reserved, floor)
-                path = _safe_rounding(points, obstacles) if points else QPainterPath()
-            reserved.extend(zip(points, points[1:]))
-            paths.append(path)
-            previous.append(stroker.createStroke(path))
-        else:
-            # Overlapping node bodies can close a port. Leave that wire absent
-            # rather than painting a false loop or cutting through authored text.
-            paths.append(QPainterPath())
+        envelope = envelopes[index]
+        if selected is None and envelope is not None:
+            points = compact_corridor(wire, envelope, *order[index])
+            if points:
+                selected = _select_candidate(
+                    wire, [rounded_route(points, 1.0)], obstacles, previous, floor
+                )
+        if selected is None and envelope is not None:
+            selected = _select_candidate(
+                wire,
+                bypass_candidates(wire, envelope, *order[index]),
+                obstacles,
+                previous,
+                floor,
+            )
+            if selected is None:
+                selected = _first_bypass(wire, envelope, obstacles, previous, floor)
+        if selected is None:
+            selected = _select_candidate(
+                wire,
+                [*fan_candidates(wire), *side_candidates(wire)],
+                obstacles,
+                previous,
+                floor,
+            )
+        if selected is None:
+            selected = _fallback(wire, obstacles, reserved, previous, floor)
+        elif selected.path.elementCount() == SINGLE_CUBIC_ELEMENTS:
+            selected = _reduce_crossings(wire, selected, obstacles, previous, floor)
+        path = selected.path if selected is not None else QPainterPath()
+        paths.append(path)
+        if selected is not None:
+            previous.append(selected)
+            reserved.extend(
+                (line.p1(), line.p2())
+                for line in selected.segments
+                if line.dx() == 0 or line.dy() == 0
+            )
     return paths

@@ -7,6 +7,7 @@ from PySide6.QtCore import QPointF, QRectF
 from PySide6.QtGui import (
     QImage,
     QPainter,
+    QPainterPath,
     QPainterPathStroker,
     QTransform,
 )
@@ -43,6 +44,186 @@ def test_clear_route_is_one_smooth_cubic():
         first.x() <= second.x() and first.y() <= second.y()
         for first, second in zip(samples, samples[1:])
     )
+
+
+@pytest.mark.parametrize("cluster", [False, True])
+def test_forward_blocker_gets_broad_cubic_bypass_without_overshoot(cluster):
+    wire = Wire(QPointF(0, 100), QPointF(600, 100), 1, -1)
+    obstacles = [QRectF(200, 75, 100, 50)]
+    if cluster:
+        obstacles.extend([QRectF(315, 90, 70, 70), QRectF(400, 60, 50, 60)])
+    path = route_wires([wire], obstacles)[0]
+    assert_side_tangents(path, wire)
+    assert not any(stroke(path).intersects(rect) for rect in obstacles)
+    # A broad, continuously tangent cubic bypass, rather than rounded elbows.
+    assert path.elementCount() <= 13
+    assert all(not path.elementAt(i).isLineTo() for i in range(1, path.elementCount()))
+    samples = [path.pointAtPercent(i / 400) for i in range(401)]
+    assert all(a.x() <= b.x() for a, b in zip(samples, samples[1:]))
+    assert path.boundingRect().left() >= wire.source.x()
+    assert path.boundingRect().right() <= wire.target.x()
+    changes = [b.y() - a.y() for a, b in zip(samples, samples[1:])]
+    signs = [1 if value > 0 else -1 for value in changes if abs(value) > 1e-6]
+    assert sum(a != b for a, b in zip(signs, signs[1:])) <= 1
+
+
+def test_twenty_shared_corridor_wires_do_not_reuse_exact_straight_tracks():
+    from scripts.render_timeline_wire_refinement import corridor, shared_length
+
+    wires, obstacles = corridor(20)
+    paths = route_wires(wires, obstacles)
+    for wire, path in zip(wires, paths):
+        assert_side_tangents(path, wire)
+        assert not any(stroke(path).intersects(rect) for rect in obstacles)
+    assert shared_length(paths) < 1
+    assert paths == route_wires(wires, list(reversed(obstacles)))
+
+
+@pytest.mark.parametrize("zoom", [0.8, 2.0])
+def test_hundred_wire_corridor_keeps_every_path_without_stroke_overlap(zoom):
+    from scripts.render_timeline_wire_refinement import corridor, shared_length
+
+    wires, obstacles = corridor(100, zoom)
+    paths = route_wires(wires, obstacles)
+    strokes = []
+    for wire, path in zip(wires, paths):
+        assert_side_tangents(path, wire)
+        current = stroke(path)
+        assert not any(current.intersects(rect) for rect in obstacles)
+        assert not any(current.intersects(earlier) for earlier in strokes)
+        strokes.append(current)
+    assert shared_length(paths) == 0
+
+
+def test_closed_socket_is_not_painted_as_a_false_connection():
+    wire = Wire(QPointF(0, 100), QPointF(600, 100), 1, -1)
+    assert route_wires([wire], [QRectF(-10, 90, 40, 20)])[0].isEmpty()
+
+
+@pytest.mark.parametrize("scene", ["staggered-cluster", "branches-and-merges"])
+@pytest.mark.parametrize("zoom", [0.8, 2.0])
+def test_multi_blocker_scenes_keep_all_wires_separate(scene, zoom):
+    from scripts.render_timeline_wire_refinement import blocker_scenes, shared_length
+    from src.gui.widgets.timeline.wire_geometry import route_conflicts, valid_candidate
+
+    wires, obstacles = blocker_scenes()[scene]
+    wires = [
+        Wire(w.source * zoom, w.target * zoom, w.source_side, w.target_side)
+        for w in wires
+    ]
+    obstacles = [QRectF(r.topLeft() * zoom, r.size() * zoom) for r in obstacles]
+    paths = route_wires(wires, obstacles)
+    previous = []
+    for wire, path in zip(wires, paths):
+        assert_side_tangents(path, wire)
+        candidate = valid_candidate(wire, path, obstacles, None)
+        assert candidate is not None
+        assert not route_conflicts(candidate, previous)[0]
+        previous.append(candidate)
+    assert shared_length(paths) == 0
+
+
+def test_shared_source_fans_out_without_losing_a_dependency():
+    from scripts.render_timeline_wire_refinement import shared_length
+
+    wires = [Wire(QPointF(30, 100), QPointF(900, y), 1, -1) for y in (100, 150, 200)]
+    paths = route_wires(wires, [])
+    assert all(not path.isEmpty() for path in paths)
+    # Small shared terminal neighbourhoods are intentional; no shared bus follows.
+    assert shared_length(paths) == 0
+    sockets = QPainterPath()
+    sockets.addEllipse(wires[0].source, 24, 24)
+    assert (
+        not stroke(paths[0])
+        .subtracted(sockets)
+        .intersects(stroke(paths[1]).subtracted(sockets))
+    )
+
+
+def test_horizontal_path_is_not_culled_as_an_empty_rectangle(qtbot):
+    from src.gui.widgets.timeline import TimelineView
+    from tests.unit.test_timeline_dependencies import sample
+
+    view = TimelineView()
+    qtbot.addWidget(view)
+    view.set_events(sample())
+    for item in view._event_items.values():
+        item.setY(200)
+    image = QImage(1200, 900, QImage.Format.Format_ARGB32)
+    painter = QPainter(image)
+    try:
+        curves, _ = view._dependencies.curves(
+            list(view._event_items.values()),
+            painter,
+            viewport=QRectF(-500, 85, 2000, 500),
+        )
+        assert len(curves) == 1
+    finally:
+        painter.end()
+
+
+def test_tight_arrowhead_clearance_is_validated():
+    wire = Wire(QPointF(0, 100), QPointF(600, 100), 1, -1)
+    # The centre line is clear, but the arrow's upper arm is blocked.
+    assert route_wires([wire], [QRectF(593, 95, 3, 2)])[0].isEmpty()
+
+
+def test_vertical_pan_and_culling_do_not_reallocate_routes(qtbot, monkeypatch):
+    import src.gui.widgets.timeline.dependency_layer as module
+    from src.gui.widgets.timeline import TimelineView
+    from tests.unit.test_timeline_dependencies import sample
+
+    router = Mock(wraps=module.route_wires)
+    monkeypatch.setattr(module, "route_wires", router)
+    view = TimelineView()
+    qtbot.addWidget(view)
+    view.set_events(sample())
+    image = QImage(1200, 900, QImage.Format.Format_ARGB32)
+    painter = QPainter(image)
+    try:
+        items = list(view._event_items.values())
+        viewport = QRectF(0, 85, 1200, 500)
+        initial = view._dependencies.curves(items, painter, 85, viewport)[0]
+        painter.setWorldTransform(QTransform.fromTranslate(0, 30))
+        panned = view._dependencies.curves(items, painter, 85, viewport)[0]
+        assert router.call_count == 1
+        assert panned[0].path() == QTransform.fromTranslate(0, 30).map(
+            initial[0].path()
+        )
+        # Changing only which wires are painted does not change batch allocation.
+        view._dependencies.curves(items, painter, 85, QRectF(0, 5000, 1200, 500))
+        assert router.call_count == 1
+    finally:
+        painter.end()
+
+
+def test_production_paint_defers_cold_routing_and_reuses_preparation(
+    qtbot, monkeypatch
+):
+    import src.gui.widgets.timeline.dependency_layer as module
+    from src.gui.widgets.timeline import TimelineView
+    from tests.unit.test_timeline_dependencies import sample
+
+    router = Mock(wraps=module.route_wires)
+    monkeypatch.setattr(module, "route_wires", router)
+    view = TimelineView()
+    qtbot.addWidget(view)
+    view.set_events(sample())
+    image = QImage(1200, 900, QImage.Format.Format_ARGB32)
+    painter = QPainter(image)
+    try:
+        view.drawBackground(painter, QRectF(0, 0, 1200, 900))
+        assert router.call_count == 0
+        assert view._dependency_route_timer.isActive()
+        view._dependency_route_timer.stop()
+        view._prepare_dependency_routes()
+        assert router.call_count == 1
+        painter.setWorldTransform(view.viewportTransform())
+        view.drawBackground(painter, QRectF(0, 0, 1200, 900))
+        assert router.call_count == 1
+        assert not view._dependencies.routing_pending
+    finally:
+        painter.end()
 
 
 def test_close_forward_sockets_do_not_get_backtracking_bezier_handles():

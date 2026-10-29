@@ -581,10 +581,11 @@ guides; edit the Event's date source in its inspector.
 
 Small sockets identify the wire outputs; arrows identify the dependent inputs.
 Clear routes use smooth node-editor curves with horizontal side connections.
-Crowded routes use stable routing tracks around labels and other event marks,
-instead of cutting a wire into visible fragments. Branches follow the displayed
-event order. Wires can still cross where the fixed timeline positions require it;
-select an Event to follow its connections more easily.
+Wires bend smoothly around intervening Events and labels. Crowded routes use
+separate tracks, with tighter rounded turns when broad curves cannot fit.
+Branches follow the displayed event order. Wires do not share a track beyond
+their common sockets, although they can cross at a point where fixed timeline
+positions require it. Select an Event to follow its connections more easily.
 
 Each connected chain shares a color, including branches and merges. Separate
 chains use a theme-aware palette whose colors can repeat. Color does not indicate
@@ -592,7 +593,8 @@ chronology, Event type or an error. Changing a date source can merge or split
 chains and change their colors; zooming or collapsing groups does not.
 
 A line does not make an uncertain date exact. Connections are omitted when an
-endpoint cannot be placed or its Event is collapsed. Grouped copies connect to
+endpoint cannot be placed, its Event is collapsed, or no safe separated route
+fits. Zooming in can open more room for a route. Grouped copies connect to
 a source in the same group when available, otherwise to the nearest visible
 source. Ordinary Relations do not create these lines.
 

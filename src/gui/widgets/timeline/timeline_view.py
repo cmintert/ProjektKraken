@@ -22,6 +22,7 @@ from PySide6.QtCore import (
 from PySide6.QtGui import (
     QColor,
     QFont,
+    QImage,
     QMouseEvent,
     QPainter,
     QPainterPath,
@@ -172,6 +173,10 @@ class TimelineView(QGraphicsView):
         self.events: list[Event] = []
         self._event_items: dict[str, EventItem] = {}
         self._dependencies = TimelineDependencyLayer()
+        self._dependency_route_timer = QTimer(self)
+        self._dependency_route_timer.setSingleShot(True)
+        self._dependency_route_timer.timeout.connect(self._prepare_dependency_routes)
+        self.graphics_scene.changed.connect(self._schedule_dependency_routes)
         self.scale_factor = 20.0
         self._initial_fit_pending = False
         self._has_done_initial_fit = False  # Only fit_all on first load
@@ -412,6 +417,8 @@ class TimelineView(QGraphicsView):
     def set_dependencies_visible(self, enabled: bool) -> None:
         """Toggle strands without changing layout, authoring state or history."""
         self._dependencies.enabled = enabled
+        if enabled:
+            self._schedule_dependency_routes()
         self.viewport().update()
 
     def are_dependencies_visible(self) -> bool:
@@ -433,7 +440,38 @@ class TimelineView(QGraphicsView):
             ],
             viewport,
             ThemeManager().get_theme(),
+            prepared_only=True,
         )
+        if self._dependencies.routing_pending:
+            self._schedule_dependency_routes()
+
+    @Slot()
+    def _schedule_dependency_routes(self) -> None:
+        """Coalesce geometry changes; drawing never starts a cold routing batch."""
+        if self._dependencies.enabled and not self._dependency_route_timer.isActive():
+            self._dependency_route_timer.start(0)
+
+    @Slot()
+    def _prepare_dependency_routes(self) -> None:
+        """Measure and cache the settled generation outside the paint callback."""
+        if (
+            not self._dependencies.enabled
+            or not self._dependencies.dependencies
+            or self._layout_in_progress
+        ):
+            return
+        image = QImage(1, 1, QImage.Format.Format_ARGB32)
+        painter = QPainter(image)
+        try:
+            painter.setWorldTransform(self.viewportTransform())
+            self._dependencies.curves(
+                [*self._event_items.values(), *self._duplicate_event_items],
+                painter,
+                self.RULER_HEIGHT,
+            )
+        finally:
+            painter.end()
+        self.viewport().update()
 
     def drawForeground(self, painter: QPainter, rect: QRectF | QRect) -> None:
         """Draws a semantic zoom ruler at the top of the viewport.

@@ -17036,8 +17036,8 @@
     {
       "source": "src/gui/widgets/timeline/dependency_layer.py",
       "symbol": "TimelineDependencyLayer.paint",
-      "sha256": "ffb170c3c81569d14c679cea96e4ec61a614090f7570afb9a5b1c0e64eb2445e",
-      "review_note": "KRT-114: noninteractive complete node-editor wires with side sockets, endpoint arrows, categorical strand colors and selection width; only viewport/group headers clip routes. Text is protected by obstacle routing."
+      "sha256": "b0abdf213691c23400a643f13219a75a7b94a0457758781139598066f944ab9e",
+      "review_note": "KRT-116: prepared complete paths keep side sockets, endpoint arrows, categorical colors and selection width. Production paint waits for coalesced preparation; viewport/header clipping is unchanged. The Show dependencies reference now explains separated tracks and omitted unsafe routes."
     },
     {
       "source": "src/core/timeline_dependencies.py",
@@ -17048,8 +17048,8 @@
     {
       "source": "src/gui/widgets/timeline/wire_router.py",
       "symbol": "route_wires",
-      "sha256": "5ada5392342252e7e0645392065bae0d7ce6494a45eff4fe59d29a6080620c11",
-      "review_note": "KRT-114: stable branch order, smooth side-tangent cubics and obstacle-aware routing tracks; no manual rerouting gesture or data mutation. Canonical timeline explanation records unavoidable crossings."
+      "sha256": "1f06cea64d5361b44d6afa9d05d3c80e7674379cdda3c30488065820862644a6",
+      "review_note": "KRT-116: retain direct cubics, add validated smooth cluster bypasses and ordered compact corridors. Shared runs are rejected outside common sockets; point crossings remain possible. The canonical timeline reference explains broad curves, crowded turns, safe-route limits and zoom recovery."
     }
   ],
   "review_status": {

@@ -192,6 +192,7 @@ class TimelineDependencyLayer:
         self._display: dict[str, _DisplaySnapshot] = {}
         self._routing_key: object = None
         self._routing_paths: list[QPainterPath] = []
+        self.routing_pending = False
 
     def set_world_events(self, events: list[Event]) -> None:
         """Replace topology only from a complete accepted generation."""
@@ -231,6 +232,8 @@ class TimelineDependencyLayer:
         painter: QPainter,
         minimum_y: float | None = None,
         viewport: QRectF | None = None,
+        *,
+        prepare: bool = True,
     ) -> tuple[list[DependencyCurve], QPainterPath]:
         """Use current copy positions while preserving cached full-world identity."""
         visible: dict[str, list[EventItem]] = defaultdict(list)
@@ -261,16 +264,6 @@ class TimelineDependencyLayer:
                 curve = self._curve(source, target, dependency, transform)
                 if curve is not None:
                     curves.append(curve)
-        if viewport is not None:
-            curves = [
-                curve
-                for curve in curves
-                if (
-                    max(curve.source.y(), curve.target.y()) >= viewport.top() - 256
-                    and min(curve.source.y(), curve.target.y())
-                    <= viewport.bottom() + 256
-                )
-            ]
         curves.sort(
             key=lambda curve: (
                 curve.source.y(),
@@ -289,7 +282,21 @@ class TimelineDependencyLayer:
             for item in copies
             for rect in self._display[item.event.id].obstacles(item)
         ]
-        self._route(curves, obstacles, transform, minimum_y)
+        self._route(curves, obstacles, transform, minimum_y, prepare=prepare)
+        if viewport is not None:
+            # Cull completed paths, never competitors in a shared corridor.
+            curves = [
+                curve
+                for curve in curves
+                if curve.path()
+                .boundingRect()
+                .adjusted(-4, -4, 4, 4)
+                .intersects(viewport)
+                or QRectF(curve.source, curve.target)
+                .normalized()
+                .adjusted(-4, -4, 4, 4)
+                .intersects(viewport)
+            ]
         return curves, mask
 
     def _route(
@@ -298,6 +305,8 @@ class TimelineDependencyLayer:
         obstacles: list[QRectF],
         transform: QTransform,
         minimum_y: float | None,
+        *,
+        prepare: bool = True,
     ) -> None:
         """Reuse routing across repaint/selection changes and simple scrolling."""
         offset = QPointF(transform.dx(), transform.dy())
@@ -311,6 +320,15 @@ class TimelineDependencyLayer:
             for curve in curves
         ]
         normalized = [rect.translated(-offset) for rect in obstacles]
+        normalized.sort(key=lambda r: (r.x(), r.y(), r.width(), r.height()))
+        # The routing floor belongs to content, not the scrolling viewport.
+        # Paint still clips all strokes and arrowheads below the sticky ruler.
+        floor = (
+            min([rect.top() for rect in normalized] + [w.source.y() for w in wires])
+            - 24
+            if minimum_y is not None and wires
+            else None
+        )
         key = (
             tuple(
                 (
@@ -326,15 +344,19 @@ class TimelineDependencyLayer:
             tuple(
                 (rect.x(), rect.y(), rect.width(), rect.height()) for rect in normalized
             ),
-            minimum_y - offset.y() if minimum_y is not None else None,
+            floor,
         )
         if key != self._routing_key:
+            if not prepare:
+                self.routing_pending = True
+                return
             self._routing_paths = route_wires(
                 wires,
                 normalized,
-                minimum_y - offset.y() if minimum_y is not None else None,
+                floor,
             )
             self._routing_key = key
+        self.routing_pending = False
         translation = QTransform.fromTranslate(offset.x(), offset.y())
         for curve, path in zip(curves, self._routing_paths):
             curve.route = translation.map(path)
@@ -384,11 +406,15 @@ class TimelineDependencyLayer:
         bands: list[GroupBandItem],
         viewport: QRectF,
         theme: dict[str, str],
+        *,
+        prepared_only: bool = False,
     ) -> None:
         """Paint clipped, constant-width strands behind all interactive content."""
         if not self.enabled or not self.dependencies:
             return
-        curves, _ = self.curves(items, painter, viewport.top(), viewport)
+        curves, _ = self.curves(
+            items, painter, viewport.top(), viewport, prepare=not prepared_only
+        )
         mask = QPainterPath()
         for band in bands:
             if band.isVisible():

@@ -1,0 +1,388 @@
+{
+  "single-blocker-0.8": {
+    "routing_ms": [
+      0.5790000000160944,
+      0.4515999999057385,
+      0.42929999972329824
+    ],
+    "median_ms": 0.4515999999057385,
+    "missing": 0,
+    "obstacle_collisions": 0,
+    "intersecting_pairs": 0,
+    "shared_straight_px": 0.0,
+    "path_elements": 18,
+    "length_px": 771.9204789384518,
+    "detour_bounds": [
+      [
+        24.0,
+        120.0,
+        696.0,
+        56.0
+      ]
+    ]
+  },
+  "single-blocker-2.0": {
+    "routing_ms": [
+      0.539300000127696,
+      0.4528999998001382,
+      0.44499999967229087
+    ],
+    "median_ms": 0.4528999998001382,
+    "missing": 0,
+    "obstacle_collisions": 0,
+    "intersecting_pairs": 0,
+    "shared_straight_px": 0.0,
+    "path_elements": 18,
+    "length_px": 1911.9204789384517,
+    "detour_bounds": [
+      [
+        60.0,
+        336.0,
+        1740.0,
+        104.0
+      ]
+    ]
+  },
+  "staggered-cluster-0.8": {
+    "routing_ms": [
+      7.919599999695492,
+      7.293899999694986,
+      7.447899999988294
+    ],
+    "median_ms": 7.447899999988294,
+    "missing": 0,
+    "obstacle_collisions": 0,
+    "intersecting_pairs": 0,
+    "shared_straight_px": 0.0,
+    "path_elements": 40,
+    "length_px": 2320.125956533337,
+    "detour_bounds": [
+      [
+        24.0,
+        96.0,
+        696.0,
+        80.0
+      ],
+      [
+        24.0,
+        224.0,
+        696.0,
+        88.0
+      ],
+      [
+        24.0,
+        304.0,
+        696.0,
+        16.0
+      ]
+    ]
+  },
+  "staggered-cluster-2.0": {
+    "routing_ms": [
+      3.677000000152475,
+      3.477699999621109,
+      3.4684000002016546
+    ],
+    "median_ms": 3.477699999621109,
+    "missing": 0,
+    "obstacle_collisions": 0,
+    "intersecting_pairs": 0,
+    "shared_straight_px": 0.0,
+    "path_elements": 40,
+    "length_px": 5764.324548241447,
+    "detour_bounds": [
+      [
+        60.0,
+        276.0,
+        1740.0,
+        164.0
+      ],
+      [
+        60.0,
+        560.0,
+        1740.0,
+        184.0
+      ],
+      [
+        60.0,
+        760.0,
+        1740.0,
+        40.0
+      ]
+    ]
+  },
+  "branches-and-merges-0.8": {
+    "routing_ms": [
+      7.73140000001149,
+      7.346700000198325,
+      7.1873000001687615
+    ],
+    "median_ms": 7.346700000198325,
+    "missing": 0,
+    "obstacle_collisions": 0,
+    "intersecting_pairs": 5,
+    "shared_straight_px": 0.0,
+    "path_elements": 57,
+    "length_px": 4527.212898061807,
+    "detour_bounds": [
+      [
+        24.0,
+        96.0,
+        696.0,
+        80.0
+      ],
+      [
+        24.0,
+        224.0,
+        696.0,
+        72.0
+      ],
+      [
+        24.0,
+        304.0,
+        696.0,
+        16.0
+      ],
+      [
+        24.0,
+        176.0,
+        696.0,
+        256.0
+      ],
+      [
+        24.0,
+        320.0,
+        696.0,
+        112.0
+      ],
+      [
+        24.0,
+        496.0,
+        696.0,
+        0.0
+      ]
+    ]
+  },
+  "branches-and-merges-2.0": {
+    "routing_ms": [
+      6.995000000188156,
+      7.026600000244798,
+      7.141000000046915
+    ],
+    "median_ms": 7.026600000244798,
+    "missing": 0,
+    "obstacle_collisions": 0,
+    "intersecting_pairs": 5,
+    "shared_straight_px": 1036.0,
+    "path_elements": 72,
+    "length_px": 11850.205266649125,
+    "detour_bounds": [
+      [
+        60.0,
+        276.0,
+        1740.0,
+        164.0
+      ],
+      [
+        60.0,
+        560.0,
+        1740.0,
+        184.0
+      ],
+      [
+        60.0,
+        760.0,
+        1740.0,
+        40.0
+      ],
+      [
+        60.0,
+        440.0,
+        1740.0,
+        640.0
+      ],
+      [
+        60.0,
+        800.0,
+        1740.0,
+        280.0
+      ],
+      [
+        60.0,
+        1240.0,
+        1740.0,
+        0.0
+      ]
+    ]
+  },
+  "widget": {
+    "dark_mode-400-0.8": {
+      "settle_and_capture_ms": 493.11820000002626,
+      "events": 9,
+      "dependencies": 4,
+      "cold_route_ms": [
+        463.88569999999163
+      ],
+      "warm_capture_ms": [
+        10.095500000261382,
+        4.231699999763805,
+        5.79829999969661,
+        3.9671000004091184,
+        5.879100000129256
+      ],
+      "repaint_misses": 0,
+      "selection_misses": 0,
+      "pan_misses": 0,
+      "zoom_route_ms": [
+        484.80479999989257
+      ]
+    },
+    "dark_mode-400-2.0": {
+      "settle_and_capture_ms": 64.29890000026717,
+      "events": 9,
+      "dependencies": 4,
+      "cold_route_ms": [
+        37.67179999977088
+      ],
+      "warm_capture_ms": [
+        8.535999999821797,
+        3.260999999838532,
+        4.999299999781215,
+        3.3367000000907865,
+        4.9392999999327
+      ],
+      "repaint_misses": 0,
+      "selection_misses": 0,
+      "pan_misses": 0,
+      "zoom_route_ms": [
+        36.757699999725446
+      ]
+    },
+    "dark_mode-1200-0.8": {
+      "settle_and_capture_ms": 516.1963000000469,
+      "events": 9,
+      "dependencies": 4,
+      "cold_route_ms": [
+        460.0407000002633
+      ],
+      "warm_capture_ms": [
+        10.620499999731692,
+        5.02890000007028,
+        4.8760999998194166,
+        4.7634999996262195,
+        4.751099999793951
+      ],
+      "repaint_misses": 0,
+      "selection_misses": 0,
+      "pan_misses": 0,
+      "zoom_route_ms": [
+        484.32279999997263
+      ]
+    },
+    "dark_mode-1200-2.0": {
+      "settle_and_capture_ms": 89.79290000024776,
+      "events": 9,
+      "dependencies": 4,
+      "cold_route_ms": [
+        37.83670000029815
+      ],
+      "warm_capture_ms": [
+        8.347999999841704,
+        4.5184999999037245,
+        4.247299999860843,
+        4.1713000000527245,
+        4.160600000432169
+      ],
+      "repaint_misses": 0,
+      "selection_misses": 0,
+      "pan_misses": 0,
+      "zoom_route_ms": [
+        36.512000000129774
+      ]
+    },
+    "light_mode-400-0.8": {
+      "settle_and_capture_ms": 496.0406999998668,
+      "events": 9,
+      "dependencies": 4,
+      "cold_route_ms": [
+        458.42190000030314
+      ],
+      "warm_capture_ms": [
+        10.645300000305724,
+        4.165300000295247,
+        6.048900000223512,
+        4.149899999902118,
+        5.999099999826285
+      ],
+      "repaint_misses": 0,
+      "selection_misses": 0,
+      "pan_misses": 0,
+      "zoom_route_ms": [
+        485.54569999987507
+      ]
+    },
+    "light_mode-400-2.0": {
+      "settle_and_capture_ms": 64.4147999996676,
+      "events": 9,
+      "dependencies": 4,
+      "cold_route_ms": [
+        36.26089999988835
+      ],
+      "warm_capture_ms": [
+        8.143500000187487,
+        3.2485000001543085,
+        5.487499999617285,
+        3.1291000000237545,
+        4.7258999998121
+      ],
+      "repaint_misses": 0,
+      "selection_misses": 0,
+      "pan_misses": 0,
+      "zoom_route_ms": [
+        35.46550000010029
+      ]
+    },
+    "light_mode-1200-0.8": {
+      "settle_and_capture_ms": 509.88820000020496,
+      "events": 9,
+      "dependencies": 4,
+      "cold_route_ms": [
+        471.41629999987344
+      ],
+      "warm_capture_ms": [
+        10.418599999866274,
+        5.217099999754282,
+        4.884299999957875,
+        4.948199999944336,
+        4.8102999999173335
+      ],
+      "repaint_misses": 0,
+      "selection_misses": 0,
+      "pan_misses": 0,
+      "zoom_route_ms": [
+        483.8398000001689
+      ]
+    },
+    "light_mode-1200-2.0": {
+      "settle_and_capture_ms": 92.46530000018538,
+      "events": 9,
+      "dependencies": 4,
+      "cold_route_ms": [
+        37.508899999920686
+      ],
+      "warm_capture_ms": [
+        8.807100000012724,
+        4.364299999906507,
+        4.182700000001205,
+        4.222900000058871,
+        4.152900000008231
+      ],
+      "repaint_misses": 0,
+      "selection_misses": 0,
+      "pan_misses": 0,
+      "zoom_route_ms": [
+        36.2835000000814
+      ]
+    }
+  }
+}

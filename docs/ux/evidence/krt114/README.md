@@ -97,3 +97,10 @@ Use the [documentation review form](../../../developer/documentation-review.md)
 and [reader-testing protocol](../../../developer/documentation-reader-testing.md)
 for later human acceptance. Keep KRT-114 In Progress while native/owner acceptance
 remains pending.
+
+## KRT-116 routing refinement
+
+The subsequent [KRT-116 implementation and comparisons](krt116/README.md) preserve
+the original router baseline and add smooth cluster bypasses, separate crowded
+tracks and coalesced preparation. Multi-blocker and actual Timeline captures,
+density measurements and native acceptance limits are recorded separately.
