@@ -152,9 +152,47 @@ Linux baseline, profiler, repair, timing and line-coverage evidence is under
 `artifacts/release-0.21.0-beta1/linux-repro/`. These ignored artifacts preserve
 failed experiments as well as successful verification.
 
+## Pre-tag dependency audit — 30 October 2026
+
+The approved test repair was committed as
+`4c8c4331c2f26124240a1e1c209c8e6b32a5f1e5` and pushed through all 12 local gates,
+including 2,906 tests passed and 3 skipped. Its
+[full regression run 41123818126](https://github.com/cmintert/ProjektKraken/actions/runs/41123818126)
+was dispatched before tagging. Its
+[documentation deployment 41123831113](https://github.com/cmintert/ProjektKraken/actions/runs/41123831113)
+passed through the existing `main` route.
+
+A pre-tag `pip-audit` check of the Windows lock found 12 advisories for
+filelock 3.32.4 and one for setuptools 84.0.0. The upstream
+[filelock 4.2.1 release](https://github.com/tox-dev/filelock/releases/tag/4.2.1)
+and [setuptools advisory](https://github.com/pypa/setuptools/security/advisories/GHSA-xmj3-9gf7-h52w)
+identify the replacement versions used here. This records the advisory gate's
+result, not proof that every reported exploit path is reachable in Kraken.
+
+The prepared dependency repair regenerates `packaging/windows/requirements.lock`
+on Windows x64 / Python 3.13 using pip-tools, selecting only filelock 4.2.1 and
+setuptools 84.1.0. The other 90 distribution pins are unchanged. The generator
+header records the exact targeted-update command. Evidence is retained under
+`artifacts/release-0.21.0-beta1/`:
+
+| Check | Result |
+| --- | --- |
+| Dependency projections and direct Windows pin contracts | Passed |
+| Repeated advisory audit of all 92 locked distributions | No known vulnerabilities found |
+| Installation of the two patched wheels in a separate environment | Passed with `--require-hashes --only-binary :all: --no-deps` |
+| Existing development PyInstaller, Hugging Face Hub, Torch and Sentence Transformers imports with isolated patched wheels | Passed; not final package certification |
+| FileLock acquisition, release and reentrancy with the patched wheel | Passed |
+| Strict Sphinx build and diff whitespace check | Passed |
+
+The source-development environment was preserved. The eventual Windows package
+workflow must install the complete hashed lock and repeat the advisory audit,
+build, contract checks and packaged launch/restart smoke tests. Full regression
+must pass for the eventual dependency-repair commit before the beta tag is made;
+the run on `4c8c4331` cannot certify a later source SHA.
+
 ## Remaining delivery steps
 
-1. Review and approve the test-only repair commit tracked in
+1. Review and approve the dependency lock repair commit tracked in
    [KRT-118](https://linear.app/projektkraken/issue/KRT-118/verify-and-publish-0210-beta1-on-github).
 2. Push the approved repair through normal gates and obtain successful exact-SHA
    Full Regression and Coverage before creating the beta tag.

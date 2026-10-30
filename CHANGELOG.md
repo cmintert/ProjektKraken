@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-30
-**Commit:** c7dce37b
+**Commit:** 4c8c4331
 ---
 
 # Changelog
@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-10-30)* **Windows release dependencies (KRT-118)**: Regenerated the
+  hashed package lock with filelock 4.2.1 and setuptools 84.1.0 to clear the
+  pre-tag advisory audit. Kept the other 90 distribution pins unchanged and
+  recorded isolated wheel and compatibility verification.
 
 - *(2026-10-30)* **Release regression (KRT-118)**: Isolated CLI backup paths on
   each platform, completed the Timeline settings double, and waited for exact
