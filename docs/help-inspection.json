@@ -15932,8 +15932,8 @@
     {
       "source": "src/gui/widgets/temporal_range_widget.py",
       "symbol": "TemporalRangeWidget._setup_ui",
-      "sha256": "7c4a16f9f1bff31d2224e1cc50e929645020cf7b961b30d411c4022328a896c6",
-      "review_note": "KRT-113: Revised checkbox to Event has an end, explicit Duration/End Date authority, and independent source selectors. Existing inspection anchors retained with corrected explanations."
+      "sha256": "d3efc7428b889490bafc1332639b5912f25439c0c04f231df76b4a1e98705fe2",
+      "review_note": "2026-10-30: End controls now immediately follow their disclosure, before the summary and evidence. Reviewed event.timing explanations: disclosure, Duration/End Date authority, evidence and explicit-save behavior remain accurate; no Help text or anchor changes required."
     },
     {
       "source": "src/gui/widgets/temporal_range_widget.py",

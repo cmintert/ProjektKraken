@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-30
-**Commit:** c02c13753b5097a186693d6ec6f13cf2f841a8df
+**Commit:** 6522d0d79af39ebfc03aa0b0b41f392767f15900
 ---
 
 # Changelog
@@ -43,6 +43,9 @@ All notable changes to this project will be documented in this file.
   bundle when upgrading.
 
 ### Fixed
+
+- *(2026-10-30)* **Contextual Help**: Recorded the Help impact review for the
+  Event end-controls layout; existing explanations and anchors remain accurate.
 
 - *(2026-10-30)* **Event editor**: Kept expanded end date and duration controls
   directly below their disclosure, with timing evidence underneath. Added
