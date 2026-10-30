@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-30
-**Commit:** a02fb8cb
+**Commit:** c7dce37b
 ---
 
 # Changelog
@@ -10,6 +10,15 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Fixed
+
+- *(2026-10-30)* **Release regression (KRT-118)**: Isolated CLI backup paths on
+  each platform, completed the Timeline settings double, and waited for exact
+  workspace alignment after queued reflow. Kept both wall-clock benchmark
+  workloads and limits while disabling coverage tracing only for those two test
+  bodies; functional coverage retained the same 5,866 application lines. Recorded
+  Linux/Windows verification and the failed candidate's release evidence.
 
 ### Changed
 

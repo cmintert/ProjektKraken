@@ -51,7 +51,19 @@ def cli_world(tmp_path):
     env["PROJEKTKRAKEN_PERFORMANCE_WORLDS_DIR"] = str(tmp_path)
     env["QT_QPA_PLATFORM"] = "offscreen"
     env["APPDATA"] = str(tmp_path / "appdata")
+    env["HOME"] = str(tmp_path / "home")
     return world, env
+
+
+def _backup_directory(tmp_path: Path) -> Path:
+    """Locate backups beneath the fixture's isolated platform data directory."""
+    if sys.platform == "win32":
+        base = tmp_path / "appdata"
+    elif sys.platform == "darwin":
+        base = tmp_path / "home" / "Library" / "Application Support"
+    else:
+        base = tmp_path / "home" / ".local" / "share"
+    return base / "ProjektKraken" / "backups"
 
 
 def invoke(env: dict[str, str], *arguments: str) -> subprocess.CompletedProcess[str]:
@@ -589,9 +601,7 @@ def test_backup_create_list_and_restore_new_target(cli_world, tmp_path):
     assert created.returncode == 0, created.stderr
     backup = invoke(env, "src.cli.cli", "backup", "create", "-d", db)
     assert backup.returncode == 0, backup.stderr
-    backups = list(
-        (tmp_path / "appdata" / "ProjektKraken" / "backups").rglob("*.kraken")
-    )
+    backups = list(_backup_directory(tmp_path).rglob("*.kraken"))
     assert len(backups) == 1
     listed = invoke(env, "src.cli.backup", "list", "-d", db)
     assert listed.returncode == 0, listed.stderr
@@ -694,9 +704,7 @@ def test_legacy_attachment_repair_is_previewed_and_backed_up(cli_world, tmp_path
     )
     assert applied.returncode == 0, applied.stderr
     assert "Recovery backup:" in applied.stderr
-    backups = list(
-        (tmp_path / "appdata" / "ProjektKraken" / "backups").rglob("*.kraken")
-    )
+    backups = list(_backup_directory(tmp_path).rglob("*.kraken"))
     assert len(backups) == 1
     after = invoke(
         env,

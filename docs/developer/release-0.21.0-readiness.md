@@ -5,6 +5,9 @@ Preparation date: 30 October 2026. Tracked by
 Source baseline: `a02fb8cb`, plus the release-preparation changes. Application
 version: `0.21.0`; intended beta package tag: `0.21.0-beta1`.
 
+The original preparation evidence below precedes commit `c7dce37b`. The
+publication follow-up records the subsequent GitHub result and pending repair.
+
 This record captures preparation before the release commit. Release preparation
 and a local executable build do not establish exact-commit full regression, packaged data
 safety, clean-machine acceptance or publication approval. The release commit
@@ -87,15 +90,78 @@ Windows display coverage, owner prose approval or newcomer task performance.
 Use the [reader-testing form](documentation-reader-testing.md) if a reader round
 is scheduled; no round is scheduled by this record.
 
+## Publication follow-up — 30 October 2026
+
+The owner approved `c7dce37b271147af468306e541f252a8fe792cd2` and subsequently
+authorized tag, push and publication, narrowed to GitHub only. The normal push
+passed all 12 local checks, including 2,906 tests passed and 3 skipped, and
+published that commit to `main`.
+
+[Documentation run 41090143977](https://github.com/cmintert/ProjektKraken/actions/runs/41090143977)
+passed. The public release-notes page returned HTTP 200 with the new version and
+schema-4 guidance. Deployment used the already allowed `main` branch; the Pages
+access policy was preserved. No itch.io change was made.
+
+[Full regression run 41090132143](https://github.com/cmintert/ProjektKraken/actions/runs/41090132143)
+collected 7,418 tests across 523 modules and six shards, with zero collection
+skips. Three shards passed and three failed. All module reports were retained;
+the final Release verification failed. No beta tag or package publication was
+performed from that result.
+
+### Diagnosed failures and prepared repair
+
+| Failure | Repair and preserved assertion |
+| --- | --- |
+| Two CLI backup assertions search a Windows-only path on Linux | Isolate the child process HOME as well as APPDATA; locate the fixture's platform data directory. Keep backup count, restore and repair assertions. |
+| Timeline settings double lacks `contains` | Complete that method on the existing double; retain persistence and view-state assertions. |
+| Longform header is observed at 20 px after a theme/panel move | Wait for queued reflow and require the same exact 12 px top gap and horizontal alignment in every existing theme/width/zone case. |
+| Two wall-clock limits fail with coverage tracing | Use the documented pytest-cov `no_cover` marker only on those two benchmark test bodies; retain every event count, operation and 200/500/100 ms limit. The functional scenarios remain instrumented. |
+
+The unchanged Windows modules passed before repair. A disposable Linux container
+then reproduced the fixture failures and the coverage-instrumented blocking-time
+failure from a clean archive of `c7dce37b`. The container uses Debian bookworm,
+Python 3.13.16 and PySide6 6.10.1; GitHub used Ubuntu 26.04 and Python 3.13.17, so
+this is a focused reproduction, not exact runner-environment certification.
+
+The untouched solver measured about 134 ms loading 300 Events and 249 ms zooming
+500 Events without instrumentation. With only the two timing markers, the full
+13-case module passed under the coverage-enabled command, measuring about
+131 ms loading, 241 ms zooming and 0.04 ms panning. Source-line comparison found
+5,866 covered application lines both before and after, with zero lost lines.
+See the [pytest-cov marker reference](https://pytest-cov.readthedocs.io/en/stable/markers-fixtures.html).
+
+Profiling and a solver-indexing experiment informed the diagnosis. All runtime
+solver experiments were discarded; the prepared repair changes tests and this
+release record only. Source workloads, functional assertions, timing budgets,
+test membership and the coverage configuration are retained.
+
+### Repair verification
+
+| Check | Result |
+| --- | --- |
+| Linux workspace, settings and CLI modules, with coverage | 70 passed |
+| Linux original Timeline module, coverage command with timing-only markers | 13 passed |
+| Windows four-module regression, with coverage | 83 passed, 96.73 seconds |
+| Ruff / formatting | Passed; all four changed test files formatted |
+| Repository-wide mypy and reviewed test inventory | Passed, 570 source files; full inventory remains 7,418 tests |
+| Strict Sphinx and final diff review | Passed |
+
+The complete failed CI evidence is retained under
+`artifacts/release-0.21.0-beta1/regression-41090132143/complete/`.
+Linux baseline, profiler, repair, timing and line-coverage evidence is under
+`artifacts/release-0.21.0-beta1/linux-repro/`. These ignored artifacts preserve
+failed experiments as well as successful verification.
+
 ## Remaining delivery steps
 
-1. Approve and create the coherent release commit.
-2. Run and verify Full Regression and Coverage for that exact committed
-   candidate before creating the beta tag.
-3. Build and verify the actual Windows release package, including packaged-world
-   data safety and required native acceptance.
-4. Verify the intended tag and package identity, ZIP checksum and publication
-   surfaces before approved distribution.
+1. Review and approve the test-only repair commit tracked in
+   [KRT-118](https://linear.app/projektkraken/issue/KRT-118/verify-and-publish-0210-beta1-on-github).
+2. Push the approved repair through normal gates and obtain successful exact-SHA
+   Full Regression and Coverage before creating the beta tag.
+3. Build/audit/smoke and verify the actual Windows release package, retaining
+   the ZIP checksum and the actual scope of native/data-safety review.
+4. Publish the authorized GitHub prerelease and verify its tag, assets and
+   checksum. KRT-44 and KRT-91 retain their separate backlog review scope.
 
 See [release regression](release-regression.md),
 [development release gates](development.md#local-first-quality-checks) and the

@@ -508,6 +508,9 @@ class TestPlayheadEventSnapping:
         stored: dict[str, object] = {}
 
         class FakeSettings:
+            def contains(self, key):
+                return key in stored
+
             def value(self, key, default=None, type=None):
                 del type
                 return stored.get(key, default)

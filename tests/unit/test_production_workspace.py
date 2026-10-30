@@ -1,5 +1,6 @@
 """Production-window architecture checks for the unified workspace shell."""
 
+from functools import partial
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -115,7 +116,7 @@ def test_reset_layout_preserves_outer_window_geometry(main_window, monkeypatch) 
 
 
 def test_panel_headers_match_project_gap_after_moving(
-    main_window, qapp, monkeypatch
+    main_window, qapp, qtbot, monkeypatch
 ) -> None:
     """Panel content aligns with the tab strip after relocation and resizing."""
     for editor in (main_window.entity_editor, main_window.event_editor):
@@ -146,6 +147,7 @@ def test_panel_headers_match_project_gap_after_moving(
         "map": [main_window.map_widget.map_selector],
     }
     main_window.show()
+    qtbot.waitExposed(main_window)
     manager = ThemeManager()
     original_theme = manager.current_theme_name
     stylesheet = Path("src/resources/main.qss").read_text(encoding="utf-8")
@@ -161,17 +163,27 @@ def test_panel_headers_match_project_gap_after_moving(
                     for panel_id, anchor in anchors.items():
                         main_window.workspace.move_panel(panel_id, zone)
                         main_window.workspace.show_panel(panel_id)
-                        qapp.processEvents()
                         panel = main_window.workspace.panel(panel_id)
                         context = (theme, width, zone, panel_id)
-                        assert anchor.mapTo(panel, QPoint()).y() == 12, context
                         pane = main_window.workspace.panes[zone]
-                        bar = pane.tabs.tabBar()
-                        tab_left = bar.mapTo(pane, QPoint()).x()
-                        for widget in [anchor, *body_anchors.get(panel_id, [])]:
-                            assert widget.mapTo(pane, QPoint()).x() == tab_left, (
+                        qtbot.waitUntil(
+                            partial(
+                                _assert_panel_alignment,
+                                panel,
+                                pane,
+                                anchor,
+                                body_anchors.get(panel_id, []),
                                 context,
-                                widget,
-                            )
+                            ),
+                            timeout=3000,
+                        )
     finally:
         manager.current_theme_name = original_theme
+
+
+def _assert_panel_alignment(panel, pane, anchor, body_anchors, context):
+    """Wait through queued reflow without changing the exact alignment contract."""
+    assert anchor.mapTo(panel, QPoint()).y() == 12, context
+    tab_left = pane.tabs.tabBar().mapTo(pane, QPoint()).x()
+    for widget in [anchor, *body_anchors]:
+        assert widget.mapTo(pane, QPoint()).x() == tab_left, (context, widget)
