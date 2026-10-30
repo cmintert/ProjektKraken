@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-30
-**Commit:** 6522d0d79af39ebfc03aa0b0b41f392767f15900
+**Commit:** a02fb8cb
 ---
 
 # Changelog
@@ -10,6 +10,17 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Changed
+
+- *(2026-10-30)* **Release (KRT-117)**: Bumped project and application metadata to
+  version 0.21.0 for beta 1, updated the release date, and rolled accumulated
+  changes into the release section. Refreshed the README, installation examples,
+  release notes and publication copy, including schema-4 upgrade guidance and
+  the distinction between release preparation and published packages. Recorded
+  release-preparation verification and documentation-review boundaries.
+
+## [0.21.0]
 
 ### Added
 
