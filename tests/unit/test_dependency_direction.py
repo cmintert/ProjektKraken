@@ -25,6 +25,7 @@ pytestmark = pytest.mark.ci_fast
         "core/temporal_editing.py",
         "core/temporal_references.py",
         "core/temporal_boundary_resolver.py",
+        "core/event_timing/components.py",
     ],
 )
 def test_event_anchor_domain_has_no_ui_or_persistence_dependencies(relative):

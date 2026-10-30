@@ -190,9 +190,85 @@ build, contract checks and packaged launch/restart smoke tests. Full regression
 must pass for the eventual dependency-repair commit before the beta tag is made;
 the run on `4c8c4331` cannot certify a later source SHA.
 
+## Timeline load blocker and prepared solver fix — 30 October 2026
+
+The dependency repair was approved, committed as
+`d6f4375a220ef92c2f368cade6990c85000488ae` and pushed through all 12 local gates
+(2,906 tests passed, 3 skipped). Its documentation deployment passed. The
+[full regression run 41126694666](https://github.com/cmintert/ProjektKraken/actions/runs/41126694666)
+did not pass: the unchanged Timeline load benchmark measured 220.96 ms against
+its 200 ms limit. The preceding run on `4c8c4331` measured 261.10 ms at the same
+assertion; all 523 module reports were retained and only that module failed.
+Some jobs in the newer run were marked cancelled, including a shard whose
+recorded steps and test ledger passed. Neither run is accepted as release proof.
+
+### Investigation and implementation boundary
+
+The benchmark loads 300 independent Events into a hidden Timeline with no
+prepared temporal context. A load-only diagnostic recorded zero dependencies
+and zero paint calls. Of 142.26 ms in that instrumented local run, 98.23 ms was
+temporal-state work, including 95.66 ms resolving anchors; dependency preparation
+took 3.94 ms. These inclusive phase timings overlap and must not be added.
+
+The synchronous path is `set_events` → initial playhead setup → temporal-state
+update → world timing resolution. Before the fix, 300 two-endpoint components
+repeatedly scanned global edges, domains and evidence, inspecting 540,000 entries
+in those loops. A prepared immutable temporal context can reuse a resolution;
+a cold context still needs the calculation. This is evidence for a solver
+bottleneck, not a measurement of individual phases on the GitHub runner.
+
+The prepared runtime fix keeps the existing UI/threading and timing contracts:
+
+- Partition compiled edges, domains, evidence, calendars and diagnostics once
+  per generation, rebuilding after calendar quarantine changes the graph.
+- Preserve component/fact ordering, source-owned diagnostic rules and authored
+  constraints; use sets for component membership.
+- Remove only already-true self-bounds from the internal relaxation graph after
+  exact affine reduction. Retain strict zero and negative bounds, original
+  constraint records, query semantics and provenance.
+- Keep benchmark workloads, coverage markers and all timing limits unchanged.
+  Add strict-boundary, disconnected-world and linear-input-scan regressions plus
+  a dependency-direction guard for the new pure core partition module.
+
+### Verification of the uncommitted runtime candidate
+
+The retained Linux diagnostic environment is Debian bookworm / Python 3.13.16 /
+Qt 6.10.1. GitHub used Ubuntu 26.04 / Python 3.13.17 / Qt 6.10.1; local timings
+do not certify performance on that runner.
+
+| Same local command/workload | Before | Prepared fix |
+| --- | --- | --- |
+| Full 13-case Timeline module with coverage | 13 passed | 13 passed |
+| UI load blocking, 300 Events | 130.97 ms | 105.84 ms |
+| Average zoom, 500 Events | 243.26 ms | 162.96 ms |
+| Average pan, 500 Events | 0.04 ms | 0.04 ms |
+| Pure solver median, 300 independent Events | 81.59 ms | 54.12 ms |
+| Pure solver median, 600 independent Events | 217.38 ms | 105.56 ms |
+| Pure solver median, 1,200 independent Events | 645.95 ms | 216.85 ms |
+
+The broader Linux semantic/persistence/context run passed 140 tests. A diagnostic
+wrapper compared 223 solver calls with the preserved pre-fix solver and constraint
+implementation; complete serialized outputs matched. Stateful cancellation
+callbacks were exercised by the existing tests rather than consumed twice by
+the comparator. Repository-wide Ruff, mypy (571 source files), complexity policy
+and test policy passed. The full inventory is now 7,425 tests, with seven added
+critical-suite cases and no removed tests or lost memberships. No complexity
+allowance was added or raised.
+
+The Windows coverage-enabled semantic, persistence, context, architecture and
+Timeline regression passed 211 tests in 39.84 seconds. Its unchanged benchmark
+measured 63.71 ms loading, 115.01 ms zooming and 0.04 ms panning.
+
+Raw logs, phase/profile data, original solver sources and equivalence/scaling
+reports are retained under
+`artifacts/release-0.21.0-beta1/linux-repro/load_investigation/`. Windows regression
+and policy logs are under `artifacts/release-0.21.0-beta1/`. The runtime candidate
+still requires its approved commit, a passing exact-SHA full regression and the
+actual Windows package checks before publication.
+
 ## Remaining delivery steps
 
-1. Review and approve the dependency lock repair commit tracked in
+1. Review and approve the runtime solver repair commit tracked in
    [KRT-118](https://linear.app/projektkraken/issue/KRT-118/verify-and-publish-0210-beta1-on-github).
 2. Push the approved repair through normal gates and obtain successful exact-SHA
    Full Regression and Coverage before creating the beta tag.

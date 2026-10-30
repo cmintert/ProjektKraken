@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-30
-**Commit:** 4c8c4331
+**Commit:** d6f4375a
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-10-30)* **Timeline loading (KRT-118)**: Indexed timing facts once per
+  connected component and removed only provably neutral constraints from the
+  internal relaxation graph. Retained authored evidence, exact/open bounds,
+  diagnostics, cancellation and the 200 ms load budget. Added semantic and
+  linear-scan regressions and recorded before/after performance verification.
 
 - *(2026-10-30)* **Windows release dependencies (KRT-118)**: Regenerated the
   hashed package lock with filelock 4.2.1 and setuptools 84.1.0 to clear the

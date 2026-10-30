@@ -8,6 +8,7 @@ from collections.abc import Iterator
 from src.core.calendar import CalendarConverter
 from src.core.event_timing.calendar_domains import CalendarPiece, calendar_pieces
 from src.core.event_timing.compiler import CompiledTiming, _quarantine, compile_timing
+from src.core.event_timing.components import component_problems
 from src.core.event_timing.constraints import (
     ZERO,
     Cancel,
@@ -25,10 +26,12 @@ from src.core.temporal_expression import ResolvedTemporalBounds
 
 
 def _components(problem: CompiledTiming) -> list[tuple[str, ...]]:
-    pending = set(problem.definitions)
+    visited: set[str] = set()
     result = []
-    while pending:
-        stack = [min(pending)]
+    for root in sorted(problem.definitions):
+        if root in visited:
+            continue
+        stack = [root]
         found: set[str] = set()
         while stack:
             node = stack.pop()
@@ -36,7 +39,7 @@ def _components(problem: CompiledTiming) -> list[tuple[str, ...]]:
                 continue
             found.add(node)
             stack.extend(problem.neighbors[node] - found)
-        pending -= found
+        visited.update(found)
         result.append(tuple(sorted(found)))
     return result
 
@@ -44,15 +47,16 @@ def _components(problem: CompiledTiming) -> list[tuple[str, ...]]:
 def _domain_branches(
     problem: CompiledTiming, component: tuple[str, ...], cancel: Cancel | None
 ) -> list[ConstraintBranch]:
+    members = frozenset(component)
     edges = tuple(
         edge
         for edge in problem.edges
-        if edge.source in component and edge.target in component
+        if edge.source in members and edge.target in members
     )
     choices = [
         tuple(item.constraints(node, f"evidence:{node}") for item in ranges)
         for node, ranges in problem.domains.items()
-        if node in component
+        if node in members
     ]
     common = [
         edge
@@ -88,10 +92,11 @@ def _calendar_branches(
     converter: CalendarConverter | None,
     cancel: Cancel | None,
 ) -> tuple[list[ConstraintBranch], set[str]]:
+    members = frozenset(component)
     transforms = [
         (node, definition)
         for node, definition in problem.calendars
-        if node in component and node not in problem.invalid
+        if node in members and node not in problem.invalid
     ]
     if not transforms:
         return bases, set()
@@ -145,16 +150,17 @@ def _project(
     branches: list[ConstraintBranch],
     invalid: set[str],
 ) -> None:
-    existing = any(
-        set(issue.endpoints) & set(component) for issue in problem.issues
-    ) or any(node in problem.invalid for node in component)
+    members = frozenset(component)
+    existing = any(set(issue.endpoints) & members for issue in problem.issues) or any(
+        node in problem.invalid for node in component
+    )
     if not branches and not existing and not invalid:
         rules = tuple(
             sorted(
                 {
                     edge.rule
                     for edge in problem.edges
-                    if edge.source in component and edge.rule
+                    if edge.source in members and edge.rule
                 }
             )
         )
@@ -193,7 +199,7 @@ def _project(
     preferences = {
         node: evidence.soft_start
         for node, evidence in problem.evidence.items()
-        if node in component
+        if node in members
         and evidence.soft_start is not None
         and (evidence.hard_start is None or evidence.hard_end is None)
     }
@@ -239,14 +245,16 @@ def resolve_world(
         )
         result.calendar_json = converter._config.to_json() if converter else None
         invalid_calendars: set[str] = set()
-        for component in _components(problem):
+        components = _components(problem)
+        groups = component_problems(problem, components, cancel)
+        for component, group in zip(components, groups, strict=True):
             checkpoint(cancel)
-            bases = _domain_branches(problem, component, cancel)
+            bases = _domain_branches(group, component, cancel)
             branches, invalid = _calendar_branches(
-                problem, component, bases, converter, cancel
+                group, component, bases, converter, cancel
             )
             invalid_calendars.update(invalid)
-            _project(problem, result, component, branches, invalid)
+            _project(group, result, component, branches, invalid)
         if not invalid_calendars:
             break
         problem.issues.extend(

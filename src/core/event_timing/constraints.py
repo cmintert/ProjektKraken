@@ -102,7 +102,11 @@ class ConstraintBranch:
         self.aliases = AffineAliases(self.nodes)
         consistent = self._collapse_equalities()
         self._nodes = tuple(sorted({self.aliases.find(node)[0] for node in self.nodes}))
-        self._edges = tuple(self._reduced(edge) for edge in self.edges)
+        self._edges = tuple(
+            reduced
+            for edge in self.edges
+            if (reduced := self._reduced(edge)) is not None
+        )
         self.feasible = consistent and self._feasible()
 
     def _collapse_equalities(self) -> bool:
@@ -119,12 +123,15 @@ class ConstraintBranch:
                     return False
         return True
 
-    def _reduced(self, edge: Constraint) -> Constraint:
+    def _reduced(self, edge: Constraint) -> Constraint | None:
         source, left = self.aliases.find(edge.source)
         target, right = self.aliases.find(edge.target)
-        return Constraint(
-            source, target, edge.limit + left - right, edge.strict, edge.rule
-        )
+        limit = edge.limit + left - right
+        # A nonnegative self-bound is already true after exact alias reduction.
+        # Strict zero and negative bounds must remain to prove infeasibility.
+        if source == target and (limit, -int(edge.strict)) >= (0, 0):
+            return None
+        return Constraint(source, target, limit, edge.strict, edge.rule)
 
     def _relax(self, distances: dict[str, Weight]) -> bool:
         changed = False

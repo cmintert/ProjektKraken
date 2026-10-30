@@ -69,6 +69,29 @@ def test_strict_zero_cycle_is_infeasible_without_epsilon():
     assert not branch.feasible
 
 
+@pytest.mark.parametrize(
+    "limit,strict,feasible",
+    [(2, False, False), (3, False, True), (3, True, False), (4, True, True)],
+)
+def test_affine_reduction_preserves_tight_and_strict_constraints(
+    limit, strict, feasible
+):
+    """Only tautologies may disappear from the internal relaxation graph."""
+    edges = (
+        Constraint(ZERO, "x", Fraction(2)),
+        Constraint("x", ZERO, Fraction(-2)),
+        Constraint("x", "y", Fraction(3)),
+        Constraint("y", "x", Fraction(-3)),
+        Constraint("x", "y", Fraction(limit), strict, "authored-rule"),
+    )
+    branch = ConstraintBranch(("x", "y"), edges)
+    assert branch.feasible is feasible
+    assert branch.edges == edges  # Retain authored edges for queries and provenance.
+    if feasible:
+        assert branch.difference("x", "y").lower == 3
+        assert branch.difference("x", "y").upper == 3
+
+
 def test_all_endpoint_combinations_and_explicit_zero_end():
     source = followed("source", "root", duration=0)
     events = [manual("root", 10), source]
@@ -462,3 +485,80 @@ def test_fractional_reference_projections_never_become_evidence():
     assert result.endpoints["event:child"].ranges[0].lower == exact
     assert result.endpoints["event:child"].coordinate == float(exact)
     assert result.exact_duration(child.id) == 0.1
+
+
+def test_independent_world_scans_only_linear_global_input_volume(monkeypatch):
+    """Small components must not repeatedly scan unrelated world facts."""
+    from src.core.event_timing import solver
+
+    scanned = 0
+
+    class CountedEdges(list):
+        def __iter__(self):
+            nonlocal scanned
+            for value in super().__iter__():
+                scanned += 1
+                yield value
+
+    class CountedFacts(dict):
+        def items(self):
+            nonlocal scanned
+            for pair in super().items():
+                scanned += 1
+                yield pair
+
+    original = solver.compile_timing
+    input_volume = 0
+
+    def counted_compile(*args):
+        nonlocal input_volume
+        problem = original(*args)
+        input_volume = len(problem.edges) + len(problem.domains) + len(problem.evidence)
+        problem.edges = CountedEdges(problem.edges)
+        problem.domains = CountedFacts(problem.domains)
+        problem.evidence = CountedFacts(problem.evidence)
+        return problem
+
+    monkeypatch.setattr(solver, "compile_timing", counted_compile)
+    events = [
+        Event(name=f"Event {i}", id=f"e{i:04d}", lore_date=i * 5.0, lore_duration=3.0)
+        for i in range(120)
+    ]
+    result = resolve_world(events)
+    assert not result.issues
+    assert all(
+        result.endpoints[f"event:{event.id}"].coordinate == event.lore_date
+        and result.exact_duration(event.id) == 3
+        for event in events
+    )
+    assert scanned <= 8 * input_volume
+
+
+def test_disconnected_components_preserve_evidence_queries_and_diagnostics():
+    """Partitioning must preserve local semantics within one mixed world."""
+    root, converter = uncertain("root")
+    child = followed("child", "root", offset=3, duration=2)
+    groups = [
+        [root, child],
+        [Event(name="Separate", id="separate", lore_date=2.5, lore_duration=0)],
+        [followed("missing", "absent")],
+        [followed("cycle-a", "cycle-b"), followed("cycle-b", "cycle-a")],
+    ]
+    combined = resolve_world([event for group in groups for event in group], converter)
+    combined_data = combined.to_dict()
+    expected_issues = []
+    for group in groups:
+        local = resolve_world(group, converter)
+        expected_issues.extend(local.issues)
+        for node, endpoint in local.to_dict()["endpoints"].items():
+            assert combined_data["endpoints"][node] == endpoint
+        for node, component in local.components.items():
+            assert combined.components[node] == component
+    assert sorted(map(repr, combined.issues)) == sorted(map(repr, expected_issues))
+    query = (
+        Constraint("event:root", ZERO, Fraction(-5)),
+        Constraint(ZERO, "event:child", Fraction(6)),
+    )
+    assert combined.possible((query[0],)) is True
+    assert combined.possible((query[1],)) is True
+    assert combined.possible(query) is False
