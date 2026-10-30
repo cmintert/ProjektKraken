@@ -76,6 +76,32 @@ def test_disclosure_keyboard_preserves_advanced_event_values(event_editor, qtbot
 
 
 @pytest.mark.ci_fast
+@pytest.mark.parametrize("width", [360, 1100])
+def test_event_end_controls_precede_timing_evidence(event_editor, qtbot, width):
+    """Keep the end disclosure and its controls together at inspector widths."""
+    editor = event_editor
+    editor.resize(width, 900)
+    editor.parentWidget().show()
+    editor.show()
+    timing = editor.temporal_widget
+    timing.has_duration.setChecked(True)
+    timing.calculation_details.setChecked(True)
+    qtbot.waitUntil(lambda: timing.range_content.isVisible())
+    card = timing.range_content.parentWidget()
+    assert card is not None
+    layout = card.layout()
+    assert layout.indexOf(timing.range_button) < layout.indexOf(timing.range_content)
+    assert layout.indexOf(timing.range_content) < layout.indexOf(timing.range_summary)
+    assert layout.indexOf(timing.range_summary) < layout.indexOf(
+        timing.calculation_details
+    )
+    assert timing.calculation_evidence.isVisible()
+    timing.range_button.setChecked(False)
+    assert timing.range_content.isHidden()
+    assert timing.calculation_evidence.isVisible()
+
+
+@pytest.mark.ci_fast
 def test_invalid_enter_then_escape_cancels_only_date_draft(event_editor, qtbot):
     """Contract 2/5: validation and local cancellation preserve other work."""
     editor = event_editor

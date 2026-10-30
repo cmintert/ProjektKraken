@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-29
-**Commit:** d6cc01390b1aa68562e3a84453634aa5a103e01d
+**Last Updated:** 2026-10-30
+**Commit:** c02c13753b5097a186693d6ec6f13cf2f841a8df
 ---
 
 # Changelog
@@ -43,6 +43,10 @@ All notable changes to this project will be documented in this file.
   bundle when upgrading.
 
 ### Fixed
+
+- *(2026-10-30)* **Event editor**: Kept expanded end date and duration controls
+  directly below their disclosure, with timing evidence underneath. Added
+  narrow and normal-width coverage for layout and independent disclosure states.
 
 - *(2026-10-29)* **Timeline wire routing (KRT-116)**: Added smooth bypasses around
   intervening Event clusters and separate crowded tracks without modulo reuse.
