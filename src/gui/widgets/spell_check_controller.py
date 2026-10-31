@@ -13,6 +13,7 @@ from PySide6.QtWidgets import QApplication, QMenu, QTextEdit
 
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
+from src.gui.utils.theme_connections import connect_theme
 from src.services.language_tool_service import LanguageToolWorker, LTMatch
 
 _MINIMUM_TEXT_LENGTH = 15
@@ -66,7 +67,7 @@ class SpellCheckController(QObject):
         editor.textChanged.connect(self._text_changed)
         editor.document().contentsChanged.connect(self._document_changed)
         editor.destroyed.connect(self.shutdown)
-        ThemeManager().theme_changed.connect(self._theme_changed)
+        connect_theme(self, self._theme_changed)
         app = QApplication.instance()
         if app is not None:
             app.aboutToQuit.connect(self.shutdown)

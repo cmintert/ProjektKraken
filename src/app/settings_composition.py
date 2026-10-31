@@ -104,7 +104,7 @@ def compose_settings(window: MainWindow) -> SettingsCoordinator:
 
 
 def _apply_effective_theme(coordinator: SettingsCoordinator) -> None:
-    local = coordinator.local.snapshot()
+    local = coordinator.local.snapshot(include_secrets=False)
     effective = coordinator.world_values.get("world.theme") or local["appearance.theme"]
     manager = ThemeManager()
     if effective != manager.current_theme_name:

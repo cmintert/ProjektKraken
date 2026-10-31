@@ -15,6 +15,7 @@ from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QTextEdit, QToolTip, QVBoxLayout, QWidget
 
 from src.gui.utils.help_context import declare_inspection
+from src.gui.utils.theme_connections import connect_theme
 
 
 class TimelineDisplayWidget(QWidget):
@@ -71,9 +72,8 @@ class TimelineDisplayWidget(QWidget):
         self._apply_widget_style()
 
         # Connect to theme changes
-        from src.core.theme_manager import ThemeManager
 
-        ThemeManager().theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
 
     def set_relations(self, relations: list[dict[str, Any]]) -> None:
         """Set the relations to display in the timeline.

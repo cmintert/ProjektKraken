@@ -23,9 +23,9 @@ from PySide6.QtWidgets import (
 
 from src.core.analysis import TemporalAnalysisReport
 from src.core.calendar import CalendarConverter
-from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.analysis._analysis_utils import (
     configure_stretch_columns,
     fmt_lore_date,
@@ -133,7 +133,7 @@ class TemporalPanel(QWidget):
     def _connect_theme_changes(self) -> None:
         """Subscribe to theme-change notifications for live style updates."""
         try:
-            ThemeManager().theme_changed.connect(self._apply_styles)
+            connect_theme(self, self._apply_styles)
         except Exception as exc:
             logger.error("Failed to connect theme changes: %s", exc)
 

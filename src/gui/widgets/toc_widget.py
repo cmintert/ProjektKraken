@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
+from src.gui.utils.theme_connections import connect_theme
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ class TOCWidget(QWidget):
         layout.addWidget(self.list_widget)
 
         self._apply_style()
-        ThemeManager().theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
 
     def _apply_style(self) -> None:
         """Applies theme styling to the list widget."""

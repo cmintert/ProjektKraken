@@ -3,9 +3,9 @@
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QDialog, QLabel, QPlainTextEdit, QVBoxLayout, QWidget
 
-from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.standard_buttons import StandardButton
 
@@ -56,7 +56,7 @@ class PreparedGenerationDialog(QDialog):
             actions.add_button(button, pinned=button is self.generate_button)
         layout.addWidget(actions)
         self._close_button = close
-        ThemeManager().theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
         self._apply_theme()
 
     def _apply_theme(self, _theme: dict | None = None) -> None:

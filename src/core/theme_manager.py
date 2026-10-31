@@ -7,6 +7,7 @@ This is the Qt-specific implementation that extends BaseThemeManager.
 """
 
 import logging
+from collections.abc import Callable
 from typing import Any, Dict, Optional, cast
 
 from PySide6.QtCore import QObject, Signal
@@ -57,6 +58,10 @@ class ThemeManager(QObject, BaseThemeManager):
             theme_file: Path to the themes JSON file.
 
         """
+        if not hasattr(self, "_presentation_handler"):
+            self._presentation_handler: (
+                Callable[[QApplication, str, dict], None] | None
+            ) = None
         if hasattr(self, "_initialized"):
             return
 
@@ -84,6 +89,22 @@ class ThemeManager(QObject, BaseThemeManager):
         # Emit Qt signal
         self.theme_changed.emit(theme_data)
 
+    @property
+    def has_scoped_presentation(self) -> bool:
+        """Whether application composition installed visibility-aware rendering."""
+        return self._presentation_handler is not None
+
+    @property
+    def defers_theme_delivery(self) -> bool:
+        """Whether a scoped presentation transaction is collecting GUI work."""
+        return bool(getattr(self, "_collecting_presentation", False))
+
+    def set_presentation_handler(
+        self, handler: Callable[[QApplication, str, dict], None] | None
+    ) -> None:
+        """Install GUI presentation through a narrow callback; core never imports GUI."""
+        self._presentation_handler = handler
+
     def set_theme(
         self,
         theme_name: str,
@@ -109,11 +130,20 @@ class ThemeManager(QObject, BaseThemeManager):
         if not app:
             app = cast(QApplication, QApplication.instance())
 
-        if app and self._qss_template:
-            self.apply_theme(app, self._qss_template)
-
-        # Notify callbacks and emit signal
-        self._notify_theme_changed(theme_data)
+        if self.has_scoped_presentation:
+            # Collect local presentation work for coherent per-panel frames.
+            # GUI composition controls visible-first delivery without event pumping.
+            self._collecting_presentation = True
+            try:
+                self._notify_theme_changed(theme_data)
+            finally:
+                self._collecting_presentation = False
+            if app and self._qss_template:
+                self.apply_theme(app, self._qss_template)
+        else:
+            if app and self._qss_template:
+                self.apply_theme(app, self._qss_template)
+            self._notify_theme_changed(theme_data)
 
         # Persist selection
         from PySide6.QtCore import QSettings
@@ -139,6 +169,11 @@ class ThemeManager(QObject, BaseThemeManager):
             self._qss_template = qss_template
 
         if not self._qss_template:
+            return
+
+        if self._presentation_handler is not None:
+            self._apply_native_palette(app)
+            self._presentation_handler(app, self._qss_template, self.get_theme())
             return
 
         stylesheet = self.format_stylesheet()

@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
 
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.map.raster_mapping import normalize_value_entity_map
 
 logger = logging.getLogger(__name__)
@@ -52,7 +53,7 @@ class RasterLegendWidget(QWidget):
         self._name_map: Optional[Dict[str, str]] = None
         self._setup_ui()
         self._apply_theme({})
-        ThemeManager().theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
 
     # ------------------------------------------------------------------
     # UI construction
@@ -292,7 +293,9 @@ class RasterLegendWidget(QWidget):
         combined_lbl.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
-        combined_lbl.setStyleSheet(f"color: {ThemeManager().get_theme().get('text_main', '#E8E8E8')};")
+        combined_lbl.setStyleSheet(
+            f"color: {ThemeManager().get_theme().get('text_main', '#E8E8E8')};"
+        )
 
         return combined_lbl
 
@@ -393,15 +396,20 @@ class _GradientBarWidget(QWidget):
     ) -> None:
         super().__init__(parent)
         _theme = ThemeManager().get_theme()
-        self._tick_color = QColor(_theme.get("text_dim", "#aaaaaa"))
-        self._tick_color.setAlpha(160)
-        self._bar_border_color = QColor(_theme.get("border", "#444444"))
-        ThemeManager().theme_changed.connect(
-            lambda _: self._refresh_bar_theme_colors() if shiboken6.isValid(self) else None
+        self._tick_color = QColor(_theme["supporting_caption"])
+        self._bar_border_color = QColor(_theme["border"])
+        connect_theme(
+            self,
+            lambda _: self._refresh_bar_theme_colors()
+            if shiboken6.isValid(self)
+            else None,
         )
+        from src.gui.widgets.map.map_data_buffer import ColorMap
+
+        # Raster colors are authored data, independent of application themes.
         self._gradient_stops: List[Dict[str, Any]] = gradient_stops or [
-            {"position": 0.0, "color": "#000000"},
-            {"position": 1.0, "color": "#FFFFFF"},
+            stop.to_dict()
+            for stop in ColorMap.from_dict({"type": "gradient"}).gradient_stops
         ]
         self.setMinimumHeight(80)
 
@@ -414,7 +422,7 @@ class _GradientBarWidget(QWidget):
         self._bar_label.setMaximumWidth(_GRADIENT_BAR_WIDTH)
         layout.addWidget(self._bar_label)
 
-        dim_style = f"font-size: 9pt; color: {_theme.get('text_dim', '#aaaaaa')};"
+        dim_style = f"font-size: 9pt; color: {_theme['supporting_caption']};"
         labels_layout = QVBoxLayout()
         labels_layout.setContentsMargins(0, 0, 0, 0)
         labels_layout.setSpacing(2)
@@ -490,9 +498,8 @@ class _GradientBarWidget(QWidget):
 
     def _refresh_bar_theme_colors(self) -> None:
         theme = ThemeManager().get_theme()
-        self._tick_color = QColor(theme.get("text_dim", "#aaaaaa"))
-        self._tick_color.setAlpha(160)
-        self._bar_border_color = QColor(theme.get("border", "#444444"))
+        self._tick_color = QColor(theme["supporting_caption"])
+        self._bar_border_color = QColor(theme["border"])
         self._redraw_bar()
 
     def _redraw_bar(self) -> None:
@@ -504,7 +511,9 @@ class _GradientBarWidget(QWidget):
         try:
             # Vertical bar: y=0 (top) = position 1.0, y=h (bottom) = position 0.0
             for stop in self._gradient_stops:
-                gradient.setColorAt(1.0 - float(stop["position"]), QColor(stop["color"]))
+                gradient.setColorAt(
+                    1.0 - float(stop["position"]), QColor(stop["color"])
+                )
         except Exception:
             gradient.setColorAt(0.0, QColor("#FFFFFF"))
             gradient.setColorAt(1.0, QColor("#000000"))

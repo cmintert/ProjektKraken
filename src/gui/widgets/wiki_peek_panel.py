@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 
@@ -84,7 +85,7 @@ class WikiPeekPanel(QWidget):
         self.choices.currentRowChanged.connect(self._choose)
         theme_manager = ThemeManager()
         self._apply_theme(theme_manager.get_theme())
-        theme_manager.theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
 
     @Slot(dict)
     def _apply_theme(self, theme: dict) -> None:

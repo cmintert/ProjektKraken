@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
 
 from src.core.temporal_display import TemporalDisplay
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.timeline.temporal_geometry import project_temporal_geometry
 from src.gui.widgets.timeline.temporal_painter import paint_occurrence
 
@@ -102,7 +103,7 @@ class GroupBandItem(QGraphicsObject):
 
         # Theme
         self.theme = ThemeManager().get_theme()
-        ThemeManager().theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
 
         # Tooltip
         self._update_tooltip()

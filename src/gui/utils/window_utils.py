@@ -15,6 +15,8 @@ from PySide6.QtCore import QEvent, QObject, Slot
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QApplication, QDialog, QWidget
 
+from src.gui.utils.theme_connections import connect_theme
+
 if TYPE_CHECKING:
     from src.core.theme_manager import ThemeManager
 
@@ -114,7 +116,7 @@ class ModalWindowThemeFilter(QObject):
         super().__init__(app)
         self._app = app
         self._theme_manager = theme_manager
-        self._theme_manager.theme_changed.connect(self.refresh_open_dialogs)
+        connect_theme(self, self.refresh_open_dialogs)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         """Theme a dialog after Qt creates its native window handle."""

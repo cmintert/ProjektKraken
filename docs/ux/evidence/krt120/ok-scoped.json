@@ -1,0 +1,369 @@
+{
+  "summary_ms": {
+    "handler_return_ms": {
+      "median": 259.7621499953675,
+      "p95": 273.7508999998681
+    },
+    "first_result_verified_ms": {
+      "median": 321.57500000175787,
+      "p95": 335.4904000007082
+    },
+    "verified_frame_ms": {
+      "median": 383.3185500043328,
+      "p95": 394.1443000076106
+    }
+  },
+  "runs": [
+    {
+      "presentation": "scoped",
+      "button": "ok",
+      "platform": "offscreen",
+      "samples": [
+        {
+          "theme": "imperial_mode",
+          "handler_return_ms": 251.6719999985071,
+          "first_new_theme_paint_ms": 289.808700006688,
+          "first_result_verified_ms": 312.8534999996191,
+          "verified_frame_ms": 372.05630000971723,
+          "pixels": {
+            "window": "#0d0d0d",
+            "input": "#1c1c1c"
+          }
+        },
+        {
+          "theme": "cyberpunk_mode",
+          "handler_return_ms": 255.9697000106098,
+          "first_new_theme_paint_ms": 294.1360000113491,
+          "first_result_verified_ms": 317.779300006805,
+          "verified_frame_ms": 377.3018000065349,
+          "pixels": {
+            "window": "#0a0a12",
+            "input": "#12121f"
+          }
+        },
+        {
+          "theme": "muted_light_mode",
+          "handler_return_ms": 257.2045999986585,
+          "first_new_theme_paint_ms": 297.6898000051733,
+          "first_result_verified_ms": 320.91330000548624,
+          "verified_frame_ms": 378.77660000231117,
+          "pixels": {
+            "window": "#eae7e0",
+            "input": "#f2f0eb"
+          }
+        },
+        {
+          "theme": "dark_mode",
+          "handler_return_ms": 260.08599999477156,
+          "first_new_theme_paint_ms": 298.48569999739993,
+          "first_result_verified_ms": 321.5416000020923,
+          "verified_frame_ms": 386.6643999936059,
+          "pixels": {
+            "window": "#2b2b2b",
+            "input": "#323232"
+          }
+        },
+        {
+          "theme": "light_mode",
+          "handler_return_ms": 261.30850000481587,
+          "first_new_theme_paint_ms": 300.36769999423996,
+          "first_result_verified_ms": 323.6685000010766,
+          "verified_frame_ms": 383.47000000067055,
+          "pixels": {
+            "window": "#f5f5f5",
+            "input": "#ffffff"
+          }
+        },
+        {
+          "theme": "fantasy_mode",
+          "handler_return_ms": 273.7508999998681,
+          "first_new_theme_paint_ms": 311.8117000121856,
+          "first_result_verified_ms": 335.4904000007082,
+          "verified_frame_ms": 394.1443000076106,
+          "pixels": {
+            "window": "#24211c",
+            "input": "#2e2a25"
+          }
+        },
+        {
+          "theme": "imperial_mode",
+          "handler_return_ms": 262.54209999751765,
+          "first_new_theme_paint_ms": 301.0117999947397,
+          "first_result_verified_ms": 325.09420000133105,
+          "verified_frame_ms": 385.24089999555144,
+          "pixels": {
+            "window": "#0d0d0d",
+            "input": "#1c1c1c"
+          }
+        },
+        {
+          "theme": "cyberpunk_mode",
+          "handler_return_ms": 291.46019999461714,
+          "first_new_theme_paint_ms": 331.6610000038054,
+          "first_result_verified_ms": 357.04400000395253,
+          "verified_frame_ms": 417.7318000001833,
+          "pixels": {
+            "window": "#0a0a12",
+            "input": "#12121f"
+          }
+        },
+        {
+          "theme": "muted_light_mode",
+          "handler_return_ms": 265.99060000444297,
+          "first_new_theme_paint_ms": 304.7167000040645,
+          "first_result_verified_ms": 329.42709999042563,
+          "verified_frame_ms": 386.7415999993682,
+          "pixels": {
+            "window": "#eae7e0",
+            "input": "#f2f0eb"
+          }
+        },
+        {
+          "theme": "dark_mode",
+          "handler_return_ms": 253.5751999967033,
+          "first_new_theme_paint_ms": 293.1174999976065,
+          "first_result_verified_ms": 318.6156000010669,
+          "verified_frame_ms": 378.60719999298453,
+          "pixels": {
+            "window": "#2b2b2b",
+            "input": "#323232"
+          }
+        }
+      ]
+    },
+    {
+      "presentation": "scoped",
+      "button": "ok",
+      "platform": "offscreen",
+      "samples": [
+        {
+          "theme": "imperial_mode",
+          "handler_return_ms": 251.26240000827238,
+          "first_new_theme_paint_ms": 290.6402000080561,
+          "first_result_verified_ms": 313.3605000039097,
+          "verified_frame_ms": 372.27229999552947,
+          "pixels": {
+            "window": "#0d0d0d",
+            "input": "#1c1c1c"
+          }
+        },
+        {
+          "theme": "cyberpunk_mode",
+          "handler_return_ms": 261.91080000717193,
+          "first_new_theme_paint_ms": 301.6884999960894,
+          "first_result_verified_ms": 326.9250000012107,
+          "verified_frame_ms": 387.0962000073632,
+          "pixels": {
+            "window": "#0a0a12",
+            "input": "#12121f"
+          }
+        },
+        {
+          "theme": "muted_light_mode",
+          "handler_return_ms": 265.32160000351723,
+          "first_new_theme_paint_ms": 302.97520000021905,
+          "first_result_verified_ms": 325.76950000657234,
+          "verified_frame_ms": 383.36570000683423,
+          "pixels": {
+            "window": "#eae7e0",
+            "input": "#f2f0eb"
+          }
+        },
+        {
+          "theme": "dark_mode",
+          "handler_return_ms": 257.876399991801,
+          "first_new_theme_paint_ms": 296.5987999923527,
+          "first_result_verified_ms": 319.1192999947816,
+          "verified_frame_ms": 379.85299999127164,
+          "pixels": {
+            "window": "#2b2b2b",
+            "input": "#323232"
+          }
+        },
+        {
+          "theme": "light_mode",
+          "handler_return_ms": 257.9102000017883,
+          "first_new_theme_paint_ms": 296.87299999932293,
+          "first_result_verified_ms": 320.5900000029942,
+          "verified_frame_ms": 380.4596000118181,
+          "pixels": {
+            "window": "#f5f5f5",
+            "input": "#ffffff"
+          }
+        },
+        {
+          "theme": "fantasy_mode",
+          "handler_return_ms": 255.11070000356995,
+          "first_new_theme_paint_ms": 293.42809999070596,
+          "first_result_verified_ms": 318.5110999911558,
+          "verified_frame_ms": 379.764500001329,
+          "pixels": {
+            "window": "#24211c",
+            "input": "#2e2a25"
+          }
+        },
+        {
+          "theme": "imperial_mode",
+          "handler_return_ms": 259.43829999596346,
+          "first_new_theme_paint_ms": 298.04049999802373,
+          "first_result_verified_ms": 321.60840000142343,
+          "verified_frame_ms": 383.4878000052413,
+          "pixels": {
+            "window": "#0d0d0d",
+            "input": "#1c1c1c"
+          }
+        },
+        {
+          "theme": "cyberpunk_mode",
+          "handler_return_ms": 260.9894000052009,
+          "first_new_theme_paint_ms": 301.2200000084704,
+          "first_result_verified_ms": 325.3759000072023,
+          "verified_frame_ms": 383.27140000183135,
+          "pixels": {
+            "window": "#0a0a12",
+            "input": "#12121f"
+          }
+        },
+        {
+          "theme": "muted_light_mode",
+          "handler_return_ms": 254.34169999789447,
+          "first_new_theme_paint_ms": 293.63839999132324,
+          "first_result_verified_ms": 317.07219999225345,
+          "verified_frame_ms": 376.62739999359474,
+          "pixels": {
+            "window": "#eae7e0",
+            "input": "#f2f0eb"
+          }
+        },
+        {
+          "theme": "dark_mode",
+          "handler_return_ms": 261.19269999617245,
+          "first_new_theme_paint_ms": 300.0442999909865,
+          "first_result_verified_ms": 324.1395999939414,
+          "verified_frame_ms": 385.34149999031797,
+          "pixels": {
+            "window": "#2b2b2b",
+            "input": "#323232"
+          }
+        }
+      ]
+    },
+    {
+      "presentation": "scoped",
+      "button": "ok",
+      "platform": "offscreen",
+      "samples": [
+        {
+          "theme": "imperial_mode",
+          "handler_return_ms": 250.60250000387896,
+          "first_new_theme_paint_ms": 289.2331000039121,
+          "first_result_verified_ms": 312.7540000132285,
+          "verified_frame_ms": 370.4671000014059,
+          "pixels": {
+            "window": "#0d0d0d",
+            "input": "#1c1c1c"
+          }
+        },
+        {
+          "theme": "cyberpunk_mode",
+          "handler_return_ms": 263.4894000075292,
+          "first_new_theme_paint_ms": 301.6545999998925,
+          "first_result_verified_ms": 326.50520000606775,
+          "verified_frame_ms": 384.95059999695513,
+          "pixels": {
+            "window": "#0a0a12",
+            "input": "#12121f"
+          }
+        },
+        {
+          "theme": "muted_light_mode",
+          "handler_return_ms": 256.93190000311006,
+          "first_new_theme_paint_ms": 295.2076999936253,
+          "first_result_verified_ms": 317.772900001728,
+          "verified_frame_ms": 377.0417999912752,
+          "pixels": {
+            "window": "#eae7e0",
+            "input": "#f2f0eb"
+          }
+        },
+        {
+          "theme": "dark_mode",
+          "handler_return_ms": 267.0800999912899,
+          "first_new_theme_paint_ms": 304.0624999994179,
+          "first_result_verified_ms": 327.8705999982776,
+          "verified_frame_ms": 385.82450000103563,
+          "pixels": {
+            "window": "#2b2b2b",
+            "input": "#323232"
+          }
+        },
+        {
+          "theme": "light_mode",
+          "handler_return_ms": 254.0811999933794,
+          "first_new_theme_paint_ms": 292.21069999039173,
+          "first_result_verified_ms": 316.60540000302717,
+          "verified_frame_ms": 375.15959999291226,
+          "pixels": {
+            "window": "#f5f5f5",
+            "input": "#ffffff"
+          }
+        },
+        {
+          "theme": "fantasy_mode",
+          "handler_return_ms": 263.21780000580475,
+          "first_new_theme_paint_ms": 301.8837999989046,
+          "first_result_verified_ms": 326.1054000031436,
+          "verified_frame_ms": 385.9530000045197,
+          "pixels": {
+            "window": "#24211c",
+            "input": "#2e2a25"
+          }
+        },
+        {
+          "theme": "imperial_mode",
+          "handler_return_ms": 267.7574999979697,
+          "first_new_theme_paint_ms": 304.6351999946637,
+          "first_result_verified_ms": 327.786499998183,
+          "verified_frame_ms": 386.47639998816885,
+          "pixels": {
+            "window": "#0d0d0d",
+            "input": "#1c1c1c"
+          }
+        },
+        {
+          "theme": "cyberpunk_mode",
+          "handler_return_ms": 253.82840000384022,
+          "first_new_theme_paint_ms": 290.6403999950271,
+          "first_result_verified_ms": 314.1509999986738,
+          "verified_frame_ms": 372.97189999662805,
+          "pixels": {
+            "window": "#0a0a12",
+            "input": "#12121f"
+          }
+        },
+        {
+          "theme": "muted_light_mode",
+          "handler_return_ms": 265.63090000126977,
+          "first_new_theme_paint_ms": 304.380300003686,
+          "first_result_verified_ms": 328.86100000177976,
+          "verified_frame_ms": 387.6271000044653,
+          "pixels": {
+            "window": "#eae7e0",
+            "input": "#f2f0eb"
+          }
+        },
+        {
+          "theme": "dark_mode",
+          "handler_return_ms": 253.3743000094546,
+          "first_new_theme_paint_ms": 292.61800000676885,
+          "first_result_verified_ms": 316.6806000081124,
+          "verified_frame_ms": 375.95329999749083,
+          "pixels": {
+            "window": "#2b2b2b",
+            "input": "#323232"
+          }
+        }
+      ]
+    }
+  ]
+}

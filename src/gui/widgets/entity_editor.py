@@ -39,7 +39,6 @@ from src.core.summary_data import (
     is_summary_stale,
 )
 from src.core.temporal_entity_checkpoint import parse_temporal_entity_checkpoint
-from src.core.theme_manager import ThemeManager
 from src.gui.constants import (
     EDITOR_FORM_VERTICAL_SPACING,
     EDITOR_SECTION_SPACING,
@@ -49,6 +48,7 @@ from src.gui.mixins.editor_mixin import BaseEditorMixin
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.utils.suggestion_effects import apply_suggestion_effects
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.authoring_context_widget import AuthoringContextWidget
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
@@ -359,7 +359,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         )
         self.btn_inject.setMenu(self.inject_menu)
         self.inject_menu.aboutToShow.connect(self._populate_inject_menu)
-        ThemeManager().theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
         self.header_form = QFormLayout()
         self.header_form.setVerticalSpacing(EDITOR_FORM_VERTICAL_SPACING)
         self.header_form.setFieldGrowthPolicy(

@@ -36,9 +36,9 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.calendar import CalendarConverter
-from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.connection_presentation import (
     ENTITY_GROUPS,
     EVENT_GROUPS,
@@ -181,7 +181,7 @@ class ConnectionsOverview(QWidget):
         self.remove_button.hide()
         self._update_summary()
         self._apply_theme()
-        ThemeManager().theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
 
     def add_secondary_actions(self, menu: QMenu) -> None:
         """Keep navigation/removal discoverable without crowding the selection row."""

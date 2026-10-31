@@ -28,6 +28,7 @@ from src.gui.ui_constants import WORKSPACE_CONTENT_INSET
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.workspace.panel_registry import ZONE_NAMES, ZoneName
 from src.gui.workspace.rounded_frame import RoundedWorkspaceFrame
 
@@ -233,7 +234,7 @@ class PaneContainer(QWidget):
 
         self._corners = RoundedWorkspaceFrame(self, _PANE_CORNER_RADIUS)
         self._corners.raise_()
-        ThemeManager().theme_changed.connect(self._refresh_close_buttons)
+        connect_theme(self, self._refresh_close_buttons)
 
     def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
         """Keep rounded outer corners aligned with the entire tabbed pane."""

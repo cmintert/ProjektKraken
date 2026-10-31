@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QWidget
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.standard_buttons import StandardButton
 from src.gui.widgets.wrapping_buttons import WrappingToolButton
 
@@ -23,7 +24,7 @@ class _CaretPresentation:
         widget.setProperty("phosphorCaret", True)
         widget.setStyleSheet(StyleHelper.get_menu_caret_style())
         self._refresh_caret()
-        ThemeManager().theme_changed.connect(self._refresh_caret)
+        connect_theme(self, self._refresh_caret)
 
     def _refresh_caret(self, _theme: dict | None = None) -> None:
         self._caret = load_icon(

@@ -30,6 +30,7 @@ from src.core.entity_context_mode import ENTITY_CONTEXT_LABELS, EntityContextMod
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.context_fact_section import ContextFactSection, FactSection
 from src.gui.widgets.entity_context_mode_selector import EntityContextModeSelector
 
@@ -124,7 +125,7 @@ class AuthoringContextWidget(QWidget):
         content_layout.addStretch()
 
         theme_manager = ThemeManager()
-        theme_manager.theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
         self._apply_theme(theme_manager.get_theme())
 
     def set_embedded(self, embedded: bool) -> None:

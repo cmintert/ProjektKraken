@@ -20,6 +20,7 @@ from src.core.calendar import CalendarConverter
 from src.core.entities import Entity
 from src.core.events import Event
 from src.gui.utils.color_utils import get_hashed_color
+from src.gui.utils.theme_connections import connect_theme
 
 logger = logging.getLogger(__name__)
 
@@ -60,11 +61,11 @@ class ExplorerModel(QAbstractListModel):
         from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
-        self.color_event = QColor(theme.get("accent_secondary", "#0078D4"))
-        self.color_entity = QColor(theme.get("primary", "#FF9900"))
+        self.color_event = QColor(theme["event_main"])
+        self.color_entity = QColor(theme["entity_main"])
 
         # Connect to theme changes
-        ThemeManager().theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
 
     def _on_theme_changed(self, theme: dict) -> None:
         """Handle theme changes.
@@ -72,8 +73,8 @@ class ExplorerModel(QAbstractListModel):
         Args:
             theme: New theme dictionary.
         """
-        self.color_event = QColor(theme.get("accent_secondary", "#0078D4"))
-        self.color_entity = QColor(theme.get("primary", "#FF9900"))
+        self.color_event = QColor(theme["event_main"])
+        self.color_entity = QColor(theme["entity_main"])
         # Notify view to repaint all items
         if self._items:
             top_left = self.index(0, 0)

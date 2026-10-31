@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.editor_presentation import COMPACT_EDITOR_WIDTH
 from src.gui.widgets.standard_buttons import LabelSizedToolButton as QToolButton
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
@@ -123,7 +124,7 @@ class FocusWritingController(QObject):
             )
         self.workspace.panel_activated.connect(self._on_panel_activated)
         self.workspace.layout_changed.connect(self._sync_tints)
-        ThemeManager().theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
         app = QApplication.instance()
         if isinstance(app, QApplication):
             app.installEventFilter(self)

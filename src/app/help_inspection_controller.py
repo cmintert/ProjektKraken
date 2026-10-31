@@ -17,7 +17,6 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import QApplication, QMenu, QMenuBar, QWhatsThis, QWidget
 
 from src.app.help_declared_bindings import bind_declared_action, bind_declared_widget
-from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import (
     ControlHelpRegistration,
     HelpContextRegistry,
@@ -26,6 +25,7 @@ from src.gui.utils.help_context import (
     owns_help_input,
 )
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.services.help_bundle_service import HelpBundleError, HelpBundleService
 
 if TYPE_CHECKING:
@@ -86,7 +86,7 @@ class HelpInspectionController(QObject):
         self._swallow_release = False
         self._explanation_chord = False
         self._pending_explanation: bool | None = None
-        ThemeManager().theme_changed.connect(self._theme_changed)
+        connect_theme(self, self._theme_changed)
         app = QApplication.instance()
         if isinstance(app, QApplication):
             app.installEventFilter(self)

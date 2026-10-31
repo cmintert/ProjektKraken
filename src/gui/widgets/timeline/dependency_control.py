@@ -4,13 +4,13 @@ from PySide6.QtCore import Signal
 from PySide6.QtGui import QActionGroup
 from PySide6.QtWidgets import QMenu, QToolButton, QWidget
 
-from src.core.theme_manager import ThemeManager
 from src.core.timeline_visibility import (
     DEPENDENCY_VISIBILITY_LABELS,
     DependencyVisibility,
 )
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.menu_caret import PhosphorToolMenuButton
 
 _HELP = (
@@ -45,7 +45,7 @@ class DependencyVisibilityButton(PhosphorToolMenuButton):
         self.setMenu(self.mode_menu)
         self.set_mode(self.mode)
         self._apply_theme()
-        ThemeManager().theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
 
     def set_mode(self, mode: DependencyVisibility) -> None:
         """Render a choice without emitting another preference mutation."""

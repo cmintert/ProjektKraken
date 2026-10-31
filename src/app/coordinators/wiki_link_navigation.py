@@ -10,8 +10,8 @@ import shiboken6
 from PySide6.QtCore import QObject, Qt, Slot
 from PySide6.QtWidgets import QTabWidget, QToolButton, QWidget
 
-from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.editor_presentation import DisclosureButton
 
 RETURN_NAME_LIMIT = 30
@@ -75,7 +75,7 @@ class WikiLinkNavigationController(QObject):
             self._header_buttons.append(button)
         self._update_actions()
         self._apply_theme()
-        ThemeManager().theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
 
     def _apply_theme(self, _theme: dict | None = None) -> None:
         """Refresh header navigation through the standard theme notification."""

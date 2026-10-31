@@ -51,6 +51,7 @@ from src.gui.mixins.map_nesting_mixin import MapNestingMixin
 from src.gui.mixins.map_trajectory_mixin import MapTrajectoryMixin
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.map.feature_actions import FeatureActionPresenter
@@ -311,7 +312,7 @@ class MapWidget(
         self.marker_scene_updated.connect(self.feature_actions.scene_ready)
 
         self._apply_theme_styles()
-        ThemeManager().theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
         self._connect_view_signals()
         self._connect_layer_panel_signals()
         self._connect_raster_signals()

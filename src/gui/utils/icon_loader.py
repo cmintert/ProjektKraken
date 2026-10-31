@@ -4,12 +4,17 @@ Provides utilities for loading and recoloring SVG icons.
 """
 
 import os
+from collections import OrderedDict
 
 from PySide6.QtCore import QByteArray, Qt
 from PySide6.QtGui import QIcon, QPainter, QPixmap
 from PySide6.QtSvg import QSvgRenderer
 
 from src.core.paths import get_resource_path
+
+# GUI-thread owned: QPixmap-backed icons must never be created in a worker.
+_ICON_CACHE_LIMIT = 256
+_icon_cache: OrderedDict[tuple[str, str | None], QIcon] = OrderedDict()
 
 
 def load_icon(relative_path: str, color: str | None = None) -> QIcon:
@@ -23,6 +28,10 @@ def load_icon(relative_path: str, color: str | None = None) -> QIcon:
         QIcon: The loaded (and potentially recolored) icon.
     """
     full_path = get_resource_path(relative_path)
+    key = (os.path.normcase(os.path.abspath(full_path)), color)
+    if key in _icon_cache:
+        _icon_cache.move_to_end(key)
+        return QIcon(_icon_cache[key])
     if not os.path.exists(full_path):
         import logging
 
@@ -51,7 +60,11 @@ def load_icon(relative_path: str, color: str | None = None) -> QIcon:
                 painter = QPainter(pixmap)
                 renderer.render(painter)
                 painter.end()
-                return QIcon(pixmap)
+                icon = QIcon(pixmap)
+                _icon_cache[key] = icon
+                if len(_icon_cache) > _ICON_CACHE_LIMIT:
+                    _icon_cache.popitem(last=False)
+                return QIcon(icon)
 
             import logging
 

@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.timeline.event_item import EventItem
 
 logger = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ class TimelineScene(QGraphicsScene):
         """
         super().__init__(parent)
         self.tm = ThemeManager()
-        self.tm.theme_changed.connect(self._update_theme)
+        connect_theme(self, self._update_theme)
         self._update_theme(self.tm.get_theme())
 
     def _update_theme(self, theme: dict[str, str]) -> None:

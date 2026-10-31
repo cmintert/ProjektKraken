@@ -4,9 +4,9 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from src.core.entity_context_mode import ENTITY_CONTEXT_LABELS
-from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.wrapping_combo_box import WrappingComboBox
 
 
@@ -32,7 +32,7 @@ class EntityContextModeSelector(QWidget):
         self.combo.currentIndexChanged.connect(self._changed)
         layout.addWidget(self.label)
         layout.addWidget(self.combo)
-        ThemeManager().theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
         self._apply_theme()
 
     def _apply_theme(self, _theme: dict | None = None) -> None:

@@ -50,6 +50,7 @@ from src.gui.utils.settings_reader import (
     read_str_setting,
 )
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.entity_context_mode_selector import EntityContextModeSelector
 from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 from src.gui.widgets.prompt_editor import PromptEditorWidget
@@ -895,7 +896,7 @@ class LLMGenerationWidget(QWidget):
         self._load_settings()
         self._sync_context_controls()
         theme_manager = ThemeManager()
-        theme_manager.theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
         self._on_theme_changed(theme_manager.get_theme())
         from src.gui.widgets.responsive_form import scroll_section_contents
 

@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.action_flow_layout import ActionFlowLayout
 
 
@@ -127,7 +128,7 @@ class HelpViewer(QWidget):
         )
         layout.addWidget(self.related)
         self.set_history(False, False)
-        ThemeManager().theme_changed.connect(self.apply_theme)
+        connect_theme(self, self.apply_theme)
         self.apply_theme()
 
     def set_history(self, back: bool, forward: bool) -> None:

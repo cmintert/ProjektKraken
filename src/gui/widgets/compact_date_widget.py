@@ -39,6 +39,7 @@ from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
@@ -712,7 +713,7 @@ class CompactDateWidget(QWidget):
         self.txt_date.editingFinished.connect(self._on_text_edited)
 
         # Theme changes
-        ThemeManager().theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
 
     def _update_icons(self, theme: dict) -> None:
         """Updates both the calendar and time-toggle icons for the given theme.

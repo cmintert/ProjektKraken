@@ -39,7 +39,6 @@ from src.core.summary_data import (
     calculate_summary_source_hash,
     is_summary_stale,
 )
-from src.core.theme_manager import ThemeManager
 from src.gui.constants import (
     EDITOR_FORM_VERTICAL_SPACING,
     EDITOR_SECTION_SPACING,
@@ -49,6 +48,7 @@ from src.gui.mixins.editor_mixin import BaseEditorMixin
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.utils.suggestion_effects import apply_suggestion_effects
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.authoring_context_widget import AuthoringContextWidget
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
@@ -499,7 +499,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             StyleHelper.get_tool_button_style()
             + " QToolButton::menu-indicator { image: none; }"
         )
-        ThemeManager().theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
         self.inject_menu = declare_inspection(
             QMenu(self.btn_inject),
             "src-gui-widgets-event-editor-eventeditorwidget-build-header-self-inject-menu|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-header-self-inject-menu",

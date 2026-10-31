@@ -43,6 +43,7 @@ from src.core.theme_manager import ThemeManager
 from src.gui.constants import SHEET_VALUE_MAX_LINES
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme, disconnect_theme
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 
 logger = logging.getLogger(__name__)
@@ -161,7 +162,7 @@ class AttributePairWidget(QFrame):
         # Apply initial theme and connect to changes
         self._theme_mgr = ThemeManager()
         self._apply_theme()
-        self._theme_mgr.theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
         self.destroyed.connect(self._on_destroyed)
         self._adjust_height()
 
@@ -311,7 +312,7 @@ class AttributePairWidget(QFrame):
     def _on_destroyed(self) -> None:
         """Disconnect theme signal when destroyed."""
         try:
-            self._theme_mgr.theme_changed.disconnect(self._apply_theme)
+            disconnect_theme(self, self._apply_theme)
         except (RuntimeError, TypeError):
             pass
 
@@ -360,7 +361,7 @@ class TextBlockWidget(QFrame):
 
         self._theme_mgr = ThemeManager()
         self._apply_theme()
-        self._theme_mgr.theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
         self.destroyed.connect(self._on_text_destroyed)
 
     def get_text(self) -> str:
@@ -382,7 +383,7 @@ class TextBlockWidget(QFrame):
     def _on_text_destroyed(self) -> None:
         """Disconnect theme signal when destroyed."""
         try:
-            self._theme_mgr.theme_changed.disconnect(self._apply_theme)
+            disconnect_theme(self, self._apply_theme)
         except (RuntimeError, TypeError):
             pass
 
@@ -406,7 +407,7 @@ class DividerWidget(QFrame):
 
         self._theme_mgr = ThemeManager()
         self._apply_theme()
-        self._theme_mgr.theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
         self.destroyed.connect(self._on_divider_destroyed)
 
     def _apply_theme(self) -> None:
@@ -418,7 +419,7 @@ class DividerWidget(QFrame):
     def _on_divider_destroyed(self) -> None:
         """Disconnect theme signal when destroyed."""
         try:
-            self._theme_mgr.theme_changed.disconnect(self._apply_theme)
+            disconnect_theme(self, self._apply_theme)
         except (RuntimeError, TypeError):
             pass
 
@@ -466,7 +467,7 @@ class HeaderWidget(QFrame):
 
         self._theme_mgr = ThemeManager()
         self._apply_theme()
-        self._theme_mgr.theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
         self.destroyed.connect(self._on_header_destroyed)
 
     def get_text(self) -> str:
@@ -492,7 +493,7 @@ class HeaderWidget(QFrame):
     def _on_header_destroyed(self) -> None:
         """Disconnect theme signal when destroyed."""
         try:
-            self._theme_mgr.theme_changed.disconnect(self._apply_theme)
+            disconnect_theme(self, self._apply_theme)
         except (RuntimeError, TypeError):
             pass
 
@@ -534,7 +535,7 @@ class SpacerWidget(QFrame):
 
         self._theme_mgr = ThemeManager()
         self._apply_theme()
-        self._theme_mgr.theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
         self.destroyed.connect(self._on_spacer_destroyed)
 
     # ------------------------------------------------------------------
@@ -578,7 +579,7 @@ class SpacerWidget(QFrame):
     def _on_spacer_destroyed(self) -> None:
         """Disconnect theme signal when destroyed."""
         try:
-            self._theme_mgr.theme_changed.disconnect(self._apply_theme)
+            disconnect_theme(self, self._apply_theme)
         except (RuntimeError, TypeError):
             pass
 
@@ -720,7 +721,7 @@ class _ResizeHandle(QWidget):
 
         self._theme_mgr = ThemeManager()
         self._apply_theme()
-        self._theme_mgr.theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
         self.destroyed.connect(self._on_destroyed)
 
     def _apply_theme(self) -> None:
@@ -732,7 +733,7 @@ class _ResizeHandle(QWidget):
     def _on_destroyed(self) -> None:
         """Disconnect theme signal when destroyed."""
         try:
-            self._theme_mgr.theme_changed.disconnect(self._apply_theme)
+            disconnect_theme(self, self._apply_theme)
         except (RuntimeError, TypeError):
             pass
 
@@ -1003,7 +1004,7 @@ class SheetBuilderWidget(QWidget):
         # Apply initial theme and connect to changes
         self._theme_mgr = ThemeManager()
         self._apply_theme()
-        self._theme_mgr.theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
         self.destroyed.connect(self._on_builder_destroyed)
 
         # ── Keyboard reordering shortcuts ────────────────────────────────
@@ -1769,7 +1770,7 @@ class SheetBuilderWidget(QWidget):
         """Disconnect theme signal when destroyed."""
         logger.debug("SheetBuilderWidget being destroyed.")
         try:
-            self._theme_mgr.theme_changed.disconnect(self._apply_theme)
+            disconnect_theme(self, self._apply_theme)
         except (RuntimeError, TypeError):
             pass
         # Clean up ghost if still alive

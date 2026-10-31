@@ -72,6 +72,7 @@ from src.gui.constants import (
     MAP_SNAP_INDICATOR_VERTEX_COLOR,
     MAP_ZOOM_IN_FACTOR,
 )
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.map.coordinate_system import MapCoordinateSystem
 from src.gui.widgets.map.detail_map_footprint_item import DetailMapFootprintItem
 from src.gui.widgets.map.drawing_tool import DrawingTool
@@ -335,7 +336,7 @@ class MapGraphicsView(QGraphicsView):
 
         # Theme
         self.tm = ThemeManager()
-        self.tm.theme_changed.connect(self._update_theme)
+        connect_theme(self, self._update_theme)
         self._update_theme(self.tm.get_theme())
 
         # Enable drop support

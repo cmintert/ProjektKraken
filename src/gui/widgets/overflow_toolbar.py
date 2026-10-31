@@ -17,10 +17,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.core.theme_manager import ThemeManager
 from src.gui.utils.action_label_metrics import intrinsic_action_size
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.menu_caret import PhosphorToolMenuButton
 from src.gui.widgets.wrapping_buttons import WrappingToolButton
 
@@ -91,7 +91,7 @@ class OverflowToolBar(QWidget):
         self.overflow_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.overflow_button.setMenu(self.overflow_menu)
         self._apply_theme()
-        ThemeManager().theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
         self.overflow_button.hide()
         self._layout.addWidget(self.overflow_button, 0, 0)
 

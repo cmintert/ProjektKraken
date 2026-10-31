@@ -13,10 +13,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.core.theme_manager import ThemeManager
 from src.gui.dialogs.help_aware_dialog import HelpAwareDialog
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.responsive_dialog_buttons import ResponsiveDialogButtonBox
 from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
 
@@ -98,7 +98,7 @@ class EventTimingReviewDialog(HelpAwareDialog):
         self.cancel_button.setFocus()
         layout.addWidget(self.button_box)
         self._apply_theme()
-        ThemeManager().theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
 
     @staticmethod
     def _label(text: str, *, heading: bool = False) -> QLabel:

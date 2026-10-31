@@ -94,6 +94,28 @@ def qapp():
     yield app
 
 
+@pytest.fixture
+def theme_presentation(qapp):
+    """Compose the production visible-first renderer with shared Qt ownership."""
+    from src.core.theme_manager import ThemeManager
+    from src.gui.utils.theme_presentation import install_theme_presentation
+
+    runtime = install_theme_presentation(qapp)
+    ThemeManager().apply_theme(
+        qapp, (repo_root / "src/resources/main.qss").read_text("utf-8")
+    )
+    yield runtime
+    runtime.close()
+
+
+@pytest.fixture(params=("legacy", "scoped"))
+def theme_delivery(request):
+    """Exercise compatibility and production presentation for authoring contracts."""
+    if request.param == "scoped":
+        return request.getfixturevalue("theme_presentation")
+    return None
+
+
 @pytest.fixture(autouse=True)
 def isolate_qsettings(qapp):
     """Isolate settings and application presentation; finish deferred Qt teardown."""
@@ -274,11 +296,14 @@ def _mock_web_engine_view():
         def setBackgroundColor(self, color):
             pass
 
-        def runJavaScript(self, script):
-            pass
+        def runJavaScript(self, script, callback=None):
+            if callback is not None:
+                callback(True)
 
     class _StubWebEngineView(QWidget):
         """Lightweight stand-in for QWebEngineView in tests."""
+
+        loadFinished = QtCore.Signal(bool)
 
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
@@ -288,7 +313,7 @@ def _mock_web_engine_view():
             return self._page
 
         def setHtml(self, html):
-            pass
+            self.loadFinished.emit(True)
 
         def setPage(self, page):
             self._page = page

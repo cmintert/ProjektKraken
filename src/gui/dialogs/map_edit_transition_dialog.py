@@ -14,9 +14,9 @@ from PySide6.QtWidgets import (
 )
 from shiboken6 import isValid
 
-from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 
 
 class MapEditTransitionDialog(QDialog):
@@ -69,7 +69,7 @@ class MapEditTransitionDialog(QDialog):
             layout.addWidget(hint)
         self.keep_button.setDefault(True)
         self.keep_button.setFocus()
-        ThemeManager().theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
 
     def _apply_theme(self, _theme: dict[str, Any]) -> None:
         for button, role in (

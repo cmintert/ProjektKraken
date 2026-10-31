@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
 from src.core.image_attachment import ImageAttachment
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 logger = logging.getLogger(__name__)
@@ -59,7 +60,7 @@ class ImageViewerDialog(QDialog):
         self._base_pixmap: QPixmap | None = None
 
         self.init_ui()
-        ThemeManager().theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
         self.load_current_image()
 
     def init_ui(self) -> None:

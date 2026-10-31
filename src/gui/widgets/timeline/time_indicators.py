@@ -10,6 +10,7 @@ from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 from src.core.calendar import CalendarConverter
 from src.core.temporal_presentation import event_navigation_context
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.theme_connections import connect_theme
 
 if TYPE_CHECKING:
     from src.gui.widgets.timeline.timeline_view import TimelineView
@@ -71,7 +72,7 @@ class TimelineTimeIndicators(QObject):
         view.playhead_time_changed.connect(self.request_settle)
         view.current_time_changed.connect(self.refresh)
         view.graphics_scene.changed.connect(self._scene_changed)
-        ThemeManager().theme_changed.connect(self._theme_changed)
+        connect_theme(self, self._theme_changed)
 
     def _theme_changed(self, theme: dict[str, str]) -> None:
         self.refresh()

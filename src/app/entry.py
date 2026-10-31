@@ -151,6 +151,9 @@ def main() -> None:
 
         # 2. Apply Theme
         tm = ThemeManager()
+        from src.gui.utils.theme_presentation import install_theme_presentation
+
+        install_theme_presentation(app)
         try:
             qss_path = get_resource_path(os.path.join("src", "resources", "main.qss"))
             with open(qss_path, "r") as f:

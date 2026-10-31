@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.workspace.activity_bar import ActivityBar
 from src.gui.workspace.layout_state import normalize_layout
 from src.gui.workspace.pane_container import PaneContainer
@@ -35,7 +36,7 @@ class _WorkspaceSplitterHandle(QSplitterHandle):
     def __init__(self, orientation: Qt.Orientation, parent: QSplitter) -> None:
         super().__init__(orientation, parent)
         self._hovered = False
-        ThemeManager().theme_changed.connect(self.update)
+        connect_theme(self, self.update)
 
     def enterEvent(self, event: QEnterEvent) -> None:  # noqa: N802
         """Repaint the sash with the theme hover color."""
@@ -169,6 +170,9 @@ class WorkspaceShell(QWidget):
         activity_id: str | None = None,
     ) -> None:
         """Register and place an existing feature widget."""
+        from src.gui.utils.theme_presentation import register_theme_scope
+
+        register_theme_scope(widget)
         definition = PanelDefinition(
             id=panel_id,
             title=title,

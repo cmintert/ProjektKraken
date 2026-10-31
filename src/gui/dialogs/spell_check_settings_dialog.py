@@ -6,6 +6,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QWidget
 
 from src.gui.utils.help_context import declare_inspection
+from src.gui.utils.theme_connections import connect_theme
 
 
 class SpellCheckSettingsDialog(QDialog):
@@ -31,7 +32,6 @@ class SpellCheckSettingsDialog(QDialog):
             QLineEdit,
         )
 
-        from src.core.theme_manager import ThemeManager
         from src.gui.utils.style_helper import StyleHelper
         from src.gui.widgets.standard_buttons import (
             PrimaryButton,
@@ -45,7 +45,7 @@ class SpellCheckSettingsDialog(QDialog):
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
 
         self._apply_style()
-        ThemeManager().theme_changed.connect(self._apply_style)
+        connect_theme(self, self._apply_style)
 
         layout = QVBoxLayout(self)
         StyleHelper.apply_standard_list_spacing(layout)

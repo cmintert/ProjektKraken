@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 from src.core.summary_data import SummaryData
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.standard_buttons import (
     DestructiveButton,
@@ -56,7 +57,7 @@ class SummaryWidget(QWidget):
         self._controls_enabled = True
         self._setup_ui()
         self._apply_styles()
-        ThemeManager().theme_changed.connect(self._apply_styles)
+        connect_theme(self, self._apply_styles)
 
     def _setup_ui(self) -> None:
         """Set up the user interface components."""

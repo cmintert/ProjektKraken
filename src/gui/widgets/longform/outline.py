@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.gui.utils.help_context import declare_inspection
+from src.gui.utils.theme_connections import connect_theme
 
 logger = logging.getLogger(__name__)
 
@@ -66,9 +67,7 @@ class LongformOutlineWidget(QTreeWidget):
         self.itemSelectionChanged.connect(self._on_selection_changed)
         self.customContextMenuRequested.connect(self._show_context_menu)
 
-        from src.core.theme_manager import ThemeManager
-
-        ThemeManager().theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
         self._update_colors()
 
     def _update_colors(self) -> None:

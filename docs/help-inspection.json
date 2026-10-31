@@ -11282,8 +11282,8 @@
     {
       "source": "src/gui/dialogs/map_edit_transition_dialog.py",
       "symbol": "MapEditTransitionDialog.__init__",
-      "sha256": "64064b13c15a8023ae5aca19723aaaedb24a8784ffae8a83c069542e4d9ed78c",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "152310d51979143f59476a2dda6ca86c94da7f724f3b18d1ea0210d9bd3320e4",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/dialogs/map_edit_transition_dialog.py",
@@ -11984,8 +11984,8 @@
     {
       "source": "src/gui/widgets/authoring_context_widget.py",
       "symbol": "AuthoringContextWidget.__init__",
-      "sha256": "294d2b417589dd301606f88137a0e4ac2b341fe136784e6beacc7519fed9b4c9",
-      "review_note": "KRT-109: reviewed persistent Load more/Retry action beside direct rows, with its own canonical excerpt. Loaded-only disclosures keep their meaning; paging and human attribute exclusion are documented without changing AI generation."
+      "sha256": "5b177b176d46849530d6699cb4b884fc3323e312a219624c964d8c1b4f2906ef",
+      "review_note": "KRT-109: reviewed persistent Load more/Retry action beside direct rows, with its own canonical excerpt. Loaded-only disclosures keep their meaning; paging and human attribute exclusion are documented without changing AI generation. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/authoring_context_widget.py",
@@ -12176,8 +12176,8 @@
     {
       "source": "src/gui/widgets/context_tag_bar.py",
       "symbol": "ContextTagBar.__init__",
-      "sha256": "fe8d24601d09d456b38c03c71b6d5d7f2075f30f406aac5faf58794f6fee2d52",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "37f84ef863ce5aa57d29d60a14739bb9cfab0e58ea515ca51166c41d72887bdc",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/context_tag_bar.py",
@@ -12254,8 +12254,8 @@
     {
       "source": "src/gui/widgets/entity_editor.py",
       "symbol": "EntityEditorWidget._build_header",
-      "sha256": "a656962b636ef69aeec47c6ae55a29318f72ed689d78a19e16fd049dd3681a1f",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "9b850e11c131d770a3848edb462bf7c0f27aa5241117d24297278553d71603b9",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/entity_editor.py",
@@ -12458,8 +12458,8 @@
     {
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget._build_header",
-      "sha256": "08f4bb067ab1238c274c6f7440af785096361a4ce65add5284d0844e2db64613",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "b133fca663b0ba59c552447030d073a65187981eff70412992aee22594fd42e7",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/event_editor.py",
@@ -12662,8 +12662,8 @@
     {
       "source": "src/gui/widgets/focus_writing.py",
       "symbol": "FocusWritingController.__init__",
-      "sha256": "1643a02d0384b5ce058d9825093c36b0aa8579feb2be4adcb71164cd14a95e7d",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "c4b1c3e04460ec4f58a01f13035dc739a28d98f633958c70e460f3646ceebaa7",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/focus_writing.py",
@@ -12824,8 +12824,8 @@
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
       "symbol": "GraphWidget.__init__",
-      "sha256": "be77249421123472ab7b3676dd2dd3cace45d8ce10912091b9549b1efaccd065",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "734fab0d5fb64a3235973f8b6e94b07c08badfc6d8a479e968d027813be04b70",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate. Renderer recoloring retains filters, selection, camera and physics; the existing Refresh action still owns content refresh."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
@@ -12860,8 +12860,8 @@
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
       "symbol": "GraphWidget._on_theme_changed",
-      "sha256": "0234cdda690e6810e94e2cba308101474accb29b750854c17f5bc53e51190f0a",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "f7fef16a48a340833c3cca4a7dff48577c10ab2871f930fbf38fdf1eea2a5fca",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate. Renderer recoloring retains filters, selection, camera and physics; the existing Refresh action still owns content refresh."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
@@ -12890,8 +12890,8 @@
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
       "symbol": "GraphWidget._refresh_display_locally",
-      "sha256": "8946d09aa84d9d3ccbe7ef3538bf19eacdefcf24c570e10f8cd76c21bfccb4c9",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "ae378cc7719e86d3ca20c4157787d4161b57e27121c36dadc11c4bc571adc06e",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate. Renderer recoloring retains filters, selection, camera and physics; the existing Refresh action still owns content refresh."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
@@ -12938,8 +12938,8 @@
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
       "symbol": "LLMGenerationWidget.__init__",
-      "sha256": "98b6f85879dca46d74a198ad4979bab83dbb216eca5fe2836d44955861eed39e",
-      "review_note": "KRT-96: Entity generation adds the documented shared session Context mode and prepared-preview state; existing provider, task and review controls remain unchanged."
+      "sha256": "27167e6fca3128014294c307352d490499cd49d7f5c308973344e4aa823c4cf0",
+      "review_note": "KRT-96: Entity generation adds the documented shared session Context mode and prepared-preview state; existing provider, task and review controls remain unchanged. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
@@ -13280,8 +13280,8 @@
     {
       "source": "src/gui/widgets/longform/membership.py",
       "symbol": "LongformMembershipWidget.__init__",
-      "sha256": "ec19bf0d8f29b0074302ad0d45d71ff70001c2d2c6397898c853c532f50200f0",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "5caa77df2cd4cee419657966b0c01d4efdca8a242bf66a0cf7bc9db681fd2e98",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/longform/membership.py",
@@ -14540,8 +14540,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget.__init__",
-      "sha256": "b2cb9b9a699ef88260076a3109b6728dcc3258954eb88c06dfaa29c5840fe0db",
-      "review_note": "Reviewed panel inset/margin changes only in MapWidget.__init__: existing control identities, labels, eligibility, keyboard actions, task destinations and authoring state are unchanged. Canonical control explanations remain accurate; no new interaction or exception is introduced."
+      "sha256": "3b82b497eb38fa097f55eb91c50403e70e928356ba11b75728baf134e05082a6",
+      "review_note": "Reviewed panel inset/margin changes only in MapWidget.__init__: existing control identities, labels, eligibility, keyboard actions, task destinations and authoring state are unchanged. Canonical control explanations remain accurate; no new interaction or exception is introduced. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -14972,8 +14972,8 @@
     {
       "source": "src/gui/widgets/overflow_toolbar.py",
       "symbol": "OverflowToolBar.__init__",
-      "sha256": "146273b5bfb8bb5708e622829396afd8a4eb4c11128825387d0e241cc234ed1f",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "544d9a68b7af3159d953c592fbcf580c649c66eb341817bc6520f1e12557a437",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/overflow_toolbar.py",
@@ -15044,8 +15044,8 @@
     {
       "source": "src/gui/widgets/prompt_editor.py",
       "symbol": "PromptEditorWidget.__init__",
-      "sha256": "36114f3330429a71be4d90ebf6f00af144962455d8b42df72af0a24869ff62ae",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "62493dfbeb9b5e732f313ad09377c0d84ef24247a969b1dfec10878ee4e6ed83",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/prompt_editor.py",
@@ -15092,8 +15092,8 @@
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring.__init__",
-      "sha256": "2ff0c65c6d8ddda01e7b4ea26b7279ba7a22bc0191ba1878194dbab75a874d40",
-      "review_note": "KRT-93 owner refinements: Meaning is one editable dropdown with stable-key suggestion data and deliberate free phrases; no Custom field. The editor heading is plain text within a neutral frame. Scrollbars refresh with the theme. Edit shares the selection row; guarded navigation/removal remain under More actions. Updated task/control explanations describe these behaviors."
+      "sha256": "0d6db967a2261eaddd157d16905009de10ab9f1cd12469104250beec8dac4006",
+      "review_note": "KRT-93 owner refinements: Meaning is one editable dropdown with stable-key suggestion data and deliberate free phrases; no Custom field. The editor heading is plain text within a neutral frame. Scrollbars refresh with the theme. Edit shares the selection row; guarded navigation/removal remain under More actions. Updated task/control explanations describe these behaviors. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
@@ -15398,8 +15398,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "AttributePairWidget.__init__",
-      "sha256": "3c1bf11aa33c2d3ea4b1d75bb080b45e9286f6f0aadf47fe32bdc920cc25c958",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "fd743ec8c4ec9dd83b55b580928beb521b7564ac0c6294863dce39fa89b1be04",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -15416,8 +15416,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "AttributePairWidget._on_destroyed",
-      "sha256": "3b2010d0bbded53839787bb4be7245e25ce2c50d15039e5f226de42e4c779bc8",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "abdff99d5127e3dd6badf16bab0cb5c25404dd14552933736ac960bfb0620b43",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -15428,8 +15428,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "HeaderWidget.__init__",
-      "sha256": "d7f57e131c1dbdffb13401d484b443ad23acb263e012c9b4effc79e589930b38",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "7c6937f020ebad71f8654d1574a932725042b80bceae7ee8e14b1c1603e3ec4f",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -15440,14 +15440,14 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "HeaderWidget._on_header_destroyed",
-      "sha256": "b459d46d470558bbc45b1b7f45b420f13ff848daddd23b3a78e4efa7f56672ff",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "e0d6c746a94f01b68d523673dfdbf3ec204c6a6d0378fa712ac98e8fa51e74e8",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget.__init__",
-      "sha256": "c524c4f921d3642503179b8ba52288613a8701dec2e38fe391e19fb135ad84f8",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "d0d5e01194de07a4b336267714cb914af685f497cf95c85f51089c24bb79102e",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -15578,8 +15578,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._on_builder_destroyed",
-      "sha256": "9289845256804ce5c051f04819fe71c6f7dacb1226b7db198f953df877e4c076",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "0a85f2c927339f7e8b931cc2c7fbea26d973fa938f606a48c89b0bb533f44e9b",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -15692,8 +15692,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "TextBlockWidget.__init__",
-      "sha256": "c0203fae0666c359bfff646349c8ee64a0074127ecb688321882ce15a7050817",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "287632f6e5d7eab0a7e49528a588b292c44de8cd53bc45581723031106e8e36e",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -15704,14 +15704,14 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "TextBlockWidget._on_text_destroyed",
-      "sha256": "d1521b5a73e6d7628cb121bc1728efc7445d8896ed5018e43fb21210a8cc1102",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "1d3095c5980fd66511c37ac10fb3736caa70a2ebc2aa47f43239a206bfcfec7d",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/splitter_tab_inspector.py",
       "symbol": "DraggableTabWidget.__init__",
-      "sha256": "f010f176b220498cf6ff925b61e0031eddfabedcb8f7b57b6023ab68d23dca89",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "91a85ea68ad72ad2667403d595e444ff59dc3cbe1d64579e721cdb8d42a04302",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/splitter_tab_inspector.py",
@@ -15740,8 +15740,8 @@
     {
       "source": "src/gui/widgets/splitter_tab_inspector.py",
       "symbol": "DraggableTabWidget._style_overflow",
-      "sha256": "b60793c9ee5c799755ef3fab270d695f3ee1fe0823b1f793133aa7a2136723d5",
-      "review_note": "Reviewed shared 12 px inset below inspector tabs and More actions. Section navigation, split/return routes and keyboard behavior are unchanged; existing Help remains accurate."
+      "sha256": "24ce0296f205c6c16d44fae7a9656f06f30862b6618c03029f79a97aad282b6d",
+      "review_note": "Reviewed shared 12 px inset below inspector tabs and More actions. Section navigation, split/return routes and keyboard behavior are unchanged; existing Help remains accurate. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/splitter_tab_inspector.py",
@@ -15866,8 +15866,8 @@
     {
       "source": "src/gui/widgets/tag_editor.py",
       "symbol": "TagEditorWidget.__init__",
-      "sha256": "1f8846a51f014b7393b82bf928afe0a3fc88cfb557c87bb44bee925607814071",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "99762bd16a5c8981e00f0735d481d632c26e8459f6cc90199fc4b60eee154e57",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/tag_editor.py",
@@ -15950,8 +15950,8 @@
     {
       "source": "src/gui/widgets/timeline/__init__.py",
       "symbol": "TimelineWidget.__init__",
-      "sha256": "bfd89e29178008aba007e416f571d814d76384dd62e70bede36947c7f59a985a",
-      "review_note": "KRT-115: replaces Show dependencies with the four-mode Dependencies menu. The existing canonical anchor now explains All, Selected, Show dependency trail and Off, the Selected default and migration. Other toolbar routes are unchanged. Accepted selection forwarding restores the same Event after visual deselection without bypassing navigation guards."
+      "sha256": "9fb89a7b999bef43442b8e52497a7eecbd1fb7867df036b366f7243a1e18bbe6",
+      "review_note": "KRT-115: replaces Show dependencies with the four-mode Dependencies menu. The existing canonical anchor now explains All, Selected, Show dependency trail and Off, the Selected default and migration. Other toolbar routes are unchanged. Accepted selection forwarding restores the same Event after visual deselection without bypassing navigation guards. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/timeline/__init__.py",
@@ -16040,8 +16040,8 @@
     {
       "source": "src/gui/widgets/timeline_display_widget.py",
       "symbol": "TimelineDisplayWidget.__init__",
-      "sha256": "8bff1205b411d95f97fb49e6576c0e3decee856ec5bf0f1b317be65483ca3acb",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "ec9397c01537158c9aa58a2dda03a30a72f107778a712558adcd33664536d832",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/timeline_display_widget.py",
@@ -16106,8 +16106,8 @@
     {
       "source": "src/gui/widgets/toc_widget.py",
       "symbol": "TOCWidget.__init__",
-      "sha256": "0fb118ad0109e7c41ba1f6a4d2ace0f2e74155eff40648ba5945907ed6189d21",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "949346bfc4a443cca8a83633735e5b34253271284b9e854f94cd8827f82f09ce",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/toc_widget.py",
@@ -16130,8 +16130,8 @@
     {
       "source": "src/gui/widgets/unified_list.py",
       "symbol": "UnifiedListWidget.__init__",
-      "sha256": "d14d5847d6788e411e99933b2b7f6f5d1c549e3971ecce621a59b9dad8c03c9d",
-      "review_note": "Reviewed uniform filter-row heights: category/sort fields align with Filter and Clear Filters through reflow. Existing labels, shortcuts, filtering, overflow routes and explanations remain accurate; no interaction change."
+      "sha256": "325b0fd7685cdb12e9f4f3b964185b97b1bbe52abffc4c5535be985dedf78038",
+      "review_note": "Reviewed uniform filter-row heights: category/sort fields align with Filter and Clear Filters through reflow. Existing labels, shortcuts, filtering, overflow routes and explanations remain accurate; no interaction change. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/unified_list.py",
@@ -16250,8 +16250,8 @@
     {
       "source": "src/gui/widgets/wiki_link_authoring.py",
       "symbol": "EntryLinkPicker.__init__",
-      "sha256": "9f86180c7a3792ff2d2565165d5897a90bc0e369baf707f69d371d79be5fb843",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "b7bdbaa234a5eb4e601aa1507dd4aa2bff7a6a2a9ad197866936f157c3732f0c",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/wiki_link_authoring.py",
@@ -16280,8 +16280,8 @@
     {
       "source": "src/gui/widgets/wiki_peek_panel.py",
       "symbol": "WikiPeekPanel.__init__",
-      "sha256": "2fbf96e2eea03813cfb7ea332d86b2d8cd21e7543993ce0927536856c7339fab",
-      "review_note": "Reviewed panel inset/margin changes only in WikiPeekPanel.__init__: existing control identities, labels, eligibility, keyboard actions, task destinations and authoring state are unchanged. Canonical control explanations remain accurate; no new interaction or exception is introduced."
+      "sha256": "14ce48d2565c14eb0aaffd120e5335c4e9156fb45add72c4f2bacbe4e6bf4f63",
+      "review_note": "Reviewed panel inset/margin changes only in WikiPeekPanel.__init__: existing control identities, labels, eligibility, keyboard actions, task destinations and authoring state are unchanged. Canonical control explanations remain accurate; no new interaction or exception is introduced. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/wiki_peek_panel.py",
@@ -16304,8 +16304,8 @@
     {
       "source": "src/gui/dialogs/spell_check_settings_dialog.py",
       "symbol": "SpellCheckSettingsDialog.__init__",
-      "sha256": "7d9c0c87c73c353a7d926920b0a3da2ca7b8548659b2e825af618b319da121b1",
-      "review_note": "KRT-55: compatibility form reads OS-backed LanguageTool credentials; the production spelling route opens the shared Center."
+      "sha256": "cbaa0ddb15a325111407f26fa595f210867b14e5f155b72709e2825bf6105215",
+      "review_note": "KRT-55: compatibility form reads OS-backed LanguageTool credentials; the production spelling route opens the shared Center. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/dialogs/spell_check_settings_dialog.py",
@@ -16322,8 +16322,8 @@
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
       "symbol": "WikiTextEdit.__init__",
-      "sha256": "a48c6578d21dd0aaad27d8c81fee84c307339687623a15c49f1a6b6f9cd87e9f",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "e65142a7e62ee8d58dda7ebfa8a391435114a06ab7073b9b5a093852e81cc41b",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
@@ -16544,8 +16544,8 @@
     {
       "source": "src/gui/widgets/writing_toolbar.py",
       "symbol": "WritingToolbarPresentation.__init__",
-      "sha256": "49a0e1e5ba79fba7708e4762c9dd20578b6a10c2c5e0c5acab587120935d2a69",
-      "review_note": "KRT-94: existing Format/Insert menus now expose source-only indentation and literal tab commands; writing Help documents permissions, selection boundaries and local undo."
+      "sha256": "eb8b45b4ac65f54cc22fab1bae62e29a97fd90e1bb1f74acb5367610cca2a7e0",
+      "review_note": "KRT-94: existing Format/Insert menus now expose source-only indentation and literal tab commands; writing Help documents permissions, selection boundaries and local undo. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/writing_toolbar.py",
@@ -16592,8 +16592,8 @@
     {
       "source": "src/gui/widgets/connections_overview.py",
       "symbol": "ConnectionsOverview.__init__",
-      "sha256": "ad095dc3e172e7cc09ed38d54e11bf4867715e0dfbc4584a113892e7c46ac662",
-      "review_note": "Reviewed single-line connection rows with right elision and full assertion/timing tooltips. Updated the overview explanation. Selection, Edit/Enter/double-click, filtering, direction, navigation and guarded removal retain their existing meanings."
+      "sha256": "64c0aa04f530d7afb3c6b4827680644178c002a20cad2370d999af53771eeefd",
+      "review_note": "Reviewed single-line connection rows with right elision and full assertion/timing tooltips. Updated the overview explanation. Selection, Edit/Enter/double-click, filtering, direction, navigation and guarded removal retain their existing meanings. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/entity_editor.py",
@@ -16916,8 +16916,8 @@
     {
       "source": "src/gui/widgets/entity_context_mode_selector.py",
       "symbol": "EntityContextModeSelector.__init__",
-      "sha256": "aab893d0ea93123baa65c5f4485a569204739fb0e647968f66dd55a063297b98",
-      "review_note": "KRT-96: three complete mode labels map to the new canonical Context mode Help paragraph; the control emits intent and edits no lore."
+      "sha256": "7ff4a7f1f23c37fa3a5f6de7fb66c76134adbbfe4a3046b4ffe95073d98f838a",
+      "review_note": "KRT-96: three complete mode labels map to the new canonical Context mode Help paragraph; the control emits intent and edits no lore. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/entity_context_mode_selector.py",
@@ -16928,8 +16928,8 @@
     {
       "source": "src/gui/dialogs/prepared_generation_dialog.py",
       "symbol": "PreparedGenerationDialog.__init__",
-      "sha256": "b6aac2d4aa32b0f9d827ed01422362530b09bf909db65d06834bbeabf353f038",
-      "review_note": "KRT-96: new inspection paragraphs describe exact read-only messages, Generate from the frozen snapshot, Refresh, and Close without generation."
+      "sha256": "bf0fa18f6b39ba77731f1a986adbafb025e12584a2f0df91465e810f07108af0",
+      "review_note": "KRT-96: new inspection paragraphs describe exact read-only messages, Generate from the frozen snapshot, Refresh, and Close without generation. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/dialogs/prepared_generation_dialog.py",
@@ -17024,8 +17024,8 @@
     {
       "source": "src/gui/dialogs/event_timing_review_dialog.py",
       "symbol": "EventTimingReviewDialog.__init__",
-      "sha256": "a07412b116d67dae7d2ea032a37d433ec08e26993df6bee25dc234ab3bf53dcb",
-      "review_note": "KRT-113 owner-reported review repair: Before/After consequences and uncertainty are visible in scrollable cards, with one shared Apply changes/Cancel action row. The completed calculation progress is retired before this window opens. Existing Event timing Help owns this modal boundary; Cancel and Escape retain the draft."
+      "sha256": "e22bd8218c2584b7fa4e13b974d59d55800db1641d1fb42c9c2af748c7754e8c",
+      "review_note": "KRT-113 owner-reported review repair: Before/After consequences and uncertainty are visible in scrollable cards, with one shared Apply changes/Cancel action row. The completed calculation progress is retired before this window opens. Existing Event timing Help owns this modal boundary; Cancel and Escape retain the draft. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     },
     {
       "source": "src/gui/widgets/timeline/__init__.py",
@@ -17054,8 +17054,8 @@
     {
       "source": "src/gui/widgets/timeline/dependency_control.py",
       "symbol": "DependencyVisibilityButton.__init__",
-      "sha256": "aa5435258b93bcda5bf0b0d6a1cc5b08c85292ae665f30a1677cef966a02be44",
-      "review_note": "KRT-115: exclusive All/Selected/Show dependency trail/Off menu is shared by the toolbar and overflow; every action retains the existing dependency explanation and timeline task."
+      "sha256": "62ea4bdf587558d733ab7e49563a55f5fb88fc230a3fe713aefecfc1e04ed79a",
+      "review_note": "KRT-115: exclusive All/Selected/Show dependency trail/Off menu is shared by the toolbar and overflow; every action retains the existing dependency explanation and timeline task. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
     }
   ],
   "review_status": {

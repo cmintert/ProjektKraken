@@ -26,9 +26,9 @@ from src.core.relation_presentation import (
     authoring_choices,
     inline_relation_preview,
 )
-from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.editor_presentation import DisclosureButton
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
@@ -53,7 +53,7 @@ class RelationAuthoring(QFrame):
         editor.tab_relations.setObjectName("ConnectionsInspector")
         editor.tab_relations.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._apply_theme()
-        ThemeManager().theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
         self.form: RelationForm | None = None
         self.target: RelationTargetEdit | None = None
         self.relation: dict[str, Any] | None = None

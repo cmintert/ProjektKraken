@@ -1,0 +1,135 @@
+{
+  "summary_ms": {
+    "handler_return_ms": {
+      "median": 99.90349999861792,
+      "p95": 103.9055000001099
+    },
+    "first_result_verified_ms": {
+      "median": 111.4644999979646,
+      "p95": 115.19960001169238
+    },
+    "verified_frame_ms": {
+      "median": 445.1860499975737,
+      "p95": 449.30209999438375
+    }
+  },
+  "runs": [
+    {
+      "presentation": "scoped",
+      "button": "apply",
+      "platform": "windows",
+      "samples": [
+        {
+          "theme": "imperial_mode",
+          "handler_return_ms": 93.49260000453796,
+          "first_new_theme_paint_ms": 97.6375000027474,
+          "first_result_verified_ms": 105.14410000178032,
+          "verified_frame_ms": 436.86990000423975,
+          "pixels": {
+            "window": "#0d0d0d",
+            "input": "#1c1c1c"
+          }
+        },
+        {
+          "theme": "cyberpunk_mode",
+          "handler_return_ms": 100.06050000083633,
+          "first_new_theme_paint_ms": 104.3840999918757,
+          "first_result_verified_ms": 112.59140000038315,
+          "verified_frame_ms": 449.30209999438375,
+          "pixels": {
+            "window": "#0a0a12",
+            "input": "#12121f"
+          }
+        },
+        {
+          "theme": "muted_light_mode",
+          "handler_return_ms": 99.53370000584982,
+          "first_new_theme_paint_ms": 103.44330000225455,
+          "first_result_verified_ms": 112.48820000037085,
+          "verified_frame_ms": 447.5244999921415,
+          "pixels": {
+            "window": "#eae7e0",
+            "input": "#f2f0eb"
+          }
+        },
+        {
+          "theme": "dark_mode",
+          "handler_return_ms": 103.9055000001099,
+          "first_new_theme_paint_ms": 108.67870000947732,
+          "first_result_verified_ms": 115.13430000923108,
+          "verified_frame_ms": 444.6025000070222,
+          "pixels": {
+            "window": "#2b2b2b",
+            "input": "#323232"
+          }
+        },
+        {
+          "theme": "light_mode",
+          "handler_return_ms": 99.98539999651257,
+          "first_new_theme_paint_ms": 103.8537999993423,
+          "first_result_verified_ms": 110.96969999198336,
+          "verified_frame_ms": 448.52109999919776,
+          "pixels": {
+            "window": "#f5f5f5",
+            "input": "#ffffff"
+          }
+        },
+        {
+          "theme": "fantasy_mode",
+          "handler_return_ms": 99.91350000200327,
+          "first_new_theme_paint_ms": 104.00289999961387,
+          "first_result_verified_ms": 115.19960001169238,
+          "verified_frame_ms": 448.3150000014575,
+          "pixels": {
+            "window": "#24211c",
+            "input": "#2e2a25"
+          }
+        },
+        {
+          "theme": "imperial_mode",
+          "handler_return_ms": 97.97489999618847,
+          "first_new_theme_paint_ms": 102.0550999965053,
+          "first_result_verified_ms": 111.54979999992065,
+          "verified_frame_ms": 434.93149999994785,
+          "pixels": {
+            "window": "#0d0d0d",
+            "input": "#1c1c1c"
+          }
+        },
+        {
+          "theme": "cyberpunk_mode",
+          "handler_return_ms": 98.29810001247097,
+          "first_new_theme_paint_ms": 102.32850001193583,
+          "first_result_verified_ms": 109.12850000022445,
+          "verified_frame_ms": 443.3971000107704,
+          "pixels": {
+            "window": "#0a0a12",
+            "input": "#12121f"
+          }
+        },
+        {
+          "theme": "muted_light_mode",
+          "handler_return_ms": 100.56489999988116,
+          "first_new_theme_paint_ms": 104.80309999547899,
+          "first_result_verified_ms": 111.35879998619203,
+          "verified_frame_ms": 445.76959998812526,
+          "pixels": {
+            "window": "#eae7e0",
+            "input": "#f2f0eb"
+          }
+        },
+        {
+          "theme": "dark_mode",
+          "handler_return_ms": 99.89349999523256,
+          "first_new_theme_paint_ms": 103.9634000044316,
+          "first_result_verified_ms": 111.37919999600854,
+          "verified_frame_ms": 443.64820000191685,
+          "pixels": {
+            "window": "#2b2b2b",
+            "input": "#323232"
+          }
+        }
+      ]
+    }
+  ]
+}

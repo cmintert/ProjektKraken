@@ -20,6 +20,7 @@ from src.gui.utils.action_label_metrics import intrinsic_action_size
 from src.gui.utils.help_context import declare_inspection, owns_assistance_input
 from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 
 
 class ActivityBar(QToolBar):
@@ -43,7 +44,7 @@ class ActivityBar(QToolBar):
         self._return_timer = QTimer(self)
         self._return_timer.setSingleShot(True)
         self._return_timer.timeout.connect(self._restore_menu_focus)
-        ThemeManager().theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
 
     def configure_workspaces(self) -> None:
         """Install six activity destinations independently of panel registration."""

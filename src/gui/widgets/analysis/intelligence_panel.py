@@ -44,9 +44,9 @@ from src.core.analysis import (
     PlotHole,
     RelationProposal,
 )
-from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.action_flow_layout import ActionFlowLayout
 from src.gui.widgets.analysis._analysis_utils import (
     SEVERITY_COLORS,
@@ -112,7 +112,7 @@ class IntelligencePanel(QWidget):
         self._selected_evidence_id: str | None = None
         self._init_ui()
         self._apply_styles()
-        ThemeManager().theme_changed.connect(self._apply_styles)
+        connect_theme(self, self._apply_styles)
 
     def _init_ui(self) -> None:
         """Build the widget layout."""

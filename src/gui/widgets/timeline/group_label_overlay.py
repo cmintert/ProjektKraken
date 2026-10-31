@@ -12,6 +12,7 @@ from PySide6.QtGui import QColor, QFont, QPainter, QPaintEvent, QPolygonF
 from PySide6.QtWidgets import QWidget
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.theme_connections import connect_theme
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ class GroupLabelOverlay(QWidget):
 
         # Theme
         self.theme = ThemeManager().get_theme()
-        ThemeManager().theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
 
         # Start invisible
         self.setVisible(False)

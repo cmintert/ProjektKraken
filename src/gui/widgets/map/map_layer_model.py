@@ -47,6 +47,7 @@ from src.gui.constants import (
     MAP_LAYER_Z_SPACING,
 )
 from src.gui.utils.icon_loader import load_icon
+from src.gui.utils.theme_connections import connect_theme
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +120,7 @@ class MapLayerModel(QAbstractItemModel):
         self._current_time: Optional[float] = None
         self._date_formatter: Optional[Callable[[float], str]] = None
         self._icon_cache: Dict[str, Any] = {}
-        ThemeManager().theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
 
     # ------------------------------------------------------------------
     # Public helpers

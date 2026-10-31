@@ -16,10 +16,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.prompt_syntax_highlighter import PromptSyntaxHighlighter
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 from src.gui.widgets.wrapping_buttons import WrappingToolButton as QToolButton
 
@@ -117,7 +117,7 @@ class PromptEditorWidget(QWidget):
 
         # Syntax Highlighter
         self.highlighter = PromptSyntaxHighlighter(self.editor.document())
-        ThemeManager().theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
 
     @Slot(dict)
     def _on_theme_changed(self, _: dict) -> None:

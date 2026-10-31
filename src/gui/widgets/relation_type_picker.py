@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
 from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
 
@@ -59,7 +60,7 @@ class RelationTypePicker(QWidget):
         self._apply_theme()
 
         # Connect theme changes
-        ThemeManager().theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
 
         # Ensure the widget paints its background/border correctly
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)

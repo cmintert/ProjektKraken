@@ -31,6 +31,7 @@ from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.shortcut_manager import ShortcutManager
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.longform.content import LongformContentWidget
 from src.gui.widgets.longform.membership import LongformMembershipWidget
@@ -92,7 +93,7 @@ class LongformEditorWidget(QWidget):
         # Setup UI
         self._setup_ui()
         self._setup_shortcuts()
-        ThemeManager().theme_changed.connect(self._apply_action_theme)
+        connect_theme(self, self._apply_action_theme)
         self._apply_action_theme()
 
     def closeEvent(self, event: QCloseEvent) -> None:

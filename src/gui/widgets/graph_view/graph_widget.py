@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 from src.core.logging_config import get_logger
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme, disconnect_theme
 from src.gui.widgets.graph_view.graph_builder import GraphBuilder
 from src.gui.widgets.graph_view.graph_filter_bar import GraphFilterBar
 from src.gui.widgets.graph_view.graph_projection import GraphProjection
@@ -110,7 +111,7 @@ class GraphWidget(QWidget):
 
         self._theme_manager = ThemeManager()
         self._current_theme_config = self._get_current_theme_config()
-        self._theme_manager.theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
         self._theme_connected = True
 
         self._setup_ui()
@@ -192,7 +193,7 @@ class GraphWidget(QWidget):
             event: The close event.
         """
         if self._theme_connected:
-            self._theme_manager.theme_changed.disconnect(self._on_theme_changed)
+            disconnect_theme(self, self._on_theme_changed)
             self._theme_connected = False
         self._web_view.shutdown()
         super().closeEvent(event)
@@ -229,15 +230,7 @@ class GraphWidget(QWidget):
             return
         self._current_theme_config = self._get_current_theme_config()
 
-        # Update Web View background to match theme immediately
-        bg_color = self._current_theme_config.get("background_color", "#1e1e1e")
-        self._web_view.set_background_color(bg_color)
-
-        # Force a full rebuild on theme changes to apply new colors
-        self._is_renderer_ready = False
-
-        # Refresh display with new colors
-        self._refresh_display_locally()
+        self._web_view.update_theme(self._current_theme_config)
 
     def _get_current_theme_config(self) -> dict[str, str]:
         """Extracts relevant colors from the current theme for the graph.
@@ -382,6 +375,7 @@ class GraphWidget(QWidget):
 
         """
         if not self._all_nodes and not self._all_edges:
+            self._web_view.set_theme_data([], [], {})
             self._web_view.load_html(
                 self._builder.build_empty_html(self._current_theme_config)
             )
@@ -451,6 +445,9 @@ class GraphWidget(QWidget):
             ),
         )
 
+        self._web_view.set_theme_data(
+            filtered_nodes, projected_edges, self._resolved_lexicon
+        )
         # -- Step 4: Render --
         if not filtered_nodes:
             self._web_view.load_html(

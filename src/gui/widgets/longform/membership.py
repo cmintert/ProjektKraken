@@ -14,9 +14,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 
@@ -72,7 +72,7 @@ class LongformMembershipWidget(QWidget):
         self.results.currentRowChanged.connect(self._update_acceptance)
         self.add_button.clicked.connect(self._accept)
         self.cancel_button.clicked.connect(self.cancelled.emit)
-        ThemeManager().theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
         self._apply_theme()
         self.hide()
 

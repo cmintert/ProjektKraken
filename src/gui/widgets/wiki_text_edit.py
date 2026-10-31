@@ -68,6 +68,7 @@ from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.utils.suggestion_effects import apply_suggestion_effects
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.spell_check_controller import SpellCheckController
 from src.gui.widgets.wiki_link_presentation import (
     LinkPresentation,
@@ -201,7 +202,7 @@ class WikiTextEditView(QTextEdit):
         # Connect to theme changes and apply initial theme
         tm = ThemeManager()
         self._typography = EditorTypography.from_theme(tm.get_theme())
-        tm.theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
 
         # Remove frame from view as it's handled by wrapper
         self.setFrameShape(QFrame.Shape.NoFrame)
@@ -2051,7 +2052,7 @@ class WikiTextEdit(QFrame):
         self._apply_style()
 
         # Connect to theme changes
-        ThemeManager().theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
         self._apply_editor_width_limit()
 
     def _apply_editor_width_limit(self) -> None:

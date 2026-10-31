@@ -24,6 +24,7 @@ from src.core.raster_paint import RasterPaintMode, brush_bounds
 from src.core.theme_manager import ThemeManager
 from src.gui.constants import MAP_LAYER_Z_UI_OVERLAY
 from src.gui.ui_constants import RASTER_DAB_SPACING_FACTOR
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.map.raster_layer_item import RasterLayerItem
 
 if TYPE_CHECKING:
@@ -247,7 +248,7 @@ class RasterEditTool:
         self._cursor_item: Optional[QGraphicsEllipseItem] = None
 
         # Cached theme colors — refreshed once at construction and on theme change
-        self._cursor_hex: str = "#E8E8E8"
+        self._cursor_hex: str = ThemeManager().get_theme()["text_main"]
         self._refresh_theme_colors()
         tool_ref = weakref.ref(self)
 
@@ -256,7 +257,7 @@ class RasterEditTool:
             if tool is not None:
                 tool._refresh_theme_colors()
 
-        ThemeManager().theme_changed.connect(refresh_theme_colors)
+        connect_theme(view, refresh_theme_colors)
 
     def _refresh_theme_colors(self) -> None:
         """Update cached cursor color from the current theme.
@@ -314,9 +315,7 @@ class RasterEditTool:
 
     @paint_color.setter
     def paint_color(self, value: tuple[int, int, int, int]) -> None:
-        self._paint_color = tuple(
-            max(0, min(int(channel), 255)) for channel in value
-        )  # type: ignore[assignment]
+        self._paint_color = tuple(max(0, min(int(channel), 255)) for channel in value)  # type: ignore[assignment]
 
     @property
     def fill_tolerance(self) -> int:
@@ -355,7 +354,9 @@ class RasterEditTool:
         if value in ("linear", "cosine", "gaussian"):
             self._falloff_curve = value
         else:
-            logger.warning("Unknown falloff_curve %r, keeping %r", value, self._falloff_curve)
+            logger.warning(
+                "Unknown falloff_curve %r, keeping %r", value, self._falloff_curve
+            )
 
     @property
     def brush_opacity(self) -> float:

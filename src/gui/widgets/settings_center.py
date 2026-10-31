@@ -28,6 +28,7 @@ from src.core.timeline_visibility import (
 )
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.responsive_form import scrollable_form_page
 from src.gui.widgets.settings_forms import (
     AI_BINDINGS,
@@ -113,7 +114,10 @@ class SettingsCenter(QDialog):
         self._build_shell()
         self._build_local_pages()
         self._refresh_navigation()
-        ThemeManager().theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
+        from src.gui.utils.theme_presentation import register_theme_scope
+
+        register_theme_scope(self, priority=True)
         self._apply_theme()
 
     def _build_shell(self) -> None:

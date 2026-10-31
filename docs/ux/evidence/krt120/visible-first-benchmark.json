@@ -1,0 +1,863 @@
+{
+  "baseline_ref": "485706ecef32bd9879223b271c8696bc4a706b46",
+  "summary": {
+    "baseline:editors": {
+      "sync": {
+        "median": 2.0736619500021334,
+        "p95": 2.1071700000029523
+      },
+      "settled": {
+        "median": 2.3209467499982566,
+        "p95": 2.36439670000982
+      }
+    },
+    "worktree:loaded": {
+      "sync": {
+        "median": 0.33351734999450855,
+        "p95": 0.3469997000065632
+      },
+      "settled": {
+        "median": 0.5670051499982947,
+        "p95": 0.5913986999948975
+      }
+    },
+    "baseline:loaded": {
+      "sync": {
+        "median": 2.1293774000005214,
+        "p95": 2.2086337999935495
+      },
+      "settled": {
+        "median": 2.574918099999195,
+        "p95": 2.6652468999964185
+      }
+    },
+    "worktree:editors": {
+      "sync": {
+        "median": 0.07958815000165487,
+        "p95": 0.08312000001023989
+      },
+      "settled": {
+        "median": 0.8201451999993878,
+        "p95": 0.8395767000038177
+      }
+    }
+  },
+  "runs": [
+    {
+      "scenario": "editors",
+      "samples": [
+        {
+          "sync": 2.065961700005573,
+          "settled": 2.3096167000039713
+        },
+        {
+          "sync": 2.078626800008351,
+          "settled": 2.3240367000107653
+        },
+        {
+          "sync": 2.04639170000155,
+          "settled": 2.291790500006755
+        },
+        {
+          "sync": 2.082934399993974,
+          "settled": 2.3364533999993
+        },
+        {
+          "sync": 2.0687210999894887,
+          "settled": 2.3161866999871563
+        },
+        {
+          "sync": 2.0624281000054907,
+          "settled": 2.3175282000011066
+        },
+        {
+          "sync": 2.051473600004101,
+          "settled": 2.298699900013162
+        },
+        {
+          "sync": 2.0338287000049604,
+          "settled": 2.281728400004795
+        },
+        {
+          "sync": 2.0510181999998167,
+          "settled": 2.3009874999988824
+        },
+        {
+          "sync": 2.053814799990505,
+          "settled": 2.299535999991349
+        }
+      ],
+      "counts": {
+        "setStyleSheet": 598,
+        "updateGeometry": 14632,
+        "render": 72,
+        "setHtml": 1,
+        "_render_markdown_fragment": 0,
+        "load_html": 0,
+        "_flush_geometry": 0
+      },
+      "qt_events": {
+        "layout": 192,
+        "paint": 256,
+        "style": 33868
+      },
+      "widgets": 1900,
+      "python": "3.13.14",
+      "pyside": "6.10.1",
+      "platform": "offscreen",
+      "viewport": [
+        960,
+        720
+      ],
+      "variant": "baseline"
+    },
+    {
+      "scenario": "editors",
+      "samples": [
+        {
+          "sync": 0.07954120000067633,
+          "settled": 0.821020099989255
+        },
+        {
+          "sync": 0.07910299999639392,
+          "settled": 0.8216251999983797
+        },
+        {
+          "sync": 0.07833010000467766,
+          "settled": 0.8229233000020031
+        },
+        {
+          "sync": 0.08312000001023989,
+          "settled": 0.8287109000084456
+        },
+        {
+          "sync": 0.0821488999936264,
+          "settled": 0.824401099991519
+        },
+        {
+          "sync": 0.08271940000122413,
+          "settled": 0.8323058999958448
+        },
+        {
+          "sync": 0.07982700000866316,
+          "settled": 0.8129081000079168
+        },
+        {
+          "sync": 0.08314539999992121,
+          "settled": 0.8226353999925777
+        },
+        {
+          "sync": 0.07822399999713525,
+          "settled": 0.8149699999921722
+        },
+        {
+          "sync": 0.07831239998631645,
+          "settled": 0.8210825999994995
+        }
+      ],
+      "counts": {
+        "setStyleSheet": 201,
+        "updateGeometry": 1332,
+        "render": 0,
+        "setHtml": 0,
+        "_render_markdown_fragment": 0,
+        "load_html": 0,
+        "_flush_geometry": 175
+      },
+      "qt_events": {
+        "layout": 264,
+        "paint": 407,
+        "style": 7225
+      },
+      "widgets": 1900,
+      "python": "3.13.14",
+      "pyside": "6.10.1",
+      "platform": "offscreen",
+      "viewport": [
+        960,
+        720
+      ],
+      "variant": "worktree"
+    },
+    {
+      "scenario": "editors",
+      "samples": [
+        {
+          "sync": 2.1617686999961734,
+          "settled": 2.4096911999949953
+        },
+        {
+          "sync": 2.1059562000009464,
+          "settled": 2.36439670000982
+        },
+        {
+          "sync": 2.0736231000046246,
+          "settled": 2.321740500003216
+        },
+        {
+          "sync": 2.0633268999954453,
+          "settled": 2.3077251000067918
+        },
+        {
+          "sync": 2.068996700007119,
+          "settled": 2.3233240000117803
+        },
+        {
+          "sync": 2.1071700000029523,
+          "settled": 2.354351600006339
+        },
+        {
+          "sync": 2.067644200011273,
+          "settled": 2.310582300007809
+        },
+        {
+          "sync": 2.081324200000381,
+          "settled": 2.3274165999901015
+        },
+        {
+          "sync": 2.073700799999642,
+          "settled": 2.3201529999932973
+        },
+        {
+          "sync": 2.087760700000217,
+          "settled": 2.3379080000013346
+        }
+      ],
+      "counts": {
+        "setStyleSheet": 598,
+        "updateGeometry": 14631,
+        "render": 72,
+        "setHtml": 1,
+        "_render_markdown_fragment": 0,
+        "load_html": 0,
+        "_flush_geometry": 0
+      },
+      "qt_events": {
+        "layout": 181,
+        "paint": 271,
+        "style": 33868
+      },
+      "widgets": 1900,
+      "python": "3.13.14",
+      "pyside": "6.10.1",
+      "platform": "offscreen",
+      "viewport": [
+        960,
+        720
+      ],
+      "variant": "baseline"
+    },
+    {
+      "scenario": "editors",
+      "samples": [
+        {
+          "sync": 0.08174289998714812,
+          "settled": 0.8100206999952206
+        },
+        {
+          "sync": 0.0809573000005912,
+          "settled": 0.827589699998498
+        },
+        {
+          "sync": 0.07822419999865815,
+          "settled": 0.8273381000035442
+        },
+        {
+          "sync": 0.07841750000079628,
+          "settled": 0.8242449999961536
+        },
+        {
+          "sync": 0.07891490000474732,
+          "settled": 0.81387050000194
+        },
+        {
+          "sync": 0.07793879999371711,
+          "settled": 0.8173065000009956
+        },
+        {
+          "sync": 0.08027439999568742,
+          "settled": 0.8395767000038177
+        },
+        {
+          "sync": 0.08050949999596924,
+          "settled": 0.8467685999930836
+        },
+        {
+          "sync": 0.08039659999485593,
+          "settled": 0.8179299000039464
+        },
+        {
+          "sync": 0.07963510000263341,
+          "settled": 0.8273631000047317
+        }
+      ],
+      "counts": {
+        "setStyleSheet": 202,
+        "updateGeometry": 1331,
+        "render": 0,
+        "setHtml": 0,
+        "_render_markdown_fragment": 0,
+        "load_html": 0,
+        "_flush_geometry": 175
+      },
+      "qt_events": {
+        "layout": 259,
+        "paint": 421,
+        "style": 7226
+      },
+      "widgets": 1900,
+      "python": "3.13.14",
+      "pyside": "6.10.1",
+      "platform": "offscreen",
+      "viewport": [
+        960,
+        720
+      ],
+      "variant": "worktree"
+    },
+    {
+      "scenario": "editors",
+      "samples": [
+        {
+          "sync": 2.067677900005947,
+          "settled": 2.3072966000036104
+        },
+        {
+          "sync": 2.094805400003679,
+          "settled": 2.3322254000086104
+        },
+        {
+          "sync": 2.0696759999991627,
+          "settled": 2.3111243000021204
+        },
+        {
+          "sync": 2.080509699997492,
+          "settled": 2.3264778000011574
+        },
+        {
+          "sync": 2.091778499991051,
+          "settled": 2.330793299988727
+        },
+        {
+          "sync": 2.0829944999859435,
+          "settled": 2.316709099992295
+        },
+        {
+          "sync": 2.097026100003859,
+          "settled": 2.3379563999915263
+        },
+        {
+          "sync": 2.076446399994893,
+          "settled": 2.325547899992671
+        },
+        {
+          "sync": 2.0843459000025177,
+          "settled": 2.3234691999969073
+        },
+        {
+          "sync": 2.070300200008205,
+          "settled": 2.310728199998266
+        }
+      ],
+      "counts": {
+        "setStyleSheet": 598,
+        "updateGeometry": 14631,
+        "render": 72,
+        "setHtml": 1,
+        "_render_markdown_fragment": 0,
+        "load_html": 0,
+        "_flush_geometry": 0
+      },
+      "qt_events": {
+        "layout": 189,
+        "paint": 256,
+        "style": 33868
+      },
+      "widgets": 1900,
+      "python": "3.13.14",
+      "pyside": "6.10.1",
+      "platform": "offscreen",
+      "viewport": [
+        960,
+        720
+      ],
+      "variant": "baseline"
+    },
+    {
+      "scenario": "editors",
+      "samples": [
+        {
+          "sync": 0.07785869999497663,
+          "settled": 0.8114710999943782
+        },
+        {
+          "sync": 0.07677430000330787,
+          "settled": 0.7993645999958972
+        },
+        {
+          "sync": 0.07851350000419188,
+          "settled": 0.8192703000095207
+        },
+        {
+          "sync": 0.07566529999894556,
+          "settled": 0.8127581000007922
+        },
+        {
+          "sync": 0.07672519999323413,
+          "settled": 0.8086794999981066
+        },
+        {
+          "sync": 0.07963809999637306,
+          "settled": 0.8068818000028841
+        },
+        {
+          "sync": 0.07818190001125913,
+          "settled": 0.8158817000075942
+        },
+        {
+          "sync": 0.0817032999912044,
+          "settled": 0.814641599994502
+        },
+        {
+          "sync": 0.08000600000377744,
+          "settled": 0.8371924000093713
+        },
+        {
+          "sync": 0.08002790001046378,
+          "settled": 0.8120422000065446
+        }
+      ],
+      "counts": {
+        "setStyleSheet": 201,
+        "updateGeometry": 1331,
+        "render": 0,
+        "setHtml": 0,
+        "_render_markdown_fragment": 0,
+        "load_html": 0,
+        "_flush_geometry": 175
+      },
+      "qt_events": {
+        "layout": 251,
+        "paint": 438,
+        "style": 7225
+      },
+      "widgets": 1900,
+      "python": "3.13.14",
+      "pyside": "6.10.1",
+      "platform": "offscreen",
+      "viewport": [
+        960,
+        720
+      ],
+      "variant": "worktree"
+    },
+    {
+      "scenario": "loaded",
+      "samples": [
+        {
+          "sync": 2.2086337999935495,
+          "settled": 2.6652468999964185
+        },
+        {
+          "sync": 2.1845869999960996,
+          "settled": 2.639047799995751
+        },
+        {
+          "sync": 2.154952400000184,
+          "settled": 2.607554700007313
+        },
+        {
+          "sync": 2.1580568000063067,
+          "settled": 2.6022817000048235
+        },
+        {
+          "sync": 2.1677921999944374,
+          "settled": 2.616405799999484
+        },
+        {
+          "sync": 2.27760460000718,
+          "settled": 2.720983300008811
+        },
+        {
+          "sync": 2.1534268999967026,
+          "settled": 2.6119714000087697
+        },
+        {
+          "sync": 2.1559695999894757,
+          "settled": 2.600813699988066
+        },
+        {
+          "sync": 2.153981499999645,
+          "settled": 2.6032365999999456
+        },
+        {
+          "sync": 2.138524199996027,
+          "settled": 2.5920151000027545
+        }
+      ],
+      "counts": {
+        "setStyleSheet": 608,
+        "updateGeometry": 14889,
+        "render": 77,
+        "setHtml": 3,
+        "_render_markdown_fragment": 40,
+        "load_html": 1,
+        "_flush_geometry": 0
+      },
+      "qt_events": {
+        "layout": 298,
+        "paint": 187,
+        "style": 34238
+      },
+      "widgets": 1996,
+      "python": "3.13.14",
+      "pyside": "6.10.1",
+      "platform": "offscreen",
+      "viewport": [
+        960,
+        720
+      ],
+      "variant": "baseline"
+    },
+    {
+      "scenario": "loaded",
+      "samples": [
+        {
+          "sync": 0.33054989999800455,
+          "settled": 0.5485151000029873
+        },
+        {
+          "sync": 0.33360879999236204,
+          "settled": 0.5690465999941807
+        },
+        {
+          "sync": 0.3312294000061229,
+          "settled": 0.5748143000091659
+        },
+        {
+          "sync": 0.3406066999887116,
+          "settled": 0.5913986999948975
+        },
+        {
+          "sync": 0.34307750000152737,
+          "settled": 0.5788761000003433
+        },
+        {
+          "sync": 0.3402255000110017,
+          "settled": 0.5754871000099229
+        },
+        {
+          "sync": 0.3418639000010444,
+          "settled": 0.5904529999970691
+        },
+        {
+          "sync": 0.3605546000035247,
+          "settled": 0.5912878000090132
+        },
+        {
+          "sync": 0.3469997000065632,
+          "settled": 0.5758997000084491
+        },
+        {
+          "sync": 0.3328051999997115,
+          "settled": 0.5672475000028498
+        }
+      ],
+      "counts": {
+        "setStyleSheet": 151,
+        "updateGeometry": 992,
+        "render": 0,
+        "setHtml": 1,
+        "_render_markdown_fragment": 0,
+        "load_html": 0,
+        "_flush_geometry": 98
+      },
+      "qt_events": {
+        "layout": 193,
+        "paint": 193,
+        "style": 4190
+      },
+      "widgets": 1997,
+      "python": "3.13.14",
+      "pyside": "6.10.1",
+      "platform": "offscreen",
+      "viewport": [
+        960,
+        720
+      ],
+      "variant": "worktree"
+    },
+    {
+      "scenario": "loaded",
+      "samples": [
+        {
+          "sync": 2.108334800010198,
+          "settled": 2.5535659000015585
+        },
+        {
+          "sync": 2.1195962999918265,
+          "settled": 2.5623185000004014
+        },
+        {
+          "sync": 2.153722699993523,
+          "settled": 2.6028308999957517
+        },
+        {
+          "sync": 2.136419200003729,
+          "settled": 2.5815302999981213
+        },
+        {
+          "sync": 2.1181118999957107,
+          "settled": 2.570025299995905
+        },
+        {
+          "sync": 2.121044500003336,
+          "settled": 2.5652536999987205
+        },
+        {
+          "sync": 2.133752000008826,
+          "settled": 2.579100600007223
+        },
+        {
+          "sync": 2.1076993999886326,
+          "settled": 2.553643399995053
+        },
+        {
+          "sync": 2.123481000002357,
+          "settled": 2.570735599991167
+        },
+        {
+          "sync": 2.1241051999968477,
+          "settled": 2.5896958999946946
+        }
+      ],
+      "counts": {
+        "setStyleSheet": 608,
+        "updateGeometry": 14890,
+        "render": 77,
+        "setHtml": 3,
+        "_render_markdown_fragment": 40,
+        "load_html": 1,
+        "_flush_geometry": 0
+      },
+      "qt_events": {
+        "layout": 309,
+        "paint": 200,
+        "style": 34238
+      },
+      "widgets": 1996,
+      "python": "3.13.14",
+      "pyside": "6.10.1",
+      "platform": "offscreen",
+      "viewport": [
+        960,
+        720
+      ],
+      "variant": "baseline"
+    },
+    {
+      "scenario": "loaded",
+      "samples": [
+        {
+          "sync": 0.33027180000499357,
+          "settled": 0.5562402000068687
+        },
+        {
+          "sync": 0.3312653000029968,
+          "settled": 0.5667627999937395
+        },
+        {
+          "sync": 0.33380510000279173,
+          "settled": 0.5592164999980014
+        },
+        {
+          "sync": 0.3401315999944927,
+          "settled": 0.5711777999968035
+        },
+        {
+          "sync": 0.32840429998759646,
+          "settled": 0.5572214999992866
+        },
+        {
+          "sync": 0.32724230000167154,
+          "settled": 0.5632743000023765
+        },
+        {
+          "sync": 0.32642460000352,
+          "settled": 0.5594982000038726
+        },
+        {
+          "sync": 0.3250633999996353,
+          "settled": 0.5483975999959512
+        },
+        {
+          "sync": 0.3268858000083128,
+          "settled": 0.5477489000040805
+        },
+        {
+          "sync": 0.3286805999960052,
+          "settled": 0.541644400000223
+        }
+      ],
+      "counts": {
+        "setStyleSheet": 150,
+        "updateGeometry": 990,
+        "render": 0,
+        "setHtml": 1,
+        "_render_markdown_fragment": 0,
+        "load_html": 0,
+        "_flush_geometry": 98
+      },
+      "qt_events": {
+        "layout": 180,
+        "paint": 192,
+        "style": 4189
+      },
+      "widgets": 1997,
+      "python": "3.13.14",
+      "pyside": "6.10.1",
+      "platform": "offscreen",
+      "viewport": [
+        960,
+        720
+      ],
+      "variant": "worktree"
+    },
+    {
+      "scenario": "loaded",
+      "samples": [
+        {
+          "sync": 2.1192991999996593,
+          "settled": 2.56624680000823
+        },
+        {
+          "sync": 2.1280503000016324,
+          "settled": 2.5675224000005983
+        },
+        {
+          "sync": 2.120588800011319,
+          "settled": 2.56353250000393
+        },
+        {
+          "sync": 2.106022699997993,
+          "settled": 2.5389025999902515
+        },
+        {
+          "sync": 2.1198314000066603,
+          "settled": 2.546163200007868
+        },
+        {
+          "sync": 2.107567300001392,
+          "settled": 2.5495386000111466
+        },
+        {
+          "sync": 2.1307044999994105,
+          "settled": 2.5515173000021605
+        },
+        {
+          "sync": 2.1054562000063015,
+          "settled": 2.5513332999980776
+        },
+        {
+          "sync": 2.093771200001356,
+          "settled": 2.530388800005312
+        },
+        {
+          "sync": 2.13676179999311,
+          "settled": 2.581673699998646
+        }
+      ],
+      "counts": {
+        "setStyleSheet": 608,
+        "updateGeometry": 14889,
+        "render": 77,
+        "setHtml": 3,
+        "_render_markdown_fragment": 40,
+        "load_html": 1,
+        "_flush_geometry": 0
+      },
+      "qt_events": {
+        "layout": 306,
+        "paint": 189,
+        "style": 34238
+      },
+      "widgets": 1996,
+      "python": "3.13.14",
+      "pyside": "6.10.1",
+      "platform": "offscreen",
+      "viewport": [
+        960,
+        720
+      ],
+      "variant": "baseline"
+    },
+    {
+      "scenario": "loaded",
+      "samples": [
+        {
+          "sync": 0.32783300000301097,
+          "settled": 0.5534460999915609
+        },
+        {
+          "sync": 0.3308314000023529,
+          "settled": 0.553260999993654
+        },
+        {
+          "sync": 0.33342589999665506,
+          "settled": 0.5475936000002548
+        },
+        {
+          "sync": 0.33404929999960586,
+          "settled": 0.548142600004212
+        },
+        {
+          "sync": 0.3427779999910854,
+          "settled": 0.593808399993577
+        },
+        {
+          "sync": 0.34516729999450035,
+          "settled": 0.5837815999984741
+        },
+        {
+          "sync": 0.3369681999902241,
+          "settled": 0.5769430999935139
+        },
+        {
+          "sync": 0.34454779999214225,
+          "settled": 0.5803620999940904
+        },
+        {
+          "sync": 0.34106530000281055,
+          "settled": 0.5822255000093719
+        },
+        {
+          "sync": 0.32947960001183674,
+          "settled": 0.5585636000032537
+        }
+      ],
+      "counts": {
+        "setStyleSheet": 151,
+        "updateGeometry": 991,
+        "render": 0,
+        "setHtml": 1,
+        "_render_markdown_fragment": 0,
+        "load_html": 0,
+        "_flush_geometry": 98
+      },
+      "qt_events": {
+        "layout": 187,
+        "paint": 194,
+        "style": 4190
+      },
+      "widgets": 1997,
+      "python": "3.13.14",
+      "pyside": "6.10.1",
+      "platform": "offscreen",
+      "viewport": [
+        960,
+        720
+      ],
+      "variant": "worktree"
+    }
+  ]
+}

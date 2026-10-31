@@ -26,13 +26,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.core.theme_manager import ThemeManager
 from src.core.timeline_visibility import (
     DEPENDENCY_VISIBILITY_KEY,
     dependency_visibility,
 )
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.menu_caret import PhosphorPushMenuButton, PhosphorToolMenuButton
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
@@ -251,7 +251,7 @@ class TimelineWidget(QWidget):
         main_layout.addWidget(self.view)
         self.view.time_indicators.status = self.time_status
         self._apply_theme()
-        ThemeManager().theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
         self.view.time_indicators.refresh()
         self._next_navigation_context: dict[str, Any] | None = None
 

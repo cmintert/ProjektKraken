@@ -145,8 +145,8 @@ def test_mentions_include_filter_disables_generated_mention_suppression(
     assert [edge["id"] for edge in rendered_edges] == ["mention"]
 
 
-def test_theme_change_forces_full_reload(graph_widget: GraphWidget) -> None:
-    """Test that changing themes still forces a full load_html call."""
+def test_theme_change_recolors_without_full_reload(graph_widget: GraphWidget) -> None:
+    """A theme change keeps the existing renderer and its incremental state."""
     nodes = [{"id": "1"}]
     edges: list[dict[str, Any]] = []
     web_view = _web_view_mock(graph_widget)
@@ -155,11 +155,12 @@ def test_theme_change_forces_full_reload(graph_widget: GraphWidget) -> None:
     graph_widget.display_graph(nodes, edges)
     web_view.load_html.reset_mock()
 
-    # 2. A theme change invalidates the incremental renderer.
+    # 2. A theme change recolors the existing renderer.
     graph_widget._on_theme_changed({"app_bg": "#FFFFFF"})
 
-    # Should call load_html to rebuild with new colors
-    web_view.load_html.assert_called()
+    web_view.load_html.assert_not_called()
+    web_view.update_theme.assert_called_once()
+    assert graph_widget._is_renderer_ready
 
 
 def test_rename_entity_updates_graph(graph_widget: GraphWidget) -> None:

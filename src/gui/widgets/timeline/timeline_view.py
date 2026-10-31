@@ -38,6 +38,7 @@ from src.core.events import Event
 from src.core.temporal_presentation import event_navigation_context
 from src.core.theme_manager import ThemeManager
 from src.core.timeline_visibility import DependencyVisibility
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.timeline.dependency_layer import TimelineDependencyLayer
 from src.gui.widgets.timeline.event_item import EventItem
@@ -148,11 +149,11 @@ class TimelineView(QGraphicsView):
         # Use shiboken6 to check if the C++ object is still valid
         from shiboken6 import isValid
 
-        ThemeManager().theme_changed.connect(
-            lambda t: self.viewport().update() if isValid(self) else None
+        connect_theme(
+            self, lambda t: self.viewport().update() if isValid(self) else None
         )
-        ThemeManager().theme_changed.connect(
-            lambda t: self._update_corner_widget(t) if isValid(self) else None
+        connect_theme(
+            self, lambda t: self._update_corner_widget(t) if isValid(self) else None
         )
 
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)

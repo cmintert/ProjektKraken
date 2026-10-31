@@ -28,6 +28,7 @@ from src.core.theme_manager import ThemeManager
 from src.gui.constants import EDITOR_FORM_VERTICAL_SPACING
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.editor_inspector_composition import (
     EditorInspectorComposition,
     InspectorContent,
@@ -56,7 +57,7 @@ class DisclosureButton(WrappingToolButton):
         self.toggled.connect(self._update_arrow)
         self._update_arrow(False)
         self._apply_theme()
-        ThemeManager().theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
 
     def _update_arrow(self, expanded: bool) -> None:
         writing_action = self.objectName() == "InspectorWritingAction"
@@ -90,13 +91,11 @@ class DisclosureButton(WrappingToolButton):
 
     def _apply_theme(self, _theme: dict | None = None) -> None:
         if self.objectName() == "InspectorWritingAction":
-            self.setStyleSheet(StyleHelper.get_inspector_support_style())
-            self._update_arrow(self.isChecked())
-            return
-        self.setStyleSheet(
-            StyleHelper.get_tool_button_style()
-            + StyleHelper.get_inspector_focus_style()
-        )
+            style = StyleHelper.get_inspector_support_style()
+        else:
+            style = StyleHelper.get_tool_button_style()
+        if self.styleSheet() != style:
+            self.setStyleSheet(style)
         self._update_arrow(self.isChecked())
 
 
@@ -110,7 +109,9 @@ class SupportingSectionHeader(DisclosureButton):
         self._apply_theme()
 
     def _apply_theme(self, _theme: dict | None = None) -> None:
-        self.setStyleSheet(StyleHelper.get_inspector_support_style())
+        style = StyleHelper.get_inspector_support_style()
+        if self.styleSheet() != style:
+            self.setStyleSheet(style)
         self._update_arrow(self.isChecked())
 
 
@@ -203,7 +204,7 @@ class EditorPresentation(QObject):
         editor.llm_generator.installEventFilter(self)
         self.writing_actions.installEventFilter(self)
         self._focus_suffix = ""
-        ThemeManager().theme_changed.connect(self._style_controls)
+        connect_theme(self, self._style_controls)
         self._style_controls()
         self.reflow()
 
@@ -224,16 +225,16 @@ class EditorPresentation(QObject):
 
     def _style_controls(self, _theme: dict | None = None) -> None:
         """Keep inspector focus and control boundaries visible in both themes."""
-        self.focus_button.setStyleSheet(StyleHelper.get_writing_editor_control_style())
+        style = StyleHelper.get_writing_editor_control_style()
+        if self.focus_button.styleSheet() != style:
+            self.focus_button.setStyleSheet(style)
         suffix = StyleHelper.get_inspector_focus_style()
         for widget in self.editor.findChildren(QWidget):
             if isinstance(widget, QLineEdit) and isinstance(
                 widget.parentWidget(), QComboBox
             ):
                 continue
-            if isinstance(
-                widget, (QAbstractButton, QLineEdit, QComboBox, QAbstractSpinBox)
-            ):
+            if isinstance(widget, (QLineEdit, QComboBox, QAbstractSpinBox)):
                 style = widget.styleSheet()
                 if self._focus_suffix:
                     style = style.replace(self._focus_suffix, "")
@@ -248,22 +249,26 @@ class EditorPresentation(QObject):
                             else bytes(raw_name).decode("utf-8")
                         )
                         style = f"{selector} {{ {style} }} "
-                    widget.setStyleSheet(style + suffix)
+                    updated = style + suffix
+                    if widget.styleSheet() != updated:
+                        widget.setStyleSheet(updated)
         self._focus_suffix = suffix
         for button in self._toolbar_more_buttons:
-            button.setStyleSheet(
+            style = (
                 StyleHelper.get_overflow_button_style()
                 + StyleHelper.get_menu_caret_style()
-                + suffix
             )
-        for button in (self.editor.summary_checkbox, self.editor.llm_checkbox):
-            button._apply_theme()
-        self.context_disclosure._apply_theme()
+            if button.styleSheet() != style:
+                button.setStyleSheet(style)
         support_style = StyleHelper.get_inspector_support_style()
-        self.writing_actions.setStyleSheet(support_style)
-        self.editor.summary_container.setStyleSheet(support_style)
-        self.editor.llm_container.setStyleSheet(support_style)
-        self.composition.history_container.setStyleSheet(support_style)
+        for container in (
+            self.writing_actions,
+            self.editor.summary_container,
+            self.editor.llm_container,
+            self.composition.history_container,
+        ):
+            if container.styleSheet() != support_style:
+                container.setStyleSheet(support_style)
 
     def _install_header_scroll(self) -> None:
         """Retain live object fields while reserving readable inspector space."""

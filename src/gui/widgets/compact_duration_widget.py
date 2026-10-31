@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 from src.core.calendar import CalendarConverter
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.numeric_inputs import ScrollSafeSpinBox
 
 
@@ -185,9 +186,8 @@ class CompactDurationWidget(QWidget):
         self.spin_minutes.valueChanged.connect(self._on_input_changed)
 
         # Theme changes
-        from src.core.theme_manager import ThemeManager
 
-        ThemeManager().theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
 
     @Slot(dict)
     def _on_theme_changed(self, theme: dict) -> None:

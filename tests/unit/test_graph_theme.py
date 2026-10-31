@@ -51,11 +51,6 @@ def test_theme_change_triggers_update(graph_widget: GraphWidget) -> None:
     assert config["text_color"] == "#00FF00"  # text_main
     assert config["node_entity_color"] == "#0000FF"  # accent_secondary
 
-    # Verify set_background_color was called on web view
-    graph_widget._web_view.set_background_color.assert_called_with("#FF0000")
-
-    # verify builder was called with new config
-    # Since we have nodes, build_html should be called
-    graph_widget._builder.build_html.assert_called()
-    call_args = graph_widget._builder.build_html.call_args
-    assert call_args.kwargs["theme_config"] == config
+    graph_widget._web_view.update_theme.assert_called_once_with(config)
+    graph_widget._builder.build_html.assert_not_called()
+    graph_widget._web_view.load_html.assert_not_called()

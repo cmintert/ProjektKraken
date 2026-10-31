@@ -164,6 +164,9 @@ def test_spell_check_capability_has_one_narrow_gui_owner():
     allowed = {
         "src.core.theme_manager",
         "src.gui.utils.help_context",
+        # Shared presentation delivery owns visibility/lifecycle, not scheduling
+        # spell checks or creating workers in the authoring view.
+        "src.gui.utils.theme_connections",
         "src.services.language_tool_service",
     }
     modules = {module for _, module in _imported_modules(path)}

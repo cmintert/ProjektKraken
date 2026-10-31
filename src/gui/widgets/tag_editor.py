@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QCompleter, QHBoxLayout, QLineEdit, QVBoxLayout, Q
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.standard_buttons import StandardButton
 from src.gui.widgets.tag_chip_view import TagChipDelegate, TagChipView, TagListModel
 
@@ -70,7 +71,7 @@ class TagEditorWidget(QWidget):
         main_layout.addStretch(1)
 
         theme_manager = ThemeManager()
-        theme_manager.theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
         self._on_theme_changed(theme_manager.get_theme())
 
     def set_base_color(self, color: str) -> None:

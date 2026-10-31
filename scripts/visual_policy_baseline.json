@@ -150,34 +150,6 @@
       "source": "\"QPushButton { background: qlineargradient(\""
     },
     {
-      "key": "src/gui/models/explorer_model.py|ExplorerModel.__init__|literal-color|5056cf128952d12a",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in ExplorerModel.__init__; migrate this expression when its presentation path is next touched.",
-      "source": "self.color_entity = QColor(theme.get(\"primary\", \"#FF9900\"))"
-    },
-    {
-      "key": "src/gui/models/explorer_model.py|ExplorerModel.__init__|literal-color|d990ab651607e46c",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in ExplorerModel.__init__; migrate this expression when its presentation path is next touched.",
-      "source": "self.color_event = QColor(theme.get(\"accent_secondary\", \"#0078D4\"))"
-    },
-    {
-      "key": "src/gui/models/explorer_model.py|ExplorerModel._on_theme_changed|literal-color|5056cf128952d12a",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in ExplorerModel._on_theme_changed; migrate this expression when its presentation path is next touched.",
-      "source": "self.color_entity = QColor(theme.get(\"primary\", \"#FF9900\"))"
-    },
-    {
-      "key": "src/gui/models/explorer_model.py|ExplorerModel._on_theme_changed|literal-color|d990ab651607e46c",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in ExplorerModel._on_theme_changed; migrate this expression when its presentation path is next touched.",
-      "source": "self.color_event = QColor(theme.get(\"accent_secondary\", \"#0078D4\"))"
-    },
-    {
       "key": "src/gui/splash_screen.py|SplashScreen._build_ui|local-color-derivation|b8cbccd11abfe0fd",
       "count": 1,
       "category": "legacy",
@@ -941,13 +913,6 @@
       "source": "\"edge_color\": \"#666666\","
     },
     {
-      "key": "src/gui/widgets/graph_view/graph_web_view.py|GraphWebView.update_graph_data|literal-color|673ad5d8a95855d4",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in GraphWebView.update_graph_data; migrate this expression when its presentation path is next touched.",
-      "source": "edge_color = theme.get(\"edge_color\", \"#888888\")"
-    },
-    {
       "key": "src/gui/widgets/graph_view/graph_widget.py|GraphWidget._get_current_theme_config|literal-color|412a334b405a8a9b",
       "count": 1,
       "category": "legacy",
@@ -981,20 +946,6 @@
       "category": "legacy",
       "reason": "KRT-54 legacy presentation in GraphWidget._get_current_theme_config; migrate this expression when its presentation path is next touched.",
       "source": "\"text_color\": theme.get(\"text_main\", \"#ffffff\"),"
-    },
-    {
-      "key": "src/gui/widgets/graph_view/graph_widget.py|GraphWidget._on_theme_changed|literal-color|4f6666232a525634",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in GraphWidget._on_theme_changed; migrate this expression when its presentation path is next touched.",
-      "source": "bg_color = self._current_theme_config.get(\"background_color\", \"#1e1e1e\")"
-    },
-    {
-      "key": "src/gui/widgets/longform/content.py|LongformContentWidget._apply_theme|literal-color|4f6666232a525634",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in LongformContentWidget._apply_theme; migrate this expression when its presentation path is next touched.",
-      "source": "bg_color = theme.get(\"app_bg\", \"#1e1e1e\")"
     },
     {
       "key": "src/gui/widgets/longform/content.py|LongformContentWidget._get_theme_css|literal-color|5056cf128952d12a",
@@ -1298,13 +1249,6 @@
       "source": "selection_pen = QPen(QColor(255, 255, 255), 2)"
     },
     {
-      "key": "src/gui/widgets/map/raster_edit_tool.py|RasterEditTool.__init__|literal-color|3f8aa17905bd07ef",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in RasterEditTool.__init__; migrate this expression when its presentation path is next touched.",
-      "source": "self._cursor_hex: str = \"#E8E8E8\""
-    },
-    {
       "key": "src/gui/widgets/map/raster_edit_tool.py|RasterEditTool._refresh_theme_colors|literal-color|3f8aa17905bd07ef",
       "count": 1,
       "category": "legacy",
@@ -1382,41 +1326,6 @@
       "source": "combined_lbl.setStyleSheet(f\"color: {ThemeManager().get_theme().get('text_main', '#E8E8E8')};\")"
     },
     {
-      "key": "src/gui/widgets/map/raster_legend_widget.py|_GradientBarWidget.__init__|literal-color|038c7447f897a832",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in _GradientBarWidget.__init__; migrate this expression when its presentation path is next touched.",
-      "source": "self._bar_border_color = QColor(_theme.get(\"border\", \"#444444\"))"
-    },
-    {
-      "key": "src/gui/widgets/map/raster_legend_widget.py|_GradientBarWidget.__init__|literal-color|0d29a6eb91e26dc6",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in _GradientBarWidget.__init__; migrate this expression when its presentation path is next touched.",
-      "source": "{\"position\": 0.0, \"color\": \"#000000\"},"
-    },
-    {
-      "key": "src/gui/widgets/map/raster_legend_widget.py|_GradientBarWidget.__init__|literal-color|5a06cd0e34821a35",
-      "count": 2,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in _GradientBarWidget.__init__; migrate this expression when its presentation path is next touched.",
-      "source": "self._tick_color = QColor(_theme.get(\"text_dim\", \"#aaaaaa\"))"
-    },
-    {
-      "key": "src/gui/widgets/map/raster_legend_widget.py|_GradientBarWidget.__init__|literal-color|d2e8bb359bfdd903",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in _GradientBarWidget.__init__; migrate this expression when its presentation path is next touched.",
-      "source": "{\"position\": 1.0, \"color\": \"#FFFFFF\"},"
-    },
-    {
-      "key": "src/gui/widgets/map/raster_legend_widget.py|_GradientBarWidget.__init__|local-color-derivation|f54b5a721cb552fa",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in _GradientBarWidget.__init__; migrate this expression when its presentation path is next touched.",
-      "source": "self._tick_color.setAlpha(160)"
-    },
-    {
       "key": "src/gui/widgets/map/raster_legend_widget.py|_GradientBarWidget._redraw_bar|literal-color|0d29a6eb91e26dc6",
       "count": 1,
       "category": "legacy",
@@ -1429,27 +1338,6 @@
       "category": "legacy",
       "reason": "KRT-54 legacy presentation in _GradientBarWidget._redraw_bar; migrate this expression when its presentation path is next touched.",
       "source": "gradient.setColorAt(0.0, QColor(\"#FFFFFF\"))"
-    },
-    {
-      "key": "src/gui/widgets/map/raster_legend_widget.py|_GradientBarWidget._refresh_bar_theme_colors|literal-color|038c7447f897a832",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in _GradientBarWidget._refresh_bar_theme_colors; migrate this expression when its presentation path is next touched.",
-      "source": "self._bar_border_color = QColor(theme.get(\"border\", \"#444444\"))"
-    },
-    {
-      "key": "src/gui/widgets/map/raster_legend_widget.py|_GradientBarWidget._refresh_bar_theme_colors|literal-color|5a06cd0e34821a35",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in _GradientBarWidget._refresh_bar_theme_colors; migrate this expression when its presentation path is next touched.",
-      "source": "self._tick_color = QColor(theme.get(\"text_dim\", \"#aaaaaa\"))"
-    },
-    {
-      "key": "src/gui/widgets/map/raster_legend_widget.py|_GradientBarWidget._refresh_bar_theme_colors|local-color-derivation|f54b5a721cb552fa",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in _GradientBarWidget._refresh_bar_theme_colors; migrate this expression when its presentation path is next touched.",
-      "source": "self._tick_color.setAlpha(160)"
     },
     {
       "key": "src/gui/widgets/map/raster_palette_editor.py|RasterPaletteEditor._add_entry_row|literal-color|dad8252028023902",

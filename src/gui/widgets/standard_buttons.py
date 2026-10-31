@@ -6,8 +6,41 @@ handled via StyleHelper QSS or global QSS.
 
 from typing import Optional
 
-from PySide6.QtCore import QEvent, QSize
-from PySide6.QtWidgets import QCheckBox, QPushButton, QToolButton, QWidget
+from PySide6.QtCore import QEvent, QObject, QSize, QTimer
+from PySide6.QtWidgets import (
+    QAbstractButton,
+    QCheckBox,
+    QPushButton,
+    QToolButton,
+    QWidget,
+)
+
+from src.gui.utils.theme_connections import connect_theme
+
+
+class _ButtonGeometryRefresh(QObject):
+    """Coalesce style bursts without caching synchronous content size hints."""
+
+    def __init__(self, button: QAbstractButton, floor: int) -> None:
+        super().__init__(button)
+        self._button = button
+        self._floor = floor
+        self._timer = QTimer(self)
+        self._timer.setSingleShot(True)
+        self._timer.timeout.connect(self._flush_geometry)
+
+    def queue(self) -> None:
+        """Request one geometry refresh after the current style cascade."""
+        if not self._timer.isActive():
+            self._timer.start(0)
+
+    def _flush_geometry(self) -> None:
+        button = self._button
+        if not callable(getattr(button, "label_geometry", None)):
+            height = max(self._floor, button.sizeHint().height())
+            if button.minimumHeight() != height:
+                button.setMinimumHeight(height)
+        button.updateGeometry()
 
 
 class StandardButton(QPushButton):
@@ -29,6 +62,7 @@ class StandardButton(QPushButton):
         if isinstance(text, QWidget):
             parent, text = text, ""
         super().__init__(text, parent)
+        self._geometry_refresh = _ButtonGeometryRefresh(self, 32)
         self._label_sizing_ready = True
         self.setMinimumHeight(32)  # 8-point grid: 4 units
 
@@ -39,9 +73,7 @@ class StandardButton(QPushButton):
             QEvent.Type.FontChange,
             QEvent.Type.StyleChange,
         ):
-            if not callable(getattr(self, "label_geometry", None)):
-                self.setMinimumHeight(max(32, self.sizeHint().height()))
-            self.updateGeometry()
+            self._geometry_refresh.queue()
 
     def minimumSizeHint(self) -> QSize:  # noqa: N802
         """Prevent parent layouts from shrinking the styled action label."""
@@ -62,6 +94,11 @@ class StandardButton(QPushButton):
 class LabelSizedToolButton(QToolButton):
     """A labeled tool whose style hint reserves complete text and decoration."""
 
+    def __init__(self, parent: QWidget | None = None) -> None:
+        """Initialize a lifetime-bound geometry refresh timer."""
+        super().__init__(parent)
+        self._geometry_refresh = _ButtonGeometryRefresh(self, 0)
+
     def sizeHint(self) -> QSize:  # noqa: N802
         """Include styled text, icons and menu decoration in both dimensions."""
         from src.gui.utils.action_label_metrics import action_label_geometry
@@ -77,10 +114,12 @@ class LabelSizedToolButton(QToolButton):
     def changeEvent(self, event: QEvent) -> None:  # noqa: N802
         """Invalidate containing layouts when style/font content changes."""
         super().changeEvent(event)
-        if event.type() in (QEvent.Type.FontChange, QEvent.Type.StyleChange):
-            if not callable(getattr(self, "label_geometry", None)):
-                self.setMinimumHeight(self.sizeHint().height())
-            self.updateGeometry()
+        refresh = getattr(self, "_geometry_refresh", None)
+        if refresh and event.type() in (
+            QEvent.Type.FontChange,
+            QEvent.Type.StyleChange,
+        ):
+            refresh.queue()
 
 
 class IconButton(QPushButton):
@@ -121,15 +160,15 @@ class PrimaryButton(StandardButton):
         super().__init__(text, parent)
         self._apply_style()
 
-        from src.core.theme_manager import ThemeManager
-
-        ThemeManager().theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
 
     def _apply_style(self) -> None:
         """Applies the current theme style."""
         from src.gui.utils.style_helper import StyleHelper
 
-        self.setStyleSheet(StyleHelper.get_primary_button_style())
+        style = StyleHelper.get_primary_button_style()
+        if self.styleSheet() != style:
+            self.setStyleSheet(style)
 
     def _on_theme_changed(self) -> None:
         """Handles theme change events."""
@@ -153,15 +192,15 @@ class DestructiveButton(StandardButton):
         super().__init__(text, parent)
         self._apply_style()
 
-        from src.core.theme_manager import ThemeManager
-
-        ThemeManager().theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
 
     def _apply_style(self) -> None:
         """Applies the current theme style."""
         from src.gui.utils.style_helper import StyleHelper
 
-        self.setStyleSheet(StyleHelper.get_destructive_button_style())
+        style = StyleHelper.get_destructive_button_style()
+        if self.styleSheet() != style:
+            self.setStyleSheet(style)
 
     def _on_theme_changed(self) -> None:
         """Handles theme change events."""
@@ -184,15 +223,15 @@ class StandardCheckbox(QCheckBox):
         super().__init__(text, parent)
         self._apply_style()
 
-        from src.core.theme_manager import ThemeManager
-
-        ThemeManager().theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
 
     def _apply_style(self) -> None:
         """Applies the current theme style."""
         from src.gui.utils.style_helper import StyleHelper
 
-        self.setStyleSheet(StyleHelper.get_checkbox_style())
+        style = StyleHelper.get_checkbox_style()
+        if self.styleSheet() != style:
+            self.setStyleSheet(style)
 
     def _on_theme_changed(self) -> None:
         """Handles theme change events."""

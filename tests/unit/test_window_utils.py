@@ -9,7 +9,43 @@ from src.gui.utils.window_utils import (
     DWMWA_USE_IMMERSIVE_DARK_MODE,
     ModalWindowThemeFilter,
     apply_windows_title_bar_style,
+    install_modal_window_theme_filter,
 )
+
+pytestmark = pytest.mark.ci_fast
+
+
+@pytest.mark.smoke
+def test_startup_theme_filters_install_and_deliver_theme(
+    qapp, qtbot, theme_presentation
+):
+    """Compose the same real theme filters as entry.main before opening a world."""
+    from src.core.theme_manager import ThemeManager
+
+    manager = ThemeManager()
+    theme_filter = install_modal_window_theme_filter(qapp, manager)
+    dialog = QDialog()
+    qtbot.addWidget(dialog)
+    try:
+        with patch(
+            "src.gui.utils.window_utils.apply_windows_title_bar_style"
+        ) as apply_style:
+            dialog.show()
+            qapp.processEvents()
+            apply_style.reset_mock()
+            manager.set_theme("light_mode", persist=False)
+            qapp.processEvents()
+        matching = [
+            call for call in apply_style.call_args_list if call.args[0] is dialog
+        ]
+        assert matching
+        assert (
+            matching[-1].kwargs["title_color"].name()
+            == manager.get_theme()["app_bg"].lower()
+        )
+    finally:
+        qapp.removeEventFilter(theme_filter)
+        theme_filter.deleteLater()
 
 
 @pytest.fixture

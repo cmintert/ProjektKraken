@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
 
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.map.map_data_buffer import CoverageStats
 
 
@@ -52,7 +53,7 @@ class _HistogramWidget(QWidget):
         self._border_color = QColor()
         self._bg_color = QColor()
         self._refresh_theme_colors()
-        ThemeManager().theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
 
     def _on_theme_changed(self, _: dict) -> None:
         if shiboken6.isValid(self):

@@ -29,6 +29,7 @@ from src.gui.models.explorer_filter_proxy import ExplorerFilterProxyModel
 from src.gui.models.explorer_model import ExplorerItem, ExplorerModel
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.auto_closing_message_box import AutoClosingMessageBox
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.menu_caret import PhosphorPushMenuButton
@@ -481,7 +482,7 @@ class UnifiedListWidget(QWidget):
         # Theme connection for checkbox style updates
         from src.core.theme_manager import ThemeManager
 
-        ThemeManager().theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
 
         self._model.dataChanged.connect(self._update_delete_button_state)
         self._render_list()

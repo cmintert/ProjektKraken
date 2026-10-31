@@ -12,6 +12,7 @@ from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.menu_caret import PhosphorToolMenuButton as WritingMenuButton
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
 
@@ -76,7 +77,7 @@ class WritingToolbarPresentation(QObject):
         owner.toolbar.installEventFilter(self)
         self.apply_theme()
         self._reflow_timer.start(0)
-        ThemeManager().theme_changed.connect(self.apply_theme)
+        connect_theme(self, self.apply_theme)
 
     def _name_actions(self) -> None:
         """Use accurate labels while preserving the actions and their handlers."""

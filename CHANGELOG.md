@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-30
-**Commit:** d6f4375a
+**Last Updated:** 2026-10-31
+**Commit:** 485706ec
 ---
 
 # Changelog
@@ -12,6 +12,19 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-10-31)* **Theme switching (KRT-120)**: Updated Settings first after Apply,
+  then refreshed visible workspace panels and deferred hidden panels until shown.
+  Kept global geometry stable, removed duplicate styling, coalesced button sizing
+  and cached SVG icons. Recolored loaded graphs without restarting physics and
+  reused Longform rendering while preserving authoring and navigation state.
+  Corrected the native-dialog theme import that prevented application startup.
+
+- *(2026-10-31)* **Theme verification (KRT-120)**: Added isolated settings and
+  credential-safe benchmarks, six-theme rendering tools, startup/lifecycle and
+  authoring regressions, reviewed Help bindings and semantic visual cleanup.
+  Recorded roughly 90% less Apply feedback delay and 65%/78% lower settled latency
+  in matched fixtures, with native Windows checks and review limits documented.
 
 - *(2026-10-30)* **Timeline loading (KRT-118)**: Indexed timing facts once per
   connected component and removed only provably neutral constraints from the

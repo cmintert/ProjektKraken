@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
 
 from src.core.logging_config import get_logger
 from src.gui.utils.help_context import declare_inspection
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.inspector_section import AuxiliarySectionHome
 from src.gui.widgets.menu_caret import PhosphorToolMenuButton
 
@@ -319,20 +320,18 @@ class DraggableTabWidget(QTabWidget):
         self.setCornerWidget(self.overflow_button, Qt.Corner.TopRightCorner)
         self.tabBar().setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.tabBar().customContextMenuRequested.connect(self._show_layout_menu)
-        from src.core.theme_manager import ThemeManager
+        from src.gui.utils.style_helper import StyleHelper
 
-        ThemeManager().theme_changed.connect(self._style_overflow)
+        self.setStyleSheet(StyleHelper.get_inspector_tab_spacing_style())
+        connect_theme(self, self._style_overflow)
         self._style_overflow()
 
     def _style_overflow(self) -> None:
         from src.gui.utils.style_helper import StyleHelper
 
-        self.setStyleSheet(StyleHelper.get_inspector_tab_spacing_style())
-        self.overflow_button.setStyleSheet(
-            StyleHelper.get_tool_button_style()
-            + StyleHelper.get_menu_caret_style()
-            + StyleHelper.get_inspector_focus_style()
-        )
+        style = StyleHelper.get_tool_button_style() + StyleHelper.get_menu_caret_style()
+        if self.overflow_button.styleSheet() != style:
+            self.overflow_button.setStyleSheet(style)
 
     def _inspector(self) -> Optional["SplitterTabInspector"]:
         parent = self.parentWidget()

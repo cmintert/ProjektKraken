@@ -27,9 +27,9 @@ from src.core.event_timing.definitions import EndpointDefinition, EventTimingDef
 from src.core.events import Event
 from src.core.temporal_context import TemporalResolutionContext
 from src.core.temporal_expression import move_expression
-from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.compact_duration_widget import CompactDurationWidget
 from src.gui.widgets.editor_presentation import DisclosureButton
@@ -342,7 +342,7 @@ class TemporalRangeWidget(QWidget):
         self.source_end.changed.connect(self._source_changed)
         self.has_duration.toggled.connect(self._source_changed)
         self.btn_lock_end.toggled.connect(self._on_lock_toggled)
-        ThemeManager().theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
         self.start_changed.connect(self._update_range_summary)
         self.duration_changed.connect(self._update_range_summary)
         self.end_changed.connect(self._update_range_summary)

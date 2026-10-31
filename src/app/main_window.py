@@ -65,6 +65,7 @@ from src.core.paths import get_worlds_dir
 from src.core.timeline_grouping import build_group_metadata, events_for_group
 from src.gui.dialogs.filter_dialog import FilterDialog
 from src.gui.utils.help_context import owns_assistance_input
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.ai_search_panel import AISearchPanelWidget
 from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.event_editor import EventEditorWidget
@@ -323,7 +324,7 @@ class MainWindow(QMainWindow):
             apply_windows_title_bar_style(self, dark_mode=dark_mode)
 
             # Connect to theme changes to update title bar
-            ThemeManager().theme_changed.connect(self._on_theme_changed_for_titlebar)
+            connect_theme(self, self._on_theme_changed_for_titlebar)
         except Exception as e:
             logger.warning(f"Failed to apply title bar style: {e}")
 
@@ -363,11 +364,8 @@ class MainWindow(QMainWindow):
 
         # Connect Theme Manager Signal
         try:
-            from src.core.theme_manager import ThemeManager
-
-            tm = ThemeManager()
-            tm.theme_changed.connect(self._update_window_style)
-            tm.theme_changed.connect(self._on_theme_changed_save_to_world)
+            connect_theme(self, self._update_window_style)
+            connect_theme(self, self._on_theme_changed_save_to_world)
         except Exception as e:
             logger.warning(f"Failed to connect theme signal: {e}")
 
@@ -516,7 +514,7 @@ class MainWindow(QMainWindow):
         try:
             from src.core.theme_manager import ThemeManager
 
-            ThemeManager().theme_changed.connect(self._refresh_map_layer_styles)
+            connect_theme(self.map_widget, self._refresh_map_layer_styles)
         except Exception as e:
             logger.warning(f"Failed to connect theme->layer panel: {e}")
 
@@ -693,8 +691,8 @@ class MainWindow(QMainWindow):
         )
         self.btn_context_tags_status.hide()
         self.status_bar.addPermanentWidget(self.btn_context_tags_status)
-        ThemeManager().theme_changed.connect(self._on_context_tag_theme_changed)
-        ThemeManager().theme_changed.connect(self._apply_status_label_theme)
+        connect_theme(self, self._on_context_tag_theme_changed)
+        connect_theme(self, self._apply_status_label_theme)
 
         # Create Menus
         self.ui_manager.create_file_menu(self.menuBar())

@@ -20,6 +20,7 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import QApplication, QTextBrowser, QWidget
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.theme_connections import connect_theme
 
 logger = logging.getLogger(__name__)
 
@@ -40,12 +41,13 @@ class LongformContentWidget(QTextBrowser):
         self.setOpenLinks(False)  # We handle links manually
         self.anchorClicked.connect(self._on_anchor_clicked)
         self._sequence: list[dict[str, Any]] = []
+        self._body_html = ""
         self._calendar_converter = None
         self._card_press: tuple[QPoint, int] | None = None
         self._card_dragged = False
 
         # Connect to theme changes
-        ThemeManager().theme_changed.connect(lambda _: self._apply_theme())
+        connect_theme(self, lambda _: self._apply_theme())
 
         # Apply initial theme
         self._apply_theme()
@@ -189,8 +191,8 @@ class LongformContentWidget(QTextBrowser):
             )
             html_parts.append(card_html)
 
-        body_html = "\n".join(html_parts)
-        final_html = self._wrap_html(body_html)
+        self._body_html = "\n".join(html_parts)
+        final_html = self._wrap_html(self._body_html)
         self.setHtml(final_html)
 
     def scroll_to_item(self, item_index: int) -> None:
@@ -420,7 +422,7 @@ class LongformContentWidget(QTextBrowser):
             theme = tm.get_theme()
             from src.gui.utils.style_helper import StyleHelper
 
-            bg_color = theme.get("app_bg", "#1e1e1e")
+            bg_color = theme["app_bg"]
             scrollbar_style = StyleHelper.get_scrollbar_style()
 
             # Combine specific browser style with global scrollbar style
@@ -431,15 +433,24 @@ class LongformContentWidget(QTextBrowser):
                 }}
                 {scrollbar_style}
             """
-            self.setStyleSheet(style)
+            if self.styleSheet() != style:
+                self.setStyleSheet(style)
 
             # Reload content to update CSS in <head>
             if self._sequence:
-                # Preserve scroll
-                scrollbar = self.verticalScrollBar()
-                val = scrollbar.value()
-                self.load_content(self._sequence)
-                scrollbar.setValue(val)
+                cursor = self.textCursor()
+                position, anchor = cursor.position(), cursor.anchor()
+                vertical = self.verticalScrollBar().value()
+                horizontal = self.horizontalScrollBar().value()
+                self.setHtml(self._wrap_html(self._body_html))
+                cursor = self.textCursor()
+                cursor.setPosition(anchor)
+                cursor.setPosition(position, QTextCursor.MoveMode.KeepAnchor)
+                self.setTextCursor(cursor)
+                # Force layout before restoring scroll ranges, including hidden views.
+                self.document().documentLayout().documentSize()
+                self.verticalScrollBar().setValue(vertical)
+                self.horizontalScrollBar().setValue(horizontal)
         except Exception:
             # Prevent crashes during theme changes (especially in tests or shutdown)
             import logging

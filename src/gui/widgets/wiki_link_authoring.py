@@ -23,6 +23,7 @@ from src.core.wiki_ast import NodeType, WikiASTParser, WikiNode
 from src.core.wiki_markdown_grammar import requires_source_mode
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 if TYPE_CHECKING:
@@ -81,7 +82,7 @@ class EntryLinkPicker(QFrame):
         self.link_button.clicked.connect(self.accept_choice)
         cancel.clicked.connect(self.close)
         self._apply_theme()
-        ThemeManager().theme_changed.connect(self._apply_theme)
+        connect_theme(self, self._apply_theme)
         self.search.setText(search)
         self._filter(search)
         self.resize(350, 300)

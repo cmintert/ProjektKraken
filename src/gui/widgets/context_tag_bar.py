@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 from src.gui.widgets.tag_chip_view import tag_color_for_theme
 
@@ -91,7 +92,7 @@ class ContextTagBar(QFrame):
         layout.addWidget(self.btn_disable)
 
         theme_manager = ThemeManager()
-        theme_manager.theme_changed.connect(self._on_theme_changed)
+        connect_theme(self, self._on_theme_changed)
         self._on_theme_changed(theme_manager.get_theme())
         self.set_state(self._state)
 

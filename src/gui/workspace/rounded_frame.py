@@ -5,6 +5,7 @@ from PySide6.QtGui import QColor, QPainter, QPainterPath, QPaintEvent, QPen
 from PySide6.QtWidgets import QWidget
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.theme_connections import connect_theme
 
 _MIN_FRAME_SIZE = 2
 
@@ -13,7 +14,10 @@ class RoundedWorkspaceFrame(QWidget):
     """Paint a rounded outline and exterior cutout without covering its interior."""
 
     def __init__(
-        self, parent: QWidget, radius: float, exterior_token: str = "border",
+        self,
+        parent: QWidget,
+        radius: float,
+        exterior_token: str = "border",
         border_width: float = 1.0,
     ) -> None:
         """Create an input-transparent frame above the parent's content."""
@@ -23,7 +27,7 @@ class RoundedWorkspaceFrame(QWidget):
         self._exterior_token = exterior_token
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground)
-        ThemeManager().theme_changed.connect(self.update)
+        connect_theme(self, self.update)
 
     def paintEvent(self, event: QPaintEvent) -> None:  # noqa: N802
         """Join all edges and corners using one antialiased rounded path."""
