@@ -95,6 +95,37 @@ def qapp():
 
 
 @pytest.fixture
+def qtbot(qtbot):
+    """Own registered widgets until pytest-qt finishes their deferred teardown."""
+    registered = qtbot.addWidget
+    retained = {}
+
+    def add_widget(widget, *, before_close_func=None):
+        registered(widget, before_close_func=before_close_func)
+        identity = id(widget)
+        retained[identity] = widget
+
+        def destroyed():
+            retained.pop(identity, None)
+            # Explicit deletion must also remove pytest-qt's weak registration:
+            # retaining an invalid wrapper would otherwise make close() fail.
+            node = qtbot._request.node
+            widgets = getattr(node, "qt_widgets", None)
+            if widgets is not None:
+                node.qt_widgets = [
+                    entry for entry in widgets if id(entry[0]()) != identity
+                ]
+
+        widget.destroyed.connect(destroyed)
+
+    # Preserve both public spellings and pytest-qt's normal close callbacks.
+    qtbot.addWidget = add_widget
+    qtbot.add_widget = add_widget
+    yield qtbot
+    retained.clear()
+
+
+@pytest.fixture
 def theme_presentation(qapp):
     """Compose the production visible-first renderer with shared Qt ownership."""
     from src.core.theme_manager import ThemeManager

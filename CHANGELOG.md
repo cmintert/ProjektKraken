@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-31
-**Commit:** 1ec97b3d
+**Commit:** 38f32ba3
 ---
 
 # Changelog
@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-10-31)* **Testing (KRT-120)**: Retained registered Qt windows through
+  orderly teardown so garbage collection cannot delete a parent during queued
+  toolbar measurement. Preserved explicit widget deletion and added lifecycle
+  regressions for both registration spellings.
 
 - *(2026-10-31)* **Documentation (KRT-120)**: Added current and historical theme
   performance evidence to the UX navigation so strict documentation builds
