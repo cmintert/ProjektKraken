@@ -5791,7 +5791,7 @@
     "tests/unit/test_incremental_graph.py::test_subsequent_load_uses_incremental_update": [
       "ci_fast"
     ],
-    "tests/unit/test_incremental_graph.py::test_theme_change_forces_full_reload": [
+    "tests/unit/test_incremental_graph.py::test_theme_change_recolors_without_full_reload": [
       "ci_fast"
     ],
     "tests/unit/test_inject_command.py::test_command_execute_entity": [],

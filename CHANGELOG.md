@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-31
-**Commit:** 485706ec
+**Commit:** d950e48d
 ---
 
 # Changelog
@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-10-31)* **Test inventory (KRT-120)**: Recorded the intentional graph-theme
+  regression rename from forced page reload to in-place recoloring. Retained its
+  `ci_fast` membership and the rest of the reviewed inventory unchanged.
 
 - *(2026-10-31)* **Theme switching (KRT-120)**: Updated Settings first after Apply,
   then refreshed visible workspace panels and deferred hidden panels until shown.
