@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-10-31
-**Commit:** d950e48d
+**Commit:** 1ec97b3d
 ---
 
 # Changelog
@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-10-31)* **Documentation (KRT-120)**: Added current and historical theme
+  performance evidence to the UX navigation so strict documentation builds
+  include both reports without suppressing orphan-page warnings.
 
 - *(2026-10-31)* **Test inventory (KRT-120)**: Recorded the intentional graph-theme
   regression rename from forced page reload to in-place recoloring. Retained its
