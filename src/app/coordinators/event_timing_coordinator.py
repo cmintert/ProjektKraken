@@ -154,6 +154,9 @@ class EventTimingCoordinator(QObject):
         if plan.errors:
             self._finish("\n".join(plan.errors))
             return
+        if plan.request.movement is not None and not plan.consequences:
+            self._finish("No timing change.", show=False)
+            return
         if plan.needs_review and not self._review(plan):
             self._finish("Timing changes were not applied.", show=False)
             return

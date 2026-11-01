@@ -38,6 +38,7 @@ from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 from src.gui.widgets.timeline.dependency_control import DependencyVisibilityButton
 from src.gui.widgets.timeline.event_item import EventItem
+from src.gui.widgets.timeline.movement import DragModeButton
 from src.gui.widgets.timeline.time_indicators import TimelineTimeStatus
 from src.gui.widgets.timeline.timeline_scene import (
     CurrentTimeLineItem,
@@ -202,6 +203,11 @@ class TimelineWidget(QWidget):
         )
         self.dependency_control.set_mode(read_dependency_visibility(settings))
         self.action_toolbar.add_button(self.dependency_control, priority=20)
+        self.drag_mode_control = declare_inspection(
+            DragModeButton(self),
+            "timeline.drag-mode|timeline.viewing|help-inspect-timeline-drag-mode",
+        )
+        self.action_toolbar.add_button(self.drag_mode_control, priority=45)
 
         self.btn_fit = declare_inspection(
             PhosphorToolMenuButton(self),
@@ -233,6 +239,7 @@ class TimelineWidget(QWidget):
             "view.src-gui-widgets-timeline-init-timelinewidget-init-self-view|timeline.viewing|help-inspect-view-src-gui-widgets-timeline-init-timelinewidget-init-self-view",
         )
         self.view.set_playhead_event_snapping(snap_to_events)
+        self.drag_mode_control.mode_changed.connect(self._set_drag_mode)
         self.view.set_dependency_visibility(self.dependency_control.mode)
         self.dependency_control.mode_changed.connect(self.set_dependency_visibility)
         self.chk_snap_playhead_to_events.toggled.connect(
@@ -258,6 +265,11 @@ class TimelineWidget(QWidget):
     def _compact_lanes(self) -> None:
         """Forward the deliberate presentation-only compaction request."""
         self.view.compact_lanes()
+
+    def _set_drag_mode(self, mode: str) -> None:
+        """Cancel the current preview before changing movement meaning."""
+        self.view.movement.cancel()
+        self.view.movement.mode = mode
 
     def _publish_event_selection(self, event_id: str) -> None:
         """Restore a reselected accepted target even if global selection is unchanged."""

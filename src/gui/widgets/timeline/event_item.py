@@ -118,9 +118,6 @@ class EventItem(QGraphicsItem):
             | QGraphicsItem.GraphicsItemFlag.ItemIsMovable
             | QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges
         )
-        self.setFlag(
-            QGraphicsItem.GraphicsItemFlag.ItemIsMovable, not event.start_follows_event
-        )
 
         # Enable caching for improved rendering performance
         self.setCacheMode(QGraphicsItem.CacheMode.DeviceCoordinateCache)
@@ -133,6 +130,8 @@ class EventItem(QGraphicsItem):
 
         # Callback for when drag completes: fn(event_id, new_lore_date)
         self.on_drag_complete: Callable[[str, float], None] | None = None
+        self.on_drag_start: Callable[[str], None] | None = None
+        self.on_drag_preview: Callable[[str, float], None] | None = None
 
         # Track if we're currently dragging
         self._is_dragging = False
@@ -209,9 +208,6 @@ class EventItem(QGraphicsItem):
         self.event = event
         self.refresh_theme(ThemeManager().get_theme())
         self.setPos(event.require_date() * self.scale_factor, self.y())
-        self.setFlag(
-            QGraphicsItem.GraphicsItemFlag.ItemIsMovable, not event.start_follows_event
-        )
         self._update_temporal_tooltip()
 
     def _update_temporal_tooltip(self) -> None:
@@ -225,7 +221,7 @@ class EventItem(QGraphicsItem):
             "Detached Duration ruler measures length, not a start/end date. "
             "A broken ruler is shorter than the scale can show."
             + (
-                "\nStart follows another Event. Edit its offset or detach it in the inspector to move it."
+                "\nStart follows another Event. Drag to adjust its offset, or choose Move chain."
                 if self.event.start_follows_event
                 else ""
             )
@@ -279,18 +275,19 @@ class EventItem(QGraphicsItem):
             event: The mouse event.
 
         """
+        if event.button() == Qt.MouseButton.LeftButton and self.on_drag_start:
+            self.on_drag_start(self.event.id)
         super().mousePressEvent(event)
         # Mark that user initiated a drag - used by itemChange to know
         # when to apply constraints vs allowing programmatic moves
-        self._is_dragging = bool(
+        self._is_dragging = event.button() == Qt.MouseButton.LeftButton and bool(
             self.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsMovable
         )
         # Capture current Y as the constraint value at drag start
         self._initial_y = self.y()
 
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
-        """Handles item changes to constrain dragging to horizontal only and update the
-        lore_date during drag.
+        """Request a horizontal preview without changing authored timing.
 
         Args:
             change: The type of change.
@@ -307,9 +304,10 @@ class EventItem(QGraphicsItem):
             if self._is_dragging:
                 new_pos.setY(self._initial_y)
 
-                # Update the event's lore_date based on new X position
                 new_lore_date = new_pos.x() / self.scale_factor
-                self.event.lore_date = new_lore_date
+                if self.on_drag_preview:
+                    self.on_drag_preview(self.event.id, new_lore_date)
+                    return self.pos()
 
                 # Trigger repaint to update the displayed date
                 self.update()

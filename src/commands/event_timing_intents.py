@@ -16,6 +16,7 @@ from src.commands.calendar_commands import (
 from src.commands.chronology_commands import ApplyChronologyCommand
 from src.commands.composite_command import CompositeCommand
 from src.commands.event_commands import CreateEventCommand, UpdateEventCommand
+from src.commands.timeline_move_command import TimelineMoveCommand
 from src.commands.transfer_commands import ApplyTransferCommand
 from src.core.events import Event
 from src.services.event_temporal_service import move_temporal_event
@@ -36,7 +37,9 @@ def children(command: BaseCommand) -> list[BaseCommand]:
 def timing_intent(command: BaseCommand) -> bool:
     """Identify existing timing mutators for asynchronous preparation."""
     return any(
-        isinstance(item, (CreateEventCommand, ApplyChronologyCommand))
+        isinstance(
+            item, (CreateEventCommand, ApplyChronologyCommand, TimelineMoveCommand)
+        )
         or (isinstance(item, UpdateEventCommand) and _updates_timing(item))
         or isinstance(
             item,
@@ -150,6 +153,10 @@ def request_for_command(
     command: BaseCommand, snapshot: dict[str, Any]
 ) -> TimingChangeRequest:
     """Preserve root command behavior while preparing its temporal consequences."""
+    if isinstance(command, TimelineMoveCommand):
+        return TimingChangeRequest(
+            movement=deepcopy(command.intent), world_id=snapshot["world_id"]
+        )
     updates: dict[str, dict[str, Any]] = {}
     creates = []
     expected = {}

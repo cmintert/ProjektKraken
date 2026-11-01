@@ -83,8 +83,9 @@ def test_review_caption_retains_disjoint_strict_bounds():
 
 
 @pytest.mark.parametrize("action", ["apply", "cancel", "world_change"])
+@pytest.mark.parametrize("intent_kind", ["scalar", "timeline"])
 def test_real_review_finishes_without_progress_overlap(
-    qtbot, qapp, db_service, monkeypatch, action
+    qtbot, qapp, db_service, monkeypatch, action, intent_kind
 ):
     from src.commands.event_commands import UpdateEventCommand
 
@@ -135,7 +136,27 @@ def test_real_review_finishes_without_progress_overlap(
 
     monkeypatch.setattr(EventTimingReviewDialog, "exec", review)
     try:
-        assert coordinator.intercept(UpdateEventCommand(root.id, {"lore_date": 20}))
+        command = UpdateEventCommand(root.id, {"lore_date": 20})
+        if intent_kind == "timeline":
+            from src.commands.timeline_move_command import TimelineMoveCommand
+            from src.core.event_timing.solver import resolve_world
+            from src.services.event_timing.planning import converter_from_snapshot
+            from src.services.event_timing.store import capture
+
+            snapshot = capture(db_service)
+
+            command = TimelineMoveCommand(
+                {
+                    "event_id": root.id,
+                    "target": 20,
+                    "mode": "offset",
+                    "generation": resolve_world(
+                        [Event.from_dict(row) for row in snapshot["events"]],
+                        converter_from_snapshot(snapshot),
+                    ).fingerprint,
+                }
+            )
+        assert coordinator.intercept(command)
         qtbot.waitUntil(lambda: bool(outgoing or failures), timeout=5000)
         assert observed == [True]
         assert coordinator._progress is None

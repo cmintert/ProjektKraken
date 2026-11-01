@@ -120,6 +120,7 @@ def _init_registry() -> None:
         SetTimelineGroupingCommand,
         UpdateTagColorCommand,
     )
+    from src.commands.timeline_move_command import TimelineMoveCommand
     from src.commands.trajectory_commands import UpdateTrajectoryCommand
     from src.commands.transfer_commands import ApplyTransferCommand
     from src.commands.wiki_commands import ProcessWikiLinksCommand
@@ -149,6 +150,7 @@ def _init_registry() -> None:
             "RegisterDetailMapCommand": RegisterDetailMapCommand,
             "UpdateCalendarConfigCommand": UpdateCalendarConfigCommand,
             "ApplyWorldSettingsCommand": ApplyWorldSettingsCommand,
+            "TimelineMoveCommand": TimelineMoveCommand,
             "CreateCalendarConfigCommand": CreateCalendarConfigCommand,
             "SetActiveCalendarCommand": SetActiveCalendarCommand,
             "SetTimelineGroupingCommand": SetTimelineGroupingCommand,

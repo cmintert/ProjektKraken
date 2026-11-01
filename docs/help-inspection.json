@@ -9440,6 +9440,26 @@
       "binding": "self.btn_batch_edit",
       "label": "Batch Edit",
       "kind": "QPushButton"
+    },
+    {
+      "id": "timeline.drag-mode",
+      "topic_id": "timeline.viewing",
+      "target": "help-inspect-timeline-drag-mode",
+      "source": "src/gui/widgets/timeline/__init__.py",
+      "symbol": "TimelineWidget.__init__",
+      "binding": "self.drag_mode_control",
+      "label": "Drag mode",
+      "kind": "DragModeButton"
+    },
+    {
+      "id": "timeline.drag-mode-options",
+      "topic_id": "timeline.viewing",
+      "target": "help-inspect-timeline-drag-mode",
+      "source": "src/gui/widgets/timeline/movement.py",
+      "symbol": "DragModeButton.__init__",
+      "binding": "self.mode_menu",
+      "label": "Drag mode options",
+      "kind": "QMenu"
     }
   ],
   "factory_exemptions": [
@@ -16060,8 +16080,8 @@
     {
       "source": "src/gui/widgets/timeline/__init__.py",
       "symbol": "TimelineWidget.__init__",
-      "sha256": "9fb89a7b999bef43442b8e52497a7eecbd1fb7867df036b366f7243a1e18bbe6",
-      "review_note": "KRT-115: replaces Show dependencies with the four-mode Dependencies menu. The existing canonical anchor now explains All, Selected, Show dependency trail and Off, the Selected default and migration. Other toolbar routes are unchanged. Accepted selection forwarding restores the same Event after visual deselection without bypassing navigation guards. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
+      "sha256": "6d062ea2e828996c454ca3869775c316c84245763d3891f1792b678c013fffb3",
+      "review_note": "KRT-128: reviewed visible Adjust offset / Move chain menu, keyboard and overflow access, startup default and cancellation. Timeline Help explains retained units, precision and uncertainty, whole-calendar snapping, reviewed application and rejected unsupported moves. Existing navigation and dependency controls retain their meanings."
     },
     {
       "source": "src/gui/widgets/timeline/__init__.py",
@@ -17184,6 +17204,12 @@
       "symbol": "BatchMetadataDialog.__init__",
       "sha256": "1760a052fdd674900247714fceb885cac9f57f58c719073384cb1a134ea282c2",
       "review_note": "KRT-127: reviewed single-operation modal form, explicit Preview and Apply, typed values, neutral baseline explanation, cancel ownership and count feedback. Workspace manual includes affected controls and complete batch recovery; human review pending. Narrow/scaled presentation uses shared WrappingComboBox, scrollable form and ActionFlowLayout with complete labels; operation meaning and cancellation guidance remain accurate."
+    },
+    {
+      "source": "src/gui/widgets/timeline/movement.py",
+      "symbol": "DragModeButton.__init__",
+      "sha256": "80c07d8c7d302ae35f69feb602beb4a983a2a0893c1c354f6fd17acdfc536975",
+      "review_note": "KRT-128: reviewed visible Adjust offset / Move chain menu, keyboard and overflow access, startup default and cancellation. Timeline Help explains retained units, precision and uncertainty, whole-calendar snapping, reviewed application and rejected unsupported moves. Existing navigation and dependency controls retain their meanings."
     }
   ],
   "review_status": {

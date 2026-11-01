@@ -148,12 +148,14 @@ def test_playhead_drag(timeline, qtbot):
 
 
 def test_event_drag_date_change(timeline, qtbot):
-    """Test that dragging an event item emits event_date_changed signal."""
+    """A drag emits explicit intent without changing accepted date evidence."""
+    from src.core.temporal_context import TemporalResolutionContext
+
     # 1. Setup event
     events = [
         Event(id="test-event-1", name="Draggable", lore_date=50.0, type="generic")
     ]
-    timeline.set_events(events)
+    timeline.view.set_temporal_context(TemporalResolutionContext.build(events, None))
 
     # 2. Find the event item
     items = [
@@ -175,17 +177,19 @@ def test_event_drag_date_change(timeline, qtbot):
     # - Set _initial_y (normally captured from current Y at drag start)
     item._is_dragging = True
     item._initial_y = initial_y
+    timeline.view.movement.begin(item.event.id)
 
     # 6. Simulate drag: move to new position
     new_lore_date = 75.0
     new_x = new_lore_date * scale
     item.setPos(new_x, initial_y)
 
-    # 7. Verify the event's lore_date was updated in-memory
-    assert abs(item.event.lore_date - new_lore_date) < 0.01
+    # Only a completed, reviewed command may change accepted date evidence.
+    assert item.event.lore_date == 50.0
+    assert item.x() == initial_x
 
     # 8. Test signal emission on mouse release
-    with qtbot.waitSignal(timeline.event_date_changed) as blocker:
+    with qtbot.waitSignal(timeline.view.movement.move_requested) as blocker:
         # Call callback directly (simulates mouseReleaseEvent logic)
         item.on_drag_complete = timeline.view._on_event_drag_complete
         if item.on_drag_complete:
@@ -193,8 +197,9 @@ def test_event_drag_date_change(timeline, qtbot):
         item._is_dragging = False
 
     # 9. Verify signal was emitted with correct values
-    assert blocker.args[0] == "test-event-1"
-    assert abs(blocker.args[1] - new_lore_date) < 0.01
+    assert blocker.args[0]["event_id"] == "test-event-1"
+    assert blocker.args[0]["target"] == new_lore_date
+    assert blocker.args[0]["mode"] == "offset"
 
 
 def test_event_drag_constrained_to_horizontal(timeline):
@@ -221,8 +226,9 @@ def test_event_drag_constrained_to_horizontal(timeline):
 
     # Y should be constrained to initial value
     assert item.y() == initial_y
-    # X should have changed
-    assert abs(item.x() - new_x) < 0.01
+    # Candidate X waits for a calculated preview; the accepted date stays intact.
+    assert item.x() == 100.0 * timeline.view.scale_factor
+    assert item.event.lore_date == 100.0
 
     item._is_dragging = False
 

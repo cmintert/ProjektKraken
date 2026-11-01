@@ -163,12 +163,23 @@ class AppCoordinator(QObject):
             self.map_temporal.prime_resolution
         )
         self.event_timing.failed.connect(lambda _result: self.data.load_events())
+        from src.app.coordinators.timeline_movement_coordinator import (
+            TimelineMovementCoordinator,
+        )
+
+        self.timeline_movement = TimelineMovementCoordinator(
+            window.timeline.view.movement,
+            self.editor.command_requested.emit,
+            self,
+            lambda: str(window.db_path),
+        )
         window.worker.initialized.connect(
             self.event_timing.cancel, Qt.ConnectionType.QueuedConnection
         )
         application = QApplication.instance()
         if application is not None:
             application.aboutToQuit.connect(self.event_timing.shutdown)
+            application.aboutToQuit.connect(self.timeline_movement.shutdown)
 
     def bind_batch_metadata(self) -> None:
         """Compose Explorer batch edits after worker and command setup."""

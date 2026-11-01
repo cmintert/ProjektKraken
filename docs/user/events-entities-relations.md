@@ -181,8 +181,10 @@ has no corresponding day or month.
 
 To detach, choose **Manual date**. An exact result can be copied into the field.
 For uncertain timing, enter an explicit replacement date or uncertainty before
-saving. A followed start cannot be dragged on the Timeline: edit its offset or
-detach it in the inspector. Resolve all timing references before deleting a
+saving. On the Timeline, choose **Drag: Adjust offset** or **Move chain** to
+move followed Events while preserving dependency meaning; see
+[Timeline movement](timeline-and-calendars.md#move-an-event-or-its-dependency-chain).
+Resolve all timing references before deleting a
 source Event or removing its referenced end.
 
 Accepted Timeline moves and Undo/Redo refresh timing that you are not editing,
@@ -202,7 +204,7 @@ viewing <help-timeline-viewing>`
 
 (help-control-event-timing)=
 
-> Choose Manual date to author date evidence, or Follow Event to calculate a start or end from another Event. Event has an end distinguishes an interval from an occurrence. Duration fixes elapsed length; End Date gives the end its own source. Date-frame edits wait for Save Changes; autosave saves other fields separately. Save Changes validates the joint timing and asks you to review dependent changes. Cancelling keeps your draft. A followed start cannot be dragged. Detaching uncertain timing requires a replacement date. Resolve references before deleting a source or removing its end.
+> Choose Manual date to author date evidence, or Follow Event to calculate a start or end from another Event. Event has an end distinguishes an interval from an occurrence. Duration fixes elapsed length; End Date gives the end its own source. Date-frame edits wait for Save Changes; autosave saves other fields separately. Save Changes validates the joint timing and asks you to review dependent changes. Cancelling keeps your draft. Timeline dragging can adjust an offset or move the connected chain while preserving timing meaning; unsupported moves are rejected. Detaching uncertain timing requires a replacement date. Resolve references before deleting a source or removing its end.
 
 (help-inspect-event-start-source)=
 

@@ -42,6 +42,7 @@ class TimingChangeRequest:
     generation: int = 0
     imported: bool = False
     consumers: tuple[dict[str, Any], ...] | None = None
+    movement: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Return worker-safe request data."""
@@ -99,6 +100,8 @@ class TimingChangePlan:
     @property
     def needs_review(self) -> bool:
         """The directly edited Event is already reviewed in its inspector."""
+        if self.request.movement is not None:
+            return bool(self.request.updates or self.consequences)
         direct = set(self.request.updates) | {row["id"] for row in self.request.creates}
         return any(
             item["kind"] != "event" or item["id"] not in direct
@@ -459,10 +462,23 @@ def prepare_change(
     if not request.world_id:
         request = replace(request, world_id=snapshot["world_id"])
     before_events = [Event.from_dict(row) for row in snapshot["events"]]
-    events = _candidate(snapshot, request)
     converter = converter_from_snapshot(snapshot)
     before_converter = converter
     before = resolve_world(before_events, converter, cancel)
+    candidate_request = request
+    if request.movement is not None:
+        from src.services.event_timing.movement import movement_updates
+
+        requested_world = request.movement.get("world_id")
+        if requested_world and requested_world != snapshot["world_id"]:
+            raise ValueError("The active world changed. Start the move again.")
+        candidate_request = replace(
+            request,
+            updates=movement_updates(
+                before_events, before, converter, request.movement
+            ),
+        )
+    events = _candidate(snapshot, candidate_request)
     if request.calendar_changed or request.calendar is not None:
         converter = (
             CalendarConverter(CalendarConfig.from_json(request.calendar))
@@ -473,6 +489,10 @@ def prepare_change(
     errors = _repair_errors(
         before_events, events, before, after, converter, before_converter
     )
+    if request.movement is not None:
+        from src.services.event_timing.movement import movement_errors
+
+        errors.extend(movement_errors(before, after, before_events))
     errors.extend(
         _removed_endpoint_errors(
             before_events,
@@ -513,6 +533,17 @@ def prepare_change(
         before_events,
         before_converter,
     )
+    if request.movement is not None:
+        from src.services.event_timing.movement import describe_offsets
+
+        for consequence in consequences:
+            if consequence["kind"] != "event":
+                continue
+            for key, rows in (("before_text", before_events), ("after_text", events)):
+                event = next(item for item in rows if item.id == consequence["id"])
+                offsets = describe_offsets(event, rows)
+                if offsets:
+                    consequence[key] += "\n" + offsets
     confirmation = digest(
         {
             "base": base_fingerprint,

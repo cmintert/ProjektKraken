@@ -45,6 +45,10 @@ class ApplyEventTimingPlanCommand(BaseCommand):
             intended = request_for_command(self.command, capture(db_service))
             if digest(intended.to_dict()) != digest(plan.request.to_dict()):
                 raise ValueError("The command differs from its reviewed timing plan")
+            from src.commands.timeline_move_command import TimelineMoveCommand
+
+            if isinstance(self.command, TimelineMoveCommand):
+                self.command.updated = deepcopy(plan.updated)
             self._previous = {
                 identity: current.to_dict()
                 for identity in plan.previous

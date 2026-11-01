@@ -39,12 +39,42 @@ Current Time** takes you back.
 
 > Viewing time is the playhead position used to inspect historical entity state, maps and the graph. World current time is the world's current story time. Moving the playhead, going to a date or showing the world at an event changes Viewing without changing World current time. Set Current Time deliberately makes the viewed position the current story time; Return to Current Time moves Viewing back to it. The two marks can coincide without becoming the same setting. Asking for Help explains these roles without moving either time.
 
-### Navigation, event movement and snapping
+### Move an Event or its dependency chain
+
+1. Open **Drag: Adjust offset** in the Timeline toolbar. In a narrow panel,
+   use the same submenu under **More actions**.
+2. Keep **Adjust offset** to move a followed Event while its source stays fixed.
+   Choose **Move chain** to move the connected network, including other branches.
+3. Drag the Event's marker horizontally. The preview shows calculated dates and
+   offsets. Press **Escape** to cancel.
+4. Release the mouse and check **Review date changes**, including affected map
+   uses. Choose **Apply changes** to save the move as one undoable operation,
+   or **Cancel** to keep the saved dates.
+
+**Adjust offset** preserves the source Event, its referenced start or end, and
+the offset's unit and calendar. Month/year offsets snap to a valid whole-unit
+offset; they never become day offsets. For an ordinary manual start, the date
+snaps to its authored precision. An independently defined end keeps its own
+authority, so moving the start may change the resulting interval.
+
+**Move chain** shifts manual date authorities and recalculates followed dates
+without changing their offsets. Independently authored ends move with the chain;
+duration definitions remain unchanged. Calendar followers may change their visual
+spacing because months and years have different lengths.
+
+Both modes preserve date precision, uncertainty, fractional-day timing, and
+calendar meaning. A move that would change uncertainty, requires ambiguous timing,
+or conflicts with chronology is rejected. Calendar-offset dragging requires an
+exact source date. Use the Event inspector for deliberate changes that dragging
+cannot represent. Neither mode detaches a dependency. **Undo** restores the
+original timing definitions. The drag mode starts at **Adjust offset** each session.
+
+### Navigation and playhead snapping
 
 - Scroll or use the zoom controls to change scale.
 - Drag the view to move through time.
 - Select an event to open its inspector.
-- Move supported event items to update their date.
+- Drag an Event marker to preview a date change, then review and apply it.
 - Use the playhead controls to inspect another point in history.
 - Open **Dependencies: Selected** beside **Snap to Events** to choose which
   Follow Event connections appear. On narrow timelines, open **More actions**
@@ -565,6 +595,14 @@ calendar date.
 
 **Snap to Events** — Snap manual playhead movement to nearby event dates. This does not
 add precision to partial event dates or affect playback jumps.
+
+(help-inspect-timeline-drag-mode)=
+
+**Drag mode** — Choose **Adjust offset** to keep a followed Event's source fixed,
+or **Move chain** to shift the connected network while retaining its offsets.
+Drag an Event marker to preview the result. Calendar offsets keep their units and
+snap to valid whole months or years. Escape cancels; release opens review before
+applying a change. Unsupported or ambiguous moves leave the saved dates intact.
 
 (help-inspect-timeline-show-dependencies)=
 

@@ -1,0 +1,20 @@
+{
+  "platform": "windows",
+  "preview": true,
+  "escape_restored": true,
+  "submitted_after_escape": 0,
+  "authored_sources_unchanged": true,
+  "themes": [
+    "dark_mode",
+    "light_mode",
+    "fantasy_mode",
+    "imperial_mode",
+    "cyberpunk_mode",
+    "muted_light_mode"
+  ],
+  "widths": [
+    1100,
+    360
+  ],
+  "evidence": "Automated native Qt widget probe; no full-app or human acceptance claim."
+}

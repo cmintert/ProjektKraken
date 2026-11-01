@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-01
-**Commit:** 62efb93147f3003f400bcac8c6e212f39ce0fba0
+**Commit:** 768792c6d6ba3e3cedc111b95f89f5a3eb96dece
 ---
 
 # Changelog
@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-11-01)* **Timeline movement (KRT-128)**: Added **Adjust offset** and
+  **Move chain** drag modes for dependent Events, with calculated previews,
+  Escape cancellation, reviewed changes, and atomic Undo/Redo. Calendar offsets
+  retain their units; ambiguous moves and changes to authored uncertainty are
+  rejected rather than converting or detaching timing. Updated Timeline and
+  Event Help, preservation/history regressions, and native rendering evidence.
 
 - *(2026-11-01)* **Batch metadata editing (KRT-127)**: Explorer can edit tags
   or one typed custom attribute across checked Entities and Events. Preview

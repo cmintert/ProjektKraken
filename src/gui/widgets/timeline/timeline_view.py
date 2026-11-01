@@ -23,6 +23,7 @@ from PySide6.QtGui import (
     QColor,
     QFont,
     QImage,
+    QKeyEvent,
     QMouseEvent,
     QPainter,
     QPainterPath,
@@ -46,6 +47,7 @@ from src.gui.widgets.timeline.group_band_item import GroupBandItem
 from src.gui.widgets.timeline.group_band_manager import GroupBandManager
 from src.gui.widgets.timeline.group_label_overlay import GroupLabelOverlay
 from src.gui.widgets.timeline.layout_history import TimelineLayoutHistory
+from src.gui.widgets.timeline.movement import TimelineMovementPresenter
 from src.gui.widgets.timeline.time_indicators import TimelineTimeIndicators
 from src.gui.widgets.timeline.timeline_scene import (
     CurrentTimeLineItem,
@@ -247,6 +249,7 @@ class TimelineView(QGraphicsView):
 
         # Track duplicate event items created for "All events" group
         self._duplicate_event_items: list[EventItem] = []
+        self.movement = TimelineMovementPresenter(self)
 
         # Initialize grouping state (will be set by set_grouping_config)
         self._grouping_tag_order: list[str] = []
@@ -351,7 +354,7 @@ class TimelineView(QGraphicsView):
             new_lore_date: The new lore_date value.
 
         """
-        self.event_date_changed.emit(event_id, new_lore_date)
+        self.movement.finish(event_id, new_lore_date)
 
     def _update_corner_widget(self, theme: dict) -> None:
         """Updates the corner widget background to match the theme.
@@ -697,6 +700,7 @@ class TimelineView(QGraphicsView):
 
     def set_events(self, events: list[Event]) -> None:
         """Reconcile event items on the GUI thread, then request their layout."""
+        self.movement.cancel()
         context = getattr(self, "_temporal_context", None)
         self._dependencies.set_world_events(
             context.events() if context is not None else events
@@ -749,6 +753,8 @@ class TimelineView(QGraphicsView):
             if item is None:
                 item = EventItem(event, self.scale_factor)
                 item.on_drag_complete = self._on_event_drag_complete
+                item.on_drag_start = self.movement.begin
+                item.on_drag_preview = self.movement.preview
                 self.graphics_scene.addItem(item)
                 self._event_items[event.id] = item
             else:
@@ -791,6 +797,7 @@ class TimelineView(QGraphicsView):
 
     def apply_event_effects(self, effects: list[LoreMutationEffect]) -> None:
         """Patch surviving items and coalesce geometric changes into one repack."""
+        self.movement.cancel()
         self._dependencies.apply_effects(effects)
         prepared = TimelineEventPreparationService.apply_effects(
             [*self.events, *getattr(self, "_unplaced_events", [])], effects
@@ -1234,6 +1241,8 @@ class TimelineView(QGraphicsView):
                     if event.id in placed_event_ids:
                         item = EventItem(event, self.scale_factor)
                         item.on_drag_complete = self._on_event_drag_complete
+                        item.on_drag_start = self.movement.begin
+                        item.on_drag_preview = self.movement.preview
                         self.graphics_scene.addItem(item)
                         self._duplicate_event_items.append(item)
                     else:
@@ -1331,6 +1340,8 @@ class TimelineView(QGraphicsView):
                 if event.id in grouped_event_ids:
                     duplicate_item = EventItem(event, self.scale_factor)
                     duplicate_item.on_drag_complete = self._on_event_drag_complete
+                    duplicate_item.on_drag_start = self.movement.begin
+                    duplicate_item.on_drag_preview = self.movement.preview
                     self.graphics_scene.addItem(duplicate_item)
                     self._duplicate_event_items.append(duplicate_item)
                     duplicate_item.setData(0, "all")
@@ -1728,6 +1739,14 @@ class TimelineView(QGraphicsView):
 
         # Standard release handling
         super().mouseReleaseEvent(event)
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        """Escape cancels the current event movement without changing navigation."""
+        if event.key() == Qt.Key.Key_Escape and self.movement.intent is not None:
+            self.movement.cancel()
+            event.accept()
+            return
+        super().keyPressEvent(event)
 
     def focus_event(self, event_id: str) -> None:
         """Centers the view on the specified event."""
