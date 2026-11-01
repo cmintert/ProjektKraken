@@ -115,6 +115,8 @@ maps
 longform
 search-ai-and-analysis
 import-export-and-backups
+source-extraction
+source-extraction-prompt
 keyboard-shortcuts
 troubleshooting
 temporal-model

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-01
-**Commit:** a14ff51ebae97d19b152d22d3e348f50f8a437cf
+**Commit:** b2064f1fd1563b27d5ff24187b6c847b09655ee0
 ---
 
 # Changelog
@@ -10,6 +10,13 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Added
+
+- *(2026-11-01)* **Documentation (KRT-126)**: Added a source-extraction guide
+  and reusable v4.0 prompt for externally drafted Lore JSON, with preparation,
+  identity, timing and source-review safeguards, limited validation evidence,
+  and links from the manual and import workflow.
 
 ### Fixed
 

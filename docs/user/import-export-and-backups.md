@@ -51,6 +51,10 @@ JSON and CSV files that you can use as templates.
 
 ## Import Lore
 
+To draft lore from a chapter or other source with an external AI assistant, use
+[Extract source material into lore](source-extraction.md) and its reusable prompt.
+Check the draft against the source before following the import procedure below.
+
 1. Choose **File → Import / Export…** and open the **Import** tab.
 2. Click **Add files…** or **Add folder…**. You can also paste lore JSON into
    the text box.
