@@ -35,6 +35,7 @@ def _init_registry() -> None:
         RunIntelligenceAnalysisCommand,
         ValidateWorldCommand,
     )
+    from src.commands.batch_metadata_command import BatchMetadataCommand
     from src.commands.calendar_commands import (
         CreateCalendarConfigCommand,
         SetActiveCalendarCommand,
@@ -125,6 +126,7 @@ def _init_registry() -> None:
 
     _COMMAND_TYPES.update(
         {
+            "BatchMetadataCommand": BatchMetadataCommand,
             "IconLibraryCommand": IconLibraryCommand,
             "ApplyChronologyCommand": ApplyChronologyCommand,
             "ApplyEventTimingPlanCommand": ApplyEventTimingPlanCommand,

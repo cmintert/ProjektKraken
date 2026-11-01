@@ -9350,6 +9350,96 @@
       "binding": "choice",
       "label": "Resolve missing Event",
       "kind": "QComboBox"
+    },
+    {
+      "id": "batch-metadata-operation",
+      "topic_id": "explorer.batch-edit",
+      "target": "help-batch-metadata-operation",
+      "source": "src/gui/dialogs/batch_metadata_dialog.py",
+      "symbol": "BatchMetadataDialog.__init__",
+      "binding": "self.action",
+      "label": "Operation",
+      "kind": "WrappingComboBox"
+    },
+    {
+      "id": "batch-metadata-key",
+      "topic_id": "explorer.batch-edit",
+      "target": "help-batch-metadata-key",
+      "source": "src/gui/dialogs/batch_metadata_dialog.py",
+      "symbol": "BatchMetadataDialog.__init__",
+      "binding": "self.key",
+      "label": "Attribute",
+      "kind": "QLineEdit"
+    },
+    {
+      "id": "batch-metadata-type",
+      "topic_id": "explorer.batch-edit",
+      "target": "help-batch-metadata-type",
+      "source": "src/gui/dialogs/batch_metadata_dialog.py",
+      "symbol": "BatchMetadataDialog.__init__",
+      "binding": "self.value_type",
+      "label": "Type",
+      "kind": "ScrollSafeComboBox"
+    },
+    {
+      "id": "batch-metadata-value",
+      "topic_id": "explorer.batch-edit",
+      "target": "help-batch-metadata-value",
+      "source": "src/gui/dialogs/batch_metadata_dialog.py",
+      "symbol": "BatchMetadataDialog.__init__",
+      "binding": "self.value",
+      "label": "Value",
+      "kind": "QLineEdit"
+    },
+    {
+      "id": "batch-metadata-boolean",
+      "topic_id": "explorer.batch-edit",
+      "target": "help-batch-metadata-boolean",
+      "source": "src/gui/dialogs/batch_metadata_dialog.py",
+      "symbol": "BatchMetadataDialog.__init__",
+      "binding": "self.boolean",
+      "label": "True",
+      "kind": "QCheckBox"
+    },
+    {
+      "id": "batch-metadata-preview",
+      "topic_id": "explorer.batch-edit",
+      "target": "help-batch-metadata-preview",
+      "source": "src/gui/dialogs/batch_metadata_dialog.py",
+      "symbol": "BatchMetadataDialog.__init__",
+      "binding": "self.preview_button",
+      "label": "Preview",
+      "kind": "StandardButton"
+    },
+    {
+      "id": "batch-metadata-apply",
+      "topic_id": "explorer.batch-edit",
+      "target": "help-batch-metadata-apply",
+      "source": "src/gui/dialogs/batch_metadata_dialog.py",
+      "symbol": "BatchMetadataDialog.__init__",
+      "binding": "self.apply_button",
+      "label": "Apply",
+      "kind": "PrimaryButton"
+    },
+    {
+      "id": "batch-metadata-cancel",
+      "topic_id": "explorer.batch-edit",
+      "target": "help-batch-metadata-cancel",
+      "source": "src/gui/dialogs/batch_metadata_dialog.py",
+      "symbol": "BatchMetadataDialog.__init__",
+      "binding": "self.cancel_button",
+      "label": "Cancel",
+      "kind": "StandardButton"
+    },
+    {
+      "id": "explorer-batch-edit",
+      "topic_id": "explorer.batch-edit",
+      "target": "help-explorer-batch-edit",
+      "source": "src/gui/widgets/unified_list.py",
+      "symbol": "UnifiedListWidget.__init__",
+      "binding": "self.btn_batch_edit",
+      "label": "Batch Edit",
+      "kind": "QPushButton"
     }
   ],
   "factory_exemptions": [
@@ -16150,8 +16240,8 @@
     {
       "source": "src/gui/widgets/unified_list.py",
       "symbol": "UnifiedListWidget.__init__",
-      "sha256": "325b0fd7685cdb12e9f4f3b964185b97b1bbe52abffc4c5535be985dedf78038",
-      "review_note": "Reviewed uniform filter-row heights: category/sort fields align with Filter and Clear Filters through reflow. Existing labels, shortcuts, filtering, overflow routes and explanations remain accurate; no interaction change. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
+      "sha256": "ecb11b1439e55f83f4afc2417a919de173ca123665d1b60bd411019ca9917212",
+      "review_note": "Reviewed uniform filter-row heights: category/sort fields align with Filter and Clear Filters through reflow. Existing labels, shortcuts, filtering, overflow routes and explanations remain accurate; no interaction change. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate. KRT-127: adds checked-only Batch Edit through existing responsive toolbar. Existing navigation, creation and delete explanations retained; new batch route explained in workspace manual."
     },
     {
       "source": "src/gui/widgets/unified_list.py",
@@ -16264,8 +16354,8 @@
     {
       "source": "src/gui/widgets/unified_list.py",
       "symbol": "UnifiedListWidget._update_delete_button_state",
-      "sha256": "0adb33369ec4ca6feb3438c6a63ed68cd377f93d3fba43b5457e853aa707495c",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "7155ec172654401cfd8b408406584f016cc5b9d2610639e1b75d4362163cdd5b",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-127: delete availability remains based on checks or row selection; new Batch Edit availability depends only on checks. Existing delete reference remains accurate and batch prerequisites are documented separately."
     },
     {
       "source": "src/gui/widgets/wiki_link_authoring.py",
@@ -17088,6 +17178,12 @@
       "symbol": "TransferDialog._show_dependency_decisions",
       "sha256": "a3ec46db0f07ddbc9c9e8f7827fab3670bdb6480268dd8a46c4d4e9bdf63d29d",
       "review_note": "KRT-121: Explicit unresolved acceptance per missing Event source; explanation preserves include/exclude alternatives and structural-error blocking."
+    },
+    {
+      "source": "src/gui/dialogs/batch_metadata_dialog.py",
+      "symbol": "BatchMetadataDialog.__init__",
+      "sha256": "1760a052fdd674900247714fceb885cac9f57f58c719073384cb1a134ea282c2",
+      "review_note": "KRT-127: reviewed single-operation modal form, explicit Preview and Apply, typed values, neutral baseline explanation, cancel ownership and count feedback. Workspace manual includes affected controls and complete batch recovery; human review pending. Narrow/scaled presentation uses shared WrappingComboBox, scrollable form and ActionFlowLayout with complete labels; operation meaning and cancellation guidance remain accurate."
     }
   ],
   "review_status": {

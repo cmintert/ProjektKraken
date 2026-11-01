@@ -78,6 +78,35 @@ def test_init_window(main_window):
     assert main_window.timeline is not None
 
 
+@pytest.mark.ci_fast
+def test_explorer_batch_route_captures_checked_objects(main_window):
+    """Production composition opens the batch dialog from checks, not navigation."""
+    from PySide6.QtCore import Qt
+
+    from src.core.entities import Entity
+    from src.core.events import Event
+
+    # This fixture suppresses the deferred startup phase that calls the binder.
+    main_window.app_coordinator.bind_batch_metadata()
+    explorer = main_window.unified_list
+    explorer.set_data(
+        [Event("Council", 1, id="event")], [Entity("Person", "character", id="entity")]
+    )
+    for row in range(2):
+        explorer._model.setData(
+            explorer._model.index(row, 0),
+            Qt.CheckState.Checked,
+            Qt.ItemDataRole.CheckStateRole,
+        )
+    expected = explorer.get_checked_items()
+    explorer.btn_batch_edit.click()
+    feature = main_window.app_coordinator.batch_metadata
+    assert feature.dialog is not None
+    assert feature._targets == expected
+    feature.dialog.reject()
+    assert explorer.get_checked_items() == expected
+
+
 def test_go_to_date_toolbar_routes_to_time_coordinator(main_window):
     from PySide6.QtWidgets import QDialog
 

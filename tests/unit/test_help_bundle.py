@@ -112,8 +112,9 @@ def test_all_topics_search_and_navigation(generated_root):
     reader = service(generated_root, source_root=generated_root)
     reader.validate()
     registry = json.loads((generated_root / "docs/help-topics.json").read_text("utf-8"))
-    assert len(registry["topics"]) == 50
-    assert "settings.center" in {topic["id"] for topic in registry["topics"]}
+    topic_ids = {topic["id"] for topic in registry["topics"]}
+    assert len(topic_ids) == len(registry["topics"])
+    assert {"settings.center", "explorer.batch-edit"}.issubset(topic_ids)
     for topic in registry["topics"]:
         resolved = reader.resolve_topic(topic["id"])
         assert resolved.id == topic["id"]
@@ -135,6 +136,7 @@ def test_all_topics_search_and_navigation(generated_root):
     search_service = HelpSearchService(search)
     for query, destination in (
         ("changing kingdom", "northwatch-tutorial.html"),
+        ("batch edit tags attribute", "workspace.html"),
         ("precision uncertainty duration", "temporal-model.html"),
         ("values connections", "representations.html"),
         ("Entity history viewed location", "world-context-model.html"),

@@ -771,6 +771,7 @@ class MainWindow(QMainWindow):
         )
         self.app_coordinator.bind_icon_library()
         self.app_coordinator.bind_event_timing()
+        self.app_coordinator.bind_batch_metadata()
         self.app_coordinator.bind_settings()
         self.worker.command_finished.connect(
             self.app_coordinator.context_tags.on_command_finished,

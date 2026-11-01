@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-01
-**Commit:** b2064f1fd1563b27d5ff24187b6c847b09655ee0
+**Commit:** 62efb93147f3003f400bcac8c6e212f39ce0fba0
 ---
 
 # Changelog
@@ -12,6 +12,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-11-01)* **Batch metadata editing (KRT-127)**: Explorer can edit tags
+  or one typed custom attribute across checked Entities and Events. Preview
+  counts changes and overwritten values; Apply verifies saved metadata and
+  creates one undoable batch. Internal metadata, unrelated fields and checked
+  selection are preserved, including entries hidden by a type filter.
+  Added workspace Help, reviewed control bindings, command/history and GUI
+  regression coverage, and rendered evidence with remaining acceptance limits.
 
 - *(2026-11-01)* **Documentation (KRT-126)**: Added a source-extraction guide
   and reusable v4.0 prompt for externally drafted Lore JSON, with preparation,

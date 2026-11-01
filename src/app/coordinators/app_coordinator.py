@@ -170,6 +170,76 @@ class AppCoordinator(QObject):
         if application is not None:
             application.aboutToQuit.connect(self.event_timing.shutdown)
 
+    def bind_batch_metadata(self) -> None:
+        """Compose Explorer batch edits after worker and command setup."""
+        from PySide6.QtCore import Qt
+
+        from src.app.coordinators.batch_metadata_coordinator import (
+            BatchMetadataCoordinator,
+        )
+
+        window = self.main_window
+        thread = window.worker_thread
+        assert thread is not None
+        self.batch_metadata = BatchMetadataCoordinator(
+            window,
+            thread,
+            lambda: window.worker.db_service,
+            lambda: str(window.db_path),
+            window.unified_list.get_checked_items,
+            self._batch_draft_warning,
+            lambda: self.data.cached_tags,
+            self.editor.command_requested.emit,
+            self._refresh_batch_metadata,
+            window.worker_manager._on_index_object_requested,
+        )
+        window.unified_list.batch_edit_requested.connect(self.batch_metadata.show)
+        window.worker.command_finished.connect(
+            self.batch_metadata.on_command_finished, Qt.ConnectionType.QueuedConnection
+        )
+        window.worker.initialized.connect(
+            self.batch_metadata.cancel, Qt.ConnectionType.QueuedConnection
+        )
+
+    def _batch_draft_warning(self, targets: list) -> str:
+        """Keep affected editor drafts and pending saves outside a batch."""
+        window = self.main_window
+        for kind, editor in (
+            ("event", window.event_editor),
+            ("entity", window.entity_editor),
+        ):
+            object_id = getattr(editor, f"current_{kind}_id")
+            if (kind, object_id) in targets and (
+                editor.has_unsaved_changes()
+                or editor.save_pending
+                or getattr(editor, "_temporal_save_pending", False)
+                or getattr(editor, "_temporal_preparing", False)
+            ):
+                return (
+                    f"Save or discard changes in the {kind.title()} Editor first "
+                    "and wait for any pending save. Your draft and checks are retained."
+                )
+        return ""
+
+    def _refresh_batch_metadata(self, effects: list) -> None:
+        """Hydrate the affected clean inspector and refresh autocomplete data."""
+        self.data.load_completer_data()
+        kind = self.navigation.selected_type
+        object_id = self.navigation.selected_id
+        if not object_id:
+            return
+        if not any(
+            effect["object_type"] == kind and effect["object_id"] == object_id
+            for effect in effects
+        ):
+            return
+        if self._batch_draft_warning([(kind, object_id)]):
+            return
+        if kind == "entity":
+            self.data.load_entity_details(object_id)
+        elif kind == "event":
+            self.data.load_event_details(object_id)
+
     def bind_longform_navigation(self) -> None:
         """Compose Longform navigation once its view is available."""
         if not hasattr(self, "longform_navigation"):

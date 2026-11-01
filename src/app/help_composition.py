@@ -20,6 +20,7 @@ class HelpSurfaceBindings(QObject):
     """Register dynamically created dialogs and semantic composite controls."""
 
     DIALOG_TOPICS = {
+        "BatchMetadataDialog": "explorer.batch-edit",
         "SettingsCenter": "settings.center",
         "GoToDateDialog": "timeline.viewing",
         "RelationEditDialog": "relations.create",

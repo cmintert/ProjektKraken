@@ -474,6 +474,18 @@
         "settings.ai",
         "writing.spelling"
       ]
+    },
+    {
+      "id": "explorer.batch-edit",
+      "source": "workspace.md",
+      "target": "help-explorer-batch-edit",
+      "level": "task",
+      "related_ids": [
+        "explorer.browsing",
+        "authoring.tags",
+        "authoring.details",
+        "history.undo"
+      ]
     }
   ]
 }

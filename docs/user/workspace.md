@@ -245,6 +245,80 @@ excluded by the indexing rules.
 The selected entry opens through the normal draft safeguards. Sorting changes
 display order, not saved dates or content; filtering never deletes entries.
 
+(help-explorer-batch-edit)=
+
+## Edit tags or an attribute on several entries
+
+Check the boxes beside the Entities and Events you want to change. Checked
+entries are separate from the entry you have open; entries hidden by a filter
+remain checked. Save or discard unfinished work in affected editors and wait
+for pending saves before continuing.
+
+1. Choose **Batch Edit…** in the Explorer toolbar or its **More actions** menu.
+2. Choose one operation: **Add tags**, **Remove tags**, **Set attribute**,
+   **Set attribute only if missing**, or **Remove attribute**.
+3. Enter the tag names, or the custom attribute name and its typed value.
+4. Choose **Preview**. Review the numbers of changed and unchanged objects.
+   Existing values overwritten are included in the changed count.
+5. Choose **Apply**. The whole batch becomes one Undo entry. The boxes remain
+   checked so you can perform another operation on the same entries.
+
+**Set attribute only if missing** leaves an existing value alone, including an
+explicit null value. A String, Number and Boolean retain their respective types.
+Core fields and names beginning with an underscore cannot be edited here.
+Entity attributes change saved baseline values; dated overrides continue to take
+precedence when viewing history. Event dates and relationships are not edited.
+
+Changing an input requires another Preview. Apply is unavailable when nothing
+would change. If a checked entry was deleted, or affected metadata changed after
+the preview, the whole batch is rejected. Review the message and preview again;
+close the dialog and adjust the checked entries if necessary. Failed batches do
+not partially apply. **Cancel** leaves the world unchanged; once Apply is
+submitted, wait for its result and use Undo to reverse a successful batch.
+
+(help-batch-metadata-operation)=
+
+**Operation** — Choose one tag or custom attribute operation for all checked
+objects. Preview reports objects rather than individual tags or attribute values.
+
+(help-batch-metadata-key)=
+
+**Attribute** — Enter a custom attribute name. Blank names, internal names
+beginning with an underscore and core fields such as name or date are rejected.
+
+(help-batch-metadata-type)=
+
+**Type** — Choose String, Number or Boolean for the value being set. Changing
+the type invalidates the preview. Remove attribute does not need a type or value.
+
+(help-batch-metadata-value)=
+
+**Value** — Enter the exact String or a finite Number to set. Empty strings are
+allowed. Invalid numbers block preview rather than being converted to zero.
+
+(help-batch-metadata-boolean)=
+
+**True** — Checked sets Boolean true; unchecked sets Boolean false. This is a
+typed value, distinct from a number or the words “true” and “false”.
+
+(help-batch-metadata-preview)=
+
+**Preview** — Read saved metadata and count changed, unchanged and overwritten
+objects. Overwritten counts existing, different values replaced by Set attribute.
+No data is changed. An unchanged batch cannot be applied.
+
+(help-batch-metadata-apply)=
+
+**Apply** — Verify the preview against saved metadata, then apply the entire
+batch as one undoable operation. Any conflict or failure rejects the whole batch.
+Wait for acknowledgement; checked selection is retained after success.
+
+(help-batch-metadata-cancel)=
+
+**Cancel** — Close the dialog without applying its operation, retaining checked
+entries and editor drafts. Cancellation is available during preview but must
+wait for acknowledgement after Apply has been submitted.
+
 (help-history-undo)=
 
 ## Review undo and redo history

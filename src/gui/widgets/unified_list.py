@@ -164,6 +164,7 @@ class UnifiedListWidget(QWidget):
     item_selected = Signal(str, str)  # type ("event"|"entity"), id
     items_selected = Signal(list)  # list of (type, id) tuples for multi-selection
     refresh_requested = Signal()
+    batch_edit_requested = Signal()
     delete_requested = Signal(str, str)  # type, id
     create_event_requested = Signal()
     create_entity_requested = Signal()
@@ -272,6 +273,15 @@ class UnifiedListWidget(QWidget):
         self.btn_refresh.setToolTip("Reload the list from the project database")
         self.btn_refresh.clicked.connect(self.refresh_requested.emit)
         self.action_toolbar.add_button(self.btn_refresh, priority=60)
+
+        self.btn_batch_edit = declare_inspection(
+            QPushButton("Batch Edit…"),
+            "explorer-batch-edit|explorer.batch-edit|help-explorer-batch-edit",
+        )
+        self.btn_batch_edit.setToolTip("Check objects to edit their tags or attributes")
+        self.btn_batch_edit.setEnabled(False)
+        self.btn_batch_edit.clicked.connect(self.batch_edit_requested.emit)
+        self.action_toolbar.add_button(self.btn_batch_edit, priority=70)
 
         self.btn_delete = declare_inspection(
             DestructiveButton("Delete"),
@@ -551,13 +561,15 @@ class UnifiedListWidget(QWidget):
                     self._entities.sort(key=lambda value: value.name)
                     if filter_mode in {"All Items", "Entities Only"}:
                         item = ("entity", entity)
-            self._model.apply_item(
-                item,
-                item_type,
-                object_id,
-                self._get_sort_key,
-                reverse,
-            )
+            # A type-filtered upsert is still a checked object, not a deletion.
+            if item is not None or effect["operation"] == "delete":
+                self._model.apply_item(
+                    item,
+                    item_type,
+                    object_id,
+                    self._get_sort_key,
+                    reverse,
+                )
 
         if self._search_term or self._advanced_filter_config:
             self._proxy_model.invalidate()
@@ -867,11 +879,16 @@ class UnifiedListWidget(QWidget):
         """Return IDs explicitly checked for multi-item actions."""
         return [item_id for _item_type, item_id in self._model.get_checked_items()]
 
+    def get_checked_items(self) -> list[tuple[str, str]]:
+        """Return typed checked identities independently of row navigation."""
+        return sorted(self._model.get_checked_items())
+
     def _update_delete_button_state(self) -> None:
         """Update enable state of delete button based on selection or checks."""
         selection_model = self.list_widget.selectionModel()
         has_selection = selection_model and selection_model.hasSelection()
         has_checks = bool(self._model.get_checked_items())
+        self.btn_batch_edit.setEnabled(has_checks)
         self.btn_delete.setEnabled(has_selection or has_checks)
 
     @Slot()
