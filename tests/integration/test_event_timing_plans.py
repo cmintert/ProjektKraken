@@ -134,3 +134,25 @@ def test_undo_preserves_unrelated_content_changed_during_review(db_service):
         db_service.get_event(child.id).description
         == "Written while the preview was open"
     )
+
+
+def test_renamed_relation_endpoint_invalidates_review(db_service):
+    from src.core.entities import Entity
+
+    root = Event("Treaty", 10)
+    db_service.insert_event(root)
+    target = Entity(name="Realm", type="Place")
+    db_service.insert_entity(target)
+    db_service.insert_relation(
+        root.id,
+        target.id,
+        "changes_state",
+        attributes={
+            "valid_from_event": True,
+            "payload": {"attributes": {"Ruler": "Ilyra"}},
+        },
+    )
+    command, _ = prepare(db_service, root, {"lore_date": 20})
+    db_service.insert_entity(replace(target, name="Renamed Realm"))
+    assert not command.execute(db_service).success
+    assert db_service.get_event(root.id).lore_date == 10

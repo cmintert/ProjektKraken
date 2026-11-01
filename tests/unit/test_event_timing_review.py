@@ -232,3 +232,96 @@ def test_review_help_keeps_event_timing_topic(qtbot):
     topics, boundary = registry.candidates(dialog.apply_button)
     assert topics[0] == "event.timing"
     assert boundary is dialog
+
+
+@pytest.mark.parametrize(
+    "theme",
+    [
+        "dark_mode",
+        "light_mode",
+        "fantasy_mode",
+        "imperial_mode",
+        "cyberpunk_mode",
+        "muted_light_mode",
+    ],
+)
+@pytest.mark.parametrize("width", [360, 680])
+def test_rich_review_groups_dates_and_keeps_details_reachable(qtbot, theme, width):
+    from src.gui.widgets.editor_presentation import DisclosureButton
+    from src.services.event_timing.planning import TimingChangeRequest, prepare_change
+    from src.services.event_timing.store import relation_consumer
+
+    ThemeManager().set_theme(theme, persist=False)
+    root = Event("The long Northwatch succession <draft>", 10, id="root")
+    consumers = [
+        relation_consumer(
+            {
+                "id": f"state-{index}",
+                "source_id": root.id,
+                "target_id": "realm",
+                "rel_type": "changes_state",
+                "attributes": {
+                    "valid_from_event": True,
+                    "payload": {
+                        "attributes": {"Office": "Queen"},
+                        "description": "Description with <literal> text " * 100,
+                    },
+                },
+            }
+        )
+        for index in range(4)
+    ]
+    plan = prepare_change(
+        {
+            "world_id": "rich-review",
+            "events": [root.to_dict()],
+            "objects": {
+                "realm": {
+                    "name": "Kingdom with a very long authored title",
+                    "kind": "entity",
+                }
+            },
+            "consumers": consumers,
+        },
+        TimingChangeRequest(updates={root.id: {"lore_date": 20.5}}),
+    )
+    dialog = EventTimingReviewDialog(plan.consequences)
+    qtbot.addWidget(dialog)
+    dialog.resize(width, 560)
+    dialog.show()
+    qtbot.wait(30)
+    assert dialog.cancel_button.hasFocus()
+    labels = dialog.changes.findChildren(QLabel)
+    assert "Changes taking effect (4)" in [label.text() for label in labels]
+    assert "Other events moving" not in [label.text() for label in labels]
+    assert sum(label.isVisible() and label.text() == "Before" for label in labels) == 2
+    buttons = dialog.changes.findChildren(DisclosureButton)
+    assert len(buttons) == 5
+    assert all(not button.isChecked() for button in buttons)
+    from src.gui.utils.style_helper import StyleHelper
+
+    assert all(
+        button.styleSheet() == StyleHelper.get_action_role_style("quiet")
+        for button in buttons
+    )
+    button = buttons[-1]
+    dialog.changes.ensureWidgetVisible(button)
+    button.setFocus()
+    qtbot.keyClick(button, Qt.Key.Key_Space)
+    qtbot.wait(30)
+    assert button.isChecked()
+    assert dialog.isVisible()
+    ThemeManager().set_theme(
+        "light_mode" if theme != "light_mode" else "dark_mode", persist=False
+    )
+    qtbot.wait(30)
+    assert button.isChecked() and button.hasFocus()
+    assert button.styleSheet() == StyleHelper.get_action_role_style("quiet")
+    assert dialog.changes.horizontalScrollBar().maximum() == 0
+    for label in labels:
+        if label.isVisible():
+            assert label.height() >= label.heightForWidth(label.width())
+    for action in (dialog.apply_button, dialog.cancel_button):
+        assert dialog.rect().contains(action.mapTo(dialog, action.rect().bottomRight()))
+    qtbot.keyClick(dialog, Qt.Key.Key_Escape)
+    assert not dialog.isVisible()

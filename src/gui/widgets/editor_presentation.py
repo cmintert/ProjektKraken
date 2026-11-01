@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 import shiboken6
 from PySide6.QtCore import QEvent, QObject, QPointF, QSize, Qt, QTimer
@@ -45,9 +45,16 @@ WRITING_COLUMN_MAX_WIDTH = 760
 class DisclosureButton(WrappingToolButton):
     """Named, keyboard accessible disclosure with a full-row hit target."""
 
-    def __init__(self, title: str, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        title: str,
+        parent: QWidget | None = None,
+        *,
+        role: Literal["secondary", "quiet"] = "secondary",
+    ) -> None:
         """Create a disclosure using the standard editor control height."""
         super().__init__(parent)
+        self._action_role = role
         self.setText(title.replace("&", "&&"))
         self.setAccessibleName(title)
         self.setCheckable(True)
@@ -93,7 +100,7 @@ class DisclosureButton(WrappingToolButton):
         if self.objectName() == "InspectorWritingAction":
             style = StyleHelper.get_inspector_support_style()
         else:
-            style = StyleHelper.get_tool_button_style()
+            style = StyleHelper.get_action_role_style(self._action_role)
         if self.styleSheet() != style:
             self.setStyleSheet(style)
         self._update_arrow(self.isChecked())

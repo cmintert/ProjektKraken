@@ -43,6 +43,7 @@ class TimingChangeRequest:
     imported: bool = False
     consumers: tuple[dict[str, Any], ...] | None = None
     movement: dict[str, Any] | None = None
+    review_objects: dict[str, dict[str, str]] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Return worker-safe request data."""
@@ -151,6 +152,7 @@ def snapshot_fingerprint(snapshot: dict[str, Any]) -> str:
             "calendar": snapshot.get("calendar"),
             "calendars": snapshot.get("calendars", []),
             "consumers": snapshot.get("consumers", []),
+            "objects": snapshot.get("objects", {}),
             "world_id": snapshot["world_id"],
         }
     )
@@ -544,6 +546,18 @@ def prepare_change(
                 offsets = describe_offsets(event, rows)
                 if offsets:
                     consequence[key] += "\n" + offsets
+    from src.services.event_timing.review import describe_consequences
+
+    describe_consequences(
+        consequences,
+        snapshot,
+        candidate_request,
+        before,
+        after,
+        before_converter,
+        converter,
+        events,
+    )
     confirmation = digest(
         {
             "base": base_fingerprint,

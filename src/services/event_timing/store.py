@@ -28,6 +28,8 @@ def relation_consumer(relation: dict[str, Any]) -> dict[str, Any]:
         "kind": "relation",
         "id": relation["id"],
         "name": relation.get("rel_type", "Relation"),
+        "source_id": relation.get("source_id"),
+        "target_id": relation.get("target_id"),
         "attributes": attributes,
     }
 
@@ -35,6 +37,12 @@ def relation_consumer(relation: dict[str, Any]) -> dict[str, Any]:
 def capture(db: DatabaseService) -> dict[str, Any]:
     """Capture source records and review labels on the database-owning thread."""
     config = db.get_active_calendar_config()
+    events = db.get_all_events()
+    objects = {
+        item.id: {"name": item.name, "kind": kind}
+        for kind, items in (("event", events), ("entity", db.get_all_entities()))
+        for item in items
+    }
     consumers: list[dict[str, Any]] = []
     for relation in db.get_all_relations():
         consumers.append(relation_consumer(relation))
@@ -55,13 +63,17 @@ def capture(db: DatabaseService) -> dict[str, Any]:
                 {
                     "kind": "map feature",
                     "id": marker.id,
-                    "name": marker.label or map_obj.name,
+                    "name": marker.label
+                    or objects.get(marker.object_id, {}).get("name", map_obj.name),
+                    "map_name": map_obj.name,
+                    "object_id": marker.object_id,
                     "attributes": deepcopy(marker.attributes),
                 }
             )
     return {
         "world_id": db.db_path,
-        "events": [event.to_dict() for event in db.get_all_events()],
+        "events": [event.to_dict() for event in events],
+        "objects": objects,
         "calendar": config.to_json() if config else None,
         "calendars": [calendar.to_dict() for calendar in db.get_all_calendar_configs()],
         "consumers": consumers,

@@ -164,6 +164,7 @@ def request_for_command(
     calendar_changed = False
     imported = False
     consumers = None
+    review_objects = None
     deletes: tuple[str, ...] = ()
     for item in children(command):
         if isinstance(item, UpdateEventCommand):
@@ -213,6 +214,7 @@ def request_for_command(
             creates.extend(incoming.creates)
             deletes = incoming.deletes
             consumers = incoming.consumers
+            review_objects = incoming.review_objects
             imported = True
     return TimingChangeRequest(
         updates=updates,
@@ -223,5 +225,6 @@ def request_for_command(
         calendar_changed=calendar_changed,
         imported=imported,
         consumers=consumers,
+        review_objects=review_objects,
         world_id=snapshot["world_id"],
     )

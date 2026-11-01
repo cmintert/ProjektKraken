@@ -26,6 +26,18 @@ def request_from_delta(
     updates = {}
     creates = []
     deletes = []
+    objects = deepcopy(snapshot.get("objects", {}))
+    for change in delta:
+        if change["table"] not in {"entities", "events"}:
+            continue
+        row = change["after"] or change["before"]
+        if change["after"] is None:
+            objects.pop(row["id"], None)
+        else:
+            objects[row["id"]] = {
+                "name": row["name"],
+                "kind": "event" if change["table"] == "events" else "entity",
+            }
     consumers = {
         (item["kind"], item["id"]): deepcopy(item)
         for item in snapshot.get("consumers", [])
@@ -54,6 +66,7 @@ def request_from_delta(
         imported=True,
         consumers=tuple(consumers.values()),
         world_id=snapshot["world_id"],
+        review_objects=objects,
     )
 
 

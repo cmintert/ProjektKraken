@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-01
-**Commit:** 768792c6d6ba3e3cedc111b95f89f5a3eb96dece
+**Commit:** 9e6e657e9c1618cd92808d8c6d5fa3ffd77df63e
 ---
 
 # Changelog
@@ -90,6 +90,12 @@ All notable changes to this project will be documented in this file.
   Linux/Windows verification and the failed candidate's release evidence.
 
 ### Changed
+
+- *(2026-11-01)* **Date-change review (KRT-129)**: Named affected relationships,
+  reign boundaries, state changes and map uses; grouped shared dates and explained
+  their Event timing sources. Added collapsible Timing details with shared quiet
+  controls, candidate import names and stale-label protection. Updated contextual
+  Help and added consequence, persistence, import and six-theme layout regressions.
 
 - *(2026-10-30)* **Release (KRT-117)**: Bumped project and application metadata to
   version 0.21.0 for beta 1, updated the release date, and rolled accumulated

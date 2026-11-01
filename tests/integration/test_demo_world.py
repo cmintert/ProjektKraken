@@ -133,6 +133,57 @@ def test_generator_refuses_existing_world(tmp_path):
     assert list(target.iterdir()) == [sentinel]
 
 
+def test_succession_review_explains_six_world_transitions_and_undo(demo):
+    from src.commands.event_commands import UpdateEventCommand
+    from src.commands.event_timing_commands import ApplyEventTimingPlanCommand
+    from src.commands.event_timing_intents import request_for_command
+    from src.services.event_timing.planning import prepare_change
+    from src.services.event_timing.store import capture, register
+
+    _, index, db = demo
+    succession = next(event for event in db.get_all_events() if "02 -" in event.name)
+    patch = {"lore_date": succession.lore_date + 1 + 47 / 72}
+    root_command = UpdateEventCommand(succession.id, patch)
+    captured = capture(db)
+    plan = prepare_change(captured, request_for_command(root_command, captured))
+    assert not plan.errors
+    assert [row["kind"] for row in plan.consequences].count("event") == 1
+    relations = [row for row in plan.consequences if row["kind"] == "relation"]
+    assert len(relations) == 6
+    reigns = [row["review"] for row in relations if row["name"] == "rules"]
+    assert "Queen Mara → Kingdom of Ashford — rules" in [
+        row["heading"] for row in reigns
+    ]
+    assert any("Reign ends" in row["explanation"] for row in reigns)
+    assert any("Reign begins" in row["explanation"] for row in reigns)
+    changes = [row["review"] for row in relations if row["name"] == "changes_state"]
+    assert len(changes) == 4
+    assert all(row["section"] == "Changes taking effect" for row in changes)
+    assert any("Ruler becomes Captain Ilyra" in row["explanation"] for row in changes)
+    assert all("15:40" in row["after_text"] for row in changes)
+    assert len({row["timing_group"] for row in changes}) == 1
+    relation_records = db.get_all_relations()
+    register(db, plan)
+    command = ApplyEventTimingPlanCommand(
+        root_command,
+        plan.identity,
+        plan.fingerprint,
+    )
+    assert command.execute(db).success
+    at_original_date = TemporalManager(db).get_entity_state_at(
+        index["entities"]["Kingdom of Ashford"],
+        succession.lore_date,
+    )
+    assert at_original_date.attributes["Ruler"] == "Queen Mara"
+    assert db.get_all_relations() == relation_records
+    command.undo(db)
+    restored = TemporalManager(db).get_entity_state_at(
+        index["entities"]["Kingdom of Ashford"],
+        succession.lore_date,
+    )
+    assert restored.attributes["Ruler"] == "Captain Ilyra"
+
+
 def test_failed_generation_does_not_publish_partial_world(tmp_path, monkeypatch):
     def fail(*args):
         raise RuntimeError("Generation interrupted")

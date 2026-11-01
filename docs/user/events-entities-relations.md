@@ -223,10 +223,26 @@ source. Select End Date first to author an independent end.
 
 (help-inspect-event-timing-review-actions)=
 
-**Review date changes** — Read each affected Event or use, including its Before
-and After dates, uncertainty and interval duration. Dates retain their clock time
-when one is set; possible ranges retain their boundaries. **Apply changes** saves the
-reviewed operation with one Undo. **Cancel** returns to your intact draft.
+**Review date changes** — Check the edited Events first, then any other Events
+moving, Relationships, Changes taking effect, and Maps and features. Only sections
+with affected items appear. Relationship rows name both endpoints and explain
+whether a reign or relationship begins or ends. State-change rows name the Entity
+and summarize what takes effect. These uses follow an Event's timing; an ordinary
+connection alone does not make another Event move.
+
+Read the Before and After dates and the explanation of which Event start or end
+supplies the timing. Items sharing the same source and dates share one comparison
+within their section. Dates retain clock time, uncertainty and strict boundaries.
+Open **Timing details** for full source timing, references and state-change values.
+**Apply changes** saves the reviewed operation with one Undo. **Cancel** or Escape
+returns to your intact draft.
+
+(help-inspect-event-timing-review-details)=
+
+**Timing details** — Expand an affected item to inspect its complete source timing,
+exact relationship type, object IDs, references and state-change values. Collapsing
+these details changes only the review display. Use **Apply changes** to save the
+reviewed operation or **Cancel** to keep editing your draft.
 
 (help-inspect-event-end-reference)=
 
