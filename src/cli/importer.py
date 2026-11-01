@@ -4,6 +4,7 @@ Handles command-line triggering of the import process.
 """
 
 import argparse
+import json
 import sys
 from pathlib import Path
 from typing import List, cast
@@ -15,11 +16,11 @@ from src.app.constants import (
     WINDOW_SETTINGS_APP,
     WINDOW_SETTINGS_KEY,
 )
+from src.core.command import CommandProtocol
 from src.core.logging_config import get_logger
 from src.core.paths import get_worlds_dir
 from src.core.world import World, WorldManager
 from src.services.db_service import DatabaseService
-from src.services.import_service import ImportService
 from src.services.world_storage_settings import WorldStorageSettings
 
 logger = get_logger(__name__)
@@ -53,107 +54,120 @@ def _resolve_import_world(database: str | None) -> World | None:
     return manager.get_world(active_name) if active_name else None
 
 
-def run_import_cli(args: List[str]) -> int:
-    """Entry point for CLI import command.
-
-    Args:
-        args: Command line arguments (excluding script name and 'import' command).
-
-    Returns:
-        Exit code (0 for success, 1 for failure).
-
-    """
-    parser = argparse.ArgumentParser(description="Import JSON data into ProjektKraken.")
+def _arguments(args: List[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Import reviewed Lore JSON into Kraken."
+    )
+    parser.add_argument("--file", "-f", help="Path to the JSON source.")
+    parser.add_argument("--database", "-d", help="Existing database in a world folder")
+    parser.add_argument("--mode", choices=("skip", "update", "overwrite"))
     parser.add_argument(
-        "--file", "-f", required=True, help="Path to the JSON file to import."
+        "--dry-run", action="store_true", help="Preview without writes."
+    )
+    parser.add_argument("--review-out", help="Write a review artifact and stop.")
+    parser.add_argument(
+        "--apply-review", help="Reconstruct a saved review from sources."
     )
     parser.add_argument(
-        "--database", "-d", help="Existing database in a complete world folder"
+        "--confirm-timing", help="Confirm the reviewed timing fingerprint."
     )
+    parser.add_argument(
+        "--calendar-map", action="append", default=[], metavar="SOURCE=TARGET"
+    )
+    parser.add_argument("--accept-unresolved-calendar", action="append", default=[])
+    parser.add_argument("--accept-unresolved-event", action="append", default=[])
+    parsed = parser.parse_args(args)
+    if not parsed.file and not parsed.apply_review:
+        parser.error("--file or --apply-review is required")
+    return parsed
 
-    try:
-        parsed_args = parser.parse_args(args)
-    except SystemExit as exc:
-        return exc.code if isinstance(exc.code, int) else 2
 
-    file_path = Path(parsed_args.file).resolve()  # Security: Resolve path
+def _execute_import(db: DatabaseService, world: World, args: argparse.Namespace) -> int:
+    from src.cli.import_review import (
+        REVIEW_REQUIRED,
+        prepare_review,
+        review_artifact,
+        reviewed_command,
+        verify_artifact,
+    )
+    from src.services.history_service import HistoryService
 
-    if not file_path.exists():
-        logger.error(f"File not found: {file_path}")
-        print(f"Error: File '{file_path}' does not exist.", file=sys.stderr)
+    artifact = None
+    if args.apply_review:
+        artifact = json.loads(Path(args.apply_review).read_text(encoding="utf-8"))
+        source = str(Path(artifact["source"]).resolve())
+        if args.file and str(Path(args.file).resolve()) != source:
+            raise ValueError("The source differs from the saved review.")
+        options = artifact["options"]
+    else:
+        source = str(Path(args.file).resolve())
+        options = {
+            "mode": args.mode or "update",
+            "calendar_mappings": dict(item.split("=", 1) for item in args.calendar_map),
+            "unresolved_calendars": args.accept_unresolved_calendar,
+            "unresolved_events": args.accept_unresolved_event,
+        }
+    preview, plan = prepare_review(db, source, options)
+    report = {
+        key: preview.get(key)
+        for key in (
+            "errors",
+            "warnings",
+            "actions",
+            "calendar_decisions",
+            "timing_review",
+        )
+    }
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    if preview["errors"]:
         return 1
-
-    if not file_path.is_file():
-        logger.error(f"Not a file: {file_path}")
-        print(f"Error: '{file_path}' is not a file.", file=sys.stderr)
-        return 1
-
-    world = _resolve_import_world(parsed_args.database)
-    if world is None:
+    fresh = review_artifact(source, preview)
+    if artifact is not None:
+        verify_artifact(artifact, fresh)
+    if args.review_out:
+        Path(args.review_out).write_text(
+            json.dumps(fresh, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+    needs_review = bool((preview.get("timing_review") or {}).get("needs_review"))
+    if args.dry_run or args.review_out:
+        return REVIEW_REQUIRED if needs_review else 0
+    if needs_review and (
+        artifact is None or plan is None or args.confirm_timing != plan.fingerprint
+    ):
         print(
-            "Error: Import target is not a valid, approved existing world.",
+            "Timing review required. Save a review and confirm its fingerprint.",
             file=sys.stderr,
         )
-        return 1
-    db_path = str(world.db_path)
-    print(f"Import target: {world.name} ({world.db_path})", file=sys.stderr)
+        return REVIEW_REQUIRED
+    command = reviewed_command(db, preview, plan)
+    with db.transaction():
+        result = command.execute(db)
+        if not result.success:
+            raise ValueError(result.message)
+        HistoryService(db, world.id).save_command(cast(CommandProtocol, command))
+    print("Import Successful! Reviewed changes applied; Undo is available.")
+    return 0
 
+
+def run_import_cli(args: List[str]) -> int:
+    """Import into an approved existing world; return 3 when review is required."""
     try:
-        db_service = DatabaseService(db_path)
+        parsed = _arguments(args)
+    except SystemExit as exc:
+        return exc.code if isinstance(exc.code, int) else 2
+    db_service = None
+    try:
+        world = _resolve_import_world(parsed.database)
+        if world is None:
+            raise ValueError("Import target is not a valid, approved existing world.")
+        print(f"Import target: {world.name} ({world.db_path})", file=sys.stderr)
+        db_service = DatabaseService(str(world.db_path))
         db_service.connect()
-        import_service = ImportService(db_service)
-
-        # 2. Read File
-        print(f"Reading {file_path}...")
-        # Modified file reading to include JSON parsing error handling
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                json_content = f.read()
-        except FileNotFoundError:  # Should be caught by file_path.exists() earlier
-            logger.error(f"File not found: {file_path}")
-            print(f"Error: File not found: '{file_path}'.", file=sys.stderr)
-            return 1
-        except Exception as e:  # Catch other potential file reading errors
-            logger.error(f"Error reading file '{file_path}': {e}")
-            print(f"Error reading file '{file_path}': {e}", file=sys.stderr)
-            return 1
-
-        # 3. Parse and Validate
-        try:
-            parsed_data = import_service.parse_only(json_content)
-        except ValueError as e:
-            msg = f"Validation Error: {e}"
-            logger.error(msg)
-            print(msg, file=sys.stderr)
-            return 1
-
-        # 4. Import
-        print(
-            f"Importing {len(parsed_data.get('entities', []))} entities, "
-            f"{len(parsed_data.get('events', []))} events..."
-        )
-        result = import_service.import_batch(parsed_data)
-
-        if result.success:
-            print("Import Successful!")
-            print(f"  Entities Created: {len(result.created_entities)}")
-            print(f"  Events Created:   {len(result.created_events)}")
-            print(f"  Relations Created:{len(result.created_relations)}")
-            if result.warnings:
-                print("\nWarnings:")
-                for w in result.warnings:
-                    print(f"  - {w}")
-            return 0
-        else:
-            print("\nImport Failed!", file=sys.stderr)
-            for error in result.errors:
-                print(f"  - {error}", file=sys.stderr)
-            return 1
-
-    except Exception as e:
-        logger.exception("Unexpected CLI import error")
-        print(f"Critical Error: {e}", file=sys.stderr)
+        return _execute_import(db_service, world, parsed)
+    except (ValueError, OSError, TypeError, KeyError) as exc:
+        logger.error("Import failed: %s", exc)
+        print(f"Import Failed: {exc}", file=sys.stderr)
         return 1
     finally:
-        if "db_service" in locals() and db_service:
+        if db_service is not None:
             db_service.close()

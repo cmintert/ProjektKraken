@@ -61,7 +61,7 @@ def test_import_parses_date_string(memory_db, simple_calendar):
 
     # 3. Run Import
     importer = ImportService(memory_db)
-    result = importer.import_batch(import_data)
+    result = importer._materialize_batch(import_data)
 
     assert result.success is True, (
         f"Import failed. Errors: {result.errors}, Warnings: {result.warnings}"
@@ -81,7 +81,7 @@ def test_import_parses_date_string(memory_db, simple_calendar):
 
 
 def test_import_range_requires_explicit_meaning(memory_db):
-    result = ImportService(memory_db).import_batch(
+    result = ImportService(memory_db)._materialize_batch(
         {"events": [{"name": "Unclassified range", "lore_date": "961-964"}]}
     )
     assert not result.created_events
@@ -89,7 +89,7 @@ def test_import_range_requires_explicit_meaning(memory_db):
 
 
 def test_import_occurrence_window_is_not_duration(memory_db):
-    result = ImportService(memory_db).import_batch(
+    result = ImportService(memory_db)._materialize_batch(
         {
             "events": [
                 {
@@ -120,7 +120,7 @@ def test_import_fallback_on_missing_calendar(memory_db):
     }
 
     importer = ImportService(memory_db)
-    result = importer.import_batch(import_data)
+    result = importer._materialize_batch(import_data)
 
     # Should succeed with fallback to default Gregorian calendar
     assert result.success is True
@@ -144,7 +144,7 @@ def test_import_range_date_sets_duration(memory_db):
     }
 
     importer = ImportService(memory_db)
-    result = importer.import_batch(import_data)
+    result = importer._materialize_batch(import_data)
 
     assert result.success is True
     event = memory_db.get_event(result.created_events[0])
@@ -168,7 +168,7 @@ def test_import_exact_date_no_duration(memory_db):
     }
 
     importer = ImportService(memory_db)
-    result = importer.import_batch(import_data)
+    result = importer._materialize_batch(import_data)
 
     assert result.success is True
     event = memory_db.get_event(result.created_events[0])
@@ -190,7 +190,7 @@ def test_import_explicit_duration_not_overridden(memory_db):
     }
 
     importer = ImportService(memory_db)
-    result = importer.import_batch(import_data)
+    result = importer._materialize_batch(import_data)
 
     assert result.success is True
     event = memory_db.get_event(result.created_events[0])
@@ -204,7 +204,7 @@ def test_import_raw_float_preserved(memory_db):
     }
 
     importer = ImportService(memory_db)
-    result = importer.import_batch(import_data)
+    result = importer._materialize_batch(import_data)
 
     event = memory_db.get_event(result.created_events[0])
     assert event.lore_date == 123.45
@@ -213,10 +213,12 @@ def test_import_raw_float_preserved(memory_db):
 def test_valid_date_sets_date_parsed_true(memory_db):
     """Events with a valid lore_date should have _date_parsed=True in attributes."""
     import_data = {
-        "events": [{"name": "Explicit Date Event", "lore_date": 42.0, "type": "generic"}]
+        "events": [
+            {"name": "Explicit Date Event", "lore_date": 42.0, "type": "generic"}
+        ]
     }
     importer = ImportService(memory_db)
-    result = importer.import_batch(import_data)
+    result = importer._materialize_batch(import_data)
 
     assert result.success
     event = memory_db.get_event(result.created_events[0])
@@ -232,7 +234,7 @@ def test_invalid_date_string_sets_date_parsed_false(memory_db):
         ]
     }
     importer = ImportService(memory_db)
-    result = importer.import_batch(import_data)
+    result = importer._materialize_batch(import_data)
 
     assert result.success
     assert result.unparsed_date_count == 1
@@ -247,11 +249,9 @@ def test_invalid_date_string_sets_date_parsed_false(memory_db):
 
 def test_missing_date_defaults_to_zero_with_date_parsed_false(memory_db):
     """Events with no lore_date key should default to 0.0 with _date_parsed=False."""
-    import_data = {
-        "events": [{"name": "No Date Event", "type": "generic"}]
-    }
+    import_data = {"events": [{"name": "No Date Event", "type": "generic"}]}
     importer = ImportService(memory_db)
-    result = importer.import_batch(import_data)
+    result = importer._materialize_batch(import_data)
 
     assert result.success
     event = memory_db.get_event(result.created_events[0])
@@ -270,7 +270,7 @@ def test_multiple_bad_dates_counted_in_unparsed_date_count(memory_db):
         ]
     }
     importer = ImportService(memory_db)
-    result = importer.import_batch(import_data)
+    result = importer._materialize_batch(import_data)
 
     assert result.success
     assert result.unparsed_date_count == 2

@@ -82,7 +82,7 @@ def test_import_retains_missing_endpoint_without_inventing_date(
     review = prepare_import(
         db_service,
         {"events": [event.to_dict()], "entities": [], "relations": []},
-        {"mode": "update"},
+        {"mode": "update", "unresolved_events": ["missing"]},
     )
     assert not review["errors"], review
     command = prepare_timing_command(ApplyTransferCommand(review))

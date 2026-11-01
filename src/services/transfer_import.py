@@ -3,62 +3,82 @@
 from __future__ import annotations
 
 import copy
-import math
+import time
+import uuid
 from typing import Any
 
-from src.core.event_timing.definitions import EVENT_TIMING_SCHEMA
 from src.core.events import Event
 from src.core.temporal_references import remap_temporal_references
 from src.core.transfer import LORE_KINDS
 from src.services.db_service import DatabaseService
 from src.services.import_service import ImportResult, ImportService
 from src.services.repositories.transfer_repository import changes, revision, snapshot
+from src.services.transfer_context import prepare_calendars
+from src.services.transfer_diagnostics import reference_diagnostics
+from src.services.transfer_validation import validate_record
 
 
-def _validate_record(
-    kind: str, row: dict[str, Any], parser: ImportService
+def _validate_nested(
+    row: dict[str, Any],
+    token: str,
+    options: dict[str, Any],
+    parser: ImportService,
 ) -> list[str]:
+    """Validate nested Relations before endpoint remapping or clone writes."""
     errors: list[str] = []
-    if kind != "relations" and not str(row.get("name", "")).strip():
-        errors.append("A name is required.")
-    if not isinstance(row.get("attributes", {}), dict):
-        errors.append("Attributes must be a JSON object.")
-    if "tags" in row and (
-        not isinstance(row["tags"], list)
-        or any(not isinstance(tag, str) for tag in row["tags"])
-    ):
-        errors.append("Tags must be a JSON list of names.")
-    if kind != "events":
-        return errors
-    metadata = row.get("attributes", {}).get("_temporal_v2", {})
-    if isinstance(metadata, dict) and metadata.get("schema", 1) != 1:
-        if metadata.get("schema") == EVENT_TIMING_SCHEMA:
-            from src.core.event_timing.definitions import EventTimingDefinition
-
-            try:
-                EventTimingDefinition.from_dict(metadata["timing"])
-            except (ValueError, TypeError, KeyError) as exc:
-                errors.append(str(exc))
-        return errors
-    raw_date = row.get("lore_date")
-    if raw_date is None or str(raw_date).strip() == "":
-        return errors + ["An event date is required."]
-    try:
-        raw_date = float(raw_date)
-    except (ValueError, TypeError):
-        pass
-    value, duration, explicit = parser._parse_lore_date(raw_date)
-    if not explicit or not math.isfinite(value):
-        errors.append(f"Invalid date {raw_date!r}.")
+    nested = row.get("relations", [])
+    if not isinstance(nested, list):
+        errors.append(f"{token}: Relations must be a list of objects.")
     else:
-        row["lore_date"] = value
-        row.setdefault("lore_duration", duration)
-    try:
-        if not math.isfinite(float(row.get("lore_duration", 0))):
-            raise ValueError("non-finite duration")
-    except (ValueError, TypeError):
-        errors.append("Duration must be a finite number of days.")
+        for rel_index, relation in enumerate(nested):
+            rel_token = f"{token}:relations:{rel_index}"
+            if not isinstance(relation, dict):
+                errors.append(f"{rel_token}: A relationship must be an object.")
+                continue
+            relation, _source = _prepare_row(
+                relation, rel_token, {**options, "mode": row["import_action"]}
+            )
+            nested[rel_index] = relation
+            errors.extend(
+                f"{rel_token}: {message}"
+                for message in validate_record("relations", relation, parser)
+            )
     return errors
+
+
+def _prepare_row(
+    incoming: dict[str, Any],
+    token: str,
+    options: dict[str, Any],
+) -> tuple[dict[str, Any], str]:
+    """Keep transfer control fields owned by review options, never by source input."""
+    row = copy.deepcopy(incoming)
+    source = row.pop("_transfer_source", "Input")
+    for key in list(row):
+        if key.startswith("_transfer_"):
+            row.pop(key)
+    row["import_action"] = options.get("actions", {}).get(
+        token, options.get("mode", "skip")
+    )
+    row["_transfer_token"] = token
+    if options.get("matches", {}).get(token):
+        if row.get("id"):
+            row.setdefault("_transfer_original_id", row["id"])
+        row["id"] = options["matches"][token]
+        row["_transfer_match"] = row["id"]
+    if options.get("actions", {}).get(token) == "create":
+        if row.get("id"):
+            row["_transfer_original_id"] = row["id"]
+        row["id"] = options["proposed_ids"].setdefault(token, str(uuid.uuid4()))
+        row["_transfer_create"] = True
+        row.pop("_transfer_match", None)
+    if not row.get("id"):
+        allocated = options["proposed_ids"].setdefault(token, str(uuid.uuid4()))
+        if token.startswith("relations:") or ":relations:" in token:
+            row["_transfer_allocated_id"] = allocated
+        else:
+            row["id"] = allocated
+    return row, str(source)
 
 
 def _prepare_payload(
@@ -67,37 +87,53 @@ def _prepare_payload(
     payload: dict[str, Any] = {}
     errors: list[str] = []
     sources: dict[str, str] = {}
-    item_ids: set[str] = set()
     for kind in LORE_KINDS:
-        records = []
+        records: list[dict[str, Any]] = []
+        if not isinstance(data.get(kind, []), list):
+            errors.append(f"{kind} must be a list of objects.")
+            payload[kind] = records
+            continue
         for index, incoming in enumerate(data.get(kind, [])):
             token = f"{kind}:{index}"
             if token in options.get("excluded", []):
                 continue
-            row = copy.deepcopy(incoming)
-            sources[token] = row.pop("_transfer_source", "Input")
-            row["import_action"] = options.get("actions", {}).get(
-                token, options.get("mode", "skip")
-            )
-            if options.get("matches", {}).get(token):
-                if row.get("id"):
-                    row["_transfer_original_id"] = row["id"]
-                row["id"] = options["matches"][token]
-            item_id = str(row.get("id", ""))
-            if kind != "relations" and item_id and item_id in item_ids:
-                errors.append(
-                    f"{token}: Duplicate ID in the input. "
-                    "Exclude or correct one record."
-                )
-            if kind != "relations" and item_id:
-                item_ids.add(item_id)
+            if not isinstance(incoming, dict):
+                errors.append(f"{token}: A record must be a JSON object.")
+                continue
+            row, source = _prepare_row(incoming, token, options)
+            sources[token] = source
             errors.extend(
                 f"{token} ({sources[token]}): {error}"
-                for error in _validate_record(kind, row, parser)
+                for error in validate_record(kind, row, parser)
             )
+            errors.extend(_validate_nested(row, token, options, parser))
             records.append(row)
         payload[kind] = records
+    errors.extend(_duplicate_ids(payload))
     return payload, errors, sources
+
+
+def _duplicate_ids(payload: dict[str, Any]) -> list[str]:
+    """Reject contradictory repeated identities, including nested Relations."""
+    seen: set[str] = set()
+    errors: list[str] = []
+    records = [row for kind in LORE_KINDS for row in payload[kind]]
+    records.extend(
+        relation
+        for row in list(records)
+        if isinstance(row.get("relations"), list)
+        for relation in row.get("relations", [])
+        if isinstance(relation, dict)
+    )
+    for row in records:
+        identity = row.get("id") or row.get("_transfer_allocated_id")
+        if identity in seen:
+            errors.append(
+                f"Duplicate ID {identity} in the input. Exclude or correct a record."
+            )
+        if identity:
+            seen.add(identity)
+    return errors
 
 
 def _import_records(
@@ -115,7 +151,9 @@ def _import_records(
             if row.get("id"):
                 original_ids[id(row)] = row.pop("_transfer_original_id", row["id"])
             nested.append((row, row.pop("relations", [])))
-    result = parser.import_batch(payload, {**options, "dry_run": False})
+    result = parser._materialize_batch(
+        payload, {**options, "dry_run": False, "review_names": True}
+    )
     remap = {
         original_ids[id(row)]: row["id"]
         for row, _ in nested
@@ -134,8 +172,8 @@ def _import_records(
         for endpoint in ("source_id", "target_id"):
             if relation.get(endpoint) in remap:
                 relation[endpoint] = remap[relation[endpoint]]
-    linked = parser.import_batch(
-        {"relations": relations}, {**options, "dry_run": False}
+    linked = parser._materialize_batch(
+        {"relations": relations}, {**options, "dry_run": False, "review_names": True}
     )
     result.created_relations.extend(linked.created_relations)
     result.errors.extend(linked.errors)
@@ -176,6 +214,9 @@ def prepare_import(
     db: DatabaseService, data: dict[str, Any], options: dict[str, Any]
 ) -> dict[str, Any]:
     """Run the importer on a private snapshot and return reviewable row deltas."""
+    options = copy.deepcopy(options)
+    options.setdefault("import_time", time.time())
+    options.setdefault("proposed_ids", {})
     connection = db.get_connection()
     if connection is None:
         raise ValueError("No world is open.")
@@ -186,8 +227,23 @@ def prepare_import(
     try:
         connection.backup(target)
         before = snapshot(target)
-        parser = ImportService(clone)
+        parser = ImportService(clone, options["import_time"])
         payload, errors, sources = _prepare_payload(data, options, parser)
+        context = data.get("context", {})
+        if not isinstance(context, dict):
+            errors.append("Exchange context must be a JSON object.")
+            context = {}
+        context_errors: list[str] = []
+        context_warnings: list[str] = []
+        calendar_decisions: list[dict[str, Any]] = []
+        if not errors:
+            try:
+                context_errors, context_warnings, calendar_decisions = (
+                    prepare_calendars(clone, payload, context, options)
+                )
+            except (ValueError, TypeError, KeyError, AttributeError) as exc:
+                context_errors.append(f"Invalid calendar context: {exc}")
+        errors.extend(context_errors)
         if errors:
             return {
                 "errors": errors,
@@ -195,9 +251,17 @@ def prepare_import(
                 "delta": [],
                 "actions": [],
                 "options": options,
+                "calendar_decisions": calendar_decisions,
+                "warnings": context_warnings,
             }
         result = _import_records(parser, payload, options, clone)
         after = snapshot(target)
+        reference_errors, reference_warnings, dependency_decisions = (
+            reference_diagnostics(clone, changes(before, after), options)
+        )
+        errors.extend(reference_errors)
+        from src.services.event_timing.planning import snapshot_fingerprint
+        from src.services.event_timing.store import capture
         from src.services.event_timing.transfer import project_import
 
         timing_review = project_import(db, changes(before, after), clone)
@@ -226,16 +290,23 @@ def prepare_import(
         )
         return {
             "errors": errors,
-            "warnings": list(data.get("warnings", [])) + result.warnings,
+            "warnings": list(data.get("warnings", []))
+            + context_warnings
+            + reference_warnings
+            + result.warnings,
+            "dependency_decisions": dependency_decisions,
+            "calendar_decisions": calendar_decisions,
             "sources": sources,
             "ambiguous": result.ambiguous_items,
             "actions": result.actions,
             "delta": delta,
             "revision": revision(before),
+            "context_revision": snapshot_fingerprint(capture(db)),
             "db_path": db.db_path,
             "source_hashes": data.get("source_hashes", {}),
             "timing_review": timing_review,
             "options": options,
+            "original_data": copy.deepcopy(data),
         }
     finally:
         clone.close()

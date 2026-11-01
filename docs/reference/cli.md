@@ -96,8 +96,39 @@ python -m src.app.main import --file data.json --database "worlds/My World/My Wo
 uses the desktop application's registered active world path, falling back to
 its saved active world name. It announces the resolved world and path before
 writing and fails when selection or approval is invalid. This source entry
-loads Qt. The importer has no `--mode` flag; its current default import mode
-applies. Import a disposable copy first when checking an unfamiliar file.
+loads Qt. `--mode skip|update|overwrite` selects conflict behavior; the CLI keeps
+its existing `update` default. Desktop import defaults to `skip`.
+
+The importer uses the same validation, identity matching, calendar mapping and
+timing preparation as desktop import. Preview without changing world data:
+
+```text
+python -m src.app.main import --file data.json --database "worlds/My World/My World.kraken" --dry-run --review-out review.json
+```
+
+The report includes record actions, diagnostics, calendar decisions and timing
+consequences. Exit status is `0` for success or a nonblocking preview, `1` for
+failure, `2` for invalid arguments and `3` when consequential timing needs review.
+`--review-out` always stops before applying. Keep the source file beside the
+review process; the artifact records intent and fingerprints, not executable SQL.
+
+Apply a saved review, supplying the timing fingerprint shown in the report when
+confirmation is required:
+
+```text
+python -m src.app.main import --apply-review review.json --database "worlds/My World/My World.kraken" --confirm-timing <fingerprint>
+```
+
+Reconstruction rereads and validates the original source. Changed source bytes,
+world records, calendar definitions or timing consumers require a fresh review.
+Successful imports are atomic and saved in world command history for Undo.
+`--calendar-map SOURCE_UUID=TARGET_UUID` proposes an equivalent active calendar;
+repeat it for multiple sources. `--accept-unresolved-calendar SOURCE_UUID`
+explicitly retains unresolved assertions. Neither option installs or switches a
+calendar. Name conflicts must be resolved in desktop review or corrected in the
+source; CLI does not silently choose a record by name.
+`--accept-unresolved-event EVENT_UUID` explicitly retains a missing Event timing
+source. Dependency cycles and malformed supported timing remain blocking.
 
 `backup restore --file <backup> --database <target> [--force]` permits a new
 target path. The backup must be inside the configured backup directory and

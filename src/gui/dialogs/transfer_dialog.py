@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from typing import Any
 
 from PySide6.QtCore import Qt, Signal
@@ -68,6 +69,8 @@ class TransferDialog(QDialog):
         self.data: dict[str, Any] = {}
         self._review_kind = ""
         self._row_controls: dict[str, tuple[QTreeWidgetItem, QComboBox, QComboBox]] = {}
+        self._calendar_controls: dict[str, QComboBox] = {}
+        self._dependency_controls: dict[str, QComboBox] = {}
         self._selected_token = ""
         self._drafts: dict[str, str] = {}
         layout = QVBoxLayout(self)
@@ -576,14 +579,16 @@ class TransferDialog(QDialog):
         self._selected_token = ""
         self.tree.clear()
         self._row_controls.clear()
+        self._calendar_controls.clear()
+        self._dependency_controls.clear()
         for kind in LORE_KINDS:
             for index, record in enumerate(data.get(kind, [])):
                 token = f"{kind}:{index}"
                 row = QTreeWidgetItem(
                     [
                         kind,
-                        record.get("name", record.get("rel_type", "")),
-                        record.get("_transfer_source", "Input"),
+                        str(record.get("name", record.get("rel_type", ""))),
+                        str(record.get("_transfer_source", "Input")),
                     ]
                 )
                 row.setData(0, Qt.ItemDataRole.UserRole, token)
@@ -601,6 +606,7 @@ class TransferDialog(QDialog):
                 )
                 for label, key in (
                     ("Default", ""),
+                    ("Create separate record", "create"),
                     ("Skip", "skip"),
                     ("Merge", "update"),
                     ("Replace", "overwrite"),
@@ -631,12 +637,11 @@ class TransferDialog(QDialog):
                     match.addItem(chosen_match, chosen_match)
                 match.setCurrentIndex(max(0, match.findData(chosen_match)))
                 for outcome in preview.get("actions", []):
-                    if (
-                        outcome.get("name") == record.get("name")
-                        and outcome.get("type") == kind[:-1]
-                    ):
+                    if outcome.get("token") == token:
                         row.setToolTip(1, f"{outcome['action']}: {outcome['reason']}")
                 self._row_controls[token] = row, action, match
+        self._show_calendar_decisions(preview)
+        self._show_dependency_decisions(preview)
         self.tree.setVisible(True)
         self.details.setVisible(True)
         self.document_preview.setVisible(False)
@@ -669,6 +674,51 @@ class TransferDialog(QDialog):
             action.currentIndexChanged.connect(self._invalidate)
             match.currentIndexChanged.connect(self._invalidate)
 
+    def _show_calendar_decisions(self, preview: dict[str, Any]) -> None:
+        """Render mapping choices as review rows using existing shared controls."""
+        options = preview.get("options", {})
+        for decision in preview.get("calendar_decisions", []):
+            identity = decision["source_id"]
+            row = QTreeWidgetItem(["Calendar", identity, decision["message"]])
+            self.tree.addTopLevelItem(row)
+            choice = declare_inspection(
+                QComboBox(),
+                "src-gui-dialogs-transfer-dialog-transferdialog-show-calendar-decisions-choice|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-show-calendar-decisions-choice",
+            )
+            choice.setAccessibleName(f"Resolve calendar {identity}")
+            choice.setToolTip(decision["message"])
+            choice.addItem("Choose a compatible calendar", "")
+            for candidate in decision["candidates"]:
+                choice.addItem(f"Map to active calendar ({candidate[:8]})", candidate)
+            choice.addItem("Preserve unresolved dates", "unresolved")
+            selected = options.get("calendar_mappings", {}).get(identity, "")
+            if identity in options.get("unresolved_calendars", []):
+                selected = "unresolved"
+            choice.setCurrentIndex(max(0, choice.findData(selected)))
+            choice.currentIndexChanged.connect(self._invalidate)
+            self.tree.setItemWidget(row, 4, choice)
+            self._calendar_controls[identity] = choice
+
+    def _show_dependency_decisions(self, preview: dict[str, Any]) -> None:
+        """Require deliberate unresolved acceptance for each missing Event source."""
+        for decision in preview.get("dependency_decisions", []):
+            identity = decision["source_id"]
+            row = QTreeWidgetItem(["Event dependency", identity, decision["message"]])
+            self.tree.addTopLevelItem(row)
+            choice = declare_inspection(
+                QComboBox(),
+                "src-gui-dialogs-transfer-dialog-transferdialog-show-dependency-decisions-choice|world.transfer|help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-show-dependency-decisions-choice",
+            )
+            choice.setAccessibleName(f"Resolve missing Event {identity}")
+            choice.setToolTip(decision["message"])
+            choice.addItem("Include the source or exclude its users", "")
+            choice.addItem("Preserve unresolved timing", "unresolved")
+            if identity in preview.get("options", {}).get("unresolved_events", []):
+                choice.setCurrentIndex(1)
+            choice.currentIndexChanged.connect(self._invalidate)
+            self.tree.setItemWidget(row, 4, choice)
+            self._dependency_controls[identity] = choice
+
     def _invalidate(self, *_: Any) -> None:
         if self._review_kind == "import":
             self.next.setEnabled(False)
@@ -694,11 +744,20 @@ class TransferDialog(QDialog):
         )
         self.details.blockSignals(False)
         record = self.data[kind][int(index)]
+        outcome: dict[str, Any] = next(
+            (
+                item
+                for item in self._preview.get("actions", [])
+                if item.get("token") == token
+            ),
+            {},
+        )
+        identity = outcome.get("id", record.get("id"))
         delta = [
             item
             for item in self._preview.get("delta", [])
             if item["table"] == kind
-            and (item["after"] or item["before"]).get("name") == record.get("name")
+            and (item["after"] or item["before"]).get("id") == identity
         ]
         issues = self._preview.get("errors", []) + self._preview.get("warnings", [])
         detail = (
@@ -713,11 +772,27 @@ class TransferDialog(QDialog):
             self._drafts[self._selected_token] = self.details.toPlainText()
         edits = dict(self._drafts)
         options: dict[str, Any] = {
+            **deepcopy(self._preview.get("options", {})),
             "mode": self.mode.currentData(),
             "actions": {},
             "matches": {},
             "excluded": [],
         }
+        for identity, choice in self._calendar_controls.items():
+            options.setdefault("calendar_mappings", {}).pop(identity, None)
+            unresolved = options.setdefault("unresolved_calendars", [])
+            if identity in unresolved:
+                unresolved.remove(identity)
+            if choice.currentData() == "unresolved":
+                unresolved.append(identity)
+            elif choice.currentData():
+                options["calendar_mappings"][identity] = choice.currentData()
+        unresolved_events = options.setdefault("unresolved_events", [])
+        for identity, choice in self._dependency_controls.items():
+            if identity in unresolved_events:
+                unresolved_events.remove(identity)
+            if choice.currentData() == "unresolved":
+                unresolved_events.append(identity)
         for token, (row, action, match) in self._row_controls.items():
             if row.checkState(0) != Qt.CheckState.Checked:
                 options["excluded"].append(token)

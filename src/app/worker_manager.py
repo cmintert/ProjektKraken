@@ -316,9 +316,7 @@ class WorkerManager(QObject):
         self.window.worker.semantic_suggestions_ready.connect(
             self.window.data_coordinator.on_semantic_suggestions, connection_type
         )
-        self.window.worker.import_finished.connect(
-            self.window.import_coordinator.on_import_finished, connection_type
-        )
+
         self.window.worker.obsidian_export_prepared.connect(
             self.window.import_coordinator.on_obsidian_export_prepared,
             connection_type,
@@ -361,18 +359,6 @@ class WorkerManager(QObject):
         )
         self.load_embedding_stats_requested.connect(
             self.window.worker.load_embedding_stats,
-            connection_type,
-        )
-        self.window.import_coordinator.run_import_requested.connect(
-            self.window.worker.run_import,
-            connection_type,
-        )
-        self.window.import_coordinator.run_markdown_import_requested.connect(
-            self.window.worker.run_markdown_import,
-            connection_type,
-        )
-        self.window.import_coordinator.run_markdown_batch_import_requested.connect(
-            self.window.worker.run_markdown_batch_import,
             connection_type,
         )
         self.window.import_coordinator.prepare_obsidian_export_requested.connect(

@@ -81,6 +81,45 @@ def project_import(
     snapshot = capture(db)
     request = request_from_delta(snapshot, delta)
     plan = prepare_change(snapshot, request)
+    # Imported records may remain unresolved, but supported structural defects
+    # must never be hidden by the planner's broad new-record preservation rule.
+    opaque = {
+        row["id"]
+        for row in (*request.creates, *request.updates.values())
+        if isinstance(row.get("attributes", {}).get("_temporal_v2"), dict)
+        and row["attributes"]["_temporal_v2"].get("schema", 1) not in {1, 2}
+    }
+    if plan.after is not None:
+        previous = (
+            {
+                (issue.code, issue.endpoints, issue.message)
+                for issue in plan.before.issues
+            }
+            if plan.before is not None
+            else set()
+        )
+        for issue in plan.after.issues:
+            identities = {
+                node.removeprefix("event:").removesuffix(":end")
+                for node in issue.endpoints
+            }
+            if (
+                issue.code == "evidence" and "unavailable" not in issue.message.lower()
+            ) or issue.code in {
+                "definition",
+                "self_reference",
+                "chronology",
+                "dependency_cycle",
+                "infeasible",
+                "calendar_offset",
+            }:
+                if (
+                    identities <= opaque
+                    or (issue.code, issue.endpoints, issue.message) in previous
+                ):
+                    continue
+                if issue.message not in plan.errors:
+                    plan.errors.append(issue.message)
     if not plan.errors:
         for row in plan.updated.values():
             clone.insert_event(Event.from_dict(deepcopy(row)))

@@ -583,6 +583,139 @@ def test_import_active_world_fallback_uses_registered_manifest(
     assert importer._resolve_import_world(None) is None
 
 
+def test_import_review_artifact_reconstructs_without_writes(cli_world, tmp_path):
+    world, env = cli_world
+    source = tmp_path / "lore.json"
+    source.write_text(json.dumps({"entities": [{"name": "Reviewed"}]}))
+    review = tmp_path / "review.json"
+    result = invoke(
+        env,
+        "src.app.main",
+        "import",
+        "--file",
+        str(source),
+        "--database",
+        str(world.db_path),
+        "--review-out",
+        str(review),
+    )
+    assert result.returncode == 0, result.stderr
+    artifact = json.loads(review.read_text())
+    assert "delta" not in artifact
+    empty = invoke(env, "src.cli.entity", "list", "-d", str(world.db_path), "--json")
+    assert json.loads(empty.stdout) == []
+    applied = invoke(
+        env,
+        "src.app.main",
+        "import",
+        "--apply-review",
+        str(review),
+        "--database",
+        str(world.db_path),
+    )
+    assert applied.returncode == 0, applied.stderr
+    records = invoke(env, "src.cli.entity", "list", "-d", str(world.db_path), "--json")
+    assert json.loads(records.stdout)[0]["name"] == "Reviewed"
+
+
+def test_import_review_rejects_changed_source(cli_world, tmp_path):
+    world, env = cli_world
+    source = tmp_path / "lore.json"
+    source.write_text(json.dumps({"entities": [{"name": "Before"}]}))
+    review = tmp_path / "review.json"
+    result = invoke(
+        env,
+        "src.app.main",
+        "import",
+        "--file",
+        str(source),
+        "--database",
+        str(world.db_path),
+        "--review-out",
+        str(review),
+    )
+    assert result.returncode == 0, result.stderr
+    source.write_text(json.dumps({"entities": [{"name": "Changed"}]}))
+    result = invoke(
+        env,
+        "src.app.main",
+        "import",
+        "--apply-review",
+        str(review),
+        "--database",
+        str(world.db_path),
+    )
+    assert result.returncode == 1
+    assert "Review inputs changed" in result.stderr
+
+
+def test_import_consequential_timing_requires_confirmation(cli_world, tmp_path):
+    from src.core.event_timing.definitions import (
+        EndpointDefinition,
+        EventTimingDefinition,
+    )
+    from src.core.events import Event
+    from src.services.db_service import DatabaseService
+
+    world, env = cli_world
+    db = DatabaseService(str(world.db_path))
+    db.connect()
+    root = Event(name="Root", lore_date=10)
+    child = Event(
+        name="Child",
+        lore_date=10,
+        attributes=EventTimingDefinition(
+            EndpointDefinition(kind="event", anchor_id=f"event:{root.id}")
+        ).apply({}),
+    )
+    db.insert_event(root)
+    db.insert_event(child)
+    db.close()
+    source = tmp_path / "change.json"
+    source.write_text(
+        json.dumps({"events": [{"id": root.id, "name": root.name, "lore_date": 20}]})
+    )
+    review = tmp_path / "review.json"
+    result = invoke(
+        env,
+        "src.app.main",
+        "import",
+        "--file",
+        str(source),
+        "--database",
+        str(world.db_path),
+        "--review-out",
+        str(review),
+    )
+    assert result.returncode == 3, result.stderr
+    db.connect()
+    assert db.get_event(root.id).lore_date == 10
+    assert db.get_event(child.id).lore_date == 10
+    db.close()
+    artifact = json.loads(review.read_text())
+    result = invoke(
+        env,
+        "src.app.main",
+        "import",
+        "--apply-review",
+        str(review),
+        "--database",
+        str(world.db_path),
+        "--confirm-timing",
+        artifact["timing_fingerprint"],
+    )
+    assert result.returncode == 0, result.stderr
+    db.connect()
+    assert db.get_event(root.id).lore_date == 20
+    assert db.get_event(child.id).lore_date == 20
+    assert (
+        db.get_connection()
+        .execute("SELECT COUNT(*) FROM command_history")
+        .fetchone()[0]
+    )
+    db.close()
+
+
 def test_backup_create_list_and_restore_new_target(cli_world, tmp_path):
     world, env = cli_world
     db = str(world.db_path)

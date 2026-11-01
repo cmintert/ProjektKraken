@@ -70,7 +70,7 @@ def test_import_batch_creates_items():
         "events": [{"name": "Evt1", "lore_date": 50.0}],
     }
 
-    result = service.import_batch(data)
+    result = service._materialize_batch(data)
 
     assert result.success is True
     assert len(result.created_entities) == 1
@@ -112,7 +112,7 @@ def test_import_relation_name_resolution():
         ]
     }
 
-    result = service.import_batch(data)
+    result = service._materialize_batch(data)
 
     assert result.success is True
     # Should resolve TargetEntity to its ID and insert relation
@@ -140,7 +140,7 @@ def test_import_relation_missing_target():
         ]
     }
 
-    result = service.import_batch(data)
+    result = service._materialize_batch(data)
 
     assert result.success is True  # Overall success
     assert len(result.created_relations) == 0
@@ -173,12 +173,12 @@ def test_import_prevents_duplicate_relations():
     }
 
     # First import
-    result1 = import_service.import_batch(data)
+    result1 = import_service._materialize_batch(data)
     assert result1.success
     assert len(result1.created_relations) == 1
 
     # Second import - should not create duplicate
-    result2 = import_service.import_batch(data)
+    result2 = import_service._materialize_batch(data)
     assert result2.success
     assert len(result2.created_relations) == 0  # No new relations created
 
@@ -203,7 +203,9 @@ def test_import_markdown_uses_filename_fallback():
     options = {"filename": "MyFallbackTitle"}
 
     # Execute import
-    result = service.import_markdown(markdown_text, options)
+    result = service._materialize_batch(
+        service.parse_markdown_file(markdown_text, options["filename"]), options
+    )
 
     assert result.success is True
     assert len(result.created_entities) == 1
@@ -223,7 +225,7 @@ def test_import_batch_persists_entity_tags_to_normalized_tables():
     db.connect()
     service = ImportService(db)
 
-    result = service.import_batch(
+    result = service._materialize_batch(
         {
             "entities": [
                 {
@@ -257,7 +259,7 @@ def test_import_batch_persists_event_tags_to_normalized_tables():
     db.connect()
     service = ImportService(db)
 
-    result = service.import_batch(
+    result = service._materialize_batch(
         {
             "events": [
                 {
@@ -291,16 +293,12 @@ def test_import_batch_update_mode_merges_existing_tags():
     db.connect()
     service = ImportService(db)
 
-    first = service.import_batch(
-        {
-            "entities": [
-                {"name": "Merge Target", "type": "character", "tags": ["old"]}
-            ]
-        }
+    first = service._materialize_batch(
+        {"entities": [{"name": "Merge Target", "type": "character", "tags": ["old"]}]}
     )
     assert first.success
 
-    second = service.import_batch(
+    second = service._materialize_batch(
         {
             "entities": [
                 {
@@ -333,7 +331,7 @@ def test_import_batch_overwrite_mode_syncs_tags():
     db.connect()
     service = ImportService(db)
 
-    first = service.import_batch(
+    first = service._materialize_batch(
         {
             "events": [
                 {
@@ -346,7 +344,7 @@ def test_import_batch_overwrite_mode_syncs_tags():
     )
     assert first.success
 
-    second = service.import_batch(
+    second = service._materialize_batch(
         {
             "events": [
                 {

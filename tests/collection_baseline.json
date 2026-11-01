@@ -2,15 +2,15 @@
   "schema": 1,
   "counts": {
     "smoke": 19,
-    "ci_fast": 2593,
+    "ci_fast": 2640,
     "slow": 1,
     "performance": 0,
-    "full": 7103,
-    "full_only": 4501
+    "full": 7154,
+    "full_only": 4505
   },
   "categories": {
-    "architecture": 11,
-    "cli": 131,
+    "architecture": 13,
+    "cli": 134,
     "gui": 15,
     "integration": 245,
     "packaging": 13,
@@ -18,7 +18,7 @@
     "repro": 2,
     "root": 15,
     "security": 5,
-    "unit": 6650
+    "unit": 6696
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -32,6 +32,12 @@
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_size_stays_within_growth_budget[src/app/map_handler.py-baseline0]": [],
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_size_stays_within_growth_budget[src/services/db_service.py-baseline4]": [],
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_size_stays_within_growth_budget[src/services/worker.py-baseline1]": [],
+    "tests/architecture/test_transfer_boundaries.py::test_obsolete_worker_import_routes_are_retired": [
+      "ci_fast"
+    ],
+    "tests/architecture/test_transfer_boundaries.py::test_private_materialization_does_not_escape_transfer_preparation": [
+      "ci_fast"
+    ],
     "tests/cli/test_action_label_audit_runtime.py::test_concurrent_audit_is_rejected_and_slot_is_reusable": [
       "ci_fast"
     ],
@@ -105,6 +111,9 @@
     "tests/cli/test_cli_contract.py::test_both_group_entry_points_have_help[timeline]": [],
     "tests/cli/test_cli_contract.py::test_both_group_entry_points_have_help[wiki]": [],
     "tests/cli/test_cli_contract.py::test_import_active_world_fallback_uses_registered_manifest": [],
+    "tests/cli/test_cli_contract.py::test_import_consequential_timing_requires_confirmation": [],
+    "tests/cli/test_cli_contract.py::test_import_review_artifact_reconstructs_without_writes": [],
+    "tests/cli/test_cli_contract.py::test_import_review_rejects_changed_source": [],
     "tests/cli/test_cli_contract.py::test_import_targets_only_selected_world": [],
     "tests/cli/test_cli_contract.py::test_index_action_usage_and_dispatch": [],
     "tests/cli/test_cli_contract.py::test_index_handlers_run_from_both_parsers": [],
@@ -1651,6 +1660,13 @@
     "tests/unit/gui/test_transfer_dialog.py::test_all_sources_visible_and_cancel_is_cooperative": [],
     "tests/unit/gui/test_transfer_dialog.py::test_complete_lore_json_example_is_inserted_as_editable_text": [],
     "tests/unit/gui/test_transfer_dialog.py::test_format_guidance_and_publishing_options": [],
+    "tests/unit/gui/test_transfer_dialog.py::test_relation_review_details_use_resolved_id_not_shared_missing_name": [],
+    "tests/unit/gui/test_transfer_dialog.py::test_review_calendar_dependency_focus_disabled_and_narrow[cyberpunk_mode]": [],
+    "tests/unit/gui/test_transfer_dialog.py::test_review_calendar_dependency_focus_disabled_and_narrow[dark_mode]": [],
+    "tests/unit/gui/test_transfer_dialog.py::test_review_calendar_dependency_focus_disabled_and_narrow[fantasy_mode]": [],
+    "tests/unit/gui/test_transfer_dialog.py::test_review_calendar_dependency_focus_disabled_and_narrow[imperial_mode]": [],
+    "tests/unit/gui/test_transfer_dialog.py::test_review_calendar_dependency_focus_disabled_and_narrow[light_mode]": [],
+    "tests/unit/gui/test_transfer_dialog.py::test_review_calendar_dependency_focus_disabled_and_narrow[muted_light_mode]": [],
     "tests/unit/gui/test_transfer_dialog.py::test_review_edits_require_recheck_and_results_persist": [],
     "tests/unit/gui/test_transfer_dialog.py::test_text_surfaces_use_the_active_theme": [],
     "tests/unit/gui/widgets/test_auto_closing_message_box.py::test_auto_close": [],
@@ -2271,6 +2287,114 @@
     "tests/unit/services/test_obsidian_exporter_enhanced.py::TestSummaryPrepending::test_summary_prepended_as_blockquote": [
       "ci_fast"
     ],
+    "tests/unit/services/test_transfer_integrity.py::test_create_separate_record_does_not_update_supplied_existing_uuid": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_distinct_temporal_relations_survive_and_repeat[overwrite]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_distinct_temporal_relations_survive_and_repeat[skip]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_distinct_temporal_relations_survive_and_repeat[update]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_explicit_match_remaps_endpoints_and_chronology": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_idless_relation_fallback_never_merges_different_payloads": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_invalid_duration_is_not_hidden_by_projection[-3]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_invalid_duration_is_not_hidden_by_projection[True]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_invalid_duration_is_not_hidden_by_projection[inf]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_invalid_duration_is_not_hidden_by_projection[nan]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_malformed_collections_have_friendly_errors[None]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_malformed_collections_have_friendly_errors[shape1]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_malformed_collections_have_friendly_errors[shape2]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_malformed_collections_have_friendly_errors[shape3]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_missing_anchor_requires_explicit_unresolved_acceptance": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_new_timing_cycle_is_structurally_blocked": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_opaque_future_event_metadata_is_preserved_with_warning": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_outer_attributes_are_diagnostics_not_crashes[None]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_outer_attributes_are_diagnostics_not_crashes[attributes0]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_outer_attributes_are_diagnostics_not_crashes[wrong]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_private_state_payload_is_rejected": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_same_uuid_rename_and_conflicting_uuid_requires_review": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_selected_event_match_wins_over_other_name[overwrite]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_selected_event_match_wins_over_other_name[skip]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_selected_event_match_wins_over_other_name[update]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_selection_one_hop_is_order_independent_and_closes_timing": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_source_cannot_supply_review_control_fields": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_text_dates_retain_authored_precision[1214-year]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_text_dates_retain_authored_precision[1214?-year]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_text_dates_retain_authored_precision[23 AUG 1214-day]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_text_dates_retain_authored_precision[AUG 1214-month]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_text_dates_retain_authored_precision[between 1214 and 1216-year]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_text_dates_retain_authored_precision[circa 1214-year]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_text_dates_retain_authored_precision[estimated 1214-year]": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_typed_csv_scalars_and_yaml_sensitive_values": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_integrity.py::test_v1_v2_and_relation_only_json": [
+      "ci_fast"
+    ],
     "tests/unit/services/test_transfer_pipeline.py::test_bad_late_row_and_invalid_date_leave_database_unchanged": [
       "ci_fast"
     ],
@@ -2317,6 +2441,33 @@
       "ci_fast"
     ],
     "tests/unit/services/test_transfer_pipeline.py::test_world_package_roundtrip_and_duplicate_folder": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_portability.py::test_calendar_change_after_preview_refuses_apply": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_portability.py::test_cross_world_calendar_requires_explicit_compatible_mapping": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_portability.py::test_direct_import_is_no_longer_a_write_api": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_portability.py::test_incompatible_epoch_mapping_is_blocked": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_portability.py::test_native_notes_preserve_yaml_types_timing_relations_and_provenance": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_portability.py::test_native_notes_reject_conflicting_readable_dates_and_links": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_portability.py::test_native_tables_manifest_carries_context_and_hashes": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_portability.py::test_portable_world_preserves_all_tables_and_full_world_controls": [
+      "ci_fast"
+    ],
+    "tests/unit/services/test_transfer_portability.py::test_prepared_import_undo_redo_survives_database_reopen": [
       "ci_fast"
     ],
     "tests/unit/test_action_label_integrity.py::test_deliberately_small_geometry_proves_gate_fails": [
@@ -5725,11 +5876,6 @@
       "ci_fast"
     ],
     "tests/unit/test_import_coordinator.py::TestDatabaseManager::test_show_database_manager": [],
-    "tests/unit/test_import_coordinator.py::TestImportFinished::test_on_import_finished_clears_status": [],
-    "tests/unit/test_import_coordinator.py::TestImportFinished::test_on_import_finished_failure": [],
-    "tests/unit/test_import_coordinator.py::TestImportFinished::test_on_import_finished_failure_skips_load_data": [],
-    "tests/unit/test_import_coordinator.py::TestImportFinished::test_on_import_finished_success": [],
-    "tests/unit/test_import_coordinator.py::TestImportFinished::test_on_import_finished_success_calls_load_data": [],
     "tests/unit/test_import_coordinator.py::TestSingleObsidianExport::test_contextual_export_opens_shared_review": [],
     "tests/unit/test_import_coordinator.py::TestSingleObsidianExport::test_failed_export_reports_worker_error": [],
     "tests/unit/test_import_coordinator.py::TestSingleObsidianExport::test_prepared_export_selects_path_and_dispatches_worker": [],
@@ -8104,7 +8250,6 @@
     "tests/unit/test_obsidian_exporter.py::TestObsidianExporterStatBlock::test_stat_block_with_divider": [],
     "tests/unit/test_obsidian_exporter.py::TestObsidianExporterStatBlock::test_stat_block_with_text": [],
     "tests/unit/test_obsidian_exporter.py::TestObsidianExporterStatBlock::test_stat_block_with_weighted_keys": [],
-    "tests/unit/test_obsidian_exporter.py::TestObsidianExporterYamlEscape::test_escape_quotes": [],
     "tests/unit/test_overflow_toolbar.py::test_attribute_toolbar_keeps_add_action_visible_without_clipping": [],
     "tests/unit/test_overflow_toolbar.py::test_checkbox_state_is_shared_with_overflow_action": [],
     "tests/unit/test_overflow_toolbar.py::test_narrow_toolbar_overflows_low_priority_without_clipping": [],

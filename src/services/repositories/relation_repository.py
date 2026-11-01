@@ -20,6 +20,22 @@ class RelationRepository(BaseRepository):
     from the database.
     """
 
+    def replace_fact(
+        self,
+        identity: str,
+        source: str,
+        target: str,
+        predicate: str,
+        attributes: dict[str, Any],
+    ) -> None:
+        """Replace a reviewed fact including changed endpoints, retaining its ID."""
+        with self.transaction() as connection:
+            connection.execute(
+                "UPDATE relations SET source_id=?, target_id=?, rel_type=?, "
+                "attributes=? WHERE id=?",
+                (source, target, predicate, self._serialize_json(attributes), identity),
+            )
+
     def insert(
         self,
         relation_id: str,

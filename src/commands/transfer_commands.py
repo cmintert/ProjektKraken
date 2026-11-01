@@ -31,8 +31,15 @@ class ApplyTransferCommand(BaseCommand):
             if connection is None or db_service.db_path != self.preview["db_path"]:
                 raise ValueError("The active world changed. Review the import again.")
             if not self.applied_once:
+                from src.services.event_timing.planning import snapshot_fingerprint
+                from src.services.event_timing.store import capture
+
                 if revision(snapshot(connection)) != self.preview["revision"]:
                     raise ValueError("World data changed. Review the import again.")
+                if self.preview.get("context_revision") != snapshot_fingerprint(
+                    capture(db_service)
+                ):
+                    raise ValueError("Timing context changed. Review the import again.")
                 for path, digest in self.preview.get("source_hashes", {}).items():
                     if fingerprint(path) != digest:
                         raise ValueError(

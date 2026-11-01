@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-10-31
-**Commit:** 38f32ba3
+**Last Updated:** 2026-11-01
+**Commit:** a14ff51ebae97d19b152d22d3e348f50f8a437cf
 ---
 
 # Changelog
@@ -12,6 +12,16 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-11-01)* **Import/export integrity (KRT-121–126)**: Unified reviewed
+  validation and UUID-first identity matching; retained distinct temporal
+  Relations and authored date precision. Added Lore v2 calendar context,
+  deterministic selected dependencies, typed native tables, preservation-capable
+  Markdown notes, and CLI review/confirmation with persistent Undo. Retired the
+  unused direct worker import routes and documented preservation boundaries.
+  Added round-trip, restart and UI regressions and lowered complexity ceilings.
+  Native Lore exports now use exchange v2; direct `ImportService.import_batch`
+  writes are retired in favor of reviewed transfers.
 
 - *(2026-10-31)* **Testing (KRT-120)**: Retained registered Qt windows through
   orderly teardown so garbage collection cannot delete a parent during queued

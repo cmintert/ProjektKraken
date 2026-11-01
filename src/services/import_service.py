@@ -19,7 +19,7 @@ from src.core.entities import Entity
 from src.core.events import Event
 from src.core.parsed_date import DatePrecision
 from src.services.db_service import DatabaseService
-from src.services.import_normalization import normalize_name
+from src.services.import_identity import resolve_record, resolve_relation
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,9 @@ class _ImportRollback(Exception):
 class ImportService:
     """Service for importing data from JSON and Markdown."""
 
-    def __init__(self, db_service: DatabaseService) -> None:
+    def __init__(
+        self, db_service: DatabaseService, import_time: float | None = None
+    ) -> None:
         """Initialize the ImportService.
 
         Args:
@@ -74,7 +76,12 @@ class ImportService:
 
         """
         self._db = db_service
+        self._import_time = import_time
         self._date_parser: Optional[DateParser] = None
+
+    def _now(self) -> float:
+        """Reuse preparation time so review reconstruction preserves exact intent."""
+        return self._import_time if self._import_time is not None else time.time()
 
     def _get_parser(self) -> Optional[DateParser]:
         """Lazy load parser with active calendar config."""
@@ -229,39 +236,11 @@ class ImportService:
             ValueError: If JSON is invalid or schema is violated.
 
         """
-        if isinstance(json_data, str):
-            try:
-                data = json.loads(json_data)
-            except json.JSONDecodeError as e:
-                raise ValueError(f"Invalid JSON: {e}")
-        else:
-            data = json_data
+        from src.services.transfer_exchange import parse_json
 
-        # Normalize structure
-        result: Dict[str, List[Any]] = {
-            "entities": [],
-            "events": [],
-            "relations": [],
-        }
-
-        # Case 1: Batch format (root keys 'entities', 'events')
-        if "entities" in data or "events" in data:
-            result["entities"] = data.get("entities", [])
-            result["events"] = data.get("events", [])
-            # Relations might be at root or nested; we'll handle root here
-            result["relations"] = data.get("relations", [])
-
-        # Case 2: Single Entity
-        elif "type" in data and "name" in data and "lore_date" not in data:
-            # Likely an entity
-            result["entities"] = [data]
-
-        # Case 3: Single Event
-        elif "name" in data and ("lore_date" in data or "type" in data):
-            # Likely an event (checking lore_date is strong hint)
-            result["events"] = [data]
-
-        return result
+        return parse_json(
+            json_data if isinstance(json_data, str) else json.dumps(json_data)
+        )
 
     @staticmethod
     def parse_markdown_file(
@@ -292,8 +271,10 @@ class ImportService:
         data = markdown_to_import_data(parsed, fallback_title)
 
         result: Dict[str, Any] = {"entities": [], "events": [], "relations": []}
+        result["context"] = data.pop("_transfer_context", {})
+        native_kind = data.pop("_native_kind", None)
 
-        if is_entity_data(data):
+        if native_kind == "entities" or (native_kind is None and is_entity_data(data)):
             result["entities"] = [data]
         else:
             result["events"] = [data]
@@ -328,163 +309,98 @@ class ImportService:
         parsed_data = self.parse_markdown_file(markdown_text, fallback_title=filename)
         return self.import_batch(parsed_data, options)
 
-    def import_batch(  # noqa: C901
+    def import_batch(
         self,
         data: Dict[str, Any],
         options: Optional[Dict[str, Any]] = None,
     ) -> ImportResult:
-        """Imports a batch of data (entities, events, relations).
+        """Refuse unreviewed writes; callers must prepare and apply a transfer."""
+        return ImportResult(
+            False,
+            [],
+            [],
+            [],
+            [
+                "Direct import writes are retired. Use prepare_import and the "
+                "reviewed ApplyTransferCommand workflow."
+            ],
+            [],
+        )
 
-        Args:
-            data: Dictionary containing 'entities', 'events', 'relations'.
-            options: Import options (mode, dry_run, source_name, etc.).
-
-        Returns:
-            ImportResult object.
-
-        """
+    def _materialize_batch(
+        self,
+        data: Dict[str, Any],
+        options: Optional[Dict[str, Any]] = None,
+    ) -> ImportResult:
+        """Materialize only a private preview clone; never a live import API."""
         options = options or {}
-        # mode = options.get("mode", "update") # defaults within conflict resolver
-
         result = ImportResult(True, [], [], [], [], [])
-
         try:
-            # Transaction handling:
-            # Default: we wrap in transaction for atomic batch.
-            # For dry_run, we avoid calling insert methods in the internal helpers.
-
-            with self._db.transaction() as _:
-                deferred_relations: List[Dict[str, Any]] = []
-                # ------------------------------------------------------------------
-                # PASS 1: Creation (Ignore Relations)
-                # ------------------------------------------------------------------
-                # 1. Import Entities (Core)
-                for entity_data in data.get("entities", []):
-                    try:
-                        entity_id = self._import_single_entity_internal(
-                            entity_data, result, options, skip_relations=True
-                        )
-                        if entity_id:
-                            result.created_entities.append(entity_id)
-                    except Exception as e:
-                        msg = (
-                            f"Failed to create entity '{entity_data.get('name')}': {e}"
-                        )
-                        result.errors.append(msg)
-
-                # 2. Import Events (Core)
-                for event_data in data.get("events", []):
-                    try:
-                        event_id = self._import_single_event_internal(
-                            event_data, result, options, skip_relations=True
-                        )
-                        if event_id:
-                            result.created_events.append(event_id)
-                    except Exception as e:
-                        result.errors.append(
-                            f"Failed to create event '{event_data.get('name')}': {e}"
-                        )
-
+            with self._db.transaction():
+                for kind, importer, created in (
+                    (
+                        "entities",
+                        self._import_single_entity_internal,
+                        result.created_entities,
+                    ),
+                    (
+                        "events",
+                        self._import_single_event_internal,
+                        result.created_events,
+                    ),
+                ):
+                    for row in data.get(kind, []):
+                        try:
+                            identity = importer(
+                                row, result, options, skip_relations=True
+                            )
+                            if identity:
+                                created.append(identity)
+                        except Exception as exc:
+                            result.errors.append(
+                                f"Failed to create {kind}: {row.get('name')}: {exc}"
+                            )
                 if result.errors:
-                    result.success = False
-                    # In dry run we might want to see all errors?
-                    # Proceeding to allow users to see all potential issues?
-                    # Existing logic returns early. Let's keep it safe.
                     raise _ImportRollback()
-
-                # ------------------------------------------------------------------
-                # PASS 2: Linking (Process Nested Relations)
-                # ------------------------------------------------------------------
-                # 1. Entity Relations
-                for entity_data in data.get("entities", []):
-                    if "relations" in entity_data:
-                        entity_id = entity_data.get(
-                            "id"
-                        )  # ID might be set/resolved in Pass 1
-                        if not entity_id:
-                            continue
-
-                        for rel_data in entity_data["relations"]:
-                            rel_data["source_id"] = entity_id
-                            try:
-                                rel_id, was_created, is_deferred = (
-                                    self._import_relation_internal(
-                                        rel_data, result, options
-                                    )
-                                )
-                                if is_deferred:
-                                    deferred_relations.append(dict(rel_data))
-                                elif rel_id and was_created:
-                                    result.created_relations.append(rel_id)
-                            except Exception as e:
-                                msg = (
-                                    f"Failed to link entity '{entity_data.get('name')}': "
-                                    f"{e}"
-                                )
-                                result.warnings.append(msg)
-                                logger.warning(msg)
-
-                # 2. Event Relations
-                for event_data in data.get("events", []):
-                    if "relations" in event_data:
-                        event_id = event_data.get("id")
-                        if not event_id:
-                            continue
-
-                        for rel_data in event_data["relations"]:
-                            rel_data["source_id"] = event_id
-                            try:
-                                rel_id, was_created, is_deferred = (
-                                    self._import_relation_internal(rel_data, result)
-                                )
-                                if is_deferred:
-                                    deferred_relations.append(dict(rel_data))
-                                elif rel_id and was_created:
-                                    result.created_relations.append(rel_id)
-                            except Exception as e:
-                                msg = (
-                                    f"Failed to link event '{event_data.get('name')}': "
-                                    f"{e}"
-                                )
-                                result.warnings.append(msg)
-                                logger.warning(msg)
-
-                # ------------------------------------------------------------------
-                # PASS 3: Top-Level Relations
-                # ------------------------------------------------------------------
-                for rel_data in data.get("relations", []):
-                    try:
-                        rel_id, was_created, is_deferred = (
-                            self._import_relation_internal(rel_data, result)
-                        )
-                        if is_deferred:
-                            deferred_relations.append(dict(rel_data))
-                        elif rel_id and was_created:
-                            result.created_relations.append(rel_id)
-                    except Exception as e:
-                        msg = f"Failed to import root relation: {e}"
-                        result.warnings.append(msg)
-                        logger.warning(msg)
-
-                # ------------------------------------------------------------------
-                # PASS 4: Retry Unresolved Relations
-                # ------------------------------------------------------------------
-                if deferred_relations:
-                    self._retry_unresolved_relations(
-                        deferred_relations, result, options
-                    )
-
+                self._link_batch_relations(data, result, options)
         except _ImportRollback:
             result.success = False
             result.created_entities.clear()
             result.created_events.clear()
             result.created_relations.clear()
-        except Exception as e:
+        except Exception as exc:
             result.success = False
-            result.errors.insert(0, f"Fatal import error: {e}")
-            logger.error(f"Import failed: {e}")
-
+            result.errors.insert(0, f"Fatal import error: {exc}")
         return result
+
+    def _link_batch_relations(
+        self,
+        data: Dict[str, Any],
+        result: ImportResult,
+        options: Dict[str, Any],
+    ) -> None:
+        """Link after all identities exist, forwarding the same conflict policy."""
+        relations = list(data.get("relations", []))
+        for kind in ("entities", "events"):
+            for row in data.get(kind, []):
+                if row.get("id"):
+                    for relation in row.get("relations", []):
+                        relation["source_id"] = row["id"]
+                        relations.append(relation)
+        deferred = []
+        for row in relations:
+            try:
+                identity, created, retry = self._import_relation_internal(
+                    row, result, options
+                )
+                if retry:
+                    deferred.append(dict(row))
+                elif identity and created:
+                    result.created_relations.append(identity)
+            except Exception as exc:
+                result.warnings.append(f"Failed to import relation: {exc}")
+        if deferred:
+            self._retry_unresolved_relations(deferred, result, options)
 
     def _import_single_entity_internal(  # noqa: C901
         self,
@@ -518,68 +434,15 @@ class ImportService:
         if has_tag_field:
             self._ensure_attribute_tags(data, imported_tags)
 
-        # 1. Conflict Resolution / ID Determination
-        entity_id = None
-        action = ImportAction.CREATE
-        match_reason = "new"
-
-        # Check for explicitly provided ID (e.g. self-referential within file)
         provided_id = data.get("id")
         external_id = data.get("external_id")
-
-        existing_entity = None
-
-        # Strategy A: External ID Lookup
-        if external_id:
-            existing_entity = self._db._entity_repo.find_by_external_id(
-                source_name, str(external_id)
-            )
-            if existing_entity:
-                entity_id = existing_entity.id
-                match_reason = "external_id_match"
-
-        # Strategy B: Provided ID Lookup (e.g. if re-importing same file with same UUIDs)
-        if provided_id:
-            existing_entity = self._db.get_entity(provided_id)
-            if existing_entity:
-                entity_id = provided_id
-                match_reason = "uuid_match"
-
-        # Strategy C: Name-based Lookup (if not matched by UUID)
-        if not entity_id:
-            normalized_search = normalize_name(name)
-            # Use Repo optimized search
-            candidates = self._db._entity_repo.find_named_entities(str(name).strip())
-            # Double check normalization in python to be safe against partial matches if any?
-            # Repo does exact case-insensitive match.
-            # But let's filter by normalized name to be super strict if needed.
-            # "Gandalf" -> "gandalf"
-            candidates = [
-                c for c in candidates if normalize_name(c.name) == normalized_search
-            ]
-
-            if len(candidates) == 1:
-                entity_id = candidates[0].id
-                existing_entity = candidates[0]
-                match_reason = "name_match"
-            elif len(candidates) > 1:
-                action = ImportAction.AMBIGUOUS
-                candidate_list = [{"name": c.name, "id": c.id} for c in candidates]
-                result.ambiguous_items.append(
-                    {
-                        "type": "entity",
-                        "name": name,
-                        "candidates": candidate_list,
-                        "reason": (
-                            f"Normalized name '{normalize_name(name)}' matches "
-                            f"{len(candidates)} entities"
-                        ),
-                    }
-                )
-                result.warnings.append(
-                    f"Ambiguous '{name}': {len(candidates)} matches. Skipping."
-                )
-                return None
+        existing_entity, match_reason = resolve_record(
+            self._db, "entity", data, result, options
+        )
+        if match_reason == "ambiguous":
+            return None
+        assert existing_entity is None or isinstance(existing_entity, Entity)
+        entity_id = existing_entity.id if existing_entity else None
 
         # Determine Action
         if entity_id:
@@ -609,7 +472,7 @@ class ImportService:
         import_source_entry = {
             "source_name": source_name,
             "external_id": external_id,
-            "seen_at": time.time(),
+            "seen_at": self._now(),
         }
 
         if action == ImportAction.SKIP:
@@ -622,7 +485,8 @@ class ImportService:
                 type=str(data.get("type", "generic")).strip(),
                 description=str(data.get("description", "")).strip(),
                 attributes=data.get("attributes", {}),
-                created_at=data.get("created_at") or time.time(),
+                created_at=data.get("created_at", self._now()),
+                modified_at=data.get("modified_at", self._now()),
             )
             # Add metadata
             self._update_import_metadata(new_entity, import_source_entry)
@@ -648,7 +512,7 @@ class ImportService:
                     description=str(data.get("description", "")).strip(),
                     attributes=data.get("attributes", {}),
                     created_at=existing_entity.created_at,  # Preserve creation
-                    modified_at=time.time(),
+                    modified_at=self._now(),
                 )
                 self._update_import_metadata(overwritten, import_source_entry)
                 overwritten.tags = list(imported_tags)
@@ -684,6 +548,7 @@ class ImportService:
         result.actions.append(
             {
                 "type": "entity",
+                "token": data.get("_transfer_token", ""),
                 "id": final_id,
                 "name": name,
                 "action": action.value,
@@ -745,7 +610,7 @@ class ImportService:
                 else:
                     existing.attributes[k] = v
 
-        existing.modified_at = time.time()
+        existing.modified_at = self._now()
         return existing
 
     def _merge_events(self, existing: Event, data: Dict[str, Any]) -> Event:
@@ -779,7 +644,7 @@ class ImportService:
                 else:
                     existing.attributes[k] = v
 
-        existing.modified_at = time.time()
+        existing.modified_at = self._now()
         return existing
 
     def _preserve_temporal_input(
@@ -870,66 +735,15 @@ class ImportService:
         if has_tag_field:
             self._ensure_attribute_tags(data, imported_tags)
 
-        # 1. Conflict Resolution / ID Determination
-        event_id = None
-        action = ImportAction.CREATE
-        match_reason = "new"
-
         provided_id = data.get("id")
         external_id = data.get("external_id")
-        existing_event = None
-
-        # Strategy A: External ID Lookup
-        if external_id:
-            # EventRepo doesn't have find_by_external_id yet?
-            # We implemented find_by_external_id in EntityRepository.
-            # Skipping for generic Events for now as per plan/time constraints.
-            pass
-
-        # Search by name if needed (generic events might not be unique by name?
-        # But for dedupe context, we assume name uniqueness for now or skip)
-        # Events without dates might be ambiguous.
-        # But we align with Entity logic: Unique Name within Type is preferred model?
-        # Actually Event names are often not unique. "Battle of X".
-        # But we will support name match for now.
-        if not event_id:
-            # Events in DB are fetched all or we need a repo method?
-            # EventRepository doesn't have find_named yet?
-            # We can use get_all_events() and filter in python (might be slow)
-            # Or add find_named_events to EventRepo.
-            # Given we are in TDD and want exhaustive implementation...
-            # For now, let's assume no name match for Events unless exact ID match.
-            pass
-            # but ImportService previously had _resolve_name_to_id using get_events().
-            # Let's rely on get_events().
-            all_events = self._db.get_events()
-            normalized_search = normalize_name(name)
-            candidates = [
-                e for e in all_events if normalize_name(e.name) == normalized_search
-            ]
-
-            if len(candidates) == 1:
-                event_id = candidates[0].id
-                existing_event = candidates[0]
-                match_reason = "name_match"
-            elif len(candidates) > 1:
-                action = ImportAction.AMBIGUOUS
-                candidate_list = [{"name": c.name, "id": c.id} for c in candidates]
-                result.ambiguous_items.append(
-                    {
-                        "type": "event",
-                        "name": name,
-                        "candidates": candidate_list,
-                        "reason": (
-                            f"Normalized name '{normalize_name(name)}' matches "
-                            f"{len(candidates)} events"
-                        ),
-                    }
-                )
-                result.warnings.append(
-                    f"Ambiguous match for event '{name}': found {len(candidates)} candidates. Skipping."
-                )
-                return None
+        existing_event, match_reason = resolve_record(
+            self._db, "event", data, result, options
+        )
+        if match_reason == "ambiguous":
+            return None
+        assert existing_event is None or isinstance(existing_event, Event)
+        event_id = existing_event.id if existing_event else None
 
         # Determine Action
         if event_id:
@@ -954,7 +768,7 @@ class ImportService:
         import_source_entry = {
             "source_name": source_name,
             "external_id": external_id,
-            "seen_at": time.time(),
+            "seen_at": self._now(),
         }
 
         date_was_explicit: bool | None
@@ -975,7 +789,8 @@ class ImportService:
                 lore_duration=parsed_duration,
                 description=str(data.get("description", "")).strip(),
                 attributes=data.get("attributes", {}),
-                created_at=data.get("created_at") or time.time(),
+                created_at=data.get("created_at", self._now()),
+                modified_at=data.get("modified_at", self._now()),
             )
             new_event.attributes["_date_parsed"] = date_was_explicit
             if not date_was_explicit:
@@ -1008,7 +823,7 @@ class ImportService:
                     description=str(data.get("description", "")).strip(),
                     attributes=data.get("attributes", {}),
                     created_at=existing_event.created_at,
-                    modified_at=time.time(),
+                    modified_at=self._now(),
                 )
                 overwritten.attributes["_date_parsed"] = date_was_explicit
                 if not date_was_explicit:
@@ -1055,6 +870,7 @@ class ImportService:
         result.actions.append(
             {
                 "type": "event",
+                "token": data.get("_transfer_token", ""),
                 "id": final_id,
                 "name": name,
                 "action": action.value,
@@ -1124,27 +940,31 @@ class ImportService:
         attributes = data.get("attributes", {})
 
         # Check for existing relation
-        existing = self._db._relation_repo.find_existing(source_id, target_id, rel_type)
+        existing = resolve_relation(self._db, data, source_id, target_id)
 
         if existing:
             # Relation already exists - optionally update attributes if they differ
             mode = data.get("import_action") or (options or {}).get("mode", "update")
-            if mode != "skip" and attributes != existing.get("attributes", {}):
-                self._db._relation_repo.update(existing["id"], rel_type, attributes)
-                logger.info(
-                    f"Updated existing relation {existing['id']}: "
-                    f"{source_id} -> {target_id} ({rel_type})"
-                )
-            else:
-                logger.debug(
-                    f"Skipping duplicate relation: "
-                    f"{source_id} -> {target_id} ({rel_type})"
+            result.actions.append(
+                {
+                    "type": "relation",
+                    "id": existing["id"],
+                    "token": data.get("_transfer_token", ""),
+                    "action": "skip" if mode == "skip" else mode,
+                    "reason": "uuid_match" if data.get("id") else "exact_duplicate",
+                }
+            )
+            if mode != "skip":
+                self._db._validate_relation_endpoint(source_id, "source")
+                self._db._validate_relation_endpoint(target_id, "target")
+                self._db._relation_repo.replace_fact(
+                    existing["id"], source_id, target_id, rel_type, attributes
                 )
             return existing["id"], False, False
 
         # Create new relation
-        if data.get("id"):
-            rel_id = str(data["id"])
+        if data.get("id") or data.get("_transfer_allocated_id"):
+            rel_id = str(data.get("id") or data["_transfer_allocated_id"])
             self._db._validate_relation_endpoint(source_id, "source")
             self._db._validate_relation_endpoint(target_id, "target")
             if str(uuid.UUID(rel_id)) != rel_id:
@@ -1155,12 +975,21 @@ class ImportService:
                 target_id,
                 rel_type,
                 attributes,
-                float(data.get("created_at") or time.time()),
+                float(data.get("created_at") or self._now()),
             )
         else:
             rel_id = self._db.insert_relation(
                 source_id, target_id, rel_type, attributes
             )
+        result.actions.append(
+            {
+                "type": "relation",
+                "id": rel_id,
+                "token": data.get("_transfer_token", ""),
+                "action": "create",
+                "reason": "new",
+            }
+        )
         return rel_id, True, False
 
     def _retry_unresolved_relations(

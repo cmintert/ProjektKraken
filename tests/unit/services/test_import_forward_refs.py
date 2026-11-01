@@ -28,7 +28,7 @@ def test_cyclic_dependency_import(db_service):
     }
 
     # Execute
-    result = import_service.import_batch(data)
+    result = import_service._materialize_batch(data)
 
     # Verify
     assert result.success is True
@@ -62,7 +62,7 @@ def test_cross_batch_forward_ref(db_service):
 
     # Batch 1: create Entity A only
     batch1 = {"entities": [{"name": "Entity Alpha", "type": "character"}]}
-    result1 = import_service.import_batch(batch1)
+    result1 = import_service._materialize_batch(batch1)
     assert result1.success
     assert len(result1.created_entities) == 1
 
@@ -72,13 +72,11 @@ def test_cross_batch_forward_ref(db_service):
             {
                 "name": "Entity Beta",
                 "type": "character",
-                "relations": [
-                    {"target_name": "Entity Alpha", "rel_type": "knows"}
-                ],
+                "relations": [{"target_name": "Entity Alpha", "rel_type": "knows"}],
             }
         ]
     }
-    result2 = import_service.import_batch(batch2)
+    result2 = import_service._materialize_batch(batch2)
 
     assert result2.success
     assert len(result2.created_entities) == 1
@@ -100,16 +98,16 @@ def test_unresolvable_relation_warns_after_retry(db_service):
             {
                 "name": "Lone Entity",
                 "type": "character",
-                "relations": [
-                    {"target_name": "Ghost Entity", "rel_type": "linked_to"}
-                ],
+                "relations": [{"target_name": "Ghost Entity", "rel_type": "linked_to"}],
             }
         ]
     }
-    result = import_service.import_batch(data)
+    result = import_service._materialize_batch(data)
 
     assert result.success
     assert len(result.created_entities) == 1
     assert len(result.created_relations) == 0
     # Should have a warning about the unresolved forward reference
-    assert any("Ghost Entity" in w or "unresolved" in w.lower() for w in result.warnings)
+    assert any(
+        "Ghost Entity" in w or "unresolved" in w.lower() for w in result.warnings
+    )

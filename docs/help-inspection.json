@@ -9330,6 +9330,26 @@
       "binding": "self.dependency_control",
       "label": "Dependencies",
       "kind": "DependencyVisibilityButton"
+    },
+    {
+      "id": "src-gui-dialogs-transfer-dialog-transferdialog-show-calendar-decisions-choice",
+      "topic_id": "world.transfer",
+      "target": "help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-show-calendar-decisions-choice",
+      "source": "src/gui/dialogs/transfer_dialog.py",
+      "symbol": "TransferDialog._show_calendar_decisions",
+      "binding": "choice",
+      "label": "Resolve calendar",
+      "kind": "QComboBox"
+    },
+    {
+      "id": "src-gui-dialogs-transfer-dialog-transferdialog-show-dependency-decisions-choice",
+      "topic_id": "world.transfer",
+      "target": "help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-show-dependency-decisions-choice",
+      "source": "src/gui/dialogs/transfer_dialog.py",
+      "symbol": "TransferDialog._show_dependency_decisions",
+      "binding": "choice",
+      "label": "Resolve missing Event",
+      "kind": "QComboBox"
     }
   ],
   "factory_exemptions": [
@@ -10226,8 +10246,8 @@
     {
       "source": "src/commands/transfer_commands.py",
       "symbol": "ApplyTransferCommand.execute",
-      "sha256": "3f2aedfd53236cee066159efba7be28792fba3f38892f2d29d724c1a4c74df9e",
-      "review_note": "KRT-113: New Event imports require joint timing preparation and explicit cascade review. Previously accepted import redo retains its exact row preconditions instead of re-entering forward validation, preserving the documented persistent Undo/Redo route."
+      "sha256": "65ae3f43a5847c09d95fcab9e7aa548fcd6e9ae78fc7a7335c57a1b875c140f2",
+      "review_note": "KRT-121: Source review confirms atomic persistent Undo and stale source/world refusal; apply also verifies calendars and timing consumers. Manual persistence/context guidance updated."
     },
     {
       "source": "src/commands/transfer_commands.py",
@@ -11576,8 +11596,8 @@
     {
       "source": "src/gui/dialogs/transfer_dialog.py",
       "symbol": "TransferDialog.__init__",
-      "sha256": "072d172872b05fac9188047f7d5c4da158694492d890effe1d366cc4e5728ee8",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "16421c1c8221a1e4ce10e60abaee869756877d660917f76fd90b54c312fa9f0c",
+      "review_note": "KRT-121: Stores calendar/dependency review controls. Existing entry routes, keyboard ownership and context are unchanged."
     },
     {
       "source": "src/gui/dialogs/transfer_dialog.py",
@@ -11654,8 +11674,8 @@
     {
       "source": "src/gui/dialogs/transfer_dialog.py",
       "symbol": "TransferDialog._recheck",
-      "sha256": "dc6323861565184a07fc07dae641614c4bc7d4592cf7777c28efc8b4aaf543b6",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "e22d71a890521d33373f35f0133ea6d542656cd09d45889d61a2cc8c85135a66",
+      "review_note": "KRT-121 final review: Recheck deep-copies options, retaining the reviewed source snapshot, stable proposed IDs and import time; it submits explicit calendar/dependency decisions. The updated manual matches this route."
     },
     {
       "source": "src/gui/dialogs/transfer_dialog.py",
@@ -11666,8 +11686,8 @@
     {
       "source": "src/gui/dialogs/transfer_dialog.py",
       "symbol": "TransferDialog._select_record",
-      "sha256": "11cf9669a333f12cab98564b53d57ebee5d3125154e49b1ea604fc9c953e0937",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "567792412de3153c5a0fce56636d3276b6378213e395e2610289aaa6ad92a88e",
+      "review_note": "KRT-121 final review: Details identify the resolved record by source token and UUID, including Relations without names. The existing inspect/correct/recheck explanation remains accurate and now shows only the selected record delta."
     },
     {
       "source": "src/gui/dialogs/transfer_dialog.py",
@@ -11702,8 +11722,8 @@
     {
       "source": "src/gui/dialogs/transfer_dialog.py",
       "symbol": "TransferDialog.show_import_review",
-      "sha256": "0f9a695a057a4c69ec621e43dfce08b6e2c70d807eb6b306a32163f457e50bcd",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "9d82386137ce7196a031f4f78ca6e10daa66fece3e2adf6ef3003d4e92e7f9c6",
+      "review_note": "KRT-121 final review: Record actions are associated by source token, malformed labels render as text, and native calendar/dependency choices remain explicit. Existing anchors and updated matching guidance remain accurate."
     },
     {
       "source": "src/gui/widgets/ai_search_panel.py",
@@ -17056,6 +17076,18 @@
       "symbol": "DependencyVisibilityButton.__init__",
       "sha256": "62ea4bdf587558d733ab7e49563a55f5fb88fc230a3fe713aefecfc1e04ed79a",
       "review_note": "KRT-115: exclusive All/Selected/Show dependency trail/Off menu is shared by the toolbar and overflow; every action retains the existing dependency explanation and timeline task. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
+    },
+    {
+      "source": "src/gui/dialogs/transfer_dialog.py",
+      "symbol": "TransferDialog._show_calendar_decisions",
+      "sha256": "0aaa28289b0d9354b4c3967d04e8941fc69598ec7e7bee41f7f1784ff1969c77",
+      "review_note": "KRT-121: Explicit compatible-active-calendar mapping or unresolved preservation; new canonical explanation identifies recheck and no install/switch."
+    },
+    {
+      "source": "src/gui/dialogs/transfer_dialog.py",
+      "symbol": "TransferDialog._show_dependency_decisions",
+      "sha256": "a3ec46db0f07ddbc9c9e8f7827fab3670bdb6480268dd8a46c4d4e9bdf63d29d",
+      "review_note": "KRT-121: Explicit unresolved acceptance per missing Event source; explanation preserves include/exclude alternatives and structural-error blocking."
     }
   ],
   "review_status": {

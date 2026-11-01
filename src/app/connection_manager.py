@@ -1167,16 +1167,6 @@ class ConnectionManager:
                 ),
                 (
                     worker,
-                    "import_finished",
-                    lambda result: (
-                        panel.intelligence_panel.mark_stale()
-                        if getattr(result, "success", False)
-                        else None
-                    ),
-                    "AnalysisPanel",
-                ),
-                (
-                    worker,
                     "events_loaded",
                     lambda _events: panel.intelligence_panel.mark_stale(),
                     "AnalysisPanel",

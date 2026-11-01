@@ -35,7 +35,7 @@ class TestImportDeduplication:
             ]
         }
 
-        result = import_service.import_batch(data)
+        result = import_service._materialize_batch(data)
 
         assert result.success
         assert len(result.created_entities) == 1
@@ -58,7 +58,7 @@ class TestImportDeduplication:
         }
 
         # Default mode should be 'update'
-        result = import_service.import_batch(data, options={"mode": "update"})
+        result = import_service._materialize_batch(data, options={"mode": "update"})
 
         # Should NOT create new ID, but update existing
         assert (
@@ -91,7 +91,7 @@ class TestImportDeduplication:
             ]
         }
 
-        import_service.import_batch(data, options={"mode": "overwrite"})
+        import_service._materialize_batch(data, options={"mode": "overwrite"})
 
         updated = memory_db.get_entity(existing.id)
         assert updated.description == "Many Colours"
@@ -108,7 +108,7 @@ class TestImportDeduplication:
 
         data = {"entities": [{"name": "Bilbo", "type": "person", "description": "New"}]}
 
-        import_service.import_batch(data, options={"mode": "skip"})
+        import_service._materialize_batch(data, options={"mode": "skip"})
 
         updated = memory_db.get_entity(existing.id)
         assert updated.description == "Old"
@@ -131,7 +131,7 @@ class TestImportDeduplication:
             "entities": [{"name": "Samwise", "type": "person", "external_id": "123"}],
         }
 
-        import_service.import_batch(
+        import_service._materialize_batch(
             data, options={"source_name": "test", "mode": "update"}
         )
 
@@ -142,12 +142,14 @@ class TestImportDeduplication:
         """Dry run should return report but change nothing."""
         data = {"entities": [{"name": "Ghost", "type": "person"}]}
 
-        result = import_service.import_batch(data, options={"dry_run": True})
+        result = import_service._materialize_batch(data, options={"dry_run": True})
 
         assert result.success
         assert len(memory_db.get_all_entities()) == 0
 
-    def test_ambiguous_entity_populates_ambiguous_items(self, import_service, memory_db):
+    def test_ambiguous_entity_populates_ambiguous_items(
+        self, import_service, memory_db
+    ):
         """Ambiguous name match should populate result.ambiguous_items."""
         from src.core.entities import Entity
 
@@ -156,7 +158,7 @@ class TestImportDeduplication:
         memory_db.insert_entity(Entity(id="id-2", name="aragorn", type="person"))
 
         data = {"entities": [{"name": "Aragorn", "type": "person"}]}
-        result = import_service.import_batch(data)
+        result = import_service._materialize_batch(data)
 
         assert len(result.ambiguous_items) == 1
         item = result.ambiguous_items[0]
@@ -175,7 +177,7 @@ class TestImportDeduplication:
         memory_db.insert_event(Event(id="ev-2", name="battle", lore_date=2.0))
 
         data = {"events": [{"name": "Battle", "lore_date": 3.0, "type": "conflict"}]}
-        result = import_service.import_batch(data)
+        result = import_service._materialize_batch(data)
 
         assert len(result.ambiguous_items) == 1
         item = result.ambiguous_items[0]

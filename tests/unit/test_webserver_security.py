@@ -303,10 +303,18 @@ def test_markdown_and_json_imports_are_sanitized_when_published(tmp_path) -> Non
     path = str(tmp_path / "imported.kraken")
     service = DatabaseService(path)
     service.connect()
+    from src.commands.transfer_commands import ApplyTransferCommand
+    from src.services.transfer_import import prepare_import
+
     importer = ImportService(service)
 
-    markdown_result = importer.import_markdown(
-        """---
+    def reviewed_import(data, options=None):
+        preview = prepare_import(service, data, options or {})
+        return ApplyTransferCommand(preview).execute(service)
+
+    markdown_result = reviewed_import(
+        importer.parse_markdown_file(
+            """---
 uid: markdown-hostile
 title: '<img src=x onerror="globalThis.__titleXss=true">Markdown title'
 type: note
@@ -317,9 +325,10 @@ type: note
 <img src="https://attacker.invalid/markdown" onerror="alert(1)">
 **Markdown formatting** and [[json-hostile|JSON entry]].
 """,
-        {"filename": "hostile.md"},
+            "hostile",
+        )
     )
-    json_result = importer.import_batch(
+    json_result = reviewed_import(
         {
             "entities": [
                 {

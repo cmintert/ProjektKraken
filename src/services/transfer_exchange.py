@@ -60,19 +60,28 @@ def parse_json(text: str) -> dict[str, Any]:
         raise ValueError(
             "Lore JSON must be an object containing entities/events/relations."
         )
-    if "exchange_version" in raw and raw["exchange_version"] != EXCHANGE_VERSION:
+    if "exchange_version" in raw and (
+        isinstance(raw["exchange_version"], bool)
+        or raw["exchange_version"] not in {1, EXCHANGE_VERSION}
+    ):
         raise ValueError("This lore exchange version is not supported.")
     if any(key in raw for key in LORE_KINDS):
         data = {key: raw.get(key, []) for key in LORE_KINDS}
     elif "name" in raw:
-        data = ImportService.parse_only(raw)
+        data = {key: [] for key in LORE_KINDS}
+        data["events" if "lore_date" in raw else "entities"] = [raw]
     else:
         raise ValueError(
             "This is not lore JSON. Palette and graph JSON have other workflows."
         )
-    for kind, rows in data.items():
+    for kind in LORE_KINDS:
+        rows = data.get(kind, [])
         if not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows):
             raise ValueError(f"{kind} must be a list of objects.")
+    context = raw.get("context", {})
+    if not isinstance(context, dict):
+        raise ValueError("Exchange context must be a JSON object.")
+    data["context"] = context
     return data
 
 
@@ -84,12 +93,22 @@ def _csv_data(
         raise ValueError("Choose entities, events or relations for the CSV.")
     headers, rows = read_csv(path, source.get("delimiter", ""))
     mapping = source.get("mapping") or {
-        name: name for name in headers if name in CSV_FIELDS[kind]
+        name: name
+        for name in headers
+        if name in [*CSV_FIELDS[kind], "created_at", "modified_at"]
     }
     ignored = [name for name in headers if not mapping.get(name)]
     if ignored:
         warnings.append(f"{label}: ignored columns: {', '.join(ignored)}")
     data: dict[str, Any] = {kind: []}
+    manifest = Path(path).parent / "manifest.json"
+    if manifest.exists():
+        native = json.loads(manifest.read_text(encoding="utf-8-sig"))
+        if native.get("format") == "kraken-lore-tables":
+            if native.get("exchange_version") != EXCHANGE_VERSION:
+                raise ValueError("This Lore table version is not supported.")
+            data["context"] = native.get("context", {})
+            data["source_hashes"] = {str(manifest): fingerprint(str(manifest))}
     for index, row in enumerate(rows, 2):
         item: dict[str, Any] = {
             target: row.get(column, "")
@@ -99,8 +118,82 @@ def _csv_data(
         for field in ("attributes", "tags"):
             if field in item:
                 item[field] = json.loads(item[field])
+        for field in ("lore_date", "lore_duration", "created_at", "modified_at"):
+            if field not in item:
+                continue
+            value = item[field]
+            if value.startswith("json:"):
+                item[field] = json.loads(value[5:])
+            else:
+                try:
+                    item[field] = float(value)
+                except ValueError:
+                    pass  # Ordinary textual dates remain authored strings.
         item["_transfer_source"] = f"{label}: row {index}"
         data[kind].append(item)
+    return data
+
+
+def table_manifest(data: dict[str, Any]) -> dict[str, Any]:
+    """Describe native tables without relying on spreadsheet type guessing."""
+    return {
+        "format": "kraken-lore-tables",
+        "exchange_version": EXCHANGE_VERSION,
+        "scalar_encoding": "json-prefix",
+        "context": data.get("context", {}),
+        "tables": {kind: f"{kind}.csv" for kind in LORE_KINDS},
+    }
+
+
+def _expand_sources(sources: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    expanded: list[dict[str, Any]] = []
+    for source in sources:
+        path = Path(source["path"]) if source.get("path") else None
+        if path and path.is_dir():
+            expanded.extend({"path": item} for item in discover_sources(path))
+        else:
+            expanded.append(source)
+    return expanded
+
+
+def discover_sources(folder: Path) -> list[str]:
+    """Discover a folder without importing manifest-owned tables twice."""
+    paths = sorted(
+        path
+        for path in folder.rglob("*")
+        if path.is_file()
+        and not path.is_symlink()
+        and path.suffix.lower() in {".json", ".md", ".csv", ".tsv"}
+    )
+    owned: set[Path] = set()
+    for path in paths:
+        if path.name == "manifest.json":
+            raw = json.loads(path.read_text(encoding="utf-8-sig"))
+            if raw.get("format") == "kraken-lore-tables":
+                owned.update(
+                    (path.parent / name).resolve()
+                    for name in raw.get("tables", {}).values()
+                )
+    return [str(path) for path in paths if path.resolve() not in owned]
+
+
+def _load_manifest(path: Path) -> dict[str, Any]:
+    raw = json.loads(path.read_text(encoding="utf-8-sig"))
+    if raw.get("format") != "kraken-lore-tables":
+        raise ValueError("This is not a native Lore table manifest.")
+    if raw.get("exchange_version") != EXCHANGE_VERSION:
+        raise ValueError("This Lore table version is not supported.")
+    if raw.get("scalar_encoding") != "json-prefix":
+        raise ValueError("This Lore table scalar encoding is not supported.")
+    sources = []
+    for kind, name in raw["tables"].items():
+        table = (path.parent / name).resolve()
+        if table.parent != path.parent.resolve() or kind not in LORE_KINDS:
+            raise ValueError("A Lore table must be beside its manifest.")
+        sources.append({"path": str(table), "kind": kind})
+    data = load_sources(sources)
+    data["context"] = raw.get("context", {})
+    data["source_hashes"][str(path)] = fingerprint(str(path))
     return data
 
 
@@ -109,7 +202,8 @@ def load_sources(sources: list[dict[str, Any]], pasted: str = "") -> dict[str, A
     combined: dict[str, Any] = {key: [] for key in LORE_KINDS}
     hashes: dict[str, str] = {}
     warnings: list[str] = []
-    inputs = list(sources)
+    inputs = _expand_sources(sources)
+    contexts: dict[str, dict[str, Any]] = {}
     if pasted.strip():
         inputs.append({"text": pasted, "path": "", "label": "Pasted JSON"})
     for source in inputs:
@@ -119,7 +213,9 @@ def load_sources(sources: list[dict[str, Any]], pasted: str = "") -> dict[str, A
         if path:
             hashes[path] = fingerprint(path)
         try:
-            if suffix in {".csv", ".tsv"}:
+            if path and Path(path).name == "manifest.json":
+                data = _load_manifest(Path(path))
+            elif suffix in {".csv", ".tsv"}:
                 data = _csv_data(source, path, label, warnings)
             elif suffix == ".md":
                 data = ImportService.parse_markdown_file(
@@ -133,32 +229,43 @@ def load_sources(sources: list[dict[str, Any]], pasted: str = "") -> dict[str, A
                 )
             else:
                 raise ValueError(f"Unsupported extension {suffix}.")
+            hashes.update(data.get("source_hashes", {}))
+            warnings.extend(data.get("warnings", []))
+            for definition in data.get("context", {}).get("calendars", []):
+                identity = definition["id"]
+                if identity in contexts and contexts[identity] != definition:
+                    raise ValueError(f"Conflicting calendar context for {identity}.")
+                contexts[identity] = definition
             for kind in LORE_KINDS:
                 for row in data.get(kind, []):
                     row.setdefault("_transfer_source", label)
                     combined[kind].append(row)
         except (ValueError, OSError, TypeError) as exc:
             raise ValueError(f"{label}: {exc}") from exc
-    if not any(combined.values()):
+    if not any(combined[kind] for kind in LORE_KINDS):
         raise ValueError("No lore records were found in the selected inputs.")
     combined["source_hashes"] = hashes
     combined["warnings"] = warnings
+    combined["context"] = {"calendars": list(contexts.values())}
     return combined
 
 
 def csv_text(kind: str, records: list[dict[str, Any]]) -> str:
     """Serialize a canonical table without losing multiline or structured cells."""
-    fields = CSV_FIELDS[kind]
+    fields = [*CSV_FIELDS[kind], "created_at", "modified_at"]
     output = io.StringIO(newline="")
     writer = csv.DictWriter(output, fieldnames=fields, extrasaction="ignore")
     writer.writeheader()
     for record in records:
         row = dict(record)
         if kind != "relations":
-            row["tags"] = row.get("attributes", {}).get("_tags", [])
+            row["tags"] = row.get("tags", row.get("attributes", {}).get("_tags", []))
         for name in ("tags", "attributes"):
             if name in row:
                 row[name] = json.dumps(row[name], ensure_ascii=False)
+        for name in ("lore_date", "lore_duration", "created_at", "modified_at"):
+            if name in row:
+                row[name] = "json:" + json.dumps(row[name], ensure_ascii=False)
         writer.writerow(row)
     return output.getvalue()
 

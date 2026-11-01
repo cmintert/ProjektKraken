@@ -127,6 +127,10 @@ def markdown_to_import_data(
 
     """
     meta = parsed.yaml_metadata
+    if "kraken" in meta and meta.get("source") == "ProjektKraken":
+        from src.services.native_notes import read_native_note
+
+        return read_native_note(meta, parsed.description, parsed.relations)
     data: Dict[str, Any] = {}
 
     # Identity fields

@@ -19,21 +19,14 @@
       "id": "c901-2a61d75c48e8",
       "path": "src/services/import_service.py",
       "symbol": "ImportService._import_single_event_internal",
-      "ceiling": 29,
+      "ceiling": 26,
       "reason": "Existing production complexity reviewed for KRT-36; untouched debt only, executable edits must strictly improve."
     },
     {
       "id": "c901-3b6258d14ee6",
       "path": "src/services/import_service.py",
       "symbol": "ImportService._import_single_entity_internal",
-      "ceiling": 28,
-      "reason": "Existing production complexity reviewed for KRT-36; untouched debt only, executable edits must strictly improve."
-    },
-    {
-      "id": "c901-3c823d3f73f0",
-      "path": "src/services/import_service.py",
-      "symbol": "ImportService.import_batch",
-      "ceiling": 29,
+      "ceiling": 22,
       "reason": "Existing production complexity reviewed for KRT-36; untouched debt only, executable edits must strictly improve."
     },
     {

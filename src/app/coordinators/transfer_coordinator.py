@@ -169,13 +169,9 @@ class TransferCoordinator(QObject):
     def _add_folder(self) -> None:
         folder = QFileDialog.getExistingDirectory(self.dialog, "Choose a lore folder")
         if folder:
-            paths = sorted(
-                str(path)
-                for path in Path(folder).rglob("*")
-                if path.is_file()
-                and not path.is_symlink()
-                and path.suffix.lower() in {".json", ".md", ".csv", ".tsv"}
-            )
+            from src.services.transfer_exchange import discover_sources
+
+            paths = discover_sources(Path(folder))
             self._add_paths(paths)
             if not paths and self.dialog:
                 self.dialog.status.setText(

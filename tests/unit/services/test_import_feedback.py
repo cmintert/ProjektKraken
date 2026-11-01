@@ -19,7 +19,7 @@ def test_import_date_warning(db_service):
     data = {"events": [{"name": "Test Event", "lore_date": "UnknownMonth 22, 2023"}]}
 
     # Execute
-    result = import_service.import_batch(data)
+    result = import_service._materialize_batch(data)
 
     # Verify
     assert result.success is True
@@ -39,7 +39,7 @@ def test_import_fallback_success(db_service):
 
     data = {"events": [{"name": "Fallback Event", "lore_date": "January 1, 2023"}]}
 
-    result = import_service.import_batch(data)
+    result = import_service._materialize_batch(data)
 
     assert result.success is True
     assert len(result.created_events) == 1
@@ -76,7 +76,7 @@ def test_import_date_parsing_failure_warning(db_service):
 
     data = {"events": [{"name": "Test Event 2", "lore_date": "BadFormat 123"}]}
 
-    result = import_service.import_batch(data)
+    result = import_service._materialize_batch(data)
 
     assert result.success is True
     assert len(result.created_events) == 1

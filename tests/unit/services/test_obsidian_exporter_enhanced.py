@@ -7,6 +7,7 @@ export capabilities added for bidirectional Obsidian integration.
 import tempfile
 from pathlib import Path
 
+import frontmatter
 import pytest
 
 from src.core.entities import Entity
@@ -65,8 +66,10 @@ class TestAttributeFiltering:
         )
 
         result = exporter._build_entity_markdown(entity, [])
-        assert 'allegiance: "Highland Kingdom"' in result
-        assert 'rank: "Captain"' in result
+        assert (
+            frontmatter.loads(result)["attributes"]["allegiance"] == "Highland Kingdom"
+        )
+        assert frontmatter.loads(result)["attributes"]["rank"] == "Captain"
 
     def test_internal_attributes_excluded(self):
         """Test that keys starting with _ are omitted from YAML."""
@@ -88,9 +91,18 @@ class TestAttributeFiltering:
         )
 
         result = exporter._build_entity_markdown(entity, [])
-        assert "_import_sources" not in result
-        assert "_summary_data" not in result
-        assert "_tags" not in result
+        assert "_import_sources" not in frontmatter.loads(result)["attributes"]
+        assert (
+            "_import_sources"
+            in frontmatter.loads(result)["kraken"]["record"]["attributes"]
+        )
+        assert "_summary_data" not in frontmatter.loads(result)["attributes"]
+        assert (
+            "_summary_data"
+            in frontmatter.loads(result)["kraken"]["record"]["attributes"]
+        )
+        assert "_tags" not in frontmatter.loads(result)["attributes"]
+        assert "_tags" in frontmatter.loads(result)["kraken"]["record"]["attributes"]
         assert "allegiance" in result
 
     def test_event_user_attributes_exported(self):
@@ -113,8 +125,12 @@ class TestAttributeFiltering:
         )
 
         result = exporter._build_event_markdown(event, [])
-        assert 'location: "Northern Pass"' in result
-        assert "_import_sources" not in result
+        assert frontmatter.loads(result)["attributes"]["location"] == "Northern Pass"
+        assert "_import_sources" not in frontmatter.loads(result)["attributes"]
+        assert (
+            "_import_sources"
+            in frontmatter.loads(result)["kraken"]["record"]["attributes"]
+        )
 
 
 class TestSummaryPrepending:
@@ -145,8 +161,8 @@ class TestSummaryPrepending:
         result = exporter._build_entity_markdown(entity, [])
         assert "> **Summary**: A legendary tracker." in result
         # Summary should come before description
-        summary_pos = result.index("> **Summary**")
-        desc_pos = result.index("Long description here.")
+        summary_pos = frontmatter.loads(result).content.index("> **Summary**")
+        desc_pos = frontmatter.loads(result).content.index("Long description here.")
         assert summary_pos < desc_pos
 
     def test_no_summary_no_blockquote(self):
@@ -216,8 +232,8 @@ class TestSingleItemExport:
             assert filepath is not None
             assert filepath.exists()
             content = filepath.read_text(encoding="utf-8")
-            assert 'uid: "ent-single"' in content
-            assert 'title: "Solo Entity"' in content
+            assert frontmatter.loads(content)["uid"] == "ent-single"
+            assert frontmatter.loads(content)["title"] == "Solo Entity"
 
     def test_export_single_event(self):
         """Test exporting a single event to a file."""
@@ -239,7 +255,7 @@ class TestSingleItemExport:
             assert filepath is not None
             assert filepath.exists()
             content = filepath.read_text(encoding="utf-8")
-            assert 'uid: "ev-single"' in content
+            assert frontmatter.loads(content)["uid"] == "ev-single"
             assert "lore_date: 500.0" in content
 
     def test_export_single_with_relations(self):

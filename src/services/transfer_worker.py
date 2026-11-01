@@ -19,10 +19,17 @@ from src.services.longform_builder import build_longform_sequence
 from src.services.markdown_assets import copy_markdown_images, markdown_image_warnings
 from src.services.obsidian_exporter import ObsidianExporter
 from src.services.repositories.transfer_repository import lore_data, revision, snapshot
+from src.services.transfer_context import export_context
 from src.services.transfer_document import document_snapshot, write_docx, write_pdf
-from src.services.transfer_exchange import csv_text, fingerprint, load_sources
+from src.services.transfer_exchange import (
+    csv_text,
+    fingerprint,
+    load_sources,
+    table_manifest,
+)
 from src.services.transfer_files import staged_markdown_output, staged_output
 from src.services.transfer_import import prepare_import
+from src.services.transfer_selection import select_lore
 from src.services.world_transfer import export_world, import_world, inspect_package
 
 
@@ -40,6 +47,14 @@ class _SnapshotRecords:
 
     def get_relations(self, item_id: str) -> list[dict[str, Any]]:
         return [row for row in self.data["relations"] if row["source_id"] == item_id]
+
+    def get_all_calendar_configs(self) -> list[Any]:
+        from src.core.calendar import CalendarConfig
+
+        return [
+            CalendarConfig.from_dict(row)
+            for row in self.data.get("context", {}).get("calendars", [])
+        ]
 
 
 class TransferWorker(QObject):
@@ -114,34 +129,21 @@ class TransferWorker(QObject):
         if request.get("scope") == "selected":
             if not selected:
                 raise ValueError("Select records in Explorer or choose All lore.")
-            if request.get("include_endpoints"):
-                for relation in data["relations"]:
-                    if (
-                        relation["source_id"] in selected
-                        or relation["target_id"] in selected
-                    ):
-                        selected.update((relation["source_id"], relation["target_id"]))
-            omitted = sum(
-                1
-                for row in data["relations"]
-                if (row["source_id"] in selected or row["target_id"] in selected)
-                and not {row["source_id"], row["target_id"]}.issubset(selected)
+            data, warnings, added = select_lore(
+                data, selected, bool(request.get("include_endpoints"))
             )
-            if omitted:
-                warnings.append(
-                    f"{omitted} relationships excluded because an endpoint is "
-                    "outside the selection."
-                )
-            data["entities"] = [r for r in data["entities"] if r["id"] in selected]
-            data["events"] = [r for r in data["events"] if r["id"] in selected]
-            data["relations"] = [
-                r
-                for r in data["relations"]
-                if {r["source_id"], r["target_id"]}.issubset(selected)
-            ]
+            warnings.extend(
+                f"Added dependency/endpoint: {identity}" for identity in added
+            )
+        db = self._database()
+        assert db is not None
+        context, context_warnings = export_context(db, data)
+        data["context"] = context
+        warnings.extend(context_warnings)
         result: dict[str, Any] = {
             "data": data,
             "revision": revision(state),
+            "context_revision": self._context_revision(db),
             "warnings": warnings,
         }
         if request["format"] == "notes":
@@ -165,12 +167,24 @@ class TransferWorker(QObject):
             )
         return result
 
+    @staticmethod
+    def _context_revision(db: DatabaseService) -> str:
+        from src.services.event_timing.planning import snapshot_fingerprint
+        from src.services.event_timing.store import capture
+
+        return snapshot_fingerprint(capture(db))
+
     def _export(
         self, connection: sqlite3.Connection, request: dict[str, Any]
     ) -> dict[str, Any]:
         destination = Path(request["destination"])
         key = request["format"]
         prepared = request["prepared"]
+        db = self._database()
+        if db is None or revision(snapshot(connection)) != prepared["revision"]:
+            raise ValueError("World data changed. Review the export again.")
+        if self._context_revision(db) != prepared.get("context_revision"):
+            raise ValueError("Timing context changed. Review the export again.")
         world_path = request.get("world", {}).get("path", "")
         world_root = Path(world_path) if world_path else None
         if key == "markdown":
@@ -208,6 +222,10 @@ class TransferWorker(QObject):
                         encoding="utf-8",
                     )
                 elif key == "csv":
+                    (output / "manifest.json").write_text(
+                        json.dumps(table_manifest(data), ensure_ascii=False, indent=2),
+                        encoding="utf-8",
+                    )
                     for kind in LORE_KINDS:
                         (output / f"{kind}.csv").write_text(
                             csv_text(kind, data[kind]), encoding="utf-8-sig"

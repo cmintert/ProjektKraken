@@ -147,7 +147,10 @@ def test_bad_late_row_and_invalid_date_leave_database_unchanged(db_service):
 
 
 def test_complete_date_range_is_reviewed_and_imported(db_service):
-    parser = DateParser(CalendarConfig.create_default())
+    config = CalendarConfig.create_default()
+    config.is_active = True
+    db_service.insert_calendar_config(config)
+    parser = DateParser(config)
     expected_start = parser.calculate_timestamp(parser.parse_date("23 AUG 1895"))
     review = prepare_import(
         db_service,
@@ -157,6 +160,7 @@ def test_complete_date_range_is_reviewed_and_imported(db_service):
                     "id": "complete-range",
                     "name": "Complete Date Range",
                     "lore_date": "23 AUG 1895 - 30 AUG 1895",
+                    "range_meaning": "duration",
                     "type": "outbreak",
                 }
             ]
@@ -168,8 +172,11 @@ def test_complete_date_range_is_reviewed_and_imported(db_service):
     assert ApplyTransferCommand(review).execute(db_service).success
     imported_event = db_service.get_event("complete-range")
     assert imported_event is not None
-    assert imported_event.lore_date == expected_start
-    assert imported_event.lore_duration == 7.0
+    assert imported_event.lore_date == expected_start + 0.5
+    assert imported_event.lore_duration is None
+    metadata = imported_event.attributes["_temporal_v2"]
+    assert metadata["end_expression"]["day"] == 30
+    assert metadata["expression"]["day"] == 23
 
 
 def test_numeric_csv_date_and_multiline_tags_round_trip(db_service, tmp_path):
@@ -217,6 +224,9 @@ def test_reject_unrelated_json(text):
 
 
 def test_complete_paste_example_is_directly_importable(db_service):
+    config = CalendarConfig.create_default()
+    config.is_active = True
+    db_service.insert_calendar_config(config)
     review = prepare_import(
         db_service, parse_json(LORE_JSON_EXAMPLE_TEXT), {"mode": "skip"}
     )

@@ -30,7 +30,7 @@ FORMATS = (
         True,
         True,
         "Exchange entities, events, relations, tags and custom attributes.",
-        "Re-importable lore data. Asset files and world settings are excluded.",
+        "Native timing and calendar context; reviewed mapping across worlds. No assets or world settings.",
     ),
     TransferFormat(
         "csv",
@@ -39,7 +39,7 @@ FORMATS = (
         True,
         True,
         "Exchange entity, event or relation tables with spreadsheets.",
-        "Map columns before import. Tags and attributes use JSON cells; no assets.",
+        "Keep the native manifest with its tables. JSON cells preserve types; no assets.",
     ),
     TransferFormat(
         "notes",
@@ -48,7 +48,7 @@ FORMATS = (
         True,
         True,
         "Import notes or export linked entity and event notes with frontmatter.",
-        "Supported frontmatter and prose can be re-imported; not a world backup.",
+        "Native Kraken metadata preserves timing and authored relations; not a world backup.",
     ),
     TransferFormat(
         "markdown",
@@ -90,7 +90,7 @@ FORMATS = (
 
 FORMAT_BY_KEY = {item.key: item for item in FORMATS}
 LORE_KINDS = ("entities", "events", "relations")
-EXCHANGE_VERSION = 1
+EXCHANGE_VERSION = 2
 WORLD_TAB = 2
 REFERENCE_TAB = 3
 

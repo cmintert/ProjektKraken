@@ -64,7 +64,11 @@ JSON and CSV files that you can use as templates.
    Uncheck records you do not want. Use the action and match menus when needed.
 7. Select a record to inspect or correct its fields, then click **Apply edits
    and recheck**.
-8. Resolve every error, then click **Import reviewed changes**.
+8. For a foreign calendar, select the equivalent active calendar in its review
+   row, or choose **Preserve unresolved dates**. Recheck after changing a choice.
+   For a missing Event source, include that source, exclude its users, or choose
+   **Preserve unresolved timing** in the dependency row.
+9. Resolve every error, then click **Import reviewed changes**.
 
 The entire reviewed import is applied together. If a source file or the world
 changes after review, ProjektKraken asks you to review again. A completed lore
@@ -77,9 +81,11 @@ import can be undone from **Edit → Undo**.
 - **Merge** keeps existing information and adds or updates imported fields.
 - **Replace** replaces the record's editable fields with the imported version.
 
-Ambiguous names must be matched to a specific record or excluded. Events need a
-valid date. ProjektKraken does not silently turn an unreadable date into day
-zero in the unified importer.
+Name matches require a selected record, **Create separate record**, or exclusion.
+An existing UUID keeps its identity even when its name changes. Relationships with
+different UUIDs remain separate facts even when their endpoints and type match.
+Events need valid authored timing; calculated dates can remain unresolved.
+Unreadable dates never become day zero through the reviewed importer.
 
 ## Export Lore
 
@@ -94,8 +100,22 @@ zero in the unified importer.
 
 JSON is the most complete re-importable lore format. CSV creates separate
 entity, event, and relation tables. Tags and custom fields are stored as JSON
-inside their cells so they can round-trip without flattening. Markdown creates
-readable linked notes but is not a complete-world backup.
+inside their cells so they can round-trip without flattening. Keep the native
+CSV folder's `manifest.json` with its tables: it carries calendar definitions.
+Native scalar cells use a `json:` prefix to distinguish numbers, text and null.
+Import the folder or its manifest to restore all tables together.
+
+Relationship endpoint inclusion adds one hop from the original selection.
+Required Event timing dependencies are added separately until all available
+anchors are included. Review lists the added IDs and any missing dependencies.
+
+Markdown creates readable linked notes with a versioned `kraken` metadata section.
+You can edit the title, type, tags, description and `attributes` mapping. Native
+timing and structured Relationships remain authoritative: changing a projected
+date or the readable **Related** links causes a conflict that must be corrected.
+User attributes named `title`, `source` or `kraken` belong inside `attributes`,
+where they cannot replace the note's native fields. Ordinary third-party notes
+without native metadata retain their existing frontmatter/prose import behavior.
 
 Note exports copy supported local images into the vault's `assets/` folder.
 Relation links use the exported note filenames, including suffixes for duplicate
@@ -221,9 +241,9 @@ Live images and map assets are unchanged by these upgrades.
 ## Historical dates in JSON imports
 
 Text dates retain their precision and qualification, including year-only and
-month-only input. Numeric lore dates keep their legacy exact meaning. If no
-calendar exists, a successful text-date import installs the default calendar;
-a dry run does not persist it.
+month-only input. A JSON number such as `1214` is a numeric day coordinate;
+the JSON string `"1214"` is an authored year. Choose an active world calendar
+before importing textual dates. Import does not install or switch calendars.
 
 For a bare date range, supply `range_meaning: "occurrence"` or
 `range_meaning: "duration"` on the event. Imports reject ambiguous ranges
@@ -231,9 +251,52 @@ without this choice. Alternatively, write an explicit occurrence expression
 such as `between 961 and 964`.
 
 Semantic dates, optional duration endpoints, event anchors, chronology
-constraints, and separate source claims are stored in JSON attributes and
-travel with ordinary world/event exports. Keep that metadata when exchanging
-records; the numeric timeline position alone cannot preserve uncertainty.
+constraints, and separate source claims travel in Lore JSON, native tables and
+native Kraken notes when their structured attributes are retained. Lore exchange
+v2 includes referenced calendar definitions. Equivalent definitions and epoch
+meaning must be reviewed before mapping a different UUID to the active calendar.
+Unresolved preservation retains the authored assertion and reports its missing
+calendar; it does not convert the date. Version 1 and unversioned Lore remain
+readable, but may need unresolved preservation when no definition is available.
+
+### Preservation reference
+
+| Information | Lore JSON v2 | Native CSV/TSV | Native Kraken notes | Portable world |
+| --- | --- | --- | --- | --- |
+| Record UUIDs, names, types, descriptions | Preserved | Preserved | Preserved; readable fields editable | Preserved |
+| Tags, user attributes, provenance | Preserved | JSON cells | Typed YAML and native metadata | Preserved |
+| Authored timing, independent ends, chronology | Preserved | Structured attributes | Native metadata | Preserved |
+| Relation UUIDs, windows and state payloads | Preserved | Relation table | Structured outgoing Relations | Preserved |
+| Referenced calendar definitions | Exchange context; reviewed mapping | Manifest; reviewed mapping | Note context; reviewed mapping | Stored calendars |
+| Numeric versus textual dates and null values | JSON types | `json:` scalar cells | YAML types | Stored values |
+| Unsupported metadata versions | Opaque; no interpretation/remapping | Same | Same | Stored values |
+| Maps, layers, trajectories, gallery records, world configuration | Omitted | Omitted | Omitted | Preserved |
+| Longform organization | Embedded attributes only; no organization guarantee | Same | Same | Preserved |
+| Asset files | Omitted | Omitted | Supported description images copied | Preserved |
+
+The Relation preservation contract covers authored facts. Automatically derived
+`mentions` rows are excluded from authored Relation import.
+Note export copies supported description images; Lore import does not install
+asset files into the target world. Embedded Longform attributes are retained,
+but Lore import does not remap their organization references.
+
+Ordinary third-party notes preserve their supported frontmatter, prose and named
+links; they do not supply Kraken's native timing or Relation metadata. Longform
+Markdown, Word and PDF are publication documents, not world exchange formats.
+
+(help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-show-calendar-decisions-choice)=
+
+**Resolve calendar** — Map a foreign calendar to a compatible active calendar or
+explicitly preserve its dates as unresolved. Recheck before importing. Mapping
+compares definitions and epoch meaning, not calendar names. This choice does not
+install a calendar or change the world's active calendar.
+
+(help-inspect-src-gui-dialogs-transfer-dialog-transferdialog-show-dependency-decisions-choice)=
+
+**Resolve missing Event** — Include a missing timing source, exclude the records
+that use it, or explicitly preserve their timing as unresolved. Recheck after
+changing this choice. It never supplies a replacement day coordinate; structurally
+invalid timing, such as a dependency cycle, still blocks import.
 
 ## Interface control reference
 

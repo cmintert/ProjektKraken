@@ -11,6 +11,8 @@ Tests the ObsidianExporter class for:
 import tempfile
 from pathlib import Path
 
+import frontmatter
+
 from src.core.entities import Entity
 from src.core.events import Event
 from src.services.obsidian_exporter import ObsidianExporter
@@ -120,9 +122,9 @@ class TestObsidianExporterFrontmatter:
         result = exporter._build_entity_markdown(entity, [])
 
         assert "---" in result
-        assert 'title: "Test Entity"' in result
+        assert frontmatter.loads(result)["title"] == "Test Entity"
         assert "type: character" in result
-        assert 'uid: "test-123"' in result
+        assert frontmatter.loads(result)["uid"] == "test-123"
         assert "source: ProjektKraken" in result
         assert "A test character." in result
 
@@ -143,8 +145,8 @@ class TestObsidianExporterFrontmatter:
         result = exporter._build_entity_markdown(entity, [])
 
         assert "tags:" in result
-        assert "  - important" in result
-        assert "  - main-plot" in result
+        assert "important" in frontmatter.loads(result)["tags"]
+        assert "main-plot" in frontmatter.loads(result)["tags"]
 
     def test_event_frontmatter_includes_lore_date(self):
         """Test event markdown includes lore_date and lore_duration."""
@@ -291,18 +293,6 @@ class TestObsidianExporterExport:
             assert result.files_created == 2
             assert (output_dir / "Duplicate.md").exists()
             assert (output_dir / "Duplicate (2).md").exists()
-
-
-class TestObsidianExporterYamlEscape:
-    """Tests for YAML string escaping."""
-
-    def test_escape_quotes(self):
-        """Test double quotes are escaped in YAML strings."""
-        db = MockDbService()
-        exporter = ObsidianExporter(db)
-
-        assert exporter._escape_yaml_string("Normal") == "Normal"
-        assert exporter._escape_yaml_string('Say "Hello"') == 'Say \\"Hello\\"'
 
 
 class TestObsidianExporterStatBlock:

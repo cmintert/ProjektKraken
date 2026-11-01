@@ -296,32 +296,6 @@ class ObsidianExporter:
         filepath.write_text(content, encoding="utf-8")
         return filepath
 
-    def _get_user_attributes_yaml(self, attributes: Dict[str, Any]) -> List[str]:
-        """Build YAML lines for user-defined attributes.
-
-        Excludes internal attributes (keys starting with '_').
-
-        Args:
-            attributes: The item's full attributes dict.
-
-        Returns:
-            List of YAML-formatted lines for user-defined attributes.
-
-        """
-        lines = []
-        for key, value in attributes.items():
-            if key.startswith("_"):
-                continue
-            if isinstance(value, str):
-                lines.append(f'{key}: "{self._escape_yaml_string(value)}"')
-            elif isinstance(value, list):
-                lines.append(f"{key}:")
-                for item in value:
-                    lines.append(f"  - {item}")
-            else:
-                lines.append(f"{key}: {value}")
-        return lines
-
     def _get_summary_blockquote(self, attributes: Dict[str, Any]) -> Optional[str]:
         """Extract summary text from _summary_data and format as blockquote.
 
@@ -339,6 +313,22 @@ class ObsidianExporter:
                 return f"> **Summary**: {text}"
         return None
 
+    def _native_frontmatter(
+        self, item: Entity | Event, relations: List[Dict[str, str]]
+    ) -> List[str]:
+        from src.services.native_notes import note_frontmatter
+        from src.services.transfer_context import export_context
+
+        outgoing = [
+            row
+            for row in self._db.get_relations(item.id)
+            if row.get("source_id") == item.id and row.get("rel_type") != "mentions"
+        ]
+        data = {"entities": [], "events": [], "relations": outgoing}
+        data["events" if isinstance(item, Event) else "entities"] = [item.to_dict()]
+        context, _warnings = export_context(self._db, data)
+        return note_frontmatter(item, outgoing, relations, context)
+
     def _build_entity_markdown(
         self, entity: Entity, relations: List[Dict[str, str]]
     ) -> str:
@@ -352,28 +342,7 @@ class ObsidianExporter:
             Complete markdown string with frontmatter and content.
 
         """
-        lines = []
-
-        # YAML frontmatter
-        lines.append("---")
-        lines.append(f'title: "{self._escape_yaml_string(entity.name)}"')
-        lines.append(f"type: {entity.type}")
-
-        tags = entity.tags
-        if tags:
-            lines.append("tags:")
-            for tag in tags:
-                lines.append(f"  - {tag}")
-
-        # User-defined attributes
-        lines.extend(self._get_user_attributes_yaml(entity.attributes))
-
-        lines.append(f'uid: "{entity.id}"')
-        lines.append(f"created: {self._format_timestamp(entity.created_at)}")
-        lines.append(f"modified: {self._format_timestamp(entity.modified_at)}")
-        lines.append("source: ProjektKraken")
-        lines.append("---")
-        lines.append("")
+        lines = self._native_frontmatter(entity, relations)
 
         # Summary blockquote
         summary = self._get_summary_blockquote(entity.attributes)
@@ -400,7 +369,9 @@ class ObsidianExporter:
                 lines.append(f"- {rel['rel_type']}: [[{rel['name']}]]")
             lines.append("")
 
-        return "\n".join(lines)
+        from src.services.native_notes import finalize_note
+
+        return finalize_note("\n".join(lines))
 
     def _build_event_markdown(
         self, event: Event, relations: List[Dict[str, str]]
@@ -415,34 +386,7 @@ class ObsidianExporter:
             Complete markdown string with frontmatter and content.
 
         """
-        lines = []
-
-        # YAML frontmatter
-        lines.append("---")
-        lines.append(f'title: "{self._escape_yaml_string(event.name)}"')
-        lines.append(f"type: {event.type}")
-
-        tags = event.tags
-        if tags:
-            lines.append("tags:")
-            for tag in tags:
-                lines.append(f"  - {tag}")
-
-        lines.append(
-            f"lore_date: {event.lore_date if event.lore_date is not None else 'null'}"
-        )
-        if event.lore_duration is not None and event.lore_duration > 0:
-            lines.append(f"lore_duration: {event.lore_duration}")
-
-        # User-defined attributes
-        lines.extend(self._get_user_attributes_yaml(event.attributes))
-
-        lines.append(f'uid: "{event.id}"')
-        lines.append(f"created: {self._format_timestamp(event.created_at)}")
-        lines.append(f"modified: {self._format_timestamp(event.modified_at)}")
-        lines.append("source: ProjektKraken")
-        lines.append("---")
-        lines.append("")
+        lines = self._native_frontmatter(event, relations)
 
         # Summary blockquote
         summary = self._get_summary_blockquote(event.attributes)
@@ -469,11 +413,9 @@ class ObsidianExporter:
                 lines.append(f"- {rel['rel_type']}: [[{rel['name']}]]")
             lines.append("")
 
-        return "\n".join(lines)
+        from src.services.native_notes import finalize_note
 
-    def _escape_yaml_string(self, value: str) -> str:
-        """Escape quotes in YAML string values."""
-        return value.replace('"', '\\"')
+        return finalize_note("\n".join(lines))
 
     def _build_stat_block(self, name: str, attributes: Dict[str, Any]) -> Optional[str]:
         """Build an Obsidian callout stat block from a sheet layout.
