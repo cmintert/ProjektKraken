@@ -57,6 +57,7 @@ from src.gui.widgets.editor_presentation import DisclosureButton, EditorPresenta
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.gallery_widget import GalleryWidget
 from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
+from src.gui.widgets.recurrence_widget import RecurrenceWidget
 from src.gui.widgets.relation_authoring import RelationAuthoring
 from src.gui.widgets.sheet_builder import SheetBuilderWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
@@ -140,6 +141,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self._saved_temporal_metadata: dict[str, Any] = {}
         self._pending_timing_controls: EventTimingDefinition | None = None
         self._pending_timing_metadata: dict[str, Any] | None = None
+        self._pending_recurrence_metadata: dict[str, Any] | None = None
         self._saved_content_payload: dict[str, Any] | None = None
         self._pending_content_payload: dict[str, Any] | None = None
         self._content_only_save = False
@@ -275,6 +277,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         authoring = getattr(self, "relation_authoring", None)
         return (
             self._is_dirty
+            or self.recurrence_widget.has_changes()
             or self.temporal_widget.has_pending_draft()
             or (authoring is not None and authoring.is_dirty())
         )
@@ -354,6 +357,13 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         if self._calendar_converter:
             self.temporal_widget.set_calendar_converter(self._calendar_converter)
         self.form_layout.addRow(self.temporal_widget)
+        self.recurrence_widget = RecurrenceWidget(self)
+        self.recurrence_widget.set_calendar_converter(self._calendar_converter)
+        self.form_layout.addRow(self.recurrence_widget)
+        self.recurrence_widget.draft_changed.connect(self._on_recurrence_changed)
+        self.temporal_widget.start_changed.connect(self._refresh_recurrence_anchor)
+        self.temporal_widget.duration_changed.connect(self._refresh_recurrence_anchor)
+        self.temporal_widget.end_changed.connect(self._refresh_recurrence_anchor)
         from src.gui.widgets.overflow_toolbar import OverflowToolBar
 
         temporal_actions = OverflowToolBar()
@@ -802,6 +812,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         timing_was_clean = not self.has_unsaved_temporal_changes()
         self._calendar_converter = converter
         self.temporal_widget.set_calendar_converter(converter)
+        self.recurrence_widget.set_calendar_converter(converter)
         if (
             timing_was_clean
             and self._current_event_id is not None
@@ -917,6 +928,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
     def has_unsaved_temporal_changes(self) -> bool:
         """Compare authored timing, ignoring a semantic date's layout coordinate."""
+        if hasattr(self, "recurrence_widget") and self.recurrence_widget.has_changes():
+            return True
         if self.temporal_widget._unsupported_timing:
             return self._temporal_metadata != self._saved_temporal_metadata
         if self.temporal_widget._loaded_definition is not None:
@@ -964,6 +977,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             if not self.has_unsaved_temporal_changes():
                 self._adopt_saved_timing(saved)
             return
+        self.recurrence_widget.acknowledge(
+            saved.attributes.get("_recurrence"), self._pending_recurrence_metadata
+        )
         try:
             definition = EventTimingDefinition.from_event(saved)
         except (ValueError, TypeError, KeyError):
@@ -1079,7 +1095,10 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         if (
             event is not None
             and event.id == self._current_event_id
-            and self.temporal_widget.has_pending_draft()
+            and (
+                self.temporal_widget.has_pending_draft()
+                or self.recurrence_widget.has_changes()
+            )
         ):
             return
         new_id = event.id if event is not None else None
@@ -1265,6 +1284,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
     def _load_event_timing_fields(self, event: Event) -> None:
         """Hydrate only timing so generation refreshes preserve writing context."""
 
+        self.recurrence_widget.load_event(event)
         # Load temporal fields in one call; TemporalRangeWidget handles
         # internal signal suppression and end-date recalculation.
         self.temporal_widget.set_values(
@@ -1440,6 +1460,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         attrs["_tags"] = self.tag_editor.get_tags()
         self._merge_hidden_attributes(attrs)
         attrs.pop("_temporal_v2", None)
+        attrs.pop("_recurrence", None)
         if self._pending_summary_changed:
             if self._pending_summary_data is None:
                 attrs.pop("_summary_data", None)
@@ -1482,6 +1503,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self._pending_timing_metadata = (
             None if content_only else deepcopy(self._temporal_metadata)
         )
+        self._pending_recurrence_metadata = (
+            None if content_only else self.recurrence_widget.metadata()
+        )
         payload["__editor_revision"] = revision
         payload["__editor_generation"] = self.draft_generation
         self.save_requested.emit(payload)
@@ -1520,6 +1544,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         if not self.temporal_widget.commit_drafts():
             self._on_date_draft_changed(True)
             return
+        if not self.recurrence_widget.commit_drafts():
+            self.btn_save.setToolTip("Correct the recurrence bounds before saving.")
+            return
 
         try:
             event_data = self._content_payload()
@@ -1547,6 +1574,12 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
                     "attributes": base_attrs,
                 }
             )
+            recurrence = self.recurrence_widget.metadata()
+            event_data["__expected_recurrence"] = (
+                self.recurrence_widget.saved_metadata()
+            )
+            if recurrence is not None:
+                event_data["attributes"]["_recurrence"] = recurrence
             if not controls_changed and self._loaded_temporal_state is not None:
                 _, event_data["lore_date"], event_data["lore_duration"] = (
                     self._loaded_temporal_state
@@ -1581,10 +1614,36 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             return
 
         self.temporal_widget.cancel_drafts()
+        self.recurrence_widget.discard_draft()
         self.relation_authoring.cancel()
         self.reset_draft_tracking()
         self.set_dirty(False)
         self.discard_requested.emit(self._current_event_id)
+
+    def _refresh_recurrence_anchor(self, *_args: object) -> None:
+        """Supply the recurrence preview with the current date-control snapshot."""
+        if self._is_loading or not hasattr(self, "recurrence_widget"):
+            return
+        try:
+            definition = self.temporal_widget.timing_definition()
+            attributes = definition.apply({})
+        except (ValueError, TypeError):
+            attributes = {"_temporal_v2": deepcopy(self._temporal_metadata)}
+        self.recurrence_widget.set_anchor(
+            Event(
+                self.name_edit.text(),
+                self.temporal_widget.get_start(),
+                lore_duration=self.temporal_widget.get_duration(),
+                attributes=attributes,
+            )
+        )
+
+    def _on_recurrence_changed(self, _changed: bool) -> None:
+        """Mark valid schedule edits dirty without treating them as raw date text."""
+        if not self._is_loading:
+            self.set_dirty(
+                self._has_content_changes() or self.has_unsaved_temporal_changes()
+            )
 
     def _populate_inject_menu(self) -> None:
         """Populate the Fast Inject menu with available actions.

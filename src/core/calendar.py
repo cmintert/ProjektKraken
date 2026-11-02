@@ -709,7 +709,7 @@ class CalendarConverter:
         if week_days:
             # floor(absolute_day) gives the integer day count from epoch
             # e.g. 0.5 -> 0 -> index 0
-            day_idx = int(absolute_day) % len(week_days)
+            day_idx = math.floor(absolute_day) % len(week_days)
             # handle negative modulo correctly in python?
             # -1 % 7 = 6 (correct, previous day)
             day_name = week_days[day_idx]

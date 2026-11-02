@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any
 
@@ -27,11 +28,18 @@ def calendar_ids(value: Any) -> set[str]:
 def native_calendar_ids(attributes: dict[str, Any]) -> set[str]:
     """Opaque future schemas are preserved, never interpreted or remapped."""
     result: set[str] = set()
-    for key in ("_temporal_v2", "temporal"):
-        metadata = attributes.get(key)
-        if isinstance(metadata, dict) and metadata.get("schema", 1) in {1, 2}:
-            result.update(calendar_ids(metadata))
+    for metadata in _calendar_metadata(attributes):
+        result.update(calendar_ids(metadata))
     return result
+
+
+def _calendar_metadata(attributes: dict[str, Any]) -> Iterator[dict[str, Any]]:
+    """Recognize native calendar-bearing schemas without touching user attributes."""
+    for key in ("_temporal_v2", "temporal", "_recurrence"):
+        value = attributes.get(key)
+        versions = {1} if key == "_recurrence" else {1, 2}
+        if isinstance(value, dict) and value.get("schema", 1) in versions:
+            yield value
 
 
 def native_event_ids(attributes: dict[str, Any]) -> set[str]:
@@ -162,9 +170,7 @@ def prepare_calendars(
             errors.append(message)
     for row in _records(payload):
         attributes = deepcopy(row.get("attributes", {}))
-        for key in ("_temporal_v2", "temporal"):
-            value = attributes.get(key)
-            if isinstance(value, dict) and value.get("schema", 1) in {1, 2}:
-                _remap(value, accepted)
+        for value in _calendar_metadata(attributes):
+            _remap(value, accepted)
         row["attributes"] = attributes
     return errors, warnings, decisions

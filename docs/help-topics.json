@@ -486,6 +486,13 @@
         "authoring.details",
         "history.undo"
       ]
+    },
+    {
+      "id": "event.recurrence",
+      "source": "event-recurrence.md",
+      "target": "help-event-recurrence",
+      "level": "task",
+      "related_ids": ["event.timing", "timeline.viewing"]
     }
   ]
 }

@@ -6,6 +6,7 @@ import math
 from typing import TYPE_CHECKING, Any
 
 from src.core.event_timing.definitions import EVENT_TIMING_SCHEMA, EventTimingDefinition
+from src.core.recurrence import RECURRENCE_ATTRIBUTE, RecurrenceRule
 from src.core.temporal_boundary_resolver import BoundaryResolver
 from src.core.temporal_expression import MAX_LORE_DAY, TemporalExpression
 from src.core.temporal_state import validate_payload
@@ -78,6 +79,12 @@ def validate_record(kind: str, row: dict[str, Any], parser: ImportService) -> li
     ):
         errors.append("Tags must be a JSON list of names.")
     try:
+        if kind == "events" and RECURRENCE_ATTRIBUTE in attributes:
+            recurrence = attributes[RECURRENCE_ATTRIBUTE]
+            if not isinstance(recurrence, dict):
+                raise ValueError("Recurrence metadata must be a JSON object.")
+            if recurrence.get("schema", 1) == 1:
+                RecurrenceRule.from_dict(recurrence)
         validate_temporal(attributes)
         validate_window(attributes)
         if "payload" in attributes:

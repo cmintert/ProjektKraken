@@ -6,6 +6,10 @@ Events record what happens and when. Entities represent people, places,
 factions, objects, and other things in the world. Relations connect any two
 items with a named direction and optional details.
 
+For festivals and other repeating patterns, see {ref}`Repeat an Event
+<help-event-recurrence>`. Recurrence stays on an ordinary Event; significant
+happenings during one occurrence are separate Events.
+
 Start with an open world and use the procedures below to create, edit and
 connect its entries. See [representations](representations.md) when deciding
 between a value, a relation and a prose link. The [time model](temporal-model.md)

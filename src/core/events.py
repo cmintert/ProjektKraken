@@ -42,6 +42,11 @@ class Event:
             raise ValueError(f"Event '{self.name}' has no resolved start date")
         return self.lore_date
 
+    @property
+    def is_recurring(self) -> bool:
+        """Whether this ordinary Event carries a schedule, including opaque versions."""
+        return "_recurrence" in self.attributes
+
     def date_sort_key(self) -> tuple[bool, float]:
         """Order unplaced Events after dated Events without assigning them a date."""
         return (

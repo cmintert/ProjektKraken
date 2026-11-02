@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-02
-**Commit:** bb018c438b6025d3d7f6376b80cf1f14897ba462
+**Commit:** 6ca4d3b01c2a82c4ca8a53f5b95bf38352023e85
 ---
 
 # Changelog
@@ -12,6 +12,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-11-02)* **Event recurrence (KRT-131)**: Ordinary Events can repeat by
+  calendar date, weekday rule or elapsed-day interval, forward, backward or both
+  from their authored date. Optional bounds and fixed durations apply to calculated
+  occurrences in a zoom-aware, clustered Timeline strip. Circular date pins use
+  ordinary Event label styling. Recurrence shares the
+  explicit date-save boundary; historical Events and world-state effects remain
+  independent. Added recurrence Help and persistence, calendar and UI regressions.
 
 - *(2026-11-01)* **Timeline movement (KRT-128)**: Added **Adjust offset** and
   **Move chain** drag modes for dependent Events, with calculated previews,
@@ -34,6 +42,9 @@ All notable changes to this project will be documented in this file.
   and links from the manual and import workflow.
 
 ### Fixed
+
+- *(2026-11-02)* **Help theming**: The native Windows Help title bar now follows
+  the active theme when opened and when themes change.
 
 - *(2026-11-02)* **Testing**: Identified exported notes by their own frontmatter
   UID in the filename-collision regression, preventing relation target UUIDs

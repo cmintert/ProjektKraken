@@ -48,6 +48,7 @@ from src.gui.widgets.timeline.group_band_manager import GroupBandManager
 from src.gui.widgets.timeline.group_label_overlay import GroupLabelOverlay
 from src.gui.widgets.timeline.layout_history import TimelineLayoutHistory
 from src.gui.widgets.timeline.movement import TimelineMovementPresenter
+from src.gui.widgets.timeline.recurrence_strip import RecurrenceStrip
 from src.gui.widgets.timeline.time_indicators import TimelineTimeIndicators
 from src.gui.widgets.timeline.timeline_scene import (
     CurrentTimeLineItem,
@@ -269,6 +270,9 @@ class TimelineView(QGraphicsView):
         )
         self._empty_state.show()
         self.time_indicators = TimelineTimeIndicators(self)
+        self._recurring_events: list[Event] = []
+        self.recurrence_strip = RecurrenceStrip(self)
+        self.recurrence_strip.event_selected.connect(self.event_selected.emit)
         self._programmatic_time_change = False
 
         # Restore only after all consumers of playhead changes are initialized.
@@ -435,6 +439,7 @@ class TimelineView(QGraphicsView):
     def set_dependency_selection(self, event_id: str | None) -> None:
         """Receive accepted selection without navigating or selecting scene items."""
         self._dependencies.selected_event_id = event_id
+        self.recurrence_strip.set_selected_event(event_id)
         self._schedule_dependency_routes()
         self.viewport().update()
 
@@ -699,6 +704,7 @@ class TimelineView(QGraphicsView):
         """
         self.movement.cancel()
         self._ruler.set_calendar_converter(converter)
+        self.recurrence_strip.schedule()
         self._dependencies.set_display_events(self.events, converter)
         self._layout_generation += 1
         self.viewport().update()
@@ -725,8 +731,8 @@ class TimelineView(QGraphicsView):
         self._event_items = existing
         self._reconcile_event_items(prepared)
         self._layout_generation += 1
-        self._empty_state.setVisible(not self.events)
-        if not self.events:
+        self._empty_state.setVisible(not self.events and not self._recurring_events)
+        if not self.events and not self._recurring_events:
             self._empty_state.raise_()
         self.repack_events()
         self._finish_event_replacement()
@@ -735,6 +741,8 @@ class TimelineView(QGraphicsView):
         """Apply a data-only plan without transferring scene ownership."""
         self.events = list(prepared.events)
         self._unplaced_events = list(prepared.unplaced)
+        self._recurring_events = list(prepared.recurring)
+        self.recurrence_strip.set_events(prepared.recurring)
         self._dependencies.set_display_events(
             self.events, EventItem._calendar_converter
         )
@@ -779,17 +787,18 @@ class TimelineView(QGraphicsView):
 
     def _finish_event_replacement(self) -> None:
         """Retain scene extent, initial fitting and initial playhead behavior."""
-        if not self.events:
+        sources = self._placed_event_sources()
+        if not sources:
             self._update_scene_rect_default()
             self._has_done_initial_fit = True
             return
         for event_id, line in self._drop_lines.items():
             item = self._event_items[event_id]
             line.setLine(item.x(), -self.RULER_HEIGHT, item.x(), item.y())
-        self._update_scene_rect_from_events(self.events)
+        self._update_scene_rect_from_events(sources)
         if self._playhead._time == 0:
             self.set_playhead_time(
-                (self.events[0].require_date() + self.events[-1].require_date()) / 2
+                (sources[0].require_date() + sources[-1].require_date()) / 2
             )
         if not self._has_done_initial_fit:
             if self.isVisible() and self.width() > 0 and self.height() > 0:
@@ -805,19 +814,24 @@ class TimelineView(QGraphicsView):
         self.movement.cancel()
         self._dependencies.apply_effects(effects)
         prepared = TimelineEventPreparationService.apply_effects(
-            [*self.events, *getattr(self, "_unplaced_events", [])], effects
+            [
+                *self.events,
+                *self._recurring_events,
+                *getattr(self, "_unplaced_events", []),
+            ],
+            effects,
         )
         if prepared.layout_changed:
             self._clear_duplicates()
             self._layout_generation += 1
         self._reconcile_event_items(prepared)
-        self._empty_state.setVisible(not self.events)
+        self._empty_state.setVisible(not self.events and not self._recurring_events)
         if not self.events:
             self._incremental_layout_timer.stop()
             self._lane_history.clear()
             self._update_scene_rect_default()
         else:
-            self._update_scene_rect_from_events(self.events)
+            self._update_scene_rect_from_events(self._placed_event_sources())
             if prepared.layout_changed:
                 self._incremental_layout_timer.start()
 
@@ -849,6 +863,7 @@ class TimelineView(QGraphicsView):
         self._incremental_layout_timer.stop()
         self._layout_generation += 1
         self.layout_requested.emit()
+        self.recurrence_strip.schedule()
         scopes = {"standard", "all"} | {
             "tag:" + tag for tag in self._grouping_tag_order
         }
@@ -1010,7 +1025,7 @@ class TimelineView(QGraphicsView):
         from itertools import accumulate
 
         # Each offset is previous offset + previous height + padding
-        first_y = self.RULER_HEIGHT + 40
+        first_y = self.RULER_HEIGHT + 40 + self._recurrence_content_inset()
         lane_y_offsets = list(
             accumulate((h + 10 for h in lane_heights[:-1]), initial=first_y)
         )
@@ -1163,7 +1178,7 @@ class TimelineView(QGraphicsView):
             self.events, self._grouping_tag_order, self._grouping_mode
         )
 
-        current_y = float(self.RULER_HEIGHT + 10)  # Start below identity rows.
+        current_y = float(self.RULER_HEIGHT + 10 + self._recurrence_content_inset())
         placed_event_ids: set[str] = set()
 
         # 2. Position tag group bands and their events
@@ -1393,8 +1408,8 @@ class TimelineView(QGraphicsView):
         dates = []
 
         # 1. Collect dates from Events (including their full duration)
-        if self.events:
-            for event in self.events:
+        if self._placed_event_sources():
+            for event in self._placed_event_sources():
                 # Include start date
                 dates.append(event.require_date())
                 # Include end date if event has duration
@@ -1764,6 +1779,19 @@ class TimelineView(QGraphicsView):
         """Centers the view on the specified event."""
         # Enforce single selection
         self.graphics_scene.clearSelection()
+        recurring = next(
+            (
+                event
+                for event in self._recurring_events
+                if event.id == event_id and event.lore_date is not None
+            ),
+            None,
+        )
+        if recurring is not None:
+            self.center_on_date(recurring.require_date())
+            self.recurrence_strip.set_selected_event(event_id)
+            self.recurrence_strip.schedule()
+            return
 
         for item in self.graphics_scene.items():
             if isinstance(item, EventItem) and item.event.id == event_id:
@@ -1775,6 +1803,24 @@ class TimelineView(QGraphicsView):
     def center_on_date(self, date: float) -> None:
         """Rebase the local navigation window around an arbitrary lore date."""
         self._set_horizontal_window(date)
+
+    def _placed_event_sources(self) -> list[Event]:
+        """Use authored dates for navigation, never expand a series to fit history."""
+        return sorted(
+            [
+                *self.events,
+                *(
+                    event
+                    for event in self._recurring_events
+                    if event.lore_date is not None
+                ),
+            ],
+            key=lambda event: event.date_sort_key(),
+        )
+
+    def _recurrence_content_inset(self) -> int:
+        """Reserve marker space without shifting lanes across zoom thresholds."""
+        return RecurrenceStrip.HEIGHT if self._recurring_events else 0
 
     def _apply_zoom(self, zoom_level: float) -> None:
         """Applies a zoom level and updates related state.

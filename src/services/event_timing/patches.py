@@ -30,6 +30,14 @@ def normalize_scalar_patch(
         if {"lore_date", "lore_duration"} & result.keys():
             raise ValueError("A content-only save cannot change Event timing")
         if "attributes" in result:
+            from src.core.recurrence import RECURRENCE_ATTRIBUTE
+
+            if RECURRENCE_ATTRIBUTE in current.attributes:
+                result["attributes"][RECURRENCE_ATTRIBUTE] = deepcopy(
+                    current.attributes[RECURRENCE_ATTRIBUTE]
+                )
+            else:
+                result["attributes"].pop(RECURRENCE_ATTRIBUTE, None)
             if "_temporal_v2" in current.attributes:
                 result["attributes"]["_temporal_v2"] = deepcopy(
                     current.attributes["_temporal_v2"]

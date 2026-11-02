@@ -1503,6 +1503,15 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_recurrence_strip_style() -> str:
+        """Use neutral strip structure with ordinary Event identity and focus."""
+        theme = ThemeManager().get_theme()
+        return (
+            f"QWidget#RecurrenceStrip {{ background: {theme['surface']}; "
+            f"border-bottom: 1px solid {theme['border']}; }}"
+        )
+
+    @staticmethod
     def get_event_color() -> str:
         """Returns the theme-aware color for events.
 

@@ -17,6 +17,7 @@ class PreparedTimelineEvents:
     removed_ids: frozenset[str]
     layout_changed: bool
     unplaced: tuple[Event, ...] = ()
+    recurring: tuple[Event, ...] = ()
 
 
 class TimelineEventPreparationService:
@@ -34,6 +35,7 @@ class TimelineEventPreparationService:
             event.type,
             tuple(event.tags),
             repr(event.attributes.get("_temporal_v2")),
+            repr(event.attributes.get("_recurrence")),
         )
 
     @staticmethod
@@ -49,7 +51,11 @@ class TimelineEventPreparationService:
             events = [project_event(event, context.resolution) for event in events]
         ordered = tuple(
             sorted(
-                (event for event in events if event.lore_date is not None),
+                (
+                    event
+                    for event in events
+                    if event.lore_date is not None and not event.is_recurring
+                ),
                 key=lambda event: event.date_sort_key(),
             )
         )
@@ -58,7 +64,12 @@ class TimelineEventPreparationService:
             ordered,
             frozenset(existing_ids - {event.id for event in ordered}),
             True,
-            tuple(event for event in events if event.lore_date is None),
+            tuple(
+                event
+                for event in events
+                if event.lore_date is None and not event.is_recurring
+            ),
+            tuple(event for event in events if event.is_recurring),
         )
 
     @classmethod
@@ -89,12 +100,20 @@ class TimelineEventPreparationService:
             layout_changed = layout_changed or (
                 cls.layout_signature(previous) != cls.layout_signature(event)
             )
+        recurring = tuple(event for event in events if event.is_recurring)
+        events = [event for event in events if not event.is_recurring]
         unplaced = tuple(event for event in events if event.lore_date is None)
         removed.update(event.id for event in unplaced)
+        removed.update(event.id for event in recurring)
         return PreparedTimelineEvents(
             tuple(event for event in events if event.lore_date is not None),
-            tuple(event for event in upserts.values() if event.lore_date is not None),
+            tuple(
+                event
+                for event in upserts.values()
+                if event.lore_date is not None and not event.is_recurring
+            ),
             frozenset(removed),
             layout_changed,
             unplaced,
+            recurring,
         )

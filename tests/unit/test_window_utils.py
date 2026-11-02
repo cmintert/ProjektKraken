@@ -183,3 +183,63 @@ def test_modal_theme_filter_refreshes_open_dialogs(qapp, qtbot):
         assert matching_calls[-1].kwargs["text_color"].name() == "#101010"
     finally:
         qapp.removeEventFilter(theme_filter)
+
+
+def test_help_native_chrome_tracks_themes_and_reopening(qapp, qtbot):
+    """The real modeless reader receives native colors without losing context."""
+    from src.core.theme_manager import ThemeManager
+    from src.gui.widgets.help_viewer import HelpViewer
+
+    manager = ThemeManager()
+    original_theme = manager.current_theme_name
+    owner = QWidget()
+    qtbot.addWidget(owner)
+    viewer = HelpViewer(owner)
+    qtbot.addWidget(viewer)
+    viewer.set_content("<h1>Retained topic</h1><p>Existing reading context.</p>")
+    viewer.query.setText("retained query")
+    theme_filter = install_modal_window_theme_filter(qapp, manager)
+    try:
+        with patch(
+            "src.gui.utils.window_utils.apply_windows_title_bar_style"
+        ) as apply_style:
+            for theme_name in manager.themes:
+                manager.set_theme(theme_name, persist=False)
+                apply_style.reset_mock()
+                viewer.show()
+                qapp.processEvents()
+                matching = [
+                    call
+                    for call in apply_style.call_args_list
+                    if call.args[0] is viewer
+                ]
+                assert matching
+                theme = manager.get_theme()
+                assert matching[-1].kwargs["title_color"] == QColor(theme["app_bg"])
+                assert matching[-1].kwargs["text_color"] == QColor(theme["text_main"])
+                assert matching[-1].kwargs["dark_mode"] == (
+                    QColor(theme["app_bg"]).lightness() < 128
+                )
+                apply_style.reset_mock()
+                manager.set_theme(theme_name, persist=False)
+                qapp.processEvents()
+                assert any(
+                    call.args[0] is viewer for call in apply_style.call_args_list
+                )
+                assert "Retained topic" in viewer.browser.toPlainText()
+                assert viewer.query.text() == "retained query"
+                viewer.hide()
+    finally:
+        qapp.removeEventFilter(theme_filter)
+        theme_filter.deleteLater()
+        manager.set_theme(original_theme, persist=False)
+
+
+def test_native_chrome_filter_excludes_ordinary_widgets(qapp, qtbot):
+    """Only dialogs and explicitly identified top-level Help windows opt in."""
+    owner = QWidget()
+    child = QWidget(owner)
+    child.setProperty("krakenHelpWindow", True)
+    qtbot.addWidget(owner)
+    assert not ModalWindowThemeFilter._is_themed_window(owner)
+    assert not ModalWindowThemeFilter._is_themed_window(child)

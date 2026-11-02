@@ -9470,6 +9470,46 @@
       "binding": "disclosure",
       "label": "Timing details",
       "kind": "DisclosureButton"
+    },
+    {
+      "id": "event-repeats",
+      "topic_id": "event.recurrence",
+      "target": "help-event-repeats",
+      "source": "src/gui/widgets/recurrence_widget.py",
+      "symbol": "RecurrenceWidget.__init__",
+      "binding": "self.disclosure",
+      "label": "Repeats",
+      "kind": "DisclosureButton"
+    },
+    {
+      "id": "event-repeat-interval",
+      "topic_id": "event.recurrence",
+      "target": "help-event-repeat-interval",
+      "source": "src/gui/widgets/recurrence_widget.py",
+      "symbol": "RecurrenceWidget.__init__",
+      "binding": "self.interval",
+      "label": "Repeat every",
+      "kind": "ScrollSafeDoubleSpinBox"
+    },
+    {
+      "id": "timeline-repeats",
+      "topic_id": "event.recurrence",
+      "target": "help-timeline-repeats",
+      "source": "src/gui/widgets/timeline/recurrence_strip.py",
+      "symbol": "RecurrenceStrip.__init__",
+      "binding": "self",
+      "label": "Recurring Events",
+      "kind": "RecurrenceStrip"
+    },
+    {
+      "id": "event-repeat-controls",
+      "topic_id": "event.recurrence",
+      "target": "help-event-repeats",
+      "source": "src/gui/widgets/recurrence_widget.py",
+      "symbol": "RecurrenceWidget.__init__",
+      "binding": "self",
+      "label": "Recurrence controls",
+      "kind": "RecurrenceWidget"
     }
   ],
   "factory_exemptions": [
@@ -9766,8 +9806,8 @@
     {
       "source": "src/commands/event_commands.py",
       "symbol": "CreateEventCommand.execute",
-      "sha256": "1076551957bd674f74dd9239439ae22dec4571778bc460b462b8cbc4fb29e368",
-      "review_note": "KRT-113: Event creation participates in timing preparation. Manual dates remain the default and Save Changes is distinguished from local field validation."
+      "sha256": "4f19feb57256f562b5294030bd47eb775d7d52735bae28680f8b0a41648dbb7b",
+      "review_note": "KRT-113: Event creation participates in timing preparation. Manual dates remain the default and Save Changes is distinguished from local field validation. KRT-131: Validates optional recurrence before creating the same ordinary Event; creation remains one reversible record. The new recurrence task explains exact anchors and rejected configurations."
     },
     {
       "source": "src/commands/event_commands.py",
@@ -9790,8 +9830,8 @@
     {
       "source": "src/commands/event_commands.py",
       "symbol": "UpdateEventCommand.execute",
-      "sha256": "6956a8b84d7e0c9aeb7ce33ab6b9457abb2e5d3f33a27cf4663cbe100c9dfdf6",
-      "review_note": "KRT-113 content-only autosave: preserve the authoritative Date-frame metadata and calculated scalars; reject scalar fields in a content-only request. Ordinary manual timing changes still require prepared validation and cascade review."
+      "sha256": "a2614dd512362f5c9ee9b188e078a5e62c332b2633e97204b553b927febd86cb",
+      "review_note": "KRT-113 content-only autosave: preserve the authoritative Date-frame metadata and calculated scalars; reject scalar fields in a content-only request. Ordinary manual timing changes still require prepared validation and cascade review. KRT-131: Validates changed recurrence while retaining opaque unchanged content. Existing save, undo and timing meanings remain; new recurrence task explains bounds, validation and independent history."
     },
     {
       "source": "src/commands/event_commands.py",
@@ -12622,8 +12662,8 @@
     {
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget._build_temporal_description_fields",
-      "sha256": "f6554bd96b6fb618dbed23b9f4c2db04a940958a4d5a55f875749a9fc216262e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "27587e16afa696efd15f733a217f3c80ea8797586d8ef2f5457ffeffd3800ac6",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-131: Adds the labeled Repeats disclosure to existing date controls; all existing actions and Help destinations remain. New recurrence explanations cover its fields and explicit Save Changes ownership."
     },
     {
       "source": "src/gui/widgets/event_editor.py",
@@ -12658,8 +12698,8 @@
     {
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget._on_discard",
-      "sha256": "048eddd78a6513e6b85d5fe52c41a62c5e17f88d1cf72f667faac0f705a5841d",
-      "review_note": "KRT-113 refresh correction: deliberate Discard cancels local field/relation drafts and resets dirty/revision tracking before reloading the saved Event, so the ordinary draft-preservation guard cannot block explicit recovery from a real timing conflict. The Event timing how-to states that unsaved changes are replaced."
+      "sha256": "34a621f197ecaa3b6d3cb9bec8c33508e2b7e07c936230e33f04ad0c2b6a5220",
+      "review_note": "KRT-113 refresh correction: deliberate Discard cancels local field/relation drafts and resets dirty/revision tracking before reloading the saved Event, so the ordinary draft-preservation guard cannot block explicit recovery from a real timing conflict. The Event timing how-to states that unsaved changes are replaced. KRT-131: Discard now also restores the recurrence draft before saved Event hydration. Existing discard prose remains accurate; recurrence task explicitly describes schedule recovery."
     },
     {
       "source": "src/gui/widgets/event_editor.py",
@@ -12682,8 +12722,8 @@
     {
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget._on_save",
-      "sha256": "706ae91498d5b27d0e0e553d8473379d7052e41461f93703a0c69e925a9e84a4",
-      "review_note": "KRT-113: Save Changes explicitly submits the completed Date-frame draft, validates raw text and retains cascade review. Independent content autosave excludes all Date-frame fields and preserves their authoritative worker-owned values."
+      "sha256": "d07d742a35649d8abcdfa10bd4d67db138f8d9c3e1dc8e83196715c42bebd37c",
+      "review_note": "KRT-113: Save Changes explicitly submits the completed Date-frame draft, validates raw text and retains cascade review. Independent content autosave excludes all Date-frame fields and preserves their authoritative worker-owned values. KRT-131: Save Changes collects recurrence and accepted bound text with date intent. Recurrence task distinguishes this explicit save from writing autosave and preserves existing timing review semantics."
     },
     {
       "source": "src/gui/widgets/event_editor.py",
@@ -12760,8 +12800,8 @@
     {
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget.has_unsaved_temporal_changes",
-      "sha256": "cf6a886fe9c3431dd595928c02800af13885930a068378c9e6fcbeef27923956",
-      "review_note": "KRT-113: compare authored timing with its hydrated baseline; preserve unsupported metadata verbatim without treating disabled placeholder controls as edits. Independent content autosave never accepts a timing draft."
+      "sha256": "b76c5bd37d696bf3d3a98e0e9bcac10e86095d919960983e61245947a0e3b9df",
+      "review_note": "KRT-113: compare authored timing with its hydrated baseline; preserve unsupported metadata verbatim without treating disabled placeholder controls as edits. Independent content autosave never accepts a timing draft. KRT-131: Pending schedule edits join date-draft protection without changing existing date evidence. Recurrence task explains navigation, failed saves and autosave isolation."
     },
     {
       "source": "src/gui/widgets/event_editor.py",
@@ -17226,6 +17266,24 @@
       "symbol": "EventTimingReviewDialog._card",
       "sha256": "b8b315bb300726c48a5c431da17f3356d4f1a0822e0fddb17091667983144a2a",
       "review_note": "KRT-129: Timing details is a visible keyboard-accessible disclosure, initially collapsed. Expansion reveals full source comparisons, exact references and complete payload values without applying any change. Existing review actions retain ownership of acceptance and cancellation. The shared DisclosureButton uses the quiet semantic action role; existing disclosure defaults remain secondary."
+    },
+    {
+      "source": "src/gui/widgets/recurrence_widget.py",
+      "symbol": "RecurrenceWidget.__init__",
+      "sha256": "dcad87fdc6d2e425432be5d72d1e258f7e584db18f84ef1cdf59956c9c8da435",
+      "review_note": "KRT-131: Reviewed collapsed Repeats disclosure, optional bounds and weekday fields, custom calendar labels, positive interval validation and manual-save boundary. Canonical explanations are in event-recurrence.md; human review pending."
+    },
+    {
+      "source": "src/gui/widgets/timeline/recurrence_strip.py",
+      "symbol": "RecurrenceStrip.__init__",
+      "sha256": "4c896ad5fdb81f9ca9f6a4f72e955e552f34ceb4d9a217dbaba8adc45f881bf3",
+      "review_note": "KRT-131: Reviewed fixed-height occurrence strip and its keyboard-accessible date lists. Selection identifies the ordinary Event without moving time or editing dates. New canonical strip explanation; human review pending. KRT-131 owner-requested circle refinement: replace the rectangular calendar-icon button with an ordinary Event-style circle/name/date mark. Accessible identity is Recurring Events; task and inspection IDs, selection, native menus and keyboard routes remain. Canonical recurrence prose now explains exact pins and label fitting."
+    },
+    {
+      "source": "src/gui/widgets/timeline/occurrence_marker.py",
+      "symbol": "OccurrenceMarker.paintEvent",
+      "sha256": "ce961e9552a455d45dbd497c8aff0108118823521e6eb9b73ea3a0aa806dd930",
+      "review_note": "KRT-131: native vector circle reuses shared Event paint, colors and typography. Date anchor remains independent of fitted label geometry. Only focused marks have an outline; keyboard, tooltip and selection meaning remain. Visual vocabulary synchronized with Linear; human review pending."
     }
   ],
   "review_status": {

@@ -105,7 +105,7 @@ def apply_windows_title_bar_style(
 
 
 class ModalWindowThemeFilter(QObject):
-    """Apply the active theme to native modal-window chrome."""
+    """Apply native chrome colors to dialogs and the modeless Help companion."""
 
     def __init__(
         self,
@@ -119,25 +119,32 @@ class ModalWindowThemeFilter(QObject):
         connect_theme(self, self.refresh_open_dialogs)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        """Theme a dialog after Qt creates its native window handle."""
+        """Theme supported windows after Qt creates their native handles."""
         if (
             event.type() == QEvent.Type.Show
-            and isinstance(watched, QDialog)
-            and watched.isWindow()
+            and isinstance(watched, QWidget)
+            and self._is_themed_window(watched)
         ):
             self._apply_dialog_theme(watched, self._theme_manager.get_theme())
         return super().eventFilter(watched, event)
 
     @Slot(dict)
     def refresh_open_dialogs(self, theme_data: dict[str, Any]) -> None:
-        """Reapply native chrome colors to every open top-level dialog."""
+        """Refresh dialogs and Help without changing their contents or focus."""
         for widget in self._app.topLevelWidgets():
-            if isinstance(widget, QDialog):
+            if self._is_themed_window(widget):
                 self._apply_dialog_theme(widget, theme_data)
 
     @staticmethod
+    def _is_themed_window(widget: QWidget) -> bool:
+        """Include the explicit Help companion without capturing other windows."""
+        return widget.isWindow() and (
+            isinstance(widget, QDialog) or bool(widget.property("krakenHelpWindow"))
+        )
+
+    @staticmethod
     def _apply_dialog_theme(
-        dialog: QDialog,
+        dialog: QWidget,
         theme_data: dict[str, Any],
     ) -> None:
         """Apply one theme snapshot to a dialog's native title bar."""

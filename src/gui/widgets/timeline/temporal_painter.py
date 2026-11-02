@@ -1,5 +1,7 @@
 """Shared occurrence and presence painting for full items and compact groups."""
 
+from typing import Literal
+
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import (
     QBrush,
@@ -68,6 +70,8 @@ def paint_occurrence(
     color: QColor,
     boundary: QColor,
     selected: bool = False,
+    *,
+    shape: Literal["diamond", "circle"] = "diamond",
 ) -> None:
     """Render identical temporal grammar in event items and collapsed bands."""
     painter.save()
@@ -96,7 +100,10 @@ def paint_occurrence(
         painter.setBrush(
             QBrush(color) if geometry.mode == "exact" else QBrush(Qt.BrushStyle.NoBrush)
         )
-        painter.drawPolygon(diamond)
+        if shape == "circle":
+            painter.drawEllipse(QRectF(x - half, -half, half * 2, half * 2))
+        else:
+            painter.drawPolygon(diamond)
     painter.restore()
 
 

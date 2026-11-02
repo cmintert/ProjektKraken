@@ -67,8 +67,14 @@ class CreateEventCommand(BaseCommand):
         """
         try:
             logger.info(f"Executing CreateEvent: {self.event.name}")
+            from src.core.calendar import CalendarConverter
+            from src.services.event_recurrence_service import validate_recurrence_change
             from src.services.event_timing.guards import require_plan
 
+            config = db_service.get_active_calendar_config()
+            validate_recurrence_change(
+                None, self.event, CalendarConverter(config) if config else None
+            )
             rejected = require_plan(db_service, None, self.event)
             if rejected is not None:
                 return rejected
@@ -212,6 +218,11 @@ class UpdateEventCommand(BaseCommand):
 
         # 2. Apply Updates
         try:
+            from src.services.event_recurrence_service import (
+                validate_expected_recurrence,
+            )
+
+            validate_expected_recurrence(current, self.update_data)
             # Validation
             if "name" in self.update_data:
                 new_name = self.update_data["name"]
@@ -275,6 +286,13 @@ class UpdateEventCommand(BaseCommand):
             )
 
             self._new_event = preserve_unchanged_projection(current, self._new_event)
+            from src.services.event_recurrence_service import validate_recurrence_change
+
+            validate_recurrence_change(
+                current,
+                self._new_event,
+                CalendarConverter(config) if config else None,
+            )
             rejected = require_plan(db_service, current, self._new_event)
             if rejected is not None:
                 return rejected

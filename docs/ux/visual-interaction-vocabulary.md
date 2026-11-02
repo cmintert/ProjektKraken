@@ -159,6 +159,20 @@ separation and undo. Review normal/future, selected/unselected, focus, disabled,
 hover/drag, six palettes and narrow overflow. Screenshot evidence establishes
 rendering; fresh unprompted interpretation is required before claiming usability.
 
+## Recurring occurrence marks — 2026-11-02 (KRT-131)
+
+Recurring occurrences use filled circles at their actual dates in the compact
+strip; ordinary Event marks retain diamonds. Both use shared Event colors,
+strokes, name/date typography and selection/focus roles. The circle identifies
+the recurrence property of an ordinary Event, not a separate Event type.
+
+Labels may change sides or shorten at viewport edges; the date pin never moves
+to make room. An offscreen start uses a continuation label without inventing a
+circle on the viewport edge. Overlapping labels retain the compact selectable
+occurrence list. Pointer, keyboard and draft-preserving selection behavior remain.
+The recurring glyph has no permanent rectangular button face; a focus outline
+appears only for keyboard focus, matching other timeline marks.
+
 ## Timeline dependency strands — 2026-10-28 (KRT-114)
 
 - `timeline_dependency_0` through `timeline_dependency_7` identify connected

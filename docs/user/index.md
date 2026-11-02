@@ -111,6 +111,7 @@ workspace
 events-entities-relations
 wiki-editor-markdown
 timeline-and-calendars
+event-recurrence
 maps
 longform
 search-ai-and-analysis
