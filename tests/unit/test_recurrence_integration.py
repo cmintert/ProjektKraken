@@ -219,6 +219,33 @@ def test_strip_clusters_select_source_without_mutating_time(qtbot):
     }
 
 
+@pytest.mark.parametrize("occurrence_count", [1, 2])
+def test_marker_menu_selects_once_for_single_or_cluster(qtbot, occurrence_count):
+    """Single markers select on opening; clusters select on choosing a row."""
+    from PySide6.QtCore import Qt
+
+    widget = TimelineWidget()
+    qtbot.addWidget(widget)
+    widget.resize(800, 400)
+    widget.show()
+    event = series(interval=1)
+    widget.set_events([event])
+    widget.view._apply_zoom(4)
+    widget.view.center_on_date(0)
+    strip = widget.view.recurrence_strip
+    strip.refresh()
+    projection = project_recurrence(event, None, 0, 3, 1)
+    selected = []
+    strip.event_selected.connect(selected.append)
+    rows = [(projection, f"Occurrence {i}") for i in range(occurrence_count)]
+    strip._open_cluster(strip._buttons[0], rows, 0, 3, 1)
+    assert selected == ([event.id] if occurrence_count == 1 else [])
+    menu = strip._menus[-1]
+    qtbot.keyClick(menu, Qt.Key.Key_Down)
+    qtbot.keyClick(menu, Qt.Key.Key_Return)
+    assert selected == [event.id]
+
+
 def test_custom_week_and_variant_skip():
     from src.core.calendar import MonthDefinition, WeekDefinition, YearVariant
     from src.core.recurrence import occurrences_in_window

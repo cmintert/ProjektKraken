@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-02
-**Commit:** 6ca4d3b01c2a82c4ca8a53f5b95bf38352023e85
+**Commit:** 524d6af5a50207cc2ee1af14a0fb61ee71dba69d
 ---
 
 # Changelog
@@ -42,6 +42,10 @@ All notable changes to this project will be documented in this file.
   and links from the manual and import workflow.
 
 ### Fixed
+
+- *(2026-11-02)* **Recurring marker selection**: Choosing the sole occurrence
+  in an already-open marker menu no longer emits a second Event selection.
+  Added explicit single-marker and cluster keyboard regression coverage.
 
 - *(2026-11-02)* **Help theming**: The native Windows Help title bar now follows
   the active theme when opened and when themes change.

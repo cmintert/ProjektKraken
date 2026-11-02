@@ -217,7 +217,7 @@ class RecurrenceStrip(QWidget):
                         menu, p, start, end, step
                     )
                 )
-            else:
+            elif len(rows) > 1:
                 action.triggered.connect(
                     lambda _checked=False, identity=projection.event.id: self._select(
                         identity, generation
