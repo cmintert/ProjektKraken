@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-02
-**Commit:** 347aac9d1f1863f6188f48ca2ae6d87e27829268
+**Commit:** bb018c438b6025d3d7f6376b80cf1f14897ba462
 ---
 
 # Changelog
@@ -34,6 +34,10 @@ All notable changes to this project will be documented in this file.
   and links from the manual and import workflow.
 
 ### Fixed
+
+- *(2026-11-02)* **Testing**: Identified exported notes by their own frontmatter
+  UID in the filename-collision regression, preventing relation target UUIDs
+  and directory enumeration order from selecting the wrong expected link.
 
 - *(2026-11-01)* **Timeline drag performance (KRT-130)**: Removed preview
   starvation during continuous movement. Added immediate provisional feedback,

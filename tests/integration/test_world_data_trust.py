@@ -8,6 +8,7 @@ from io import BytesIO
 from types import SimpleNamespace
 from unittest.mock import Mock
 
+import frontmatter
 import pytest
 from PIL import Image
 from PySide6.QtCore import QByteArray, QRectF, Qt, QUrl
@@ -252,9 +253,15 @@ def test_relation_links_use_actual_export_filenames(trust_world):
     result = export(TransferWorker(lambda: db), db, root, destination, "notes")
     assert result["success"], result
     notes = {path: path.read_text("utf-8") for path in destination.glob("*.md")}
-    source = next(text for text in notes.values() if second.id in text)
-    target = next(path for path, text in notes.items() if first.id in text)
-    assert f"[[{target.stem}]]" in source
+    # Relation metadata also contains the target UUID. Only the owning uid
+    # identifies a note; directory enumeration order must not affect this oracle.
+    for ordered in (list(notes.items()), list(reversed(notes.items()))):
+        by_uid = {
+            frontmatter.loads(text)["uid"]: (path, text) for path, text in ordered
+        }
+        target, _ = by_uid[first.id]
+        _, source = by_uid[second.id]
+        assert f"[[{target.stem}]]" in source
 
 
 def test_note_filename_collisions_never_overwrite_lore(trust_world):
