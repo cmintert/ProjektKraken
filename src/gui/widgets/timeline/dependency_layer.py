@@ -1,7 +1,7 @@
 """Cached timing snapshots and noninteractive device-space strand rendering."""
 
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import (
@@ -34,7 +34,7 @@ from src.gui.widgets.timeline.item_layout import (
     TimelineItemLayout,
     timeline_item_layout,
 )
-from src.gui.widgets.timeline.wire_router import Wire, route_wires
+from src.gui.widgets.timeline.wire_router import Wire, route_wires, smooth_wire
 
 
 @dataclass
@@ -195,6 +195,26 @@ class TimelineDependencyLayer:
         self._routing_key: object = None
         self._routing_paths: list[QPainterPath] = []
         self.routing_pending = False
+        self.preview_active = False
+        self._settled_pairs: list[tuple[EventItem, EventItem, DependencyCurve]] = []
+        self._settled_transform = QTransform()
+        self._preview_changed: set[str] = set()
+        self._preview_cache: list[DependencyCurve] | None = None
+        self._preview_transform = QTransform()
+        self._preview_viewport: QRectF | None = None
+
+    def begin_preview(self) -> None:
+        """Freeze settled routes while inexpensive affected paths follow calculation."""
+        self.preview_active = True
+        self._preview_changed.clear()
+        self._preview_cache = None
+        self.routing_pending = False
+
+    def end_preview(self) -> None:
+        """Resume normal obstacle routing only when the drag session settles."""
+        self.preview_active = False
+        self._preview_cache = None
+        self._preview_changed.clear()
 
     def set_world_events(self, events: list[Event]) -> None:
         """Replace topology only from a complete accepted generation."""
@@ -239,6 +259,7 @@ class TimelineDependencyLayer:
         self, events: list[Event], converter: CalendarConverter | None
     ) -> None:
         """Resolve presentation at hydration, never during background painting."""
+        self._settled_pairs = []
         self._display = {
             event.id: _DisplaySnapshot(
                 event_temporal_presentation(event, converter), {}
@@ -252,6 +273,86 @@ class TimelineDependencyLayer:
         self._display[event.id] = _DisplaySnapshot(
             event_temporal_presentation(event, converter), {}
         )
+        if self.preview_active:
+            self._preview_changed.add(event.id)
+            self._preview_cache = None
+
+    def _preview_curves(
+        self,
+        transform: QTransform,
+        viewport: QRectF | None = None,
+    ) -> list[DependencyCurve]:
+        """Reuse unchanged route geometry; changed wires use direct cubic paths."""
+        if (
+            self._preview_cache is not None
+            and transform == self._preview_transform
+            and viewport == self._preview_viewport
+        ):
+            return self._preview_cache
+        curves = []
+        translation = QTransform.fromTranslate(
+            transform.dx() - self._settled_transform.dx(),
+            transform.dy() - self._settled_transform.dy(),
+        )
+        for source, target, original in self._settled_pairs:
+            dependency = original.dependency
+            if not source.isVisible() or not target.isVisible():
+                continue
+            if viewport is not None and self._outside_point_wire(
+                source, target, dependency, transform, viewport
+            ):
+                continue
+            if {dependency.source_id, dependency.target_id} & self._preview_changed:
+                curve = self._curve(source, target, dependency, transform)
+                if curve is None:
+                    continue
+                curve.route = smooth_wire(
+                    Wire(
+                        curve.source, curve.target, curve.source_side, curve.target_side
+                    )
+                )
+            else:
+                curve = replace(
+                    original,
+                    source=translation.map(original.source),
+                    target=translation.map(original.target),
+                    route=translation.map(original.route),
+                )
+            curves.append(curve)
+        self._preview_cache = curves
+        self._preview_transform = QTransform(transform)
+        self._preview_viewport = QRectF(viewport) if viewport is not None else None
+        return curves
+
+    def _outside_point_wire(
+        self,
+        source: EventItem,
+        target: EventItem,
+        dependency: TimelineDependency,
+        transform: QTransform,
+        viewport: QRectF,
+    ) -> bool:
+        """Cull only exact point-to-point wires; uncertain extents remain conservative."""
+        if (
+            dependency.source_endpoint != "start"
+            or dependency.target_endpoint != "start"
+        ):
+            return False
+        for item in (source, target):
+            start = self._display[item.event.id].presentation.start
+            if (
+                start.error
+                or start.possible_start is None
+                or start.possible_start != start.possible_end
+            ):
+                return False
+        rect = (
+            source.deviceTransform(transform)
+            .mapRect(source.boundingRect())
+            .united(target.deviceTransform(transform).mapRect(target.boundingRect()))
+        )
+        # Include full label extents, sockets and the <=160px cubic handles.
+        return not rect.adjusted(-168, -80, 168, 80).intersects(viewport)
 
     def curves(
         self,
@@ -263,6 +364,10 @@ class TimelineDependencyLayer:
         prepare: bool = True,
     ) -> tuple[list[DependencyCurve], QPainterPath]:
         """Use current copy positions while preserving cached full-world identity."""
+        if self.preview_active:
+            return self._preview_curves(
+                painter.worldTransform(), viewport
+            ), QPainterPath()
         visible: dict[str, list[EventItem]] = defaultdict(list)
         mask = QPainterPath()
         mask.setFillRule(Qt.FillRule.WindingFill)
@@ -275,6 +380,7 @@ class TimelineDependencyLayer:
                 for rect in snapshot.labels(item):
                     mask.addRect(device.mapRect(rect))
         curves = []
+        pairs = []
         for dependency in self.dependencies:
             sources = visible.get(dependency.source_id, [])
             for target in visible.get(dependency.target_id, []) if sources else []:
@@ -291,6 +397,7 @@ class TimelineDependencyLayer:
                 curve = self._curve(source, target, dependency, transform)
                 if curve is not None:
                     curves.append(curve)
+                    pairs.append((source, target, curve))
         curves.sort(
             key=lambda curve: (
                 curve.source.y(),
@@ -310,6 +417,8 @@ class TimelineDependencyLayer:
             for rect in self._display[item.event.id].obstacles(item)
         ]
         self._route(curves, obstacles, transform, minimum_y, prepare=prepare)
+        self._settled_pairs = pairs
+        self._settled_transform = QTransform(transform)
         if viewport is not None:
             # Cull completed paths, never competitors in a shared corridor.
             curves = [

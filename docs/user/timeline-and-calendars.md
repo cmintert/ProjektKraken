@@ -45,8 +45,9 @@ Current Time** takes you back.
    use the same submenu under **More actions**.
 2. Keep **Adjust offset** to move a followed Event while its source stays fixed.
    Choose **Move chain** to move the connected network, including other branches.
-3. Drag the Event's marker horizontally. The preview shows calculated dates and
-   offsets. Press **Escape** to cancel.
+3. Drag the Event's marker horizontally. A dashed outline follows the pointer
+   immediately with **Pending calculation**. Calculated markers, dates and
+   offsets catch up separately. Press **Escape** to cancel.
 4. Release the mouse and check **Review date changes**, including affected map
    uses. Choose **Apply changes** to save the move as one undoable operation,
    or **Cancel** to keep the saved dates.
@@ -68,6 +69,12 @@ or conflicts with chronology is rejected. Calendar-offset dragging requires an
 exact source date. Use the Event inspector for deliberate changes that dragging
 cannot represent. Neither mode detaches a dependency. **Undo** restores the
 original timing definitions. The drag mode starts at **Adjust offset** each session.
+
+The outline is provisional: its position is not a validated or saved date.
+Connected markers may update progressively while calculation catches up; wires
+use simpler paths during dragging. Release still checks the complete change
+before opening review. Zooming, changing the calendar or grouping, switching
+worlds, or receiving changed saved timing cancels the current preview.
 
 ### Navigation and playhead snapping
 
@@ -600,8 +607,10 @@ add precision to partial event dates or affect playback jumps.
 
 **Drag mode** — Choose **Adjust offset** to keep a followed Event's source fixed,
 or **Move chain** to shift the connected network while retaining its offsets.
-Drag an Event marker to preview the result. Calendar offsets keep their units and
-snap to valid whole months or years. Escape cancels; release opens review before
+Drag an Event marker to preview the result. The **Pending calculation** outline
+follows the pointer while calculated markers catch up; it is not a saved date.
+Calendar offsets keep their units and snap to valid whole months or years.
+Escape cancels; release opens review before
 applying a change. Unsupported or ambiguous moves leave the saved dates intact.
 
 (help-inspect-timeline-show-dependencies)=

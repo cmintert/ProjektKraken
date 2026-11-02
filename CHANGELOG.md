@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-11-01
-**Commit:** 9e6e657e9c1618cd92808d8c6d5fa3ffd77df63e
+**Last Updated:** 2026-11-02
+**Commit:** 347aac9d1f1863f6188f48ca2ae6d87e27829268
 ---
 
 # Changelog
@@ -34,6 +34,12 @@ All notable changes to this project will be documented in this file.
   and links from the manual and import workflow.
 
 ### Fixed
+
+- *(2026-11-01)* **Timeline drag performance (KRT-130)**: Removed preview
+  starvation during continuous movement. Added immediate provisional feedback,
+  cached component previews, bounded background scheduling and incremental
+  presentation. Dragging retains authored timing and full review before Apply;
+  updated Help and native performance evidence distinguish pending positions.
 
 - *(2026-11-01)* **Import/export integrity (KRT-121–126)**: Unified reviewed
   validation and UUID-first identity matching; retained distinct temporal

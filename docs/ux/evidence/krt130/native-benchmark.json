@@ -1,0 +1,407 @@
+{
+  "platform": "windows",
+  "python": "3.13.14",
+  "machine": "AMD64",
+  "fixture": "disposable linear dependencies, 20-day spacing, all wires, two tags plus All events when grouped",
+  "measurement": "Qt input dispatch and paint dispatch; not desktop compositor or independent human UX evidence",
+  "results": [
+    {
+      "events": 100,
+      "component": 2,
+      "grouped": false,
+      "mode": "offset",
+      "pointer_updates": 60,
+      "drag_and_outline_visible": true,
+      "previews_during_motion": 19,
+      "pending_targets_max": 1,
+      "worker_threads": 1,
+      "input_dispatch": {
+        "samples": 60,
+        "median_ms": 0.13,
+        "p95_ms": 0.423,
+        "max_ms": 0.507
+      },
+      "input_to_paint": {
+        "samples": 60,
+        "median_ms": 0.304,
+        "p95_ms": 0.835,
+        "max_ms": 1.039
+      },
+      "frame_intervals": {
+        "samples": 65,
+        "median_ms": 17.24,
+        "p95_ms": 18.175,
+        "max_ms": 18.319
+      },
+      "heartbeat_intervals": {
+        "samples": 111,
+        "median_ms": 10.513,
+        "p95_ms": 16.761,
+        "max_ms": 17.718
+      },
+      "presentation": {
+        "samples": 20,
+        "median_ms": 0.312,
+        "p95_ms": 0.521,
+        "max_ms": 0.521
+      },
+      "presentation_slices": {
+        "samples": 20,
+        "median_ms": 0.29,
+        "p95_ms": 0.491,
+        "max_ms": 0.491
+      },
+      "provisional_routing": {
+        "samples": 68,
+        "median_ms": 0.003,
+        "p95_ms": 0.166,
+        "max_ms": 0.188
+      },
+      "obstacle_route_calls_during_drag": 0,
+      "calculation": {
+        "samples": 20,
+        "median_ms": 0.189,
+        "p95_ms": 0.29,
+        "max_ms": 0.29
+      },
+      "solver_scope": [
+        2
+      ],
+      "errors": [],
+      "authored_sources_unchanged": true
+    },
+    {
+      "events": 100,
+      "component": 100,
+      "grouped": true,
+      "mode": "chain",
+      "pointer_updates": 60,
+      "drag_and_outline_visible": true,
+      "previews_during_motion": 16,
+      "pending_targets_max": 1,
+      "worker_threads": 1,
+      "input_dispatch": {
+        "samples": 60,
+        "median_ms": 0.11,
+        "p95_ms": 0.83,
+        "max_ms": 1.064
+      },
+      "input_to_paint": {
+        "samples": 60,
+        "median_ms": 4.647,
+        "p95_ms": 6.366,
+        "max_ms": 10.791
+      },
+      "frame_intervals": {
+        "samples": 59,
+        "median_ms": 17.158,
+        "p95_ms": 24.559,
+        "max_ms": 26.59
+      },
+      "heartbeat_intervals": {
+        "samples": 108,
+        "median_ms": 9.007,
+        "p95_ms": 17.669,
+        "max_ms": 19.971
+      },
+      "presentation": {
+        "samples": 17,
+        "median_ms": 0.092,
+        "p95_ms": 4.193,
+        "max_ms": 4.193
+      },
+      "presentation_slices": {
+        "samples": 65,
+        "median_ms": 4.207,
+        "p95_ms": 4.399,
+        "max_ms": 4.79
+      },
+      "provisional_routing": {
+        "samples": 65,
+        "median_ms": 1.753,
+        "p95_ms": 2.722,
+        "max_ms": 2.95
+      },
+      "obstacle_route_calls_during_drag": 0,
+      "calculation": {
+        "samples": 17,
+        "median_ms": 3.561,
+        "p95_ms": 4.854,
+        "max_ms": 4.854
+      },
+      "solver_scope": [
+        100
+      ],
+      "errors": [],
+      "authored_sources_unchanged": true
+    },
+    {
+      "events": 500,
+      "component": 2,
+      "grouped": false,
+      "mode": "offset",
+      "pointer_updates": 60,
+      "drag_and_outline_visible": true,
+      "previews_during_motion": 20,
+      "pending_targets_max": 1,
+      "worker_threads": 1,
+      "input_dispatch": {
+        "samples": 60,
+        "median_ms": 0.129,
+        "p95_ms": 0.423,
+        "max_ms": 0.518
+      },
+      "input_to_paint": {
+        "samples": 60,
+        "median_ms": 0.287,
+        "p95_ms": 0.886,
+        "max_ms": 1.171
+      },
+      "frame_intervals": {
+        "samples": 65,
+        "median_ms": 17.428,
+        "p95_ms": 18.258,
+        "max_ms": 19.106
+      },
+      "heartbeat_intervals": {
+        "samples": 109,
+        "median_ms": 10.474,
+        "p95_ms": 18.088,
+        "max_ms": 18.834
+      },
+      "presentation": {
+        "samples": 20,
+        "median_ms": 0.305,
+        "p95_ms": 0.718,
+        "max_ms": 0.718
+      },
+      "presentation_slices": {
+        "samples": 20,
+        "median_ms": 0.284,
+        "p95_ms": 0.682,
+        "max_ms": 0.682
+      },
+      "provisional_routing": {
+        "samples": 68,
+        "median_ms": 0.003,
+        "p95_ms": 0.184,
+        "max_ms": 2.636
+      },
+      "obstacle_route_calls_during_drag": 0,
+      "calculation": {
+        "samples": 20,
+        "median_ms": 0.188,
+        "p95_ms": 0.335,
+        "max_ms": 0.335
+      },
+      "solver_scope": [
+        2
+      ],
+      "errors": [],
+      "authored_sources_unchanged": true
+    },
+    {
+      "events": 500,
+      "component": 100,
+      "grouped": true,
+      "mode": "chain",
+      "pointer_updates": 60,
+      "drag_and_outline_visible": true,
+      "previews_during_motion": 18,
+      "pending_targets_max": 1,
+      "worker_threads": 1,
+      "input_dispatch": {
+        "samples": 60,
+        "median_ms": 0.089,
+        "p95_ms": 0.491,
+        "max_ms": 5.191
+      },
+      "input_to_paint": {
+        "samples": 60,
+        "median_ms": 4.62,
+        "p95_ms": 5.919,
+        "max_ms": 24.237
+      },
+      "frame_intervals": {
+        "samples": 62,
+        "median_ms": 17.211,
+        "p95_ms": 23.451,
+        "max_ms": 26.503
+      },
+      "heartbeat_intervals": {
+        "samples": 104,
+        "median_ms": 10.348,
+        "p95_ms": 17.177,
+        "max_ms": 22.015
+      },
+      "presentation": {
+        "samples": 19,
+        "median_ms": 0.08,
+        "p95_ms": 4.571,
+        "max_ms": 4.571
+      },
+      "presentation_slices": {
+        "samples": 67,
+        "median_ms": 4.244,
+        "p95_ms": 4.621,
+        "max_ms": 6.021
+      },
+      "provisional_routing": {
+        "samples": 68,
+        "median_ms": 1.615,
+        "p95_ms": 2.781,
+        "max_ms": 3.108
+      },
+      "obstacle_route_calls_during_drag": 0,
+      "calculation": {
+        "samples": 19,
+        "median_ms": 3.662,
+        "p95_ms": 4.833,
+        "max_ms": 4.833
+      },
+      "solver_scope": [
+        100
+      ],
+      "errors": [],
+      "authored_sources_unchanged": true
+    },
+    {
+      "events": 2000,
+      "component": 2,
+      "grouped": false,
+      "mode": "offset",
+      "pointer_updates": 60,
+      "drag_and_outline_visible": true,
+      "previews_during_motion": 19,
+      "pending_targets_max": 1,
+      "worker_threads": 1,
+      "input_dispatch": {
+        "samples": 60,
+        "median_ms": 0.155,
+        "p95_ms": 0.454,
+        "max_ms": 0.543
+      },
+      "input_to_paint": {
+        "samples": 60,
+        "median_ms": 0.48,
+        "p95_ms": 1.197,
+        "max_ms": 17.159
+      },
+      "frame_intervals": {
+        "samples": 65,
+        "median_ms": 16.966,
+        "p95_ms": 18.136,
+        "max_ms": 18.365
+      },
+      "heartbeat_intervals": {
+        "samples": 107,
+        "median_ms": 10.223,
+        "p95_ms": 16.363,
+        "max_ms": 17.59
+      },
+      "presentation": {
+        "samples": 20,
+        "median_ms": 0.377,
+        "p95_ms": 0.569,
+        "max_ms": 0.569
+      },
+      "presentation_slices": {
+        "samples": 20,
+        "median_ms": 0.354,
+        "p95_ms": 0.545,
+        "max_ms": 0.545
+      },
+      "provisional_routing": {
+        "samples": 68,
+        "median_ms": 0.004,
+        "p95_ms": 0.191,
+        "max_ms": 0.209
+      },
+      "obstacle_route_calls_during_drag": 0,
+      "calculation": {
+        "samples": 20,
+        "median_ms": 0.189,
+        "p95_ms": 0.344,
+        "max_ms": 0.344
+      },
+      "solver_scope": [
+        2
+      ],
+      "errors": [],
+      "authored_sources_unchanged": true
+    },
+    {
+      "events": 2000,
+      "component": 500,
+      "grouped": true,
+      "mode": "chain",
+      "pointer_updates": 60,
+      "drag_and_outline_visible": true,
+      "previews_during_motion": 19,
+      "pending_targets_max": 1,
+      "worker_threads": 1,
+      "input_dispatch": {
+        "samples": 60,
+        "median_ms": 0.106,
+        "p95_ms": 16.457,
+        "max_ms": 16.743
+      },
+      "input_to_paint": {
+        "samples": 60,
+        "median_ms": 6.625,
+        "p95_ms": 23.028,
+        "max_ms": 52.695
+      },
+      "frame_intervals": {
+        "samples": 59,
+        "median_ms": 26.008,
+        "p95_ms": 44.691,
+        "max_ms": 46.576
+      },
+      "heartbeat_intervals": {
+        "samples": 58,
+        "median_ms": 28.244,
+        "p95_ms": 42.529,
+        "max_ms": 46.626
+      },
+      "presentation": {
+        "samples": 20,
+        "median_ms": 0.522,
+        "p95_ms": 4.522,
+        "max_ms": 4.522
+      },
+      "presentation_slices": {
+        "samples": 90,
+        "median_ms": 4.443,
+        "p95_ms": 11.866,
+        "max_ms": 21.644
+      },
+      "provisional_routing": {
+        "samples": 66,
+        "median_ms": 7.177,
+        "p95_ms": 9.015,
+        "max_ms": 10.312
+      },
+      "obstacle_route_calls_during_drag": 0,
+      "calculation": {
+        "samples": 20,
+        "median_ms": 18.18,
+        "p95_ms": 19.515,
+        "max_ms": 19.515
+      },
+      "solver_scope": [
+        500
+      ],
+      "errors": [],
+      "authored_sources_unchanged": true
+    }
+  ],
+  "qt_version": "6.10.1",
+  "pyside_version": "6.10.1",
+  "viewport_fixture_size": [
+    1100,
+    600
+  ],
+  "layout_note": "Layout settled before measurement; fixture uses synchronous layout setup.",
+  "source_manifest": "source-manifest.json"
+}

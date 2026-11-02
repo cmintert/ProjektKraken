@@ -4,6 +4,7 @@ Provides the EventItem class for rendering individual events on the timeline.
 """
 
 import logging
+import weakref
 from collections.abc import Callable
 from typing import Any, Optional
 
@@ -16,6 +17,7 @@ from PySide6.QtGui import (
     QPen,
 )
 from PySide6.QtWidgets import (
+    QApplication,
     QGraphicsItem,
     QGraphicsSceneMouseEvent,
     QStyleOptionGraphicsItem,
@@ -62,6 +64,14 @@ class EventItem(QGraphicsItem):
 
     # Class-level calendar converter (shared across all event items)
     _calendar_converter: CalendarConverter | None = None
+    _calendar_revision = 0
+    _font_revision = 0
+    _font_app: weakref.ReferenceType[QApplication] | None = None
+
+    @classmethod
+    def _font_changed(cls, _font: object) -> None:
+        """Invalidate shared measurement keys without per-item Qt subscriptions."""
+        cls._font_revision += 1
 
     @classmethod
     def get_event_height(cls, event: Event) -> int:
@@ -87,6 +97,7 @@ class EventItem(QGraphicsItem):
     def set_calendar_converter(cls, converter: CalendarConverter | None) -> None:
         """Sets the calendar converter for date formatting."""
         cls._calendar_converter = converter
+        cls._calendar_revision += 1
 
     def __init__(self, event: Event, scale_factor: float = 10.0) -> None:
         """Initializes an EventBlock.
@@ -98,8 +109,17 @@ class EventItem(QGraphicsItem):
 
         """
         super().__init__()
+        app = QApplication.instance()
+        if isinstance(app, QApplication) and (
+            self._font_app is None or self._font_app() is not app
+        ):
+            EventItem._font_app = weakref.ref(app)
+            app.fontChanged.connect(EventItem._font_changed)
         self.event = event
         self.scale_factor = scale_factor
+        self._layout_key: tuple[object, ...] | None = None
+        self._layout_cache: TimelineItemLayout | None = None
+        self._layout_metadata: object = None
 
         self.base_color = QColor()
         self._text_color = QColor()
@@ -130,7 +150,7 @@ class EventItem(QGraphicsItem):
 
         # Callback for when drag completes: fn(event_id, new_lore_date)
         self.on_drag_complete: Callable[[str, float], None] | None = None
-        self.on_drag_start: Callable[[str], None] | None = None
+        self.on_drag_start: Callable[[str, float], None] | None = None
         self.on_drag_preview: Callable[[str, float], None] | None = None
 
         # Track if we're currently dragging
@@ -154,6 +174,7 @@ class EventItem(QGraphicsItem):
             theme: The active theme data emitted by :class:`ThemeManager`.
 
         """
+        self._layout_key = None
         self.base_color = QColor(StyleHelper.get_event_color())
         self._text_color = QColor(theme["text_main"])
         self._secondary_text_color = QColor(theme["supporting_caption"])
@@ -210,6 +231,13 @@ class EventItem(QGraphicsItem):
         self.setPos(event.require_date() * self.scale_factor, self.y())
         self._update_temporal_tooltip()
 
+    def set_preview_event(self, event: Event) -> None:
+        """Change calculated geometry without theme or tooltip reconstruction."""
+        self.prepareGeometryChange()
+        self.event = event
+        self.setPos(event.require_date() * self.scale_factor, self.y())
+        self.update()
+
     def _update_temporal_tooltip(self) -> None:
         display = event_temporal_display(self.event, self._calendar_converter)
         self.setToolTip(
@@ -239,10 +267,28 @@ class EventItem(QGraphicsItem):
 
     def _layout(self) -> TimelineItemLayout:
         """Return the same measured layout used by painting and lane packing."""
-        presentation = event_temporal_presentation(self.event, self._calendar_converter)
-        return timeline_item_layout(
-            presentation, self.event.name, self.scale_factor * self._zoom_level
+        metadata = self.event.attributes.get("_temporal_v2")
+        key = (
+            self.event.name,
+            self.event.lore_date,
+            self.event.lore_duration,
+            id(metadata),
+            self.scale_factor,
+            self._zoom_level,
+            self._calendar_revision,
+            self._font_revision,
         )
+        if key != self._layout_key or self._layout_cache is None:
+            presentation = event_temporal_presentation(
+                self.event, self._calendar_converter
+            )
+            self._layout_cache = timeline_item_layout(
+                presentation, self.event.name, self.scale_factor * self._zoom_level
+            )
+            self._layout_key = key
+            # Keep the identity alive until the cache is replaced; ids cannot be reused.
+            self._layout_metadata = metadata
+        return self._layout_cache
 
     def contains_occurrence_anchor(self, local_point: QPointF) -> bool:
         """Identify painted occurrence marks independently of a playhead hit area."""
@@ -276,7 +322,7 @@ class EventItem(QGraphicsItem):
 
         """
         if event.button() == Qt.MouseButton.LeftButton and self.on_drag_start:
-            self.on_drag_start(self.event.id)
+            self.on_drag_start(self.event.id, event.scenePos().x())
         super().mousePressEvent(event)
         # Mark that user initiated a drag - used by itemChange to know
         # when to apply constraints vs allowing programmatic moves

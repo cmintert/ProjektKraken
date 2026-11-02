@@ -552,3 +552,28 @@ def test_entity_context_projection_has_no_ui_or_mutation_dependencies():
             )
             for module in modules
         )
+
+
+def test_timeline_preview_calculation_has_no_ui_or_persistence_dependencies():
+    for relative in (
+        "services/event_timing/preview.py",
+        "services/event_timing/affine_preview.py",
+        "services/event_timing/preview_worker.py",
+    ):
+        modules = {module for _, module in _imported_modules(_SOURCE_ROOT / relative)}
+        assert not any(
+            module.startswith(
+                (
+                    "src.gui",
+                    "src.app",
+                    "src.commands",
+                    "src.services.db_service",
+                    "src.services.event_timing.store",
+                    "PySide6.QtWidgets",
+                    "PySide6.QtGui",
+                )
+            )
+            for module in modules
+        )
+        if not relative.endswith("preview_worker.py"):
+            assert not any(module.startswith("PySide6") for module in modules)

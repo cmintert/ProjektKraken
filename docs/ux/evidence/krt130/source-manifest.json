@@ -1,0 +1,62 @@
+{
+  "base_commit": "347aac9d1f1863f6188f48ca2ae6d87e27829268",
+  "state": "uncommitted KRT-130 worktree",
+  "python_sources": {
+    "src/app/coordinators/timeline_movement_coordinator.py": {
+      "sha256": "82e6914f40707e85b1b87c03285b1d2bcfab35227985c33192625cd6cbedce53",
+      "ast_sha256": "027034a750dee9be89f692478c487479b672dfa14bbe140d7d868b912533bf2b"
+    },
+    "src/gui/widgets/timeline/dependency_layer.py": {
+      "sha256": "bd9bdeaff832b08445478a83d1af668a876bc3962905a8f760f2e8c7beb657ca",
+      "ast_sha256": "5494950a1175deb7fe3c94378d4a6267bde2b6b5c0bf35029d5e1112b6ade0bf"
+    },
+    "src/gui/widgets/timeline/drag_outline.py": {
+      "sha256": "c50c2bc307ac4e28a82cc2ffb9f5b4be57b28934f4007ccd17893586f83bc7c8",
+      "ast_sha256": "7b167725663e0b648185d05207d4a427cf193953252f133d73303679c48a598c"
+    },
+    "src/gui/widgets/timeline/event_item.py": {
+      "sha256": "5e13e6aeadb605dbaf06427dd2dfe6c248dff25495c3fcc010327b362689323c",
+      "ast_sha256": "7a9c62b56382d1109e52337bab5f42f8e647e380dcb8c2747a1b308933252220"
+    },
+    "src/gui/widgets/timeline/movement.py": {
+      "sha256": "ee927fea2427ef42d87bc4606b50e56cb93b7ece4877c996ee99902abae009a6",
+      "ast_sha256": "26387eda00c98c6dbce332a0d7e461714e0d805357760a1674e59e599943e27f"
+    },
+    "src/gui/widgets/timeline/timeline_view.py": {
+      "sha256": "33f074d3089a5bacc4c452b0d06b16e7013734b72f55acab1e5ff90f09e5b487",
+      "ast_sha256": "5d92d5ea6c96070939c7cef7d0213c2dc2ec0c9f24c6a6491bc8551fddfc79de"
+    },
+    "src/services/event_timing/affine_preview.py": {
+      "sha256": "4145158716e34568bb34ee129c654775fb3bac66005cf869fedef3472a7aa0e1",
+      "ast_sha256": "cfd5d73402a7d332326a4823d52d336f4bf31238d433ce875da6fbace67374a9"
+    },
+    "src/services/event_timing/movement.py": {
+      "sha256": "a3071d4287be20c5287e175d0b0df8989db0caf68270961cc70af21852654d73",
+      "ast_sha256": "fb5a7e60226b337bcb1e53cada968985bf7c6b9f27aaba6028234cc530f84a5a"
+    },
+    "src/services/event_timing/preview.py": {
+      "sha256": "77b7cd1e2bd577ff719edb2d4fe9a0a47a9da78426da9b7117a363ab478f95b0",
+      "ast_sha256": "3f173cd486760058779144bd2145067017930d47bf42e764d93ad79805312795"
+    },
+    "src/services/event_timing/preview_worker.py": {
+      "sha256": "9edfe32f8347edb56c9aa7052a333c83fee1a79a944f4770df2f79d299127203",
+      "ast_sha256": "f56559a30bd5e10762576b52e1d17b09002e7f2e7382fc30b7b8f1a380d4130d"
+    },
+    "tests/manual/krt130_drag_benchmark.py": {
+      "sha256": "6946fafc2839ff4a87a8a523567a0daffe35611f0b1ed4b643b8590c0410ccb7",
+      "ast_sha256": "1945d7fb83a60accc278964060ebcf9c477d80e7f854d171c814a3691c093f2d"
+    },
+    "tests/unit/services/test_timeline_preview.py": {
+      "sha256": "85beb596d4803f443c51937258256f6e00eb9ea75083b88c67130affe2ff4865",
+      "ast_sha256": "12b90a7767d449f9e65dfb0a059134a77246d5f6ec3fdc6a02fbb24508d9f727"
+    },
+    "tests/unit/test_dependency_direction.py": {
+      "sha256": "bf2ffe542cacf894f83e594c2df236c25de7e2ed9823c3f45f8d41fa50eda2b0",
+      "ast_sha256": "042ac87bc30cac04e9a858f1560fee879cdf1fc19a55a1fc7056c1d97fa5c8ab"
+    },
+    "tests/unit/test_timeline_movement_gui.py": {
+      "sha256": "816ee712485e75d3d78619beade05139e05a0dd05d1c22611dcb11e767c285c3",
+      "ast_sha256": "9883efcc98b91c52ad076b9249fd731713de12b49ca326268cc5d9d1cf784b75"
+    }
+  }
+}

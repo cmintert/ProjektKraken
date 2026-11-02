@@ -461,6 +461,8 @@ class TimelineView(QGraphicsView):
     @Slot()
     def _schedule_dependency_routes(self) -> None:
         """Coalesce geometry changes; drawing never starts a cold routing batch."""
+        if self._dependencies.preview_active:
+            return
         if (
             self._dependencies.visible_dependencies()
             and not self._dependency_route_timer.isActive()
@@ -470,6 +472,8 @@ class TimelineView(QGraphicsView):
     @Slot()
     def _prepare_dependency_routes(self) -> None:
         """Measure and cache the settled generation outside the paint callback."""
+        if self._dependencies.preview_active:
+            return
         if not self._dependencies.visible_dependencies() or self._layout_in_progress:
             return
         image = QImage(1, 1, QImage.Format.Format_ARGB32)
@@ -693,6 +697,7 @@ class TimelineView(QGraphicsView):
             converter (CalendarConverter): Converter instance or None.
 
         """
+        self.movement.cancel()
         self._ruler.set_calendar_converter(converter)
         self._dependencies.set_display_events(self.events, converter)
         self._layout_generation += 1
@@ -1644,6 +1649,13 @@ class TimelineView(QGraphicsView):
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         """Handles mouse movement for playhead dragging and hover states."""
+        if (
+            self.movement.intent is not None
+            and event.buttons() & Qt.MouseButton.LeftButton
+        ):
+            self.movement.move_pointer(self.mapToScene(event.position().toPoint()).x())
+            event.accept()
+            return
         try:
             pos = event.position().toPoint()
         except AttributeError:
@@ -1771,6 +1783,7 @@ class TimelineView(QGraphicsView):
             zoom_level: The zoom level to apply.
 
         """
+        self.movement.cancel()
         center_date = self._visible_center_date()
         self.setTransform(QTransform().scale(zoom_level, 1.0))
         self._current_zoom = zoom_level
@@ -1973,6 +1986,7 @@ class TimelineView(QGraphicsView):
             mode: Grouping mode ("DUPLICATE" or "FIRST_MATCH")
 
         """
+        self.movement.cancel()
         if self._band_manager is None:
             logger.warning("Cannot set grouping: band manager not initialized")
             return
