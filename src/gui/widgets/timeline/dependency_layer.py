@@ -78,7 +78,6 @@ class _DisplaySnapshot:
                 key: _caption_rects(
                     self.layout(item),
                     item.display_name,
-                    self.presentation.presence.caption,
                 )
             }
         return self.text_masks[key]
@@ -99,46 +98,36 @@ class _DisplaySnapshot:
 def _port(
     item: EventItem, snapshot: _DisplaySnapshot, endpoint: Endpoint
 ) -> QPointF | None:
-    """Use endpoint glyphs or presence geometry, never a detached length measure."""
+    """Retain semantic endpoint anchors on the single visible row."""
     presentation = snapshot.presentation
     display = presentation.start if endpoint == "start" else presentation.end
     if display is not None and display.error:
         return None
     layout = snapshot.layout(item)
     row = layout.rows[0]
-    x, y = row.geometry.marker_x, row.y
-    if row.geometry.mode == "duration":
-        x = row.geometry.left
-    if endpoint == "end":
-        end_row = next((row for row in layout.rows if row.label == "Ends"), None)
-        if end_row is not None:
-            x, y = end_row.geometry.marker_x, end_row.y
-        elif presentation.authored_duration is not None:
-            if presentation.presence.error:
-                return None
-            # The presence envelope has time coordinates; the measure does not.
-            row = layout.rows[-1]
-            x, y = row.geometry.right, row.y
-        else:
-            return None
-    return QPointF(x, y)
+    if display is not None:
+        coordinate = display.anchor
+    elif presentation.authored_duration is not None and not presentation.presence.error:
+        coordinate = presentation.start.anchor + presentation.authored_duration
+    else:
+        return None
+    scale = item.scale_factor * item._zoom_level
+    x = (coordinate - presentation.presence.anchor) * scale
+    return QPointF(x, row.y)
 
 
 def _endpoint_side(
     snapshot: _DisplaySnapshot, endpoint: Endpoint, preferred: float
 ) -> float:
     """A duration's start and end retain their left/right time identity."""
-    if (
-        not snapshot.presentation.layered
-        and snapshot.presentation.presence.kind == "duration"
-    ):
+    if snapshot.presentation.presence.kind == "duration":
         return -1.0 if endpoint == "start" else 1.0
     if endpoint == "end" and snapshot.presentation.authored_duration is not None:
         return 1.0
     return preferred
 
 
-def _caption_rects(layout: TimelineItemLayout, name: str, text: str) -> list[QRectF]:
+def _caption_rects(layout: TimelineItemLayout, name: str) -> list[QRectF]:
     """Text masks using the same fonts and strings as EventItem."""
     title = QFont()
     title.setPointSize(10)
@@ -147,10 +136,7 @@ def _caption_rects(layout: TimelineItemLayout, name: str, text: str) -> list[QRe
     caption.setPointSize(8)
     caption.setBold(False)
     rects = []
-    for y, font, value in (
-        (layout.name_y, title, name),
-        (layout.caption_y, caption, text),
-    ):
+    for y, font, value in ((layout.name_y, title, name),):
         metrics = QFontMetricsF(font)
         rects.append(
             QRectF(
@@ -516,8 +502,8 @@ class TimelineDependencyLayer:
         source_bounds = source_transform.mapRect(first.row_bounds(source, start.y()))
         target_bounds = target_transform.mapRect(second.row_bounds(target, end.y()))
         # A socket belongs to the visible event body, like an ordinary node editor.
-        # The endpoint row still identifies start versus end; duration measures
-        # remain excluded by _port(). No wire starts inside an opaque text label.
+        # Start/end sides retain identity on the shared row. Semantic anchors
+        # remain in _port(); no wire starts inside an opaque text label.
         start = source_transform.map(start)
         end = target_transform.map(end)
         start.setX(

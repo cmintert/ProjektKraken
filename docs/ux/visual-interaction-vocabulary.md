@@ -117,6 +117,9 @@ colors come from themes. Rendered evidence establishes presentation, not human
 task-time improvement. KA-04/KA-20 remain relevant to empty-world comparisons.
 ## Timeline temporal grammar — 2026-10-07
 
+Revised 2026-11-03 (KRT-137): reduce repeated timing information to one visual
+per ordinary Event while preserving authored meaning and existing hover details.
+
 KRT-50/KRT-57/KRT-58 extend this vocabulary to the world timeline.
 This does not change stored temporal assertions or the authoring interaction contract.
 
@@ -124,13 +127,13 @@ This does not change stored temporal assertions or the authoring interaction con
   finite precision/occurrence windows use hollow anchors and caps; unbounded
   approximate dates use uncapped halos; one-sided assertions retain their hard
   cap and open direction. Hollow anchors are layout positions, not exact dates.
-- For uncertain starts with a known duration, Starts, Duration and Possible span
-  remain visible together. Duration is a detached length measure on a neutral
-  surface; its horizontal placement does not assert a start/end date. Below six
-  pixels it uses a broken compact measure and keeps the authored value visible.
+- Ordinary timeline Events show their name and one occurrence mark or span bar.
+  Uncertain starts with a duration and independently asserted endpoints show
+  only the compact unlabeled span bar; separate Starts, Ends and Duration rows
+  are omitted. Existing hover information retains the authored timing details.
 - Possible span is a thin hatched possible-presence envelope with a solid
   guaranteed-presence core. It must not serve as the duration-length measure.
-  Independently asserted endpoints show Starts, Ends and Possible span; their
+  Independently asserted endpoints retain their authored precision; their
   representative difference is not an authored fixed duration.
 - Valid unbounded timing retains its occurrence grammar and explains that its
   presence span is not bounded. Question-mark marks indicate actual unresolved
@@ -144,9 +147,10 @@ This does not change stored temporal assertions or the authoring interaction con
 - Snapping and event-directed navigation may use a representative position.
   Uncertain targets receive a disclosure after navigation safeguards accept;
   canceled/failed navigation retains the previous accepted context.
-- Date captions use supporting_caption at full opacity. Definitely future
-  occurrences show Not yet without dimming their names/dates. The existing
-  past-start flag does not assert that a duration has finished.
+- Ordinary Event date captions are omitted; existing hover information remains
+  unchanged. The span bar has no permanent Possible span label or label gutter.
+  Definitely future occurrences show Not yet without dimming their names. The
+  existing past-start flag does not assert that a duration has finished.
 - timeline_viewed_time and timeline_world_time are theme-owned time-identity
   roles, initially mapped to readable neutral text tokens; pattern, handle and
   text supply the distinction. timeline_grid and theme-owned halo/window opacity
@@ -185,9 +189,10 @@ appears only for keyboard focus, matching other timeline marks.
   Events remain part of strand identity, so layout changes do not recolor it.
 - Noninteractive curves meet event sides with horizontal endpoint tangents and
   arrowheads pointing from the source endpoint to the dependent endpoint.
-  Endpoint rows and duration caps retain their temporal meaning. Detached
-  duration measures never serve as endpoint ports; representative uncertain
-  positions remain uncertain. Text, group headers and the ruler are protected.
+  Start/end sides of the single visible span row retain endpoint identity.
+  Logical endpoint anchors retain their temporal meaning and never become the
+  outer uncertainty bounds; representative uncertain positions remain uncertain.
+  Text, group headers and the ruler are protected.
 - Output sockets use actual painted row/text extents rather than reserved label
   width. Prefer a single smooth cubic, with horizontal output/input handles.
   Obstructed routes use deterministic routing points and rounded, separated

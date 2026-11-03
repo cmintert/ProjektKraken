@@ -59,8 +59,8 @@ class EventItem(QGraphicsItem):
     PADDING = 5
 
     # Height constants for lane packing (includes label space)
-    DURATION_EVENT_HEIGHT = 60  # Bar + label + date below
-    POINT_EVENT_HEIGHT = 40  # Diamond + text to right
+    DURATION_EVENT_HEIGHT = 60  # Legacy default for unmeasured lanes
+    POINT_EVENT_HEIGHT = 40
 
     # Class-level calendar converter (shared across all event items)
     _calendar_converter: CalendarConverter | None = None
@@ -85,13 +85,7 @@ class EventItem(QGraphicsItem):
 
         """
         presentation = event_temporal_presentation(event, cls._calendar_converter)
-        if presentation.layered:
-            return timeline_item_layout(presentation, event.name, 1).height
-        return (
-            cls.DURATION_EVENT_HEIGHT
-            if presentation.presence.kind == "duration"
-            else cls.POINT_EVENT_HEIGHT
-        )
+        return timeline_item_layout(presentation, event.name, 1).height
 
     @classmethod
     def set_calendar_converter(cls, converter: CalendarConverter | None) -> None:
@@ -293,7 +287,7 @@ class EventItem(QGraphicsItem):
     def contains_occurrence_anchor(self, local_point: QPointF) -> bool:
         """Identify painted occurrence marks independently of a playhead hit area."""
         for row in self._layout().rows:
-            if row.measure or row.label == "Possible span":
+            if row.measure or row.presence:
                 continue
             half = 8 if row.geometry.mode in {"exact", "unresolved"} else 5
             distance = abs(local_point.x() - row.geometry.marker_x) + abs(
@@ -384,7 +378,7 @@ class EventItem(QGraphicsItem):
         option: QStyleOptionGraphicsItem,
         widget: Optional[QWidget] = None,
     ) -> None:
-        """Render independent occurrence, length and possible presence channels."""
+        """Render one occurrence mark or possible-presence bar and its name."""
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         layout = self._layout()
@@ -408,7 +402,7 @@ class EventItem(QGraphicsItem):
                     row.geometry,
                     color,
                     boundary,
-                    6 if row.label else 12,
+                    6 if row.presence else 12,
                     self.isSelected(),
                 )
             else:
@@ -441,8 +435,7 @@ class EventItem(QGraphicsItem):
             painter.drawText(QPointF(row.geometry.right + 12, row.y + 4), row.value)
 
     def _paint_labels(self, painter: QPainter, layout: TimelineItemLayout) -> None:
-        """Keep authored captions fully readable in every temporal state."""
-        display = event_temporal_display(self.event, self._calendar_converter)
+        """Keep the event name readable; full date wording stays in the tooltip."""
         font = painter.font()
         font.setPointSize(10)
         font.setBold(True)
@@ -450,11 +443,6 @@ class EventItem(QGraphicsItem):
         painter.setPen(self._text_color)
         title = self.display_name
         painter.drawText(QPointF(layout.label_x, layout.name_y), title)
-        font.setBold(False)
-        font.setPointSize(8)
-        painter.setFont(font)
-        painter.setPen(self._secondary_text_color)
-        painter.drawText(QPointF(layout.label_x, layout.caption_y), display.caption)
 
     @property
     def display_name(self) -> str:

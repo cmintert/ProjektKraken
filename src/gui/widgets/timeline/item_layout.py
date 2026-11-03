@@ -9,12 +9,10 @@ from PySide6.QtGui import QFont, QFontMetricsF
 from src.core.temporal_display import TemporalDisplay
 from src.core.temporal_presentation import TemporalPresentation
 from src.gui.widgets.timeline.temporal_geometry import (
-    MIN_DURATION_PX,
     TemporalGeometry,
     project_temporal_geometry,
 )
 
-ROW_SPACING = 26.0
 LABEL_GUTTER = 92.0
 
 
@@ -27,6 +25,7 @@ class TemporalRow:
     y: float
     measure: bool = False
     value: str = ""
+    presence: bool = False
 
     @property
     def rect(self) -> QRectF:
@@ -49,7 +48,6 @@ class TimelineItemLayout:
     bounds: QRectF
     label_x: float
     name_y: float
-    caption_y: float
 
     @property
     def height(self) -> int:
@@ -74,23 +72,7 @@ def occurrence_geometry(
 def _layered_rows(
     presentation: TemporalPresentation, scale: float
 ) -> tuple[TemporalRow, ...]:
-    start = occurrence_geometry(presentation.start, presentation.presence.anchor, scale)
-    rows = [TemporalRow("Starts", start, 0)]
-    if presentation.end is not None:
-        end = occurrence_geometry(presentation.end, presentation.presence.anchor, scale)
-        rows.append(TemporalRow("Ends", end, ROW_SPACING))
-    elif presentation.authored_duration is not None:
-        width = presentation.authored_duration * scale
-        value = f"{presentation.authored_duration:g} days"
-        # The measure has a neutral surface and is deliberately detached in X.
-        left = start.left
-        geometry = TemporalGeometry(
-            "duration",
-            left,
-            left + max(width, MIN_DURATION_PX),
-            compact=width < MIN_DURATION_PX,
-        )
-        rows.append(TemporalRow("Duration", geometry, ROW_SPACING, True, value))
+    """Keep one presence row, falling back to occurrence for unbounded spans."""
     presence = project_temporal_geometry(presentation.presence, scale)
     value = ""
     if presence.mode == "unresolved":
@@ -98,8 +80,7 @@ def _layered_rows(
             presentation.start, presentation.presence.anchor, scale
         )
         value = "Span not bounded"
-    rows.append(TemporalRow("Possible span", presence, ROW_SPACING * 2, value=value))
-    return tuple(rows)
+    return (TemporalRow("", presence, 0, value=value, presence=True),)
 
 
 def timeline_item_layout(
@@ -120,8 +101,7 @@ def timeline_item_layout(
     exact = not presentation.layered and geometry.mode == "exact"
     left = min(row.rect.left() for row in rows)
     x = geometry.label_left if exact else left
-    name_y = -2 if exact else (20 if not presentation.layered else -18)
-    caption_y = 10 if exact else (32 if not presentation.layered else 78)
+    name_y = -2 if exact else -18
     main_font = QFont(font) if font is not None else QFont()
     main_font.setPointSize(10)
     main_font.setBold(True)
@@ -130,15 +110,12 @@ def timeline_item_layout(
     caption_font.setPointSize(8)
     main_metrics = QFontMetricsF(main_font)
     caption_metrics = QFontMetricsF(caption_font)
-    width = max(
-        main_metrics.horizontalAdvance(name + " · Not yet"),
-        caption_metrics.horizontalAdvance(presentation.presence.caption),
-    )
+    width = main_metrics.horizontalAdvance(name + " · Not yet")
     bounds = QRectF(
         x,
         name_y - main_metrics.ascent(),
         width,
-        caption_y - name_y + main_metrics.height() + 4,
+        main_metrics.height(),
     )
     for row in rows:
         bounds = bounds.united(row.rect)
@@ -156,4 +133,4 @@ def timeline_item_layout(
                     20,
                 )
             )
-    return TimelineItemLayout(rows, bounds.adjusted(-5, -4, 5, 4), x, name_y, caption_y)
+    return TimelineItemLayout(rows, bounds.adjusted(-5, -4, 5, 4), x, name_y)

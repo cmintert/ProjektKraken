@@ -1,6 +1,7 @@
 """Independent temporal channels and accepted viewing-context regressions."""
 
 from copy import deepcopy
+from dataclasses import replace
 from unittest.mock import Mock
 
 import pytest
@@ -89,33 +90,30 @@ def authored(converter, text, duration=0, end=None):
         "between June 1218 and October 1218",
     ],
 )
-def test_duration_length_never_includes_occurrence_uncertainty(calendar, qapp, text):
+def test_single_span_preserves_authored_duration_and_uncertainty(calendar, qapp, text):
     owner = authored(calendar, text, 3)
     before = deepcopy(owner.to_dict())
     presentation = event_temporal_presentation(owner, calendar)
     assert presentation.presence == event_temporal_display(owner, calendar)
     assert owner.to_dict() == before
     layout = timeline_item_layout(presentation, owner.name, 2.4)
-    assert [row.label for row in layout.rows] == ["Starts", "Duration", "Possible span"]
-    assert layout.rows[1].geometry.right - layout.rows[
-        1
-    ].geometry.left == pytest.approx(7.2)
+    assert [row.label for row in layout.rows] == [""]
+    assert layout.rows[0].presence
+    assert presentation.authored_duration == 3
     assert layout.rows[0].geometry.mode != "unresolved"
-    assert layout.rows[2].geometry.mode != "unresolved"
+    if presentation.presence.possible_start is None:
+        assert layout.rows[0].value == "Span not bounded"
+    assert "Duration: 3 days" in EventItem(owner).toolTip()
 
 
-def test_measure_threshold_is_independent_from_year_and_presence_thresholds(
-    calendar, qapp
-):
+def test_presence_threshold_does_not_show_a_separate_duration_measure(calendar, qapp):
     presentation = event_temporal_presentation(authored(calendar, "1218", 3), calendar)
     broad = timeline_item_layout(presentation, "Council", 0.02)
     close = timeline_item_layout(presentation, "Council", 2.4)
-    assert broad.rows[1].geometry.compact
-    assert broad.rows[1].geometry.right - broad.rows[1].geometry.left == 6
-    assert not broad.rows[2].geometry.compact
-    assert not close.rows[1].geometry.compact
-    assert close.rows[0].geometry.right - close.rows[0].geometry.left == 876
-    assert close.rows[2].geometry.right - close.rows[2].geometry.left == pytest.approx(
+    assert len(broad.rows) == len(close.rows) == 1
+    assert not broad.rows[0].geometry.compact
+    assert not close.rows[0].geometry.compact
+    assert close.rows[0].geometry.right - close.rows[0].geometry.left == pytest.approx(
         883.2
     )
 
@@ -126,10 +124,49 @@ def test_independent_endpoints_do_not_invent_an_authored_length(calendar, qapp):
     )
     assert presentation.authored_duration is None
     layout = timeline_item_layout(presentation, "Council", 1.2)
-    assert [r.label for r in layout.rows] == ["Starts", "Ends", "Possible span"]
+    assert [r.label for r in layout.rows] == [""]
+    assert layout.bounds.left() == pytest.approx(layout.rows[0].rect.left() - 5)
     assert all(not row.measure for row in layout.rows)
     assert layout.rows[-1].geometry.certain_left is not None
     assert layout.rows[-1].geometry.certain_right is not None
+
+
+@pytest.mark.parametrize("duration,end", [(0, None), (3, None), (0, "October 1218")])
+def test_date_text_is_hover_only_and_does_not_reserve_layout_space(
+    calendar, qapp, duration, end
+):
+    owner = authored(calendar, "June 1218", duration, end)
+    item = EventItem(owner)
+    tooltip = item.toolTip()
+    presentation = event_temporal_presentation(owner, calendar)
+    layout = item._layout()
+    long_caption = replace(
+        presentation,
+        presence=replace(presentation.presence, caption="Hidden date wording " * 100),
+    )
+    assert timeline_item_layout(long_caption, owner.name, item.scale_factor) == layout
+    painter = Mock()
+    item._paint_labels(painter, layout)
+    assert [call.args[1] for call in painter.drawText.call_args_list] == [owner.name]
+    assert presentation.presence.caption in tooltip
+    item.setSelected(True)
+    item.set_temporal_state(True)
+    item.set_zoom(0.01)
+    item.refresh_theme(ThemeManager().get_theme())
+    assert item.toolTip() == tooltip
+
+
+def test_point_event_has_only_its_name_beside_the_mark(qapp):
+    item = EventItem(Event(name="Landfall", lore_date=-361))
+    layout = item._layout()
+    painter = Mock()
+    item._paint_labels(painter, layout)
+    assert [call.args[1] for call in painter.drawText.call_args_list] == ["Landfall"]
+    assert len(layout.rows) == 1
+    assert layout.rows[0].geometry.mode == "exact"
+    assert layout.height < EventItem.POINT_EVENT_HEIGHT
+    assert EventItem.get_event_height(item.event) == layout.height
+    assert "-361" in item.toolTip()
 
 
 def test_invalid_calendar_still_uses_actual_error_symbol(calendar, qapp):
@@ -142,10 +179,13 @@ def test_invalid_calendar_still_uses_actual_error_symbol(calendar, qapp):
     assert layout.rows[0].geometry.mode == "unresolved"
 
 
-def test_shared_hit_and_packing_extents_cover_all_three_channels(calendar, qapp):
+def test_shared_hit_and_packing_extents_cover_only_visible_content(calendar, qapp):
     owner = authored(calendar, "1218", 800)
     item = EventItem(owner, 1.2)
     before = item.boundingRect()
+    assert len(item._layout().rows) == 1
+    assert before.height() < 65
+    assert not item.shape().contains(QPointF(0, 52))
     for row in item._layout().rows:
         assert item.shape().contains(row.rect.center())
         assert before.contains(row.rect)
@@ -353,7 +393,7 @@ def test_production_group_duplicates_share_zoom_and_refresh_captions(
     assert len(items) == 2
     for item in items:
         first = item._layout().rows[0].geometry
-        assert first.right - first.left == pytest.approx(438)
+        assert first.right - first.left == pytest.approx(441.6)
         assert item._zoom_level == 0.06
     manager = timeline.view._band_manager
     manager._on_collapse_requested("Council")

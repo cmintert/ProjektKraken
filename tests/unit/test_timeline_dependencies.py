@@ -151,7 +151,8 @@ def test_all_endpoint_combinations(view, painting, source_endpoint, target_endpo
     if source_endpoint == "end":
         assert curve.source.x() > 3 * view.scale_factor
     if target_endpoint == "end":
-        assert curve.target.y() > view._event_items["b"].y()
+        assert curve.target.y() == view._event_items["b"].y()
+        assert curve.target_side == 1
     assert [event.to_dict() for event in records] == before
 
 
@@ -389,7 +390,7 @@ def test_settings_center_synchronizes_mode_and_runtime(qtbot):
         bus.contextual_changed.disconnect(changed)
 
 
-def test_uncertain_duration_end_uses_presence_not_detached_measure(view, painting):
+def test_uncertain_duration_end_uses_single_span_and_semantic_anchor(view, painting):
     from src.core.calendar import CalendarConfig, CalendarConverter
     from src.core.date_parser import DateParser
 
@@ -410,15 +411,51 @@ def test_uncertain_duration_end_uses_presence_not_detached_measure(view, paintin
         item = view._event_items["a"]
         layout = item._layout()
         assert curve.source.y() == item.y() + layout.rows[-1].y
-        assert curve.source.y() != item.y() + next(
-            row.y for row in layout.rows if row.measure
-        )
+        assert len(layout.rows) == 1
         assert curve.source.x() == pytest.approx(
             item.x() + layout.rows[-1].geometry.right + 2
         )
+        from src.gui.widgets.timeline.dependency_layer import _port
+
+        snapshot = view._dependencies._display["a"]
+        port = _port(item, snapshot, "end")
+        expected = (
+            (
+                snapshot.presentation.start.anchor
+                + snapshot.presentation.authored_duration
+                - snapshot.presentation.presence.anchor
+            )
+            * item.scale_factor
+            * item._zoom_level
+        )
+        assert port.x() == pytest.approx(expected)
+        assert port.x() != pytest.approx(layout.rows[0].geometry.right)
         assert [event.to_dict() for event in records] == before
     finally:
         EventItem.set_calendar_converter(None)
+
+
+@pytest.mark.parametrize("scale", [0.001, 1.2])
+def test_independent_uncertain_endpoint_ports_keep_authored_anchors(qapp, scale):
+    from src.core.calendar import CalendarConfig, CalendarConverter
+    from src.core.temporal_presentation import event_temporal_presentation
+    from src.gui.widgets.timeline.dependency_layer import _DisplaySnapshot, _port
+    from tests.unit.test_timeline_presentation import authored
+
+    converter = CalendarConverter(CalendarConfig.create_default())
+    owner = authored(converter, "June 1218", end="October 1218")
+    presentation = event_temporal_presentation(owner, converter)
+    snapshot = _DisplaySnapshot(presentation, {})
+    item = EventItem(owner, scale)
+    layout = snapshot.layout(item)
+    for endpoint, display in (("start", presentation.start), ("end", presentation.end)):
+        port = _port(item, snapshot, endpoint)
+        assert port.y() == layout.rows[0].y == 0
+        assert port.x() == pytest.approx(
+            (display.anchor - presentation.presence.anchor) * scale
+        )
+    assert _port(item, snapshot, "end").x() != layout.rows[0].geometry.right
+    assert len(snapshot.labels(item)) == 1  # Only the event name remains.
 
 
 def test_contextual_setting_uses_canonical_local_adapter(qtbot, monkeypatch):

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-03
-**Commit:** 1a8477d6169ee4bd030d68920e557de00aea33a5
+**Commit:** da2b9bf7a800da4271b63957efb2abf12ed94ba9
 ---
 
 # Changelog
@@ -47,6 +47,11 @@ All notable changes to this project will be documented in this file.
   available tags and event counts while preserving selected order, colours,
   keyboard focus and pending edits. Selected tags with no matching events remain
   available rather than silently clearing the grouping.
+
+- *(2026-11-03)* **Timeline readability (KRT-137)**: Events show their name
+  and one mark or unlabeled span bar. Removed separate Starts, Ends and Duration
+  rows and written date captions; existing hover details and authored timing
+  remain unchanged. Compact bounds also govern packing, dragging and wire routing.
 
 - *(2026-11-02)* **Recurring marker selection**: Choosing the sole occurrence
   in an already-open marker menu no longer emits a second Event selection.

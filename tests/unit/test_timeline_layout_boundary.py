@@ -226,8 +226,6 @@ def test_preview_change_invalidates_worker(controlled):
     assert pool.start.call_count == 2
     assert view._layout_worker.request_token != old.request_token
     assert view._event_items["0"].event.name == "A much longer preview"
-    # The date caption can remain wider than either name; equal measured bounds
-    # do not imply that a stale request was accepted.
 
 
 def test_stale_completion_consumes_pending_debounce(controlled):
