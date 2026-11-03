@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-11-02
-**Commit:** 524d6af5a50207cc2ee1af14a0fb61ee71dba69d
+**Last Updated:** 2026-11-03
+**Commit:** 1a8477d6169ee4bd030d68920e557de00aea33a5
 ---
 
 # Changelog
@@ -42,6 +42,11 @@ All notable changes to this project will be documented in this file.
   and links from the manual and import workflow.
 
 ### Fixed
+
+- *(2026-11-03)* **Timeline grouping (KRT-138)**: Settings Center refreshes
+  available tags and event counts while preserving selected order, colours,
+  keyboard focus and pending edits. Selected tags with no matching events remain
+  available rather than silently clearing the grouping.
 
 - *(2026-11-02)* **Recurring marker selection**: Choosing the sole occurrence
   in an already-open marker menu no longer emits a second Event selection.

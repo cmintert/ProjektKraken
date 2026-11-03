@@ -140,6 +140,10 @@ class SettingsCoordinator(QObject):
         self.world_values = deepcopy(values)
         self._capture()
         self.draft.merge(values)
+        if self.view is not None and self.view.world_forms_ready:
+            self.view.grouping.refresh_tags(
+                payload["tags"], self.draft.values.get("world.grouping")
+            )
         if values != previous:
             self.world_changed.emit(deepcopy(values))
         self._install_world_forms()

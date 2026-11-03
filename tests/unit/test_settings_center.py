@@ -394,6 +394,170 @@ def test_populated_tag_world_loads_and_tag_colors_undo_exactly(db_service):
     assert db_service.get_tag_by_name("Northwatch")["color"] == original
 
 
+def _refresh_tag_snapshot(coordinator, db_service):
+    from src.services.settings_snapshot import SettingsSnapshotWorker
+
+    endpoint = SettingsSnapshotWorker(lambda: db_service)
+    endpoint.loaded.connect(coordinator.on_snapshot)
+    endpoint.load({"token": coordinator._token, "database": db_service.db_path})
+
+
+def test_empty_grouping_refreshes_tags_and_applies_with_undo(
+    settings_coordinator, db_service
+):
+    from src.core.events import Event
+
+    coordinator, submitted = settings_coordinator
+    form = coordinator.view.grouping
+    assert form.list_widget.count() == 0
+    event = Event(name="Tagged later", lore_date=1.0)
+    db_service.insert_event(event)
+    db_service.assign_tag_to_event(event.id, "Bestril")
+    _refresh_tag_snapshot(coordinator, db_service)
+    assert form.list_widget.count() == 1
+    widget = form.tag_items["Bestril"][1]
+    assert widget.event_count == 1
+    assert not coordinator.draft.changes()
+    coordinator.open_settings("world.grouping")
+    _refresh_tag_snapshot(coordinator, db_service)
+    assert coordinator.view.grouping is form
+    assert form.tag_items["Bestril"][1] is widget
+    widget.set_checked(True)
+    coordinator.apply()
+    command = submitted[-1]
+    result = command.execute(db_service)
+    assert result.success
+    assert world_snapshot(db_service)["world.grouping"] == {
+        "tag_order": ["Bestril"],
+        "mode": "DUPLICATE",
+    }
+    command.undo(db_service)
+    assert world_snapshot(db_service)["world.grouping"] is None
+
+
+def test_grouping_refresh_preserves_drafts_focus_order_and_counts(
+    settings_coordinator, db_service, qtbot
+):
+    from src.core.events import Event
+
+    coordinator, submitted = settings_coordinator
+    event = Event(name="Multiple tags", lore_date=1.0)
+    db_service.insert_event(event)
+    for name in ("Alpha", "Beta"):
+        db_service.assign_tag_to_event(event.id, name)
+    _refresh_tag_snapshot(coordinator, db_service)
+    form = coordinator.view.grouping
+    for _, widget in form.tag_items.values():
+        widget.set_checked(True)
+    form._move_item(1, 0)
+    form.radio_first_match.setChecked(True)
+    widget = form.tag_items["Beta"][1]
+    widget.tag_color = "#123456"
+    widget.color_button.set_color(widget.tag_color)
+    widget.color_changed.emit("Beta", widget.tag_color)
+    coordinator.view.controls["longform_auto_refresh"].setChecked(False)
+    coordinator.view.navigate("world.grouping")
+    widget.checkbox.setFocus()
+    qtbot.waitUntil(widget.checkbox.hasFocus)
+    extra = Event(name="More Beta events", lore_date=2.0)
+    db_service.insert_event(extra)
+    db_service.assign_tag_to_event(extra.id, "Beta")
+    db_service.assign_tag_to_event(extra.id, "Gamma")
+    _refresh_tag_snapshot(coordinator, db_service)
+    assert form.tag_items["Beta"][1] is widget
+    assert widget.checkbox.hasFocus()
+    assert widget.event_count == 2
+    assert widget.tag_color == "#123456"
+    assert form.colors["Beta"] == "#123456"
+    assert form.draft_config() == {
+        "tag_order": ["Beta", "Alpha"],
+        "mode": "FIRST_MATCH",
+    }
+    assert not form.tag_items["Gamma"][1].is_checked()
+    assert not coordinator.view.controls["longform_auto_refresh"].isChecked()
+    assert not submitted
+
+
+def test_grouping_refresh_keeps_missing_selected_tags_without_implicit_edits(
+    qtbot, init_theme_manager
+):
+    from PySide6.QtCore import QCoreApplication, QEvent
+
+    from src.gui.widgets.settings_forms import GroupingSettingsForm
+
+    config = {"tag_order": ["Beta", "Alpha"], "mode": "FIRST_MATCH"}
+    form = GroupingSettingsForm([], config)
+    qtbot.addWidget(form)
+    assert form.draft_config() == config
+    beta = form.tag_items["Beta"][1]
+    form.refresh_tags(
+        [
+            {"name": "Alpha", "color": "#123456", "count": 2},
+            {"name": "Unused", "color": "#654321", "count": 1},
+        ],
+        config,
+    )
+    assert form.tag_items["Beta"][1] is beta
+    assert beta.event_count == 0
+    assert form.tag_items["Alpha"][1].event_count == 2
+    assert form.draft_config() == config
+    form.refresh_tags([], config)
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    assert set(form.tag_items) == {"Alpha", "Beta"}
+    assert form.draft_config() == config
+
+
+def test_saved_grouping_reorders_existing_rows_without_deleting_widgets(
+    qtbot, init_theme_manager
+):
+    from PySide6.QtCore import QCoreApplication, QEvent
+
+    from src.gui.widgets.settings_forms import GroupingSettingsForm
+
+    config = {"tag_order": ["Beta", "Alpha"], "mode": "DUPLICATE"}
+    form = GroupingSettingsForm(
+        [
+            {"name": "Alpha", "color": "#123456", "count": 2},
+            {"name": "Beta", "color": "#654321", "count": 1},
+        ],
+        config,
+    )
+    qtbot.addWidget(form)
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    assert form.draft_config() == config
+    assert form.list_widget.itemWidget(form.list_widget.item(0)).tag_name == "Beta"
+
+
+def test_grouping_rows_fit_their_contents_after_refresh_and_reorder(qtbot, qapp):
+    from src.gui.widgets.settings_forms import GroupingSettingsForm
+
+    original = qapp.styleSheet()
+    try:
+        qapp.setStyleSheet(
+            "QListWidget::item { padding: 7px; border-bottom: 2px solid black; }"
+        )
+        form = GroupingSettingsForm([], None)
+        qtbot.addWidget(form)
+        form.resize(420, 370)
+        form.show()
+        form.refresh_tags(
+            [
+                {"name": "Alpha", "color": "#123456", "count": 2},
+                {"name": "Beta", "color": "#654321", "count": 1},
+            ],
+            None,
+        )
+        qapp.processEvents()
+        for _, widget in form.tag_items.values():
+            assert widget.label.height() >= widget.label.sizeHint().height()
+        form._move_item(0, 1)
+        qapp.processEvents()
+        for _, widget in form.tag_items.values():
+            assert widget.label.height() >= widget.label.sizeHint().height()
+    finally:
+        qapp.setStyleSheet(original)
+
+
 def test_world_name_is_visible_before_snapshot_arrives(settings_coordinator):
     coordinator, _ = settings_coordinator
     assert coordinator.view.scope.itemText(1) == "This World — Test World"

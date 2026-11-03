@@ -146,6 +146,7 @@ class TagListItem(QWidget):
 
     def update_event_count(self, count: int) -> None:
         """Updates the event count display."""
+        self.event_count = count
         self.label.setText(f"{self.tag_name} ({count})")
 
 

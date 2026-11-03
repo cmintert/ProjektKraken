@@ -10,20 +10,24 @@ from copy import deepcopy
 from dataclasses import replace
 from typing import Any, cast
 
-from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtCore import QModelIndex, QRect, Qt, QTimer, Signal
 from PySide6.QtGui import QKeyEvent
 from PySide6.QtWidgets import (
     QDialog,
     QGroupBox,
     QLabel,
     QLayout,
+    QListWidgetItem,
     QPushButton,
+    QStyle,
+    QStyleOptionViewItem,
     QVBoxLayout,
     QWidget,
 )
 
 from src.core.ai_generation import AIGenerationPreferences, TaskTemplate
 from src.core.calendar import CalendarConfig
+from src.core.theme_manager import ThemeManager
 from src.gui.dialogs.ai_settings_dialog import AISettingsDialog
 from src.gui.dialogs.backup_settings_dialog import BackupSettingsDialog
 from src.gui.dialogs.calendar_config_dialog import CalendarConfigDialog
@@ -285,8 +289,77 @@ class GroupingSettingsForm(_EmbeddedInput, GroupingConfigDialog):
         self.colors = {tag["name"]: tag["color"] for tag in tags}
         self._setup_ui()
         self.button_box.hide()
-        self._load_tags()
+        self.refresh_tags(tags, config)
         self._load_current_config()
+
+    def refresh_tags(
+        self, tags: list[dict[str, Any]], config: dict[str, Any] | None
+    ) -> None:
+        """Reconcile available tags in place, retaining selected draft rows."""
+        available = {tag["name"]: tag for tag in tags}
+        retained = set((config or {}).get("tag_order", []))
+        scroll = self.list_widget.verticalScrollBar().value()
+        for name, (item, widget) in list(self.tag_items.items()):
+            if name in available:
+                widget.update_event_count(available[name]["count"])
+            elif widget.is_checked() or name in retained:
+                widget.update_event_count(0)
+            else:
+                self.list_widget.takeItem(self.list_widget.row(item))
+                del self.tag_items[name]
+        for name in dict.fromkeys([*available, *(config or {}).get("tag_order", [])]):
+            if name not in self.tag_items:
+                data = available.get(name, {})
+                color = self.colors.get(
+                    name, data.get("color", ThemeManager().get_theme()["event_main"])
+                )
+                widget = TagListItem(
+                    name, color, data.get("count", 0), self.list_widget
+                )
+                widget.set_checked(name in retained)
+                widget.color_changed.connect(self._on_tag_color_changed)
+                item = QListWidgetItem(self.list_widget)
+                self.list_widget.setItemWidget(item, widget)
+                self._size_tag_row(item, widget)
+                self.tag_items[name] = (item, widget)
+        self.tags_data = deepcopy(tags)
+        self.list_widget.verticalScrollBar().setValue(scroll)
+
+    def _size_tag_row(self, item: QListWidgetItem, widget: TagListItem) -> None:
+        """Include the shared item padding around the embedded row widget."""
+        self.list_widget.ensurePolished()
+        widget.ensurePolished()
+        size = widget.sizeHint()
+        option = QStyleOptionViewItem()
+        option.initFrom(self.list_widget)
+        # PySide's stubs omit the public QStyleOptionViewItem data attributes.
+        view_option = cast(Any, option)
+        view_option.widget = self.list_widget
+        view_option.index = self.list_widget.indexFromItem(item)
+        view_option.rect = QRect(0, 0, size.width(), size.height())
+        view_option.text = widget.label.text()
+        view_option.features |= QStyleOptionViewItem.ViewItemFeature.HasDisplay
+        content = self.list_widget.style().subElementRect(
+            QStyle.SubElement.SE_ItemViewItemText, option, self.list_widget
+        )
+        item.setSizeHint(size + (size - content.size()))
+
+    def _move_item(self, source_row: int, target_row: int) -> None:
+        """Keep stylesheet-aware row sizing after a deliberate order change."""
+        super()._move_item(source_row, target_row)
+        item = self.list_widget.item(target_row)
+        widget = self.list_widget.itemWidget(item)
+        if isinstance(widget, TagListItem):
+            self._size_tag_row(item, widget)
+
+    def _reorder_items_by_tags(self, tag_order: list[str]) -> None:
+        """Move saved rows without deleting their widgets or keyboard focus."""
+        model = self.list_widget.model()
+        for target, name in enumerate(tag_order):
+            if name in self.tag_items:
+                source = self.list_widget.row(self.tag_items[name][0])
+                if source != target:
+                    model.moveRow(QModelIndex(), source, QModelIndex(), target)
 
     def _on_tag_color_changed(self, tag_name: str, color: str) -> None:
         """Keep colour edits inside the current draft."""
