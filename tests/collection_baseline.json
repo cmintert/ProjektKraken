@@ -2,10 +2,10 @@
   "schema": 1,
   "counts": {
     "smoke": 19,
-    "ci_fast": 2640,
+    "ci_fast": 2644,
     "slow": 1,
     "performance": 0,
-    "full": 7154,
+    "full": 7158,
     "full_only": 4505
   },
   "categories": {
@@ -18,7 +18,7 @@
     "repro": 2,
     "root": 15,
     "security": 5,
-    "unit": 6696
+    "unit": 6700
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -11228,22 +11228,13 @@
     "tests/unit/test_timeline_presentation.py::test_date_caption_and_time_roles_remain_readable_in_future_state[muted_light_mode]": [
       "ci_fast"
     ],
-    "tests/unit/test_timeline_presentation.py::test_duration_length_never_includes_occurrence_uncertainty[1218]": [
+    "tests/unit/test_timeline_presentation.py::test_date_text_is_hover_only_and_does_not_reserve_layout_space[0-None]": [
       "ci_fast"
     ],
-    "tests/unit/test_timeline_presentation.py::test_duration_length_never_includes_occurrence_uncertainty[June 1218]": [
+    "tests/unit/test_timeline_presentation.py::test_date_text_is_hover_only_and_does_not_reserve_layout_space[0-October 1218]": [
       "ci_fast"
     ],
-    "tests/unit/test_timeline_presentation.py::test_duration_length_never_includes_occurrence_uncertainty[after 1218]": [
-      "ci_fast"
-    ],
-    "tests/unit/test_timeline_presentation.py::test_duration_length_never_includes_occurrence_uncertainty[before 1218]": [
-      "ci_fast"
-    ],
-    "tests/unit/test_timeline_presentation.py::test_duration_length_never_includes_occurrence_uncertainty[between June 1218 and October 1218]": [
-      "ci_fast"
-    ],
-    "tests/unit/test_timeline_presentation.py::test_duration_length_never_includes_occurrence_uncertainty[c. 1218]": [
+    "tests/unit/test_timeline_presentation.py::test_date_text_is_hover_only_and_does_not_reserve_layout_space[3-None]": [
       "ci_fast"
     ],
     "tests/unit/test_timeline_presentation.py::test_first_items_do_not_hide_behind_time_identity_rows": [
@@ -11261,10 +11252,13 @@
     "tests/unit/test_timeline_presentation.py::test_manual_snap_publishes_target_without_modifying_assertions": [
       "ci_fast"
     ],
-    "tests/unit/test_timeline_presentation.py::test_measure_threshold_is_independent_from_year_and_presence_thresholds": [
+    "tests/unit/test_timeline_presentation.py::test_packing_reuses_space_between_short_labels": [
       "ci_fast"
     ],
-    "tests/unit/test_timeline_presentation.py::test_packing_reuses_space_between_short_labels": [
+    "tests/unit/test_timeline_presentation.py::test_point_event_has_only_its_name_beside_the_mark": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_presence_threshold_does_not_show_a_separate_duration_measure": [
       "ci_fast"
     ],
     "tests/unit/test_timeline_presentation.py::test_production_group_duplicates_share_zoom_and_refresh_captions": [
@@ -11285,7 +11279,25 @@
     "tests/unit/test_timeline_presentation.py::test_saved_playhead_restores_after_complete_widget_initialization[444682.5]": [
       "ci_fast"
     ],
-    "tests/unit/test_timeline_presentation.py::test_shared_hit_and_packing_extents_cover_all_three_channels": [
+    "tests/unit/test_timeline_presentation.py::test_shared_hit_and_packing_extents_cover_only_visible_content": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_single_span_preserves_authored_duration_and_uncertainty[1218]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_single_span_preserves_authored_duration_and_uncertainty[June 1218]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_single_span_preserves_authored_duration_and_uncertainty[after 1218]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_single_span_preserves_authored_duration_and_uncertainty[before 1218]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_single_span_preserves_authored_duration_and_uncertainty[between June 1218 and October 1218]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_timeline_presentation.py::test_single_span_preserves_authored_duration_and_uncertainty[c. 1218]": [
       "ci_fast"
     ],
     "tests/unit/test_timeline_presentation.py::test_target_refresh_and_deletion_clear_stale_context": [

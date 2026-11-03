@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-03
-**Commit:** da2b9bf7a800da4271b63957efb2abf12ed94ba9
+**Commit:** 5f4341b4619d7680c5146860c53896491b9e19cb
 ---
 
 # Changelog
@@ -42,6 +42,10 @@ All notable changes to this project will be documented in this file.
   and links from the manual and import workflow.
 
 ### Fixed
+
+- *(2026-11-03)* **Testing (KRT-137)**: Updated the reviewed inventory for
+  renamed single-span Timeline tests and added hover-only caption coverage,
+  replacing assertions for the deliberately removed three-row presentation.
 
 - *(2026-11-03)* **Timeline grouping (KRT-138)**: Settings Center refreshes
   available tags and event counts while preserving selected order, colours,
