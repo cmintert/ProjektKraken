@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-03
-**Commit:** 5f4341b4619d7680c5146860c53896491b9e19cb
+**Commit:** 703e4aacf0f13cec78e755736996f5f80bc45ee7
 ---
 
 # Changelog
@@ -42,6 +42,9 @@ All notable changes to this project will be documented in this file.
   and links from the manual and import workflow.
 
 ### Fixed
+
+- *(2026-11-03)* **Documentation**: Linked the KRT-137 and KRT-138 evidence
+  pages from the UX contents so strict documentation builds include both.
 
 - *(2026-11-03)* **Testing (KRT-137)**: Updated the reviewed inventory for
   renamed single-span Timeline tests and added hover-only caption coverage,
