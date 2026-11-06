@@ -9,6 +9,8 @@ from src.core.mcp_access import McpFailure, failure
 from src.services.db_service import DatabaseService
 from src.services.mcp_read_service import McpReadService
 
+DatabaseProvider = Callable[[], DatabaseService | None]
+
 
 class McpReadTask(QObject):
     """Borrow the active database only for one cancellable queued operation."""
@@ -17,7 +19,7 @@ class McpReadTask(QObject):
 
     def __init__(
         self,
-        database: Callable[[], DatabaseService | None],
+        database: DatabaseProvider,
         expired: Callable[[str], bool],
     ) -> None:
         """Retain narrow providers rather than the worker or application."""

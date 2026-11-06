@@ -10,9 +10,8 @@ from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import QObject, Qt, QThread, QTimer, Signal, Slot
 
-from src.services.db_service import DatabaseService
 from src.services.mcp_compact import record_ids
-from src.services.mcp_read_task import McpReadTask
+from src.services.mcp_read_task import DatabaseProvider, McpReadTask
 from src.services.mcp_session import McpSession
 
 if TYPE_CHECKING:
@@ -30,7 +29,7 @@ class McpCoordinator(QObject):
     def __init__(
         self,
         context: Callable[[], dict[str, str]],
-        database: Callable[[], DatabaseService | None],
+        database: DatabaseProvider,
         db_thread: QThread,
         parent: QObject | None = None,
     ) -> None:

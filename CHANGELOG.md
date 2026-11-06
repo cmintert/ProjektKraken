@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-07
-**Commit:** 8343b7f067f831af2235e02009555a3a45f612fa
+**Commit:** 6f5c61c8924baaf4b8cb36451e37b5e64d5ac326
 ---
 
 # Changelog
@@ -55,6 +55,10 @@ All notable changes to this project will be documented in this file.
   and links from the manual and import workflow.
 
 ### Fixed
+
+- *(2026-11-07)* **Architecture (KRT-119)**: Moved the MCP database-provider
+  type to its worker-side read task, preserving the app-layer dependency
+  boundary without changing queued reads or session behavior.
 
 - *(2026-11-03)* **Testing (KRT-137)**: Aligned the calendar-bound span
   regression with the retained single Timeline row while preserving date-bound,
