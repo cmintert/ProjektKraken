@@ -115,6 +115,7 @@ event-recurrence
 maps
 longform
 search-ai-and-analysis
+local-ai-access
 import-export-and-backups
 source-extraction
 source-extraction-prompt

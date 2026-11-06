@@ -50,6 +50,8 @@ class HelpSurfaceBindings(QObject):
         name = type(widget).__name__
         if name == "ActivityBar":
             registry.register_panel(widget, "workspace.navigation")
+        if name == "McpAccessWidget":
+            registry.register_control(widget, "integrations.mcp")
         topic = self.DIALOG_TOPICS.get(name)
         if topic:
             registry.register_dialog(widget, topic)

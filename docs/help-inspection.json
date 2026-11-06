@@ -17042,8 +17042,8 @@
     {
       "source": "src/app/help_composition.py",
       "symbol": "HelpSurfaceBindings.bind",
-      "sha256": "f8ca97219694603587063e2f0a7b72d095b6a38a33daff423cf7d35e884d72f6",
-      "review_note": "KRT-108: ActivityBar is an explicit workspace.navigation F1 surface; existing control explanations, modal boundaries and authoring input ownership are preserved."
+      "sha256": "17ee8f5dc16cf5854612bae06d9bdd0e23bdc45f661c40df9c6f12901d45ffe4",
+      "review_note": "KRT-119: register the MCP settings composite for integrations.mcp; existing surface meanings stay intact. New enable, stop and activity excerpts explain immediate session effects, provider disclosure and revocation limits."
     },
     {
       "source": "src/gui/workspace/focus_navigation.py",

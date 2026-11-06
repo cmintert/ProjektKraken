@@ -32,6 +32,7 @@ class SettingsCoordinator(QObject):
     icon_picker_created = Signal(object)
     index_rebuilt = Signal(dict)
     world_availability_changed = Signal(bool, str)
+    view_created = Signal(object)
 
     def __init__(
         self,
@@ -81,6 +82,7 @@ class SettingsCoordinator(QObject):
             self.view.operation_requested.connect(self.operation_requested.emit)
             self.view.connection_requested.connect(self.connection_requested.emit)
             self.view.graph_form_created.connect(self._attach_graph_form)
+            self.view_created.emit(self.view)
             self._install_world_forms()
             self.view.render_values(self.draft.values)
             self.operation_requested.emit("index-status")

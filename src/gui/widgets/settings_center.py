@@ -462,6 +462,8 @@ class SettingsCenter(QDialog):
         self.search.clear()
         self.scope.setCurrentIndex(1 if target_scope == "world" else 0)
         self._refresh_navigation()
+        if setting_id == "integrations.mcp":
+            self.select_category("kraken", "Integrations")
         if definition:
             for index in range(self.navigation.count()):
                 item = self.navigation.item(index)
@@ -473,6 +475,14 @@ class SettingsCenter(QDialog):
                     break
             if setting_id in self.controls:
                 self.controls[setting_id].setFocus()
+
+    def select_category(self, scope: str, category: str) -> None:
+        """Select a non-preference integration page without inventing a setting."""
+        for index in range(self.navigation.count()):
+            item = self.navigation.item(index)
+            if tuple(item.data(Qt.ItemDataRole.UserRole)[:2]) == (scope, category):
+                self.navigation.setCurrentItem(item)
+                break
 
     def selected_target(self) -> tuple[str, str, str]:
         """Identify reset scope/category and an optional search result."""
@@ -497,6 +507,11 @@ class SettingsCenter(QDialog):
                 for d in SETTINGS
                 if d.matches(query) and (d.scope, d.category) in self.pages
             ]
+            if ("kraken", "Integrations") in self.pages and any(
+                word in query.casefold()
+                for word in ("mcp", "integration", "sharing", "local ai")
+            ):
+                entries.append(("kraken", "Integrations", "", "Local AI access (MCP)"))
         else:
             entries = [
                 (s, category, "", category) for s, category in self.pages if s == scope
@@ -523,6 +538,7 @@ class SettingsCenter(QDialog):
             else "Kraken — local preferences. Connections and credentials stay on this computer."
         )
         self.reset_setting.setEnabled(bool(key and BY_ID[key].resettable))
+        self.reset_page.setEnabled(category != "Integrations")
         if key in self.controls:
             self.controls[key].setFocus()
 

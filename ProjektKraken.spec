@@ -41,6 +41,10 @@ hiddenimports = [
     "src.services.providers.openai_provider",
 ]
 hiddenimports += collect_submodules("keyring.backends")
+hiddenimports += [
+    "win32security", "win32api", "win32file", "win32crypt", "win32com.shell.shell",
+]
+datas += copy_metadata("mcp")
 
 excluded_modules = [
     "_pytest",
@@ -83,10 +87,27 @@ exe = EXE(
     icon=icon_path,
     version=version_file,
 )
+connector_analysis = Analysis(
+    [str(ROOT / "mcp_launcher.py")], pathex=[str(ROOT)],
+    hiddenimports=hiddenimports[-5:],
+    excludes=excluded_modules + [
+        "PySide6", "IPython", "torch", "transformers", "sentence_transformers",
+        "scipy", "sklearn", "numpy", "PIL",
+    ],
+    noarchive=False,
+)
+connector_pyz = PYZ(connector_analysis.pure)
+connector_exe = EXE(
+    connector_pyz, connector_analysis.scripts, [], exclude_binaries=True,
+    name="KrakenMCP", console=True, strip=False, upx=False,
+)
 coll = COLLECT(
     exe,
+    connector_exe,
     a.binaries,
     a.datas,
+    connector_analysis.binaries,
+    connector_analysis.datas,
     strip=False,
     upx=False,
     name="ProjektKraken",

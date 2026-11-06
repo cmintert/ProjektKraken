@@ -23,6 +23,7 @@
   "required_package_paths": [
     "LICENSE",
     "ProjektKraken.exe",
+    "KrakenMCP.exe",
     "_internal/package-contract.json",
     "_internal/help/manifest.json",
     "_internal/help/index.html",

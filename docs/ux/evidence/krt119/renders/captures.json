@@ -1,0 +1,86 @@
+[
+  {
+    "file": "dark_mode-640-Active.png",
+    "theme": "dark_mode",
+    "state": "Active",
+    "width": 640,
+    "evidence": "offscreen"
+  },
+  {
+    "file": "dark_mode-960-Off.png",
+    "theme": "dark_mode",
+    "state": "Off",
+    "width": 960,
+    "evidence": "offscreen"
+  },
+  {
+    "file": "light_mode-640-Active.png",
+    "theme": "light_mode",
+    "state": "Active",
+    "width": 640,
+    "evidence": "offscreen"
+  },
+  {
+    "file": "light_mode-960-Off.png",
+    "theme": "light_mode",
+    "state": "Off",
+    "width": 960,
+    "evidence": "offscreen"
+  },
+  {
+    "file": "fantasy_mode-640-Active.png",
+    "theme": "fantasy_mode",
+    "state": "Active",
+    "width": 640,
+    "evidence": "offscreen"
+  },
+  {
+    "file": "fantasy_mode-960-Off.png",
+    "theme": "fantasy_mode",
+    "state": "Off",
+    "width": 960,
+    "evidence": "offscreen"
+  },
+  {
+    "file": "imperial_mode-640-Active.png",
+    "theme": "imperial_mode",
+    "state": "Active",
+    "width": 640,
+    "evidence": "offscreen"
+  },
+  {
+    "file": "imperial_mode-960-Off.png",
+    "theme": "imperial_mode",
+    "state": "Off",
+    "width": 960,
+    "evidence": "offscreen"
+  },
+  {
+    "file": "cyberpunk_mode-640-Active.png",
+    "theme": "cyberpunk_mode",
+    "state": "Active",
+    "width": 640,
+    "evidence": "offscreen"
+  },
+  {
+    "file": "cyberpunk_mode-960-Off.png",
+    "theme": "cyberpunk_mode",
+    "state": "Off",
+    "width": 960,
+    "evidence": "offscreen"
+  },
+  {
+    "file": "muted_light_mode-640-Active.png",
+    "theme": "muted_light_mode",
+    "state": "Active",
+    "width": 640,
+    "evidence": "offscreen"
+  },
+  {
+    "file": "muted_light_mode-960-Off.png",
+    "theme": "muted_light_mode",
+    "state": "Off",
+    "width": 960,
+    "evidence": "offscreen"
+  }
+]

@@ -34,6 +34,7 @@ REQUIRED_MODULES = (
     ("keyring", "keyring"),
     ("python-docx", "docx"),
     ("starlette", "starlette"),
+    ("mcp", "mcp"),
 )
 
 

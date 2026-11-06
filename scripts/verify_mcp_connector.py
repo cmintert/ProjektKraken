@@ -1,0 +1,126 @@
+"""Verify a built MCP console relay against a disposable queued-worker host."""
+
+import argparse
+import asyncio
+import json
+import threading
+from pathlib import Path
+
+from mcp import Client
+from mcp.client.stdio import StdioServerParameters
+from PySide6.QtCore import QMetaObject, Qt, QThread, QTimer
+from PySide6.QtWidgets import QApplication
+
+from src.app.coordinators.mcp_coordinator import McpCoordinator
+from src.core.mcp_access import TOOLS
+from src.services.worker import DatabaseWorker
+
+
+def _describe(error: BaseException, token: str) -> list[str]:
+    """Keep disposable-host diagnostics useful without recording credentials."""
+    if isinstance(error, BaseExceptionGroup):
+        return [item for child in error.exceptions for item in _describe(child, token)]
+    message = str(error).replace(token, "[redacted]") if token else str(error)
+    return [f"{type(error).__name__}: {message}"]
+
+
+def main() -> None:
+    """Verify protocol modes without installing or altering client accounts."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--executable", type=Path, required=True)
+    parser.add_argument("--report", type=Path, required=True)
+    arguments = parser.parse_args()
+    arguments.report.parent.mkdir(parents=True, exist_ok=True)
+    app = QApplication([])
+    path = str((arguments.report.parent / "connector-test.kraken").resolve())
+    thread = QThread()
+    worker = DatabaseWorker(path)
+    worker.moveToThread(thread)
+    thread.finished.connect(worker.deleteLater)
+    thread.start()
+    context = {
+        "world_id": "connector-test",
+        "world_name": "Connector test",
+        "database": path,
+    }
+    coordinator = McpCoordinator(lambda: context, lambda: worker.db_service, thread)
+    results: dict[str, object] = {}
+
+    async def calls() -> None:
+        for mode in ("legacy", "auto"):
+            async with Client(
+                StdioServerParameters(
+                    command=str(arguments.executable.resolve()),
+                    args=[],
+                ),
+                mode=mode,
+                cache=None,
+            ) as client:
+                tools = await client.list_tools()
+                assert {tool.name for tool in tools.tools} == set(TOOLS)
+                result = await client.call_tool("get_active_world")
+                results[f"{mode}_result"] = result.structured_content
+                assert result.structured_content["data"]["id"] == "connector-test"
+                results[mode] = "passed"
+
+    def run_client() -> None:
+        try:
+            asyncio.run(calls())
+        except Exception as exc:
+            results["error"] = type(exc).__name__
+            results["error_details"] = _describe(
+                exc, coordinator._session.token if coordinator._session else ""
+            )
+
+    def initialized(success: bool) -> None:
+        if success:
+            coordinator.enable()
+        else:
+            results["error"] = "Database initialization failed"
+            app.quit()
+
+    caller: threading.Thread | None = None
+
+    def changed(state: dict) -> None:
+        nonlocal caller
+        if state["state"] == "Active" and caller is None:
+            caller = threading.Thread(target=run_client)
+            caller.start()
+
+    poll = QTimer()
+    poll.setInterval(50)
+
+    def finished() -> None:
+        if caller is not None and not caller.is_alive():
+            coordinator.stop()
+            if coordinator.snapshot()["state"] == "Off":
+                app.quit()
+
+    poll.timeout.connect(finished)
+    poll.start()
+    QTimer.singleShot(45000, app.quit)
+    worker.initialized.connect(initialized, Qt.ConnectionType.QueuedConnection)
+    coordinator.changed.connect(changed)
+    QMetaObject.invokeMethod(
+        worker, "initialize_db", Qt.ConnectionType.QueuedConnection
+    )
+    try:
+        app.exec()
+    finally:
+        coordinator.stop()
+        coordinator._poll.stop()
+        QMetaObject.invokeMethod(
+            worker, "cleanup", Qt.ConnectionType.BlockingQueuedConnection
+        )
+        thread.quit()
+        thread.wait(5000)
+    if caller is not None:
+        caller.join(15)
+    results["evidence"] = "packaged connector against queued-worker verification host"
+    arguments.report.write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
+    if results.get("legacy") != "passed" or results.get("auto") != "passed":
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()

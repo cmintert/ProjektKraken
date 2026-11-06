@@ -26,6 +26,19 @@ def test_check_environment_lists_missing_modules() -> None:
     assert "python-multipart" in result.errors[-1]
 
 
+def test_missing_mcp_is_reported_before_launch() -> None:
+    """A fresh source install must get an actionable missing-MCP diagnosis."""
+    import importlib.util
+
+    installed_spec = importlib.util.find_spec
+    with patch(
+        "src.app.startup_check.importlib.util.find_spec",
+        side_effect=lambda name: None if name == "mcp" else installed_spec(name),
+    ):
+        result = check_environment()
+    assert result.errors == ("Missing runtime dependencies: mcp.",)
+
+
 def test_format_environment_error_includes_recovery_command() -> None:
     """Preflight errors should tell users how to repair the environment."""
     message = format_environment_error(EnvironmentCheck(("Missing example.",)))

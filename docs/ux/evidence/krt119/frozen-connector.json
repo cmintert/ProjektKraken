@@ -1,0 +1,12 @@
+{
+  "legacy": "passed",
+  "modern": "passed",
+  "host": "frozen VerifyKrakenMCP.exe using the actual queued DatabaseWorker",
+  "connector": "frozen KrakenMCP.exe",
+  "sdk": "mcp==2.3.0",
+  "environment": "PATH restricted to Windows system directories; no Python on PATH",
+  "tools": "fixed catalogue discovery and get_active_world",
+  "world": "disposable connector-test database",
+  "full_Kraken_shell_verified": false,
+  "desktop_chat_verified": false
+}

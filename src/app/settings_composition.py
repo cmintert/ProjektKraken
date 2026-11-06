@@ -99,7 +99,8 @@ def compose_settings(window: MainWindow) -> SettingsCoordinator:
         lambda request: _probe(coordinator, request)
     )
     coordinator.credential_warnings = coordinator.local.migrate_credentials()
-    coordinator.refresh_world()
+    if window.worker_manager.database_initialized is True:
+        coordinator.refresh_world()
     return coordinator
 
 

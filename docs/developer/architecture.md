@@ -1,5 +1,23 @@
 # Architecture and Threading
 
+## Optional local MCP access
+
+`McpCoordinator` receives narrow world/database providers and the existing DB
+thread. Its feature-owned `McpReadTask` executes fixed reads under a scoped SQLite
+authorizer and returns detached factual snapshots. `McpReadService` adapts existing
+World Context and connection browsing rather than defining another context model.
+The HTTP SDK adapter and stdio connector never query SQLite or import GUI code.
+Their session broker owns bounded futures and immediate credential revocation.
+
+Composition is isolated in `mcp_composition`; the Settings form emits intent and
+renders snapshots. There are no MCP worker slots or longform-server routes.
+Sharing is never persisted. Windows discovery uses DPAPI, current-user/SYSTEM
+ACLs, exclusive ownership and atomic publication. The console relay uses neither
+the CLI nor a separate database connection. Context inputs above 5,000 rows per
+major table return an explicit limit rather than monopolizing the DB worker.
+See [setup and privacy](../user/local-ai-access.md) and
+[verification](../ux/evidence/krt119/README.md).
+
 ## Activity workspace layouts
 
 `WorkspaceCoordinator` owns activity activation and custom workspace management.

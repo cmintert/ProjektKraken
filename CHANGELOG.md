@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-11-03
-**Commit:** ef69a17dc6626646dffb8efc9b3b859b19b72169
+**Last Updated:** 2026-11-07
+**Commit:** 8343b7f067f831af2235e02009555a3a45f612fa
 ---
 
 # Changelog
@@ -12,6 +12,19 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-11-06)* **Optional local MCP access (KRT-119)**: Session-only sharing of
+  saved world facts through an authenticated localhost endpoint, a bundled console
+  connector, and Settings/status-bar Stop controls. Read tools preserve temporal
+  evidence and reject writes, stale cursors and revoked sessions. Added client
+  packaging helpers and setup/privacy Help; desktop conversation compatibility
+  remains subject to independent client verification.
+  Runtime install projections, startup coverage and hashed Windows pins include
+  MCP. Initial settings reads wait for database readiness during startup.
+  Added public attributes/tags and source identity, calendar-aware timing,
+  batched object reads, a world overview and bounded filtered browsing with
+  possible date overlap. Optional lossless compact responses pool repeated facts
+  without changing descriptions, temporal evidence or omission indicators.
 
 - *(2026-11-02)* **Event recurrence (KRT-131)**: Ordinary Events can repeat by
   calendar date, weekday rule or elapsed-day interval, forward, backward or both

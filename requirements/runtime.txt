@@ -16,4 +16,5 @@ requests==2.34.2
 python-dotenv==1.2.2
 starlette==1.6.0
 httpx==0.28.1
+mcp==2.3.0
 networkx==3.6.1

@@ -488,6 +488,13 @@
       ]
     },
     {
+      "id": "integrations.mcp",
+      "source": "local-ai-access.md",
+      "target": "help-local-ai-access",
+      "level": "task",
+      "related_ids": ["settings.center"]
+    },
+    {
       "id": "event.recurrence",
       "source": "event-recurrence.md",
       "target": "help-event-recurrence",
