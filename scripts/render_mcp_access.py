@@ -28,11 +28,13 @@ def main() -> None:
     records = []
     for theme in manager.get_available_themes():
         manager.set_theme(theme, app, persist=False)
-        for width, state, available in (
-            (640, "Active", True),
-            (960, "Off", True),
-            (360, "Off", True),
-            (360, "Off", False),
+        for width, state, available, semantic_state in (
+            (640, "Active", True, "preparing"),
+            (640, "Active", True, "ready"),
+            (360, "Active", True, "unavailable"),
+            (960, "Off", True, "unprepared"),
+            (360, "Off", True, "unprepared"),
+            (360, "Off", False, "unprepared"),
         ):
             center = SettingsCenter()
             form = McpAccessWidget(center)
@@ -47,7 +49,7 @@ def main() -> None:
                     "scopes": ["maps", "longform", "attachments", "images", "semantic"]
                     if state == "Active"
                     else [],
-                    "semantic_state": "unprepared",
+                    "semantic_state": semantic_state,
                     "activity": [],
                 }
             )
@@ -55,7 +57,7 @@ def main() -> None:
             center.show()
             form.stop_button.setFocus()
             app.processEvents()
-            name = f"{theme}-{width}-{state}-{available}.png"
+            name = f"{theme}-{width}-{state}-{available}-{semantic_state}.png"
             center.grab().save(str(args.output / name))
             records.append(
                 {
@@ -63,10 +65,13 @@ def main() -> None:
                     "theme": theme,
                     "state": state,
                     "width": width,
+                    "semantic_state": semantic_state,
                     "evidence": "offscreen",
                 }
             )
             form.scope_details.setChecked(True)
+            if form.prepare_button.isEnabled():
+                form.prepare_button.setFocus()
             app.processEvents()
             for scroll in center.findChildren(QScrollArea):
                 if scroll.widget() and scroll.widget().isAncestorOf(form):

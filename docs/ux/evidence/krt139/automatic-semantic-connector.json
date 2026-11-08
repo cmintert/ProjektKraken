@@ -1,0 +1,391 @@
+{
+  "legacy_result": {
+    "data": {
+      "id": "connector-test",
+      "name": "Connector test",
+      "read_only": true
+    },
+    "evaluation": {},
+    "revision": "3b92c781c97c2059aa10e6ca0896e29c73bc97a79c84784f79d3b543b91301fa",
+    "schema_version": 1,
+    "session_generation": "4cnhVRaubMwlxF7pel2GDgndjFZuxNMy",
+    "status": "OK",
+    "world_id": "connector-test"
+  },
+  "legacy_tools": [
+    "get_active_world",
+    "get_world_overview",
+    "get_capabilities",
+    "search_world",
+    "browse_world",
+    "get_object",
+    "get_objects",
+    "get_context",
+    "list_connections",
+    "get_object_summary",
+    "read_object_section",
+    "read_context_section",
+    "browse_facets",
+    "read_longform",
+    "browse_maps",
+    "read_map",
+    "list_attachments",
+    "get_image_preview",
+    "semantic_search",
+    "search_shared_content"
+  ],
+  "legacy": "passed",
+  "auto_result": {
+    "data": {
+      "id": "connector-test",
+      "name": "Connector test",
+      "read_only": true
+    },
+    "evaluation": {},
+    "revision": "3b92c781c97c2059aa10e6ca0896e29c73bc97a79c84784f79d3b543b91301fa",
+    "schema_version": 1,
+    "session_generation": "4cnhVRaubMwlxF7pel2GDgndjFZuxNMy",
+    "status": "OK",
+    "world_id": "connector-test"
+  },
+  "auto_tools": [
+    "get_active_world",
+    "get_world_overview",
+    "get_capabilities",
+    "search_world",
+    "browse_world",
+    "get_object",
+    "get_objects",
+    "get_context",
+    "list_connections",
+    "get_object_summary",
+    "read_object_section",
+    "read_context_section",
+    "browse_facets",
+    "read_longform",
+    "browse_maps",
+    "read_map",
+    "list_attachments",
+    "get_image_preview",
+    "semantic_search",
+    "search_shared_content"
+  ],
+  "auto": "passed",
+  "evidence": "source connector against queued-worker verification host",
+  "automatic_preparation": {
+    "count": 1,
+    "observed_ready": true,
+    "no_prepare_button_used": true,
+    "installed_local_model": true,
+    "transitions": [
+      {
+        "session": "Starting",
+        "semantic": "unprepared"
+      },
+      {
+        "session": "Active",
+        "semantic": "preparing"
+      },
+      {
+        "session": "Active",
+        "semantic": "preparing"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Active",
+        "semantic": "ready"
+      },
+      {
+        "session": "Stopping",
+        "semantic": "unprepared"
+      },
+      {
+        "session": "Stopping",
+        "semantic": "unprepared"
+      },
+      {
+        "session": "Stopping",
+        "semantic": "unprepared"
+      },
+      {
+        "session": "Stopping",
+        "semantic": "unprepared"
+      },
+      {
+        "session": "Off",
+        "semantic": "unprepared"
+      },
+      {
+        "session": "Stopping",
+        "semantic": "unprepared"
+      },
+      {
+        "session": "Off",
+        "semantic": "unprepared"
+      }
+    ]
+  }
+}

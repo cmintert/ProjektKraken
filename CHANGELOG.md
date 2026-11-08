@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-08
-**Commit:** afb6bad0c62bf3350b8aa2cc34f2c3c3479bd75a
+**Commit:** 22525d235231eb8f5bfaa649a1f76d67eaf746f0
 ---
 
 # Changelog
@@ -10,6 +10,22 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Fixed
+
+- *(2026-11-08)* **Automatic MCP semantic preparation (KRT-139)**: Enabling local
+  semantic sharing starts preparation automatically after secure startup. Saved
+  changes refresh the index after edits settle, and Stop cancels pending refresh.
+  The form shows a retry action only when preparation is unavailable; installed
+  models remain offline-only. Updated lifecycle tests, Help and rendered evidence.
+
+- *(2026-11-08)* **MCP review follow-up (KRT-139)**: Preserved ordinary authored
+  attribute names while counting protected-field omissions. Shared search defaults
+  to enabled scopes; semantic lexical fallback reports top-K truncation without
+  unusable cursors. Tag facets use set-based queries. Dead semantic helpers revoke
+  readiness through queued, generation-safe delivery. Shared frame bounds support
+  the full 64 MiB public-text budget after JSON escaping. Added regression tests
+  and clarified the read contracts in Help.
 
 ### Added
 

@@ -72,7 +72,7 @@ class McpAccessWidget(QWidget):
             ("maps", "Share saved map facts"),
             ("attachments", "Share attachment captions and metadata"),
             ("images", "Share map and attachment image previews"),
-            ("semantic", "Allow local semantic search"),
+            ("semantic", "Enable local semantic search"),
         ):
             checkbox = declare_inspection(
                 QCheckBox(text, self.scope_choices),
@@ -81,7 +81,7 @@ class McpAccessWidget(QWidget):
             checkbox.setAccessibleName(text)
             self.scope_boxes[key] = checkbox
             choice_layout.addWidget(checkbox)
-        self.prepare_button = WrappingPushButton("Prepare semantic search")
+        self.prepare_button = WrappingPushButton("Retry semantic preparation")
         self.prepare_button.setToolTip(
             "Use an already-installed local model for this session. No downloads."
         )
@@ -151,11 +151,17 @@ class McpAccessWidget(QWidget):
         self.scope_boxes["images"].setToolTip(
             "Also requires map facts or attachment metadata sharing"
         )
-        self.prepare_button.setEnabled(
+        self.scope_boxes["semantic"].setToolTip(
+            "Automatically prepares the installed local model when sharing starts. "
+            "Saved changes refresh it automatically. No downloads."
+        )
+        retry = (
             state["state"] == "Active"
             and "semantic" in state.get("scopes", [])
-            and state.get("semantic_state") != "preparing"
+            and state.get("semantic_state") == "unavailable"
         )
+        self.prepare_button.setVisible(retry)
+        self.prepare_button.setEnabled(retry)
         self.prepare_button.setToolTip(
             "Use an already-installed local model. No downloads; Stop sharing cancels preparation."
             if state["state"] == "Active" and "semantic" in state.get("scopes", [])

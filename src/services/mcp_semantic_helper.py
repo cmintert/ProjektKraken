@@ -5,14 +5,15 @@ import contextlib
 import json
 import sys
 
+from src.services.mcp_embedding_protocol import read_payload
+
 
 def main() -> None:
     """Use cached model files only; stdout contains only the helper protocol."""
     try:
         model = None
         model_name = ""
-        while raw := sys.stdin.buffer.readline(70 * 1024 * 1024):
-            payload = json.loads(raw)
+        while (payload := read_payload(sys.stdin.buffer)) is not None:
             with contextlib.redirect_stdout(sys.stderr):
                 import numpy as np
                 from sentence_transformers import SentenceTransformer

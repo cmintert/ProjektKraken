@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from src.core.mcp_access import McpFailure
+from src.services.mcp_embedding_protocol import encode_payload
 
 MAX_RESPONSE_BYTES = 256 * 1024 * 1024
 
@@ -81,6 +82,11 @@ class EmbeddingProcess:
             except OSError:
                 pass
 
+    @property
+    def available(self) -> bool:
+        """Distinguish retained vectors from a usable warm model process."""
+        return not self._closed.is_set() and self._process.poll() is None
+
     def encode(
         self, payload: dict[str, Any], expired: Callable[[], bool], timeout: float
     ) -> dict[str, Any]:
@@ -100,8 +106,8 @@ class EmbeddingProcess:
                 acquired = self._lock.acquire(timeout=0.05)
             checkpoint()
             assert self._process.stdin is not None
-            data = json.dumps({**payload, "keep_alive": True}, ensure_ascii=False)
-            self._process.stdin.write(data.encode() + b"\n")
+            data = encode_payload({**payload, "keep_alive": True})
+            self._process.stdin.write(data)
             self._process.stdin.flush()
             while True:
                 checkpoint()

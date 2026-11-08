@@ -57,6 +57,10 @@ class McpCoordinator(QObject):
         )
         self._semantic_state = "unprepared"
         self._preparation_id = ""
+        self._semantic_refresh = QTimer(self)
+        self._semantic_refresh.setSingleShot(True)
+        self._semantic_refresh.setInterval(300)
+        self._semantic_refresh.timeout.connect(self.prepare_semantic)
         self._task = McpReadTask(database, self._expired)
         self._task.moveToThread(db_thread)
         db_thread.finished.connect(self._task.deleteLater)
@@ -133,6 +137,7 @@ class McpCoordinator(QObject):
     @Slot()
     def stop(self) -> None:
         """Revoke before asynchronous socket shutdown; never wait on the GUI."""
+        self._semantic_refresh.stop()
         if self._session is not None:
             self._session.revoke()
         self._poll.start()
@@ -161,14 +166,20 @@ class McpCoordinator(QObject):
 
     @Slot()
     def prepare_semantic(self) -> None:
-        """Only explicit local intent can prepare an installed offline model."""
+        """Honor local semantic opt-in with cancellable installed-model preparation."""
         session = self._session
         if (
             session is None
+            or not session.active
+            or self._state != "Active"
             or "semantic" not in self._scopes
             or self._semantic_state == "preparing"
         ):
             return
+        if self._context() != session.world:
+            self.stop()
+            return
+        self._semantic_refresh.stop()
         self._semantic_state = "preparing"
         self._preparation_id = "prepare:" + secrets.token_urlsafe(24)
         self._prepare.emit(
@@ -185,7 +196,11 @@ class McpCoordinator(QObject):
     def _semantic_changed(self, result: dict[str, Any]) -> None:
         if self._session is None or result["generation"] != self._session.generation:
             return
+        if "request_id" in result and result["request_id"] != self._preparation_id:
+            return
         self._semantic_state = result["state"]
+        if self._semantic_state == "stale":
+            self._semantic_refresh.start()
         self._emit()
 
     @Slot(dict)
@@ -199,8 +214,12 @@ class McpCoordinator(QObject):
             )
             self.stop()
         else:
+            starting = self._state == "Starting"
             self._state = "Active"
-            self._emit()
+            if starting and "semantic" in self._scopes:
+                self.prepare_semantic()
+            else:
+                self._emit()
 
     @Slot(dict)
     def _dispatch(self, request: dict[str, Any]) -> None:
@@ -251,10 +270,11 @@ class McpCoordinator(QObject):
     def invalidate(self, *_args: Any) -> None:
         """Reject queued results whose saved lore changed before delivery."""
         self._lore_epoch += 1
-        if self._semantic_state in {"ready", "preparing"}:
+        if self._semantic_state in {"ready", "preparing", "stale"}:
             self._semantic_state = "stale"
             self._preparation_id = ""
             self._reset.emit()
+            self._semantic_refresh.start()
             self._emit()
 
     @staticmethod

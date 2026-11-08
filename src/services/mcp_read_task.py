@@ -98,6 +98,7 @@ class McpReadTask(QObject):
         fallback: dict[str, Any],
         expired: Callable[[], bool],
     ) -> None:
+        semantic_failed = False
         try:
             rows = self._semantic.query(request, fallback["revision"], expired)
             fallback["data"] = {
@@ -110,9 +111,16 @@ class McpReadTask(QObject):
                 "score_meaning": "relevance_only",
             }
         except Exception:
+            semantic_failed = True
             fallback["data"]["fallback_reason"] = "model_unavailable"
         try:
-            self._image_ready.emit({"request": request, "result": fallback})
+            self._image_ready.emit(
+                {
+                    "request": request,
+                    "result": fallback,
+                    "semantic_failed": semantic_failed,
+                }
+            )
         except RuntimeError:
             pass
 
@@ -158,4 +166,10 @@ class McpReadTask(QObject):
             )
         ):
             result = failure("WORLD_CHANGED")
+        if response.get("semantic_failed") and self._semantic.invalidate_failed_helper(
+            request["generation"], response["result"]["revision"]
+        ):
+            self.semantic_changed.emit(
+                {"generation": request["generation"], "state": "unavailable"}
+            )
         self.finished.emit({"request_id": request["request_id"], "result": result})

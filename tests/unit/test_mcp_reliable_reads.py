@@ -356,6 +356,10 @@ def test_semantic_index_local_public_vectors_and_stale_revision(monkeypatch):
 
         encode = staticmethod(embed)
 
+        @property
+        def available(self):
+            return not self.closed
+
         def close(self):
             self.closed = True
 
@@ -515,7 +519,17 @@ def test_shared_search_respects_each_scope_and_keeps_document_sources(db_service
     assert result["rows"][0]["id"] == entity.id
     assert result["rows"][0]["object_kind"] == "entity"
     with pytest.raises(McpFailure, match="SCOPE_DISABLED"):
-        read(db_service, "search_shared_content", scopes=["longform"], query="ruler")
+        read(
+            db_service,
+            "search_shared_content",
+            scopes=["longform"],
+            kinds=["map"],
+            query="ruler",
+        )
+    default = read(
+        db_service, "search_shared_content", scopes=["longform"], query="ruler"
+    )["data"]
+    assert default["rows"] == result["rows"]
 
 
 def test_map_features_are_paged_before_geometry_materialization(

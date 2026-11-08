@@ -19,13 +19,18 @@ timing components retain a 5,000-record ceiling. The shared context builder acce
 detached inputs and can expose sections before its presentation budget, preserving
 ordinary UI defaults. Image decoding and offline-only embedding inference use
 cancellable helper processes outside the GUI and database threads; completion
-returns to the worker for a fresh revision check. Explicit semantic preparation
-yields between worker snapshots and stores public-fact vectors in session memory.
+returns to the worker for a fresh revision check. Semantic scope opt-in starts
+preparation after secure session activation. Saved changes debounce an automatic
+refresh; Stop cancels pending work, and preparation identities reject older status
+callbacks. Preparation yields between worker snapshots and stores public-fact
+vectors in session memory. Unavailable preparation requires local retry rather
+than a repeating model-load loop.
 The prepared helper retains the offline model for warm queries; clearing the index
 kills that process, including in-flight work. Framed requests are serialized in
 the feature executor, without blocking Qt's GUI or database event loop.
-Additional content scopes require local intent; MCP cannot prepare an index or
-widen access. Both transports retain native image content and structured sources.
+Additional content scopes require local intent; MCP has no preparation or
+scope-changing tool. Automatic preparation belongs to the opted-in local session.
+Both transports retain native image content and structured sources.
 See [setup and privacy](../user/local-ai-access.md) and
 [verification](../ux/evidence/krt139/README.md).
 

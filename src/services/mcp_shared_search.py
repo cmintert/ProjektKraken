@@ -20,21 +20,28 @@ def shared_search(
     """Search only selected scopes and return stable identities, never asset paths."""
     args = request["arguments"]
     query = args.get("query")
-    kinds = args.get("kinds") or ["longform", "map", "attachment"]
+    scope_of = {"longform": "longform", "map": "maps", "attachment": "attachments"}
+    kinds = args.get("kinds")
+    if kinds is None:
+        kinds = [
+            kind
+            for kind, scope in scope_of.items()
+            if scope in request.get("scopes", [])
+        ]
+        if not kinds:
+            raise McpFailure("SCOPE_DISABLED")
     if (
         not isinstance(query, str)
         or not query.strip()
         or len(query) > MAX_QUERY_CHARS
         or not isinstance(kinds, list)
+        or not kinds
         or any(kind not in {"longform", "map", "attachment"} for kind in kinds)
     ):
         raise McpFailure("INVALID_INPUT")
     limit = page_limit(args)
     for kind in kinds:
-        require_scope(
-            request,
-            {"longform": "longform", "map": "maps", "attachment": "attachments"}[kind],
-        )
+        require_scope(request, scope_of[kind])
     doc_id = args.get("doc_id", "default")
     try:
         validate_doc_id(doc_id)

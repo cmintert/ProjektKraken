@@ -37,9 +37,24 @@ class McpSemanticIndex:
         with self._lock:
             return (
                 self.vectors is not None
+                and self._embedding is not None
+                and self._embedding.available
                 and self.generation == generation
                 and self.revision == revision
             )
+
+    def invalidate_failed_helper(self, generation: str, revision: str) -> bool:
+        """Clear a dead helper only if it still belongs to this investigation."""
+        with self._lock:
+            if (
+                self.generation != generation
+                or self.revision != revision
+                or self._embedding is None
+                or self._embedding.available
+            ):
+                return False
+            self.clear()
+            return True
 
     def prepare(
         self,
@@ -99,14 +114,18 @@ class McpSemanticIndex:
         args = request["arguments"]
         if embedding is None:
             raise McpFailure("MODEL_UNAVAILABLE")
-        result = embedding.encode(
-            {"model": model, "texts": [args["query"]]}, expired, 9
-        )
-        vector = np.frombuffer(
-            base64.b64decode(result["vectors"], validate=True), dtype="float32"
-        )
-        if vector.size != matrix.shape[1] or not np.isfinite(vector).all():
-            raise McpFailure("MODEL_UNAVAILABLE")
+        try:
+            result = embedding.encode(
+                {"model": model, "texts": [args["query"]]}, expired, 9
+            )
+            vector = np.frombuffer(
+                base64.b64decode(result["vectors"], validate=True), dtype="float32"
+            )
+            if vector.size != matrix.shape[1] or not np.isfinite(vector).all():
+                raise McpFailure("MODEL_UNAVAILABLE")
+        except Exception:
+            embedding.close()
+            raise
         scores = matrix @ vector
         requested_tags = {tag.strip().casefold() for tag in args.get("tags") or []}
         candidates = (

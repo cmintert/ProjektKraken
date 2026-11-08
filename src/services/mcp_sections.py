@@ -6,9 +6,10 @@ from typing import Any
 
 from src.core.mcp_access import PAGE_SIZE, McpFailure
 from src.services.db_service import DatabaseService
-from src.services.mcp_facts import object_key, saved_object, saved_tags
+from src.services.mcp_facts import object_key, saved_object
 from src.services.mcp_public import public_projection
 from src.services.mcp_temporal import McpTemporalReader
+from src.services.repositories.mcp_read_repository import McpReadRepository
 
 Continuation = Callable[..., Any]
 SECTION_BYTES = 40000
@@ -137,6 +138,7 @@ class McpSections:
             }
             for key in ("description", "attributes", "tags")
         }
+        result["omitted_counts"] = data.get("omitted_counts", {})
         return result
 
     @staticmethod
@@ -148,6 +150,13 @@ class McpSections:
         ):
             raise McpFailure("INVALID_INPUT")
         names: set[str] = set()
+        if category == "tags":
+            return [
+                {"name": name}
+                for name in McpReadRepository(db.require_connection()).tag_facet_names(
+                    kinds
+                )
+            ]
         for kind in set(kinds):
             table = "entities" if kind == "entity" else "events"
             if category == "types":
@@ -157,15 +166,6 @@ class McpSections:
                         f"SELECT DISTINCT type FROM {table}"
                     )
                 )
-            else:
-                for row in db.require_connection().execute(f"SELECT id FROM {table}"):
-                    item = (
-                        db.get_entity(row[0])
-                        if kind == "entity"
-                        else db.get_event(row[0])
-                    )
-                    if item is not None:
-                        names.update(tag["name"] for tag in saved_tags(db, item))
         return [
             {"name": name} for name in sorted(names, key=lambda n: (n.casefold(), n))
         ]

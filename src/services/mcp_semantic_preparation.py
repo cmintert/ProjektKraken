@@ -9,14 +9,13 @@ from PySide6.QtCore import QObject, Qt, Signal, Slot
 
 from src.core.mcp_access import McpFailure
 from src.services.db_service import DatabaseService
+from src.services.mcp_embedding_protocol import MAX_DOCUMENTS, MAX_TEXT_BYTES
 from src.services.mcp_facts import saved_tags
 from src.services.mcp_public import public_projection
 from src.services.mcp_read_service import McpReadService, read_guard
 from src.services.mcp_semantic import McpSemanticIndex
 from src.services.repositories.mcp_read_repository import McpReadRepository
 
-MAX_DOCUMENTS = 50000
-MAX_TEXT_BYTES = 64 * 1024 * 1024
 BATCH_SIZE = 100
 
 
@@ -47,7 +46,7 @@ class SemanticPreparation(QObject):
 
     @Slot(dict)
     def prepare(self, request: dict[str, Any]) -> None:
-        """Start only from the local Prepare action; MCP cannot invoke this slot."""
+        """Prepare from local semantic sharing intent; MCP cannot invoke this slot."""
         self._index.clear()
         self._documents, self._bytes = [], 0
         self._active_request = request["request_id"]
@@ -79,6 +78,7 @@ class SemanticPreparation(QObject):
             self.changed.emit(
                 {
                     "generation": request["generation"],
+                    "request_id": request["request_id"],
                     "state": "preparing",
                     "count": len(self._documents),
                 }
@@ -97,13 +97,18 @@ class SemanticPreparation(QObject):
             self.changed.emit(
                 {
                     "generation": request["generation"],
+                    "request_id": request["request_id"],
                     "state": "stale" if exc.code == "WORLD_CHANGED" else "unavailable",
                 }
             )
         except Exception:
             self._documents = []
             self.changed.emit(
-                {"generation": request["generation"], "state": "unavailable"}
+                {
+                    "generation": request["generation"],
+                    "request_id": request["request_id"],
+                    "state": "unavailable",
+                }
             )
 
     def _append(self, db: DatabaseService, row: Any) -> None:
@@ -165,5 +170,9 @@ class SemanticPreparation(QObject):
             self._index.clear()
             result["state"] = "stale"
         self.changed.emit(
-            {"generation": result["generation"], "state": result["state"]}
+            {
+                "generation": result["generation"],
+                "request_id": result["request_id"],
+                "state": result["state"],
+            }
         )

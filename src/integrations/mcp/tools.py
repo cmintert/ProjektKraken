@@ -330,7 +330,7 @@ def _register_rich_tools(
         tags: list[str] | None = None,
         limit: int = 10,
     ) -> dict[str, Any]:
-        """Search an explicitly prepared local index, with labelled lexical fallback."""
+        """Search a locally enabled index, with labelled lexical fallback."""
         return await call(
             "semantic_search", {k: v for k, v in locals().items() if k != "call"}
         )

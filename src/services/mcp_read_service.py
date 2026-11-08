@@ -173,8 +173,11 @@ class McpReadService:
         if tool == "search_shared_content":
             return shared_search(db, request, revision, self._continue, self._remember)
         if tool == "semantic_search":
-            data = self._search(db, {**args, "ranking": "relevance"}, request, revision)
+            data = self._search(
+                db, {**args, "ranking": "relevance"}, request, revision, paged=False
+            )
             data.update(
+                truncated=data["partial"],
                 effective_search="lexical",
                 fallback_reason=(
                     "index_not_ready"
@@ -371,6 +374,8 @@ class McpReadService:
         args: dict[str, Any],
         request: dict[str, Any],
         revision: str,
+        *,
+        paged: bool = True,
     ) -> dict[str, Any]:
         from src.services.mcp_search import lexical_page
 
@@ -379,9 +384,9 @@ class McpReadService:
         return {
             "rows": rows,
             "partial": continuation is not None,
-            "done": continuation is None,
+            "done": not paged or continuation is None,
             "next_cursor": self._remember(continuation, args, request, revision)
-            if continuation is not None
+            if paged and continuation is not None
             else None,
             "omitted_counts": {},
         }

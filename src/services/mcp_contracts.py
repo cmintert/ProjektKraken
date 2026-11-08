@@ -24,6 +24,7 @@ class ReadPayload(TypedDict, total=False):
     next_cursor: str | None
     done: bool
     partial: bool
+    truncated: bool
     omitted_counts: dict[str, int]
     provenance: dict[str, Any]
     content: dict[str, Any]

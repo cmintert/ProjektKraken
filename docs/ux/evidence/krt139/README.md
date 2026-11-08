@@ -4,6 +4,90 @@ Primary purpose: verification reference for maintainers. Related task:
 [KRT-139](https://linear.app/projektkraken/issue/KRT-139/reliable-richer-mcp-reads-consistency-paging-scoped-world-content-and).
 The existing KRT-119 evidence remains historical; it does not certify this extension.
 
+## Automatic semantic preparation, 2026-11-08
+
+Owner direction supersedes the earlier separate mandatory Prepare action. Enabling
+sharing with the semantic scope selected automatically starts local preparation
+after secure startup. Saved changes cancel stale work and debounce refresh for
+300 ms; Stop/world switch cancels it. Preparation status carries its request ID
+so an old callback cannot replace a newer preparation's state. An unavailable
+model/preparation does not repeatedly retry; the form exposes **Retry semantic
+preparation** only in that state. No download or external embedding provider is used.
+
+**227 focused tests passed**, including startup/no-scope/failed-start checks,
+debounced refresh, cancellation on Stop/world replacement, old callback rejection,
+retry behavior and context-preserving Settings presentation. Ruff and mypy (638
+source files), complexity, visual and Help inspection policies pass.
+
+The [automatic preparation source check](automatic-semantic-connector.json) used
+the installed offline model, observed exactly one preparation reach ready without
+pressing a preparation button, then exercised all 20 tools in both SDK modes.
+Its verification-only observer waits for readiness before starting client calls;
+ordinary clients can receive labelled lexical fallback while preparation runs.
+Protected discovery and the disposable world are isolated as in the follow-up below.
+
+Presentation preserves authoring contracts 1/2/4/5/6/7/8/9: Settings keeps the local
+opt-in and Stop routes, and exposes recovery only when needed. Shared neutral
+secondary buttons, wrapping choices and disclosure roles retain focus/disabled
+behavior without new colors or local variants. Authored drafts, selection, caret,
+playhead, scroll and undo state are not changed. Six-theme offscreen renders cover
+preparing/ready/unavailable, 360/640/960 widths and unavailable/off controls; narrow
+light retry focus and dark ready controls were inspected. This is rendered and
+automated evidence; independent human/native-DPI review remains pending.
+
+![Automatic semantic recovery at narrow width](automatic-semantic-retry.png)
+
+![Ready semantic sharing without a redundant preparation action](automatic-semantic-ready.png)
+
+The user guide retains existing Help anchors and now describes enable → automatic
+preparation → ready, automatic refresh, and local retry recovery. The documentation
+review form below remains applicable; no human approval or reader observations
+are inferred from the source tests/builds. No new Windows package or independent
+desktop-client acceptance is claimed for this uncommitted change.
+
+## CodeRabbit follow-up, 2026-11-08
+
+Base revision: `22525d235231eb8f5bfaa649a1f76d67eaf746f0`; fixes are uncommitted.
+All six reported issues were checked against source and addressed:
+
+- Sensitive-name matching retains ordinary attributes such as Telepathy and
+  Sympathies while protecting separated/camel-case credential keys and common
+  compact aliases. `omitted_counts.restricted_fields` reports suppression without
+  disclosing names or values; summaries and section pages retain those counts.
+- Shared-content search defaults to enabled scopes. Explicit disabled kinds are
+  rejected, and a session with no enabled content scopes returns SCOPE_DISABLED.
+- Semantic lexical fallback is bounded top-K: no continuation handle is issued;
+  `truncated`/`partial` explicitly report additional matches. Ordinary lexical
+  search remains pageable.
+- Tag facets use one set-based query per selected kind, combining assigned and
+  legacy names, excluding non-text legacy values and deduplicating by casefold.
+- A dead warm helper immediately stops satisfying readiness. Queued worker
+  completion clears its matching index and publishes unavailable, even after
+  request expiry; a newer live preparation remains intact.
+- A shared frame budget accommodates re-escaping the full 64 MiB of public text
+  plus 50,000 document entries. Oversize frames are rejected before parsing or
+  writing; valid frames are never parsed from a truncated prefix.
+
+Verification: **217 focused tests passed**, including real framing at the text
+budget with 50,000 entries, protected-name variants, query-count checks and queued
+failure/expiry/new-preparation races. Ruff and mypy (638 source files) pass;
+complexity and Help inspection checks pass without baseline changes.
+
+The [isolated source connector check](review-fixes-connector.json) exercised all
+20 tools in both SDK modes, native images, exact paging and structured errors.
+It uses verification-only parent/relay factories pointing at a fresh encrypted,
+ACL-protected discovery directory. Normal discovery rejected startup during this
+run; no existing user session was stopped or production discovery rule changed.
+The disposable harness remains in ignored
+`artifacts/krt139/isolated_connector_verification.py`.
+
+The [installed offline model check](review-fixes-model.json) returned the expected
+synthetic match (4,868.70 ms preparation, 147.60 ms warm query), then confirmed
+helper termination revokes readiness and releases vectors. This is source evidence.
+The Windows package was not rebuilt for these fixes. Earlier package hashes and
+results below certify the earlier implementation, not this follow-up. Independent
+desktop-client conversations and human/native Help review remain pending.
+
 ## Implementation and contracts
 
 The additive catalogue preserves the eight earlier calls and adds capabilities,
@@ -131,7 +215,8 @@ Use a disposable benchmark world and these reader tasks:
 6. Read map validity and dated geometry, request a preview/crop and identify its exact
    raster variant without claiming vector overlays or unverified historical appearance.
 7. Verify disabled scopes return no protected content. Prepare the installed local
-   model explicitly; verify semantic sources, stale-index handling and labelled fallback.
+   model through local semantic opt-in; verify automatic readiness, semantic sources,
+   refresh after saved changes and labelled fallback during preparation or failure.
 8. Stop sharing while a request is pending. Verify no new facts or images arrive.
 
 Human prose/live Help approval, native theme/DPI interaction review and reader

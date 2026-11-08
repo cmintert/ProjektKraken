@@ -26,6 +26,27 @@ class McpReadRepository:
             }
         return result
 
+    def tag_facet_names(self, kinds: list[str]) -> list[str]:
+        """Read assigned normalized and legacy tag names without object loading."""
+        names: set[str] = set()
+        tables = {"entity": "entities", "event": "events"}
+        for kind in sorted(set(kinds)):
+            table = tables[kind]
+            rows = self._connection.execute(
+                f"SELECT DISTINCT t.name FROM tags t JOIN {kind}_tags j "
+                f"ON j.tag_id=t.id JOIN {table} o ON o.id=j.{kind}_id "
+                "UNION SELECT legacy.value FROM "
+                f"{table} o, json_each(CASE "
+                "WHEN json_type(o.attributes,'$._tags')='array' "
+                "THEN json_extract(o.attributes,'$._tags') ELSE '[]' END) legacy "
+                "WHERE legacy.type='text'"
+            )
+            names.update(row[0].strip() for row in rows if row[0].strip())
+        by_name: dict[str, str] = {}
+        for name in sorted(names, key=lambda value: (value.casefold(), value)):
+            by_name.setdefault(name.casefold(), name)
+        return list(by_name.values())
+
     def candidates(
         self, kinds: list[str], types: list[str], after: str, limit: int
     ) -> list[Any]:

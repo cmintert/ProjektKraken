@@ -124,6 +124,8 @@ context attributes retain their available Event/relation sources. A source marke
 `unavailable` means provenance was not supplied, not that a supporting Event exists.
 Private metadata and credential/path-bearing attributes remain excluded. Image
 previews require separate consent. Ordinary authored prose is returned as written.
+`omitted_counts.restricted_fields` counts filtered fields without revealing their
+names or values. Ordinary attribute names such as **Telepathy** remain visible.
 
 Event reads retain numeric lore dates alongside calendar-aware `temporal` captions,
 bounds, precision, qualifiers and unresolved status. `start`, independent `end`,
@@ -242,12 +244,19 @@ not the completeness of all world knowledge; inspect `omitted_counts` too.
 priority. Type alternatives use OR and tags use AND. Unicode matching preserves
 original spelling; description excerpts include original character offsets.
 
+`semantic_search` returns a bounded top-K result without continuation, including
+when it falls back to lexical matching. Lexical fallback reports `truncated: true`
+and `partial: true` when more matches exist; use `search_world` to page through
+lexical matches. Its `done: true` means that top-K request has finished.
+
 ### Share additional saved content
 
 Open **Additional sharing options** and select only the optional scopes you need
 before enabling sharing. Stop sharing
 before changing those choices, then enable a new session. Stopping clears the
 options; they are never saved as preferences.
+`search_shared_content` searches the enabled scopes by default. Explicitly asking
+for a disabled content kind returns **SCOPE_DISABLED**.
 
 Longform reads return saved structure and references to existing Entity/Event
 text, rather than a second manuscript. Deliberately excluded entries stay excluded.
@@ -272,18 +281,22 @@ AI provider just like text already returned.
 
 ### Prepare optional local semantic search
 
-1. Open **Additional sharing options**, select **Allow local semantic search**,
+1. Open **Additional sharing options**, select **Enable local semantic search**,
    then choose **Enable for this session**.
-2. Choose **Prepare semantic search**. It uses the configured sentence-transformers
-   model only when already installed locally. Preparation never downloads a model
-   or uses an external embedding provider.
-3. Wait for **Semantic search: ready**, then request `semantic_search`.
+2. Preparation starts automatically once sharing is active. Wait for
+   **Semantic search: ready**, then request `semantic_search`.
+
+Preparation uses the configured sentence-transformers model only when already
+installed locally. It never downloads a model or uses an external embedding
+provider. If preparation is unavailable, check the configured local model and
+choose **Retry semantic preparation**. Lexical search remains available meanwhile.
 
 Preparation copies public Entity/Event fields in bounded background steps. The
 prepared index and local model stay in memory for this session so queries reuse
 the loaded model. It supports up to 50,000 objects and
 64 MiB of public text. Map notes, captions and document structure are not
-semantically indexed. A changed world revision requires preparation again.
+semantically indexed. Saved changes trigger automatic preparation again after
+edits settle; results use labelled lexical fallback until the updated index is ready.
 Stop sharing to cancel preparation and release the index and model.
 
 If the model is unavailable, the scope is disabled or the index is unprepared or
@@ -297,8 +310,8 @@ acceptance are recorded separately from mocked inference and protocol tests.
 **Enable for this session** shares the current saved world with configured local
 clients. Access lasts until you stop it or Kraken's world/session ends. It never
 persists as an enabled preference. Optional scope choices apply to that session
-only. **Prepare semantic search** is a separate local action after enabling its
-scope; tool calls cannot start preparation or install models.
+only. Selecting semantic search also opts into automatic local preparation and
+refresh for that session; tool calls cannot enable it or install models.
 
 (help-mcp-activity)=
 

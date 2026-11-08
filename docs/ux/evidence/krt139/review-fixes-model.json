@@ -1,0 +1,10 @@
+{
+  "evidence": "source helper with installed offline model and synthetic public facts; not packaged/client acceptance",
+  "model": "sentence-transformers/all-MiniLM-L6-v2",
+  "preparation_ms": 4868.7,
+  "warm_query_ms": 147.6,
+  "expected_top_id": "ruler",
+  "actual_top_id": "ruler",
+  "dead_helper_revokes_readiness": true,
+  "failed_index_cleared": true
+}

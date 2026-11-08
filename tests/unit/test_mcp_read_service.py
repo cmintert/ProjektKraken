@@ -181,7 +181,11 @@ def test_public_projection_preserves_null_positions_but_removes_private_metadata
                 {"name": "Population", "value": 42},
             ],
         }
-    ) == {"range": [None, 2], "attributes": [{"name": "Population", "value": 42}]}
+    ) == {
+        "range": [None, 2],
+        "attributes": [{"name": "Population", "value": 42}],
+        "omitted_counts": {"restricted_fields": 2},
+    }
 
 
 def test_large_world_small_relevant_context_without_mutation(db_service, monkeypatch):
