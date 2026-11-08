@@ -1,0 +1,36 @@
+{
+  "verification_only": true,
+  "version": "0.21.0",
+  "source_revision": "afb6bad0c62bf3350b8aa2cc34f2c3c3479bd75a",
+  "source_dirty": true,
+  "semantic": {
+    "offline": true,
+    "model": "sentence-transformers/all-MiniLM-L6-v2",
+    "preparation_ms": 19288.93,
+    "warm_query_ms": 148.83,
+    "shape": [
+      2,
+      384
+    ],
+    "expected_top_id": "ruler",
+    "actual_top_id": "ruler",
+    "evidence": "Source index harness with final frozen helper, installed model and synthetic public documents"
+  },
+  "connector": "20 tools, both SDK modes, native image, exact pages and errors; frozen queued verification host",
+  "native_app": {
+    "first_run": true,
+    "restart": true,
+    "help_pages": 21,
+    "search_documents": 1137,
+    "world_boundary": "Existing configured world; no authoring commands in smoke probe. Not isolated-world or clean-VM acceptance.",
+    "preferences": "Final verification omitted --reset-settings. Earlier standard smoke reset ordinary preferences."
+  },
+  "independent_clients": "Pending Codex, Claude Desktop and locally executing ChatGPT Desktop conversations",
+  "sha256": {
+    "ProjektKraken.exe": "1ead049775f341a81b653204f1204a953d498ef931ca32374960def1e8254c4d",
+    "KrakenMCP.exe": "fcc26051ac0bbfcabc15d98125e3cd84fd103159f907123a2efc2c41cf323e21"
+  },
+  "runtime_tree_sha256": "c9f28eb3b8bac2470c7a6567b76988ad00c9263c260081619f81093bbb7ccd55",
+  "runtime_tree_files": 14150,
+  "runtime_tree_definition": "Sorted relative paths and SHA256 for both product EXEs, root LICENSE and all _internal files; verification host, metadata and logs excluded."
+}

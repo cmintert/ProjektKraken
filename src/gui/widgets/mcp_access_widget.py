@@ -11,6 +11,7 @@ from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.editor_presentation import DisclosureButton
 from src.gui.widgets.wrapping_buttons import WrappingPushButton
+from src.gui.widgets.wrapping_choices import WrappingCheckBox as QCheckBox
 
 
 class McpAccessWidget(QWidget):
@@ -18,6 +19,8 @@ class McpAccessWidget(QWidget):
 
     enable_requested = Signal()
     stop_requested = Signal()
+    scopes_requested = Signal(list)
+    prepare_requested = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         """Create a compact, keyboard-accessible integration form."""
@@ -31,8 +34,8 @@ class McpAccessWidget(QWidget):
         layout.addWidget(self.status)
         for text in (
             DISCLOSURE,
-            "Only saved Entity/Event content is shared. Unsaved drafts, files and "
-            "credentials are excluded. Sharing includes the current saved world; "
+            "Saved Entity/Event content is shared. Optional scopes below add "
+            "saved world content. Unsaved drafts and credentials are excluded; "
             "Kraken cannot identify secrets you have written into its prose.",
             "Access is local to this computer and available to configured clients "
             "under your user account. Restarting Kraken requires enabling again. "
@@ -51,7 +54,43 @@ class McpAccessWidget(QWidget):
             self.stop_button,
             "mcp.stop|integrations.mcp|help-mcp-stop",
         )
-        self.enable_button.clicked.connect(self.enable_requested.emit)
+        self.scope_boxes: dict[str, QCheckBox] = {}
+        self._sharing_was_on = False
+        self.scope_details = DisclosureButton("Additional sharing options", self)
+        declare_inspection(
+            self.scope_details, "mcp.enable|integrations.mcp|help-mcp-enable"
+        )
+        self.scope_choices = QWidget(self)
+        choice_layout = QVBoxLayout(self.scope_choices)
+        StyleHelper.apply_standard_list_spacing(choice_layout)
+        self.scope_choices.hide()
+        self.scope_details.toggled.connect(self.scope_choices.setVisible)
+        layout.addWidget(self.scope_details)
+        layout.addWidget(self.scope_choices)
+        for key, text in (
+            ("longform", "Share saved Longform structure"),
+            ("maps", "Share saved map facts"),
+            ("attachments", "Share attachment captions and metadata"),
+            ("images", "Share map and attachment image previews"),
+            ("semantic", "Allow local semantic search"),
+        ):
+            checkbox = declare_inspection(
+                QCheckBox(text, self.scope_choices),
+                "mcp.enable|integrations.mcp|help-mcp-enable",
+            )
+            checkbox.setAccessibleName(text)
+            self.scope_boxes[key] = checkbox
+            choice_layout.addWidget(checkbox)
+        self.prepare_button = WrappingPushButton("Prepare semantic search")
+        self.prepare_button.setToolTip(
+            "Use an already-installed local model for this session. No downloads."
+        )
+        declare_inspection(
+            self.prepare_button, "mcp.enable|integrations.mcp|help-mcp-enable"
+        )
+        self.prepare_button.clicked.connect(self.prepare_requested.emit)
+        choice_layout.addWidget(self.prepare_button)
+        self.enable_button.clicked.connect(self._enable)
         self.stop_button.clicked.connect(self.stop_requested.emit)
         layout.addWidget(self.enable_button)
         layout.addWidget(self.stop_button)
@@ -78,6 +117,12 @@ class McpAccessWidget(QWidget):
         layout.addWidget(self.activity)
         layout.addStretch()
 
+    def _enable(self) -> None:
+        self.scopes_requested.emit(
+            [key for key, box in self.scope_boxes.items() if box.isChecked()]
+        )
+        self.enable_requested.emit()
+
     def render_state(self, state: dict[str, Any]) -> None:
         """Render detached state without persisting preferences or reading data."""
         self.status.setText(
@@ -90,4 +135,36 @@ class McpAccessWidget(QWidget):
             else "Open a world before enabling local AI access"
         )
         self.stop_button.setEnabled(state["state"] in {"Starting", "Active"})
+        if state["state"] == "Off" and self._sharing_was_on:
+            for box in self.scope_boxes.values():
+                box.setChecked(False)
+        self._sharing_was_on = state["state"] != "Off"
+        for key, box in self.scope_boxes.items():
+            if state["state"] in {"Starting", "Active"}:
+                box.setChecked(key in state.get("scopes", []))
+            box.setEnabled(state["state"] == "Off")
+            box.setToolTip(
+                "Applies only to this session"
+                if state["state"] == "Off"
+                else "Stop sharing before changing content scopes"
+            )
+        self.scope_boxes["images"].setToolTip(
+            "Also requires map facts or attachment metadata sharing"
+        )
+        self.prepare_button.setEnabled(
+            state["state"] == "Active"
+            and "semantic" in state.get("scopes", [])
+            and state.get("semantic_state") != "preparing"
+        )
+        self.prepare_button.setToolTip(
+            "Use an already-installed local model. No downloads; Stop sharing cancels preparation."
+            if state["state"] == "Active" and "semantic" in state.get("scopes", [])
+            else "Enable local semantic search for this session first"
+        )
+        if "semantic" in state.get("scopes", []):
+            self.status.setText(
+                self.status.text()
+                + "\nSemantic search: "
+                + state.get("semantic_state", "unprepared")
+            )
         self.activity.setPlainText(json.dumps(state["activity"], indent=2))

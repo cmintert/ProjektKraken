@@ -1,11 +1,13 @@
 """Independent, bounded human browsing; never assembles an AI snapshot."""
 
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from typing import Any, cast
 
 from src.core.authoring_context import ContextItem, ContextRelation, ObjectType
 from src.core.calendar import CalendarConfig, CalendarConverter
 from src.core.entity_context_mode import EntityContextMode
+from src.core.event_timing.constraints import Cancel, checkpoint
 from src.core.events import Event
 from src.core.temporal_anchors import resolve_event_anchors
 from src.core.temporal_expression import ResolvedTemporalBounds
@@ -41,11 +43,19 @@ class StaleConnectionCursor(ValueError):
 class EntityConnectionBrowseService:
     """Evaluate short candidate batches on the database connection's thread."""
 
-    def __init__(self, db: DatabaseService) -> None:
+    def __init__(
+        self,
+        db: DatabaseService,
+        *,
+        event_loader: Callable[[set[str]], list[Event]] | None = None,
+        cancel: Cancel | None = None,
+    ) -> None:
         """Borrow an already-open worker-owned database for this operation."""
         self.db = db
         self.connection = db.require_connection()
         self.repository = EntityConnectionBrowseRepository(self.connection)
+        self._event_loader = event_loader
+        self._cancel = cancel
 
     def revision(self) -> list[int]:
         """Detect own writes and external commits on this same connection."""
@@ -83,6 +93,7 @@ class EntityConnectionBrowseService:
             )
             context = self._context(rows, query)
             for row in rows:
+                checkpoint(self._cancel)
                 relation = self._relation(row, context)
                 after = [
                     row["sort_source"],
@@ -145,10 +156,12 @@ class EntityConnectionBrowseService:
             event = self.db.get_event(identifier)
             if event is not None:
                 events[event.id] = event
+        if self._event_loader is not None:
+            events = {event.id: event for event in self._event_loader(identifiers)}
         mode = EntityContextMode(query["mode"])
         if mode != EntityContextMode.ALL_HISTORY:
             projection = EntityContextProjectionService(
-                self.db, mode, float(query["date"]), events
+                self.db, mode, float(query["date"]), events, self._cancel
             )
             return _BatchContext(events, projection.converter, {}, projection)
         config = self.db.get_active_calendar_config()
@@ -158,7 +171,7 @@ class EntityConnectionBrowseService:
         return _BatchContext(
             events,
             converter,
-            resolve_event_anchors(list(events.values()), converter),
+            resolve_event_anchors(list(events.values()), converter, self._cancel),
             None,
         )
 

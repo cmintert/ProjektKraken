@@ -130,6 +130,18 @@ def test_real_stdio_relay_new_tools_and_compact_arguments(server, mode):
 
     def dispatch(request):
         captured.append(request)
+        if request["tool"] == "get_image_preview":
+            session.complete(
+                {
+                    "request_id": request["request_id"],
+                    "result": {
+                        "status": "OK",
+                        "data": {"source_id": "map-a"},
+                        "_image": "aW1hZ2U=",
+                    },
+                }
+            )
+            return
         original(request)
 
     session._dispatch = dispatch
@@ -163,6 +175,12 @@ def test_real_stdio_relay_new_tools_and_compact_arguments(server, mode):
             for name in ("get_world_overview", "browse_world"):
                 result = await client.call_tool(name, {})
                 assert result.structured_content["status"] == "OK"
+            image = await client.call_tool(
+                "get_image_preview", {"source_kind": "map", "source_id": "map-a"}
+            )
+            assert image.content[-1].type == "image"
+            assert image.content[-1].data == "aW1hZ2U="
+            assert "_image" not in image.structured_content
 
     asyncio.run(run())
 

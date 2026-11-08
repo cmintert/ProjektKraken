@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import secrets
 import time
 from collections import deque
 from collections.abc import Callable
@@ -10,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import QObject, Qt, QThread, QTimer, Signal, Slot
 
+from src.core.mcp_access import SHARING_SCOPES, failure
 from src.services.mcp_compact import record_ids
 from src.services.mcp_read_task import DatabaseProvider, McpReadTask
 from src.services.mcp_session import McpSession
@@ -25,6 +27,8 @@ class McpCoordinator(QObject):
     requested = Signal(dict)
     _admitted = Signal(dict)
     _started = Signal(dict)
+    _prepare = Signal(dict)
+    _reset = Signal()
 
     def __init__(
         self,
@@ -32,6 +36,8 @@ class McpCoordinator(QObject):
         database: DatabaseProvider,
         db_thread: QThread,
         parent: QObject | None = None,
+        *,
+        local_model: Callable[[], str] | None = None,
     ) -> None:
         """Bind one feature endpoint on the existing DB thread."""
         super().__init__(parent)
@@ -45,11 +51,24 @@ class McpCoordinator(QObject):
         self._activity: deque[dict[str, Any]] = deque(maxlen=200)
         self._requests: dict[str, tuple[str, float, int]] = {}
         self._lore_epoch = 0
+        self._scopes: tuple[str, ...] = ()
+        self._local_model = local_model or (
+            lambda: "sentence-transformers/all-MiniLM-L6-v2"
+        )
+        self._semantic_state = "unprepared"
+        self._preparation_id = ""
         self._task = McpReadTask(database, self._expired)
         self._task.moveToThread(db_thread)
         db_thread.finished.connect(self._task.deleteLater)
         self.requested.connect(self._task.run, Qt.ConnectionType.QueuedConnection)
         self._task.finished.connect(self._completed, Qt.ConnectionType.QueuedConnection)
+        self._prepare.connect(
+            self._task.preparation.prepare, Qt.ConnectionType.QueuedConnection
+        )
+        self._reset.connect(self._task.reset, Qt.ConnectionType.QueuedConnection)
+        self._task.semantic_changed.connect(
+            self._semantic_changed, Qt.ConnectionType.QueuedConnection
+        )
         self._admitted.connect(self._dispatch, Qt.ConnectionType.QueuedConnection)
         self._started.connect(self._on_started, Qt.ConnectionType.QueuedConnection)
         self._poll = QTimer(self)
@@ -58,6 +77,8 @@ class McpCoordinator(QObject):
 
     def _expired(self, identifier: str) -> bool:
         session = self._session
+        if session is not None and identifier == self._preparation_id:
+            return not session.active or self._semantic_state != "preparing"
         return session is None or session.expired(identifier)
 
     def snapshot(self) -> dict[str, Any]:
@@ -69,6 +90,8 @@ class McpCoordinator(QObject):
             "world_name": world.get("world_name", "No world loaded"),
             "available": bool(world.get("database")) and self._db_thread.isRunning(),
             "activity": list(self._activity),
+            "scopes": list(self._scopes),
+            "semantic_state": self._semantic_state,
         }
 
     @Slot()
@@ -88,7 +111,7 @@ class McpCoordinator(QObject):
             self._poll.start()
             self._message = ""
             self._state = "Starting"
-            self._session = McpSession(world, self._admitted.emit)
+            self._session = McpSession(world, self._admitted.emit, self._scopes)
             generation = self._session.generation
             self._server = LocalMcpServer(
                 self._session,
@@ -119,9 +142,51 @@ class McpCoordinator(QObject):
             self._retiring.append(self._server)
             self._server = None
         self._session = None
+        self._scopes = ()
+        self._semantic_state = "unprepared"
+        self._preparation_id = ""
+        self._reset.emit()
         self._requests.clear()
         self._emit()
         self._check()
+
+    @Slot(list)
+    def set_scopes(self, scopes: list[str]) -> None:
+        """Capture local consent while sharing is off; active changes revoke first."""
+        selected = tuple(key for key in SHARING_SCOPES if key in scopes)
+        if self._state != "Off":
+            self.stop()
+            return
+        self._scopes = selected
+
+    @Slot()
+    def prepare_semantic(self) -> None:
+        """Only explicit local intent can prepare an installed offline model."""
+        session = self._session
+        if (
+            session is None
+            or "semantic" not in self._scopes
+            or self._semantic_state == "preparing"
+        ):
+            return
+        self._semantic_state = "preparing"
+        self._preparation_id = "prepare:" + secrets.token_urlsafe(24)
+        self._prepare.emit(
+            {
+                **session.world,
+                "generation": session.generation,
+                "request_id": self._preparation_id,
+                "model": self._local_model(),
+            }
+        )
+        self._emit()
+
+    @Slot(dict)
+    def _semantic_changed(self, result: dict[str, Any]) -> None:
+        if self._session is None or result["generation"] != self._session.generation:
+            return
+        self._semantic_state = result["state"]
+        self._emit()
 
     @Slot(dict)
     def _on_started(self, result: dict[str, Any]) -> None:
@@ -151,6 +216,7 @@ class McpCoordinator(QObject):
                 time.monotonic(),
                 self._lore_epoch,
             )
+            request["semantic_state"] = self._semantic_state
             self.requested.emit(request)
 
     @Slot(dict)
@@ -164,10 +230,10 @@ class McpCoordinator(QObject):
             return
         result = response["result"]
         if request[2] != self._lore_epoch:
-            result = {"status": "WORLD_CHANGED", "data": None}
+            result = failure("WORLD_CHANGED")
             response["result"] = result
         if session.expired(response["request_id"]):
-            result = {"status": "TIMEOUT", "data": None}
+            result = failure("TIMEOUT")
             response["result"] = result
         self._activity.append(
             {
@@ -185,6 +251,11 @@ class McpCoordinator(QObject):
     def invalidate(self, *_args: Any) -> None:
         """Reject queued results whose saved lore changed before delivery."""
         self._lore_epoch += 1
+        if self._semantic_state in {"ready", "preparing"}:
+            self._semantic_state = "stale"
+            self._preparation_id = ""
+            self._reset.emit()
+            self._emit()
 
     @staticmethod
     def _record_ids(value: Any) -> list[str]:

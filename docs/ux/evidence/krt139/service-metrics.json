@@ -1,0 +1,278 @@
+[
+  {
+    "unrelated_entities": 100,
+    "evidence": "service-only; no desktop/client acceptance",
+    "calls": [
+      {
+        "tool": "get_active_world",
+        "elapsed_ms": 0.25,
+        "bytes": 262
+      },
+      {
+        "tool": "get_context",
+        "elapsed_ms": 9.62,
+        "bytes": 5654
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.43,
+        "bytes": 12275
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.36,
+        "bytes": 12310
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.34,
+        "bytes": 12300
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.34,
+        "bytes": 12310
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.33,
+        "bytes": 12311
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.31,
+        "bytes": 12300
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.32,
+        "bytes": 12310
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.32,
+        "bytes": 12311
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.32,
+        "bytes": 12300
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.31,
+        "bytes": 12310
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.32,
+        "bytes": 12311
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.33,
+        "bytes": 12311
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.32,
+        "bytes": 12271
+      }
+    ],
+    "peak_python_bytes": 1942553,
+    "expected_sources": {
+      "entity_id": "3f64d341-1bf7-4c79-9791-a66099912c13",
+      "event_id": "66fc184d-433d-46f0-bf21-b833c8f97648",
+      "relation_id": "67a26dab-170d-4a05-8aa1-0ccb13421b24"
+    },
+    "verified": [
+      "historical_source",
+      "exact_paged_text",
+      "revision_rejection"
+    ]
+  },
+  {
+    "unrelated_entities": 10000,
+    "evidence": "service-only; no desktop/client acceptance",
+    "calls": [
+      {
+        "tool": "get_active_world",
+        "elapsed_ms": 0.23,
+        "bytes": 262
+      },
+      {
+        "tool": "get_context",
+        "elapsed_ms": 47.05,
+        "bytes": 5654
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.4,
+        "bytes": 12275
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.35,
+        "bytes": 12310
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.34,
+        "bytes": 12300
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.33,
+        "bytes": 12310
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.32,
+        "bytes": 12311
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.33,
+        "bytes": 12300
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.32,
+        "bytes": 12310
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.34,
+        "bytes": 12311
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.33,
+        "bytes": 12300
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.32,
+        "bytes": 12310
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.32,
+        "bytes": 12311
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.32,
+        "bytes": 12311
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.33,
+        "bytes": 12271
+      }
+    ],
+    "peak_python_bytes": 1848188,
+    "expected_sources": {
+      "entity_id": "8b781823-65d3-458a-8326-ee0467700547",
+      "event_id": "4aa7cc63-6f4f-4325-b8bd-713309795309",
+      "relation_id": "e6466d71-1c38-4bb8-9fcf-9bb5ade0a985"
+    },
+    "verified": [
+      "historical_source",
+      "exact_paged_text",
+      "revision_rejection"
+    ]
+  },
+  {
+    "unrelated_entities": 50000,
+    "evidence": "service-only; no desktop/client acceptance",
+    "calls": [
+      {
+        "tool": "get_active_world",
+        "elapsed_ms": 0.25,
+        "bytes": 262
+      },
+      {
+        "tool": "get_context",
+        "elapsed_ms": 221.97,
+        "bytes": 5654
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.45,
+        "bytes": 12275
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.38,
+        "bytes": 12310
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.37,
+        "bytes": 12300
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.36,
+        "bytes": 12310
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.36,
+        "bytes": 12311
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.36,
+        "bytes": 12300
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.36,
+        "bytes": 12310
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.36,
+        "bytes": 12311
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.36,
+        "bytes": 12300
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.36,
+        "bytes": 12310
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.36,
+        "bytes": 12311
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.35,
+        "bytes": 12311
+      },
+      {
+        "tool": "read_object_section",
+        "elapsed_ms": 0.35,
+        "bytes": 12271
+      }
+    ],
+    "peak_python_bytes": 1847372,
+    "expected_sources": {
+      "entity_id": "c08562dd-8fbe-44e7-a9e1-c07418c755fb",
+      "event_id": "d7c7279a-3a44-453b-9a75-1d9a6bc02d62",
+      "relation_id": "44e359c1-88c0-4dcb-a963-cf425f06e686"
+    },
+    "verified": [
+      "historical_source",
+      "exact_paged_text",
+      "revision_rejection"
+    ]
+  }
+]

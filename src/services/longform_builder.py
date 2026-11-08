@@ -288,6 +288,7 @@ def read_all_longform_items(
     *,
     include_excluded: bool = False,
     include_unindexed: bool = False,
+    include_content: bool = True,
 ) -> List[Dict[str, Any]]:
     """Read all events and entities that have longform metadata.
 
@@ -297,6 +298,8 @@ def read_all_longform_items(
         allowed_ids: Optional filter applied without changing membership.
         include_excluded: Include deliberate exclusions for indexing bookkeeping.
         include_unindexed: Project new content without writing metadata.
+        include_content: Include prose and full attributes; false reads outline
+            metadata only and avoids materializing unrelated authored bodies.
 
     Returns:
         List[Dict]: List of items with keys: table, id, name, content,
@@ -306,9 +309,16 @@ def read_all_longform_items(
     validate_doc_id(doc_id)
     items = []
 
+    projection = (
+        "description, attributes"
+        if include_content
+        else "'' AS description, CASE WHEN json_valid(attributes) THEN "
+        "json_object('_longform',json_extract(attributes,'$._longform')) "
+        "ELSE '{}' END AS attributes"
+    )
     # Read events
     cursor = conn.execute(
-        "SELECT id, name, description, attributes, lore_date, lore_duration FROM events"
+        f"SELECT id, name, {projection}, lore_date, lore_duration FROM events"
     )
     for row in cursor.fetchall():
         row_dict = dict(row)
@@ -335,7 +345,7 @@ def read_all_longform_items(
             )
 
     # Read entities
-    cursor = conn.execute("SELECT id, name, description, attributes FROM entities")
+    cursor = conn.execute(f"SELECT id, name, {projection} FROM entities")
     for row in cursor.fetchall():
         row_dict = dict(row)
         attrs = _safe_json_loads(row_dict.get("attributes", "{}"))
@@ -438,6 +448,7 @@ def build_longform_sequence(
     allowed_ids: Optional[Set[str]] = None,
     *,
     include_unindexed: bool = False,
+    include_content: bool = True,
 ) -> List[Dict[str, Any]]:
     """Build an ordered sequence of longform items for rendering.
 
@@ -446,6 +457,8 @@ def build_longform_sequence(
 
     This function is read-only. Call :func:`ensure_all_items_indexed` explicitly
     from a trusted mutation path when the document should be auto-populated.
+    With ``include_content=False``, read only outline metadata and reject an
+    unreachable hierarchy instead of returning an apparently complete outline.
 
     Args:
         conn: SQLite connection.
@@ -458,10 +471,16 @@ def build_longform_sequence(
     """
     if include_unindexed:
         items = read_all_longform_items(
-            conn, doc_id, allowed_ids=allowed_ids, include_unindexed=True
+            conn,
+            doc_id,
+            allowed_ids=allowed_ids,
+            include_unindexed=True,
+            include_content=include_content,
         )
     else:
-        items = read_all_longform_items(conn, doc_id, allowed_ids=allowed_ids)
+        items = read_all_longform_items(
+            conn, doc_id, allowed_ids=allowed_ids, include_content=include_content
+        )
 
     # Build parent-child map
     children_map: Dict[Optional[str], List[Dict]] = {}
@@ -505,7 +524,10 @@ def build_longform_sequence(
 
         return result
 
-    return _walk(None, 0)
+    sequence = _walk(None, 0)
+    if not include_content and len(sequence) != len(items):
+        raise ValueError("Longform hierarchy contains unreachable records")
+    return sequence
 
 
 def insert_or_update_longform_meta(

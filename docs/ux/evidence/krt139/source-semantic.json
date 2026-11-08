@@ -1,0 +1,16 @@
+{
+  "offline": true,
+  "model": "sentence-transformers/all-MiniLM-L6-v2",
+  "preparation_ms": 4632.61,
+  "warm_query_ms": 10.79,
+  "shapes": [
+    [
+      1,
+      384
+    ],
+    [
+      1,
+      384
+    ]
+  ]
+}

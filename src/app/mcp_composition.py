@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QEvent, QObject, Qt
+from PySide6.QtCore import QEvent, QObject, QSettings, Qt
 from PySide6.QtWidgets import QApplication, QMenu
 
 from src.app.coordinators.mcp_coordinator import McpCoordinator
+from src.core.settings import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 from src.gui.utils.settings_navigation import request_settings
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.utils.theme_connections import connect_theme
@@ -52,7 +53,16 @@ def compose_mcp(window: MainWindow, settings: SettingsCoordinator) -> McpCoordin
 
     thread = window.worker_thread
     assert thread is not None
-    coordinator = McpCoordinator(context, lambda: worker.db_service, thread, window)
+
+    def local_model() -> str:
+        value = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP).value(
+            "ai_st_model", ""
+        )
+        return str(value) or "sentence-transformers/all-MiniLM-L6-v2"
+
+    coordinator = McpCoordinator(
+        context, lambda: worker.db_service, thread, window, local_model=local_model
+    )
     window.data_coordinator.lore_mutation_applied.connect(coordinator.invalidate)
     close_filter = _CloseAccess(coordinator)
     window.installEventFilter(close_filter)
@@ -93,6 +103,8 @@ def compose_mcp(window: MainWindow, settings: SettingsCoordinator) -> McpCoordin
         form = McpAccessWidget(view)
         view.add_page("kraken", "Integrations", form)
         form.enable_requested.connect(coordinator.enable)
+        form.scopes_requested.connect(coordinator.set_scopes)
+        form.prepare_requested.connect(coordinator.prepare_semantic)
         form.stop_requested.connect(coordinator.stop)
         coordinator.changed.connect(form.render_state)
         form.render_state(coordinator.snapshot())

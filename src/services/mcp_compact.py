@@ -133,6 +133,12 @@ def record_ids(data: Any) -> list[str]:
     found: list[str] = []
     for root in roots:
         if isinstance(root, dict):
+            if (
+                root.get("source_kind") in {"map", "attachment"}
+                and "asset_revision" in root
+                and isinstance(root.get("source_id"), str)
+            ):
+                found.append(root["source_id"])
             found.extend(
                 root[key]
                 for key in ("entity_id", "event_id")

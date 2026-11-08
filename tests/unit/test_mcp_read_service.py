@@ -184,17 +184,17 @@ def test_public_projection_preserves_null_positions_but_removes_private_metadata
     ) == {"range": [None, 2], "attributes": [{"name": "Population", "value": 42}]}
 
 
-def test_large_context_rejected_explicitly_without_mutation(db_service, monkeypatch):
+def test_large_world_small_relevant_context_without_mutation(db_service, monkeypatch):
     import src.services.mcp_read_service as module
 
     monkeypatch.setattr(module, "_MAX_CONTEXT_INPUT_ROWS", 1)
     entity = Entity("One", "place")
     db_service.insert_entity(entity)
     db_service.insert_entity(Entity("Two", "place"))
-    with pytest.raises(McpFailure, match="CONTEXT_LIMIT"):
-        McpReadService().execute(
-            db_service,
-            request("get_context", kind="entity", id=entity.id, mode="all_history"),
-            lambda: False,
-        )
+    result = McpReadService().execute(
+        db_service,
+        request("get_context", kind="entity", id=entity.id, mode="all_history"),
+        lambda: False,
+    )
+    assert result["status"] == "OK"
     assert db_service.get_entity(entity.id).name == "One"

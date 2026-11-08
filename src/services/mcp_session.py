@@ -18,9 +18,11 @@ class McpSession:
         self,
         world: dict[str, str],
         dispatch: Callable[[dict[str, Any]], None],
+        scopes: tuple[str, ...] = (),
     ) -> None:
         """Capture immutable world context when the user explicitly enables access."""
         self.world = dict(world)
+        self.scopes = tuple(scopes)
         self.generation = secrets.token_urlsafe(24)
         self.token = secrets.token_urlsafe(32)
         self._dispatch = dispatch
@@ -62,6 +64,7 @@ class McpSession:
                 "request_id": identifier,
                 "tool": tool,
                 "arguments": arguments,
+                "scopes": list(self.scopes),
             }
         try:
             self._dispatch(request)

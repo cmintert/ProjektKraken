@@ -13,10 +13,21 @@ Composition is isolated in `mcp_composition`; the Settings form emits intent and
 renders snapshots. There are no MCP worker slots or longform-server routes.
 Sharing is never persisted. Windows discovery uses DPAPI, current-user/SYSTEM
 ACLs, exclusive ownership and atomic publication. The console relay uses neither
-the CLI nor a separate database connection. Context inputs above 5,000 rows per
-major table return an explicit limit rather than monopolizing the DB worker.
+the CLI nor a separate database connection. Large worlds discover relevant context
+inputs without loading unrelated prose. Relevant input sets and complete connected
+timing components retain a 5,000-record ceiling. The shared context builder accepts
+detached inputs and can expose sections before its presentation budget, preserving
+ordinary UI defaults. Image decoding and offline-only embedding inference use
+cancellable helper processes outside the GUI and database threads; completion
+returns to the worker for a fresh revision check. Explicit semantic preparation
+yields between worker snapshots and stores public-fact vectors in session memory.
+The prepared helper retains the offline model for warm queries; clearing the index
+kills that process, including in-flight work. Framed requests are serialized in
+the feature executor, without blocking Qt's GUI or database event loop.
+Additional content scopes require local intent; MCP cannot prepare an index or
+widen access. Both transports retain native image content and structured sources.
 See [setup and privacy](../user/local-ai-access.md) and
-[verification](../ux/evidence/krt119/README.md).
+[verification](../ux/evidence/krt139/README.md).
 
 ## Activity workspace layouts
 

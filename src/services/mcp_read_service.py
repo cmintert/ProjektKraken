@@ -14,8 +14,10 @@ from typing import Any
 
 from src.core.authoring_context import EntityAuthoringContext, EventAuthoringContext
 from src.core.entity_context_mode import EntityContextMode
+from src.core.events import Event
 from src.core.mcp_access import MAX_RESULT_BYTES, PAGE_SIZE, McpFailure
 from src.services.authoring_context_builder import AuthoringContextBuilder
+from src.services.context_read_inputs import relevant_inputs, timing_component_ids
 from src.services.db_service import DatabaseService
 from src.services.entity_connection_browse_service import (
     EntityConnectionBrowseService,
@@ -23,78 +25,24 @@ from src.services.entity_connection_browse_service import (
 )
 from src.services.mcp_browse import browse_arguments, browse_batch
 from src.services.mcp_compact import compact_data
+from src.services.mcp_contracts import capabilities, check_preconditions
 from src.services.mcp_facts import (
     enrich_context,
     object_key,
     saved_object,
     world_overview,
 )
+from src.services.mcp_images import image_job
+from src.services.mcp_public import public_projection
+from src.services.mcp_sections import McpSections
+from src.services.mcp_shared_search import shared_search
 from src.services.mcp_temporal import McpTemporalReader
+from src.services.mcp_world_reads import McpWorldReads
 from src.services.repositories.mcp_read_repository import McpReadRepository
 
-_HIDDEN_KEYS = frozenset(
-    {
-        "attachments",
-        "path",
-        "file_path",
-        "assets_dir",
-        "image_path",
-        "api_key",
-        "password",
-        "token",
-        "secret",
-        "credentials",
-    }
-)
 _MAX_CURSORS = 200
 _MAX_QUERY_CHARS = 256
 _MAX_CONTEXT_INPUT_ROWS = 5000
-
-
-def _restricted_name(name: str) -> bool:
-    normalized = name.casefold().replace(" ", "_").replace("-", "_")
-    return (
-        normalized.startswith("_")
-        or normalized in _HIDDEN_KEYS
-        or any(
-            marker in normalized
-            for marker in (
-                "path",
-                "credential",
-                "api_key",
-                "password",
-                "secret",
-                "token",
-            )
-        )
-    )
-
-
-def _restricted_attribute(value: Any) -> bool:
-    return (
-        isinstance(value, dict)
-        and "value" in value
-        and _restricted_name(str(value.get("name", "")))
-    )
-
-
-def public_projection(value: Any) -> Any:
-    """Copy bounded factual values, removing internal and path-bearing metadata."""
-    if isinstance(value, dict):
-        if _restricted_attribute(value):
-            return None
-        return {
-            str(key): public_projection(item)
-            for key, item in value.items()
-            if not _restricted_name(str(key))
-        }
-    if isinstance(value, (list, tuple)):
-        return [
-            public_projection(item) for item in value if not _restricted_attribute(item)
-        ]
-    if isinstance(value, float) and not math.isfinite(value):
-        return None
-    return value
 
 
 @contextmanager
@@ -147,12 +95,18 @@ class McpReadService:
     def __init__(self) -> None:
         """Own bounded, session-local opaque continuation handles."""
         self._cursors: dict[str, dict[str, Any]] = {}
+        self._sections = McpSections(self._continue, self._remember)
+        self._world_reads = McpWorldReads(self._continue, self._remember)
 
     @staticmethod
     def revision(db: DatabaseService) -> str:
         """Hash local revision markers without publishing connection identities."""
         raw = EntityConnectionBrowseService(db).revision()
         return hashlib.sha256(json.dumps(raw).encode()).hexdigest()
+
+    def reset(self) -> None:
+        """Release query bindings and continuation handles when sharing ends."""
+        self._cursors.clear()
 
     def execute(
         self,
@@ -163,6 +117,7 @@ class McpReadService:
         """Execute one bounded query against the active worker connection."""
         if expired():
             raise McpFailure("TIMEOUT")
+        self._expired = expired
         args = request["arguments"]
         tool = request["tool"]
         detail = args.get("detail", "full")
@@ -170,12 +125,14 @@ class McpReadService:
             raise McpFailure("INVALID_INPUT")
         with read_guard(db.require_connection(), expired):
             revision = self.revision(db)
+            check_preconditions(args, request, revision)
             with db.transaction():
                 data = self._dispatch(db, tool, args, request, revision)
             if expired():
                 raise McpFailure("TIMEOUT")
             if self.revision(db) != revision:
                 raise McpFailure("WORLD_CHANGED")
+        pending_image = data.pop("image_job", None)
         data = public_projection(data)
         if detail == "compact":
             data = compact_data(data)
@@ -194,6 +151,13 @@ class McpReadService:
             result["detail"] = detail
         if len(json.dumps(result, allow_nan=False).encode()) > MAX_RESULT_BYTES:
             raise McpFailure("RESULT_TOO_LARGE")
+        with read_guard(db.require_connection(), expired):
+            if expired():
+                raise McpFailure("TIMEOUT")
+            if self.revision(db) != revision:
+                raise McpFailure("WORLD_CHANGED")
+        if pending_image is not None:
+            result["_image_job"] = pending_image
         return result
 
     def _dispatch(
@@ -204,6 +168,30 @@ class McpReadService:
         request: dict[str, Any],
         revision: str,
     ) -> dict[str, Any]:
+        if tool == "get_capabilities":
+            return capabilities(request)
+        if tool == "search_shared_content":
+            return shared_search(db, request, revision, self._continue, self._remember)
+        if tool == "semantic_search":
+            data = self._search(db, {**args, "ranking": "relevance"}, request, revision)
+            data.update(
+                effective_search="lexical",
+                fallback_reason=(
+                    "index_not_ready"
+                    if "semantic" in request.get("scopes", [])
+                    else "scope_disabled"
+                ),
+            )
+            return data
+        if tool == "get_image_preview":
+            # Kept outside public data; only the worker task consumes this job.
+            return {"image_job": image_job(db, request)}
+        if self._sections.supports(tool):
+            return self._sections.execute(
+                db, request, revision, self._context, self._expired
+            )
+        if self._world_reads.supports(tool):
+            return self._world_reads.execute(db, request, revision, self._expired)
         if tool == "get_active_world":
             return {
                 "id": request["world_id"],
@@ -221,7 +209,7 @@ class McpReadService:
         if tool == "browse_world":
             filters = browse_arguments(args)
             after = self._continue(args, request, revision) or ""
-            data, continuation = browse_batch(db, filters, after)
+            data, continuation = browse_batch(db, filters, after, self._expired)
             data["next_cursor"] = (
                 self._remember(continuation, args, request, revision)
                 if continuation is not None
@@ -231,20 +219,41 @@ class McpReadService:
         if tool not in {"get_object", "get_context"}:
             raise McpFailure("INVALID_TOOL")
         kind, identifier = object_key(args)
-        reader = McpTemporalReader(db)
+        reader = McpTemporalReader(db, self._expired)
         if tool == "get_object":
             return saved_object(db, kind, identifier, reader)
+        return self._context(db, args)
+
+    def _context(self, db: DatabaseService, args: dict[str, Any]) -> dict[str, Any]:
+        kind, identifier = object_key(args)
+        reader = McpTemporalReader(db, self._expired)
         item = (
             db.get_entity(identifier) if kind == "entity" else db.get_event(identifier)
         )
         if item is None:
             raise McpFailure("NOT_FOUND")
         mode, day = self._date(args, require_date=kind == "entity")
-        builder = AuthoringContextBuilder(db)
+        if isinstance(item, Event) and day is None:
+            projected = reader.projected(item)
+            if projected is None or projected.lore_date is None:
+                raise McpFailure("INVALID_DATE")
+            day = projected.lore_date
+        bounded = not args.get("unbounded", False)
+        inputs = None
         if not McpReadRepository(db.require_connection()).context_within_limit(
             _MAX_CONTEXT_INPUT_ROWS
         ):
-            raise McpFailure("CONTEXT_LIMIT")
+            effective_day = day if day is not None else getattr(item, "lore_date", None)
+            inputs = relevant_inputs(
+                db, kind, identifier, self._expired, day=effective_day, bounded=bounded
+            )
+        builder = AuthoringContextBuilder(
+            db,
+            inputs=inputs,
+            bounded=bounded,
+            cancel=self._expired,
+            complete_anchors=True,
+        )
         context: EntityAuthoringContext | EventAuthoringContext | None
         if kind == "entity":
             context = builder.build_entity_context(
@@ -261,8 +270,7 @@ class McpReadService:
         data["omitted_counts"]["attachment_access_disabled"] = 1
         return data
 
-    @staticmethod
-    def _objects(db: DatabaseService, args: dict[str, Any]) -> dict[str, Any]:
+    def _objects(self, db: DatabaseService, args: dict[str, Any]) -> dict[str, Any]:
         objects = args.get("objects")
         if (
             not isinstance(objects, list)
@@ -272,7 +280,7 @@ class McpReadService:
             raise McpFailure("INVALID_INPUT")
         keys = [object_key(item) for item in objects]
         results: list[dict[str, Any]] = []
-        reader = McpTemporalReader(db)
+        reader = McpTemporalReader(db, self._expired)
         for kind, identifier in keys:
             try:
                 data = saved_object(db, kind, identifier, reader)
@@ -364,35 +372,16 @@ class McpReadService:
         request: dict[str, Any],
         revision: str,
     ) -> dict[str, Any]:
-        query = args.get("query")
-        kinds = args.get("kinds") or ["entity", "event"]
-        limit = args.get("limit", PAGE_SIZE)
-        if (
-            not isinstance(query, str)
-            or not query.strip()
-            or len(query) > _MAX_QUERY_CHARS
-            or not isinstance(limit, int)
-            or not 1 <= limit <= PAGE_SIZE
-            or not isinstance(kinds, list)
-            or not kinds
-            or any(k not in {"entity", "event"} for k in kinds)
-        ):
-            raise McpFailure("INVALID_INPUT")
-        after = self._continue(args, request, revision) or ""
-        rows = McpReadRepository(db.require_connection()).search(
-            query, kinds, after, limit
-        )
-        more = len(rows) > limit
-        rows = rows[:limit]
+        from src.services.mcp_search import lexical_page
+
+        after = self._continue(args, request, revision)
+        rows, continuation = lexical_page(db.require_connection(), args, after)
         return {
-            "rows": [
-                {key: row[key] for key in ("kind", "id", "name", "snippet")}
-                for row in rows
-            ],
-            "partial": more,
-            "done": not more,
-            "next_cursor": self._remember(rows[-1]["ordering"], args, request, revision)
-            if more
+            "rows": rows,
+            "partial": continuation is not None,
+            "done": continuation is None,
+            "next_cursor": self._remember(continuation, args, request, revision)
+            if continuation is not None
             else None,
             "omitted_counts": {},
         }
@@ -407,7 +396,11 @@ class McpReadService:
         mode, day = self._date(args)
         cursor = self._continue(args, request, revision)
         try:
-            result = EntityConnectionBrowseService(db).step(
+            result = EntityConnectionBrowseService(
+                db,
+                event_loader=lambda ids: self._connection_events(db, ids),
+                cancel=self._expired,
+            ).step(
                 {
                     "query": {
                         "entity_id": args["entity_id"],
@@ -433,3 +426,13 @@ class McpReadService:
             key: continuation[key] for key in ("excluded", "unreadable")
         }
         return result
+
+    def _connection_events(self, db: DatabaseService, seeds: set[str]) -> list[Event]:
+        if not seeds:
+            return []
+        ids = timing_component_ids(db, seeds, self._expired)
+        return [
+            event
+            for identifier in sorted(ids)
+            if (event := db.get_event(identifier)) is not None
+        ]

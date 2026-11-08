@@ -27,6 +27,7 @@ from src.core.authoring_context import (
 from src.core.calendar import CalendarConfig, CalendarConverter
 from src.core.entities import Entity
 from src.core.entity_context_mode import EntityContextMode
+from src.core.event_timing.constraints import Cancel
 from src.core.events import Event
 from src.core.map import Map
 from src.core.temporal_anchors import resolve_event_anchors
@@ -36,6 +37,7 @@ from src.core.temporal_window import (
     TemporalWindowKind,
     resolve_temporal_window,
 )
+from src.services.context_read_inputs import ContextReadInputs
 from src.services.db_service import DatabaseService
 from src.services.entity_context_projection import (
     EntityContextProjectionService,
@@ -78,10 +80,28 @@ class AuthoringContextBuilder:
         db: DatabaseService,
         *,
         world_root: Path | None = None,
+        inputs: ContextReadInputs | None = None,
+        bounded: bool = True,
+        cancel: Cancel | None = None,
+        complete_anchors: bool = False,
     ) -> None:
         """Initialize the builder with one connected database service."""
         self._db = db
         self._world_root = world_root
+        self._inputs = inputs
+        self._bounded = bounded
+        self._cancel = cancel
+        self._complete_anchors = complete_anchors
+        self._anchor_snapshot: dict[str, ResolvedTemporalBounds] | None = None
+
+    def _entities(self) -> list[Entity]:
+        return self._inputs.entities if self._inputs else self._db.get_all_entities()
+
+    def _events(self) -> list[Event]:
+        return self._inputs.events if self._inputs else self._db.get_all_events()
+
+    def _relations(self) -> list[dict[str, Any]]:
+        return self._inputs.relations if self._inputs else self._db.get_all_relations()
 
     def build_event_context(
         self,
@@ -230,13 +250,14 @@ class AuthoringContextBuilder:
                 self._db,
                 mode,
                 context_date,
-                {item.id: item for item in self._db.get_all_events()},
+                {item.id: item for item in self._events()},
+                self._cancel,
             )
             entity = self._entity_projection.resolve_entity(entity)
 
-        entities_by_id = {item.id: item for item in self._db.get_all_entities()}
+        entities_by_id = {item.id: item for item in self._entities()}
         entities_by_id[entity.id] = entity
-        events_by_id = {item.id: item for item in self._db.get_all_events()}
+        events_by_id = {item.id: item for item in self._events()}
         item_cache: dict[str, ContextItem | None] = {}
         event_cache: dict[str, Event | None] = dict(events_by_id)
 
@@ -264,7 +285,11 @@ class AuthoringContextBuilder:
         attributes = self._bounded_entity_attributes(
             public_value(entity.attributes), omitted
         )
-        tag_memberships = self._db.get_entity_tag_memberships()
+        tag_memberships = (
+            self._inputs.memberships
+            if self._inputs
+            else self._db.get_entity_tag_memberships()
+        )
         tags = self._entity_tags(entity, tag_memberships.get(entity.id, []), omitted)
 
         appearance_roles: dict[str, set[str]] = {}
@@ -274,7 +299,7 @@ class AuthoringContextBuilder:
         temporal: list[ContextRelation] = []
         seeds: list[ContextItem] = []
         relations_by_item: dict[str, list[dict[str, Any]]] = {}
-        all_relations = sorted(self._db.get_all_relations(), key=self._relation_key)
+        all_relations = sorted(self._relations(), key=self._relation_key)
         if self._entity_projection is not None:
             all_relations = [
                 rel
@@ -411,7 +436,7 @@ class AuthoringContextBuilder:
         )
 
         if self._entity_projection is not None:
-            return self._entity_projection.finish(context)
+            return self._entity_projection.finish(context, bounded=self._bounded)
         return context
 
     def description_changes_for_display(self) -> dict[str, Any]:
@@ -502,7 +527,13 @@ class AuthoringContextBuilder:
                     event = self._cached_event(anchor_id[6:], event_cache)
                     if event is not None:
                         events.append(event)
-        return resolve_event_anchors(events, converter)
+        if self._complete_anchors:
+            if self._anchor_snapshot is None:
+                self._anchor_snapshot = resolve_event_anchors(
+                    self._events(), converter, self._cancel
+                )
+            return self._anchor_snapshot
+        return resolve_event_anchors(events, converter, self._cancel)
 
     def _resolve_relation_history(
         self,
@@ -700,7 +731,11 @@ class AuthoringContextBuilder:
                     item=ContextItem(related.id, "entity", related.name),
                     events=tuple(
                         self._context_event(item)
-                        for item in ordered[-MAX_CO_APPEARANCE_EVENTS:]
+                        for item in (
+                            ordered[-MAX_CO_APPEARANCE_EVENTS:]
+                            if self._bounded
+                            else ordered
+                        )
                     ),
                     event_count=len(ordered),
                 )
@@ -820,6 +855,8 @@ class AuthoringContextBuilder:
             ),
             key=lambda item: (item[0].casefold(), item[0]),
         )
+        if not self._bounded:
+            return [ContextAttribute(name, value) for name, value in values]
         if len(values) > MAX_ENTITY_ATTRIBUTES:
             omitted["attributes"] = len(values) - MAX_ENTITY_ATTRIBUTES
         results: list[ContextAttribute] = []
@@ -843,8 +880,8 @@ class AuthoringContextBuilder:
             omitted["attribute_details"] = truncated
         return results
 
-    @staticmethod
     def _trim_entity_context(
+        self,
         *,
         attributes: list[ContextAttribute],
         tags: list[ContextTag],
@@ -862,6 +899,8 @@ class AuthoringContextBuilder:
         omitted: dict[str, int],
     ) -> None:
         """Enforce one total prompt-size budget by dropping lowest-priority facts."""
+        if not self._bounded:
+            return
 
         def size() -> int:
             return (
@@ -1026,7 +1065,7 @@ class AuthoringContextBuilder:
         events = sorted(
             (
                 event
-                for event in self._db.get_all_events()
+                for event in self._events()
                 if event.id != event_id and event.lore_date is not None
             ),
             key=lambda item: (item.require_date(), item.id),
@@ -1036,10 +1075,22 @@ class AuthoringContextBuilder:
         ]
         concurrent_all = [event for event in events if event.lore_date == context_date]
         next_all = [event for event in events if event.require_date() > context_date]
+        if not self._bounded:
+            return (
+                [self._context_event(item) for item in previous_all],
+                [self._context_event(item) for item in concurrent_all],
+                [self._context_event(item) for item in next_all],
+            )
+        if self._inputs:
+            omitted.update(self._inputs.neighbor_omissions)
         if len(previous_all) > MAX_SIDE_EVENTS:
-            omitted["previous_events"] = len(previous_all) - MAX_SIDE_EVENTS
+            omitted["previous_events"] = max(
+                omitted.get("previous_events", 0), len(previous_all) - MAX_SIDE_EVENTS
+            )
         if len(next_all) > MAX_SIDE_EVENTS:
-            omitted["next_events"] = len(next_all) - MAX_SIDE_EVENTS
+            omitted["next_events"] = max(
+                omitted.get("next_events", 0), len(next_all) - MAX_SIDE_EVENTS
+            )
         concurrent = self._limit(
             "concurrent_events",
             concurrent_all,
@@ -1186,33 +1237,39 @@ class AuthoringContextBuilder:
             "Start unresolved" if event.lore_date is None else "",
         )
 
-    @staticmethod
     def _limit(
+        self,
         section: str,
         items: list[Any],
         limit: int,
         omitted: dict[str, int],
     ) -> list[Any]:
+        if not self._bounded:
+            return items
         if len(items) > limit:
-            omitted[section] = len(items) - limit
+            omitted[section] = max(omitted.get(section, 0), len(items) - limit)
         return items[:limit]
 
-    @staticmethod
     def _limit_recent_events(
+        self,
         section: str,
         items: list[ContextEvent],
         omitted: dict[str, int],
     ) -> list[ContextEvent]:
+        if not self._bounded:
+            return items
         if len(items) > MAX_ENTITY_EVENTS:
             omitted[section] = len(items) - MAX_ENTITY_EVENTS
         return items[-MAX_ENTITY_EVENTS:]
 
-    @staticmethod
     def _limit_recent_appearances(
+        self,
         section: str,
         items: list[ContextEventAppearance],
         omitted: dict[str, int],
     ) -> list[ContextEventAppearance]:
+        if not self._bounded:
+            return items
         if len(items) > MAX_ENTITY_EVENTS:
             omitted[section] = len(items) - MAX_ENTITY_EVENTS
         return items[-MAX_ENTITY_EVENTS:]

@@ -44,6 +44,10 @@ hiddenimports += collect_submodules("keyring.backends")
 hiddenimports += [
     "win32security", "win32api", "win32file", "win32crypt", "win32com.shell.shell",
 ]
+# SciPy's array compatibility layer resolves these modules dynamically. The
+# installed SciPy hook misses them when freezing the offline embedding helper.
+semantic_hiddenimports = collect_submodules("scipy._external.array_api_compat")
+hiddenimports += semantic_hiddenimports
 datas += copy_metadata("mcp")
 
 excluded_modules = [
@@ -89,10 +93,11 @@ exe = EXE(
 )
 connector_analysis = Analysis(
     [str(ROOT / "mcp_launcher.py")], pathex=[str(ROOT)],
-    hiddenimports=hiddenimports[-5:],
+    hiddenimports=[
+        "win32security", "win32api", "win32file", "win32crypt", "win32com.shell.shell",
+    ] + semantic_hiddenimports,
     excludes=excluded_modules + [
-        "PySide6", "IPython", "torch", "transformers", "sentence_transformers",
-        "scipy", "sklearn", "numpy", "PIL",
+        "PySide6", "IPython",
     ],
     noarchive=False,
 )

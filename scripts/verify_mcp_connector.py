@@ -3,6 +3,7 @@
 import argparse
 import asyncio
 import json
+import sys
 import threading
 from pathlib import Path
 
@@ -11,8 +12,9 @@ from mcp.client.stdio import StdioServerParameters
 from PySide6.QtCore import QMetaObject, Qt, QThread, QTimer
 from PySide6.QtWidgets import QApplication
 
+from scripts.mcp_verification_fixture import cases, seed
 from src.app.coordinators.mcp_coordinator import McpCoordinator
-from src.core.mcp_access import TOOLS
+from src.core.mcp_access import SHARING_SCOPES, TOOLS
 from src.services.worker import DatabaseWorker
 
 
@@ -24,15 +26,52 @@ def _describe(error: BaseException, token: str) -> list[str]:
     return [f"{type(error).__name__}: {message}"]
 
 
+async def _exercise(client: Client, facts: dict[str, str], expected: str) -> list[str]:
+    """Verify every tool, exact continuation and structured tool-error forwarding."""
+    tested = []
+    for name, args in cases(facts).items():
+        response = await client.call_tool(name, {**args, "expected_revision": expected})
+        assert response.structured_content["status"] == "OK", (
+            name,
+            response.structured_content,
+        )
+        if name == "get_image_preview":
+            assert any(content.type == "image" for content in response.content)
+        tested.append(name)
+    assert set(tested) == set(TOOLS)
+    text, cursor = [], None
+    while True:
+        response = await client.call_tool(
+            "read_object_section",
+            {
+                "kind": "entity",
+                "id": facts["entity_id"],
+                "section": "description",
+                "cursor": cursor,
+                "expected_revision": expected,
+            },
+        )
+        page = response.structured_content["data"]
+        text.append(page["text"])
+        cursor = page["next_cursor"]
+        if cursor is None:
+            break
+    assert "".join(text) == facts["description"]
+    missing = await client.call_tool("get_object", {"kind": "entity", "id": "missing"})
+    assert missing.is_error and missing.structured_content["status"] == "NOT_FOUND"
+    return tested
+
+
 def main() -> None:
     """Verify protocol modes without installing or altering client accounts."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--executable", type=Path, required=True)
+    parser.add_argument("--executable", type=Path)
     parser.add_argument("--report", type=Path, required=True)
     arguments = parser.parse_args()
     arguments.report.parent.mkdir(parents=True, exist_ok=True)
     app = QApplication([])
     path = str((arguments.report.parent / "connector-test.kraken").resolve())
+    facts = seed(Path(path))
     thread = QThread()
     worker = DatabaseWorker(path)
     worker.moveToThread(thread)
@@ -50,8 +89,12 @@ def main() -> None:
         for mode in ("legacy", "auto"):
             async with Client(
                 StdioServerParameters(
-                    command=str(arguments.executable.resolve()),
-                    args=[],
+                    command=str(arguments.executable.resolve())
+                    if arguments.executable
+                    else sys.executable,
+                    args=[]
+                    if arguments.executable
+                    else ["-m", "src.integrations.mcp.connector"],
                 ),
                 mode=mode,
                 cache=None,
@@ -61,6 +104,8 @@ def main() -> None:
                 result = await client.call_tool("get_active_world")
                 results[f"{mode}_result"] = result.structured_content
                 assert result.structured_content["data"]["id"] == "connector-test"
+                expected = result.structured_content["revision"]
+                results[f"{mode}_tools"] = await _exercise(client, facts, expected)
                 results[mode] = "passed"
 
     def run_client() -> None:
@@ -74,6 +119,7 @@ def main() -> None:
 
     def initialized(success: bool) -> None:
         if success:
+            coordinator.set_scopes(list(SHARING_SCOPES))
             coordinator.enable()
         else:
             results["error"] = "Database initialization failed"
@@ -98,7 +144,7 @@ def main() -> None:
 
     poll.timeout.connect(finished)
     poll.start()
-    QTimer.singleShot(45000, app.quit)
+    QTimer.singleShot(90000, app.quit)
     worker.initialized.connect(initialized, Qt.ConnectionType.QueuedConnection)
     coordinator.changed.connect(changed)
     QMetaObject.invokeMethod(
@@ -116,7 +162,9 @@ def main() -> None:
         thread.wait(5000)
     if caller is not None:
         caller.join(15)
-    results["evidence"] = "packaged connector against queued-worker verification host"
+    results["evidence"] = (
+        "packaged connector" if arguments.executable else "source connector"
+    ) + " against queued-worker verification host"
     arguments.report.write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
     if results.get("legacy") != "passed" or results.get("auto") != "passed":
         raise SystemExit(1)

@@ -17,6 +17,7 @@ from src.core.authoring_context import (
 from src.core.calendar import CalendarConfig, CalendarConverter
 from src.core.entities import Entity
 from src.core.entity_context_mode import EntityContextMode
+from src.core.event_timing.constraints import Cancel
 from src.core.events import Event
 from src.core.temporal_anchors import resolve_event_anchors
 from src.core.temporal_manager import TemporalManager
@@ -118,6 +119,7 @@ class EntityContextProjectionService:
         mode: EntityContextMode,
         context_date: float,
         events: dict[str, Event],
+        cancel: Cancel | None = None,
     ) -> None:
         """Capture the complete calendar and anchor context for one transaction."""
         if not math.isfinite(context_date):
@@ -130,14 +132,17 @@ class EntityContextProjectionService:
         self.converter = (
             CalendarConverter(config) if isinstance(config, CalendarConfig) else None
         )
-        self._anchors = resolve_event_anchors(list(events.values()), self.converter)
+        self._cancel = cancel
+        self._anchors = resolve_event_anchors(
+            list(events.values()), self.converter, cancel
+        )
         self._state: ResolvedEntityState | None = None
 
     def resolve_entity(self, entity: Entity) -> Entity:
         """Reuse fresh full-context Entity resolution rather than merging changes."""
-        self._state = TemporalManager(self._db).get_entity_state_at(
-            entity.id, self.date
-        )
+        self._state = TemporalManager(
+            self._db, events=list(self._events.values()), cancel=self._cancel
+        ).get_entity_state_at(entity.id, self.date)
         attributes = public_value(self._state.attributes)
         # Tags are public classification metadata despite their legacy storage key.
         # Keep baseline classification; dated state never invents tag history.
@@ -233,7 +238,9 @@ class EntityContextProjectionService:
             temporal_evidence=evidence,
         )
 
-    def finish(self, context: EntityAuthoringContext) -> EntityAuthoringContext:
+    def finish(
+        self, context: EntityAuthoringContext, *, bounded: bool = True
+    ) -> EntityAuthoringContext:
         """Attach bounded effective state and source identity after fact selection."""
         assert self._state is not None
         state = self._state
@@ -252,50 +259,53 @@ class EntityContextProjectionService:
         possible = self._possible_changes(state)
         description = ContextAttribute(
             "Description",
-            state.description[:MAX_DESCRIPTION_CHARS],
+            state.description[:MAX_DESCRIPTION_CHARS] if bounded else state.description,
             fact_source(state.description_source),
             "possible" if "description" in state.ambiguous_attributes else "definite",
         )
         omitted = dict(context.omitted_counts)
-        if len(state.description) > MAX_DESCRIPTION_CHARS:
+        if bounded and len(state.description) > MAX_DESCRIPTION_CHARS:
             omitted["description_details"] = 1
-        if len(possible) > MAX_POSSIBLE_CHANGES:
+        if bounded and len(possible) > MAX_POSSIBLE_CHANGES:
             omitted["possible_changes"] = len(possible) - MAX_POSSIBLE_CHANGES
-        if len(state.temporal_warnings) > MAX_TIMING_NOTICES:
+        if bounded and len(state.temporal_warnings) > MAX_TIMING_NOTICES:
             omitted["temporal_notices"] = (
                 len(state.temporal_warnings) - MAX_TIMING_NOTICES
             )
-        return bound_projection(
-            replace(
-                context,
-                mode=self.mode.value,
-                context_date=self.date,
-                date_label=(
-                    self.converter.format_datetime(self.date)
-                    if self.converter
-                    else format(self.date, ".12g")
-                ),
-                attributes=attributes,
-                event_appearances=tuple(
-                    replace(item, event=self._qualify_event(item.event))
-                    for item in context.event_appearances
-                ),
-                mentions=tuple(self._qualify_event(item) for item in context.mentions),
-                co_appearances=tuple(
-                    replace(
-                        item,
-                        events=tuple(
-                            self._qualify_event(event) for event in item.events
-                        ),
-                    )
-                    for item in context.co_appearances
-                ),
-                effective_description=description,
-                possible_changes=tuple(possible[:MAX_POSSIBLE_CHANGES]),
-                temporal_notices=tuple(state.temporal_warnings[:MAX_TIMING_NOTICES]),
-                omitted_counts=tuple(sorted(omitted.items())),
-            )
+        result = replace(
+            context,
+            mode=self.mode.value,
+            context_date=self.date,
+            date_label=(
+                self.converter.format_datetime(self.date)
+                if self.converter
+                else format(self.date, ".12g")
+            ),
+            attributes=attributes,
+            event_appearances=tuple(
+                replace(item, event=self._qualify_event(item.event))
+                for item in context.event_appearances
+            ),
+            mentions=tuple(self._qualify_event(item) for item in context.mentions),
+            co_appearances=tuple(
+                replace(
+                    item,
+                    events=tuple(self._qualify_event(event) for event in item.events),
+                )
+                for item in context.co_appearances
+            ),
+            effective_description=description,
+            possible_changes=tuple(
+                possible[:MAX_POSSIBLE_CHANGES] if bounded else possible
+            ),
+            temporal_notices=tuple(
+                state.temporal_warnings[:MAX_TIMING_NOTICES]
+                if bounded
+                else state.temporal_warnings
+            ),
+            omitted_counts=tuple(sorted(omitted.items())),
         )
+        return bound_projection(result) if bounded else result
 
     def description_changes_for_display(self) -> dict[str, Any]:
         """Project description payloads before budgeting, without attribute facts."""

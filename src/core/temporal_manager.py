@@ -10,6 +10,8 @@ from typing import Any
 from PySide6.QtCore import QObject, Slot
 
 from src.core.calendar import CalendarConfig, CalendarConverter
+from src.core.event_timing.constraints import Cancel
+from src.core.events import Event
 from src.core.temporal_anchors import resolve_event_anchors
 from src.core.temporal_constraints import TemporalConstraint
 from src.core.temporal_resolver import TemporalResolver
@@ -21,7 +23,13 @@ logger = logging.getLogger(__name__)
 class TemporalManager(QObject):
     """Manages temporal state resolution, caching, and invalidation."""
 
-    def __init__(self, db_service: Any) -> None:
+    def __init__(
+        self,
+        db_service: Any,
+        *,
+        events: list[Event] | None = None,
+        cancel: Cancel | None = None,
+    ) -> None:
         """Args:
         db_service: Reference to DatabaseService to fetch entities/relations.
 
@@ -29,6 +37,8 @@ class TemporalManager(QObject):
         super().__init__()
         self._db = db_service
         self._resolver = TemporalResolver()
+        self._events = events
+        self._cancel = cancel
 
         # Cache structure: { (entity_id, time): state_dict }
         # This is a naive cache. In reality, state is valid for a RANGE.
@@ -36,9 +46,7 @@ class TemporalManager(QObject):
         # a starting point.
         self._cache: dict[tuple[str, float], ResolvedEntityState] = {}
 
-    def get_entity_state_at(
-        self, entity_id: str, time: float
-    ) -> ResolvedEntityState:
+    def get_entity_state_at(self, entity_id: str, time: float) -> ResolvedEntityState:
         """Returns the resolved state of an entity at a specific time.
 
         Uses cache if available.
@@ -64,9 +72,9 @@ class TemporalManager(QObject):
         converter = (
             CalendarConverter(config) if isinstance(config, CalendarConfig) else None
         )
-        events = self._db.get_all_events()
+        events = self._events if self._events is not None else self._db.get_all_events()
         events = events if isinstance(events, list) else []
-        anchors = resolve_event_anchors(events, converter)
+        anchors = resolve_event_anchors(events, converter, self._cancel)
         constraints = [
             TemporalConstraint.from_dict(item)
             for event in events

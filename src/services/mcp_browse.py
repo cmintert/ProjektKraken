@@ -1,6 +1,7 @@
 """Bounded saved-object browsing with evidence-based Event overlap."""
 
 import math
+from collections.abc import Callable
 from typing import Any
 
 from src.core.mcp_access import PAGE_SIZE, McpFailure
@@ -116,14 +117,17 @@ def _range_overlaps(
 
 
 def browse_batch(
-    db: DatabaseService, filters: dict[str, Any], after: str
+    db: DatabaseService,
+    filters: dict[str, Any],
+    after: str,
+    expired: Callable[[], bool] | None = None,
 ) -> tuple[dict[str, Any], str | None]:
     """Evaluate at most one candidate batch, including empty matching pages."""
     candidates = McpReadRepository(db.require_connection()).candidates(
         filters["kinds"], filters["types"], after, CANDIDATE_BATCH_SIZE
     )
     converter = calendar_converter(db)
-    reader = McpTemporalReader(db)
+    reader = McpTemporalReader(db, expired)
     rows: list[dict[str, Any]] = []
     omitted = {"unresolved": 0, "excluded": 0}
     scanned = 0

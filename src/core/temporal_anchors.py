@@ -1,6 +1,7 @@
 """Resolve event anchors once per immutable query snapshot."""
 
 from src.core.calendar import CalendarConverter
+from src.core.event_timing.constraints import Cancel
 from src.core.events import Event
 from src.core.temporal_expression import (
     ResolvedTemporalBounds,
@@ -10,11 +11,12 @@ from src.core.temporal_expression import (
 def resolve_event_anchors(
     events: list[Event],
     converter: CalendarConverter | None,
+    cancel: Cancel | None = None,
 ) -> dict[str, ResolvedTemporalBounds]:
     """Keep event identity even when a calendar or expression cannot be resolved."""
     from src.core.event_timing.solver import resolve_world
 
-    return resolve_world(events, converter).anchors()
+    return resolve_world(events, converter, cancel).anchors()
 
 
 def event_position_at(

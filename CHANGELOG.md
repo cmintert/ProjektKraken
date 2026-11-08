@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-11-07
-**Commit:** 6f5c61c8924baaf4b8cb36451e37b5e64d5ac326
+**Last Updated:** 2026-11-08
+**Commit:** afb6bad0c62bf3350b8aa2cc34f2c3c3479bd75a
 ---
 
 # Changelog
@@ -12,6 +12,17 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-11-08)* **Richer session-scoped MCP reads (KRT-139)**: Added revision
+  preconditions, typed result contracts, exact text/context paging, ranked Unicode
+  search and facets. Separate session options expose saved Longform structure,
+  map facts, attachment captions and bounded image previews. Optional explicit
+  preparation uses installed local embeddings and an ephemeral public-fact index;
+  lexical fallback remains available. Relevant context inputs avoid rejecting
+  small questions solely because unrelated world data exceeds 5,000 records.
+  Added focused regressions, benchmark and packaged connector verification,
+  offline helper packaging fixes, setup documentation and indexed evidence.
+  Packaged and independent three-client acceptance are tracked separately.
 
 - *(2026-11-06)* **Optional local MCP access (KRT-119)**: Session-only sharing of
   saved world facts through an authenticated localhost endpoint, a bundled console

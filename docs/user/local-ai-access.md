@@ -19,9 +19,11 @@ Your assistant has its own account and availability requirements.
 5. In your assistant, ask it to identify the shared world, then retrieve a known
    Entity or Event. Check the returned record IDs and dates against Kraken.
 
-Only the current world's saved Entity/Event facts and their contextual
-connections are available. Unsaved drafts, attachment bodies, file browsing,
-credentials and other registered worlds are excluded. No write tools exist.
+The default shares the current world's saved Entity/Event facts and their
+contextual connections. Separate session options add Longform structure, map
+facts, attachment captions, image previews and local semantic search. Unsaved
+drafts, arbitrary file browsing, credentials and other registered worlds remain
+excluded. No write tools exist.
 Whole-world sharing can include sensitive information you wrote into ordinary
 prose; Kraken cannot recognize every secret in authored text.
 
@@ -98,26 +100,37 @@ credentials to the chat or exposing the endpoint to the internet.
 | --- | --- |
 | `get_active_world` | Identity and name of the explicitly shared world. |
 | `get_world_overview` | Saved Entity/Event totals and counts by type, plus the active calendar's name, ID, epoch, standard months and week. Flags identify calendars with year variants or leap rules. |
-| `search_world` | Matching names and the first 400 description characters. |
+| `search_world` | Matching names and description excerpts around literal matches. |
 | `browse_world` | Saved objects filtered by kind, type, tags or an Event date range, with description excerpts and Event timing. |
 | `get_object` | Full saved description, public attributes, tags, timestamps, source identity and Event timing. |
 | `get_objects` | Between 1 and 25 selected Entity/Event reads, in request order, under one world/revision envelope. Missing IDs have individual `NOT_FOUND` results. |
 | `get_context` | Bounded Entity/Event context, including available historical sources, qualified timing and omissions. |
 | `list_connections` | Directed relationships, endpoint identities and temporal evidence. |
+| `get_capabilities` | Enabled scopes, available tools, limits and semantic preparation state. |
+| `get_object_summary` | Identity, timing and sizes of saved sections, without full prose. |
+| `read_object_section` | Exact description pages or whole public attributes/tags. |
+| `read_context_section` | Historical context sections before the presentation budget, retaining sources and omissions. |
+| `browse_facets` | Saved types and reconciled tags for filtering. |
+| `read_longform` | Saved reading order, hierarchy, title overrides and underlying object IDs. |
+| `browse_maps`, `read_map` | Map identities, descriptions, layers and features; optional date evaluation retains validity and geometry sources. |
+| `list_attachments` | Saved captions, IDs, order and dimensions; original filenames and paths are excluded. |
+| `search_shared_content` | Lexical search in enabled Longform text, map descriptions and attachment captions. |
+| `get_image_preview` | A bounded raster preview or map crop with its saved variant identity. |
+| `semantic_search` | Optional prepared local Entity/Event search; otherwise explicitly labelled lexical results. |
 
 Object fields describe the saved record. Use date-scoped context to establish
 historical state. Saved-field `provenance` identifies the source object; resolved
 context attributes retain their available Event/relation sources. A source marked
 `unavailable` means provenance was not supplied, not that a supporting Event exists.
-Private metadata, credential/path-bearing attributes and attachment bodies remain
-excluded. Ordinary authored prose is returned as written.
+Private metadata and credential/path-bearing attributes remain excluded. Image
+previews require separate consent. Ordinary authored prose is returned as written.
 
 Event reads retain numeric lore dates alongside calendar-aware `temporal` captions,
 bounds, precision, qualifiers and unresolved status. `start`, independent `end`,
 `authored_duration` and `presence` remain separate. `authored_timing` contains the
 typed timing definition, including followed Event IDs and offset units. No active
 calendar is invented when one is unavailable. Dependent Event timing uses the
-existing solver, bounded to 5,000 saved Events per request; above that limit,
+existing solver, bounded to 5,000 relevant Events per request; above that limit,
 saved fields remain readable but timing reports `TIMING_LIMIT` as unresolved.
 
 ### Browse without a search term
@@ -200,18 +213,92 @@ resolved state at a date. The assistant must retrieve historical context for
 historical claims.
 Event context uses the Event's recorded date unless an evaluation date is supplied.
 
-Requests have a ten-second deadline and bounded payloads. **CONTEXT_LIMIT** means
-the existing context builder would scan more than 5,000 Entities, Events or
-Relations; use search, object reads and connection pages instead.
+Requests have a ten-second deadline and bounded payloads. Large worlds use relevant
+context inputs rather than loading unrelated descriptions. **CONTEXT_LIMIT** means
+the relevant input set or a connected timing component exceeds its 5,000-record
+budget; use search, object reads and connection pages instead.
 **RESULT_TOO_LARGE** means the result exceeds the 64 KiB tool-response limit;
-no apparently complete shortened result is substituted. Large-world context
-support is bounded deliberately and does not change Kraken's ordinary browsing.
+use a summary and section reads to recover long descriptions. An indivisible
+structured value that exceeds a page still fails explicitly. No apparently complete
+shortened value is substituted.
+
+### Keep one investigation consistent
+
+Each tool accepts optional `expected_world_id`, `expected_revision` and
+`expected_session_generation`. Begin with `get_active_world`, then pass its
+identity, revision and generation to subsequent reads. If a precondition fails,
+the tool returns **WORLD_CHANGED** without replacement-world facts. Restart the
+investigation instead of combining old and new evidence.
+
+Section tools return `done`, `next_cursor` and source identity. Follow continuations
+with unchanged arguments. Text pages contain exact authored characters with
+`offset`, `until` and `total_length`, measured in Unicode characters; a page contains
+at most 8,000 characters and may be smaller to fit the byte budget. Historical
+description pages retain their source on every page. `done` describes that section,
+not the completeness of all world knowledge; inspect `omitted_counts` too.
+
+`search_world` keeps stable identity ordering by default. Request
+`ranking: "relevance"` for exact-name, prefix, name-substring and description-match
+priority. Type alternatives use OR and tags use AND. Unicode matching preserves
+original spelling; description excerpts include original character offsets.
+
+### Share additional saved content
+
+Open **Additional sharing options** and select only the optional scopes you need
+before enabling sharing. Stop sharing
+before changing those choices, then enable a new session. Stopping clears the
+options; they are never saved as preferences.
+
+Longform reads return saved structure and references to existing Entity/Event
+text, rather than a second manuscript. Deliberately excluded entries stay excluded.
+Map reads distinguish saved visibility, date-qualified validity and resolved
+geometry or position. An uncertain or unresolved presence is not definite location
+evidence. Read a map's `description` section for long notes.
+
+Image access also requires map or attachment sharing. Previews are raster images,
+at most 1,024 pixels on the longest edge; normalized map crops
+`[left, top, right, bottom]` return tiles at most 512 pixels per edge. Map metadata
+lists exact `variant_id` values for the base image and saved raster states. A preview
+does not render vector overlays or promise the same raster colour treatment as
+Kraken's map view. Original downloads and OCR are unavailable.
+Use the map's paged `images` section when its metadata says the variant list is
+incomplete.
+
+Image results have a separate 512 KiB ceiling. Source assets above 64 MiB or
+64 million pixels, unsupported formats, missing assets and files outside the world's
+managed assets are unavailable. Previews strip embedded metadata and retain source
+identity, dimensions, crop and an asset revision. They may be sent to the assistant's
+AI provider just like text already returned.
+
+### Prepare optional local semantic search
+
+1. Open **Additional sharing options**, select **Allow local semantic search**,
+   then choose **Enable for this session**.
+2. Choose **Prepare semantic search**. It uses the configured sentence-transformers
+   model only when already installed locally. Preparation never downloads a model
+   or uses an external embedding provider.
+3. Wait for **Semantic search: ready**, then request `semantic_search`.
+
+Preparation copies public Entity/Event fields in bounded background steps. The
+prepared index and local model stay in memory for this session so queries reuse
+the loaded model. It supports up to 50,000 objects and
+64 MiB of public text. Map notes, captions and document structure are not
+semantically indexed. A changed world revision requires preparation again.
+Stop sharing to cancel preparation and release the index and model.
+
+If the model is unavailable, the scope is disabled or the index is unprepared or
+stale, results say `effective_search: "lexical"` and include a fallback reason.
+Semantic scores express relevance, never confidence that a fact is true. Search
+still works without a model. Installed-model and independent desktop-client
+acceptance are recorded separately from mocked inference and protocol tests.
 
 (help-mcp-enable)=
 
 **Enable for this session** shares the current saved world with configured local
 clients. Access lasts until you stop it or Kraken's world/session ends. It never
-persists as an enabled preference.
+persists as an enabled preference. Optional scope choices apply to that session
+only. **Prepare semantic search** is a separate local action after enabling its
+scope; tool calls cannot start preparation or install models.
 
 (help-mcp-activity)=
 

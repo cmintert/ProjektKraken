@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 from PySide6.QtGui import QFont, QFontDatabase
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QScrollArea
 
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.mcp_access_widget import McpAccessWidget
@@ -28,7 +28,12 @@ def main() -> None:
     records = []
     for theme in manager.get_available_themes():
         manager.set_theme(theme, app, persist=False)
-        for width, state in ((640, "Active"), (960, "Off")):
+        for width, state, available in (
+            (640, "Active", True),
+            (960, "Off", True),
+            (360, "Off", True),
+            (360, "Off", False),
+        ):
             center = SettingsCenter()
             form = McpAccessWidget(center)
             center.add_page("kraken", "Integrations", form)
@@ -38,7 +43,11 @@ def main() -> None:
                     "state": state,
                     "world_name": "Northwatch",
                     "message": "",
-                    "available": state == "Active",
+                    "available": available,
+                    "scopes": ["maps", "longform", "attachments", "images", "semantic"]
+                    if state == "Active"
+                    else [],
+                    "semantic_state": "unprepared",
                     "activity": [],
                 }
             )
@@ -46,7 +55,7 @@ def main() -> None:
             center.show()
             form.stop_button.setFocus()
             app.processEvents()
-            name = f"{theme}-{width}-{state}.png"
+            name = f"{theme}-{width}-{state}-{available}.png"
             center.grab().save(str(args.output / name))
             records.append(
                 {
@@ -57,6 +66,15 @@ def main() -> None:
                     "evidence": "offscreen",
                 }
             )
+            form.scope_details.setChecked(True)
+            app.processEvents()
+            for scroll in center.findChildren(QScrollArea):
+                if scroll.widget() and scroll.widget().isAncestorOf(form):
+                    scroll.verticalScrollBar().setValue(
+                        scroll.verticalScrollBar().maximum()
+                    )
+            app.processEvents()
+            center.grab().save(str(args.output / name.replace(".png", "-controls.png")))
             center.close()
             center.deleteLater()
             app.processEvents()

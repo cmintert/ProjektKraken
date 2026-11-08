@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import sys
 from typing import Any
 
 import httpx2
@@ -31,15 +32,39 @@ async def forward(tool: str, arguments: dict[str, Any]) -> dict[str, Any]:
                     cache=None,
                 ) as client:
                     result = await client.call_tool(tool, arguments)
-                    return result.structured_content or failure("UNAVAILABLE")
+                    data = result.structured_content or failure("UNAVAILABLE")
+                    if not isinstance(data, dict) or not isinstance(
+                        data.get("status"), str
+                    ):
+                        return failure("PROTOCOL_ERROR")
+                    for content in result.content:
+                        if content.type == "image" and data["status"] == "OK":
+                            data["_image"] = content.data
+                    return data
     except McpFailure as exc:
         return failure(exc.code)
+    except (TimeoutError, httpx2.TimeoutException):
+        return failure("TIMEOUT")
+    except httpx2.HTTPStatusError as exc:
+        return failure(
+            {429: "BUSY", 504: "TIMEOUT"}.get(exc.response.status_code, "UNAVAILABLE")
+        )
     except Exception:
         return failure("UNAVAILABLE")
 
 
 def main() -> None:
     """Serve only protocol messages on stdout; no Qt or app startup."""
+    if sys.argv[1:] == ["--image-helper"]:
+        from src.services.mcp_image_helper import main as image_main
+
+        image_main()
+        return
+    if sys.argv[1:] == ["--semantic-helper"]:
+        from src.services.mcp_semantic_helper import main as semantic_main
+
+        semantic_main()
+        return
     logging.basicConfig(level=logging.CRITICAL)
     create_catalogue(forward).run(transport="stdio")
 
