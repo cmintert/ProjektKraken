@@ -3,7 +3,9 @@
 from typing import Any, NotRequired, TypedDict
 
 from src.core.mcp_access import (
+    DEADLINE_SECONDS,
     MAX_IMAGE_RESULT_BYTES,
+    MAX_PENDING,
     MAX_RESULT_BYTES,
     PAGE_SIZE,
     SHARING_SCOPES,
@@ -27,6 +29,14 @@ class ReadPayload(TypedDict, total=False):
     truncated: bool
     omitted_counts: dict[str, int]
     provenance: dict[str, Any]
+    attachment_access: dict[str, Any]
+    calendar_id: str | None
+    world_now: dict[str, Any]
+    displayed_world_now: dict[str, Any]
+    playhead: dict[str, Any]
+    view_version: int | None
+    observed_at_utc: str | None
+    system_time: dict[str, Any] | None
     content: dict[str, Any]
     references: dict[str, dict[str, Any]]
 
@@ -44,6 +54,9 @@ class ReadEnvelope(TypedDict):
     retryable: NotRequired[bool]
     restart_required: NotRequired[bool]
     suggested_action: NotRequired[str]
+    reason_code: NotRequired[str]
+    required_fields: NotRequired[list[str]]
+    retry_after_ms: NotRequired[int]
     detail: NotRequired[str]
 
 
@@ -82,6 +95,9 @@ def capabilities(request: dict[str, Any]) -> dict[str, Any]:
             "image_bytes": MAX_IMAGE_RESULT_BYTES,
             "page_size": PAGE_SIZE,
             "text_characters": 8000,
+            "max_pending_requests": MAX_PENDING,
+            "recommended_tool_concurrency": 1,
+            "request_deadline_seconds": DEADLINE_SECONDS,
         },
         "semantic": request.get("semantic_state", "unprepared"),
         "tools": list(TOOLS),

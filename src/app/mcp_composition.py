@@ -61,8 +61,18 @@ def compose_mcp(window: MainWindow, settings: SettingsCoordinator) -> McpCoordin
         return str(value) or "sentence-transformers/all-MiniLM-L6-v2"
 
     coordinator = McpCoordinator(
-        context, lambda: worker.db_service, thread, window, local_model=local_model
+        context,
+        lambda: worker.db_service,
+        thread,
+        window,
+        local_model=local_model,
+        view_context=lambda: {
+            "world_now": window.timeline.get_current_time(),
+            "playhead": window.timeline.get_playhead_time(),
+        },
     )
+    window.timeline.playhead_time_changed.connect(coordinator.view_changed)
+    window.timeline.current_time_changed.connect(coordinator.view_changed)
     window.data_coordinator.lore_mutation_applied.connect(coordinator.invalidate)
     close_filter = _CloseAccess(coordinator)
     window.installEventFilter(close_filter)
@@ -79,7 +89,7 @@ def compose_mcp(window: MainWindow, settings: SettingsCoordinator) -> McpCoordin
     indicator.setText("MCP sharing on")
     indicator.setAccessibleName("Local MCP sharing status and stop control")
     menu = QMenu(indicator)
-    menu.addAction("Stop sharing", coordinator.stop)
+    menu.addAction("Stop sharing", coordinator.stop_sharing)
     menu.addAction(
         "Local AI access settings", lambda: request_settings("integrations.mcp")
     )
@@ -105,7 +115,7 @@ def compose_mcp(window: MainWindow, settings: SettingsCoordinator) -> McpCoordin
         form.enable_requested.connect(coordinator.enable)
         form.scopes_requested.connect(coordinator.set_scopes)
         form.prepare_requested.connect(coordinator.prepare_semantic)
-        form.stop_requested.connect(coordinator.stop)
+        form.stop_requested.connect(coordinator.stop_sharing)
         coordinator.changed.connect(form.render_state)
         form.render_state(coordinator.snapshot())
 

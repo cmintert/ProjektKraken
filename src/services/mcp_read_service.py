@@ -24,6 +24,7 @@ from src.services.entity_connection_browse_service import (
     StaleConnectionCursor,
 )
 from src.services.mcp_browse import browse_arguments, browse_batch
+from src.services.mcp_calendars import calendar_read
 from src.services.mcp_compact import compact_data
 from src.services.mcp_contracts import capabilities, check_preconditions
 from src.services.mcp_facts import (
@@ -34,9 +35,11 @@ from src.services.mcp_facts import (
 )
 from src.services.mcp_images import image_job
 from src.services.mcp_public import public_projection
+from src.services.mcp_relationships import browse_relationships
 from src.services.mcp_sections import McpSections
 from src.services.mcp_shared_search import shared_search
 from src.services.mcp_temporal import McpTemporalReader
+from src.services.mcp_time import time_context
 from src.services.mcp_world_reads import McpWorldReads
 from src.services.repositories.mcp_read_repository import McpReadRepository
 
@@ -133,6 +136,21 @@ class McpReadService:
             if self.revision(db) != revision:
                 raise McpFailure("WORLD_CHANGED")
         pending_image = data.pop("image_job", None)
+        if tool in {"get_context", "read_context_section"}:
+            data["attachment_access"] = {
+                "included_by_this_tool": False,
+                "reason_code": "CONTEXT_TOOL_EXCLUDES_ATTACHMENTS",
+                "session_metadata_scope_enabled": "attachments"
+                in request.get("scopes", []),
+                "session_attachment_images_enabled": all(
+                    key in request.get("scopes", [])
+                    for key in ("attachments", "images")
+                ),
+                "metadata_tool": "list_attachments",
+                "image_tool": "get_image_preview",
+                "legacy_flag": "omitted_counts.attachment_access_disabled",
+                "legacy_flag_is_count": False,
+            }
         data = public_projection(data)
         if detail == "compact":
             data = compact_data(data)
@@ -168,8 +186,14 @@ class McpReadService:
         request: dict[str, Any],
         revision: str,
     ) -> dict[str, Any]:
-        if tool == "get_capabilities":
-            return capabilities(request)
+        if tool in {
+            "list_calendars",
+            "read_calendar_section",
+            "browse_relationships",
+            "get_time_context",
+            "get_capabilities",
+        }:
+            return self._audit_read(db, request, revision)
         if tool == "search_shared_content":
             return shared_search(db, request, revision, self._continue, self._remember)
         if tool == "semantic_search":
@@ -226,6 +250,20 @@ class McpReadService:
         if tool == "get_object":
             return saved_object(db, kind, identifier, reader)
         return self._context(db, args)
+
+    def _audit_read(
+        self, db: DatabaseService, request: dict[str, Any], revision: str
+    ) -> dict[str, Any]:
+        """Route feature-owned audit readers without expanding the original dispatcher."""
+        if request["tool"] == "get_capabilities":
+            return capabilities(request)
+        if request["tool"] in {"list_calendars", "read_calendar_section"}:
+            return calendar_read(db, request, revision, self._continue, self._remember)
+        if request["tool"] == "browse_relationships":
+            return browse_relationships(
+                db, request, revision, self._continue, self._remember
+            )
+        return time_context(db, request)
 
     def _context(self, db: DatabaseService, args: dict[str, Any]) -> dict[str, Any]:
         kind, identifier = object_key(args)
@@ -318,7 +356,7 @@ class McpReadService:
         ):
             raise McpFailure("INVALID_DATE")
         if require_date and mode != "all_history" and day is None:
-            raise McpFailure("INVALID_DATE")
+            raise McpFailure("INVALID_DATE", "LORE_DAY_REQUIRED")
         return mode, day
 
     def _continue(
@@ -331,20 +369,23 @@ class McpReadService:
         if token is None:
             return None
         if not isinstance(token, str):
-            raise McpFailure("STALE_CURSOR")
+            raise McpFailure("STALE_CURSOR", "INVALID_CURSOR")
         saved = self._cursors.get(token)
+        if saved is None:
+            raise McpFailure("STALE_CURSOR", "INVALID_CURSOR")
+        if saved["expires"] < time.monotonic():
+            raise McpFailure("STALE_CURSOR", "CURSOR_EXPIRED")
         binding = {key: value for key, value in args.items() if key != "cursor"}
-        if saved is None or any(
+        if any(
             (
                 saved["binding"] != binding,
                 saved["tool"] != request["tool"],
                 saved["world_id"] != request["world_id"],
                 saved["revision"] != revision,
                 saved["generation"] != request["generation"],
-                saved["expires"] < time.monotonic(),
             )
         ):
-            raise McpFailure("STALE_CURSOR")
+            raise McpFailure("STALE_CURSOR", "CURSOR_BINDING_MISMATCH")
         return saved["value"]
 
     def _remember(

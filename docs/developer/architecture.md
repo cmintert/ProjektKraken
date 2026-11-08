@@ -31,8 +31,17 @@ the feature executor, without blocking Qt's GUI or database event loop.
 Additional content scopes require local intent; MCP has no preparation or
 scope-changing tool. Automatic preparation belongs to the opted-in local session.
 Both transports retain native image content and structured sources.
+Audit readers use feature-owned calendar/time services and a fixed-query
+relationship repository. Saved relation counts and keyset pages include Event-only
+edges and unresolved endpoint buckets; they do not infer date applicability.
+Time observations arrive through GUI-owned providers, with a view version separate
+from DB revision; saved Now and calendar captions remain worker-owned reads.
+Typed failures retain safe causes across SDK exception groups and both transports.
+Unavailable discovery never implies an unobserved app/world state. The four-request
+admission ceiling is shared across clients; recommended tool concurrency is one.
 See [setup and privacy](../user/local-ai-access.md) and
-[verification](../ux/evidence/krt139/README.md).
+[initial verification](../ux/evidence/krt139/README.md) and
+[audit verification](../ux/evidence/krt151-155/README.md).
 
 ## Activity workspace layouts
 

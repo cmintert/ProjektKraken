@@ -6,11 +6,15 @@ from typing import Any
 
 from PIL import Image
 
+from src.core.calendar import CalendarConfig, LeapYearRule, MonthDefinition, YearVariant
 from src.core.entities import Entity
 from src.core.events import Event
 from src.core.image_attachment import ImageAttachment
 from src.core.map import Map
 from src.services.db_service import DatabaseService
+
+WORLD_NOW = 120.0
+PLAYHEAD = 110.0
 
 
 def seed(path: Path) -> dict[str, str]:
@@ -23,6 +27,14 @@ def seed(path: Path) -> dict[str, str]:
     db = DatabaseService(str(path))
     db.connect()
     try:
+        calendar = CalendarConfig.create_default()
+        calendar.is_active = True
+        calendar.leap_year_rules = [LeapYearRule(4, 100, 400, 1, 1)]
+        calendar.year_variants = [
+            YearVariant(2, [MonthDefinition("Festival", "F", 12)])
+        ]
+        db.insert_calendar_config(calendar)
+        db.set_current_time(WORLD_NOW)
         entity = Entity(
             "Ilyra",
             "person",
@@ -32,6 +44,9 @@ def seed(path: Path) -> dict[str, str]:
         event = Event("Coronation", 100)
         db.insert_entity(entity)
         db.insert_event(event)
+        preceding = Event("Accession", 99)
+        db.insert_event(preceding)
+        event_relation = db.insert_relation(preceding.id, event.id, "precedes", {})
         relation = db.insert_relation(
             event.id,
             entity.id,
@@ -63,6 +78,8 @@ def seed(path: Path) -> dict[str, str]:
             "map_id": item.id,
             "attachment_id": attachment.id,
             "description": entity.description,
+            "calendar_id": calendar.id,
+            "event_relation_id": event_relation,
         }
     finally:
         db.close()
@@ -71,6 +88,13 @@ def seed(path: Path) -> dict[str, str]:
 def cases(facts: dict[str, str]) -> dict[str, dict[str, Any]]:
     """Exercise every tool, with real saved facts instead of transport stubs."""
     return {
+        "list_calendars": {},
+        "read_calendar_section": {
+            "calendar_id": facts["calendar_id"],
+            "section": "leap_year_rules",
+        },
+        "get_time_context": {},
+        "browse_relationships": {},
         "get_active_world": {},
         "get_world_overview": {},
         "get_capabilities": {},

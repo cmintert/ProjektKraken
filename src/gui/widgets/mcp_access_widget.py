@@ -34,8 +34,9 @@ class McpAccessWidget(QWidget):
         layout.addWidget(self.status)
         for text in (
             DISCLOSURE,
-            "Saved Entity/Event content is shared. Optional scopes below add "
-            "saved world content. Unsaved drafts and credentials are excluded; "
+            "Saved Entity/Event facts, calendar rules and relationship inventory "
+            "are shared. Time reads also expose world Now and the live playhead. "
+            "Optional scopes below add saved content. Unsaved drafts and credentials are excluded; "
             "Kraken cannot identify secrets you have written into its prose.",
             "Access is local to this computer and available to configured clients "
             "under your user account. Restarting Kraken requires enabling again. "

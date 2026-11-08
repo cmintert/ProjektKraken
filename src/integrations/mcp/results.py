@@ -9,6 +9,7 @@ from typing import Any
 
 from mcp.types import CallToolResult, ImageContent, TextContent
 
+from src.core.mcp_access import McpFailure, failure
 from src.services.mcp_contracts import ReadEnvelope
 
 
@@ -35,7 +36,12 @@ def tool_adapter(
         # Preconditions are consumed by the catalogue's call closure, not the SDK.
         token = _preconditions.set(preconditions)
         try:
-            result = await function(*args, **kwargs)
+            try:
+                result = await function(*args, **kwargs)
+            except McpFailure as exc:
+                result = exc.as_result()
+            except Exception:
+                result = failure("INTERNAL_ERROR")
         finally:
             _preconditions.reset(token)
         content: list[Any] = []

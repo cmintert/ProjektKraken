@@ -12,7 +12,7 @@ from mcp import Client
 from mcp.client.stdio import StdioServerParameters
 from mcp.client.streamable_http import streamable_http_client
 
-from src.core.mcp_access import TOOLS, McpFailure
+from src.core.mcp_access import TOOLS, McpFailure, failure
 from src.integrations.mcp.discovery import SessionDiscovery
 from src.integrations.mcp.server import LocalMcpServer
 from src.services.mcp_session import McpSession
@@ -251,6 +251,111 @@ def test_stdio_forwarder_uses_authenticated_current_session(server, monkeypatch)
     result = asyncio.run(connector.forward("get_active_world", {}))
     assert result["status"] == "OK"
     assert result["data"]["id"] == "world-test"
+
+
+@pytest.mark.parametrize("mode", ["legacy", "auto"])
+def test_relay_preserves_actionable_tool_failures_and_recovers(server, mode):
+    _, discovery, session, _ = server
+    original = session._dispatch
+
+    def dispatch(request):
+        code = {
+            "browse_world": ("STALE_CURSOR", "INVALID_CURSOR"),
+            "get_context": ("INVALID_DATE", "LORE_DAY_REQUIRED"),
+        }.get(request["tool"])
+        if code:
+            session.complete(
+                {"request_id": request["request_id"], "result": failure(*code)}
+            )
+        else:
+            original(request)
+
+    session._dispatch = dispatch
+    bootstrap = (
+        "import sys; from pathlib import Path; "
+        "from src.integrations.mcp import connector; "
+        "from src.integrations.mcp.discovery import SessionDiscovery; "
+        "connector.SessionDiscovery=lambda: SessionDiscovery(Path(sys.argv[1])); "
+        "connector.main()"
+    )
+
+    async def run():
+        async with Client(
+            StdioServerParameters(
+                command=sys.executable, args=["-c", bootstrap, str(discovery.directory)]
+            ),
+            cache=None,
+            mode=mode,
+        ) as client:
+            for name, args, reason in [
+                ("browse_world", {"cursor": "bad"}, "INVALID_CURSOR"),
+                (
+                    "get_context",
+                    {"kind": "entity", "id": "a", "mode": "at_playhead"},
+                    "LORE_DAY_REQUIRED",
+                ),
+            ]:
+                response = await client.call_tool(name, args)
+                assert response.is_error
+                assert response.structured_content["reason_code"] == reason
+                assert response.structured_content["retryable"] is False
+                healthy = await client.call_tool("get_active_world", {})
+                assert healthy.structured_content["status"] == "OK"
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("concurrency", [1, 2, 4, 5])
+def test_parallel_bridge_calls_return_busy_or_success_not_unavailable(
+    server, monkeypatch, concurrency
+):
+    from src.integrations.mcp import connector
+
+    _, discovery, _, _ = server
+    monkeypatch.setattr(connector, "SessionDiscovery", lambda: discovery)
+
+    async def run():
+        results = await asyncio.gather(
+            *(connector.forward("get_active_world", {}) for _ in range(concurrency))
+        )
+        assert all(result["status"] in {"OK", "BUSY"} for result in results)
+        assert all(
+            result["retryable"] for result in results if result["status"] == "BUSY"
+        )
+        assert (await connector.forward("get_active_world", {}))["status"] == "OK"
+
+    asyncio.run(run())
+
+
+def test_interrupted_http_bridge_is_retryable_and_next_read_recovers(
+    server, monkeypatch
+):
+    from src.integrations.mcp import connector
+    from src.integrations.mcp import server as module
+
+    _, discovery, _, _ = server
+    monkeypatch.setattr(connector, "SessionDiscovery", lambda: discovery)
+    original = module.LocalAccessGuard._serve_http
+    interrupt = True
+
+    async def serve(self, scope, receive, send):
+        nonlocal interrupt
+        if interrupt:
+            interrupt = False
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 200,
+                    "headers": [(b"content-type", b"application/json")],
+                }
+            )
+            raise ConnectionResetError("Fixture interrupted the response")
+        await original(self, scope, receive, send)
+
+    monkeypatch.setattr(module.LocalAccessGuard, "_serve_http", serve)
+    broken = asyncio.run(connector.forward("get_active_world", {}))
+    assert broken["status"] == "TRANSIENT_FAILURE" and broken["retryable"]
+    assert asyncio.run(connector.forward("get_active_world", {}))["status"] == "OK"
 
 
 def test_total_http_deadline_releases_admission(monkeypatch):

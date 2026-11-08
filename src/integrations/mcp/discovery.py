@@ -149,7 +149,11 @@ class SessionDiscovery:
         """Read protected current-session coordinates; never trust arbitrary URLs."""
         try:
             target = self.directory / "session.bin"
+            reject_links(self.directory)
+            self.directory.stat()
             protect(self.directory, install=False)
+            reject_links(target)
+            target.stat()
             protect(target, install=False)
             if target.stat().st_size > _MAX_DESCRIPTOR:
                 raise ValueError("Oversized descriptor")
@@ -168,8 +172,27 @@ class SessionDiscovery:
             ):
                 raise ValueError("Invalid descriptor")
             return dict(data)
+        except FileNotFoundError as exc:
+            raise McpFailure("UNAVAILABLE", "NO_ACTIVE_SESSION") from exc
+        except ImportError as exc:
+            raise McpFailure("UNAVAILABLE", "LOCAL_RUNTIME_UNAVAILABLE") from exc
+        except McpFailure as exc:
+            raise McpFailure("UNAVAILABLE", "UNSAFE_DISCOVERY") from exc
+        except PermissionError as exc:
+            raise McpFailure("UNAVAILABLE", "UNSAFE_DISCOVERY") from exc
         except Exception as exc:
-            raise McpFailure("UNAVAILABLE") from exc
+            error_number = getattr(exc, "winerror", None)
+            if error_number is None and exc.args and type(exc.args[0]) is int:
+                error_number = exc.args[0]
+            reason = {
+                2: "NO_ACTIVE_SESSION",
+                3: "NO_ACTIVE_SESSION",
+                5: "UNSAFE_DISCOVERY",
+            }.get(
+                error_number if isinstance(error_number, int) else 0,
+                "INVALID_DISCOVERY",
+            )
+            raise McpFailure("UNAVAILABLE", reason) from exc
 
     def close(self) -> None:
         """Remove only this publisher's descriptor before releasing ownership."""

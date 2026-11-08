@@ -19,8 +19,9 @@ Your assistant has its own account and availability requirements.
 5. In your assistant, ask it to identify the shared world, then retrieve a known
    Entity or Event. Check the returned record IDs and dates against Kraken.
 
-The default shares the current world's saved Entity/Event facts and their
-contextual connections. Separate session options add Longform structure, map
+The default shares the current world's saved Entity/Event facts, calendar rules
+and relationship inventory. Time-context reads also observe world Now and the live
+playhead. Separate session options add Longform structure, map
 facts, attachment captions, image previews and local semantic search. Unsaved
 drafts, arbitrary file browsing, credentials and other registered worlds remain
 excluded. No write tools exist.
@@ -99,13 +100,16 @@ credentials to the chat or exposing the endpoint to the internet.
 | Tool | Returned information |
 | --- | --- |
 | `get_active_world` | Identity and name of the explicitly shared world. |
-| `get_world_overview` | Saved Entity/Event totals and counts by type, plus the active calendar's name, ID, epoch, standard months and week. Flags identify calendars with year variants or leap rules. |
+| `get_world_overview` | Saved Entity/Event totals, revision-bound saved relationship counts and endpoint-kind breakdown, plus active-calendar metadata. |
+| `list_calendars`, `read_calendar_section` | Saved calendar identities and exact month, week, leap-rule and year-variant definitions, with bounded continuation. |
+| `get_time_context` | Saved world Now, displayed Now, observed live playhead, calendar identity, view version and a separate system UTC clock. |
+| `browse_relationships` | World-wide saved edge identities and predicates, including Event→Event and unresolved endpoints; excludes attribute bodies and date filtering. |
 | `search_world` | Matching names and description excerpts around literal matches. |
 | `browse_world` | Saved objects filtered by kind, type, tags or an Event date range, with description excerpts and Event timing. |
 | `get_object` | Full saved description, public attributes, tags, timestamps, source identity and Event timing. |
 | `get_objects` | Between 1 and 25 selected Entity/Event reads, in request order, under one world/revision envelope. Missing IDs have individual `NOT_FOUND` results. |
 | `get_context` | Bounded Entity/Event context, including available historical sources, qualified timing and omissions. |
-| `list_connections` | Directed relationships, endpoint identities and temporal evidence. |
+| `list_connections` | Relationships touching one selected Entity, with endpoint identities and temporal evidence; not a world-wide edge inventory. |
 | `get_capabilities` | Enabled scopes, available tools, limits and semantic preparation state. |
 | `get_object_summary` | Identity, timing and sizes of saved sections, without full prose. |
 | `read_object_section` | Exact description pages or whole public attributes/tags. |
@@ -223,6 +227,124 @@ budget; use search, object reads and connection pages instead.
 use a summary and section reads to recover long descriptions. An indivisible
 structured value that exceeds a page still fails explicitly. No apparently complete
 shortened value is substituted.
+
+### Recover from a failed read
+
+Failures have `data: null`, a status, a safe `reason_code` and a specific
+`suggested_action`. Tool failures retain MCP's error flag. Do not treat a failed
+read as an empty successful result.
+
+| Status/reason | Recovery |
+| --- | --- |
+| `STALE_CURSOR` / `INVALID_CURSOR`, `CURSOR_EXPIRED` or `CURSOR_BINDING_MISMATCH` | Restart the query from its first page with consistent arguments. |
+| `INVALID_DATE` / `LORE_DAY_REQUIRED` | Supply `lore_day`; `required_fields` identifies it. Obtain a coordinate from `get_time_context` if the intended date is world Now or the playhead. |
+| `TRANSIENT_FAILURE` | Retry with bounded backoff and the same world/revision preconditions. |
+| `BUSY` | Queue the read and retry after `retry_after_ms`; reduce concurrent calls. |
+| `TIMEOUT` | Retry after waiting, or reduce the request. Queue time counts toward the deadline. |
+| `UNAVAILABLE` | Follow the reason-specific recovery below; do not assume sharing is disabled. |
+| `PROTOCOL_ERROR` or `INTERNAL_ERROR` | Check the matching connector installation or report the local error; repeatedly enabling sharing is not a general repair. |
+
+`retryable: true` means an unchanged read can recover after waiting. It does not
+authorize an endless retry loop. Bad cursors and missing dates need correction,
+not repeated identical calls. `restart_required` means previously gathered
+investigation/page state must be re-established.
+
+For `UNAVAILABLE`, `NO_ACTIVE_SESSION` means discovery could not find a current
+session. It cannot establish whether Kraken is closed, sharing is off or no world
+is open: open Kraken, select a world and enable sharing. When trusted local state
+identifies `SHARING_DISABLED`, `SESSION_ENDED` or `NO_WORLD_SELECTED`, the recovery
+names that action directly. `APP_UNREACHABLE` means a protected session descriptor
+exists but its endpoint cannot be reached; check Kraken and rediscover before
+retrying. It does not prove the app is closed.
+`WORLD_NOT_READY` identifies a selected world whose database is still loading;
+wait for it to finish before enabling sharing again.
+
+`AUTH_REQUIRED` calls for rediscovery of the local session.
+`UNSAFE_DISCOVERY`, `INVALID_DISCOVERY` and `LOCAL_RUNTIME_UNAVAILABLE` call for
+checking local permissions, restarting local sharing or checking the connector
+installation respectively. Never put credentials in chat, weaken permission
+checks or expose the endpoint to the internet to repair these errors.
+
+Use **one tool call at a time** for consistent investigations. The local server's
+admission ceiling is **four pending requests**, shared across clients and HTTP
+setup traffic; it is not four parallel database workers. `get_capabilities.limits`
+publishes this ceiling, the recommended concurrency of one and the ten-second
+deadline. A separate desktop bridge may impose a lower limit; use the stricter
+limit. Requests above capacity return retryable `BUSY` rather than claiming
+sharing is unavailable.
+
+### Read calendars and choose a lore time
+
+Use `list_calendars` to enumerate saved definitions in the shared world.
+`read_calendar_section` without `calendar_id` selects the active saved calendar;
+an explicit ID can read an inactive definition without activating it. If no
+calendar is active, the result is `NOT_FOUND` / `NO_ACTIVE_CALENDAR`, not an
+invented Gregorian calendar. An empty leap-rule list is a valid saved definition.
+
+The `summary`, `months`, `week`, `leap_year_rules` and `year_variants` sections
+preserve saved values and ordering. Leap rules expose `interval`, `skip_interval`,
+`reset_interval`, `month_index` and `extra_days`. Rule month indexes are zero-based;
+calendar date month/day numbers are one-based. The first explicit variant matching
+a year replaces its months and skips algorithmic leap rules. Otherwise, all
+applicable leap rules add their changes in saved order, using Kraken's canonical
+calendar behavior.
+
+For a large definition, page `year_variant_summaries`, then read
+`year_variant_months` with its `variant_index`. `week_day_names` and
+`week_day_abbreviations` provide narrower week sections. Cursor/revision rules and
+whole-record limits still apply; a single oversized value fails explicitly.
+
+`get_time_context` distinguishes three meanings:
+
+- `world_now` is the **saved** world current-time marker.
+- `displayed_world_now` and `playhead` are **live view observations**. A displayed
+  Now value can differ from its saved value while a queued save is pending.
+- `system_time` is a separate real-world UTC observation with the observed local
+  offset/timezone label. It is not a lore date or a calendar-rule definition.
+
+Numeric `lore_day` values are authoritative coordinates; zero and negative values
+are valid. Unavailable coordinates are null with a reason, never guessed zero.
+Captions use the saved active calendar identified by `calendar_id`; without a
+calendar, numeric coordinates remain usable and captions are null.
+`observed_at_utc` and `view_version` identify the view snapshot: moving the playhead
+alone does not change the database revision. The view is captured for the request,
+not promised to remain unchanged until the response arrives.
+
+`at_playhead` does not itself fetch the UI cursor. Read `get_time_context`, choose
+the intended world Now/playhead coordinate and pass it explicitly as `lore_day`
+to dated context/connection reads. These tools do not navigate or change time.
+
+### Audit relationships and attachment access
+
+`get_world_overview.counts.relationships.total_saved` counts saved relation rows
+at the response's world/revision. Its endpoint-kind breakdown includes all four
+Entity/Event direction pairs and an unresolved-or-ambiguous bucket. Each relation
+ID counts once; self-links, parallel rows and reverse edges retain their identities.
+These are not counts of date-active facts, inferred associations, WikiLinks or
+dependencies stored only inside attributes.
+
+At one unchanged revision, page `browse_relationships` to reconcile the saved edge
+IDs, including Event-only edges. Optional `source_kind`, `target_kind` and
+`predicate` filters narrow the inventory. Rows contain endpoint identities/kinds
+and the saved predicate; attribute bodies are excluded by this inventory tool,
+not counted as known absent. It applies no date filter. Continue to use dated
+context and connection evidence to establish historical applicability. Do not
+derive a global relationship total by summing Entity connection pages.
+
+Context reads always omit attachments. `attachment_access.included_by_this_tool`
+and its reason describe that **tool policy**; `session_metadata_scope_enabled`
+and `session_attachment_images_enabled` describe the effective grants for this
+session. `get_capabilities.scopes` remains the complete scope inventory.
+The schema-v1 compatibility value `omitted_counts.attachment_access_disabled: 1`
+is a deprecated boolean policy sentinel, **not an attachment count** or proof
+that the session's attachment scope is off. It remains in this schema version;
+new clients should use `attachment_access`.
+
+Use `list_attachments` for saved metadata when its scope is enabled and
+`get_image_preview` for an allowed image read. A scope grant establishes permission,
+not that an attachment record or decodable asset exists. A metadata listing alone
+does not verify file availability; preview failures must not be interpreted as
+unavailable world sharing.
 
 ### Keep one investigation consistent
 

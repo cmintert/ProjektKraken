@@ -7,6 +7,7 @@ import secrets
 import time
 from collections import deque
 from collections.abc import Callable
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import QObject, Qt, QThread, QTimer, Signal, Slot
@@ -38,6 +39,7 @@ class McpCoordinator(QObject):
         parent: QObject | None = None,
         *,
         local_model: Callable[[], str] | None = None,
+        view_context: Callable[[], dict[str, Any]] | None = None,
     ) -> None:
         """Bind one feature endpoint on the existing DB thread."""
         super().__init__(parent)
@@ -57,6 +59,8 @@ class McpCoordinator(QObject):
         )
         self._semantic_state = "unprepared"
         self._preparation_id = ""
+        self._view_context = view_context or (lambda: {})
+        self._view_version = 0
         self._semantic_refresh = QTimer(self)
         self._semantic_refresh.setSingleShot(True)
         self._semantic_refresh.setInterval(300)
@@ -135,11 +139,11 @@ class McpCoordinator(QObject):
         self._emit()
 
     @Slot()
-    def stop(self) -> None:
+    def stop(self, reason: str = "SESSION_ENDED") -> None:
         """Revoke before asynchronous socket shutdown; never wait on the GUI."""
         self._semantic_refresh.stop()
         if self._session is not None:
-            self._session.revoke()
+            self._session.revoke(reason)
         self._poll.start()
         self._state = "Stopping"
         if self._server is not None:
@@ -154,6 +158,33 @@ class McpCoordinator(QObject):
         self._requests.clear()
         self._emit()
         self._check()
+
+    @Slot()
+    def stop_sharing(self) -> None:
+        """Identify the deliberate local Stop action separately from lifecycle exit."""
+        self.stop("SHARING_DISABLED")
+
+    def view_changed(self, *_args: Any) -> None:
+        """Version GUI observations without treating cursor movement as a DB edit."""
+        self._view_version += 1
+
+    def _capture_view(self) -> dict[str, Any]:
+        """Capture live scalar coordinates and the observation clock on the GUI."""
+        now = datetime.now(timezone.utc)
+        local = now.astimezone()
+        offset = local.utcoffset()
+        return {
+            **self._view_context(),
+            "view_version": self._view_version,
+            "observed_at_utc": now.isoformat(),
+            "system_time": {
+                "utc": now.isoformat(),
+                "utc_offset_seconds": offset.total_seconds()
+                if offset is not None
+                else None,
+                "timezone_label": local.tzname(),
+            },
+        }
 
     @Slot(list)
     def set_scopes(self, scopes: list[str]) -> None:
@@ -177,7 +208,7 @@ class McpCoordinator(QObject):
         ):
             return
         if self._context() != session.world:
-            self.stop()
+            self._stop_changed_world()
             return
         self._semantic_refresh.stop()
         self._semantic_state = "preparing"
@@ -227,9 +258,20 @@ class McpCoordinator(QObject):
         if session is None or session.generation != request["generation"]:
             return
         if self._context() != session.world:
-            self.stop()
+            self._stop_changed_world()
             return
         if not session.expired(request["request_id"]):
+            if request["tool"] == "get_time_context":
+                try:
+                    request["view_context"] = self._capture_view()
+                except Exception:
+                    session.complete(
+                        {
+                            "request_id": request["request_id"],
+                            "result": failure("INTERNAL_ERROR"),
+                        }
+                    )
+                    return
             self._requests[request["request_id"]] = (
                 request["tool"],
                 time.monotonic(),
@@ -245,7 +287,7 @@ class McpCoordinator(QObject):
         if session is None or request is None:
             return
         if self._context() != session.world:
-            self.stop()
+            self._stop_changed_world()
             return
         result = response["result"]
         if request[2] != self._lore_epoch:
@@ -284,7 +326,7 @@ class McpCoordinator(QObject):
 
     def _check(self) -> None:
         if self._session is not None and self._context() != self._session.world:
-            self.stop()
+            self._stop_changed_world()
             return
         self._retiring = [thread for thread in self._retiring if thread.is_alive()]
         if self._state == "Stopping" and not self._retiring:
@@ -294,3 +336,14 @@ class McpCoordinator(QObject):
 
     def _emit(self) -> None:
         self.changed.emit(self.snapshot())
+
+    def _stop_changed_world(self) -> None:
+        """Report only the trusted context change, never replacement-world facts."""
+        world = self._context()
+        if not world.get("world_id"):
+            reason = "NO_WORLD_SELECTED"
+        elif not world.get("database"):
+            reason = "WORLD_NOT_READY"
+        else:
+            reason = "WORLD_CHANGED"
+        self.stop(reason)

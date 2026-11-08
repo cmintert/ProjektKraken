@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-08
-**Commit:** 22525d235231eb8f5bfaa649a1f76d67eaf746f0
+**Commit:** 0fd0580ed53dbf071dbd209ccbe51a10d3c9043c
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-11-08)* **Actionable MCP failures (KRT-151/KRT-152)**: Preserved specific
+  cursor/date errors and safe availability reasons through the bridge. Transient
+  failures, deadlines and overload retain retry guidance; capabilities publish
+  concurrency limits. Context attachment omission is distinguished from effective
+  session grants, with the old boolean sentinel explicitly deprecated.
 
 - *(2026-11-08)* **Automatic MCP semantic preparation (KRT-139)**: Enabling local
   semantic sharing starts preparation automatically after secure startup. Saved
@@ -28,6 +34,12 @@ All notable changes to this project will be documented in this file.
   and clarified the read contracts in Help.
 
 ### Added
+
+- *(2026-11-08)* **MCP audit and time reads (KRT-153/KRT-154/KRT-155)**: Added exact
+  paged calendar definitions, saved world Now and observed playhead/system clocks,
+  revision-bound saved relationship counts and a world-wide edge inventory that
+  includes Event-to-Event links. Added protocol, concurrency, temporal and audit
+  regressions, source verification, sharing disclosure and reference Help.
 
 - *(2026-11-08)* **Richer session-scoped MCP reads (KRT-139)**: Added revision
   preconditions, typed result contracts, exact text/context paging, ranked Unicode

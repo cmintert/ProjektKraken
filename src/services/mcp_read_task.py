@@ -1,5 +1,6 @@
 """Feature-local queued MCP reads on the existing database worker thread."""
 
+import sqlite3
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
@@ -58,7 +59,7 @@ class McpReadTask(QObject):
         try:
             database = self._database()
             if expired():
-                raise McpFailure("UNAVAILABLE")
+                raise McpFailure("TIMEOUT")
             if database is None or str(database.db_path) != request["database"]:
                 raise McpFailure("WORLD_CHANGED")
             if request.get("semantic_state") == "ready" and not self._semantic.ready(
@@ -81,7 +82,14 @@ class McpReadTask(QObject):
                 self._images.submit(self._decode, request, result, job, expired)
                 return
         except McpFailure as exc:
-            result = failure(exc.code)
+            result = exc.as_result()
+        except sqlite3.OperationalError as exc:
+            result = (
+                failure("BUSY", "DATABASE_BUSY")
+                if (getattr(exc, "sqlite_errorcode", 0) & 255)
+                in {sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED}
+                else failure("TIMEOUT" if expired() else "INTERNAL_ERROR")
+            )
         except Exception:
             result = failure("TIMEOUT" if expired() else "INTERNAL_ERROR")
         self.finished.emit({"request_id": identifier, "result": result})
@@ -143,7 +151,7 @@ class McpReadTask(QObject):
                 "rendering": "saved_raster_without_overlays",
             }
         except McpFailure as exc:
-            result = failure(exc.code)
+            result = exc.as_result()
         except Exception:
             result = failure("IMAGE_UNAVAILABLE")
         try:
@@ -156,7 +164,7 @@ class McpReadTask(QObject):
         request, result = response["request"], response["result"]
         database = self._database()
         if self._expired(request["request_id"]):
-            result = failure("UNAVAILABLE")
+            result = failure("TIMEOUT")
         elif (
             database is None
             or str(database.db_path) != request["database"]

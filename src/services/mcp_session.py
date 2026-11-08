@@ -28,6 +28,7 @@ class McpSession:
         self._dispatch = dispatch
         self._lock = threading.RLock()
         self._active = True
+        self._revoked_result = failure("UNAVAILABLE", "SESSION_ENDED")
         self._pending: dict[
             str, tuple[float, concurrent.futures.Future[dict[str, Any]]]
         ] = {}
@@ -48,7 +49,7 @@ class McpSession:
         """Await a queued read without blocking either the GUI or network loop."""
         with self._lock:
             if not self._active:
-                return failure("UNAVAILABLE")
+                return dict(self._revoked_result)
             if tool not in TOOLS:
                 return failure("INVALID_TOOL")
             if len(self._pending) >= MAX_PENDING:
@@ -82,18 +83,23 @@ class McpSession:
             entry = self._pending.get(identifier)
             if entry is None or entry[1].done():
                 return
-            result = (
-                failure("UNAVAILABLE")
-                if self.expired(identifier)
-                else response["result"]
-            )
+            result = response["result"]
+            if not self._active:
+                result = dict(self._revoked_result)
+            elif self.expired(identifier):
+                result = failure("TIMEOUT")
             entry[1].set_result(result)
 
-    def revoke(self) -> None:
+    def revoke(self, reason: str = "SESSION_ENDED") -> None:
         """Close admission first and release all awaiting callers without data."""
         with self._lock:
+            if not self._active:
+                return
             self._active = False
+            self._revoked_result = failure(
+                "WORLD_CHANGED" if reason == "WORLD_CHANGED" else "UNAVAILABLE", reason
+            )
             for _, future in self._pending.values():
                 if not future.done():
-                    future.set_result(failure("UNAVAILABLE"))
+                    future.set_result(dict(self._revoked_result))
             self._pending.clear()

@@ -6,13 +6,14 @@ import json
 import sys
 import threading
 from pathlib import Path
+from typing import Any
 
 from mcp import Client
 from mcp.client.stdio import StdioServerParameters
 from PySide6.QtCore import QMetaObject, Qt, QThread, QTimer
 from PySide6.QtWidgets import QApplication
 
-from scripts.mcp_verification_fixture import cases, seed
+from scripts.mcp_verification_fixture import PLAYHEAD, WORLD_NOW, cases, seed
 from src.app.coordinators.mcp_coordinator import McpCoordinator
 from src.core.mcp_access import SHARING_SCOPES, TOOLS
 from src.services.worker import DatabaseWorker
@@ -26,7 +27,9 @@ def _describe(error: BaseException, token: str) -> list[str]:
     return [f"{type(error).__name__}: {message}"]
 
 
-async def _exercise(client: Client, facts: dict[str, str], expected: str) -> list[str]:
+async def _exercise(
+    client: Client, facts: dict[str, str], expected: str, errors: list[dict[str, Any]]
+) -> list[str]:
     """Verify every tool, exact continuation and structured tool-error forwarding."""
     tested = []
     for name, args in cases(facts).items():
@@ -37,6 +40,24 @@ async def _exercise(client: Client, facts: dict[str, str], expected: str) -> lis
         )
         if name == "get_image_preview":
             assert any(content.type == "image" for content in response.content)
+        if name == "get_time_context":
+            assert (
+                response.structured_content["data"]["world_now"]["lore_day"]
+                == WORLD_NOW
+            )
+            assert (
+                response.structured_content["data"]["playhead"]["lore_day"] == PLAYHEAD
+            )
+        if name == "get_world_overview":
+            counts = response.structured_content["data"]["counts"]["relationships"]
+            assert counts["total_saved"] == len(
+                {facts["relation_id"], facts["event_relation_id"]}
+            )
+            assert counts["by_endpoint_kinds"]["event_to_event"] == 1
+        if name == "browse_relationships":
+            assert {
+                row["id"] for row in response.structured_content["data"]["rows"]
+            } == {facts["relation_id"], facts["event_relation_id"]}
         tested.append(name)
     assert set(tested) == set(TOOLS)
     text, cursor = [], None
@@ -59,6 +80,28 @@ async def _exercise(client: Client, facts: dict[str, str], expected: str) -> lis
     assert "".join(text) == facts["description"]
     missing = await client.call_tool("get_object", {"kind": "entity", "id": "missing"})
     assert missing.is_error and missing.structured_content["status"] == "NOT_FOUND"
+    for tool, arguments, status, reason in (
+        (
+            "browse_world",
+            {"cursor": "invalid-cursor"},
+            "STALE_CURSOR",
+            "INVALID_CURSOR",
+        ),
+        (
+            "get_context",
+            {"kind": "entity", "id": facts["entity_id"], "mode": "at_playhead"},
+            "INVALID_DATE",
+            "LORE_DAY_REQUIRED",
+        ),
+    ):
+        invalid = await client.call_tool(tool, arguments)
+        assert invalid.is_error
+        assert invalid.structured_content["status"] == status
+        assert invalid.structured_content["reason_code"] == reason
+        assert invalid.structured_content["retryable"] is False
+        errors.append({"tool": tool, **invalid.structured_content})
+        healthy = await client.call_tool("get_active_world", {})
+        assert healthy.structured_content["status"] == "OK"
     return tested
 
 
@@ -82,7 +125,12 @@ def main() -> None:
         "world_name": "Connector test",
         "database": path,
     }
-    coordinator = McpCoordinator(lambda: context, lambda: worker.db_service, thread)
+    coordinator = McpCoordinator(
+        lambda: context,
+        lambda: worker.db_service,
+        thread,
+        view_context=lambda: {"world_now": WORLD_NOW, "playhead": PLAYHEAD},
+    )
     results: dict[str, object] = {}
 
     async def calls() -> None:
@@ -105,7 +153,11 @@ def main() -> None:
                 results[f"{mode}_result"] = result.structured_content
                 assert result.structured_content["data"]["id"] == "connector-test"
                 expected = result.structured_content["revision"]
-                results[f"{mode}_tools"] = await _exercise(client, facts, expected)
+                errors: list[dict[str, Any]] = []
+                results[f"{mode}_tools"] = await _exercise(
+                    client, facts, expected, errors
+                )
+                results[f"{mode}_errors"] = errors
                 results[mode] = "passed"
 
     def run_client() -> None:

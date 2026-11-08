@@ -9,8 +9,9 @@ import httpx2
 from mcp import Client
 from mcp.client.streamable_http import streamable_http_client
 
-from src.core.mcp_access import DEADLINE_SECONDS, McpFailure, failure
+from src.core.mcp_access import DEADLINE_SECONDS, failure
 from src.integrations.mcp.discovery import SessionDiscovery
+from src.integrations.mcp.errors import bridge_failure
 from src.integrations.mcp.tools import create_catalogue
 
 
@@ -23,6 +24,7 @@ async def forward(tool: str, arguments: dict[str, Any]) -> dict[str, Any]:
                 headers={"Authorization": f"Bearer {descriptor['token']}"},
                 follow_redirects=False,
                 trust_env=False,
+                timeout=DEADLINE_SECONDS,
             ) as http:
                 async with Client(
                     streamable_http_client(
@@ -32,25 +34,19 @@ async def forward(tool: str, arguments: dict[str, Any]) -> dict[str, Any]:
                     cache=None,
                 ) as client:
                     result = await client.call_tool(tool, arguments)
-                    data = result.structured_content or failure("UNAVAILABLE")
+                    data = result.structured_content
                     if not isinstance(data, dict) or not isinstance(
                         data.get("status"), str
                     ):
+                        return failure("PROTOCOL_ERROR")
+                    if result.is_error and data["status"] == "OK":
                         return failure("PROTOCOL_ERROR")
                     for content in result.content:
                         if content.type == "image" and data["status"] == "OK":
                             data["_image"] = content.data
                     return data
-    except McpFailure as exc:
-        return failure(exc.code)
-    except (TimeoutError, httpx2.TimeoutException):
-        return failure("TIMEOUT")
-    except httpx2.HTTPStatusError as exc:
-        return failure(
-            {429: "BUSY", 504: "TIMEOUT"}.get(exc.response.status_code, "UNAVAILABLE")
-        )
-    except Exception:
-        return failure("UNAVAILABLE")
+    except Exception as exc:
+        return bridge_failure(exc)
 
 
 def main() -> None:

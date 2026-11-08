@@ -249,7 +249,7 @@ def test_dead_helper_state_is_queued_and_cannot_clear_new_preparation(
         expired = expired_request
         qtbot.waitUntil(lambda: bool(results))
         if expired_request:
-            assert results[0]["result"]["status"] == "UNAVAILABLE"
+            assert results[0]["result"]["status"] == "TIMEOUT"
         else:
             assert (
                 results[0]["result"]["data"]["fallback_reason"] == "model_unavailable"

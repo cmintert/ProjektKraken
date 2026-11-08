@@ -170,6 +170,9 @@ def saved_object(
 def world_overview(db: DatabaseService, world: dict[str, Any]) -> dict[str, Any]:
     """Return saved-object counts and explicitly standard calendar structure."""
     from src.services.repositories.mcp_read_repository import McpReadRepository
+    from src.services.repositories.mcp_relationship_repository import (
+        McpRelationshipRepository,
+    )
 
     config = db.get_active_calendar_config()
     calendar = None
@@ -183,11 +186,15 @@ def world_overview(db: DatabaseService, world: dict[str, Any]) -> dict[str, Any]
             "has_year_variants": bool(config.year_variants),
             "has_leap_year_rules": bool(config.leap_year_rules),
         }
+    counts = McpReadRepository(db.require_connection()).counts()
+    counts["relationships"] = McpRelationshipRepository(
+        db.require_connection()
+    ).counts()
     return {
         "id": world["world_id"],
         "name": world["world_name"],
         "read_only": True,
-        "counts": McpReadRepository(db.require_connection()).counts(),
+        "counts": counts,
         "calendar": calendar,
     }
 

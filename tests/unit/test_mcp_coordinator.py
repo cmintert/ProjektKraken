@@ -30,8 +30,17 @@ def test_queued_reads_and_stop_do_not_touch_main_thread_database(
     thread.finished.connect(worker.deleteLater)
     thread.start()
     context = {"world_id": "a", "world_name": "Saved world", "database": path}
+    view = {"world_now": 2.0, "playhead": 0.0}
+
+    def capture_view():
+        assert QThread.currentThread() == coordinator.thread()
+        return dict(view)
+
     coordinator = McpCoordinator(
-        lambda: dict(context), lambda: worker.db_service, thread
+        lambda: dict(context),
+        lambda: worker.db_service,
+        thread,
+        view_context=capture_view,
     )
     try:
         with qtbot.waitSignal(worker.initialized, timeout=5000):
@@ -49,6 +58,7 @@ def test_queued_reads_and_stop_do_not_touch_main_thread_database(
 
         def client():
             output.update(asyncio.run(session.call("get_active_world", {})))
+            additional["time"] = asyncio.run(session.call("get_time_context", {}))
             additional["overview"] = asyncio.run(session.call("get_world_overview", {}))
             additional["batch"] = asyncio.run(
                 session.call(
@@ -72,6 +82,25 @@ def test_queued_reads_and_stop_do_not_touch_main_thread_database(
             == "NOT_FOUND"
         )
         assert additional["browse"]["data"]["done"]
+        first_time = additional["time"]
+        assert first_time["data"]["playhead"]["lore_day"] == 0.0
+        assert first_time["data"]["displayed_world_now"]["lore_day"] == 2.0
+        assert first_time["data"]["system_time"]["utc"].endswith("+00:00")
+        view["playhead"] = -5.0
+        before = coordinator._lore_epoch
+        coordinator.view_changed()
+        caller = threading.Thread(
+            target=lambda: additional.update(
+                time_after=asyncio.run(session.call("get_time_context", {}))
+            )
+        )
+        caller.start()
+        qtbot.waitUntil(lambda: "time_after" in additional, timeout=5000)
+        caller.join()
+        assert additional["time_after"]["data"]["playhead"]["lore_day"] == -5.0
+        assert additional["time_after"]["data"]["view_version"] == 1
+        assert additional["time_after"]["revision"] == first_time["revision"]
+        assert coordinator._lore_epoch == before
         context["world_id"] = "b"
         qtbot.waitUntil(lambda: coordinator.snapshot()["state"] == "Off", timeout=5000)
         assert not session.active
@@ -207,6 +236,9 @@ def test_saved_edits_refresh_automatically_and_ignore_old_preparation(
     qtbot.waitUntil(lambda: preparations.count() == 1)
     original = preparations.at(0)[0]
     coordinator._semantic_changed({**original, "state": "ready"})
+    coordinator.view_changed()
+    assert coordinator.snapshot()["semantic_state"] == "ready"
+    assert preparations.count() == 1
     for _ in range(3):
         coordinator.invalidate()
     assert coordinator._expired(original["request_id"])
@@ -255,6 +287,39 @@ def test_model_failure_waits_for_local_retry(semantic_coordinator, qtbot):
     assert not coordinator._semantic_refresh.isActive()
     coordinator.prepare_semantic()
     assert preparations.count() == 2
+
+
+@pytest.mark.parametrize(
+    "cause,expected",
+    [
+        ("stop", "SHARING_DISABLED"),
+        ("no_world", "NO_WORLD_SELECTED"),
+        ("loading_world", "WORLD_NOT_READY"),
+        ("changed_world", "WORLD_CHANGED"),
+    ],
+)
+def test_session_end_reason_comes_from_trusted_local_state(
+    semantic_coordinator, qtbot, cause, expected
+):
+    coordinator, _, context = semantic_coordinator
+    coordinator.enable()
+    coordinator._server.ready({"port": 1})
+    qtbot.waitUntil(lambda: coordinator.snapshot()["state"] == "Active")
+    session = coordinator._session
+    if cause == "stop":
+        coordinator.stop_sharing()
+    else:
+        if cause == "no_world":
+            context["database"] = ""
+            context["world_id"] = ""
+        elif cause == "loading_world":
+            context["database"] = ""
+        else:
+            context["world_id"] = "replacement"
+        coordinator._check()
+    result = asyncio.run(session.call("get_active_world", {}))
+    assert result["reason_code"] == expected
+    assert result["data"] is None
 
 
 @pytest.mark.parametrize("semantic_state", ["preparing", "ready", "unavailable"])

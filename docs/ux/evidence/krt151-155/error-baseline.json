@@ -1,0 +1,47 @@
+{
+  "baseline_commit": "0fd0580e",
+  "evidence": "Controlled SDK/transport exceptions against baseline relay source; not a live desktop bridge replay",
+  "cases": [
+    {
+      "case": "MCPError",
+      "before": {
+        "schema_version": 1,
+        "status": "UNAVAILABLE",
+        "data": null,
+        "retryable": false,
+        "restart_required": false,
+        "suggested_action": "check_local_sharing"
+      },
+      "after": {
+        "schema_version": 1,
+        "status": "INVALID_INPUT",
+        "data": null,
+        "reason_code": "TOOL_ARGUMENTS_INVALID",
+        "retryable": false,
+        "restart_required": false,
+        "suggested_action": "check_request"
+      }
+    },
+    {
+      "case": "ReadError",
+      "before": {
+        "schema_version": 1,
+        "status": "UNAVAILABLE",
+        "data": null,
+        "retryable": false,
+        "restart_required": false,
+        "suggested_action": "check_local_sharing"
+      },
+      "after": {
+        "schema_version": 1,
+        "status": "TRANSIENT_FAILURE",
+        "data": null,
+        "reason_code": "CONNECTION_INTERRUPTED",
+        "retryable": true,
+        "restart_required": false,
+        "suggested_action": "retry_with_backoff",
+        "retry_after_ms": 250
+      }
+    }
+  ]
+}
