@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-08
-**Commit:** 0fd0580ed53dbf071dbd209ccbe51a10d3c9043c
+**Commit:** ec8407227d3b8f600822e06ece1d13a2dbb76f0b
 ---
 
 # Changelog
@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-11-08)* **Theme scope teardown crash (KRT-144)**: Theme delivery now
+  discards scopes destroyed during callbacks and stylesheet updates. Reentrant
+  updates preserve the latest theme generation and pending paint work. Added
+  regressions for root/chrome teardown and generation replacement.
 
 - *(2026-11-08)* **Actionable MCP failures (KRT-151/KRT-152)**: Preserved specific
   cursor/date errors and safe availability reasons through the bridge. Transient

@@ -4,9 +4,17 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+import shiboken6
 from PySide6.QtCore import QEvent, QObject, Qt
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import QDialog, QLineEdit, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QDialog,
+    QLineEdit,
+    QPushButton,
+    QTabBar,
+    QVBoxLayout,
+    QWidget,
+)
 
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.theme_connections import connect_theme, disconnect_theme
@@ -316,3 +324,191 @@ def test_new_native_tooltip_uses_current_scope_colors(qapp, qtbot, theme_present
             == ThemeManager().get_theme()["surface"].lower()
         )
     QToolTip.hideText()
+
+
+def _pending_callback(widget, callback):
+    from src.gui.utils.theme_connections import _ThemeSubscription
+
+    connect_theme(widget, callback)
+    subscription = next(
+        child for child in widget.children() if isinstance(child, _ThemeSubscription)
+    )
+    subscription._pending = dict(ThemeManager().get_theme())
+
+
+@pytest.mark.parametrize("delete_root", (False, True))
+def test_chrome_flush_can_destroy_later_scope_or_root(
+    qapp, qtbot, theme_presentation, delete_root
+):
+    runtime = theme_presentation
+    root = QWidget()
+    qtbot.addWidget(root)
+    tab = QTabBar(root)
+    tab.addTab("One")
+    later = QWidget(root)
+    root.show()
+    qapp.processEvents()
+    runtime.register(root)
+    runtime.register(tab, ("QTabBar",))
+    runtime.register(later)
+    deleted_scope = runtime._scope_for(root if delete_root else later)
+    _pending_callback(tab, lambda _: shiboken6.delete(root if delete_root else later))
+
+    runtime._apply(runtime._scope_for(root))
+
+    assert not shiboken6.isValid(deleted_scope)
+    assert deleted_scope not in runtime._scopes.values()
+    if not delete_root:
+        assert runtime._scope_for(root).generation == runtime._generation
+
+
+def test_scope_deleted_by_its_subscription_is_not_applied(
+    qapp, qtbot, theme_presentation
+):
+    runtime = theme_presentation
+    root = QWidget()
+    qtbot.addWidget(root)
+    root.show()
+    qapp.processEvents()
+    scope = runtime._scope_for(root)
+    _pending_callback(root, lambda _: shiboken6.delete(root))
+    runtime._apply(scope)
+    assert not shiboken6.isValid(scope)
+    assert scope not in runtime._scopes.values()
+
+
+def test_reentrant_theme_delivery_keeps_new_generation_and_paint_wait(
+    qapp, qtbot, theme_presentation, monkeypatch
+):
+    runtime = theme_presentation
+    settings, panel = _scopes(qapp, qtbot, runtime)
+    original = runtime._apply
+    replaced = False
+    expected_waiting = None
+
+    def apply(scope):
+        nonlocal replaced, expected_waiting
+        original(scope)
+        if not replaced:
+            replaced = True
+            runtime._scope_for(settings).priority = False
+            runtime.register(panel, priority=True)
+            ThemeManager().set_theme("cyberpunk_mode", persist=False)
+            expected_waiting = runtime._waiting
+
+    monkeypatch.setattr(runtime, "_apply", apply)
+    ThemeManager().set_theme("light_mode", persist=False)
+    assert runtime._waiting is expected_waiting
+    qtbot.waitUntil(lambda: not runtime.is_pending)
+    assert runtime._scope_for(panel).generation == runtime._generation
+    assert ThemeManager().get_theme()["surface"] in panel.styleSheet()
+
+
+def test_chrome_callback_can_replace_theme_generation(qapp, qtbot, theme_presentation):
+    runtime = theme_presentation
+    root = QWidget()
+    qtbot.addWidget(root)
+    tab = QTabBar(root)
+    tab.addTab("One")
+    root.show()
+    qapp.processEvents()
+    runtime.register(root)
+    replaced = False
+
+    def replace_once(_theme):
+        nonlocal replaced
+        if not replaced:
+            replaced = True
+            ThemeManager().set_theme("light_mode", persist=False)
+
+    _pending_callback(tab, replace_once)
+    previous = runtime._generation
+    runtime._apply(runtime._scope_for(root))
+    assert runtime._generation > previous
+    assert runtime._scope_for(root).generation == runtime._generation
+    assert runtime._scope_for(tab).generation == runtime._generation
+    assert ThemeManager().get_theme()["surface"] in root.styleSheet()
+
+
+def test_destroyed_scopes_leave_pending_queue_immediately(
+    qapp, qtbot, theme_presentation
+):
+    runtime = theme_presentation
+    settings, panel = _scopes(qapp, qtbot, runtime)
+    ThemeManager().set_theme("light_mode", persist=False)
+    scope = runtime._scope_for(panel)
+    assert scope in runtime._queued
+    shiboken6.delete(panel)
+    assert scope not in runtime._queued
+    shiboken6.delete(settings)
+    assert runtime._waiting is None
+    qtbot.waitUntil(lambda: not runtime.is_pending)
+
+
+def test_scope_deletion_after_stylesheet_application_is_safe(
+    qapp, qtbot, theme_presentation, monkeypatch
+):
+    runtime = theme_presentation
+    root = QWidget()
+    qtbot.addWidget(root)
+    root.show()
+    qapp.processEvents()
+    scope = runtime._scope_for(root)
+    original = scope.apply
+
+    def apply(*args):
+        original(*args)
+        shiboken6.delete(root)
+
+    monkeypatch.setattr(scope, "apply", apply)
+    runtime._apply(scope)
+    assert not shiboken6.isValid(scope)
+
+
+def test_stylesheet_reentry_does_not_stamp_older_generation(
+    qapp, qtbot, theme_presentation, monkeypatch
+):
+    runtime = theme_presentation
+    root = QWidget()
+    qtbot.addWidget(root)
+    root.show()
+    qapp.processEvents()
+    scope = runtime._scope_for(root)
+    original = root.setStyleSheet
+    replaced = False
+
+    def set_style(sheet):
+        nonlocal replaced
+        original(sheet)
+        if not replaced:
+            replaced = True
+            ThemeManager().set_theme("cyberpunk_mode", persist=False)
+
+    root.setStyleSheet("QWidget { padding: 1px; }")
+    monkeypatch.setattr(root, "setStyleSheet", set_style)
+    runtime._apply(scope)
+    assert replaced
+    assert scope.generation == runtime._generation
+    assert ThemeManager().get_theme()["surface"] in root.styleSheet()
+
+
+def test_same_generation_reentry_does_not_repeat_subscription_delivery(
+    qapp, qtbot, theme_presentation
+):
+    runtime = theme_presentation
+    root = QWidget()
+    qtbot.addWidget(root)
+    root.show()
+    qapp.processEvents()
+    scope = runtime._scope_for(root)
+    observed = []
+
+    def reenter(_theme):
+        observed.append("delivered")
+        runtime._apply(scope)
+
+    _pending_callback(root, reenter)
+    runtime._apply(scope)
+    assert observed == ["delivered"]
+    assert not runtime._applying
+    assert scope.generation == runtime._generation
