@@ -8,8 +8,8 @@ switches reliably update the UI.
 import logging
 from typing import Any, Optional, Tuple
 
-from PySide6.QtCore import QEvent, QObject, QRect
-from PySide6.QtGui import QColor, QCursor, QPalette
+from PySide6.QtCore import QEvent, QObject, QRect, Qt
+from PySide6.QtGui import QColor, QCursor, QPainter, QPalette, QPen
 from PySide6.QtWidgets import (
     QLayout,
     QProxyStyle,
@@ -1342,6 +1342,20 @@ class StyleHelper:
             f"background-color: {theme['primary']}; "
             f"image: url({icon_url}); }}"
         )
+
+    @staticmethod
+    def draw_item_focus_frame(painter: QPainter, rect: QRect) -> None:
+        """Paint a stable, inset focus boundary without changing cell geometry."""
+        theme = ThemeManager().get_theme()
+        frame = rect.adjusted(2, 2, -2, -2)
+        painter.save()
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        # A neutral backing keeps focus legible over any selected-row fill.
+        painter.setPen(QPen(QColor(theme["surface"]), 4))
+        painter.drawRect(frame)
+        painter.setPen(QPen(QColor(theme["focus_ring"]), 2))
+        painter.drawRect(frame)
+        painter.restore()
 
     @staticmethod
     def get_item_view_selection_style(selector: str) -> str:

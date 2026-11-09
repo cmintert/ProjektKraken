@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-09
-**Commit:** 9c23cccc9298bd49c3f09bb8bdd02fff4415463b
+**Commit:** 484bd94de603f99a91af572a8a1bf65f1a860b09
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-11-09)* **Attribute cell focus (KRT-143)**: Single-click and keyboard
+  focus now frame the current editable attribute cell immediately, using the
+  theme focus role. Selection and focus changes preserve values and the existing
+  double-click/typing edit gestures. Added theme, keyboard and type-specific
+  editing regressions and reviewed the existing Help bindings.
 
 - *(2026-11-09)* **Layers-to-map panning (KRT-140)**: Returning the pointer to
   the map after selecting a Layers row now returns navigation focus to the map.

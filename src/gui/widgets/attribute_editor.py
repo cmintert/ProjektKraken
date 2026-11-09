@@ -109,7 +109,7 @@ class AttributeEditorWidget(QWidget):
 
         self._delegate = AttributeDelegate(self.table)
         self._delegate.set_attribute_widget(self)
-        self.table.setItemDelegateForColumn(1, self._delegate)  # Apply to Value column
+        self.table.setItemDelegate(self._delegate)
 
         main_layout.addWidget(self.table)
 

@@ -12180,8 +12180,8 @@
     {
       "source": "src/gui/widgets/attribute_editor.py",
       "symbol": "AttributeEditorWidget.__init__",
-      "sha256": "3fda82a9bcaad3a6a0202dabf7d072aec4eebaee0b4834c8c8a673fcfc9f221f",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "b52383fd32d2321294eff69b2e582b1bc5877e4e5f8b49c86aeef98705d14393",
+      "review_note": "KRT-143: reviewed immediate cell focus feedback; table editing, Add/Remove, Help targets and attribute explanations remain accurate."
     },
     {
       "source": "src/gui/widgets/attribute_editor.py",

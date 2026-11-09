@@ -6,15 +6,18 @@ Provides type-aware editing widgets for the attribute editor table.
 import logging
 from typing import Any, Optional, cast
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QModelIndex, QPersistentModelIndex, Qt
+from PySide6.QtGui import QPainter
 from PySide6.QtWidgets import (
     QCheckBox,
+    QStyle,
     QStyledItemDelegate,
     QStyleOptionViewItem,
     QWidget,
 )
 
 from src.gui.utils.help_context import declare_inspection
+from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
 
 logger = logging.getLogger(__name__)
@@ -45,6 +48,26 @@ class AttributeDelegate(QStyledItemDelegate):
             widget: The AttributeEditorWidget instance.
         """
         self._attribute_widget = widget
+
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        index: QModelIndex | QPersistentModelIndex,
+    ) -> None:
+        """Distinguish the focused editable cell before an editor is opened."""
+        super().paint(painter, option, index)
+        # PySide6 stubs omit these inherited QStyleOption fields.
+        state = option.state  # type: ignore[attr-defined]
+        if (
+            state & QStyle.StateFlag.State_HasFocus
+            and state & QStyle.StateFlag.State_Enabled
+            and index.flags() & Qt.ItemFlag.ItemIsEditable
+        ):
+            StyleHelper.draw_item_focus_frame(
+                painter,
+                option.rect,  # type: ignore[attr-defined]
+            )
 
     def createEditor(
         self,
