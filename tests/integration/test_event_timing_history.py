@@ -10,10 +10,17 @@ from src.commands.calendar_commands import (
     UpdateCalendarConfigCommand,
 )
 from src.commands.chronology_commands import ApplyChronologyCommand
-from src.commands.event_commands import DeleteEventCommand, UpdateEventCommand
+from src.commands.event_commands import (
+    CreateEventCommand,
+    DeleteEventCommand,
+    UpdateEventCommand,
+)
 from src.commands.event_timing_commands import ApplyEventTimingPlanCommand
+from src.commands.lifecycle_command import CreateLifecycleEventCommand
+from src.commands.relation_commands import AddRelationCommand
 from src.commands.transfer_commands import ApplyTransferCommand
 from src.core.calendar import CalendarConfig
+from src.core.entities import Entity
 from src.core.event_timing.definitions import EndpointDefinition, EventTimingDefinition
 from src.core.events import Event
 from src.core.map import Map
@@ -30,6 +37,29 @@ def calculated_event(db):
     )
     db.insert_event(event)
     return event
+
+
+def test_calculated_world_lifecycle_creation_replays_with_same_link(
+    db_service, prepare_timing_command
+):
+    calculated_event(db_service)
+    entity = Entity(name="Ada", type="character")
+    db_service.insert_entity(entity)
+    event = CreateEventCommand(
+        {"name": "Birth of Ada", "lore_date": 25}, select_after_create=False
+    )
+    relation = AddRelationCommand(event.event.id, entity.id, "birth")
+    root = CreateLifecycleEventCommand([event, relation], "Record birth")
+    command = prepare_timing_command(root)
+    result = command.execute(db_service)
+    assert result.success, result.message
+    saved_relation = db_service.get_incoming_relations(entity.id)[0]
+    assert result.data["refresh_editor_relations"]
+    restored = ApplyEventTimingPlanCommand.from_dict(command.to_dict())
+    assert restored.undo(db_service).success
+    assert db_service.get_event(event.event.id) is None
+    assert restored.execute(db_service).success
+    assert db_service.get_incoming_relations(entity.id)[0] == saved_relation
 
 
 def test_legacy_import_redo_restores_recorded_delta_in_calculated_world(db_service):

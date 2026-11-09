@@ -10,10 +10,12 @@ from bisect import bisect_right
 from html import escape
 from typing import Any, Optional
 
-from PySide6.QtCore import QEvent, QObject, Qt, Signal
+from PySide6.QtCore import QEvent, QObject, QPoint, Qt, Signal
 from PySide6.QtGui import QMouseEvent
-from PySide6.QtWidgets import QTextEdit, QToolTip, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QLabel, QTextBrowser, QToolTip, QVBoxLayout, QWidget
 
+from src.core.events import Event
+from src.core.temporal_display import TemporalDisplay, event_temporal_display
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.theme_connections import connect_theme
 
@@ -28,6 +30,7 @@ class TimelineDisplayWidget(QWidget):
     # Class-level calendar converter for date formatting
     _calendar_converter: Any = None
     event_clicked = Signal(str)
+    association_requested = Signal(str, dict)
 
     @classmethod
     def set_calendar_converter(cls, converter: Any) -> None:
@@ -48,16 +51,28 @@ class TimelineDisplayWidget(QWidget):
         self._current_time: Optional[float] = None  # Story's "current time"
         self._description_map: dict[str, str] = {}  # anchor_id -> description
         self._event_id_map: dict[str, str] = {}  # anchor_id -> source event ID
+        self._association_map: dict[str, list[dict[str, Any]]] = {}
 
         # Setup UI
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+        self._living_status_label = QLabel()
+        self._living_status_label.hide()
+        layout.addWidget(self._living_status_label)
 
         self._text_display = declare_inspection(
-            QTextEdit(),
+            QTextBrowser(),
             "src-gui-widgets-timeline-display-widget-timelinedisplaywidget-init-self-text-display|timeline.viewing|help-inspect-src-gui-widgets-timeline-display-widget-timelinedisplaywidget-init-self-text-display",
         )
         self._text_display.setReadOnly(True)
+        self._text_display.setOpenLinks(False)
+        self._text_display.anchorClicked.connect(
+            lambda url: self._follow_card_link(
+                url.toString(), self._text_display.cursorRect().bottomLeft()
+            )
+        )
+        self._text_display.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self._text_display.customContextMenuRequested.connect(self._show_card_menu)
         self._text_display.setMinimumHeight(100)
         self._text_display.setMinimumHeight(100)
         # Allow widget to expand to fill available space
@@ -84,7 +99,18 @@ class TimelineDisplayWidget(QWidget):
                       and attributes (including payload).
 
         """
-        self._relations = relations
+        cards: list[dict[str, Any]] = []
+        by_event: dict[str, dict[str, Any]] = {}
+        for relation in relations:
+            event_id = relation.get("source_event_id")
+            if event_id and event_id in by_event:
+                by_event[event_id]["associations"].append(relation)
+                continue
+            card = {**relation, "associations": [relation]}
+            cards.append(card)
+            if event_id:
+                by_event[event_id] = card
+        self._relations = cards
         self._refresh_display()
 
     def set_playhead_time(self, time: float) -> None:
@@ -94,8 +120,19 @@ class TimelineDisplayWidget(QWidget):
             time: The playhead time in lore_date units.
 
         """
+        if self._playhead_time != time:
+            self.set_living_status(None)
         self._playhead_time = time
         self._refresh_display()
+
+    def set_living_status(self, status: dict[str, Any] | None) -> None:
+        """Show the derived status at the viewed time when available."""
+        value = status.get("value") if status else None
+        labels = {"alive": "Alive", "dead": "Dead", "indeterminate": "Indeterminate"}
+        self._living_status_label.setText(
+            f"Living status at viewed time: {labels[value]}" if value in labels else ""
+        )
+        self._living_status_label.setVisible(value in labels)
 
     def set_current_time(self, time: Optional[float]) -> None:
         """Set the story's 'current time' for the NOW marker.
@@ -121,13 +158,20 @@ class TimelineDisplayWidget(QWidget):
         # Clear description map for new display
         self._description_map = {}
         self._event_id_map = {}
+        self._association_map = {}
 
         # Sort relations by date
-        sorted_relations = sorted(
-            self._relations,
-            key=lambda r: self._get_event_date(r),
-        )
-        dates = [self._get_event_date(rel) for rel in sorted_relations]
+        dated: list[tuple[float, TemporalDisplay, dict[str, Any]]] = []
+        unresolved: list[tuple[None, TemporalDisplay, dict[str, Any]]] = []
+        for relation in self._relations:
+            timing = self._event_timing(relation)
+            if timing.possible_start is None:
+                unresolved.append((None, timing, relation))
+            else:
+                dated.append((timing.possible_start, timing, relation))
+        dated.sort(key=lambda item: item[0])
+        dates = [date for date, _, _ in dated]
+        entries = [*dated, *unresolved]
         markers: dict[int, list[tuple[float, str]]] = {}
         for time, label, css_class in (
             (self._playhead_time, "Viewing", "viewed-marker"),
@@ -148,34 +192,28 @@ class TimelineDisplayWidget(QWidget):
         html_parts.append(StyleHelper.get_timeline_display_css())
         html_parts.append("</style>")
 
-        for i, rel in enumerate(sorted_relations):
+        for i, (_, timing, rel) in enumerate(entries):
             for _, marker in sorted(markers.get(i, [])):
                 html_parts.append(marker)
-            event_date = self._get_event_date(rel)
             event_name = rel.get("source_event_name") or "Event"
-            payload = rel.get("attributes", {}).get("payload", {})
-            rel_type = rel.get("rel_type", "")
 
             # Extract description and build anchor ID
             anchor_id = rel.get("id") or f"card_{i}"
-            event_id = rel.get("source_id") or rel.get("source_event_id")
+            self._association_map[anchor_id] = rel["associations"]
+            event_id = rel.get("source_event_id") or rel.get("source_id")
             if event_id:
                 self._event_id_map[anchor_id] = str(event_id)
             raw_desc = rel.get("source_event_description") or ""
             self._extract_and_map_description(anchor_id, raw_desc)
 
             # Format date using calendar converter if available
-            date_str = self._format_date(event_date)
-
-            # When the date is 0.0, it may be a genuine epoch event or a failed
-            # date parse that defaulted to 0.0.  Show a subtle indicator.
-            date_html = escape(date_str)
-            if event_date == 0.0:
-                date_html += " <span class='date-unknown'>(date unknown)</span>"
+            date_html = escape(timing.caption)
 
             # Determine state: active (past/current) or future
             is_active = (
-                self._playhead_time is not None and event_date <= self._playhead_time
+                self._playhead_time is not None
+                and timing.possible_end is not None
+                and timing.possible_end <= self._playhead_time
             )
 
             # Use CSS classes for styling instead of inline styles
@@ -197,32 +235,47 @@ class TimelineDisplayWidget(QWidget):
             html_parts.append(
                 f"<span class='event-name'>{escape(str(event_name))}</span>"
             )
-            if rel_type:
-                html_parts.append(
-                    f" <span class='event-type'>({escape(str(rel_type))})</span>"
-                )
-
-            # Payload attributes (if any)
-            if self._payload_has_state_changes(payload):
-                self._append_payload_v2(html_parts, payload)
+            self._append_associations(html_parts, rel["associations"])
 
             self._close_card_anchor(html_parts, anchor_id, has_desc or has_event)
+            if has_event and any(
+                self._is_authored_association(row) for row in rel["associations"]
+            ):
+                html_parts.append(
+                    f"<br><a href='actions:{escape(anchor_id, quote=True)}'>Association actions</a>"
+                )
 
             html_parts.append("</td></tr></table>")
 
-        for _, marker in sorted(markers.get(len(sorted_relations), [])):
+        for _, marker in sorted(markers.get(len(entries), [])):
             html_parts.append(marker)
-        if not sorted_relations:
+        if not entries:
             html_parts.append(
                 "<p class='timeline-empty'>No timeline events for this entity.</p>"
             )
 
+        scrollbar = self._text_display.verticalScrollBar()
+        previous_scroll = scrollbar.value()
         self._text_display.setHtml("\n".join(html_parts))
+        scrollbar.setValue(previous_scroll)
 
     def _format_date(self, time: float) -> str:
         """Format an event or time marker with the active world calendar."""
         converter = TimelineDisplayWidget._calendar_converter
         return converter.format_date(time) if converter else f"{time:.1f}"
+
+    def _append_associations(
+        self, html_parts: list[str], associations: list[dict[str, Any]]
+    ) -> None:
+        for relation in associations:
+            rel_type = relation.get("rel_type")
+            if rel_type:
+                html_parts.append(
+                    f" <span class='event-type'>({escape(str(rel_type))})</span>"
+                )
+            payload = relation.get("attributes", {}).get("payload", {})
+            if self._payload_has_state_changes(payload):
+                self._append_payload_v2(html_parts, payload)
 
     @staticmethod
     def _payload_has_state_changes(payload: object) -> bool:
@@ -318,35 +371,28 @@ class TimelineDisplayWidget(QWidget):
         if has_anchor:
             html_parts.append("</a>")
 
-    def _get_event_date(self, rel: dict[str, Any]) -> float:
-        """Get the date to use for sorting/displaying an event.
+    def _get_event_date(self, rel: dict[str, Any]) -> float | None:
+        """Keep an explicitly unknown Event date separate from relation validity."""
+        date = rel.get("source_event_date")
+        if "source_event_date" not in rel:
+            date = rel.get("attributes", {}).get("valid_from")
+        return float(date) if date is not None else None
 
-        Uses source_event_date if available, otherwise valid_from.
-
-        Note:
-            A returned value of 0.0 is ambiguous: it may mean the event
-            genuinely occurs at the calendar epoch, or that its lore_date
-            could not be parsed during import and was silently defaulted to
-            0.0.  The caller should treat 0.0 with appropriate caution.
-
-        Args:
-            rel: Relation dict.
-
-        Returns:
-            Date as float.
-
-        """
-        # Prefer source_event_date (from Event JOIN)
-        if "source_event_date" in rel and rel["source_event_date"] is not None:
-            return float(rel["source_event_date"])
-
-        # Fall back to valid_from in attributes
-        attrs = rel.get("attributes", {})
-        if "valid_from" in attrs and attrs["valid_from"] is not None:
-            return float(attrs["valid_from"])
-
-        # Default to 0 if no date available
-        return 0.0
+    def _event_timing(self, relation: dict[str, Any]) -> TemporalDisplay:
+        date = self._get_event_date(relation)
+        attributes = relation.get("source_event_attributes") or {}
+        if attributes.get("_temporal_v2"):
+            return event_temporal_display(
+                Event(
+                    name=relation.get("source_event_name") or "Event",
+                    lore_date=date,
+                    lore_duration=relation.get("source_event_duration"),
+                    attributes=attributes,
+                ),
+                self._calendar_converter,
+            )
+        caption = "Date unknown" if date is None else self._format_date(date)
+        return TemporalDisplay(date, date, caption=caption)
 
     def clear(self) -> None:
         """Clear the timeline display."""
@@ -354,6 +400,7 @@ class TimelineDisplayWidget(QWidget):
         self._playhead_time = None
         self._description_map = {}
         self._event_id_map = {}
+        self.set_living_status(None)
         self._text_display.clear()
 
     def _activate_anchor(self, anchor_id: str) -> bool:
@@ -363,6 +410,43 @@ class TimelineDisplayWidget(QWidget):
             return False
         self.event_clicked.emit(event_id)
         return True
+
+    def _show_card_menu(self, position: QPoint) -> None:
+        anchor = self._text_display.anchorAt(position)
+        self._open_card_menu(anchor.removeprefix("actions:"), position)
+
+    @staticmethod
+    def _is_authored_association(relation: dict) -> bool:
+        return bool(relation.get("id")) and relation.get("rel_type") != "mentions"
+
+    def _open_card_menu(self, anchor: str, position: QPoint) -> None:
+        menu = self._text_display.createStandardContextMenu(position)
+        if anchor in self._event_id_map:
+            menu.addAction("Open event", lambda: self._activate_anchor(anchor))
+        for relation in self._association_map.get(anchor, []):
+            if not self._is_authored_association(relation):
+                continue
+            actions = menu.addMenu(str(relation.get("rel_type", "Association")))
+            actions.addAction(
+                "Change associated event…",
+                lambda _checked=False, row=relation: self.association_requested.emit(
+                    "replace", row
+                ),
+            )
+            actions.addAction(
+                "Remove association",
+                lambda _checked=False, row=relation: self.association_requested.emit(
+                    "unlink", row
+                ),
+            )
+        menu.exec(self._text_display.viewport().mapToGlobal(position))
+        menu.deleteLater()
+
+    def _follow_card_link(self, anchor: str, position: QPoint) -> bool:
+        if anchor.startswith("actions:"):
+            self._open_card_menu(anchor.removeprefix("actions:"), position)
+            return True
+        return self._activate_anchor(anchor)
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         """Handle card hover tooltips and event navigation clicks.
@@ -396,8 +480,9 @@ class TimelineDisplayWidget(QWidget):
             and isinstance(event, QMouseEvent)
             and event.button() == Qt.MouseButton.LeftButton
         ):
-            anchor = self._text_display.anchorAt(event.position().toPoint())
-            if anchor and self._activate_anchor(anchor):
+            position = event.position().toPoint()
+            anchor = self._text_display.anchorAt(position)
+            if anchor and self._follow_card_link(anchor, position):
                 return True
         return super().eventFilter(obj, event)
 

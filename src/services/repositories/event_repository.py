@@ -104,6 +104,21 @@ class EventRepository(BaseRepository):
             events.append(Event.from_dict(data))
         return events
 
+    def get_by_ids(self, ids: list[str]) -> dict[str, Event]:
+        """Read a bounded set of explicit Event references."""
+        connection = self._require_connection()
+        events = {}
+        for start in range(0, len(ids), 500):
+            chunk = ids[start : start + 500]
+            placeholders = ",".join("?" for _ in chunk)
+            for row in connection.execute(
+                f"SELECT * FROM events WHERE id IN ({placeholders})", chunk
+            ):
+                data = dict(row)
+                data["attributes"] = self._deserialize_json(data["attributes"] or "{}")
+                events[data["id"]] = Event.from_dict(data)
+        return events
+
     def delete(self, event_id: str) -> None:
         """Delete an event permanently.
 

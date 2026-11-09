@@ -14,7 +14,6 @@ from typing import TYPE_CHECKING, Any
 
 from src.core.analysis import (
     CharacterLifespan,
-    EvidenceReference,
     SeverityLevel,
     TemporalAnalysisReport,
     TemporalConflict,
@@ -22,6 +21,13 @@ from src.core.analysis import (
 )
 from src.core.entities import Entity
 from src.core.events import Event
+from src.core.lifecycle import (
+    LivingClaim,
+    character_claims,
+    competing_claims,
+    definitely_outside_life,
+)
+from src.core.temporal_expression import ResolvedTemporalBounds
 from src.core.temporal_window import resolve_temporal_window
 from src.services.text_parser import WikiLinkParser
 
@@ -46,7 +52,7 @@ class TemporalAnalyzer:
     - **Temporal conflicts**: relations whose ``valid_from``/``valid_to``
       attribute window is logically invalid (``valid_from >= valid_to``).
     - **Character lifespans**: per-entity birth/death tracking derived from
-      relations whose ``rel_type`` contains ``"birth"`` or ``"death"``, plus
+      relations with explicit ``birth`` or ``death`` keys, plus
       any events that fall outside the computed lifespan.
 
     Attributes:
@@ -132,19 +138,10 @@ class TemporalAnalyzer:
             exclusive_role_conflicts(relations, events, self._date_parser.converter)
         )
 
-        # Pre-build event date map once; reused by lifespan check to avoid
-        # calling _coerce_date O(entities × events) times.
-        event_dates: dict[str, float | None] = {
-            e.id: self._coerce_date(e.lore_date)
-            if "_temporal_v2" not in e.attributes
-            else None
-            for e in events
-        }
         lifespans, lifespan_conflicts = self._analyze_character_lifespans(
             entities,
             events,
             relations,
-            event_dates,
         )
         conflicts.extend(lifespan_conflicts)
 
@@ -351,17 +348,16 @@ class TemporalAnalyzer:
 
         return conflicts
 
-    def _analyze_character_lifespans(  # noqa: C901
+    def _analyze_character_lifespans(
         self,
         entities: list[Entity],
         events: list[Event],
         relations: list[dict[str, Any]],
-        event_dates: dict[str, float | None] | None = None,
     ) -> tuple[list[CharacterLifespan], list[TemporalConflict]]:
         """Compute birth/death and lifespan violation data for every entity.
 
         Birth and death dates are resolved from relations whose ``rel_type``
-        contains ``"birth"`` or ``"death"`` (case-insensitive).  The date is
+        is ``"birth"`` or ``"death"`` (case-insensitive). The legacy date is
         taken from the relation's ``attributes["date"]`` value; if absent, it
         falls back to the ``lore_date`` of the event referenced by
         ``attributes["event_id"]``.
@@ -374,19 +370,12 @@ class TemporalAnalyzer:
             entities: All entities in the world.
             events: All events in the world.
             relations: All relations as raw dicts.
-            event_dates: Optional pre-computed mapping of event_id → coerced
-                lore date.  When provided the method skips per-event
-                ``_coerce_date`` calls; when ``None`` it builds the map
-                itself.
 
         Returns:
             tuple: Lifespans and any malformed or out-of-lifespan conflicts.
         """
         event_map: dict[str, Event] = {e.id: e for e in events}
         entity_map: dict[str, Entity] = {entity.id: entity for entity in entities}
-
-        if event_dates is None:
-            event_dates = {e.id: self._coerce_date(e.lore_date) for e in events}
 
         lifespan_relations: dict[str, list[dict[str, Any]]] = defaultdict(list)
         related_event_ids: dict[str, set[str]] = defaultdict(set)
@@ -400,8 +389,8 @@ class TemporalAnalyzer:
                 if entity_id in entity_map and other_id in event_map:
                     related_event_ids[entity_id].add(other_id)
 
-            rel_type = str(rel.get("rel_type", "")).casefold()
-            if "birth" not in rel_type and "death" not in rel_type:
+            rel_type = str(rel.get("rel_type", "")).strip().casefold()
+            if rel_type not in {"birth", "death", "revival"}:
                 continue
             characters = [
                 entity_map[endpoint]
@@ -452,6 +441,34 @@ class TemporalAnalyzer:
                 )
             lifespan_relations[character.id].append(rel)
 
+        self._include_wikilink_events(events, entity_map, related_event_ids)
+
+        from src.core.temporal_anchors import resolve_event_anchors
+
+        converter = (
+            self._date_parser.converter if self._date_parser is not None else None
+        )
+        anchors = resolve_event_anchors(events, converter)
+        lifespans = []
+        for entity in entities:
+            rows = lifespan_relations.get(entity.id, [])
+            if not rows:
+                continue
+            claims = character_claims(entity.id, rows, anchors, self._date_parser)
+            lifespan, issues = self._summarize_lifespan(
+                entity, claims, related_event_ids[entity.id], event_map, anchors
+            )
+            if lifespan is not None:
+                lifespans.append(lifespan)
+            conflicts.extend(issues)
+        return lifespans, conflicts
+
+    @staticmethod
+    def _include_wikilink_events(
+        events: list[Event],
+        entities: dict[str, Entity],
+        related: dict[str, set[str]],
+    ) -> None:
         for event in events:
             texts = [event.description or ""]
             summary = event.attributes.get("_summary_data")
@@ -459,174 +476,105 @@ class TemporalAnalyzer:
                 texts.append(str(summary["text"]))
             for text in texts:
                 for link in WikiLinkParser.extract_links(text):
-                    if link.is_id_based and link.target_id in entity_map:
-                        related_event_ids[str(link.target_id)].add(event.id)
+                    if link.is_id_based and link.target_id in entities:
+                        related[str(link.target_id)].add(event.id)
 
-        lifespans: list[CharacterLifespan] = []
-
-        for entity in entities:
-            birth_date: float | None = None
-            death_date: float | None = None
-            has_lifespan_relation = False
-
-            if entity.type.casefold() != "character":
+    def _summarize_lifespan(
+        self,
+        entity: Entity,
+        claims: list[LivingClaim],
+        related_ids: set[str],
+        events: dict[str, Event],
+        anchors: dict[str, ResolvedTemporalBounds],
+    ) -> tuple[CharacterLifespan | None, list[TemporalConflict]]:
+        """Keep lifespan scalars and diagnostics tied to the same evidence."""
+        if not claims:
+            return None, []
+        issues = self._lifespan_evidence_issues(entity, claims)
+        violating = []
+        evidence_ids = {claim.event_id for claim in claims}
+        for event_id in sorted(related_ids - evidence_ids):
+            bounds = anchors.get(f"event:{event_id}")
+            if bounds is None or not definitely_outside_life(claims, bounds):
                 continue
-            for rel in lifespan_relations[entity.id]:
-                rel_type = rel.get("rel_type", "").lower()
-                attrs = rel.get("attributes", {})
-                source_id = str(rel.get("source_id", ""))
-                target_id = str(rel.get("target_id", ""))
-                event_endpoint = next(
-                    (
-                        endpoint
-                        for endpoint in (source_id, target_id)
-                        if endpoint in event_map
-                    ),
-                    None,
-                )
-                dated_event = event_map.get(event_endpoint or attrs.get("event_id", ""))
-                if (
-                    dated_event
-                    and "_temporal_v2" in dated_event.attributes
-                    and attrs.get("date") is None
-                ):
-                    has_lifespan_relation = True
-                    conflicts.append(
-                        TemporalConflict(
-                            conflict_type="imprecise_lifespan",
-                            entity_id=entity.id,
-                            entity_name=entity.name,
-                            problem_date=None,
-                            message=f"{dated_event.name} has a partial or qualified date; an exact lifespan is not established.",
-                            suggestion="Retain the stated precision unless more evidence is available.",
-                            severity=SeverityLevel.INFO,
-                            related_ids=[entity.id, dated_event.id],
-                            fingerprint=f"imprecise-lifespan:{entity.id}:{dated_event.id}",
-                        )
-                    )
-                    continue
-                date = self._resolve_date(attrs, event_map, event_endpoint)
-                if date is None:
-                    rel_id = str(rel.get("id", ""))
-                    conflicts.append(
-                        TemporalConflict(
-                            conflict_type="malformed_lifespan_relation",
-                            entity_id=rel_id,
-                            entity_name=f"Relation {rel_id}",
-                            problem_date=None,
-                            message=(
-                                "Birth/death relation has no resolvable explicit "
-                                "or event date."
-                            ),
-                            suggestion="Add a relation date or connect an event.",
-                            related_ids=[source_id, target_id],
-                            fingerprint=f"malformed-lifespan-date:{rel_id}",
-                        )
-                    )
-
-                if "birth" in rel_type:
-                    has_lifespan_relation = True
-                    if date is not None and birth_date is None:
-                        birth_date = date
-                    elif (
-                        date is not None
-                        and birth_date is not None
-                        and date != birth_date
-                    ):
-                        rel_id = str(rel.get("id", ""))
-                        conflicts.append(
-                            TemporalConflict(
-                                conflict_type="ambiguous_lifespan_relation",
-                                entity_id=rel_id,
-                                entity_name=entity.name,
-                                problem_date=date,
-                                message="Character has conflicting birth dates.",
-                                suggestion="Keep one authoritative birth relation.",
-                                related_ids=[entity.id],
-                                fingerprint=f"ambiguous-birth:{entity.id}:{rel_id}",
-                            )
-                        )
-                if "death" in rel_type:
-                    has_lifespan_relation = True
-                    if date is not None and death_date is None:
-                        death_date = date
-                    elif (
-                        date is not None
-                        and death_date is not None
-                        and date != death_date
-                    ):
-                        rel_id = str(rel.get("id", ""))
-                        conflicts.append(
-                            TemporalConflict(
-                                conflict_type="ambiguous_lifespan_relation",
-                                entity_id=rel_id,
-                                entity_name=entity.name,
-                                problem_date=date,
-                                message="Character has conflicting death dates.",
-                                suggestion="Keep one authoritative death relation.",
-                                related_ids=[entity.id],
-                                fingerprint=f"ambiguous-death:{entity.id}:{rel_id}",
-                            )
-                        )
-
-            if not has_lifespan_relation:
-                continue
-
-            violating: list[str] = []
-            for event_id in sorted(related_event_ids[entity.id]):
-                event = event_map[event_id]
-                event_date = event_dates.get(event.id)
-                if event_date is None:
-                    continue
-                if birth_date is not None and event_date < birth_date:
-                    violating.append(event.id)
-                elif death_date is not None and event_date > death_date:
-                    violating.append(event.id)
-
-                if event.id in violating:
-                    conflicts.append(
-                        TemporalConflict(
-                            conflict_type="lifespan_violation",
-                            entity_id=event.id,
-                            entity_name=event.name,
-                            problem_date=event_date,
-                            message=(
-                                f"'{event.name}' falls outside {entity.name}'s "
-                                "recorded lifespan."
-                            ),
-                            suggestion="Review the event date or lifespan relation.",
-                            object_type="event",
-                            related_ids=[entity.id, event.id],
-                            evidence=[
-                                EvidenceReference(
-                                    evidence_id=f"event:{event.id}",
-                                    object_type="event",
-                                    object_id=event.id,
-                                    object_name=event.name,
-                                    field="lore_date",
-                                    lore_date=event_date,
-                                )
-                            ],
-                            fingerprint=(f"lifespan:{entity.id}:{event.id}"),
-                        )
-                    )
-
-            life_span_years: float | None = None
-            if birth_date is not None and death_date is not None:
-                life_span_years = (death_date - birth_date) / self._year_length
-
-            lifespans.append(
-                CharacterLifespan(
-                    entity_id=entity.id,
-                    entity_name=entity.name,
-                    birth_date=birth_date,
-                    death_date=death_date,
-                    life_span_years=life_span_years,
-                    violating_events=violating,
+            event = events[event_id]
+            violating.append(event_id)
+            issues.append(
+                TemporalConflict(
+                    conflict_type="lifespan_violation",
+                    entity_id=event_id,
+                    entity_name=event.name,
+                    problem_date=bounds.hard_start,
+                    message=f"'{event.name}' falls outside {entity.name}'s recorded lifespan.",
+                    suggestion="Review the Event timing and lifecycle associations.",
+                    object_type="event",
+                    related_ids=[entity.id, event_id],
+                    fingerprint=f"lifespan:{entity.id}:{event_id}",
                 )
             )
+        birth = self._single_exact_boundary(claims, "birth")
+        death = self._single_exact_boundary(claims, "death")
+        if any(claim.kind == "revival" for claim in claims):
+            birth = death = None
+        duration = (
+            (death - birth) / self._year_length
+            if birth is not None and death is not None and birth < death
+            else None
+        )
+        return CharacterLifespan(
+            entity.id, entity.name, birth, death, duration, violating
+        ), issues
 
-        return lifespans, conflicts
+    @staticmethod
+    def _single_exact_boundary(claims: list[LivingClaim], kind: str) -> float | None:
+        boundaries = [claim for claim in claims if claim.kind == kind]
+        if len(boundaries) == 1 and boundaries[0].lower == boundaries[0].upper:
+            return boundaries[0].lower
+        return None
+
+    @staticmethod
+    def _lifespan_evidence_issues(
+        entity: Entity, claims: list[LivingClaim]
+    ) -> list[TemporalConflict]:
+        issues = []
+        for claim in claims:
+            if claim.lower is not None and claim.upper is not None:
+                continue
+            issues.append(
+                TemporalConflict(
+                    conflict_type="unresolved_lifespan",
+                    entity_id=entity.id,
+                    entity_name=entity.name,
+                    problem_date=None,
+                    message=f"Timing for a {claim.kind} claim is unresolved.",
+                    suggestion="Review the linked Event's authored timing.",
+                    severity=SeverityLevel.INFO,
+                    related_ids=[
+                        claim.relation_id,
+                        *([claim.event_id] if claim.event_id else []),
+                    ],
+                    fingerprint=f"unresolved-lifespan:{claim.relation_id}",
+                )
+            )
+        for left, right, definite in competing_claims(claims):
+            issues.append(
+                TemporalConflict(
+                    conflict_type="lifespan_boundary_conflict",
+                    entity_id=entity.id,
+                    entity_name=entity.name,
+                    problem_date=left.lower if definite else None,
+                    message=(
+                        "Recorded lifecycle boundaries conflict."
+                        if definite
+                        else "Recorded lifecycle boundaries may conflict."
+                    ),
+                    suggestion="Review the timing and meaning of both claims.",
+                    severity=SeverityLevel.WARNING if definite else SeverityLevel.INFO,
+                    related_ids=[left.relation_id, right.relation_id],
+                    fingerprint=f"lifespan-boundary:{left.relation_id}:{right.relation_id}",
+                )
+            )
+        return issues
 
     # ------------------------------------------------------------------
     # Private helpers
@@ -657,35 +605,4 @@ class TemporalAnalyzer:
                 logger.warning(
                     "TemporalAnalyzer: could not parse date string %r", value
                 )
-        return None
-
-    def _resolve_date(
-        self,
-        attrs: dict[str, Any],
-        event_map: dict[str, Event],
-        event_endpoint: str | None = None,
-    ) -> float | None:
-        """Resolve a lore date from relation attributes.
-
-        Checks ``attrs["date"]`` first; if absent, looks up
-        ``attrs["event_id"]`` in *event_map* and returns that event's
-        ``lore_date``.
-
-        Args:
-            attrs: Relation attributes dict.
-            event_map: Mapping of event_id → Event for fast lookup.
-
-        Returns:
-            float | None: The resolved date, or None if not determinable.
-        """
-        if "date" in attrs and attrs["date"] is not None:
-            return self._coerce_date(attrs["date"])
-
-        if event_endpoint is not None and event_endpoint in event_map:
-            return self._coerce_date(event_map[event_endpoint].lore_date)
-
-        event_id = attrs.get("event_id")
-        if event_id and event_id in event_map:
-            return self._coerce_date(event_map[event_id].lore_date)
-
         return None

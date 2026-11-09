@@ -899,8 +899,24 @@ viewed time, rather than correcting the source currently displayed.
 
 (help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-timeline-section-self-timeline-checkbox)=
 
-**Timeline** — Show or hide the selected Entity’s linked-event Timeline section. This
-changes section visibility without deleting events.
+**Linked events** — In the Entity editor’s **Overview** tab, expand
+**History & context** to see Events associated with the selected Entity. Collapsing
+this section hides its contents without removing Events or their associations.
+
+(help-lifecycle-event)=
+
+**Add event…** — In the Entity editor, open **Overview → History & context**.
+Under **Linked events**, choose **Add the first event…** for an empty history or
+**Add event…** when Events are already linked. Choose a lifecycle action or an
+ordinary event. Edit the suggested name, enter a date at the precision you
+know, or select **Date unknown**. **Create** records the Event and its association
+as one undoable action while you stay on the Entity.
+
+Choose **Link existing event…** to reuse an Event. Open the Event from its card
+or use **Association actions** to change or remove a specific link. Removing a
+link keeps the Event and any other links to it. For characters, living status
+describes the recorded evidence at the viewed time. An unresolved transition or
+a life start without a later death can leave that status indeterminate.
 
 (help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-summary-section-self-summary-checkbox)=
 

@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QVBoxLayout,
+    QWidget,
 )
 
 from src.core.theme_manager import ThemeManager
@@ -37,7 +38,7 @@ class EntryLinkPicker(QFrame):
     cancelled = Signal()
 
     def __init__(
-        self, view: WikiTextEditView, items: list[tuple[str, str, str]], search: str
+        self, view: QWidget, items: list[tuple[str, str, str]], search: str
     ) -> None:
         """Build a compact popup with explicit selection and acceptance."""
         super().__init__(view, Qt.WindowType.Popup)

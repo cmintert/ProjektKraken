@@ -10,8 +10,10 @@ from typing import Any
 from PySide6.QtCore import QObject, Slot
 
 from src.core.calendar import CalendarConfig, CalendarConverter
+from src.core.date_parser import DateParser
 from src.core.event_timing.constraints import Cancel
 from src.core.events import Event
+from src.core.lifecycle import character_claims, resolve_living_status
 from src.core.temporal_anchors import resolve_event_anchors
 from src.core.temporal_constraints import TemporalConstraint
 from src.core.temporal_resolver import TemporalResolver
@@ -83,6 +85,13 @@ class TemporalManager(QObject):
         state = self._resolver.resolve_entity_state(
             entity, relations, time, converter, anchors, constraints
         )
+        if entity.type.casefold() == "character":
+            outgoing = self._db.get_relations(entity_id)
+            parser = DateParser(config) if isinstance(config, CalendarConfig) else None
+            claims = character_claims(
+                entity_id, [*relations, *outgoing], anchors, parser
+            )
+            state.living_status = resolve_living_status(claims, time)
 
         # 4. Cache and Return
         self._cache[cache_key] = state
@@ -95,6 +104,7 @@ class TemporalManager(QObject):
         Invalidates cache for the target entity.
         """
         self.invalidate_entity(target_id)
+        self.invalidate_entity(source_id)
 
     @Slot(str)
     def on_event_changed(self, event_id: str) -> None:

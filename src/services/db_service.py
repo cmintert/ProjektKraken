@@ -323,6 +323,12 @@ class DatabaseService:
         """
         return self.get_events()
 
+    def get_events_by_ids(self, event_ids: list[str]) -> dict[str, Event]:
+        """Return the existing Events for explicit references in one batched read."""
+        if not self._connection:
+            self.connect()
+        return self._event_repo.get_by_ids(event_ids)
+
     def get_events(self, event_type: Optional[str] = None) -> List[Event]:
         """Retrieves events, optionally filtered by type.
 
@@ -515,11 +521,14 @@ class DatabaseService:
             self.connect()
         self._relation_repo.delete_for_item(item_id)
 
-    def get_relations(self, source_id: str) -> List[Dict[str, Any]]:
+    def get_relations(
+        self, source_id: str, *, include_target_events: bool = False
+    ) -> List[Dict[str, Any]]:
         """Retrieves all outgoing relations for a given source object.
 
         Args:
             source_id (str): The ID of the source object.
+            include_target_events: Include Event timing and display fields.
 
         Returns:
             List[Dict[str, Any]]: List of relation dictionaries.
@@ -529,7 +538,9 @@ class DatabaseService:
             self.connect()
         assert self._connection is not None
 
-        return self._relation_repo.get_by_source(source_id)
+        return self._relation_repo.get_by_source(
+            source_id, include_target_events=include_target_events
+        )
 
     def get_incoming_relations(self, target_id: str) -> List[Dict[str, Any]]:
         """Retrieves all incoming relations for a given target object.

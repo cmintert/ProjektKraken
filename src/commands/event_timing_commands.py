@@ -95,34 +95,51 @@ class ApplyEventTimingPlanCommand(BaseCommand):
             if result
             else []
         )
-        effects.extend(
-            {
+        by_id = {effect["object_id"]: effect for effect in effects}
+        for identity, row in self._updated.items():
+            previous = by_id.get(identity)
+            by_id[identity] = {
                 "object_type": "event",
                 "operation": "upsert",
                 "object_id": identity,
                 "snapshot": row,
-                "relations_changed": False,
+                "relations_changed": bool(previous and previous["relations_changed"]),
             }
-            for identity, row in self._updated.items()
-        )
         return CommandResult(
             success=True,
             message="Timing changes applied.",
             command_name=type(self).__name__,
             data={
                 **(result.data if result else {}),
-                "lore_effects": effects,
+                "lore_effects": list(by_id.values()),
                 "temporal_generation_changed": True,
             },
         )
 
-    def undo(self, db_service: DatabaseService) -> None:
+    def undo(self, db_service: DatabaseService) -> CommandResult | None:
         """Restore exact recorded state, including pre-existing defects."""
-        self.command.undo(db_service)
+        result = self.command.undo(db_service)
         for row in self._previous.values():
             db_service.insert_event(Event.from_dict(deepcopy(row)))
         self._is_executed = False
         self._redo = True
+        if result is not None and result.data.get("refresh_editor_relations"):
+            from src.core.command import parse_lore_mutation_effects
+
+            effects = parse_lore_mutation_effects(result.data.get("lore_effects")) or []
+            effects.extend(
+                {
+                    "object_type": "event",
+                    "operation": "upsert",
+                    "object_id": identity,
+                    "snapshot": row,
+                    "relations_changed": False,
+                }
+                for identity, row in self._previous.items()
+            )
+            result.data["lore_effects"] = effects
+            return result
+        return None
 
     def _restore_redo(self, db: DatabaseService) -> CommandResult:
         if (

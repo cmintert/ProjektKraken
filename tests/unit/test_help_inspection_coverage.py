@@ -90,6 +90,37 @@ def test_map_event_endpoint_inspection_keeps_the_reference_draft(help_setup, qap
     dialog.close()
 
 
+@pytest.mark.parametrize("has_events", [False, True])
+def test_visible_history_actions_keep_their_inspection_destination(
+    help_setup, qapp, has_events
+):
+    from src.gui.widgets.linked_events_section import LinkedEventsSection
+
+    coordinator, _registry, owner, _, _ = help_setup
+    section = LinkedEventsSection(owner)
+    section.set_has_events(has_events)
+    bindings = HelpSurfaceBindings(coordinator)
+    for widget in [section, *section.findChildren(QWidget)]:
+        bindings.bind(widget)
+    section.show()
+    owner.show()
+    owner.activateWindow()
+    target = section.picker_anchor()
+    target.setFocus()
+    qapp.processEvents()
+    QTest.keyClick(
+        target,
+        Qt.Key.Key_F1,
+        Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier,
+    )
+    qapp.processEvents()
+    assert coordinator.inspection._topic_id == "authoring.details"
+    assert coordinator.inspection._excerpt_target == "help-lifecycle-event"
+    assert not section.menu.isVisible()
+    coordinator.inspection.dismiss()
+    section.close()
+
+
 def test_every_declared_explanation_is_generated_and_bounded(generated_root):
     inventory = json.loads((ROOT / "docs/help-inspection.json").read_text("utf-8"))
     service = HelpBundleService(root=generated_root / "docs/_build/help")

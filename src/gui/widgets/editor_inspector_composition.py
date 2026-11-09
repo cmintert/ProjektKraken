@@ -96,9 +96,13 @@ class EditorInspectorComposition:
         context_layout = QVBoxLayout(context_container)
         StyleHelper.apply_no_margins(context_layout)
         context_layout.addWidget(content.context_disclosure)
-        self.history_caption = QLabel(
-            "Read-only information: linked events, map layer links and known world facts."
+        history_caption = (
+            "Record and manage linked events. Map layer links and world facts "
+            "are read-only here."
+            if content.linked_events is not None
+            else "Read-only information: map layer links and known world facts."
         )
+        self.history_caption = QLabel(history_caption)
         self.history_caption.setObjectName("InspectorSupportCaption")
         self.history_caption.setWordWrap(True)
         content.context_disclosure.setAccessibleDescription(self.history_caption.text())
@@ -108,9 +112,9 @@ class EditorInspectorComposition:
         StyleHelper.apply_no_margins(history_layout)
         if content.linked_events is not None:
             self._fit_linked_events(content.linked_events)
-            self._add_information_section(
-                history_layout, "Linked events", content.linked_events
-            )
+            history_layout.addWidget(content.linked_events)
+            content.linked_events.show()
+            QWidget.setTabOrder(content.context_disclosure, content.linked_events)
         self._add_information_section(
             history_layout, "Map layer links", content.map_links
         )
@@ -129,7 +133,7 @@ class EditorInspectorComposition:
         )
         self.context_home.detached_changed.connect(
             lambda detached: self.history_caption.setText(
-                "Read-only information: linked events, map layer links and known world facts."
+                history_caption
                 + (" World context is open in another pane." if detached else "")
             )
         )

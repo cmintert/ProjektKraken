@@ -9,13 +9,6 @@
       "reason": "Existing production complexity reviewed for KRT-36; untouched debt only, executable edits must strictly improve."
     },
     {
-      "id": "c901-2188c36477f8",
-      "path": "src/services/temporal_analyzer.py",
-      "symbol": "TemporalAnalyzer._analyze_character_lifespans",
-      "ceiling": 32,
-      "reason": "Existing production complexity reviewed for KRT-36; untouched debt only, executable edits must strictly improve."
-    },
-    {
       "id": "c901-2a61d75c48e8",
       "path": "src/services/import_service.py",
       "symbol": "ImportService._import_single_event_internal",
@@ -40,7 +33,7 @@
       "id": "c901-5a285eb9563e",
       "path": "src/app/data_handler.py",
       "symbol": "DataHandler.on_command_finished",
-      "ceiling": 30,
+      "ceiling": 25,
       "reason": "Existing production complexity reviewed for KRT-36; untouched debt only, executable edits must strictly improve."
     },
     {

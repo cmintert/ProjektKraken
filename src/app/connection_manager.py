@@ -336,6 +336,12 @@ class ConnectionManager:
                 ),
                 (
                     dh,
+                    "reload_active_editor_relations",
+                    self.window.time_coordinator.refresh_selected_living_evidence,
+                    "DataHandler",
+                ),
+                (
+                    dh,
                     "reload_affected_editor_relations",
                     dc.on_reload_affected_editor_relations,
                     "DataHandler",
@@ -511,6 +517,24 @@ class ConnectionManager:
             )
         specs.extend(
             [
+                (
+                    self.window.entity_editor,
+                    "lifecycle_event_requested",
+                    ec.create_lifecycle_event,
+                    "EntityEditor",
+                ),
+                (
+                    self.window.entity_editor,
+                    "lifecycle_link_requested",
+                    ec.link_lifecycle_event,
+                    "EntityEditor",
+                ),
+                (
+                    self.window.entity_editor,
+                    "lifecycle_association_requested",
+                    ec.change_lifecycle_association,
+                    "EntityEditor",
+                ),
                 (
                     self.window.entity_editor,
                     "navigate_to_map",

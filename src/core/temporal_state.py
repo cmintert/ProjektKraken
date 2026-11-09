@@ -4,6 +4,8 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any
 
+from src.core.lifecycle import LivingStatus
+
 _PAYLOAD_KEYS = {"attributes", "unset_attributes", "description"}
 _RESERVED_ATTRIBUTE_KEYS = {
     "id",
@@ -31,10 +33,11 @@ class ResolvedEntityState:
     possible_effects: list[dict[str, Any]] = field(default_factory=list)
     ambiguous_attributes: dict[str, list[Any]] = field(default_factory=dict)
     temporal_warnings: list[str] = field(default_factory=list)
+    living_status: LivingStatus | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Return a serializable snapshot suitable for queued Qt delivery."""
-        return {
+        snapshot = {
             "entity_id": self.entity_id,
             "description": self.description,
             "attributes": deepcopy(self.attributes),
@@ -45,6 +48,9 @@ class ResolvedEntityState:
             "attribute_sources": deepcopy(self.attribute_sources or {}),
             "absent_attribute_sources": deepcopy(self.absent_attribute_sources or {}),
         }
+        if self.living_status is not None:
+            snapshot["living_status"] = self.living_status.to_dict()
+        return snapshot
 
 
 def _validate_attribute_key(key: object, section: str) -> str:

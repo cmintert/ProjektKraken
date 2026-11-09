@@ -246,10 +246,10 @@ class CompositeCommand(BaseCommand):
                 # Log but continue rollback
                 pass
 
-    def undo(self, db_service: DatabaseService) -> None:
+    def undo(self, db_service: DatabaseService) -> CommandResult | None:
         """Undoes all commands in reverse order."""
         if not self._is_executed:
-            return
+            return None
 
         for cmd in reversed(self.commands):
             if hasattr(cmd, "is_executed") and not cmd.is_executed:
@@ -264,6 +264,7 @@ class CompositeCommand(BaseCommand):
                 )
 
         self._is_executed = False
+        return None
 
     def get_description(self) -> str:
         """Return the user-facing description for the command group."""

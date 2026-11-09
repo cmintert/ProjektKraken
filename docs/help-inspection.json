@@ -3445,11 +3445,11 @@
       "id": "src-gui-widgets-entity-editor-entityeditorwidget-build-timeline-section-self-timeline-checkbox",
       "topic_id": "authoring.details",
       "target": "help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-timeline-section-self-timeline-checkbox",
-      "source": "src/gui/widgets/entity_editor.py",
-      "symbol": "EntityEditorWidget._build_timeline_section",
-      "binding": "self.timeline_checkbox",
-      "label": "Timeline",
-      "kind": "DisclosureButton"
+      "source": "src/gui/widgets/linked_events_section.py",
+      "symbol": "LinkedEventsSection.__init__",
+      "binding": "self",
+      "label": "Linked events",
+      "kind": "LinkedEventsSection"
     },
     {
       "id": "src-gui-widgets-entity-editor-entityeditorwidget-build-summary-section-self-summary-checkbox",
@@ -9510,6 +9510,56 @@
       "binding": "self",
       "label": "Recurrence controls",
       "kind": "RecurrenceWidget"
+    },
+    {
+      "id": "entity-timeline-add-event",
+      "topic_id": "authoring.details",
+      "target": "help-lifecycle-event",
+      "source": "src/gui/widgets/linked_events_section.py",
+      "symbol": "LinkedEventsSection.__init__",
+      "binding": "self.add_event_button",
+      "label": "Add event…",
+      "kind": "PhosphorToolMenuButton"
+    },
+    {
+      "id": "entity-timeline-first-event",
+      "topic_id": "authoring.details",
+      "target": "help-lifecycle-event",
+      "source": "src/gui/widgets/linked_events_section.py",
+      "symbol": "LinkedEventsSection.__init__",
+      "binding": "self.empty_action",
+      "label": "Add the first event…",
+      "kind": "PhosphorToolMenuButton"
+    },
+    {
+      "id": "lifecycle-event-name",
+      "topic_id": "authoring.details",
+      "target": "help-lifecycle-event",
+      "source": "src/gui/dialogs/lifecycle_event_dialog.py",
+      "symbol": "LifecycleEventDialog.__init__",
+      "binding": "self.name_edit",
+      "label": "Event name",
+      "kind": "QLineEdit"
+    },
+    {
+      "id": "lifecycle-event-unknown",
+      "topic_id": "authoring.details",
+      "target": "help-lifecycle-event",
+      "source": "src/gui/dialogs/lifecycle_event_dialog.py",
+      "symbol": "LifecycleEventDialog.__init__",
+      "binding": "self.unknown",
+      "label": "Date unknown",
+      "kind": "QCheckBox"
+    },
+    {
+      "id": "lifecycle-event-confirm",
+      "topic_id": "authoring.details",
+      "target": "help-lifecycle-event",
+      "source": "src/gui/dialogs/lifecycle_event_dialog.py",
+      "symbol": "LifecycleEventDialog.__init__",
+      "binding": "buttons",
+      "label": "Create or cancel",
+      "kind": "QDialogButtonBox"
     }
   ],
   "factory_exemptions": [
@@ -9764,8 +9814,8 @@
     {
       "source": "src/commands/composite_command.py",
       "symbol": "CompositeCommand.undo",
-      "sha256": "e5a93e5fb273506a3c31b18d86db3a99b358a3da98fbccc53ecdffe435969f39",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "993e5bee6275e0c6eb68cb45b479ec51353bf011f6a205ae4e6063a95723ee25",
+      "review_note": "The optional return type lets the lifecycle specialization publish its strict undo refresh. Ordinary composite behavior is unchanged."
     },
     {
       "source": "src/commands/entity_commands.py",
@@ -12422,8 +12472,8 @@
     {
       "source": "src/gui/widgets/entity_editor.py",
       "symbol": "EntityEditorWidget._build_details_tab",
-      "sha256": "50b8bc1fd53faeab48fd4beeed33f9d1485c06ed06abfec7ec742a5c76127887",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "9ff880cccf5e07ee479973b2b2f5d68c5ba1709567ad41816eefa383566f9f71",
+      "review_note": "KRT-146: builds linked-event controls for composition into Overview History & context. Canonical Help corrected from the retired Timeline route; description, writing tools and save semantics are unchanged."
     },
     {
       "source": "src/gui/widgets/entity_editor.py",
@@ -12462,10 +12512,10 @@
       "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
     },
     {
-      "source": "src/gui/widgets/entity_editor.py",
-      "symbol": "EntityEditorWidget._build_timeline_section",
-      "sha256": "85c2ff5f71c95da1e74f684c73ee0d793cc3e2efac0cba641d89a8392a5aa67e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "source": "src/gui/widgets/linked_events_section.py",
+      "symbol": "LinkedEventsSection.__init__",
+      "sha256": "e5b5bc2c8ae3ac4458c5a1c163ca19268c4b45e309397aeba7528e3950edc3ff",
+      "review_note": "KRT-146: reviewed visible history component and single contextual creation route. Existing inspection IDs and excerpt anchors retained; canonical Help now describes Overview > History & context > Linked events, including the first-event action. No Timeline disclosure remains. Secondary actions explicitly use shared theme/focus/disabled roles; action_bar avoids shadowing QWidget.actions()."
     },
     {
       "source": "src/gui/widgets/entity_editor.py",
@@ -16220,8 +16270,8 @@
     {
       "source": "src/gui/widgets/timeline_display_widget.py",
       "symbol": "TimelineDisplayWidget.__init__",
-      "sha256": "ec9397c01537158c9aa58a2dda03a30a72f107778a712558adcd33664536d832",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
+      "sha256": "f5c749560d92f8e947e451d33eb6ddae7f0141f902f28e74cbf17c61fbbb9966",
+      "review_note": "KRT-146 retains linked Event navigation and adds an evidence-based status and association controls."
     },
     {
       "source": "src/gui/widgets/timeline_display_widget.py",
@@ -16256,8 +16306,8 @@
     {
       "source": "src/gui/widgets/timeline_display_widget.py",
       "symbol": "TimelineDisplayWidget._get_event_date",
-      "sha256": "0efba5a86c68187f8a3e33e491f0bfb11233f4db456d130eb2bd651f0c1372c7",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "0092b3457d416a55c0f56aada6c0fcc306ba678e319242abe77214ef3c496e77",
+      "review_note": "KRT-146 separates unknown Event timing, relation validity and the calendar epoch."
     },
     {
       "source": "src/gui/widgets/timeline_display_widget.py",
@@ -16274,8 +16324,8 @@
     {
       "source": "src/gui/widgets/timeline_display_widget.py",
       "symbol": "TimelineDisplayWidget._refresh_display",
-      "sha256": "8c0efb012588e319943e975ec515632539a80cf7f6cc43210e9e9d82e467cb4b",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "1827d526c58414f04c34fe525c1e13d3465a9ed5bb34e84752a87b8750b35ae4",
+      "review_note": "KRT-146 groups linked Event cards and keeps unresolved timing outside chronological placement."
     },
     {
       "source": "src/gui/widgets/timeline_display_widget.py",
@@ -16430,8 +16480,8 @@
     {
       "source": "src/gui/widgets/wiki_link_authoring.py",
       "symbol": "EntryLinkPicker.__init__",
-      "sha256": "b7bdbaa234a5eb4e601aa1507dd4aa2bff7a6a2a9ad197866936f157c3732f0c",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
+      "sha256": "93b2ac8b51d0ea95f00ac7e8b795a9fd127add69e44b962640978a90225a9047",
+      "review_note": "The reusable picker accepts a general parent. Search, identity and selection behavior are unchanged."
     },
     {
       "source": "src/gui/widgets/wiki_link_authoring.py",
@@ -17284,6 +17334,30 @@
       "symbol": "OccurrenceMarker.paintEvent",
       "sha256": "ce961e9552a455d45dbd497c8aff0108118823521e6eb9b73ea3a0aa806dd930",
       "review_note": "KRT-131: native vector circle reuses shared Event paint, colors and typography. Date anchor remains independent of fitted label geometry. Only focused marks have an outline; keyboard, tooltip and selection meaning remain. Visual vocabulary synchronized with Linear; human review pending."
+    },
+    {
+      "source": "src/gui/dialogs/lifecycle_event_dialog.py",
+      "symbol": "LifecycleEventDialog.__init__",
+      "sha256": "104da3a4848c55533e94882f5b281735bb73c39834e0a93d37b0bdedd28b7f9a",
+      "review_note": "KRT-146 explains explicit date precision, unknown timing, and the create action."
+    },
+    {
+      "source": "src/gui/widgets/linked_events_section.py",
+      "symbol": "LinkedEventsSection._menu_button",
+      "sha256": "5e43d8bed9138b8ecba887d2b7b04c1d18bb1ce2e4ea935179f13fbdb56daeee",
+      "review_note": "KRT-146: equivalent shared secondary menu controls use the same lifecycle excerpt, native keyboard menu behavior and accessible labels. No authoring mutation occurs while opening the menu."
+    },
+    {
+      "source": "src/gui/widgets/entity_editor.py",
+      "symbol": "EntityEditorWidget._build_linked_events_section",
+      "sha256": "f974d64f6118ad48de2e2336fe441c9d5aa3c16ed82485805f8af1f2697b7014",
+      "review_note": "KRT-146: mounts existing chronological display and intent signals in the visible history component. Add/link remains a command-driven operation and event navigation retains its existing meaning."
+    },
+    {
+      "source": "src/gui/widgets/editor_inspector_composition.py",
+      "symbol": "EditorInspectorComposition.__init__",
+      "sha256": "461fc000ffc7d90b0b79fcdd516c0f2d9bdb72ecb0ba2820212e252251d1639d",
+      "review_note": "KRT-146: Linked events now includes authoring actions. Caption distinguishes managing event associations from read-only map/world information, including the detached-world-context suffix. Event-only inspectors retain read-only wording. Tab from the outer disclosure enters the component focus proxy, which tracks the active empty/populated action."
     }
   ],
   "review_status": {

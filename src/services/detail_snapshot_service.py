@@ -56,18 +56,47 @@ class DetailSnapshotService:
         entity = self._db_service.get_entity(entity_id)
         if entity is None:
             return DetailSnapshot(None, [], [])
-        relations = self._db_service.get_relations(entity_id)
+        relations = self._db_service.get_relations(
+            entity_id, include_target_events=True
+        )
         incoming = self._db_service.get_incoming_relations(entity_id)
         metadata = self._resolve_relation_metadata(relations, incoming)
         for relation in relations:
             relation["source_name"] = entity.name
             target = metadata.get(relation["target_id"])
             relation["target_name"] = target["name"] if target else None
+            if target is not None:
+                relation["target_kind"] = target["kind"]
         for relation in incoming:
             relation["target_name"] = entity.name
             source = metadata.get(relation["source_id"])
             relation["source_name"] = source["name"] if source else None
+            if source is not None:
+                relation["source_kind"] = source["kind"]
+        if entity.type.casefold() == "character":
+            self._enrich_legacy_event_references(relations, incoming)
         return DetailSnapshot(entity, relations, incoming)
+
+    def _enrich_legacy_event_references(
+        self, outgoing: list[dict], incoming: list[dict]
+    ) -> None:
+        candidates = []
+        for direction, rows in (("target", outgoing), ("source", incoming)):
+            for row in rows:
+                if row.get(f"{direction}_kind") == "event":
+                    continue
+                key = str(row.get("rel_type", "")).strip().casefold()
+                identity = (row.get("attributes") or {}).get("event_id")
+                if key in {"birth", "death"} and isinstance(identity, str) and identity:
+                    candidates.append((identity, row))
+        if not candidates:
+            return
+        events = self._db_service.get_events_by_ids(
+            list(dict.fromkeys(identity for identity, _ in candidates))
+        )
+        for identity, row in candidates:
+            if identity in events:
+                row["historical_event"] = events[identity].to_dict()
 
     def _resolve_relation_metadata(
         self, relations: list[dict], incoming: list[dict]

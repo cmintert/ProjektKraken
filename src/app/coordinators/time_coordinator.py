@@ -222,11 +222,15 @@ class TimeCoordinator(BaseCoordinator):
         else:
             self._pending_go_to_date = None
 
-    def resolve_selected_entity(self, *, after_save: bool = False) -> None:
+    def resolve_selected_entity(
+        self, *, after_save: bool = False, refresh_evidence: bool = False
+    ) -> None:
         """Resolve the selected entity at the actual playhead, including today."""
         editor = self.main_window.entity_editor
         entity_id = editor.current_entity_id
-        if entity_id is None or (editor.has_unsaved_changes() and not after_save):
+        if entity_id is None or (
+            editor.has_unsaved_changes() and not (after_save or refresh_evidence)
+        ):
             return
         time = float(self.main_window.timeline.get_playhead_time())
         self._current_playhead_time = time
@@ -238,6 +242,12 @@ class TimeCoordinator(BaseCoordinator):
             Q_ARG(float, time),
             Q_ARG(int, self._resolve_request_id),
         )
+
+    @Slot()
+    def refresh_selected_living_evidence(self) -> None:
+        """Refresh historical evidence after relation changes without rebasing prose."""
+        if self.main_window.navigation_coordinator.selected_type == "entity":
+            self.resolve_selected_entity(refresh_evidence=True)
 
     def on_temporal_save_completed(self) -> None:
         """Follow a deferred scrub or refresh the saved state."""

@@ -264,7 +264,7 @@ class DataHandler(QObject):
             self.selection_requested.emit(
                 str(selection["object_type"]), str(selection["object_id"])
             )
-        elif any(
+        elif result.data.get("refresh_editor_relations") or any(
             effect["relations_changed"] and effect["operation"] != "delete"
             for effect in effects
         ):
@@ -470,6 +470,49 @@ class DataHandler(QObject):
             self.index_object_requested.emit(object_type, str(object_id))
         return True
 
+    def _refresh_lore_result(self, result: CommandResult) -> bool:
+        """Apply lifecycle and other lore changes through their refresh contracts."""
+        command_name = result.command_name
+        if result.data.get("refresh_editor_relations"):
+            lifecycle_effects = parse_lore_mutation_effects(
+                result.data.get("lore_effects")
+            )
+            if lifecycle_effects is not None:
+                self._apply_incremental_lore_refresh(result, lifecycle_effects)
+            else:
+                self.reload_active_editor_relations.emit()
+            return True
+
+        # Undo and redo retain one conservative full refresh, even when a
+        # redo reuses the original command's incremental result payload.
+        is_undo_redo = command_name.startswith(("Undo_", "Redo_"))
+        if is_undo_redo:
+            logger.debug("[DataHandler] UNDO/REDO detected - full reload")
+            self.reload_all_data.emit()
+            self.reload_markers_for_current_map.emit()
+            self.reload_maps.emit()
+            return True
+
+        effects = parse_lore_mutation_effects(result.data.get("lore_effects"))
+        if effects is not None:
+            self._apply_incremental_lore_refresh(result, effects)
+            return True
+        if self._refresh_creation_fallback(result):
+            return True
+        if "lore_effects" in result.data:
+            logger.warning(
+                "Invalid lore mutation effects for %s; using full refresh",
+                command_name,
+            )
+            if "Event" in command_name:
+                self._schedule_marker_after_lore("event")
+            if "Entity" in command_name:
+                self._schedule_marker_after_lore("entity")
+            self.reload_all_data.emit()
+            self.reload_longform.emit()
+            return True
+        return False
+
     @Slot(CommandResult)
     def on_command_finished(self, result: CommandResult) -> None:  # noqa: C901
         """Handles completion of async commands, emitting signals for necessary UI
@@ -516,33 +559,7 @@ class DataHandler(QObject):
                 # persistence; generic undo reloads would duplicate it.
                 return
 
-            # Undo and redo retain one conservative full refresh, even when a
-            # redo reuses the original command's incremental result payload.
-            is_undo_redo = command_name.startswith(("Undo_", "Redo_"))
-            if is_undo_redo:
-                logger.debug("[DataHandler] UNDO/REDO detected - full reload")
-                self.reload_all_data.emit()
-                self.reload_markers_for_current_map.emit()
-                self.reload_maps.emit()
-                return
-
-            effects = parse_lore_mutation_effects(result.data.get("lore_effects"))
-            if effects is not None:
-                self._apply_incremental_lore_refresh(result, effects)
-                return
-            if self._refresh_creation_fallback(result):
-                return
-            if "lore_effects" in result.data:
-                logger.warning(
-                    "Invalid lore mutation effects for %s; using full refresh",
-                    command_name,
-                )
-                if "Event" in command_name:
-                    self._schedule_marker_after_lore("event")
-                if "Entity" in command_name:
-                    self._schedule_marker_after_lore("entity")
-                self.reload_all_data.emit()
-                self.reload_longform.emit()
+            if self._refresh_lore_result(result):
                 return
 
             # These layer/map commands only update metadata that is already

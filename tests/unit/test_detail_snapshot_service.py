@@ -76,6 +76,38 @@ def test_missing_items_return_empty_snapshots(db_service):
     assert entity_snapshot.incoming_relations == []
 
 
+def test_entity_snapshot_enriches_undated_event_in_either_direction(db_service):
+    entity = Entity(name="Ada", type="character")
+    event = Event(name="Uncertain birth", lore_date=None)
+    db_service.insert_entity(entity)
+    db_service.insert_event(event)
+    db_service.insert_relation(event.id, entity.id, "birth", {})
+    db_service.insert_relation(entity.id, event.id, "involved", {})
+
+    snapshot = DetailSnapshotService(db_service).load_entity(entity.id)
+    assert snapshot.incoming_relations[0]["source_kind"] == "event"
+    assert snapshot.incoming_relations[0]["source_event_date"] is None
+    assert snapshot.relations[0]["target_kind"] == "event"
+    assert snapshot.relations[0]["target_event_name"] == event.name
+    assert snapshot.relations[0]["target_event_date"] is None
+
+
+def test_entity_snapshot_projects_explicit_legacy_event_reference(db_service):
+    entity = Entity(name="Ada", type="character")
+    witness = Entity(name="Witness", type="character")
+    event = Event(name="Birth record", lore_date=None)
+    db_service.insert_entity(entity)
+    db_service.insert_entity(witness)
+    db_service.insert_event(event)
+    db_service.insert_relation(witness.id, entity.id, "birth", {"event_id": event.id})
+
+    snapshot = DetailSnapshotService(db_service).load_entity(entity.id)
+    row = snapshot.incoming_relations[0]
+    assert row["source_id"] == witness.id
+    assert row["historical_event"]["id"] == event.id
+    assert row["historical_event"]["lore_date"] is None
+
+
 def test_large_relation_fanout_uses_chunk_bounded_metadata_queries(db_service):
     source = Event(name="Source", lore_date=1.0)
     db_service.insert_event(source)

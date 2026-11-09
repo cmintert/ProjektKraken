@@ -635,7 +635,8 @@ def test_supporting_tools_are_contextual_and_start_closed(editor):
     assert presentation.composition.history_body.isHidden()
     assert not editor.raster_appearances_checkbox.isVisibleTo(editor)
     if isinstance(editor, EntityEditorWidget):
-        assert not editor.timeline_checkbox.isVisibleTo(editor)
+        assert not hasattr(editor, "timeline_checkbox")
+        assert not editor.linked_events_section.isVisibleTo(editor)
     else:
         assert all(
             getattr(label, "text", lambda: "")() != "Linked events"
@@ -741,6 +742,116 @@ def test_same_object_refresh_and_reset_keep_supporting_choices(editor):
     assert editor.llm_checkbox.isChecked()
     assert editor._presentation.history_disclosure.isChecked()
     assert not editor.has_unsaved_changes()
+
+
+@pytest.mark.parametrize("editor", ["entity"], indirect=True)
+@pytest.mark.parametrize("width", [360, 1100])
+@pytest.mark.parametrize("has_events", [False, True])
+def test_linked_events_actions_stay_reachable_and_preserve_drafts(
+    editor, qtbot, width, has_events
+):
+    editor.resize(width, 900)
+    section = editor.linked_events_section
+    text = editor.desc_edit.editor
+    text.insertPlainText("Unsaved history draft")
+    cursor = text.textCursor()
+    cursor.setPosition(2)
+    cursor.setPosition(8, QTextCursor.MoveMode.KeepAnchor)
+    text.setTextCursor(cursor)
+    relations = (
+        [
+            {
+                "id": "link",
+                "source_id": "event",
+                "source_kind": "event",
+                "source_event_name": "Arrival",
+                "source_event_date": 1,
+                "rel_type": "involved",
+                "attributes": {},
+            }
+        ]
+        if has_events
+        else []
+    )
+    editor._load_entity_relations([], relations)
+    original_text = text.toPlainText()
+    original_entity = editor._current_entity_id
+    editor.timeline_display.set_playhead_time(42)
+    button = section.add_event_button if has_events else section.empty_action
+    manager = ThemeManager()
+    for theme in manager.themes:
+        manager.set_theme(theme, persist=False)
+        editor._presentation.history_disclosure.setChecked(True)
+        editor.scroll_area.ensureWidgetVisible(button)
+        qtbot.waitUntil(lambda: button.isVisibleTo(editor))
+        editor.activateWindow()
+        disclosure = editor._presentation.history_disclosure
+        disclosure.setFocus()
+        qtbot.waitUntil(disclosure.hasFocus)
+        qtbot.keyClick(disclosure, Qt.Key.Key_Tab)
+        assert button.hasFocus()
+        assert button.isEnabled()
+        assert button.focusPolicy() == Qt.FocusPolicy.StrongFocus
+        assert section.picker_anchor() is button
+        assert button.width() >= button.minimumSizeHint().width()
+        assert section.display.isVisibleTo(editor)
+        assert section.isAncestorOf(section.display)
+        assert "Record and manage linked events" in (
+            editor._presentation.composition.history_caption.text()
+        )
+        assert text.toPlainText() == original_text
+        assert text.textCursor().selectionStart() == 2
+        assert text.textCursor().selectionEnd() == 8
+        assert editor._current_entity_id == original_entity
+        assert editor.timeline_display._playhead_time == 42
+        assert editor.has_unsaved_changes()
+        editor._presentation.history_disclosure.setChecked(False)
+        assert not button.isVisibleTo(editor)
+    editor._presentation.history_disclosure.setChecked(True)
+    editor._load_entity_relations([], [])
+    qtbot.waitUntil(lambda: section.empty_action.isVisibleTo(editor))
+    assert not section.add_event_button.isVisibleTo(editor)
+    assert section.picker_anchor() is section.empty_action
+
+
+@pytest.mark.parametrize("editor", ["entity"], indirect=True)
+@pytest.mark.parametrize("has_events", [False, True])
+def test_history_picker_uses_visible_anchor_and_local_cancel(editor, qtbot, has_events):
+    from src.app.coordinators.editor_coordinator import EditorCoordinator
+    from src.gui.widgets.wiki_link_authoring import EntryLinkPicker
+
+    host = editor.parentWidget()
+    host.entity_editor = editor
+    host.data_coordinator = MagicMock()
+    event = Event(name="Shared council", lore_date=5)
+    host.data_coordinator.cached_events = [event]
+    coordinator = EditorCoordinator(host)
+    editor.linked_events_section.set_has_events(has_events)
+    editor._presentation.history_disclosure.setChecked(True)
+    anchor = editor.linked_events_section.picker_anchor()
+    editor.scroll_area.ensureWidgetVisible(anchor)
+    editor.desc_edit.editor.insertPlainText("Keep this draft")
+    draft = editor.desc_edit.toPlainText()
+    commands = []
+    coordinator.command_requested.connect(commands.append)
+    intent = {"entity_id": "person", "key": "involved"}
+    coordinator._pick_lifecycle_event(intent)
+    picker = anchor.findChild(EntryLinkPicker)
+    assert picker is not None and picker.isVisible()
+    assert picker.parentWidget() is anchor
+    assert not picker.link_button.isEnabled()
+    qtbot.keyClick(picker.search, Qt.Key.Key_Escape)
+    assert not commands
+    assert editor.desc_edit.toPlainText() == draft
+    coordinator._pick_lifecycle_event(intent)
+    picker = next(p for p in anchor.findChildren(EntryLinkPicker) if p.isVisible())
+    picker.results.setCurrentRow(0)
+    assert picker.link_button.isEnabled()
+    qtbot.mouseClick(picker.link_button, Qt.MouseButton.LeftButton)
+    assert len(commands) == 1
+    assert commands[0].intent == {**intent, "event_id": event.id}
+    assert editor.desc_edit.toPlainText() == draft
+    assert editor._current_entity_id == "person"
 
 
 @pytest.mark.parametrize("editor", ["entity"], indirect=True)

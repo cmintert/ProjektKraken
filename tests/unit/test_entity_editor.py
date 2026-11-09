@@ -1,4 +1,5 @@
 import pytest
+from PySide6.QtCore import Qt, QTimer
 
 from src.core.entities import Entity
 from src.gui.widgets.entity_editor import EntityEditorWidget
@@ -44,6 +45,47 @@ def test_timeline_card_width_tracks_description_editor(editor):
     editor.desc_edit._toggle_toc()
 
     assert editor.timeline_display.maximumWidth() == editor.desc_edit.maximumWidth()
+
+
+@pytest.mark.parametrize(
+    ("entity_type", "action_label", "key", "suggested"),
+    [
+        ("Character", "Birth…", "birth", "Birth of Ada"),
+        ("Concept", "Ordinary event…", "involved", ""),
+    ],
+)
+def test_timeline_add_menu_emits_birth_intent_for_selected_entity(
+    editor, qtbot, entity_type, action_label, key, suggested
+):
+    entity = Entity(name="Ada", type=entity_type)
+    editor.load_entity(entity, [], [])
+    editor.parentWidget().show()
+    editor.show()
+    editor.parentWidget().activateWindow()
+    disclosure = editor._presentation.history_disclosure
+    disclosure.setFocus()
+    qtbot.waitUntil(disclosure.hasFocus)
+    qtbot.keyClick(disclosure, Qt.Key.Key_Space)
+    section = editor.linked_events_section
+    button = section.empty_action
+    qtbot.waitUntil(lambda: button.isVisibleTo(editor))
+    assert not hasattr(editor, "timeline_container")
+    assert not hasattr(editor, "timeline_checkbox")
+    assert not section.add_event_button.isVisibleTo(editor)
+    qtbot.keyClick(disclosure, Qt.Key.Key_Tab)
+    assert button.hasFocus()
+    menu = section.menu
+
+    def choose_action():
+        action = next(a for a in menu.actions() if a.text() == action_label)
+        menu.setActiveAction(action)
+        qtbot.keyClick(menu, Qt.Key.Key_Return)
+
+    menu.aboutToShow.connect(lambda: QTimer.singleShot(0, choose_action))
+    button.setFocus()
+    with qtbot.waitSignal(editor.lifecycle_event_requested) as signal:
+        qtbot.keyClick(button, Qt.Key.Key_Space)
+    assert signal.args == [entity.id, key, suggested]
 
 
 def test_timeline_card_forwards_event_navigation(editor, qtbot):

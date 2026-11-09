@@ -171,7 +171,7 @@ class EditorPresentation(QObject):
                 context=editor.tab_context,
                 context_renderer=editor.authoring_context,
                 context_disclosure=self.context_disclosure,
-                linked_events=getattr(editor, "timeline_display", None),
+                linked_events=getattr(editor, "linked_events_section", None),
                 map_links=editor.raster_appearances_label,
                 tags=editor.tab_tags,
                 connections=editor.tab_relations,
@@ -183,11 +183,6 @@ class EditorPresentation(QObject):
         if hasattr(editor, "temporal_snapshot_label"):
             editor.temporal_snapshot_label.setWordWrap(True)
             editor.description_source_label.setWordWrap(True)
-        if hasattr(editor, "timeline_display"):
-            editor.desc_edit.minimum_width_changed.disconnect(
-                editor.timeline_display.setMinimumWidth
-            )
-            editor.timeline_display.setMinimumWidth(0)
         for button in editor.findChildren(QAbstractButton):
             if (
                 button.minimumHeight() < EDITOR_CONTROL_HEIGHT
@@ -372,7 +367,6 @@ class EditorPresentation(QObject):
             "summary_container",
             "llm_container",
             "raster_appearances_container",
-            "timeline_container",
         ):
             container = getattr(editor, name, None)
             if container is not None:

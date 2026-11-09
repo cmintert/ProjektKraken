@@ -270,7 +270,9 @@ class TemporalPanel(QWidget):
                 if lifespan.life_span_years is not None
                 else "Unknown"
             )
-            valid = "Yes" if lifespan.is_valid() else "No"
+            valid = "Indeterminate"
+            if lifespan.birth_date is not None and lifespan.death_date is not None:
+                valid = "Yes" if lifespan.is_valid() else "No"
 
             self.lifespans_table.setItem(row, 0, QTableWidgetItem(lifespan.entity_name))
             self.lifespans_table.setItem(

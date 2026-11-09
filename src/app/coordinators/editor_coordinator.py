@@ -84,6 +84,7 @@ class EditorCoordinator(BaseCoordinator):
         self._pending_temporal_time: float | None = None
         self._pending_editor_saves: dict[str, tuple[str, str, int, int, dict]] = {}
         self._pending_relation_requests: dict[str, str] = {}
+        self._lifecycle_draft: tuple[tuple[str, str], str, dict] | None = None
 
     @Slot(list)
     def apply_chronology(self, operations: list[dict]) -> None:
@@ -336,6 +337,103 @@ class EditorCoordinator(BaseCoordinator):
         lore_date = float(self.main_window.timeline.get_playhead_time())
         cmd = self._create_event_command({"name": name.strip(), "lore_date": lore_date})
         self.command_requested.emit(cmd)
+
+    @Slot(str, str, str)
+    def create_lifecycle_event(self, entity_id: str, key: str, suggested: str) -> None:
+        """Dispatch Event creation and its historical link as one command."""
+        from src.commands.lifecycle_command import CreateLifecycleEventCommand
+        from src.gui.dialogs.lifecycle_event_dialog import LifecycleEventDialog
+
+        dialog = LifecycleEventDialog(
+            suggested,
+            getattr(self.main_window, "calendar_converter", None),
+            self.main_window,
+        )
+        draft_key = (entity_id, key)
+        if self._lifecycle_draft is not None and self._lifecycle_draft[0] == draft_key:
+            dialog.restore_input(self._lifecycle_draft[2])
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            dialog.deleteLater()
+            return
+        event = self._create_event_command(dialog.event_data)
+        event.select_after_create = False
+        relation = AddRelationCommand(event.event.id, entity_id, key)
+        command = CreateLifecycleEventCommand([event, relation], "Add historical event")
+        command.command_id = event.command_id
+        self._lifecycle_draft = (draft_key, command.command_id, dialog.event_data)
+        dialog.deleteLater()
+        self.command_requested.emit(command)
+
+    @Slot(str, str)
+    def link_lifecycle_event(self, entity_id: str, entity_type: str) -> None:
+        """Choose a semantic association and then search for an existing Event."""
+        from src.core.lifecycle import additional_lifecycle_options, lifecycle_options
+
+        options = (
+            ("involved", "Ordinary association"),
+            *lifecycle_options(entity_type),
+            *additional_lifecycle_options(entity_type),
+        )
+        labels = {label: key for key, label in options}
+        label, accepted = QInputDialog.getItem(
+            self.main_window,
+            "Link existing event",
+            "Association",
+            list(labels),
+            0,
+            False,
+        )
+        if accepted:
+            self._pick_lifecycle_event({"entity_id": entity_id, "key": labels[label]})
+
+    @Slot(str, str, dict)
+    def change_lifecycle_association(
+        self, entity_id: str, operation: str, row: dict
+    ) -> None:
+        """Apply changes to the specific authored relation selected on the card."""
+        from src.commands.lifecycle_command import ChangeLifecycleAssociationCommand
+
+        intent = {
+            "entity_id": entity_id,
+            "key": row["rel_type"],
+            "relation_id": row["id"],
+            "expected": {
+                key: row[key]
+                for key in (
+                    "id",
+                    "source_id",
+                    "target_id",
+                    "rel_type",
+                    "attributes",
+                    "created_at",
+                )
+            },
+        }
+        if operation == "replace":
+            self._pick_lifecycle_event(intent)
+        else:
+            self.command_requested.emit(ChangeLifecycleAssociationCommand(intent))
+
+    def _pick_lifecycle_event(self, intent: dict) -> None:
+        from src.commands.lifecycle_command import ChangeLifecycleAssociationCommand
+        from src.gui.widgets.wiki_link_authoring import EntryLinkPicker
+
+        anchor = self.main_window.entity_editor.linked_events_section.picker_anchor()
+        items = [
+            (event.id, event.name, "event")
+            for event in self.main_window.data_coordinator.cached_events
+        ]
+        picker = EntryLinkPicker(anchor, items, "")
+        picker.chosen.connect(
+            lambda identity: self.command_requested.emit(
+                ChangeLifecycleAssociationCommand({**intent, "event_id": identity})
+            )
+        )
+        picker.chosen.connect(picker.deleteLater)
+        picker.cancelled.connect(picker.deleteLater)
+        picker.move(anchor.mapToGlobal(anchor.rect().bottomLeft()))
+        picker.show()
+        picker.search.setFocus()
 
     def create_entity(self) -> None:
         """Capture a deliberate name/type choice and emit an undoable command."""
@@ -870,6 +968,12 @@ class EditorCoordinator(BaseCoordinator):
             result: CommandResult object from worker.
 
         """
+        if (
+            result.success
+            and self._lifecycle_draft is not None
+            and self._lifecycle_draft[1] == result.data.get("command_id")
+        ):
+            self._lifecycle_draft = None
         request_id = self._pending_relation_requests.pop(
             str(result.data.get("command_id", "")), None
         )

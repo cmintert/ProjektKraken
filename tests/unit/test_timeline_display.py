@@ -247,6 +247,47 @@ def test_no_op_payload_has_no_state_changes_label(widget):
     assert "State changes" not in widget.get_display_text()
 
 
+def test_unknown_event_date_is_not_epoch_or_relation_validity(widget):
+    widget.set_relations(
+        [
+            {
+                "source_event_name": "Undated event",
+                "source_event_date": None,
+                "attributes": {"valid_from": -100.0},
+            },
+            {"source_event_name": "Epoch event", "source_event_date": 0.0},
+        ]
+    )
+    widget.set_playhead_time(1.0)
+    display = widget.get_display_text()
+    assert display.index("Epoch event") < display.index("Viewing:")
+    assert display.index("Viewing:") < display.index("Date unknown")
+    assert display.index("Date unknown") < display.index("Undated event")
+    assert "-100.0" not in display
+
+
+def test_timeline_groups_associations_and_navigates_to_the_event(widget, qtbot):
+    widget.set_relations(
+        [
+            {
+                "id": relation_type,
+                "source_id": "entity-id",
+                "source_event_id": "event-id",
+                "source_event_name": "Shared historical event",
+                "rel_type": relation_type,
+            }
+            for relation_type in ("birth", "involved")
+        ]
+    )
+    display = widget.get_display_text()
+    assert display.count("Shared historical event") == 1
+    assert "(birth)" in display
+    assert "(involved)" in display
+    with qtbot.waitSignal(widget.event_clicked) as signal:
+        assert widget._activate_anchor("birth")
+    assert signal.args == ["event-id"]
+
+
 def test_timeline_escapes_stored_relation_and_payload_text(widget):
     """Stored relation text renders literally rather than as timeline HTML."""
     malicious = '<img src="https://example.invalid/tracker.png">'

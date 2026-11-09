@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-11-08
-**Commit:** ec8407227d3b8f600822e06ece1d13a2dbb76f0b
+**Last Updated:** 2026-11-09
+**Commit:** 269b04fe79dae29a45795ba1a39fd153440cf557
 ---
 
 # Changelog
@@ -12,6 +12,16 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-11-09)* **Visible Entity history actions (KRT-146)**: Linked events in
+  Overview’s History & context now owns Event creation, existing-Event linking
+  and empty-state guidance. Removed the hidden Timeline container, corrected
+  picker placement and read-only wording, and updated Help and composed-editor
+  keyboard, theme, narrow-layout and draft-preservation regressions.
+
+- *(2026-11-09)* **Historical association direction**: Changing an associated
+  Event preserves the relation direction, identity and authored attributes.
+  Added regression coverage for both directions through undo and redo.
 
 - *(2026-11-08)* **Theme scope teardown crash (KRT-144)**: Theme delivery now
   discards scopes destroyed during callbacks and stylesheet updates. Reentrant
@@ -39,6 +49,14 @@ All notable changes to this project will be documented in this file.
   and clarified the read contracts in Help.
 
 ### Added
+
+- *(2026-11-09)* **Entity lifecycle authoring (KRT-146)**: Added canonical
+  historical Event creation and linking for birth/death, creation/destruction,
+  founding/dissolution and optional reversals. Event dates retain unknown and
+  qualified timing. Added evidence-based character living status, explicit
+  lifecycle analysis with legacy compatibility, relation-aware snapshot refresh
+  and atomic undo/redo. Included command/persistence regressions and reproducible
+  six-theme UI and Help evidence.
 
 - *(2026-11-08)* **MCP audit and time reads (KRT-153/KRT-154/KRT-155)**: Added exact
   paged calendar definitions, saved world Now and observed playhead/system clocks,

@@ -56,6 +56,7 @@ from src.gui.widgets.connections_overview import ConnectionsOverview
 from src.gui.widgets.editor_presentation import DisclosureButton, EditorPresentation
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.gallery_widget import GalleryWidget
+from src.gui.widgets.linked_events_section import LinkedEventsSection
 from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
 from src.gui.widgets.relation_authoring import RelationAuthoring
 from src.gui.widgets.relation_snapshots import distinct_relation_directions
@@ -67,7 +68,6 @@ from src.gui.widgets.standard_buttons import (
 )
 from src.gui.widgets.summary_widget import SummaryWidget
 from src.gui.widgets.tag_editor import TagEditorWidget
-from src.gui.widgets.timeline_display_widget import TimelineDisplayWidget
 from src.gui.widgets.wiki_text_edit import ResizableWikiTextEditField, WikiTextEdit
 from src.gui.widgets.wrapping_buttons import WrappingPrimaryButton as PrimaryButton
 from src.services.temporal_entity_draft_service import (
@@ -117,6 +117,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
     remove_relation_requested = Signal(str)
     update_relation_requested = Signal(str, str, str, dict)
     relation_authoring_requested = Signal(dict)
+    lifecycle_event_requested = Signal(str, str, str)
+    lifecycle_link_requested = Signal(str, str)
+    lifecycle_association_requested = Signal(str, str, dict)
     link_clicked = Signal(str)
     peek_requested = Signal(str)
     navigate_to_relation = Signal(str)
@@ -241,7 +244,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self.btn_new_description, False
         )
         self.new_description_actions.hide()
-        self._build_timeline_section()
+        self._build_linked_events_section()
         self._build_summary_section()
         self._build_llm_section()
         self._build_raster_appearances_section()
@@ -252,27 +255,64 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             "Core entity details, description, and AI summary",
         )
 
-    def _build_timeline_section(self) -> None:
-        """Build the collapsible entity timeline section."""
-        self.timeline_container = QWidget()
-        section_layout = QVBoxLayout(self.timeline_container)
-        section_layout.setContentsMargins(0, 0, 0, 0)
-        section_layout.setSpacing(EDITOR_SECTION_SPACING)
-        self.timeline_checkbox = declare_inspection(
-            DisclosureButton("Timeline"),
-            "src-gui-widgets-entity-editor-entityeditorwidget-build-timeline-section-self-timeline-checkbox|authoring.details|help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-timeline-section-self-timeline-checkbox",
-        )
-        section_layout.addWidget(self.timeline_checkbox)
-        self.timeline_display = TimelineDisplayWidget()
-        self.timeline_display.setMinimumWidth(self.desc_edit.minimumWidth())
-        self.desc_edit.minimum_width_changed.connect(
-            self.timeline_display.setMinimumWidth
+    def _build_linked_events_section(self) -> None:
+        """Build the history component mounted by the inspector composition."""
+        self.linked_events_section = LinkedEventsSection(self)
+        self.timeline_display = self.linked_events_section.display
+        self.linked_events_section.menu.aboutToShow.connect(
+            self._populate_timeline_event_menu
         )
         self.timeline_display.event_clicked.connect(self.navigate_to_relation.emit)
-        self.timeline_display.setVisible(False)
-        section_layout.addWidget(self.timeline_display)
-        self.timeline_checkbox.toggled.connect(self.timeline_display.setVisible)
-        self.form_layout.addRow(self.timeline_container)
+        self.timeline_display.association_requested.connect(
+            self._request_timeline_association
+        )
+
+    def _populate_timeline_event_menu(self) -> None:
+        from src.core.lifecycle import additional_lifecycle_options, lifecycle_options
+
+        menu = self.linked_events_section.menu
+        assert menu is not None
+        menu.clear()
+        entity_id = self._current_entity_id
+        if entity_id is None:
+            return
+        name = self.name_edit.text().strip()
+        options = lifecycle_options(self._baseline_type)
+        extra = additional_lifecycle_options(self._baseline_type)
+        for key, label in options:
+            suggested = f"{key.title()} of {name}"
+            menu.addAction(
+                f"{label}…",
+                lambda _checked=False,
+                key=key,
+                suggested=suggested: self.lifecycle_event_requested.emit(
+                    entity_id, key, suggested
+                ),
+            )
+        other = menu.addMenu("Other event") if options else menu
+        other.addAction(
+            "Ordinary event…",
+            lambda: self.lifecycle_event_requested.emit(entity_id, "involved", ""),
+        )
+        for key, label in extra:
+            other.addAction(
+                f"{label}…",
+                lambda _checked=False,
+                key=key,
+                label=label: self.lifecycle_event_requested.emit(
+                    entity_id, key, f"{label} of {name}"
+                ),
+            )
+        menu.addAction(
+            "Link existing event…",
+            lambda: self.lifecycle_link_requested.emit(entity_id, self._baseline_type),
+        )
+
+    def _request_timeline_association(self, operation: str, relation: dict) -> None:
+        if self._current_entity_id is not None:
+            self.lifecycle_association_requested.emit(
+                self._current_entity_id, operation, relation
+            )
 
     def _build_summary_section(self) -> None:
         """Build the collapsible entity summary section."""
@@ -850,6 +890,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self._is_loading = True
         try:
             self._reset_pending_summary()
+            self.timeline_display.set_living_status(None)
             self._current_entity_id = entity.id
             self._temporal_state = None
             self._temporal_time = None
@@ -1088,18 +1129,56 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self._current_entity_id or "",
             self.name_edit.text(),
         )
-        # Timeline should only show relations from events, not entity-to-entity relations
         event_relations = [
-            rel
+            {**rel, "source_event_id": rel.get("source_id")}
             for rel in (incoming_relations or [])
-            if rel.get("source_event_date") is not None
+            if rel.get("source_kind") == "event"
+            or rel.get("source_event_name") is not None
+            or rel.get("source_event_date") is not None
         ]
+        event_relations.extend(
+            {
+                **rel,
+                "source_event_id": rel.get("target_id"),
+                **{
+                    f"source_event_{field}": rel.get(f"target_event_{field}")
+                    for field in (
+                        "name",
+                        "date",
+                        "duration",
+                        "description",
+                        "attributes",
+                    )
+                },
+            }
+            for rel in relations or []
+            if rel.get("target_kind") == "event" and rel.get("rel_type") != "mentions"
+        )
+        event_relations.extend(
+            self._project_legacy_timeline_relation(rel)
+            for rel in [*(relations or []), *(incoming_relations or [])]
+            if rel.get("historical_event")
+        )
         self.timeline_display.set_relations(event_relations)
+        self.linked_events_section.set_has_events(bool(event_relations))
 
         self.relation_authoring.refresh(
             [*(relations or []), *(incoming_relations or [])]
         )
         self._update_relation_button_states()
+
+    @staticmethod
+    def _project_legacy_timeline_relation(relation: dict) -> dict:
+        event = relation["historical_event"]
+        return {
+            **relation,
+            "source_event_id": event["id"],
+            "source_event_name": event["name"],
+            "source_event_date": event["lore_date"],
+            "source_event_duration": event["lore_duration"],
+            "source_event_description": event["description"],
+            "source_event_attributes": event["attributes"],
+        }
 
     @Slot(dict)
     def _on_theme_changed(self, theme: dict) -> None:
@@ -1461,6 +1540,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         """
         if entity_id != self._current_entity_id:
             return
+        if playhead_time is not None:
+            self.timeline_display.set_playhead_time(playhead_time)
+        self.timeline_display.set_living_status(state.get("living_status"))
         if (
             self._temporal_save_pending
             or self.save_pending
@@ -1548,10 +1630,6 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             pair.setToolTip(
                 self._source_caption(state.get("attribute_sources", {}).get(key))
             )
-
-        # Update timeline display with playhead time for highlighting
-        if playhead_time is not None:
-            self.timeline_display.set_playhead_time(playhead_time)
 
     @staticmethod
     def _possible_effects_text(effects: list[dict[str, Any]]) -> str:

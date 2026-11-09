@@ -76,6 +76,10 @@ def _init_registry() -> None:
         UpdateLayerPropertiesCommand,
         UpdateLayerTreeCommand,
     )
+    from src.commands.lifecycle_command import (
+        ChangeLifecycleAssociationCommand,
+        CreateLifecycleEventCommand,
+    )
     from src.commands.longform_commands import (
         AddLongformEntryCommand,
         DemoteLongformEntryCommand,
@@ -131,6 +135,8 @@ def _init_registry() -> None:
             "IconLibraryCommand": IconLibraryCommand,
             "ApplyChronologyCommand": ApplyChronologyCommand,
             "ApplyEventTimingPlanCommand": ApplyEventTimingPlanCommand,
+            "CreateLifecycleEventCommand": CreateLifecycleEventCommand,
+            "ChangeLifecycleAssociationCommand": ChangeLifecycleAssociationCommand,
             "CreateEventCommand": CreateEventCommand,
             "UpdateEventCommand": UpdateEventCommand,
             "DeleteEventCommand": DeleteEventCommand,

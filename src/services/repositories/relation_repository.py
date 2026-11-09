@@ -287,17 +287,31 @@ class RelationRepository(BaseRepository):
             relations.append(data)
         return relations
 
-    def get_by_source(self, source_id: str) -> List[Dict[str, Any]]:
+    def get_by_source(
+        self, source_id: str, *, include_target_events: bool = False
+    ) -> List[Dict[str, Any]]:
         """Retrieve all relations where source_id matches.
 
         Args:
             source_id: The source entity/event ID.
+            include_target_events: Include Event timing and display fields.
 
         Returns:
             List of relation dictionaries.
 
         """
         sql = "SELECT * FROM relations WHERE source_id = ?"
+        if include_target_events:
+            sql = """
+                SELECT r.*, e.name AS target_event_name,
+                       e.lore_date AS target_event_date,
+                       e.lore_duration AS target_event_duration,
+                       e.description AS target_event_description,
+                       e.attributes AS target_event_attributes
+                FROM relations r
+                LEFT JOIN events e ON r.target_id = e.id
+                WHERE r.source_id = ?
+            """
 
         if not self._connection:
             raise RuntimeError("Database connection not initialized")
@@ -308,6 +322,10 @@ class RelationRepository(BaseRepository):
             data = dict(row)
             if data.get("attributes"):
                 data["attributes"] = self._deserialize_json(data["attributes"])
+            if data.get("target_event_attributes"):
+                data["target_event_attributes"] = self._deserialize_json(
+                    data["target_event_attributes"]
+                )
             relations.append(data)
         return relations
 
@@ -328,6 +346,7 @@ class RelationRepository(BaseRepository):
         sql = """
             SELECT r.*, e.lore_date as source_event_date, e.name as source_event_name,
                    e.description as source_event_description,
+                   e.lore_duration as source_event_duration,
                    e.attributes as source_event_attributes
             FROM relations r
             LEFT JOIN events e ON r.source_id = e.id
