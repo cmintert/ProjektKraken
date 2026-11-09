@@ -69,6 +69,17 @@ logs/
 *.sqlite3-shm
 *.sqlite3-wal
 docs/_build/
+# UX evidence images stay local; keep evidence notes and metadata tracked.
+/docs/ux/evidence/**/*.[pP][nN][gG]
+/docs/ux/evidence/**/*.[jJ][pP][gG]
+/docs/ux/evidence/**/*.[jJ][pP][eE][gG]
+/docs/ux/evidence/**/*.[wW][eE][bB][pP]
+/docs/ux/evidence/**/*.[gG][iI][fF]
+/docs/ux/evidence/**/*.[bB][mM][pP]
+/docs/ux/evidence/**/*.[tT][iI][fF]
+/docs/ux/evidence/**/*.[tT][iI][fF][fF]
+/docs/ux/evidence/**/*.[sS][vV][gG]
+/docs/ux/evidence/**/*.[aA][vV][iI][fF]
 .pytest_cache/
 .coverage
 .coverage.*

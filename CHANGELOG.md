@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-09
-**Commit:** 10818028f3f264392bab37d813c9db6e6f204621
+**Commit:** 9c23cccc9298bd49c3f09bb8bdd02fff4415463b
 ---
 
 # Changelog
@@ -234,6 +234,10 @@ All notable changes to this project will be documented in this file.
   Linux/Windows verification and the failed candidate's release evidence.
 
 ### Changed
+
+- *(2026-11-09)* **Cleanup**: Kept UX evidence images locally and removed them
+  from Git tracking. Added scoped image ignore rules while retaining evidence
+  notes and metadata in the repository; existing Git history is unchanged.
 
 - *(2026-11-01)* **Date-change review (KRT-129)**: Named affected relationships,
   reign boundaries, state changes and map uses; grouped shared dates and explained
