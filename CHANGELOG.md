@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-09
-**Commit:** cf074014aa532eb346eb01782fbf7d07da2ef52e
+**Commit:** 10818028f3f264392bab37d813c9db6e6f204621
 ---
 
 # Changelog
@@ -12,6 +12,18 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-11-09)* **Layers-to-map panning (KRT-140)**: Returning the pointer to
+  the map after selecting a Layers row now returns navigation focus to the map.
+  Space-drag pans instead of toggling the selected row's visibility, while
+  text editors and keyboard interaction inside Layers retain their focus.
+
+- *(2026-11-09)* **Map settings consolidation (KRT-140)**: Combined map-level
+  actions and scale/calibration in one Map settings menu, grouped by scale,
+  hierarchy and detail-map footprints, with deletion separated. Removed the
+  duplicate Map actions button while retaining Fit to View, native toolbar
+  overflow, existing handlers and confirmation guards. Updated Help and focused
+  menu, keyboard and presentation regressions.
 
 - *(2026-11-09)* **Map settings ownership (KRT-140)**: Unified feature properties
   under Feature actions, added visible group and map-surface settings routes,

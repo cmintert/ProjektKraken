@@ -56,11 +56,13 @@ from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.map.feature_actions import FeatureActionPresenter
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
+from src.gui.widgets.map.layer_navigation_focus import LayerNavigationFocus
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 from src.gui.widgets.map.map_layer_model import MapLayerModel
 from src.gui.widgets.map.map_layer_panel import MapLayerPanel
 from src.gui.widgets.map.marker_item import MarkerItem
 from src.gui.widgets.map.raster_legend_widget import RasterLegendWidget
+from src.gui.widgets.menu_section import add_menu_section
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 logger = logging.getLogger(__name__)
@@ -1004,13 +1006,6 @@ class MapWidget(
         self.btn_new_map.setToolTip("Create a new map in this world")
         self.btn_new_map.clicked.connect(self._on_create_map_clicked)
         self.toolbar.addWidget(self.btn_new_map)
-        self.btn_map_overflow = declare_inspection(
-            QPushButton("Map actions"),
-            "src-gui-widgets-map-widget-mapwidget-build-map-management-controls-self-btn-map-overflow|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-build-map-management-controls-self-btn-map-overflow",
-        )
-        self.btn_map_overflow.setToolTip("Map options (delete, etc.)")
-        self.btn_map_overflow.clicked.connect(self._show_map_overflow_menu)
-        self.toolbar.addWidget(self.btn_map_overflow)
 
     def _build_viewport_controls(self) -> None:
         """Build viewport fitting and settings controls."""
@@ -1021,13 +1016,26 @@ class MapWidget(
         self.btn_fit_view.setToolTip("Zoom and pan to fit all content in view")
         self.btn_fit_view.clicked.connect(self.view.fit_to_view)
         self.toolbar.addWidget(self.btn_fit_view)
-        self.btn_settings = declare_inspection(
-            QPushButton("Settings"),
-            "src-gui-widgets-map-widget-mapwidget-build-viewport-controls-self-btn-settings|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-build-viewport-controls-self-btn-settings",
+        self.map_settings_menu = declare_inspection(
+            QMenu(self),
+            "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-menu|map.settings|help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-menu",
         )
-        self.btn_settings.setToolTip("Configure map scale and distance calibration")
-        self.btn_settings.clicked.connect(self._configure_map_width)
-        self.toolbar.addWidget(self.btn_settings)
+        self.map_settings_menu.setToolTipsVisible(True)
+        self.map_settings_menu.aboutToShow.connect(self._populate_map_settings_menu)
+        self.map_settings_action = declare_inspection(
+            QAction("Map settings", self),
+            "src-gui-widgets-map-widget-mapwidget-build-viewport-controls-self-btn-settings|map.settings|help-inspect-src-gui-widgets-map-widget-mapwidget-build-viewport-controls-self-btn-settings",
+        )
+        self.map_settings_action.setToolTip(
+            "Configure this map's scale, hierarchy and detail-map footprints"
+        )
+        self.map_settings_action.setMenu(self.map_settings_menu)
+        self.toolbar.addAction(self.map_settings_action)
+        self.btn_settings = cast(
+            QToolButton, self.toolbar.widgetForAction(self.map_settings_action)
+        )
+        self.btn_settings.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
+        self.btn_settings.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
 
     def _build_drawing_controls(self) -> None:
         """Build mutually exclusive marker and geometry drawing controls."""
@@ -1188,6 +1196,9 @@ class MapWidget(
 
     def _connect_layer_panel_signals(self) -> None:
         """Wire layer-panel actions to map operations and public signals."""
+        self._layer_navigation_focus = LayerNavigationFocus(
+            self.view, self.layer_panel.tree_view
+        )
         self.layer_panel.layer_selected.connect(self._on_layer_panel_selected)
         self.layer_panel.create_group_requested.connect(self._on_create_group)
         self.layer_panel.create_layer_requested.connect(self._on_create_layer)
@@ -1467,24 +1478,23 @@ class MapWidget(
     # -- Trajectory / drawing / dialog methods provided by mixins ------
 
     @Slot()
-    def _show_map_overflow_menu(self) -> None:
-        """Shows the map overflow menu containing map-level actions.
-
-        Includes nesting actions (Set as Master, Register as Detail,
-        Edit Footprint) gated by the active map's role and the world's
-        master state, plus the destructive Delete action.
-
-        """
-        menu = declare_inspection(
-            QMenu(self),
-            "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-menu|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-menu",
+    def _populate_map_settings_menu(self) -> None:
+        """Refresh grouped map settings while retaining existing action handlers."""
+        menu = self.map_settings_menu
+        menu.clear()
+        add_menu_section(menu, "Scale")
+        scale_action = declare_inspection(
+            menu.addAction("Scale and distance calibration…"),
+            "map.settings.scale|map.calibration|help-inspect-map-settings-scale",
         )
+        scale_action.triggered.connect(self._configure_map_width)
+        add_menu_section(menu, "Map hierarchy")
         active_role = self._active_map_role()
         has_master = self._world_has_master_map()
 
         master_action = declare_inspection(
             menu.addAction("Set as Master Map"),
-            "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-master-action|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-master-action",
+            "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-master-action|map.settings|help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-master-action",
         )
         master_action.setCheckable(True)
         master_action.setChecked(active_role == "master")
@@ -1492,18 +1502,21 @@ class MapWidget(
 
         register_action = declare_inspection(
             menu.addAction("Register as Detail Map…"),
-            "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-register-action|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-register-action",
+            "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-register-action|map.settings|help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-register-action",
         )
         register_action.setEnabled(has_master and active_role != "master")
         if not has_master:
             register_action.setToolTip(
                 "Designate a master map first before registering a detail map."
             )
+        elif active_role == "master":
+            register_action.setToolTip("A master map cannot also be a detail map.")
         register_action.triggered.connect(self._on_register_detail_map_clicked)
 
+        add_menu_section(menu, "Detail-map footprints")
         show_footprints_action = declare_inspection(
             menu.addAction("Show Footprints"),
-            "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-show-footprints-action|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-show-footprints-action",
+            "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-show-footprints-action|map.settings|help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-show-footprints-action",
         )
         show_footprints_action.setCheckable(True)
         show_footprints_action.setChecked(self.view.footprints_visible)
@@ -1516,24 +1529,26 @@ class MapWidget(
 
         edit_footprint_action = declare_inspection(
             menu.addAction("Edit Footprint…"),
-            "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-edit-footprint-action|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-edit-footprint-action",
+            "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-edit-footprint-action|map.settings|help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-edit-footprint-action",
         )
         edit_footprint_action.setEnabled(
             self.view.footprints_visible
             and (bool(self.view._footprint_items) or active_role == "detail")
         )
+        if not edit_footprint_action.isEnabled():
+            edit_footprint_action.setToolTip(
+                "Show footprints before editing their placement."
+                if not self.view.footprints_visible
+                else "Open a detail map or a map containing detail-map footprints."
+            )
         edit_footprint_action.triggered.connect(self._on_edit_footprint_clicked)
 
         menu.addSeparator()
         delete_action = declare_inspection(
-            menu.addAction("Delete Map..."),
-            "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-delete-action|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-delete-action",
+            menu.addAction("Delete map…"),
+            "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-delete-action|map.settings|help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-delete-action",
         )
         delete_action.triggered.connect(self._on_delete_map_clicked)
-        pos = self.btn_map_overflow.mapToGlobal(
-            self.btn_map_overflow.rect().bottomLeft()
-        )
-        menu.exec(pos)
 
     @Slot()
     def _on_mode_indicator_clicked(self) -> None:
@@ -2057,7 +2072,6 @@ class MapWidget(
         )
         for button in (
             self.btn_new_map,
-            self.btn_map_overflow,
             self.btn_fit_view,
             self.btn_settings,
             self.btn_parent,

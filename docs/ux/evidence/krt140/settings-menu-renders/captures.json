@@ -1,0 +1,160 @@
+{
+  "issue": "KRT-140",
+  "scope": "Map settings consolidation",
+  "date": "2026-11-09",
+  "source_revision": "10818028f3f264392bab37d813c9db6e6f204621",
+  "dirty": true,
+  "platform": "Windows Qt offscreen, software viewport",
+  "font": "Segoe UI 10",
+  "device_pixel_ratio": 1.0,
+  "requested_widget_widths": [
+    1400,
+    520
+  ],
+  "captures": [
+    {
+      "file": "cyberpunk_mode-1400-menu.png",
+      "width": 243,
+      "height": 253,
+      "sha256": "3b03a610516435ed5228175b477988c8d0b4e7b736185aa19996208dbf500774"
+    },
+    {
+      "file": "cyberpunk_mode-1400-toolbar.png",
+      "width": 1400,
+      "height": 760,
+      "sha256": "f8009560becff83cd6e4a2331a4641aee1be82d677c7981bd6c111be176806e8"
+    },
+    {
+      "file": "cyberpunk_mode-520-menu.png",
+      "width": 243,
+      "height": 253,
+      "sha256": "6dca903ce265834e0baf2ccbaa3d0e8354f46cf4a3120631e85a9142d99738dc"
+    },
+    {
+      "file": "cyberpunk_mode-520-toolbar.png",
+      "width": 715,
+      "height": 760,
+      "sha256": "a58137743b130c3bdb88f8093b7e375c819a6771177a02d704aadc18093ef84f"
+    },
+    {
+      "file": "dark_mode-1400-menu.png",
+      "width": 243,
+      "height": 253,
+      "sha256": "a6d78da23924b8a9ece6b5756ad2c606141b9982b907e55dfdde65f38e2beb73"
+    },
+    {
+      "file": "dark_mode-1400-toolbar.png",
+      "width": 1400,
+      "height": 760,
+      "sha256": "170f2aedc27ef6740046fa30e41a532585273d58b91d0b9b5b5154a32ee850cb"
+    },
+    {
+      "file": "dark_mode-520-menu.png",
+      "width": 243,
+      "height": 253,
+      "sha256": "63ffce46e5e2c445ba3fa97c1b849d547a4d8a5c002913b2416ef39f63b05b85"
+    },
+    {
+      "file": "dark_mode-520-toolbar.png",
+      "width": 715,
+      "height": 760,
+      "sha256": "1b29ea67688df700d726a6fa02141072878303b08e159143620e2a1c318d772c"
+    },
+    {
+      "file": "fantasy_mode-1400-menu.png",
+      "width": 243,
+      "height": 253,
+      "sha256": "c08e061de9ee6e471a2acdddcaa621343b8a07a4b67ce7a907e8f911901386c5"
+    },
+    {
+      "file": "fantasy_mode-1400-toolbar.png",
+      "width": 1400,
+      "height": 760,
+      "sha256": "e69fd719970b169a884cf0bac614fe878b8721cb8b9db514a510b5a2ac75326f"
+    },
+    {
+      "file": "fantasy_mode-520-menu.png",
+      "width": 243,
+      "height": 253,
+      "sha256": "e9d0f0975aa6e9ffa8ab5f97a8d5f19e2c39fd97b11d4cf4b3a912ecddfde483"
+    },
+    {
+      "file": "fantasy_mode-520-toolbar.png",
+      "width": 715,
+      "height": 760,
+      "sha256": "762e76a97e2a5ff4957247ee12625b8e27691bdb6df03e7af73eeb34955f02c3"
+    },
+    {
+      "file": "imperial_mode-1400-menu.png",
+      "width": 243,
+      "height": 253,
+      "sha256": "06e4c2795a13c62fa91a8f800418fa0dda617c75f9924943b5ed61d298f59d81"
+    },
+    {
+      "file": "imperial_mode-1400-toolbar.png",
+      "width": 1400,
+      "height": 760,
+      "sha256": "207a29f8a7fcf88570e0305f8306a7cdac8e05585ae2698d4a8b940a1360f3ef"
+    },
+    {
+      "file": "imperial_mode-520-menu.png",
+      "width": 243,
+      "height": 253,
+      "sha256": "586a41d1863b694f2e88933ae7d6e6f3e4b09f2c7a564fd92e4b1066fe813b5c"
+    },
+    {
+      "file": "imperial_mode-520-toolbar.png",
+      "width": 715,
+      "height": 760,
+      "sha256": "fdf214ae9a43643f7c55eadf91d938f1c2e697583ac4b84ffe53312f0c193971"
+    },
+    {
+      "file": "light_mode-1400-menu.png",
+      "width": 243,
+      "height": 253,
+      "sha256": "d16fdceeca0dcccb1d8f24e6628e0dd5d4e01739d8c16629555f4447f8ed332c"
+    },
+    {
+      "file": "light_mode-1400-toolbar.png",
+      "width": 1400,
+      "height": 760,
+      "sha256": "56748aac7dbab59cc26a39c295f37bf3320f40774e2847f52ae1170fd827ae2a"
+    },
+    {
+      "file": "light_mode-520-menu.png",
+      "width": 243,
+      "height": 253,
+      "sha256": "91d030605c36651abe47b2c12e9295f7acb9c4772e8a30c046a742742f164f3d"
+    },
+    {
+      "file": "light_mode-520-toolbar.png",
+      "width": 715,
+      "height": 760,
+      "sha256": "8e36df2dca2e01016386b6df9a279091131278fe2b1352c40ee05ce8c0068369"
+    },
+    {
+      "file": "muted_light_mode-1400-menu.png",
+      "width": 243,
+      "height": 253,
+      "sha256": "5ea140fc5dc04a1ac9ab1ebf3abfe3a574d449edb1dfd03824bdc2be86d2ad3b"
+    },
+    {
+      "file": "muted_light_mode-1400-toolbar.png",
+      "width": 1400,
+      "height": 760,
+      "sha256": "ec6e491578e1eb717b60d325313d5dcebf49fedd18cb92343f8ee695b4cc29ad"
+    },
+    {
+      "file": "muted_light_mode-520-menu.png",
+      "width": 243,
+      "height": 253,
+      "sha256": "a737274fba68d5a2bc4afe4ea5b862ea17f4f9b9fa30cf083777ed470825e329"
+    },
+    {
+      "file": "muted_light_mode-520-toolbar.png",
+      "width": 715,
+      "height": 760,
+      "sha256": "6901e7cf5a4fb23680ebbfdda4ddfc27ff9b6d016ee47b2cc20b5674a044e5b7"
+    }
+  ]
+}

@@ -94,3 +94,82 @@ the group. Repeat with a one-feature group and explain each setting's scope
 before applying it. Verify the saved results and Undo independently. Record
 misunderstandings, assistance and unintended sibling changes; do not report
 automated checks as human acceptance.
+
+## Map settings consolidation — 2026-11-09 follow-up
+
+Based on committed ownership work `10818028`, this uncommitted follow-up removes
+the separate Map actions button. One **Map settings** toolbar action exposes
+**Scale**, **Map hierarchy** and **Detail-map footprints**, followed by a
+separated **Delete map…** action. **Fit to View** remains on the toolbar. Scale,
+registration, footprint visibility/editing and confirmed deletion use their
+existing handlers; no commands, storage or map-setting values changed.
+
+Contracts 2/4/5/6/7/8/9 apply. The button uses the shared secondary toolbar role.
+Section headings use shared section-header/supporting-caption styles and skip
+keyboard navigation. A shared menu-heading helper supplies visible headings
+because native Qt separator titles were omitted in rendered output. Disabled
+registration and footprint controls explain their prerequisites. Keyboard Space
+opens the menu; native toolbar overflow exposes the same menu at narrow widths;
+Escape dismisses it without ending an active marker appearance edit. Tests retain
+the selected feature, playhead, pan/zoom and active edit when opening/dismissing.
+
+The affected batch and targeted rerun passed 295 distinct map, hierarchy,
+calibration, toolbar and Help regressions. The final menu checks include six
+themes at normal/narrow requested widget widths (1400/520 px); actual offscreen
+widget dimensions are recorded in the captures, since Qt enforces its minimum
+size. These are software-viewport/offscreen checks, not native DPI or human
+acceptance. Existing task/excerpt anchors remain; the focused `map.settings`
+topic documents the consolidated route.
+Focused Ruff, repository-wide mypy (650 source files), visual policy, complexity
+policy, Help inspection, offline Help generation and strict Sphinx passed.
+The [menu capture metadata](settings-menu-renders/captures.json) records 24
+menu/toolbar images; [offline Help presentation](settings-help-renders/presentation.json)
+records the focused Map settings topic in six themes at normal/narrow widths.
+
+![Map settings with visible section headings](settings-menu-renders/dark_mode-1400-menu.png)
+
+![Narrow settings menu](settings-menu-renders/light_mode-520-menu.png)
+
+Reproduce menu captures with the existing shared map test fixture:
+
+```powershell
+$env:QT_QPA_PLATFORM = "offscreen"
+$env:KRT_MAP_SETTINGS_EVIDENCE_DIR = "docs/ux/evidence/krt140/settings-menu-renders"
+.venv\Scripts\python.exe -m pytest tests/unit/test_map_settings_menu.py -q
+```
+
+The documentation review remains how-to material in the Maps guide, now also
+covering `map.settings` and calibration. Source review verified action routes,
+prerequisites, unchanged confirmation, cancellation and context preservation.
+Human/live Help review, reader testing and native DPI acceptance remain pending
+under the forms linked above.
+
+## Layers-to-map navigation focus — 2026-11-09
+
+The owner reported that Space continued selecting/deselecting a Layers item
+after moving the pointer back to the map. Real Qt event tests reproduced the
+underlying visibility toggle for a group, marker, path and region: Layers kept
+keyboard focus and consumed Space before the existing map pan handler saw it.
+
+A view-owned `LayerNavigationFocus` now returns focus to the map on pointer
+entry only when the Layers tree itself owns focus and no mouse button is held.
+It does not route global keys, replace the Space-pan implementation, change
+selection, or write map state. Text editors and other controls keep keyboard
+ownership, and unfinished layer drags are left alone. Watching the view rather
+than its replaceable viewport also supports the software viewport used in tests.
+
+Contracts 2/5/6/8/9 apply. This is a bounded navigation-focus handoff from the
+tree to the canvas, matching the owner's requested pointer transition; it is
+not a general focus-on-hover policy. Existing focus presentation, themes,
+authoring modes, map inspector behavior and pan interruption/release guards
+remain unchanged. The Maps guide explains both Space-drag on the map and Space
+visibility toggling while working in Layers.
+
+Validation: 110 focused regressions passed, covering all four reproduced cases,
+actual scroll movement, unchanged visibility/selection/position/geometry,
+retained text entry and tree drag ownership, existing Space-pan lifecycle,
+feature actions, inspector context and Help integrity. Focused Ruff,
+repository-wide mypy (651 source files), visual/complexity policies, Help
+inspection, offline Help generation and strict Sphinx passed. These are
+automated/offscreen checks; native owner acceptance remains pending. The fix
+and the preceding settings-menu consolidation are still uncommitted.

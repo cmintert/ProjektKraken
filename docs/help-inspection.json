@@ -6182,16 +6182,6 @@
       "kind": "QPushButton"
     },
     {
-      "id": "src-gui-widgets-map-widget-mapwidget-build-map-management-controls-self-btn-map-overflow",
-      "topic_id": "map.features",
-      "target": "help-inspect-src-gui-widgets-map-widget-mapwidget-build-map-management-controls-self-btn-map-overflow",
-      "source": "src/gui/widgets/map_widget.py",
-      "symbol": "MapWidget._build_map_management_controls",
-      "binding": "self.btn_map_overflow",
-      "label": "Map actions",
-      "kind": "QPushButton"
-    },
-    {
       "id": "src-gui-widgets-map-widget-mapwidget-build-viewport-controls-self-btn-fit-view",
       "topic_id": "map.features",
       "target": "help-inspect-src-gui-widgets-map-widget-mapwidget-build-viewport-controls-self-btn-fit-view",
@@ -6203,13 +6193,13 @@
     },
     {
       "id": "src-gui-widgets-map-widget-mapwidget-build-viewport-controls-self-btn-settings",
-      "topic_id": "map.features",
+      "topic_id": "map.settings",
       "target": "help-inspect-src-gui-widgets-map-widget-mapwidget-build-viewport-controls-self-btn-settings",
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._build_viewport_controls",
-      "binding": "self.btn_settings",
-      "label": "Settings",
-      "kind": "QPushButton"
+      "binding": "self.map_settings_action",
+      "label": "Map settings",
+      "kind": "QAction"
     },
     {
       "id": "src-gui-widgets-map-widget-mapwidget-build-drawing-controls-self-btn-add-marker",
@@ -6293,60 +6283,60 @@
     },
     {
       "id": "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-menu",
-      "topic_id": "map.features",
+      "topic_id": "map.settings",
       "target": "help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-menu",
       "source": "src/gui/widgets/map_widget.py",
-      "symbol": "MapWidget._show_map_overflow_menu",
-      "binding": "menu",
-      "label": "menu",
+      "symbol": "MapWidget._build_viewport_controls",
+      "binding": "self.map_settings_menu",
+      "label": "Map settings menu",
       "kind": "QMenu"
     },
     {
       "id": "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-master-action",
-      "topic_id": "map.features",
+      "topic_id": "map.settings",
       "target": "help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-master-action",
       "source": "src/gui/widgets/map_widget.py",
-      "symbol": "MapWidget._show_map_overflow_menu",
+      "symbol": "MapWidget._populate_map_settings_menu",
       "binding": "master_action",
       "label": "Set as Master Map",
       "kind": "addAction"
     },
     {
       "id": "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-register-action",
-      "topic_id": "map.features",
+      "topic_id": "map.settings",
       "target": "help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-register-action",
       "source": "src/gui/widgets/map_widget.py",
-      "symbol": "MapWidget._show_map_overflow_menu",
+      "symbol": "MapWidget._populate_map_settings_menu",
       "binding": "register_action",
       "label": "Register as Detail Map…",
       "kind": "addAction"
     },
     {
       "id": "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-show-footprints-action",
-      "topic_id": "map.features",
+      "topic_id": "map.settings",
       "target": "help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-show-footprints-action",
       "source": "src/gui/widgets/map_widget.py",
-      "symbol": "MapWidget._show_map_overflow_menu",
+      "symbol": "MapWidget._populate_map_settings_menu",
       "binding": "show_footprints_action",
       "label": "Show Footprints",
       "kind": "addAction"
     },
     {
       "id": "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-edit-footprint-action",
-      "topic_id": "map.features",
+      "topic_id": "map.settings",
       "target": "help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-edit-footprint-action",
       "source": "src/gui/widgets/map_widget.py",
-      "symbol": "MapWidget._show_map_overflow_menu",
+      "symbol": "MapWidget._populate_map_settings_menu",
       "binding": "edit_footprint_action",
       "label": "Edit Footprint…",
       "kind": "addAction"
     },
     {
       "id": "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-delete-action",
-      "topic_id": "map.features",
+      "topic_id": "map.settings",
       "target": "help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-delete-action",
       "source": "src/gui/widgets/map_widget.py",
-      "symbol": "MapWidget._show_map_overflow_menu",
+      "symbol": "MapWidget._populate_map_settings_menu",
       "binding": "delete_action",
       "label": "Delete Map...",
       "kind": "addAction"
@@ -9579,6 +9569,16 @@
       "symbol": "MapLayerPanel._show_settings_actions",
       "binding": "dates",
       "label": "map.group-dates",
+      "kind": "QAction"
+    },
+    {
+      "id": "map.settings.scale",
+      "topic_id": "map.calibration",
+      "target": "help-inspect-map-settings-scale",
+      "source": "src/gui/widgets/map_widget.py",
+      "symbol": "MapWidget._populate_map_settings_menu",
+      "binding": "scale_action",
+      "label": "Scale and distance calibration",
       "kind": "QAction"
     }
   ],
@@ -14802,8 +14802,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._apply_theme_styles",
-      "sha256": "ca8010921dadfe40d5e773772cd0726160cb8371b8ec111ac097b97d247f3fbd",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "8812f501b28f5baf0873c16c06cb73343a1540a88f132b88514bd79ebea8bd69",
+      "review_note": "KRT-140 Map settings consolidation: reviewed single toolbar action, native overflow, visible non-interactive headings via shared helpers, and themed secondary action styling. Scale, master/detail registration, footprint visibility/editing and confirmed deletion retain existing handlers. Fit to View remains separate. Help task and retained excerpt anchors describe these routes; human review pending."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -14850,8 +14850,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._build_map_management_controls",
-      "sha256": "136cecfca2447f886e2c9c4c85560f8a48cefefbffff8b03dd64714e721093f1",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "52c79f3abf6c91722d344011fa8481dc625538170a1938738a7e01d2633ea81f",
+      "review_note": "KRT-140 follow-up: reviewed the single Map settings toolbar action and native overflow submenu, grouped scale/hierarchy/footprint entries and separated confirmed deletion. Existing handlers, role prerequisites, Fit to View, active edits and map context are preserved. Existing excerpt anchors remain; Map settings now has a focused task destination. Human acceptance pending."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -14934,14 +14934,14 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._build_viewport_controls",
-      "sha256": "0887d8a96673ba81f7a78ea004f2c253ef849e254badf71df91a91679cfe1d90",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "b1495549e3b7762306b7c5b005fd586f480ecdbbfd74c38a268838db6cfda139",
+      "review_note": "KRT-140 follow-up: reviewed the single Map settings toolbar action and native overflow submenu, grouped scale/hierarchy/footprint entries and separated confirmed deletion. Existing handlers, role prerequisites, Fit to View, active edits and map context are preserved. Existing excerpt anchors remain; Map settings now has a focused task destination. Human acceptance pending."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._connect_layer_panel_signals",
-      "sha256": "44c420d157e0b1f94ffa25bbf21a2d50718b453a28ba9c51c7dbdbf636572972",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "8b3cd6f0a3c71b01f1630637a6046f0fc4eaafe4f92d44e7aee1114d9dd6cc47",
+      "review_note": "KRT-140 panning follow-up: reviewed view-owned focus handoff from the Layers tree on pointer entry. Space-drag returns to map navigation without visibility changes. Focused text editors, other controls and ongoing Layers drags retain ownership; existing panning lifecycle and signal routes remain. Canonical Maps guidance describes this bounded handoff. Human acceptance pending."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -15125,9 +15125,9 @@
     },
     {
       "source": "src/gui/widgets/map_widget.py",
-      "symbol": "MapWidget._show_map_overflow_menu",
-      "sha256": "949b383343a7090ad60ec97f3d2d9f3c078693f724dec738407d2d73af7ad813",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "symbol": "MapWidget._populate_map_settings_menu",
+      "sha256": "1e7ff3ec4f99e2b05902519f4831859250dc6779c094afe1e3d644d7d765ea9b",
+      "review_note": "KRT-140 Map settings consolidation: reviewed single toolbar action, native overflow, visible non-interactive headings via shared helpers, and themed secondary action styling. Scale, master/detail registration, footprint visibility/editing and confirmed deletion retain existing handlers. Fit to View remains separate. Help task and retained excerpt anchors describe these routes; human review pending."
     },
     {
       "source": "src/gui/widgets/map_widget.py",

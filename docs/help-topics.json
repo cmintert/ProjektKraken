@@ -367,6 +367,13 @@
       "related_ids": []
     },
     {
+      "id": "map.settings",
+      "source": "maps.md",
+      "target": "help-map-settings",
+      "level": "task",
+      "related_ids": ["map.calibration", "map.layers", "map.features"]
+    },
+    {
       "id": "map.layers",
       "source": "maps.md",
       "target": "help-map-layers",

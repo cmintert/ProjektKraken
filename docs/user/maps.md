@@ -22,6 +22,32 @@ place your existing Events or Entities on it. Cancel the creation dialog if
 the wrong image was selected; avoid creating a second map to repair a missing
 asset without first checking the world's asset files.
 
+(help-map-settings)=
+
+## Configure the selected map
+
+Open **Map settings** in the map toolbar to configure the map currently selected
+in the map selector. At narrow widths, open the toolbar overflow and choose
+**Map settings** there. The menu groups its controls by purpose:
+
+| Section | Controls |
+| --- | --- |
+| Scale | Scale and distance calibration… |
+| Map hierarchy | Set as Master Map; Register as Detail Map… |
+| Detail-map footprints | Show Footprints; Edit Footprint… |
+| Separate deletion action | Delete map… |
+
+Choose **Scale and distance calibration…** to enter a known map width or begin
+measurement-based calibration. Accept the scale dialog to save its proposed
+width, or cancel to leave it unchanged. The hierarchy and footprint controls
+retain their existing prerequisites: designate a master before registering a
+detail map, and show footprints before editing a placement. **Delete map…**
+still asks for confirmation before deletion.
+
+Opening or dismissing Map settings does not apply a change. Feature settings
+remain in **Feature actions**, and collection settings remain in **Group actions**
+in Layers. **Fit to View** remains a separate toolbar control for navigation.
+
 (help-map-features)=
 
 ## Add markers and features
@@ -48,6 +74,12 @@ automatically replace a hidden inspector or one sharing the map’s zone.
 Use **Feature actions** for appearance changes, historical geometry and other feature
 operations. The actions are also available through Layers and the toolbar overflow at
 narrow widths.
+
+After selecting a row in Layers, move the pointer back onto the map and hold
+**Space** while dragging to pan. This preserves the selected row and its
+visibility. While working inside the Layers tree, **Space** still toggles the
+focused row's visibility. Returning the pointer to the map does not interrupt
+text entry or an unfinished Layers drag.
 
 **Example:** Place Ada’s court as a marker and draw the kingdom as a region. Use a
 trajectory for movement over time, historical geometry for changing borders, and
@@ -508,7 +540,7 @@ state without changing the Base raster.
 
 ## Master and detail maps
 
-Use the map overflow menu to designate a master map or register another map as
+Use **Map settings**, under **Map hierarchy**, to designate a master map or register another map as
 a detail map. Registered detail maps appear as footprints on their parent.
 Footprints can be shown or hidden, opened, and edited. Breadcrumb navigation
 returns through the map hierarchy.
@@ -517,7 +549,8 @@ returns through the map hierarchy.
 
 ## Calibration and queries
 
-Calibrate a map by measuring a known distance. Calibration affects displayed
+Choose **Map settings > Scale and distance calibration…** to enter a known map
+width or calibrate by measuring a known distance. Calibration affects displayed
 measurements and the scale bar; it does not resample the map image or raster.
 
 ProjektKraken assumes every map is north-up. Spatial context evaluates point
@@ -816,8 +849,9 @@ changes. This is separate from applying or saving them.
 
 (help-inspect-src-gui-widgets-map-feature-actions-featureactionpresenter-show-layers-menu-menu)=
 
-**Menu** — Open the Menu menu to choose a related operation. Opening the menu does not
-apply any of its actions.
+**Map settings menu** — Choose scale, hierarchy or detail-map footprint controls
+for the selected map. Delete map is separated at the end. Opening or dismissing
+the menu does not apply a change.
 
 (help-inspect-src-gui-widgets-map-feature-actions-featureactionpresenter-show-canvas-menu-menu)=
 
@@ -1406,8 +1440,9 @@ the journey’s Apply action separately to save the complete track.
 
 (help-inspect-src-gui-widgets-map-widget-mapwidget-build-map-management-controls-self-btn-map-overflow)=
 
-**Map actions** — Open map-level actions such as master/detail-map setup and map
-deletion.
+**Map settings** — The former Map actions entries now share the Map settings
+menu with scale and distance calibration. Feature and group properties remain
+separate.
 
 (help-inspect-src-gui-widgets-map-widget-mapwidget-build-viewport-controls-self-btn-fit-view)=
 
@@ -1415,7 +1450,14 @@ deletion.
 
 (help-inspect-src-gui-widgets-map-widget-mapwidget-build-viewport-controls-self-btn-settings)=
 
-**Settings** — Configure map scale and distance calibration.
+**Map settings** — Configure the selected map's scale, hierarchy and detail-map
+footprints. Delete map remains a separate, confirmed action at the end of the menu.
+
+(help-inspect-map-settings-scale)=
+
+**Scale and distance calibration** — Open the existing map-scale dialog. Set a
+known map width or choose measurement-based calibration; confirm to save or
+cancel to leave the proposed width unchanged.
 
 (help-inspect-src-gui-widgets-map-widget-mapwidget-build-drawing-controls-self-btn-add-marker)=
 
