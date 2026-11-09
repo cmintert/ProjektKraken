@@ -66,7 +66,10 @@ def feature_actions(context: FeatureContext) -> tuple[FeatureAction, ...]:
     """Describe the same supported operations for every feature entry point."""
     if context.locked:
         return (FeatureAction("unlock", "Unlock"),)
-    common = [FeatureAction("lock", "Lock")]
+    common = [
+        FeatureAction("properties", "Feature properties…"),
+        FeatureAction("lock", "Lock"),
+    ]
     if context.outside_date:
         return tuple(
             common
@@ -141,7 +144,7 @@ def _appearance_actions(context: FeatureContext) -> list[FeatureAction]:
             context.can_reset_anchor,
             "The anchor is already centred",
         ),
-        ("size", "Size & Zoom…", True, ""),
+        ("size", "Icon size while zooming…", True, ""),
         (
             "reset_size",
             "Reset size to icon default",
@@ -188,6 +191,7 @@ def _appearance_actions(context: FeatureContext) -> list[FeatureAction]:
 
 
 _INSPECTION_ACTIONS = {
+    "properties": "feature.properties|map.layers|help-inspect-feature-properties",
     "lock": "feature.lock|map.features|help-inspect-feature-lock",
     "unlock": "feature.unlock|map.features|help-inspect-feature-unlock",
     "jump": "feature.jump|map.visibility|help-inspect-feature-jump",
@@ -410,8 +414,11 @@ class FeatureActionPresenter(QObject):
             reason if context is None else "Actions for the selected feature"
         )
         node = self.panel.feature_node(self.target.object_id) if self.target else None
+        if node is not None and self.panel.selected_node_id != node.id:
+            self.panel.select_node(node.id)
         self.panel.feature_selection_label.setText(node.name if node else reason)
         self.panel.feature_selection_label.setToolTip(node.name if node else reason)
+        self.panel.refresh_settings_scope()
         self.selection_updated()
 
     def scene_ready(self, map_id: str) -> None:
@@ -501,6 +508,7 @@ class FeatureActionPresenter(QObject):
         self, object_id: str, action_id: str, guard: Callable[[], bool]
     ) -> None:
         routes: dict[str, Callable[[], None]] = {
+            "properties": lambda: self.panel.edit_properties(object_id),
             "unlock": lambda: self.view.unlock_feature(object_id),
             "lock": lambda: self.view.set_feature_locked(object_id, True),
             "validity": lambda: self.panel.edit_temporal_validity(object_id),

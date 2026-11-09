@@ -1,0 +1,517 @@
+{
+  "platform": "offscreen",
+  "qt_version": "6.10.1",
+  "app_version": "0.21.0",
+  "source_revision": "cf074014aa532eb346eb01782fbf7d07da2ef52e",
+  "source_dirty": true,
+  "topic_id": "map.layers",
+  "inspection_example": "duration",
+  "device_pixel_ratio": 1.0,
+  "logical_dpi": 96.0,
+  "renders": [
+    {
+      "theme": "dark_mode",
+      "width": 640,
+      "controls": {
+        "Back": {
+          "width": 47,
+          "required": 47,
+          "enabled": false,
+          "visible": true
+        },
+        "Forward": {
+          "width": 68,
+          "required": 68,
+          "enabled": false,
+          "visible": true
+        },
+        "Manual": {
+          "width": 63,
+          "required": 63,
+          "enabled": true,
+          "visible": true
+        },
+        "Search": {
+          "width": 59,
+          "required": 59,
+          "enabled": true,
+          "visible": true
+        },
+        "Refresh context": {
+          "width": 111,
+          "required": 111,
+          "enabled": true,
+          "visible": true
+        },
+        "Return to work": {
+          "width": 107,
+          "required": 107,
+          "enabled": true,
+          "visible": true
+        }
+      }
+    },
+    {
+      "theme": "dark_mode",
+      "width": 360,
+      "controls": {
+        "Back": {
+          "width": 47,
+          "required": 47,
+          "enabled": false,
+          "visible": true
+        },
+        "Forward": {
+          "width": 68,
+          "required": 68,
+          "enabled": false,
+          "visible": true
+        },
+        "Manual": {
+          "width": 63,
+          "required": 63,
+          "enabled": true,
+          "visible": true
+        },
+        "Search": {
+          "width": 59,
+          "required": 59,
+          "enabled": true,
+          "visible": true
+        },
+        "Refresh context": {
+          "width": 111,
+          "required": 111,
+          "enabled": true,
+          "visible": true
+        },
+        "Return to work": {
+          "width": 107,
+          "required": 107,
+          "enabled": true,
+          "visible": true
+        }
+      }
+    },
+    {
+      "theme": "light_mode",
+      "width": 640,
+      "controls": {
+        "Back": {
+          "width": 47,
+          "required": 47,
+          "enabled": false,
+          "visible": true
+        },
+        "Forward": {
+          "width": 68,
+          "required": 68,
+          "enabled": false,
+          "visible": true
+        },
+        "Manual": {
+          "width": 63,
+          "required": 63,
+          "enabled": true,
+          "visible": true
+        },
+        "Search": {
+          "width": 59,
+          "required": 59,
+          "enabled": true,
+          "visible": true
+        },
+        "Refresh context": {
+          "width": 111,
+          "required": 111,
+          "enabled": true,
+          "visible": true
+        },
+        "Return to work": {
+          "width": 107,
+          "required": 107,
+          "enabled": true,
+          "visible": true
+        }
+      }
+    },
+    {
+      "theme": "light_mode",
+      "width": 360,
+      "controls": {
+        "Back": {
+          "width": 47,
+          "required": 47,
+          "enabled": false,
+          "visible": true
+        },
+        "Forward": {
+          "width": 68,
+          "required": 68,
+          "enabled": false,
+          "visible": true
+        },
+        "Manual": {
+          "width": 63,
+          "required": 63,
+          "enabled": true,
+          "visible": true
+        },
+        "Search": {
+          "width": 59,
+          "required": 59,
+          "enabled": true,
+          "visible": true
+        },
+        "Refresh context": {
+          "width": 111,
+          "required": 111,
+          "enabled": true,
+          "visible": true
+        },
+        "Return to work": {
+          "width": 107,
+          "required": 107,
+          "enabled": true,
+          "visible": true
+        }
+      }
+    },
+    {
+      "theme": "fantasy_mode",
+      "width": 640,
+      "controls": {
+        "Back": {
+          "width": 47,
+          "required": 47,
+          "enabled": false,
+          "visible": true
+        },
+        "Forward": {
+          "width": 68,
+          "required": 68,
+          "enabled": false,
+          "visible": true
+        },
+        "Manual": {
+          "width": 63,
+          "required": 63,
+          "enabled": true,
+          "visible": true
+        },
+        "Search": {
+          "width": 59,
+          "required": 59,
+          "enabled": true,
+          "visible": true
+        },
+        "Refresh context": {
+          "width": 111,
+          "required": 111,
+          "enabled": true,
+          "visible": true
+        },
+        "Return to work": {
+          "width": 107,
+          "required": 107,
+          "enabled": true,
+          "visible": true
+        }
+      }
+    },
+    {
+      "theme": "fantasy_mode",
+      "width": 360,
+      "controls": {
+        "Back": {
+          "width": 47,
+          "required": 47,
+          "enabled": false,
+          "visible": true
+        },
+        "Forward": {
+          "width": 68,
+          "required": 68,
+          "enabled": false,
+          "visible": true
+        },
+        "Manual": {
+          "width": 63,
+          "required": 63,
+          "enabled": true,
+          "visible": true
+        },
+        "Search": {
+          "width": 59,
+          "required": 59,
+          "enabled": true,
+          "visible": true
+        },
+        "Refresh context": {
+          "width": 111,
+          "required": 111,
+          "enabled": true,
+          "visible": true
+        },
+        "Return to work": {
+          "width": 107,
+          "required": 107,
+          "enabled": true,
+          "visible": true
+        }
+      }
+    },
+    {
+      "theme": "imperial_mode",
+      "width": 640,
+      "controls": {
+        "Back": {
+          "width": 47,
+          "required": 47,
+          "enabled": false,
+          "visible": true
+        },
+        "Forward": {
+          "width": 68,
+          "required": 68,
+          "enabled": false,
+          "visible": true
+        },
+        "Manual": {
+          "width": 63,
+          "required": 63,
+          "enabled": true,
+          "visible": true
+        },
+        "Search": {
+          "width": 59,
+          "required": 59,
+          "enabled": true,
+          "visible": true
+        },
+        "Refresh context": {
+          "width": 111,
+          "required": 111,
+          "enabled": true,
+          "visible": true
+        },
+        "Return to work": {
+          "width": 107,
+          "required": 107,
+          "enabled": true,
+          "visible": true
+        }
+      }
+    },
+    {
+      "theme": "imperial_mode",
+      "width": 360,
+      "controls": {
+        "Back": {
+          "width": 47,
+          "required": 47,
+          "enabled": false,
+          "visible": true
+        },
+        "Forward": {
+          "width": 68,
+          "required": 68,
+          "enabled": false,
+          "visible": true
+        },
+        "Manual": {
+          "width": 63,
+          "required": 63,
+          "enabled": true,
+          "visible": true
+        },
+        "Search": {
+          "width": 59,
+          "required": 59,
+          "enabled": true,
+          "visible": true
+        },
+        "Refresh context": {
+          "width": 111,
+          "required": 111,
+          "enabled": true,
+          "visible": true
+        },
+        "Return to work": {
+          "width": 107,
+          "required": 107,
+          "enabled": true,
+          "visible": true
+        }
+      }
+    },
+    {
+      "theme": "cyberpunk_mode",
+      "width": 640,
+      "controls": {
+        "Back": {
+          "width": 47,
+          "required": 47,
+          "enabled": false,
+          "visible": true
+        },
+        "Forward": {
+          "width": 68,
+          "required": 68,
+          "enabled": false,
+          "visible": true
+        },
+        "Manual": {
+          "width": 63,
+          "required": 63,
+          "enabled": true,
+          "visible": true
+        },
+        "Search": {
+          "width": 59,
+          "required": 59,
+          "enabled": true,
+          "visible": true
+        },
+        "Refresh context": {
+          "width": 111,
+          "required": 111,
+          "enabled": true,
+          "visible": true
+        },
+        "Return to work": {
+          "width": 107,
+          "required": 107,
+          "enabled": true,
+          "visible": true
+        }
+      }
+    },
+    {
+      "theme": "cyberpunk_mode",
+      "width": 360,
+      "controls": {
+        "Back": {
+          "width": 47,
+          "required": 47,
+          "enabled": false,
+          "visible": true
+        },
+        "Forward": {
+          "width": 68,
+          "required": 68,
+          "enabled": false,
+          "visible": true
+        },
+        "Manual": {
+          "width": 63,
+          "required": 63,
+          "enabled": true,
+          "visible": true
+        },
+        "Search": {
+          "width": 59,
+          "required": 59,
+          "enabled": true,
+          "visible": true
+        },
+        "Refresh context": {
+          "width": 111,
+          "required": 111,
+          "enabled": true,
+          "visible": true
+        },
+        "Return to work": {
+          "width": 107,
+          "required": 107,
+          "enabled": true,
+          "visible": true
+        }
+      }
+    },
+    {
+      "theme": "muted_light_mode",
+      "width": 640,
+      "controls": {
+        "Back": {
+          "width": 47,
+          "required": 47,
+          "enabled": false,
+          "visible": true
+        },
+        "Forward": {
+          "width": 68,
+          "required": 68,
+          "enabled": false,
+          "visible": true
+        },
+        "Manual": {
+          "width": 63,
+          "required": 63,
+          "enabled": true,
+          "visible": true
+        },
+        "Search": {
+          "width": 59,
+          "required": 59,
+          "enabled": true,
+          "visible": true
+        },
+        "Refresh context": {
+          "width": 111,
+          "required": 111,
+          "enabled": true,
+          "visible": true
+        },
+        "Return to work": {
+          "width": 107,
+          "required": 107,
+          "enabled": true,
+          "visible": true
+        }
+      }
+    },
+    {
+      "theme": "muted_light_mode",
+      "width": 360,
+      "controls": {
+        "Back": {
+          "width": 47,
+          "required": 47,
+          "enabled": false,
+          "visible": true
+        },
+        "Forward": {
+          "width": 68,
+          "required": 68,
+          "enabled": false,
+          "visible": true
+        },
+        "Manual": {
+          "width": 63,
+          "required": 63,
+          "enabled": true,
+          "visible": true
+        },
+        "Search": {
+          "width": 59,
+          "required": 59,
+          "enabled": true,
+          "visible": true
+        },
+        "Refresh context": {
+          "width": 111,
+          "required": 111,
+          "enabled": true,
+          "visible": true
+        },
+        "Return to work": {
+          "width": 107,
+          "required": 107,
+          "enabled": true,
+          "visible": true
+        }
+      }
+    }
+  ]
+}

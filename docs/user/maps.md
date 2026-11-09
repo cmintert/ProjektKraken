@@ -60,6 +60,11 @@ visibility <help-map-visibility>` · {ref}`Map trajectories <help-map-trajectori
 
 ### Feature appearance and sizing
 
+**Icon size while zooming** changes the selected marker's footprint or screen
+size. **Visible at zoom levels**, in Feature properties, controls when it is
+shown. These are independent settings; containing groups can further restrict
+visibility.
+
 Select a point marker and choose **Feature actions > Change icon…** to use a bundled icon,
 reuse an icon stored in the world, or import an SVG, PNG, JPG/JPEG, or WebP
 file. Imported icons are copied into the portable world's `assets/images/`
@@ -69,8 +74,7 @@ disabled, but their size controls remain available.
 
 Point-marker icons scale with the map by default. This gives character tokens
 and location symbols a stable footprint: zooming in makes both the map and its
-icons larger. Choose **Feature actions > Advanced appearance > Size &
-Zoom…** to set that marker's behavior and size. Uncalibrated maps use a
+icons larger. Choose **Feature actions > Advanced appearance > Icon size while zooming…** to set that marker's behavior and size. Uncalibrated maps use a
 percentage of total map width; calibrated maps also offer metres and
 kilometres as alternate representations of the same map-space footprint.
 
@@ -449,6 +453,34 @@ The layer panel groups markers, features, and rasters. You can:
 
 Structural layer changes participate in undo and redo.
 
+### Change one feature or a whole group
+
+1. Select a marker, path or region on the map or in **Layers**.
+2. Choose **Feature actions > Feature properties…** for its name, manual
+   visibility, opacity, notes and zoom visibility. Use the other Feature actions
+   for appearance, icon size, journeys, geometry or visibility dates.
+3. Check the target name and containing group path before accepting with **OK**.
+   Choose **Cancel** to leave the settings unchanged.
+
+To change a collection, select its group in Layers and choose **Group actions >
+Group properties…** or **Group visibility dates…**. The scope caption counts all
+descendant features and map layers, including hidden items. Group settings apply
+to current contents and items added later, even when the group contains only one
+feature. Raster and Base map selections name their own properties actions.
+
+The opacity control below the tree names its selected target. Feature opacity
+affects one feature; group opacity multiplies the local opacity of its contents.
+For example, 50% feature opacity within a 50% group produces 25% combined opacity
+before any temporal presentation effects. Parent visibility, zoom limits and
+group dates also restrict a feature; enabling it locally does not bypass them.
+The editors show the contributing group names and values.
+
+These settings govern map representations. **Name in Layers** changes the tree
+label only. The separate **Rename…** action for a feature also synchronizes its
+marker label and linked entry. Group names organize the map.
+After accepting, check the selected feature and a neighboring feature, or the
+group's contents. Use **Undo** if the scope was wrong.
+
 (help-map-raster)=
 
 ## Add raster layers
@@ -608,8 +640,8 @@ management mode, inspect or manage it without assigning a marker.
 
 (help-inspect-src-gui-dialogs-layer-properties-dialog-layerpropertiesdialog-init-self-name)=
 
-**Layer name** — Rename this layer or group without changing the entries linked to its
-features.
+**Name in Layers** — Change the named target's tree label only. The separate
+Rename action for a feature also synchronizes its marker label and linked entry.
 
 (help-inspect-src-gui-dialogs-layer-properties-dialog-layerpropertiesdialog-init-self-visible)=
 
@@ -965,17 +997,18 @@ existence dates.
 
 (help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-rename)=
 
-**Rename layer** — Change the layer's display name without renaming linked world
-entries.
+**Rename target** — Rename the selected map item. For a feature, this also
+synchronizes its marker label and linked entry. Group names organize the map.
 
 (help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-properties)=
 
-**Layer properties** — Edit layer visibility, opacity, notes and zoom limits.
+**Properties** — Edit the named group or map surface's visibility, opacity, notes
+and zoom limits. Group settings affect all contents, including future additions.
 
 (help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-temporal-action)=
 
-**Existence dates** — Edit when this feature exists, independently of its historical
-geometry states.
+**Group visibility dates** — Restrict when the contents of this group are shown.
+Feature dates still apply; group dates do not replace them.
 
 (help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-delete)=
 
@@ -994,13 +1027,13 @@ initial data.
 
 (help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-populate-feature-layer-actions-properties)=
 
-**Layer properties** — Edit the selected layer's visibility, opacity, notes and zoom
-limits.
+**Feature properties** — This former layer-properties route is now available as
+Feature actions > Feature properties. It affects only the selected map feature.
 
 (help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-populate-feature-layer-actions-rename)=
 
-**Rename layer** — Change this layer's display name without renaming linked world
-entries.
+**Rename feature** — Synchronize the feature’s tree name, marker label and
+linked entry name. Use Name in Layers in properties for a tree-only label.
 
 (help-inspect-src-gui-widgets-map-map-scale-dialog-mapscaledialog-init-self-width-input)=
 
@@ -1644,8 +1677,9 @@ states. Visibility and locking are separate from deletion.
 
 (help-inspect-view-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-opacity-bar-self-opacity-slider)=
 
-**Layer opacity** — Adjust how strongly the selected layer is drawn over layers beneath
-it.
+**Target opacity** — Change the named feature, group or map surface's local
+opacity. Group opacity multiplies descendant values. Locked features must be
+unlocked before changing this control.
 
 (help-inspect-view-src-gui-widgets-map-map-layer-panel-maplayerpanel-build-mode-specific-paint-controls-self-fill-tolerance-slider)=
 
@@ -1726,3 +1760,15 @@ inspection explains the canvas without selecting, moving or confirming a feature
 (help-inspect-raster-brush)=
 
 **Raster brush** — Paint raster cells with the selected value or colour. Brush size, hardness and opacity control its effect.
+
+(help-inspect-feature-properties)=
+
+**Feature properties** — Change only the selected map feature. Review its name, containing group path and inherited restrictions before accepting. Group settings continue to apply.
+
+(help-inspect-map-scope-properties)=
+
+**Target properties** — Edit the named group, raster layer or base map. A group affects all descendants and items added later; a map surface affects only itself.
+
+(help-inspect-map-group-dates)=
+
+**Group visibility dates** — Restrict the dates on which this group’s features are shown. Feature dates combine with these bounds rather than being replaced. Raster and base map dates are unaffected.

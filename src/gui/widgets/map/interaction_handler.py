@@ -9,13 +9,14 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Optional
 
-from PySide6.QtCore import QPoint, QPointF
+from PySide6.QtCore import QPoint, QPointF, Qt
 from PySide6.QtGui import QAction, QColor
 from PySide6.QtWidgets import (
     QAbstractSpinBox,
     QColorDialog,
     QDialog,
     QHBoxLayout,
+    QLabel,
     QMenu,
     QToolButton,
     QWidget,
@@ -401,6 +402,7 @@ class InteractionHandler:
             image_width,
             self._view.transform().m11(),
             self._view,
+            target_name=marker_item.label,
         )
         if dialog.exec() == QDialog.DialogCode.Accepted and (guard is None or guard()):
             updates = {
@@ -459,6 +461,13 @@ class InteractionHandler:
         dialog.setWindowTitle("Set Border Strength")
         dialog.setMinimumWidth(250)
         layout = QFormLayout(dialog)
+        scope = QLabel(
+            f"Marker: {marker_item.label} — changes this map feature only. "
+            "Group opacity and visibility restrictions still apply."
+        )
+        scope.setTextFormat(Qt.TextFormat.PlainText)
+        scope.setWordWrap(True)
+        layout.addRow(scope)
 
         spin = declare_inspection(
             ScrollSafeSpinBox(),
@@ -569,6 +578,13 @@ class InteractionHandler:
         dialog.setWindowTitle(f"Edit {item.label} Style")
         dialog.setMinimumWidth(300)
         layout = QFormLayout(dialog)
+        scope = QLabel(
+            f"{item.label} — changes this map feature only. "
+            "Group opacity and visibility restrictions still apply."
+        )
+        scope.setTextFormat(Qt.TextFormat.PlainText)
+        scope.setWordWrap(True)
+        layout.addRow(scope)
 
         # Stroke color
         stroke_init = _safe_color_css(

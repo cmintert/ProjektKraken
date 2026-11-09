@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QStandardItemModel
 from PySide6.QtWidgets import (
     QComboBox,
@@ -25,6 +26,7 @@ from src.core.marker_sizing import (
 )
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.action_flow_layout import ActionFlowLayout as QHBoxLayout
 from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
 from src.gui.widgets.responsive_dialog_buttons import (
@@ -45,6 +47,8 @@ class MarkerSizeDialog(QDialog):
         image_width: float,
         view_scale: float,
         parent: QWidget | None = None,
+        *,
+        target_name: str = "Selected marker",
     ) -> None:
         """Initialize the controls from one marker's stored settings."""
         super().__init__(parent)
@@ -58,11 +62,16 @@ class MarkerSizeDialog(QDialog):
         self._display_unit = self._relative_display_unit()
         self._updating = False
 
-        self.setWindowTitle("Marker Size & Zoom")
+        self.setWindowTitle("Icon size while zooming")
         self.setModal(True)
         self.setMinimumWidth(440)
         self.setStyleSheet(StyleHelper.get_dialog_base_style())
+        connect_theme(self, self._apply_theme)
         layout = QVBoxLayout(self)
+        scope = QLabel(f"Marker: {target_name} — changes this map feature only.")
+        scope.setTextFormat(Qt.TextFormat.PlainText)
+        scope.setWordWrap(True)
+        layout.addWidget(scope)
         intro = QLabel(
             "Choose whether this marker represents a footprint on the map or "
             "stays readable at a fixed screen size."
@@ -117,6 +126,10 @@ class MarkerSizeDialog(QDialog):
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
         self._sync_controls()
+
+    def _apply_theme(self) -> None:
+        """Refresh shared presentation while retaining the size proposal."""
+        self.setStyleSheet(StyleHelper.get_dialog_base_style())
 
     def _mode_changed(self, _index: int) -> None:
         if self._updating:

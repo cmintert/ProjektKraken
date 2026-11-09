@@ -394,7 +394,7 @@ def test_restricted_capability_vocabulary(kind):
     assert [
         action.action_id
         for action in feature_actions(FeatureContext(kind, outside_date=True))
-    ] == ["lock", "jump", "validity", "layers"]
+    ] == ["properties", "lock", "jump", "validity", "layers"]
 
 
 def test_event_and_raster_marker_capabilities():
@@ -408,6 +408,29 @@ def test_event_and_raster_marker_capabilities():
     assert actions["appearance"].enabled and actions["size"].enabled
     assert not actions["fill"].enabled and actions["fill"].reason
     assert not actions["paste"].enabled and actions["paste"].reason
+
+
+@pytest.mark.parametrize("kind", ["point", "path", "region"])
+def test_feature_properties_shared_route_and_captured_target(feature_map, qtbot, kind):
+    add_feature(feature_map, kind, "target")
+    add_feature(feature_map, kind, "other")
+    select_layer(feature_map, "target", qtbot)
+    menu = open_toolbar_menu(feature_map, qtbot)
+    action = menu_action(menu, "properties")
+    assert action.text() == "Feature properties…" and action.isEnabled()
+    action.trigger()
+    panel = feature_map.layer_panel
+    dialog = panel._properties_dialog
+    assert dialog is not None
+    assert "Upper Rhine" in dialog._scope_label.text()
+    intents = []
+    feature_map.layer_properties_changed.connect(lambda *args: intents.append(args))
+    dialog._opacity.setValue(0.4)
+    dialog.accept()
+    assert len(intents) == 1 and intents[0][0] == "target"
+    assert intents[0][1]["opacity"] == 0.4
+    assert panel.feature_node("other").opacity == 1.0
+    menu.close()
 
 
 @pytest.mark.parametrize(

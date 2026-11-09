@@ -881,6 +881,17 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_text_area_style() -> str:
+        """Use standard input surfaces and keyboard focus for multiline text."""
+        theme = ThemeManager().get_theme()
+        base = StyleHelper.get_input_field_style()
+        return (
+            f"QPlainTextEdit, QTextEdit {{ {base} }}"
+            "QPlainTextEdit:focus, QTextEdit:focus {"
+            f" border-color: {theme['focus_ring']}; }}"
+        )
+
+    @staticmethod
     def get_transparent_input_style() -> str:
         """Returns QSS for transparent inner input widget.
 

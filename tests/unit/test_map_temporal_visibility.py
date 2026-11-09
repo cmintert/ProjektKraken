@@ -37,10 +37,17 @@ def test_validity_dialog_preserves_unknown_and_partial_dates(qtbot):
     config = CalendarConfig.create_default()
     converter = CalendarConverter(config)
     expression = DateParser(config).parse_expression("961")
-    node = MapLayerNode(name="Uncertain city", layer_type="marker", attributes={
-        "temporal": {"schema": 1, "start": {"status": "unknown"},
-                     "end": {"expression": expression.to_dict()}}
-    })
+    node = MapLayerNode(
+        name="Uncertain city",
+        layer_type="marker",
+        attributes={
+            "temporal": {
+                "schema": 1,
+                "start": {"status": "unknown"},
+                "end": {"expression": expression.to_dict()},
+            }
+        },
+    )
     dialog = TemporalValidityDialog(node, calendar_converter=converter)
     qtbot.addWidget(dialog)
     assert dialog._boundary_modes["start"].currentData() == "unknown"
@@ -292,10 +299,10 @@ def test_properties_and_temporal_dialogs_have_distinct_scope(qtbot) -> None:
     qtbot.addWidget(properties_dialog)
     qtbot.addWidget(temporal_dialog)
 
-    assert properties_dialog.windowTitle() == "Layer Properties"
+    assert properties_dialog.windowTitle() == "Feature properties"
     assert "start_date" not in properties_dialog.properties()
     assert "end_date" not in properties_dialog.properties()
-    assert temporal_dialog.windowTitle() == "Temporal Validity — Site"
+    assert temporal_dialog.windowTitle() == "Marker visibility dates — Site"
     assert temporal_dialog.properties() == {
         "start_date": 10.0,
         "end_date": 20.0,

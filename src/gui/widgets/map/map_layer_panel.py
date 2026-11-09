@@ -70,6 +70,7 @@ from src.gui.widgets.map.map_data_buffer import (
     format_display_value,
 )
 from src.gui.widgets.map.raster_layer_item import BLEND_MODE_NAMES
+from src.gui.widgets.map.settings_scope import settings_scope
 from src.gui.widgets.numeric_inputs import (
     ScrollSafeDoubleSpinBox,
     ScrollSafeSpinBox,
@@ -319,6 +320,8 @@ class MapLayerPanel(QWidget):
         self._properties_dialog: Optional["LayerPropertiesDialog"] = None
         self._properties_node_id: Optional[str] = None
         self._properties_guard: Callable[[], bool] = lambda: False
+        self._scope_selection_id: str | None = None
+        self._scope_selection_revision = 0
         self._temporal_dialog: Optional["TemporalValidityDialog"] = None
         self._temporal_node_id: Optional[str] = None
         self._temporal_guard: Callable[[], bool] = lambda: False
@@ -457,8 +460,41 @@ class MapLayerPanel(QWidget):
 
     def _show_feature_actions(self) -> None:
         """Delegate menu presentation to the shared map presenter."""
+        node = (
+            self._model.find_node_by_id(self._selected_node_id)
+            if (self._model and self._selected_node_id)
+            else None
+        )
+        if node is not None and node.layer_type not in VECTOR_LAYER_TYPES:
+            self._show_settings_actions(node)
+            return
         if self.feature_menu_requested is not None:
             self.feature_menu_requested()
+
+    def _show_settings_actions(self, node: MapLayerNode) -> None:
+        """Expose collection and map-surface settings without a context gesture."""
+        menu = QMenu(self)
+        guard = self._capture_dialog_guard(node.id, "properties")
+        properties = declare_inspection(
+            menu.addAction(settings_scope(node).properties_label),
+            "map.scope-properties|map.layers|help-inspect-map-scope-properties",
+        )
+        properties.triggered.connect(
+            lambda: self.edit_properties(node.id) if guard() else None
+        )
+        if node.layer_type == "group":
+            dates = declare_inspection(
+                menu.addAction("Group visibility dates…"),
+                "map.group-dates|map.layers|help-inspect-map-group-dates",
+            )
+            dates.triggered.connect(
+                lambda: self.edit_temporal_validity(node.id) if guard() else None
+            )
+        menu.exec(
+            self.btn_feature_actions.mapToGlobal(
+                self.btn_feature_actions.rect().bottomLeft()
+            )
+        )
 
     def feature_node(self, node_id: str) -> MapLayerNode | None:
         """Resolve supported feature nodes without requiring canvas visibility."""
@@ -529,7 +565,8 @@ class MapLayerPanel(QWidget):
         )
         self._opacity_slider.setRange(0, 100)
         self._opacity_slider.setValue(100)
-        self._opacity_slider.setToolTip("Layer opacity (0–100 %)")
+        self._opacity_slider.setEnabled(False)
+        self._opacity_slider.setToolTip("Select a feature, group or map surface")
         self._opacity_slider.sliderPressed.connect(self._on_slider_pressed)
         self._opacity_slider.valueChanged.connect(self._on_opacity_preview)
         self._opacity_slider.sliderReleased.connect(self._on_opacity_committed)
@@ -539,6 +576,10 @@ class MapLayerPanel(QWidget):
         opacity_layout.addWidget(self._opacity_label)
         opacity_layout.addWidget(self._opacity_slider, 1)
         opacity_layout.addWidget(self._opacity_value_label)
+        self._opacity_scope = QLabel("Select a feature, group or map surface")
+        self._opacity_scope.setTextFormat(Qt.TextFormat.PlainText)
+        self._opacity_scope.setWordWrap(True)
+        parent_layout.addWidget(self._opacity_scope)
         parent_layout.addLayout(opacity_layout)
 
     def _build_raster_toolbar(self, parent_layout: QVBoxLayout) -> None:
@@ -1681,6 +1722,7 @@ class MapLayerPanel(QWidget):
     def _on_model_data_changed(self, *_args: object) -> None:
         self._proxy_model.invalidate()
         self._update_temporal_count()
+        self.refresh_settings_scope()
 
     @Slot()
     def _on_temporal_state_changed(self) -> None:
@@ -1721,6 +1763,7 @@ class MapLayerPanel(QWidget):
         self._brush_opacity_slider.setStyleSheet(StyleHelper.get_slider_style())
         dim_style = f"color: {self._theme_token('text_dim')}; font-size: 9pt;"
         self._opacity_label.setStyleSheet(dim_style)
+        self._opacity_scope.setStyleSheet(StyleHelper.get_supporting_caption_style())
         self._opacity_value_label.setStyleSheet(
             f"color: {self._theme_token('text_main')}; font-size: 9pt;"
         )
@@ -1890,7 +1933,10 @@ class MapLayerPanel(QWidget):
         node = self._model.node_from_index(source_index)
         guard = self._capture_dialog_guard(node.id, "lock")
         name, ok = QInputDialog.getText(
-            self, "Rename Layer", "New name:", text=node.name
+            self,
+            f"Rename {settings_scope(node).kind.lower()}",
+            "New name:",
+            text=node.name,
         )
         if ok and name.strip() and guard():
             self.layer_renamed.emit(node.id, name.strip())
@@ -1995,7 +2041,7 @@ class MapLayerPanel(QWidget):
             # Toggle visibility
             vis_text = "Hide" if node.visible else "Show"
             action_toggle = declare_inspection(
-                menu.addAction(f"{vis_text} Layer"),
+                menu.addAction(f"{vis_text} {settings_scope(node).kind.lower()}"),
                 "src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-toggle|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-toggle",
             )
             action_toggle.triggered.connect(lambda: self._toggle_visibility(node))
@@ -2018,14 +2064,14 @@ class MapLayerPanel(QWidget):
                     lambda: self._on_item_double_clicked(index)
                 )
                 action_properties = declare_inspection(
-                    menu.addAction("Properties…"),
+                    menu.addAction(settings_scope(node).properties_label),
                     "src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-properties|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-action-properties",
                 )
                 action_properties.triggered.connect(lambda: self._edit_properties(node))
 
                 if node.layer_type in VECTOR_LAYER_TYPES or node.layer_type == "group":
                     temporal_action = declare_inspection(
-                        menu.addAction("Temporal Validity…"),
+                        menu.addAction("Group visibility dates…"),
                         "src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-temporal-action|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-show-context-menu-temporal-action",
                     )
                     temporal_action.triggered.connect(
@@ -2070,17 +2116,10 @@ class MapLayerPanel(QWidget):
         node = self.feature_node(node_id)
         if node is None:
             return
-        action = menu.addAction("Hide layer" if node.visible else "Show layer")
+        action = menu.addAction("Hide feature" if node.visible else "Show feature")
         guard = self._capture_dialog_guard(node_id, "lock")
         action.triggered.connect(
             lambda: self._toggle_feature_visibility(node_id) if guard() else None
-        )
-        properties = declare_inspection(
-            menu.addAction("Layer properties…"),
-            "src-gui-widgets-map-map-layer-panel-maplayerpanel-populate-feature-layer-actions-properties|map.layers|help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-populate-feature-layer-actions-properties",
-        )
-        properties.triggered.connect(
-            lambda: self.edit_properties(node_id) if guard() else None
         )
         rename = declare_inspection(
             menu.addAction("Rename…"),
@@ -2135,10 +2174,11 @@ class MapLayerPanel(QWidget):
         dialog = LayerPropertiesDialog(
             node,
             self,
+            root=self._model.root if self._model else None,
         )
         self._properties_dialog = dialog
         self._properties_node_id = node.id
-        guard = self._capture_dialog_guard(node.id, "lock")
+        guard = self._capture_dialog_guard(node.id, "properties")
         self._properties_guard = guard
         dialog.accepted.connect(
             lambda: self._accept_feature_properties(node.id, dialog.properties(), guard)
@@ -2176,6 +2216,7 @@ class MapLayerPanel(QWidget):
             ancestor_windows=layer_temporal_ancestors(self._model.root, node.id)
             if self._model
             else (),
+            scope=settings_scope(node, self._model.root if self._model else None),
         )
         self._temporal_dialog = dialog
         self._temporal_node_id = node.id
@@ -2196,7 +2237,17 @@ class MapLayerPanel(QWidget):
         """Capture feature identity for a modeless editor, retaining group routes."""
         if self.feature_node(node_id) is not None and self.capture_feature_guard:
             return self.capture_feature_guard(node_id, action_id)
-        return lambda: bool(self._model and self._model.find_node_by_id(node_id))
+        model = self._model
+        selection = self._selected_node_id
+        revision = self._scope_selection_revision
+        root_id = model.root.id if model else None
+        return lambda: bool(
+            self._model is not None
+            and self._model.root.id == root_id
+            and self._selected_node_id == selection
+            and self._scope_selection_revision == revision
+            and self._model.find_node_by_id(node_id)
+        )
 
     def _accept_feature_properties(
         self, node_id: str, properties: dict, guard: Callable[[], bool]
@@ -2398,8 +2449,72 @@ class MapLayerPanel(QWidget):
         disabled while it is selected.
         """
         has_selection = self._selected_node_id is not None
+        if self._selected_node_id != self._scope_selection_id:
+            self._scope_selection_revision += 1
+            self._scope_selection_id = self._selected_node_id
         is_basemap = self._selected_node_id == MAP_LAYER_BASEMAP_NODE_ID
         self.btn_delete.setEnabled(has_selection and not is_basemap)
+        self.refresh_settings_scope()
+
+    def refresh_settings_scope(self) -> None:
+        """Name the current control target without changing authoring state."""
+        self._refresh_editor_scopes()
+        node = (
+            self._model.find_node_by_id(self._selected_node_id)
+            if (self._model and self._selected_node_id)
+            else None
+        )
+        self._opacity_slider.setEnabled(
+            bool(node and not node.locked and not node.virtual)
+        )
+        if node is None:
+            self._opacity_label.setText("Opacity:")
+            self._opacity_scope.setText("Select a feature, group or map surface")
+            self.btn_feature_actions.setText("Feature actions")
+            self.btn_feature_actions.setEnabled(False)
+            return
+        scope = settings_scope(node, self._model.root if self._model else None)
+        owner = "Feature" if node.layer_type in VECTOR_LAYER_TYPES else scope.kind
+        opacity_owner = "Raster" if node.layer_type == "raster" else owner
+        self._opacity_label.setText(f"{opacity_owner} opacity:")
+        self._opacity_scope.setText(
+            f"{scope.heading}\n{scope.description}\n{scope.location}"
+            + (
+                f"\nGroup opacity multiplies this value: {scope.opacity}"
+                if scope.opacity
+                else ""
+            )
+        )
+        self._opacity_slider.setToolTip(
+            f"{scope.heading}: "
+            + (
+                "Unlock this feature to change opacity"
+                if node.locked
+                else "local opacity (0–100 %)"
+            )
+        )
+        self.btn_feature_actions.setText(f"{owner} actions")
+        self.feature_selection_label.setText(node.name)
+        self.feature_selection_label.setToolTip(node.name)
+        if node.layer_type not in VECTOR_LAYER_TYPES:
+            self.btn_feature_actions.setEnabled(not node.virtual)
+            self.btn_feature_actions.setToolTip(f"Actions for {scope.heading}")
+
+    def _refresh_editor_scopes(self) -> None:
+        """Keep live group context current without hydrating draft fields."""
+        if self._model is None:
+            return
+        if self._properties_dialog is not None and self._properties_node_id:
+            node = self._model.find_node_by_id(self._properties_node_id)
+            if node is not None:
+                self._properties_dialog.set_scope(node, self._model.root)
+        if self._temporal_dialog is not None and self._temporal_node_id:
+            node = self._model.find_node_by_id(self._temporal_node_id)
+            if node is not None:
+                self._temporal_dialog.set_scope(settings_scope(node, self._model.root))
+            self._temporal_dialog.set_ancestor_windows(
+                layer_temporal_ancestors(self._model.root, self._temporal_node_id)
+            )
 
     # ------------------------------------------------------------------
     # Private — raster editing toolbar

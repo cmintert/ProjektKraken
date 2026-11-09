@@ -30,8 +30,10 @@ from src.core.temporal_window import (
 from src.gui.dialogs.help_aware_dialog import HelpAwareDialog
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.event_anchor_controls import EventAnchorControls
+from src.gui.widgets.map.settings_scope import SettingsScope, settings_scope
 from src.gui.widgets.responsive_dialog_buttons import (
     ResponsiveDialogButtonBox as QDialogButtonBox,
 )
@@ -51,6 +53,7 @@ class TemporalValidityDialog(HelpAwareDialog):
         playhead_time: float = 0.0,
         temporal_context: TemporalResolutionContext | None = None,
         ancestor_windows: tuple[tuple[str, dict[str, Any]], ...] = (),
+        scope: SettingsScope | None = None,
     ) -> None:
         """Initialize temporal-validity controls for a layer."""
         super().__init__(parent)
@@ -67,9 +70,11 @@ class TemporalValidityDialog(HelpAwareDialog):
         self._dirty_sides: set[str] = set()
         self.setModal(False)
         self.setWindowModality(Qt.WindowModality.NonModal)
-        self.setWindowTitle(f"Temporal Validity — {node.name}")
+        scope = scope or settings_scope(node)
+        self.setWindowTitle(f"{scope.kind} visibility dates — {node.name}")
         self.setMinimumWidth(420)
         self.setStyleSheet(StyleHelper.get_dialog_base_style())
+        connect_theme(self, self._apply_theme)
 
         outer = QVBoxLayout(self)
         scroll = declare_inspection(
@@ -84,6 +89,11 @@ class TemporalValidityDialog(HelpAwareDialog):
         scroll.setWidget(body)
         outer.addWidget(scroll, 1)
         layout = QVBoxLayout(body)
+        self._scope_label = QLabel()
+        self._scope_label.setTextFormat(Qt.TextFormat.PlainText)
+        self._scope_label.setWordWrap(True)
+        self.set_scope(scope)
+        layout.addWidget(self._scope_label)
         subject = "Visible" if node.layer_type == MAP_LAYER_TYPE_GROUP else "Exists"
         intro = QLabel(
             f"Set when {node.name} is part of the map. Choose a date or an event "
@@ -432,11 +442,47 @@ class TemporalValidityDialog(HelpAwareDialog):
                 "inactive": "not present",
                 "indeterminate": "presence unresolved",
             }[state.value]
-            groups = ", ".join(name for name, _attrs in self._ancestor_windows)
+            groups = "; ".join(
+                f"{name}: {self._group_window_caption(attrs)}"
+                for name, attrs in self._ancestor_windows
+            )
             self._temporal_summary.setText(
                 self._temporal_summary.text()
                 + f" With group dates ({groups}): {caption} at the viewed date."
             )
+
+    def set_scope(self, scope: SettingsScope) -> None:
+        """Refresh collection context without replacing date drafts."""
+        self._scope_label.setText(
+            f"{scope.heading}\n{scope.description}\n{scope.location}\n"
+            "Dates affect the map representation. Group and feature dates apply together."
+            + (
+                " Group dates restrict features; raster layers and the base map "
+                "ignore dates."
+                if scope.kind == "Group"
+                else ""
+            )
+        )
+
+    def _apply_theme(self) -> None:
+        """Refresh the shared dialog surface without changing date drafts."""
+        self.setStyleSheet(StyleHelper.get_dialog_base_style())
+
+    def _group_window_caption(self, attrs: dict[str, Any]) -> str:
+        """Name inherited date values without flattening uncertain boundaries."""
+        window = resolve_temporal_window(
+            attrs, converter=self._calendar_converter, anchors=self._anchors
+        )
+        if not window.is_valid:
+            return "unresolved dates"
+        values = []
+        for side, value, bounds in (
+            ("from", window.start, window.start_bounds),
+            ("until", window.end, window.end_bounds),
+        ):
+            text = bounds.label if bounds and bounds.label else self._format_date(value)
+            values.append(f"{side} {text}")
+        return ", ".join(values)
 
     def _accept_if_valid(self) -> None:
         """Accept only when the half-open validity range is non-empty."""

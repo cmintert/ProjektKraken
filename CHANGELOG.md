@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-09
-**Commit:** 269b04fe79dae29a45795ba1a39fd153440cf557
+**Commit:** cf074014aa532eb346eb01782fbf7d07da2ef52e
 ---
 
 # Changelog
@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-11-09)* **Map settings ownership (KRT-140)**: Unified feature properties
+  under Feature actions, added visible group and map-surface settings routes,
+  and named each editor and opacity control's target. Group scope, inherited
+  restrictions and icon sizing versus zoom visibility are explicit. Unchanged
+  legacy zoom settings retain their original values and basis. Updated map Help,
+  inspection bindings, focused regressions and six-theme presentation evidence.
 
 - *(2026-11-09)* **Visible Entity history actions (KRT-146)**: Linked events in
   Overview’s History & context now owns Event creation, existing-Event linking

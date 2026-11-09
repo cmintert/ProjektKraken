@@ -5352,16 +5352,6 @@
       "kind": "addAction"
     },
     {
-      "id": "src-gui-widgets-map-map-layer-panel-maplayerpanel-populate-feature-layer-actions-properties",
-      "topic_id": "map.layers",
-      "target": "help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-populate-feature-layer-actions-properties",
-      "source": "src/gui/widgets/map/map_layer_panel.py",
-      "symbol": "MapLayerPanel._populate_feature_layer_actions",
-      "binding": "properties",
-      "label": "Layer properties…",
-      "kind": "addAction"
-    },
-    {
       "id": "src-gui-widgets-map-map-layer-panel-maplayerpanel-populate-feature-layer-actions-rename",
       "topic_id": "map.layers",
       "target": "help-inspect-src-gui-widgets-map-map-layer-panel-maplayerpanel-populate-feature-layer-actions-rename",
@@ -9560,6 +9550,36 @@
       "binding": "buttons",
       "label": "Create or cancel",
       "kind": "QDialogButtonBox"
+    },
+    {
+      "id": "feature.properties",
+      "topic_id": "map.layers",
+      "target": "help-inspect-feature-properties",
+      "source": "src/gui/widgets/map/feature_actions.py",
+      "symbol": "populate_feature_menu",
+      "binding": "descriptor.action_id=properties",
+      "label": "feature.properties",
+      "kind": "FeatureAction"
+    },
+    {
+      "id": "map.scope-properties",
+      "topic_id": "map.layers",
+      "target": "help-inspect-map-scope-properties",
+      "source": "src/gui/widgets/map/map_layer_panel.py",
+      "symbol": "MapLayerPanel._show_settings_actions",
+      "binding": "properties",
+      "label": "map.scope-properties",
+      "kind": "QAction"
+    },
+    {
+      "id": "map.group-dates",
+      "topic_id": "map.layers",
+      "target": "help-inspect-map-group-dates",
+      "source": "src/gui/widgets/map/map_layer_panel.py",
+      "symbol": "MapLayerPanel._show_settings_actions",
+      "binding": "dates",
+      "label": "map.group-dates",
+      "kind": "QAction"
     }
   ],
   "factory_exemptions": [
@@ -11452,8 +11472,8 @@
     {
       "source": "src/gui/dialogs/layer_properties_dialog.py",
       "symbol": "LayerPropertiesDialog.__init__",
-      "sha256": "8dfa3af123c64c67d8714d1850a28fc9bc0d6d7de4643b155850a2c448f37aa5",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "b623b5e90b4d9a859f8ceef0a5147dddd298c25fdd45cef2ff200f860b702da9",
+      "review_note": "KRT-140: reviewed named map targets, local versus containing-group effects, shared properties routes, modeless identity/selection guards and theme-only refresh. Name in Layers edits only the tree label; the separate Rename action retains marker and linked-entry synchronization. Existing command, calendar, zoom basis, save and cancel semantics are preserved. Human acceptance remains pending."
     },
     {
       "source": "src/gui/dialogs/lexicon_editor_dialog.py",
@@ -11728,8 +11748,8 @@
     {
       "source": "src/gui/dialogs/temporal_validity_dialog.py",
       "symbol": "TemporalValidityDialog.__init__",
-      "sha256": "b878d1f6778e1e985640061b99e2c0569492dc2ec4e431d0f80297bab3a68600",
-      "review_note": "KRT-111: Modeless scrollable fields retain a fixed OK/Cancel footer and shared event controls. Source and map-specific explanations match current widgets."
+      "sha256": "7445c639c821273d39ca508a7b0ba45e4b44f0c89219aa6e878185928d0b9d4e",
+      "review_note": "KRT-140: reviewed named map targets, local versus containing-group effects, shared properties routes, modeless identity/selection guards and theme-only refresh. Name in Layers edits only the tree label; the separate Rename action retains marker and linked-entry synchronization. Existing command, calendar, zoom basis, save and cancel semantics are preserved. Human acceptance remains pending."
     },
     {
       "source": "src/gui/dialogs/temporal_validity_dialog.py",
@@ -11777,7 +11797,7 @@
       "source": "src/gui/dialogs/temporal_validity_dialog.py",
       "symbol": "TemporalValidityDialog._update_temporal_feedback",
       "sha256": "842ec1c107b0360f6b8780561bfe9cc67525298bca7681d31bbb369849330123",
-      "review_note": "KRT-111: Feedback distinguishes event provenance and unavailable evidence, shows the joint group-date presence status, and requires both modes to replace an unsupported whole-window format. It does not commit dates."
+      "review_note": "KRT-140: reviewed named map targets, local versus containing-group effects, shared properties routes, modeless identity/selection guards and theme-only refresh. Name in Layers edits only the tree label; the separate Rename action retains marker and linked-entry synchronization. Existing command, calendar, zoom basis, save and cancel semantics are preserved. Human acceptance remains pending."
     },
     {
       "source": "src/gui/dialogs/temporal_validity_dialog.py",
@@ -13702,8 +13722,8 @@
     {
       "source": "src/gui/widgets/map/feature_actions.py",
       "symbol": "FeatureActionPresenter._execute",
-      "sha256": "cf7636a42b765d56e278b8c72d5943da31263ac53a7316f85373956c4006a93d",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "9f236c9d51c7900c4e0081788a5021658b8797ef1636d8bfa4a05c1bcebe56ba",
+      "review_note": "KRT-140: reviewed explicit feature, group and surface ownership; scope captions, inherited restrictions, modeless target guards and unchanged commands. Map Help describes the named routes, icon sizing versus zoom visibility and existing rename synchronization. Human acceptance pending."
     },
     {
       "source": "src/gui/widgets/map/feature_actions.py",
@@ -13732,8 +13752,8 @@
     {
       "source": "src/gui/widgets/map/feature_actions.py",
       "symbol": "FeatureActionPresenter.refresh",
-      "sha256": "57d819dd265fba6c382eb7e603be7b53056b96d2566fcd04201746c45c0cd94e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "e009295cfdac86461da5d1cd2d234e8701193c3e19cdd83621e3515e05454802",
+      "review_note": "KRT-140: reviewed named map targets, local versus containing-group effects, shared properties routes, modeless identity/selection guards and theme-only refresh. Name in Layers edits only the tree label; the separate Rename action retains marker and linked-entry synchronization. Existing command, calendar, zoom basis, save and cancel semantics are preserved. Human acceptance remains pending."
     },
     {
       "source": "src/gui/widgets/map/feature_actions.py",
@@ -13834,14 +13854,14 @@
     {
       "source": "src/gui/widgets/map/interaction_handler.py",
       "symbol": "InteractionHandler.show_border_strength_dialog",
-      "sha256": "c423e873c5e5fce4c5807f09331eca09b653ed358570ae6aa82a6c75515cb105",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "9cc91ca805468039ed72a1f582080fbe2efa068573be77824b76ee493d83e858",
+      "review_note": "KRT-140: reviewed explicit feature, group and surface ownership; scope captions, inherited restrictions, modeless target guards and unchanged commands. Map Help describes the named routes, icon sizing versus zoom visibility and existing rename synchronization. Human acceptance pending."
     },
     {
       "source": "src/gui/widgets/map/interaction_handler.py",
       "symbol": "InteractionHandler.show_feature_style_dialog",
-      "sha256": "4bcd2f31a2855946ebab6a06c5381d7a4842806ae5bf40ada18ce77cca1a4cb7",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "a03e9ae334efea93266b5179c43a664c9d0aa578cdfc1fc50a8503f987ddb9bb",
+      "review_note": "KRT-140: reviewed explicit feature, group and surface ownership; scope captions, inherited restrictions, modeless target guards and unchanged commands. Map Help describes the named routes, icon sizing versus zoom visibility and existing rename synchronization. Human acceptance pending."
     },
     {
       "source": "src/gui/widgets/map/interaction_handler.py",
@@ -13864,8 +13884,8 @@
     {
       "source": "src/gui/widgets/map/interaction_handler.py",
       "symbol": "InteractionHandler.show_scale_dialog",
-      "sha256": "fbe42a5c2f15670053eaed07861809e0ee3c7ed29941287b023e86bdd803a048",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "18825758edf068f80e8d1253e847d9e701adb8b3a2aecb40a3cb0a910a735877",
+      "review_note": "KRT-140: reviewed explicit feature, group and surface ownership; scope captions, inherited restrictions, modeless target guards and unchanged commands. Map Help describes the named routes, icon sizing versus zoom visibility and existing rename synchronization. Human acceptance pending."
     },
     {
       "source": "src/gui/widgets/map/interaction_handler.py",
@@ -13936,8 +13956,8 @@
     {
       "source": "src/gui/widgets/map/map_layer_panel.py",
       "symbol": "MapLayerPanel._build_opacity_bar",
-      "sha256": "ad78dfa16a98163c580aace7600abfc9186102dd317b1044322bad1ef7c4ebea",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "c08f469495bfb1b55ccd334f1a808ceadf4d823595bf05b3b0b104deccfa0104",
+      "review_note": "KRT-140: reviewed explicit feature, group and surface ownership; scope captions, inherited restrictions, modeless target guards and unchanged commands. Map Help describes the named routes, icon sizing versus zoom visibility and existing rename synchronization. Human acceptance pending."
     },
     {
       "source": "src/gui/widgets/map/map_layer_panel.py",
@@ -13966,8 +13986,8 @@
     {
       "source": "src/gui/widgets/map/map_layer_panel.py",
       "symbol": "MapLayerPanel._capture_dialog_guard",
-      "sha256": "6084cc63c37b2a0d8d30db612d98bb0f72b0057441b26c9be7f3f3be39921680",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "91d10c51dba528b83a6c69d0e43cc41a0b34a6f0c2d85816d50e7e3c23e10aa4",
+      "review_note": "KRT-140: reviewed named map targets, local versus containing-group effects, shared properties routes, modeless identity/selection guards and theme-only refresh. Name in Layers edits only the tree label; the separate Rename action retains marker and linked-entry synchronization. Existing command, calendar, zoom basis, save and cancel semantics are preserved. Human acceptance remains pending."
     },
     {
       "source": "src/gui/widgets/map/map_layer_panel.py",
@@ -14008,14 +14028,14 @@
     {
       "source": "src/gui/widgets/map/map_layer_panel.py",
       "symbol": "MapLayerPanel._edit_properties",
-      "sha256": "1648b77f72863419d08f612107436793adc26d265b39304ecbbc13df98fa89ea",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "da3f7537daddde24f42b14a1f36998661847095ddc124653cb069781b4a75549",
+      "review_note": "KRT-140: reviewed explicit feature, group and surface ownership; scope captions, inherited restrictions, modeless target guards and unchanged commands. Map Help describes the named routes, icon sizing versus zoom visibility and existing rename synchronization. Human acceptance pending."
     },
     {
       "source": "src/gui/widgets/map/map_layer_panel.py",
       "symbol": "MapLayerPanel._edit_temporal_validity",
-      "sha256": "3d98838de624ef0ea4c904b6c999419a7b8a46782581b7f7822984f69118b0ca",
-      "review_note": "KRT-111: The existing Visibility dates route passes detached context to its modeless draft; captured target guards remain."
+      "sha256": "2be9dc309ec15d540f7da3b1069662beaebd1888061119690c68e1dc7212aaa9",
+      "review_note": "KRT-140: reviewed explicit feature, group and surface ownership; scope captions, inherited restrictions, modeless target guards and unchanged commands. Map Help describes the named routes, icon sizing versus zoom visibility and existing rename synchronization. Human acceptance pending."
     },
     {
       "source": "src/gui/widgets/map/map_layer_panel.py",
@@ -14128,8 +14148,8 @@
     {
       "source": "src/gui/widgets/map/map_layer_panel.py",
       "symbol": "MapLayerPanel._on_item_double_clicked",
-      "sha256": "852b45c0cc24fa3e6036411c8fa516254bf53db8892bd540340fa819c5a7855e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "48c638a4da5ca8b9be1463ba3a1d970b87faf59d44bee8eeb6d24a3220fdd4ae",
+      "review_note": "KRT-140: reviewed named map targets, local versus containing-group effects, shared properties routes, modeless identity/selection guards and theme-only refresh. Name in Layers edits only the tree label; the separate Rename action retains marker and linked-entry synchronization. Existing command, calendar, zoom basis, save and cancel semantics are preserved. Human acceptance remains pending."
     },
     {
       "source": "src/gui/widgets/map/map_layer_panel.py",
@@ -14242,8 +14262,8 @@
     {
       "source": "src/gui/widgets/map/map_layer_panel.py",
       "symbol": "MapLayerPanel._populate_feature_layer_actions",
-      "sha256": "3b43425d58f7789d4b91dbe1b60bfea1699a73fca3890191f4a5bbde0abe1619",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "a63cf2140e9616369cef3e653b4da1b494ac7c368531a529875f9e1aca9f669c",
+      "review_note": "KRT-140: reviewed explicit feature, group and surface ownership; scope captions, inherited restrictions, modeless target guards and unchanged commands. Map Help describes the named routes, icon sizing versus zoom visibility and existing rename synchronization. Human acceptance pending."
     },
     {
       "source": "src/gui/widgets/map/map_layer_panel.py",
@@ -14302,14 +14322,14 @@
     {
       "source": "src/gui/widgets/map/map_layer_panel.py",
       "symbol": "MapLayerPanel._show_context_menu",
-      "sha256": "dd6729e869294848216a5a17933d15535b117f2d39919138cafbe9d98e5728c2",
-      "review_note": "KRT-111: Date navigation is named Jump to valid time and remains visible but disabled when no guaranteed date exists; other layer routes are unchanged."
+      "sha256": "0833a1cb0adaebccfde839af856f2764592200e4839e20c8fddd0441e99ff003",
+      "review_note": "KRT-140: reviewed target-specific properties and visibility action labels, icon size while zooming wording, target scope and draft-preserving theme refresh; matching Map Help routes and excerpts updated. Human acceptance pending."
     },
     {
       "source": "src/gui/widgets/map/map_layer_panel.py",
       "symbol": "MapLayerPanel._show_feature_actions",
-      "sha256": "794008a6f2635fd0318e708756c3e60778bdfea370c3ed21f7634c90bf01a03e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "371c3eee62e3e1530b03bd037c467144830a32e6ac3d36ae569540b51626208c",
+      "review_note": "KRT-140: reviewed explicit feature, group and surface ownership; scope captions, inherited restrictions, modeless target guards and unchanged commands. Map Help describes the named routes, icon sizing versus zoom visibility and existing rename synchronization. Human acceptance pending."
     },
     {
       "source": "src/gui/widgets/map/map_layer_panel.py",
@@ -14362,8 +14382,8 @@
     {
       "source": "src/gui/widgets/map/map_layer_panel.py",
       "symbol": "MapLayerPanel._update_button_state",
-      "sha256": "331d0c9fbf0c045add16e124c81e528ea1a4a5ffe411ce1076b36789e815072a",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "9e27785866818bf04148acd3e121f5e8b2531711f07e8d818135afc08f853191",
+      "review_note": "KRT-140: reviewed named map targets, local versus containing-group effects, shared properties routes, modeless identity/selection guards and theme-only refresh. Name in Layers edits only the tree label; the separate Rename action retains marker and linked-entry synchronization. Existing command, calendar, zoom basis, save and cancel semantics are preserved. Human acceptance remains pending."
     },
     {
       "source": "src/gui/widgets/map/map_layer_panel.py",
@@ -14464,8 +14484,8 @@
     {
       "source": "src/gui/widgets/map/marker_size_dialog.py",
       "symbol": "MarkerSizeDialog.__init__",
-      "sha256": "483b4ffcb3e8c18585ff5a660352bc80e4652c2f4f9ecbc87efbce16c57f3b8a",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "ad8def36bf4624e2790094a238d3660da4a60972474653e13b9142459392cf3d",
+      "review_note": "KRT-140: reviewed target-specific properties and visibility action labels, icon size while zooming wording, target scope and draft-preserving theme refresh; matching Map Help routes and excerpts updated. Human acceptance pending."
     },
     {
       "source": "src/gui/widgets/map/marker_size_dialog.py",
@@ -17358,6 +17378,30 @@
       "symbol": "EditorInspectorComposition.__init__",
       "sha256": "461fc000ffc7d90b0b79fcdd516c0f2d9bdb72ecb0ba2820212e252251d1639d",
       "review_note": "KRT-146: Linked events now includes authoring actions. Caption distinguishes managing event associations from read-only map/world information, including the detached-world-context suffix. Event-only inspectors retain read-only wording. Tab from the outer disclosure enters the component focus proxy, which tracks the active empty/populated action."
+    },
+    {
+      "source": "src/gui/dialogs/layer_properties_dialog.py",
+      "symbol": "LayerPropertiesDialog.properties",
+      "sha256": "40a13bfc4e05d91bbcd6df559e8227f7ff353f734efc43c0d8de04b7b342b196",
+      "review_note": "KRT-140: reviewed named map targets, local versus containing-group effects, shared properties routes, modeless identity/selection guards and theme-only refresh. Name in Layers edits only the tree label; the separate Rename action retains marker and linked-entry synchronization. Existing command, calendar, zoom basis, save and cancel semantics are preserved. Human acceptance remains pending."
+    },
+    {
+      "source": "src/gui/widgets/map/feature_actions.py",
+      "symbol": "feature_actions",
+      "sha256": "62d753dcf0ee989fa02cb20fdfcbbf19b40d09401bf229c86836999c55419125",
+      "review_note": "KRT-140: reviewed explicit feature, group and surface ownership; scope captions, inherited restrictions, modeless target guards and unchanged commands. Map Help describes the named routes, icon sizing versus zoom visibility and existing rename synchronization. Human acceptance pending."
+    },
+    {
+      "source": "src/gui/widgets/map/map_layer_panel.py",
+      "symbol": "MapLayerPanel._on_model_data_changed",
+      "sha256": "ffd23fb0ce1bd4e36c8626f7fc67d86a3240a31be387d89132515fc7ae5cc7ba",
+      "review_note": "KRT-140: reviewed explicit feature, group and surface ownership; scope captions, inherited restrictions, modeless target guards and unchanged commands. Map Help describes the named routes, icon sizing versus zoom visibility and existing rename synchronization. Human acceptance pending."
+    },
+    {
+      "source": "src/gui/widgets/map/map_layer_panel.py",
+      "symbol": "MapLayerPanel._show_settings_actions",
+      "sha256": "89d64e6be68f11b05ac2a4db08276984a6462fac5561eb640f853cb2f78be10d",
+      "review_note": "KRT-140: reviewed explicit feature, group and surface ownership; scope captions, inherited restrictions, modeless target guards and unchanged commands. Map Help describes the named routes, icon sizing versus zoom visibility and existing rename synchronization. Human acceptance pending."
     }
   ],
   "review_status": {
