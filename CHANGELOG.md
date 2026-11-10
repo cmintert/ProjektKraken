@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-10
-**Commit:** f701885dcf14aab3d0aec35f8ff1bc6afab3543a
+**Commit:** 479f4a454f3a9a87f2cb7c9177c4072028be5766
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-11-10)* **Pasted description formatting (KRT-141)**: Clear Formatting
+  removes imported text colors and backgrounds from the selection or current
+  paragraph in Rich view. Preserved link targets, paragraphs, caret and selection;
+  grouped cleanup into one Undo step. Added paste, theme, range and persistence
+  regressions and updated the existing editor Help.
 
 - *(2026-11-10)* **Persistent custom-type colors (KRT-149 follow-up)**: Replaced
   predefined categories and colliding hashes with 24 theme-aware palette entries

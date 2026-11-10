@@ -20,8 +20,12 @@ prose and supported formatting, or **Markdown source** to edit the exact stored 
    then reopen the same entry to check the stored description.
 
 Rich view supports paragraphs, headings from `#` through `###`, bold, italic and wiki
-links. **Clear Formatting** removes heading, bold and italic formatting from the
-selected text.
+links. In Rich view, choose **Format → Clear Formatting** to remove heading,
+bold, italic and pasted text colors or backgrounds. Select the text to clean;
+with no selection, the action cleans the current paragraph. Paragraph backgrounds
+and headings are reset for each affected paragraph. Links and paragraph breaks
+remain. Use **Undo** once to restore the previous formatting, then save the
+description with **Save Changes** when ready.
 
 Descriptions containing tables, lists, code or other Markdown that Rich view cannot
 safely preserve open in Source view. Those constructs remain editable and are saved
@@ -39,9 +43,9 @@ The writing controls have three rows: **Edit / Insert / Format / View / Tools**,
 compact formatting controls, and link/Focus writing actions. **Headings** offers
 the existing heading styles. Bold, Italic and Clear Formatting have tooltips with
 their existing shortcuts; full command names also appear in **Format**. The
-previous **Body** command is named **Clear Formatting** to describe its existing
-effect. It still clears heading/bold/italic formatting; no new Body operation was
-added. **View** contains Markdown source/Rendered view and Table of contents;
+previous **Body** command is named **Clear Formatting**. In Markdown source it
+removes heading, bold and italic markers; Rich view also removes pasted colors
+and backgrounds. **View** contains Markdown source/Rendered view and Table of contents;
 **Tools** contains the Spell & grammar checking toggle. Narrow rows use labeled **More actions**.
 
 ### Indent source without using Tab
@@ -257,8 +261,10 @@ formatting, not the entry’s name.
 
 (help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-setup-actions-self-action-body)=
 
-**Body** — Clear heading, bold and italic formatting from the selected writing. This
-does not delete the selected words.
+**Clear Formatting** — In Rich view, remove heading, bold, italic and pasted
+colors or backgrounds from the selection, or the current paragraph when nothing
+is selected. Links and paragraph breaks remain; one Undo restores the formatting.
+In Markdown source, remove heading, bold and italic markers.
 
 (help-inspect-src-gui-widgets-wiki-text-edit-wikitexteditview-contextmenuevent-menu)=
 

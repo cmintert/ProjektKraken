@@ -1,5 +1,36 @@
 # Authoring interaction audit v1 — KRT-46
 
+KRT-141 (2026-11-10, implementation based on `479f4a45`): the existing
+Format → Clear Formatting / Ctrl+0 route now removes imported character colors
+and backgrounds in Rich view. A selection limits character cleanup; no selection
+cleans the current paragraph. Affected paragraph headings/backgrounds reset to
+body presentation. Anchor identities and paragraph boundaries remain, and one
+Undo restores the complete operation. Source-mode behavior is unchanged.
+
+Contracts 2/5/6/7/8/9 apply. Existing secondary controls, `text_main` and transient
+`link_entity` / `link_event` / `link_neutral` / `link_unresolved` presentation remain;
+no new color, control variant, keyboard owner or interaction exception. Regressions
+cover read-only protection, reversed/partial selections, caret, focus and scroll
+at 320 px, persistence/command undo and dark/light theme changes. KA-04/KA-20
+link and writing continuity remain the relevant human tasks, not newly measured
+task-performance results.
+
+Verification: 15 cleanup tests and 156 editor/link/toolbar/rendering/Help checks
+passed. Repository Ruff, mypy (661 files, fresh cache), complexity, visual,
+inspection and test policies passed. Offline Help and strict Sphinx passed.
+Offscreen 320 px editor before/after and 360 px generated Help excerpt captures
+were visually inspected in dark/light themes; Windows Segoe UI fonts were loaded
+explicitly for the offscreen renderer. Local captures: `docs/ux/evidence/krt141/`.
+
+Documentation review ([form](../developer/documentation-review.md)): existing
+`user/wiki-editor-markdown.md` control reference serves description authors;
+the preferred Format route, Save Changes, one-step Undo and result were checked
+against production actions, serializer and command persistence. `writing.edit`
+and the existing action-body excerpt anchor remain unchanged. The changed handler
+fingerprint was individually reviewed. Independent human prose/live Help/native
+DPI approval and [reader observations](../developer/documentation-reader-testing.md)
+remain pending; automated/offscreen checks do not establish those outcomes.
+
 KRT-149 follow-up (2026-11-10): the owner screenshot exposed a collision between
 Concept and user-defined Deity in the earlier eight-slot hash mapping. That
 implementation is superseded by 24 theme-owned, perceptually ordered entries and

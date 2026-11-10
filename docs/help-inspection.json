@@ -16684,8 +16684,8 @@
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
       "symbol": "WikiTextEditView._clear_rich_formatting",
-      "sha256": "1a686ac3f6f47b4e1c73d73417b62d2c114cf40c41a4670b4b8181c48eb7535b",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "2a5f264aea4c653f5d1157961638a02276de54736b08ae8cc765ece4e7ca7208",
+      "review_note": "KRT-141: reviewed in-place cleanup of selected text or current paragraph, pasted colors/backgrounds, preserved anchors and one-step Undo. Updated writing.edit and the existing action-body explanation; source-mode behavior and Help IDs remain unchanged."
     },
     {
       "source": "src/gui/widgets/wiki_text_edit.py",

@@ -1307,28 +1307,25 @@ class WikiTextEditView(QTextEdit):
         self.setTextCursor(cursor)
 
     def _clear_rich_formatting(self) -> None:
-        """Resets block and character formatting in Rich mode."""
+        """Clear imported presentation in place, retaining links and edit context."""
+        if self.isReadOnly():
+            return
+
+        from src.gui.widgets.rich_text_formatting import (
+            body_character_format,
+            clear_rich_formatting,
+        )
+
         cursor = self.textCursor()
-
-        # 1. Reset Block Level (Heading -> Paragraph)
-        self._set_rich_heading(0)
-
-        # 2. Reset Character Formatting (Bold/Italic/Size)
-        from PySide6.QtGui import QFont, QTextCharFormat
-
-        fmt = QTextCharFormat()
-        fmt.setFontWeight(QFont.Weight.Normal)
-        fmt.setFontItalic(False)
-        fmt.setFontFamilies([self._typography.primary_font_family])
-        fmt.setFontPointSize(self._typography.body_size)
-
-        if cursor.hasSelection():
-            cursor.mergeCharFormat(fmt)
-        else:
-            # If no selection, set for future typing
-            self.mergeCurrentCharFormat(fmt)
-
+        scroll = self.verticalScrollBar().value()
+        clear_rich_formatting(cursor, self._typography)
         self.setTextCursor(cursor)
+        if not cursor.hasSelection():
+            self.setCurrentCharFormat(
+                body_character_format(self.currentCharFormat(), self._typography)
+            )
+        self._update_link_colors()
+        self.verticalScrollBar().setValue(scroll)
 
     def _set_heading(self, level: int) -> None:
         """Set heading level on the current line.
