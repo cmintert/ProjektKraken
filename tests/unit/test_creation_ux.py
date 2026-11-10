@@ -43,6 +43,9 @@ def _connect_creation_flow(window):
     window.unified_list.create_event_requested.connect(
         window.editor_coordinator.create_event
     )
+    window.unified_list.item_selected.connect(
+        window.navigation_coordinator.on_item_selected
+    )
     window.data_handler.lore_mutation_ready.connect(
         window.data_coordinator.on_lore_mutation_ready
     )
@@ -503,7 +506,10 @@ def test_explorer_create_reveals_entity_hidden_by_search(main_window, db_service
         result = commands[0].execute(db_service)
         main_window.data_handler.on_command_finished(result)
 
-    assert main_window.unified_list.search_bar.text() == ""
+    assert main_window.unified_list.search_bar.text() == "unmatched"
+    assert main_window.unified_list._proxy_model.index(0, 0).data(
+        main_window.unified_list._proxy_model.PinnedRole
+    )
     assert main_window.unified_list.list_widget.currentIndex().isValid()
     assert main_window.navigation_coordinator.selected_id == commands[0].entity_id
 
@@ -531,9 +537,132 @@ def test_explorer_create_reveals_entity_hidden_by_advanced_filter(
         result = commands[0].execute(db_service)
         main_window.data_handler.on_command_finished(result)
 
-    assert main_window.unified_list.get_advanced_filter_config() == {}
+    assert main_window.unified_list.get_advanced_filter_config() == {
+        "include": ["missing"]
+    }
     assert main_window.unified_list.list_widget.currentIndex().isValid()
     assert main_window.navigation_coordinator.selected_id == commands[0].entity_id
+
+
+@pytest.mark.ci_fast
+@pytest.mark.parametrize("kind", ["entity", "event"])
+@pytest.mark.parametrize("autosave", [False, True])
+def test_filtered_creation_save_and_reload_keep_new_editor(
+    main_window, db_service, qtbot, kind, autosave
+):
+    """A real creation and editor save cannot restore an older search result."""
+    from src.core.command import CommandResult
+
+    _connect_creation_flow(main_window)
+    widget = main_window.unified_list
+    nav = main_window.navigation_coordinator
+    old = Entity(id="old-context", name="Alpha", type="Person")
+    db_service.insert_entity(old)
+    main_window.data_coordinator.on_entities_ready([old])
+    commands = []
+    main_window.editor_coordinator.command_requested.connect(commands.append)
+    editor = getattr(main_window, f"{kind}_editor")
+    editor.save_requested.connect(
+        getattr(main_window.editor_coordinator, f"update_{kind}")
+    )
+
+    def hydrate_entity(key):
+        main_window.data_coordinator.on_entity_details_ready(
+            db_service.get_entity(key), [], []
+        )
+
+    def hydrate_event(key):
+        main_window.data_coordinator.on_event_details_ready(
+            db_service.get_event(key), [], []
+        )
+
+    with (
+        patch.object(
+            main_window.data_coordinator,
+            "load_entity_details",
+            side_effect=hydrate_entity,
+        ),
+        patch.object(
+            main_window.data_coordinator,
+            "load_event_details",
+            side_effect=hydrate_event,
+        ),
+        patch(
+            "src.app.coordinators.editor_coordinator.EntityCreationDialog",
+            **{
+                "return_value.exec.return_value": 1,
+                "return_value.name.return_value": "Zulu",
+                "return_value.entity_type.return_value": "Person",
+            },
+        ),
+        patch(
+            "src.app.coordinators.editor_coordinator.QInputDialog.getText",
+            return_value=("Zulu", True),
+        ),
+    ):
+        nav.set_global_selection("entity", old.id)
+        widget.search_bar.setText("Alpha")
+        widget.set_advanced_filter({"include": ["unmatched-tag"]})
+        widget.filter_combo.setCurrentText(
+            "Entities Only" if kind == "event" else "Events Only"
+        )
+        getattr(widget, f"create_{kind}_requested").emit()
+        create = commands.pop()
+        result = create.execute(db_service)
+        assert result.success
+        main_window.data_handler.on_command_finished(result)
+        new_id = result.data["id"]
+        assert nav.selected_id == new_id
+        assert getattr(editor, f"current_{kind}_id") == new_id
+        assert widget._proxy_model.index(0, 0).data(widget._proxy_model.PinnedRole)
+
+        editor.name_edit.setText("Zulu saved")
+        editor.set_dirty(True)
+        getattr(editor, "_on_autosave" if autosave else "_on_save")()
+        save = commands.pop()
+        result = save.execute(db_service)
+        assert result.success
+        result.data["command_id"] = save.command_id
+        main_window.data_handler.on_command_finished(result)
+        main_window.editor_coordinator.on_temporal_command_result(result)
+        assert not editor.save_pending
+        assert getattr(db_service, f"get_{kind}")(new_id).name == "Zulu saved"
+
+        # Exercise the conservative full refresh used by undo and redo too.
+        for operation in (None, "Undo", "Redo"):
+            if operation:
+                result = (
+                    save.undo(db_service)
+                    if operation == "Undo"
+                    else save.execute(db_service)
+                )
+                if operation == "Redo":
+                    assert result.success
+                assert getattr(db_service, f"get_{kind}")(new_id).name == (
+                    "Zulu" if operation == "Undo" else "Zulu saved"
+                )
+                main_window.data_handler.on_command_finished(
+                    CommandResult(
+                        success=True,
+                        command_name=f"{operation}_{save.__class__.__name__}",
+                    )
+                )
+            main_window.data_coordinator.on_entities_ready(
+                db_service.get_all_entities()
+            )
+            main_window.data_coordinator.on_events_ready(db_service.get_all_events())
+            qtbot.wait(330)
+            assert nav.selected_id == new_id
+            assert getattr(editor, f"current_{kind}_id") == new_id
+            assert (
+                widget.list_widget.currentIndex().data(ExplorerModel.ItemIdRole)
+                == new_id
+            )
+        assert widget.search_bar.text() == "Alpha"
+        assert widget.get_advanced_filter_config() == {"include": ["unmatched-tag"]}
+        assert widget.filter_combo.currentText() == (
+            "Entities Only" if kind == "event" else "Events Only"
+        )
 
 
 def test_select_item_switches_filter_if_needed(main_window):

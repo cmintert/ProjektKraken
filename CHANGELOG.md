@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-11-09
-**Commit:** 484bd94de603f99a91af572a8a1bf65f1a860b09
+**Last Updated:** 2026-11-10
+**Commit:** 89c3df085350daa0ff537db040557f95681352fd
 ---
 
 # Changelog
@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-11-09)* **Filtered Explorer authoring (KRT-148)**: Kept the active
+  Entity or Event independent of filtered list refreshes. Creation preserves
+  search, tag and category filters, with a full Explorer row pinned for an
+  active entry outside the results. Added selection, save and row-action
+  regressions and updated Explorer Help. Owner human verification was accepted
+  on 2026-11-10 using the recorded automated evidence.
 
 - *(2026-11-09)* **Attribute cell focus (KRT-143)**: Single-click and keyboard
   focus now frame the current editable attribute cell immediately, using the

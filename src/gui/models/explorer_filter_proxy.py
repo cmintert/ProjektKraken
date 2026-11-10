@@ -4,7 +4,7 @@ Provides sorting and filtering for the Explorer model.
 """
 
 import logging
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from PySide6.QtCore import (
     QModelIndex,
@@ -28,6 +28,9 @@ class ExplorerFilterProxyModel(QSortFilterProxyModel):
     Supports filtering by search term, item type, and tags.
     """
 
+    PinnedRole = int(Qt.ItemDataRole.UserRole) + 30
+    SourceOrderRole = int(Qt.ItemDataRole.UserRole) + 31
+
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the filter proxy model.
 
@@ -38,11 +41,64 @@ class ExplorerFilterProxyModel(QSortFilterProxyModel):
         self._search_term = ""
         self._filter_mode = "All Items"  # "All Items", "Events Only", "Entities Only"
         self._advanced_filter_config: dict = {}
+        self._active_item: tuple[str, str] | None = None
+        self._pinned_source_row: int | None = None
 
         # The source Explorer model already maintains the requested order.
         # Dynamic proxy sorting re-evaluates the full large-world model for a
         # single changed row; active filters are invalidated explicitly.
         self.setDynamicSortFilter(False)
+
+    def set_active_item(self, identity: tuple[str, str] | None) -> None:
+        """Keep an accepted active object available through restrictive filters."""
+        self._active_item = identity
+        self.invalidate()
+
+    def _is_pinned(self, index: QModelIndex | QPersistentModelIndex) -> bool:
+        """Read the pin decision cached once for this source/filter snapshot."""
+        return index.isValid() and index.row() == self._pinned_source_row
+
+    def invalidate(self) -> None:
+        """Evaluate the active filter exception once, outside sorting callbacks."""
+        self._pinned_source_row = None
+        source = self.sourceModel()
+        if isinstance(source, ExplorerModel) and self._active_item is not None:
+            index = source.find_item_index(*self._active_item)
+            if index is not None:
+                item = source.get_item(index)
+                if item is not None and not self._matches_filters(*item):
+                    self._pinned_source_row = index.row()
+        if self.sortRole() == self.SourceOrderRole:
+            # Native source order needs no Python comparator when nothing is pinned.
+            super().sort(
+                0 if self._pinned_source_row is not None else -1,
+                Qt.SortOrder.AscendingOrder,
+            )
+        super().invalidate()
+
+    def data(
+        self,
+        index: QModelIndex | QPersistentModelIndex,
+        role: int = Qt.ItemDataRole.DisplayRole,
+    ) -> Any:
+        """Expose pin status without duplicating or changing the source record."""
+        if role not in {
+            self.PinnedRole,
+            Qt.ItemDataRole.AccessibleTextRole,
+            Qt.ItemDataRole.ToolTipRole,
+        }:
+            return super().data(index, role)
+        pinned = index.isValid() and self._is_pinned(self.mapToSource(index))
+        if role == self.PinnedRole:
+            return pinned
+        value = super().data(index, role)
+        if pinned and role in {
+            Qt.ItemDataRole.AccessibleTextRole,
+            Qt.ItemDataRole.ToolTipRole,
+        }:
+            title = super().data(index, Qt.ItemDataRole.DisplayRole)
+            return f"{title}\nActive item · Hidden by filters"
+        return value
 
     def set_search_term(self, term: str) -> None:
         """Set the search term for filtering.
@@ -95,7 +151,12 @@ class ExplorerFilterProxyModel(QSortFilterProxyModel):
         if not item:
             return False
 
-        item_type, obj = item
+        return (item[0], item[1].id) == self._active_item or self._matches_filters(
+            *item
+        )
+
+    def _matches_filters(self, item_type: str, obj: Entity | Event) -> bool:
+        """Test ordinary results independently of the active-object exception."""
 
         # Apply type filter
         if self._filter_mode == "Events Only" and item_type != "event":
@@ -130,6 +191,13 @@ class ExplorerFilterProxyModel(QSortFilterProxyModel):
         source_model = self.sourceModel()
         if not isinstance(source_model, ExplorerModel):
             return False
+
+        left_pinned = self._is_pinned(left)
+        right_pinned = self._is_pinned(right)
+        if left_pinned != right_pinned:
+            return left_pinned
+        if self.sortRole() == self.SourceOrderRole:
+            return left.row() < right.row()
 
         left_item = source_model.get_item(left)
         right_item = source_model.get_item(right)

@@ -6,9 +6,20 @@ color-coded differentiation.
 
 import json
 import logging
+from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import Any, Dict, List, Optional
 
-from PySide6.QtCore import QMimeData, QSize, QSortFilterProxyModel, Qt, Signal, Slot
+from PySide6.QtCore import (
+    QMimeData,
+    QModelIndex,
+    QSignalBlocker,
+    QSize,
+    QSortFilterProxyModel,
+    Qt,
+    Signal,
+    Slot,
+)
 from PySide6.QtGui import QDrag, QMouseEvent
 from PySide6.QtWidgets import (
     QComboBox,
@@ -433,10 +444,16 @@ class UnifiedListWidget(QWidget):
         self._model = ExplorerModel(self)
         self._proxy_model = ExplorerFilterProxyModel(self)
         self._proxy_model.setSourceModel(self._model)
+        self._proxy_model.setSortRole(ExplorerFilterProxyModel.SourceOrderRole)
+        self._proxy_model.sort(0, Qt.SortOrder.AscendingOrder)
+        self._active_item: tuple[str, str] | None = None
 
         # List (with drag support and virtualization)
         self.list_widget = DraggableListView()
         self.list_widget.setModel(self._proxy_model)
+        from src.gui.delegates.explorer_delegate import ExplorerDelegate
+
+        self.list_widget.setItemDelegate(ExplorerDelegate(self.list_widget))
         self.list_widget.setStyleSheet(StyleHelper.get_checkbox_style())
         # Use SingleSelection to prevent box-select interfering with drag operations
         self.list_widget.setSelectionMode(QListView.SelectionMode.SingleSelection)
@@ -519,23 +536,11 @@ class UnifiedListWidget(QWidget):
 
     def apply_lore_effects(self, effects: list[LoreMutationEffect]) -> None:
         """Apply worker-confirmed lore mutations without resetting the list."""
-        current_index = self.list_widget.currentIndex()
-        selected: tuple[str, str] | None = None
-        if current_index.isValid():
-            source_index = self._proxy_model.mapToSource(current_index)
-            selected = (
-                self._model.data(source_index, ExplorerModel.ItemTypeRole),
-                self._model.data(source_index, ExplorerModel.ItemIdRole),
-            )
-        selected_deleted = selected is not None and any(
-            effect["operation"] == "delete"
-            and (effect["object_type"], effect["object_id"]) == selected
-            for effect in effects
-        )
-        if selected_deleted:
-            self.list_widget.selectionModel().clear()
+        with self._presentation_update():
+            self._apply_lore_rows(effects)
 
-        filter_mode = self.filter_combo.currentText()
+    def _apply_lore_rows(self, effects: list[LoreMutationEffect]) -> None:
+        """Patch complete source rows, leaving all filtering to the proxy."""
         reverse = not self._sort_ascending
         for effect in effects:
             object_id = effect["object_id"]
@@ -549,8 +554,7 @@ class UnifiedListWidget(QWidget):
                     event = Event.from_dict(snapshot)
                     self._events.append(event)
                     self._events.sort(key=lambda value: value.date_sort_key())
-                    if filter_mode in {"All Items", "Events Only"}:
-                        item = ("event", event)
+                    item = ("event", event)
             else:
                 self._entities = [e for e in self._entities if e.id != object_id]
                 if effect["operation"] == "upsert":
@@ -559,8 +563,7 @@ class UnifiedListWidget(QWidget):
                     entity = Entity.from_dict(snapshot)
                     self._entities.append(entity)
                     self._entities.sort(key=lambda value: value.name)
-                    if filter_mode in {"All Items", "Entities Only"}:
-                        item = ("entity", entity)
+                    item = ("entity", entity)
             # A type-filtered upsert is still a checked object, not a deletion.
             if item is not None or effect["operation"] == "delete":
                 self._model.apply_item(
@@ -571,31 +574,47 @@ class UnifiedListWidget(QWidget):
                     reverse,
                 )
 
-        if self._search_term or self._advanced_filter_config:
-            self._proxy_model.invalidate()
+        if any(
+            effect["operation"] == "delete"
+            and (effect["object_type"], effect["object_id"]) == self._active_item
+            for effect in effects
+        ):
+            self._active_item = None
+            self._proxy_model.set_active_item(None)
+        self._proxy_model.invalidate()
 
-        if selected is not None and not selected_deleted:
-            self._restore_lore_selection(selected)
+    @contextmanager
+    def _presentation_update(self) -> Iterator[None]:
+        """Keep model maintenance separate from user navigation gestures."""
+        with QSignalBlocker(self.list_widget.selectionModel()):
+            yield
+            self._sync_active_selection()
+        self._update_delete_button_state()
+
+    def set_active_item(self, item_type: str | None, item_id: str | None) -> None:
+        """Present an accepted navigation target without changing any filters."""
+        with self._presentation_update():
+            self._active_item = (item_type, item_id) if item_type and item_id else None
+            self._proxy_model.set_active_item(self._active_item)
+        index = self.list_widget.currentIndex()
+        if index.isValid():
+            self.list_widget.scrollTo(index)
+
+    def _sync_active_selection(self) -> None:
+        """Restore only the accepted target, never an incidental current row."""
+        index = QModelIndex()
+        found_source = (
+            self._model.find_item_index(*self._active_item)
+            if self._active_item is not None
+            else None
+        )
+        if found_source is not None:
+            index = self._proxy_model.mapFromSource(found_source)
+        self.list_widget.selectionModel().clear()
+        self.list_widget.setCurrentIndex(index)
         has_items = self._proxy_model.rowCount() > 0
         self.list_widget.setVisible(has_items)
         self.empty_state.setVisible(not has_items)
-
-    def _restore_lore_selection(self, selected: tuple[str, str]) -> None:
-        """Keep the current Explorer row across an incremental model move."""
-        current = self.list_widget.currentIndex()
-        if current.isValid():
-            source = self._proxy_model.mapToSource(current)
-            current_identity = (
-                self._model.data(source, ExplorerModel.ItemTypeRole),
-                self._model.data(source, ExplorerModel.ItemIdRole),
-            )
-            if current_identity == selected:
-                return
-        found_source = self._model.find_item_index(*selected)
-        if found_source is not None:
-            proxy = self._proxy_model.mapFromSource(found_source)
-            if proxy.isValid():
-                self.list_widget.setCurrentIndex(proxy)
 
     def _get_sort_key(self, item_tuple: ExplorerItem) -> str | float:
         """Return the current Explorer sort key for one item."""
@@ -663,7 +682,8 @@ class UnifiedListWidget(QWidget):
         self._advanced_filter_config = config or {}
         has_filter = bool(config.get("include") or config.get("exclude"))
         self.set_filter_active(has_filter)
-        self._proxy_model.set_advanced_filter(config)
+        with self._presentation_update():
+            self._proxy_model.set_advanced_filter(config)
 
     def get_advanced_filter_config(self) -> Dict[str, Any]:
         """Returns the current advanced filter configuration.
@@ -680,60 +700,16 @@ class UnifiedListWidget(QWidget):
     # _clear_filters removed as it's replaced by backend refresh
 
     def _render_list(self) -> None:
-        """Renders the list based on current filter and data.
-
-        Preserves selection during refresh.
-        """
-        # Capture current selection
-        current_index = self.list_widget.currentIndex()
-        current_id = None
-        current_type = None
-
-        if current_index.isValid():
-            # Map through proxy to source model
-            source_index = self._proxy_model.mapToSource(current_index)
-            current_id = self._model.data(source_index, ExplorerModel.ItemIdRole)
-            current_type = self._model.data(source_index, ExplorerModel.ItemTypeRole)
-
-        # Update filter mode in proxy
-        filter_mode = self.filter_combo.currentText()
-        self._proxy_model.set_filter_mode(filter_mode)
-
-        # Collect all items that pass filters (filter mode handled by proxy)
-        show_events = filter_mode in ["All Items", "Events Only"]
-        show_entities = filter_mode in ["All Items", "Entities Only"]
-
-        items_to_display: list[ExplorerItem] = []
-        if show_entities:
-            items_to_display.extend([("entity", e) for e in self._entities])
-        if show_events:
-            items_to_display.extend([("event", e) for e in self._events])
-
-        # Sort items based on current sort settings
-        reverse = not self._sort_ascending
-
-        items_to_display.sort(key=self._get_sort_key, reverse=reverse)
-
-        # Update model with sorted items
-        self._model.set_items(items_to_display)
-
-        # Show/hide empty state
-        has_items = self._proxy_model.rowCount() > 0
-        if has_items:
-            self.list_widget.show()
-            self.empty_state.hide()
-
-            # Restore selection if possible
-            if current_id and current_type:
-                restore_index = self._model.find_item_index(current_type, current_id)
-                if restore_index:
-                    # Map to proxy index
-                    proxy_index = self._proxy_model.mapFromSource(restore_index)
-                    if proxy_index.isValid():
-                        self.list_widget.setCurrentIndex(proxy_index)
-        else:
-            self.list_widget.hide()
-            self.empty_state.show()
+        """Render complete sorted source data without navigating on refresh."""
+        with self._presentation_update():
+            self._proxy_model.set_filter_mode(self.filter_combo.currentText())
+            items: list[ExplorerItem] = [
+                *(("entity", item) for item in self._entities),
+                *(("event", item) for item in self._events),
+            ]
+            items.sort(key=self._get_sort_key, reverse=not self._sort_ascending)
+            self._model.set_items(items)
+            self._proxy_model.invalidate()
 
     @Slot(str)
     @Slot(str)
@@ -745,7 +721,8 @@ class UnifiedListWidget(QWidget):
 
         """
         self._search_term = text.lower().strip()
-        self._proxy_model.set_search_term(self._search_term)
+        with self._presentation_update():
+            self._proxy_model.set_search_term(self._search_term)
 
     @Slot(str)
     @Slot(str)
@@ -996,10 +973,14 @@ class UnifiedListWidget(QWidget):
             proxy_index = self._proxy_model.mapFromSource(source_index)
             if not proxy_index.isValid():
                 return False
+            if reveal_hidden and proxy_index.data(ExplorerFilterProxyModel.PinnedRole):
+                return False
 
             # Select and scroll
-            self.list_widget.setCurrentIndex(proxy_index)
-            self.list_widget.scrollTo(proxy_index)
+            with QSignalBlocker(self.list_widget.selectionModel()):
+                self.list_widget.setCurrentIndex(proxy_index)
+                self.list_widget.scrollTo(proxy_index)
+            self._update_delete_button_state()
             return True
 
         if find_and_select():
@@ -1031,7 +1012,10 @@ class UnifiedListWidget(QWidget):
                 return True
 
         # Clear selection if item truly not found.
-        self.list_widget.clearSelection()
+        with QSignalBlocker(self.list_widget.selectionModel()):
+            self.list_widget.selectionModel().clear()
+            self.list_widget.setCurrentIndex(QModelIndex())
+        self._update_delete_button_state()
         return False
 
     def minimumSizeHint(self) -> QSize:

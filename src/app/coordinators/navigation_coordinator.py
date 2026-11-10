@@ -205,6 +205,9 @@ class NavigationCoordinator(BaseCoordinator):
 
         # 2. Avoid redundant updates if already selected
         if item_id == self._last_selected_id and item_type == self._last_selected_type:
+            self._selection_timer.stop()
+            self._pending_selection = None
+            self.main_window.unified_list.set_active_item(item_type, item_id)
             if source_panel is not None and reveal:
                 self.main_window.workspace.show_panel(item_type)
             return
@@ -226,6 +229,9 @@ class NavigationCoordinator(BaseCoordinator):
 
         self._last_selected_id = item_id
         self._last_selected_type = item_type
+        self._selection_timer.stop()
+        self._pending_selection = None
+        self.main_window.unified_list.set_active_item(item_type, item_id)
         self.navigation_result.emit(item_type, item_id, "selected")
 
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
@@ -241,8 +247,6 @@ class NavigationCoordinator(BaseCoordinator):
             if reveal:
                 self.main_window.workspace.show_panel("entity")
             self.main_window.data_coordinator.load_entity_details(item_id)
-
-        self.main_window.unified_list.select_item(item_type, item_id)
 
     def _can_inspect_in_place(self, source: str | None, target: str) -> bool:
         """Require a visible destination outside the source's current zone."""
@@ -378,7 +382,9 @@ class NavigationCoordinator(BaseCoordinator):
             self.navigation_result.emit(pending[0], pending[1], "cancelled")
 
     @Slot(str)
-    def navigate_to_entity(self, target: str, *, source_panel: str | None = None) -> None:
+    def navigate_to_entity(
+        self, target: str, *, source_panel: str | None = None
+    ) -> None:
         """Navigates to the entity or event with the given name or ID.
 
         Handles both ID-based links (UUIDs) and legacy name-based links.
@@ -409,7 +415,9 @@ class NavigationCoordinator(BaseCoordinator):
                 ),
                 None,
             ):
-                self.set_global_selection("entity", entity.id, source_panel=source_panel)
+                self.set_global_selection(
+                    "entity", entity.id, source_panel=source_panel
+                )
                 return
 
             if event := next(
@@ -504,8 +512,8 @@ class NavigationCoordinator(BaseCoordinator):
         """Executes the pending selection."""
         if self._pending_selection:
             item_type, item_id = self._pending_selection
-            self.set_global_selection(item_type, item_id)
             self._pending_selection = None
+            self.set_global_selection(item_type, item_id)
 
     def restore_last_selection(self) -> None:
         """Restores the last selected item from settings."""

@@ -245,6 +245,16 @@ excluded by the indexing rules.
 The selected entry opens through the normal draft safeguards. Sorting changes
 display order, not saved dates or content; filtering never deletes entries.
 
+Creating or opening an entry keeps your search, tag and category filters. If
+those filters hide the entry you are editing, it appears once at the top of
+Explorer with **Active item · Hidden by filters** beneath its name. You can
+check, drag or use the row's actions as usual. It scrolls with the list.
+
+Saving, autosaving or refreshing keeps that entry active. The extra caption
+disappears when the entry matches the filters again; opening another entry
+replaces the active row. Clear the search and filters when you want to return
+to the full list.
+
 (help-explorer-batch-edit)=
 
 ## Edit tags or an attribute on several entries
@@ -512,11 +522,13 @@ entries or change their content.
 (help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-search-bar)=
 
 **Search bar** — Filter Explorer entries by the text you enter. This narrows the visible
-list without editing the entries.
+results without editing the entries. An active entry outside those results stays
+at the top with **Active item · Hidden by filters**.
 
 (help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-filter-combo)=
 
-**Filter combo** — Filter the list by primary category type.
+**Filter combo** — Choose which entry category appears in the results. An active
+entry excluded by this filter stays at the top with **Active item · Hidden by filters**.
 
 (help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-btn-filter)=
 
@@ -524,12 +536,14 @@ list without editing the entries.
 
 (help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-btn-clear-filters)=
 
-**Clear Filters** — Reset all search terms and active filters.
+**Clear Filters** — Clear the advanced tag filters. Use the search field's clear
+button to remove its text, and choose **All Items** to remove the category filter.
 
 (help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-sort-combo)=
 
-**Sort combo** — Choose whether the Explorer is ordered by name, creation time, lore
-date or type. Sorting does not alter event dates.
+**Sort combo** — Choose whether Explorer results are ordered by name, creation time,
+lore date or type. An active entry hidden by filters stays first. Sorting does not
+alter event dates.
 
 (help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-btn-sort-dir)=
 

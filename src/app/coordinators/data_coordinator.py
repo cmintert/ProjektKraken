@@ -558,7 +558,9 @@ class DataCoordinator(BaseCoordinator):
             entities: Filtered list of entities.
 
         """
-        self.main_window.unified_list.set_data(events, entities)
+        self.main_window.unified_list.set_data(
+            self._cached_events, self._cached_entities
+        )
         count = len(events) + len(entities)
         self.main_window.status_bar.showMessage(f"Filter applied. Found {count} items.")
 
@@ -595,10 +597,6 @@ class DataCoordinator(BaseCoordinator):
         """
         navigation = self.main_window.navigation_coordinator
         navigation.set_global_selection(item_type, item_id)
-        if navigation.selected_type == item_type and navigation.selected_id == item_id:
-            self.main_window.unified_list.select_item(
-                item_type, item_id, reveal_hidden=True
-            )
 
     @Slot(str)
     def on_command_failed(self, message: str) -> None:

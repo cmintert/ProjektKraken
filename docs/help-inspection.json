@@ -16380,8 +16380,8 @@
     {
       "source": "src/gui/widgets/unified_list.py",
       "symbol": "UnifiedListWidget.__init__",
-      "sha256": "ecb11b1439e55f83f4afc2417a919de173ca123665d1b60bd411019ca9917212",
-      "review_note": "Reviewed uniform filter-row heights: category/sort fields align with Filter and Clear Filters through reflow. Existing labels, shortcuts, filtering, overflow routes and explanations remain accurate; no interaction change. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate. KRT-127: adds checked-only Batch Edit through existing responsive toolbar. Existing navigation, creation and delete explanations retained; new batch route explained in workspace manual."
+      "sha256": "63f74e1b60dd49f9463a1bc8d893442586ae49261f4f7bd19e8bba60a5f37d2c",
+      "review_note": "Reviewed uniform filter-row heights: category/sort fields align with Filter and Clear Filters through reflow. Existing labels, shortcuts, filtering, overflow routes and explanations remain accurate; no interaction change. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate. KRT-127: adds checked-only Batch Edit through existing responsive toolbar. Existing navigation, creation and delete explanations retained; new batch route explained in workspace manual. KRT-148: reviewed active filtered-out row caption, native row actions and preserved creation filters; Explorer task, Search, category, sort and Clear Filters excerpts corrected; existing control IDs retained."
     },
     {
       "source": "src/gui/widgets/unified_list.py",
@@ -16440,8 +16440,8 @@
     {
       "source": "src/gui/widgets/unified_list.py",
       "symbol": "UnifiedListWidget._on_search_text_changed",
-      "sha256": "9f9cffc00a40069c064f489f14849378d965388d154b388796bfdc128d46940b",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "0a93251e3f14a8aabc73f66fa492f43688b69d68ac69e7a2ac4198ffbbd98cd8",
+      "review_note": "KRT-148: Search narrows matching results while an excluded active entry remains pinned; canonical Explorer task and Search excerpt explain the exception."
     },
     {
       "source": "src/gui/widgets/unified_list.py",
@@ -16464,8 +16464,8 @@
     {
       "source": "src/gui/widgets/unified_list.py",
       "symbol": "UnifiedListWidget._render_list",
-      "sha256": "29f4bdc5063b69c191aea52a55f4b9d758bf06dade89f1637541c9e7433c41fd",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "b9fb448d623aac09d02e55fcacefb34f8a0e97f482fd598f984cb983996c12b6",
+      "review_note": "KRT-148: complete source snapshots and blocked presentation updates preserve accepted editor context; Explorer task explains refresh and pinned ordering."
     },
     {
       "source": "src/gui/widgets/unified_list.py",

@@ -387,9 +387,8 @@ class TestSignalHandlers:
         navigation.selected_id = "evt-123"
         coordinator.on_selection_requested("event", "evt-123")
         navigation.set_global_selection.assert_called_once_with("event", "evt-123")
-        fake_window.unified_list.select_item.assert_called_once_with(
-            "event", "evt-123", reveal_hidden=True
-        )
+        fake_window.unified_list.select_item.assert_not_called()
+        fake_window.unified_list.set_active_item.assert_not_called()
 
     def test_on_command_failed_shows_warning(self, coordinator, fake_window):
         """on_command_failed should show a warning message box."""
@@ -398,11 +397,16 @@ class TestSignalHandlers:
             mock_box.warning.assert_called_once()
 
     def test_on_filter_results_ready(self, coordinator, fake_window):
-        """on_filter_results_ready should update unified list."""
+        """Legacy filtered results cannot replace the complete Explorer cache."""
         events = [MagicMock()]
         entities = [MagicMock(), MagicMock()]
+        complete_entities = [*entities, MagicMock()]
+        coordinator._cached_events = events
+        coordinator._cached_entities = complete_entities
         coordinator.on_filter_results_ready(events, entities)
-        fake_window.unified_list.set_data.assert_called_once_with(events, entities)
+        fake_window.unified_list.set_data.assert_called_once_with(
+            events, complete_entities
+        )
         fake_window.status_bar.showMessage.assert_called_once()
 
 
