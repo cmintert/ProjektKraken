@@ -103,7 +103,15 @@
         "timeline_dependency_4": "#E5849F",
         "timeline_dependency_5": "#64C4C8",
         "timeline_dependency_6": "#B8BC70",
-        "timeline_dependency_7": "#B3B9CE"
+        "timeline_dependency_7": "#B3B9CE",
+        "category_0": "#80BFFF",
+        "category_1": "#71D6D1",
+        "category_2": "#E5A1CD",
+        "category_3": "#E7B36B",
+        "category_4": "#A9CC7A",
+        "category_5": "#B8AEED",
+        "category_6": "#ED9D99",
+        "category_7": "#C2C6CE"
     },
     "light_mode": {
         "app_bg": "#F5F5F5",
@@ -209,7 +217,15 @@
         "timeline_dependency_4": "#A33E61",
         "timeline_dependency_5": "#216F74",
         "timeline_dependency_6": "#666B20",
-        "timeline_dependency_7": "#525D7D"
+        "timeline_dependency_7": "#525D7D",
+        "category_0": "#145CA4",
+        "category_1": "#006B6E",
+        "category_2": "#8F3975",
+        "category_3": "#80520A",
+        "category_4": "#396A1D",
+        "category_5": "#62469A",
+        "category_6": "#9F352D",
+        "category_7": "#52575F"
     },
     "fantasy_mode": {
         "app_bg": "#24211C",
@@ -315,7 +331,15 @@
         "timeline_dependency_4": "#E5849F",
         "timeline_dependency_5": "#64C4C8",
         "timeline_dependency_6": "#B8BC70",
-        "timeline_dependency_7": "#B3B9CE"
+        "timeline_dependency_7": "#B3B9CE",
+        "category_0": "#80BFFF",
+        "category_1": "#71D6D1",
+        "category_2": "#E5A1CD",
+        "category_3": "#E7B36B",
+        "category_4": "#A9CC7A",
+        "category_5": "#B8AEED",
+        "category_6": "#ED9D99",
+        "category_7": "#C2C6CE"
     },
     "imperial_mode": {
         "app_bg": "#0D0D0D",
@@ -421,7 +445,15 @@
         "timeline_dependency_4": "#E5849F",
         "timeline_dependency_5": "#64C4C8",
         "timeline_dependency_6": "#B8BC70",
-        "timeline_dependency_7": "#B3B9CE"
+        "timeline_dependency_7": "#B3B9CE",
+        "category_0": "#80BFFF",
+        "category_1": "#71D6D1",
+        "category_2": "#E5A1CD",
+        "category_3": "#E7B36B",
+        "category_4": "#A9CC7A",
+        "category_5": "#B8AEED",
+        "category_6": "#ED9D99",
+        "category_7": "#C2C6CE"
     },
     "cyberpunk_mode": {
         "app_bg": "#0A0A12",
@@ -527,7 +559,15 @@
         "timeline_dependency_4": "#E5849F",
         "timeline_dependency_5": "#64C4C8",
         "timeline_dependency_6": "#B8BC70",
-        "timeline_dependency_7": "#B3B9CE"
+        "timeline_dependency_7": "#B3B9CE",
+        "category_0": "#80BFFF",
+        "category_1": "#71D6D1",
+        "category_2": "#E5A1CD",
+        "category_3": "#E7B36B",
+        "category_4": "#A9CC7A",
+        "category_5": "#B8AEED",
+        "category_6": "#ED9D99",
+        "category_7": "#C2C6CE"
     },
     "muted_light_mode": {
         "app_bg": "#EAE7E0",
@@ -633,6 +673,14 @@
         "timeline_dependency_4": "#A33E61",
         "timeline_dependency_5": "#216F74",
         "timeline_dependency_6": "#666B20",
-        "timeline_dependency_7": "#525D7D"
+        "timeline_dependency_7": "#525D7D",
+        "category_0": "#145CA4",
+        "category_1": "#006B6E",
+        "category_2": "#8F3975",
+        "category_3": "#80520A",
+        "category_4": "#396A1D",
+        "category_5": "#62469A",
+        "category_6": "#9F352D",
+        "category_7": "#52575F"
     }
 }

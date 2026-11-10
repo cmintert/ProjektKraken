@@ -7,6 +7,8 @@ from copy import deepcopy
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
+from src.core.event_offsets import offset_steps
+
 if TYPE_CHECKING:
     from src.core.events import Event
 
@@ -56,6 +58,10 @@ class EndpointDefinition:
         if self.instant is not None or self.expression is not None:
             raise ValueError("A followed date cannot also contain manual evidence")
         offset = self.offset or {"unit": "days", "value": 0.0}
+        if offset.get("unit") == "compound":
+            offset_steps(offset)
+            object.__setattr__(self, "offset", deepcopy(offset))
+            return
         unit, value = offset.get("unit"), finite(offset.get("value", 0))
         if unit not in {"days", "months", "years"}:
             raise ValueError("Choose days, months or years")

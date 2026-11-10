@@ -216,3 +216,18 @@ appears only for keyboard focus, matching other timeline marks.
   action/focus roles; strand colors retain categorical meaning. Preserve lane
   order, drafts, selection, keyboard ownership, Viewing/World current time and
   undo (contracts 1/2/4/5/6/7/8/9).
+
+## Explorer category cues — 2026-11-10 (KRT-149)
+
+`category_0` through `category_7` are theme-owned, optional type-category text
+colors. They meet 4.5:1 contrast on Explorer backgrounds in every palette and
+recovery theme. Stable normalized type assignments do not depend on the visible
+or filtered set. Custom types may share a slot; color never asserts unique type
+identity. These roles are distinct from Entity/Event identity, temporal strands
+and warning/success states.
+
+Entity rows reserve room for the written type before shortening long names.
+Full names and types remain in tooltips and accessible text. Native selection,
+disabled and keyboard focus presentation retain priority. Type coloring changes
+only Explorer presentation; Graph Visual Lexicon/authored overrides and Timeline
+temporal grammar retain their existing meaning. Contracts 2/4/5/6/7/8/9 apply.

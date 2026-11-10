@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-10
-**Commit:** 35145dd3571f7237ea248d5819a952c551673a09
+**Commit:** 342966c73da76b1ef5c9a8ae82be67fcc2c24f64
 ---
 
 # Changelog
@@ -12,6 +12,20 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-11-10)* **Explorer type differentiation (KRT-149)**: Replaced nearby
+  hashed hues with stable theme-owned category colors that meet text contrast
+  requirements in all six themes. Long Entity names retain a visible type cue;
+  full names and custom types remain available through tooltips and accessibility.
+  Preserved selection, checkboxes and authored Graph/Timeline presentation.
+  Owner human verification accepted on 2026-11-10.
+
+- *(2026-11-10)* **Compound Event offsets (KRT-145)**: Follow Event supports
+  separate direction, years, months and fractional days. Ordered calendar
+  calculations preserve uncertainty, dependencies, saved references and undo/redo;
+  invalid intermediate dates remain unresolved. Existing single-unit offsets
+  retain their meaning. Updated Event Help and calendar regressions. Owner human
+  verification accepted on 2026-11-10.
 
 - *(2026-11-10)* **Map summary regression coverage**: Updated the inherited
   presence-summary assertion to include the group date bounds already shown

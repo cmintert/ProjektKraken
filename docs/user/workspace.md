@@ -552,7 +552,13 @@ alter event dates.
 
 (help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-init-self-btn-hashed-colors)=
 
-**Hashed colors** — Color-code items by their unique Type category.
+**Color items by type** — Use theme-aware category colors in Project Explorer.
+Entity rows retain their written type beside the name, including when long
+names are shortened. The full name and type remain in the tooltip and accessible
+text. Custom types receive a stable palette entry; colors can be shared, so use
+the written type to distinguish them. Turning this off restores Entity/Event
+identity colors. This view option does not change Graph Visual Lexicon styles,
+authored colors or Timeline date meaning.
 
 (help-inspect-src-gui-widgets-unified-list-unifiedlistwidget-show-context-menu-menu)=
 

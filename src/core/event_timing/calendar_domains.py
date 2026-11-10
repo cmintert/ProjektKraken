@@ -3,11 +3,19 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from fractions import Fraction
 
 from src.core.calendar import CalendarConverter
-from src.core.event_timing.constraints import Cancel, Constraint, Interval, checkpoint
+from src.core.event_offsets import offset_steps
+from src.core.event_timing.constraints import (
+    ZERO,
+    Cancel,
+    Constraint,
+    ConstraintBranch,
+    Interval,
+    checkpoint,
+)
 from src.core.event_timing.definitions import EndpointDefinition
 from src.core.temporal_shift import _calendar_regions, _globally_affine, calendar_shift
 
@@ -45,6 +53,9 @@ def calendar_pieces(
 ) -> Iterator[CalendarPiece]:
     """Partition on day validity and calendar months, never enumerate days."""
     offset = endpoint.offset or {}
+    if offset.get("unit") == "compound":
+        yield from _compound_pieces(target, endpoint, ranges, converter, cancel)
+        return
     amount, unit = int(offset.get("value", 0)), str(offset.get("unit"))
     source = endpoint.source
     if converter is None or offset.get("calendar_id") != converter._config.id:
@@ -63,6 +74,58 @@ def calendar_pieces(
         yield from _bounded_pieces(
             source, target, interval, amount, unit, converter, cancel
         )
+
+
+def _translated(interval: Interval, delta: Fraction) -> Interval:
+    return replace(
+        interval,
+        lower=None if interval.lower is None else interval.lower + delta,
+        upper=None if interval.upper is None else interval.upper + delta,
+    )
+
+
+def _compound_pieces(
+    target: str,
+    endpoint: EndpointDefinition,
+    ranges: tuple[Interval, ...],
+    converter: CalendarConverter | None,
+    cancel: Cancel | None,
+) -> Iterator[CalendarPiece]:
+    """Compose affine pieces while retaining original-source validity and gaps."""
+    pending = [(interval, Fraction(0)) for interval in ranges]
+    for step in offset_steps(endpoint.offset or {}):
+        following = []
+        for original, delta in pending:
+            checkpoint(cancel)
+            if step["unit"] == "days":
+                following.append((original, delta + Fraction(step["value"])))
+                continue
+            for piece in calendar_pieces(
+                target,
+                replace(endpoint, offset=step),
+                (_translated(original, delta),),
+                converter,
+                cancel,
+            ):
+                branch = ConstraintBranch(
+                    (endpoint.source, target),
+                    (
+                        *piece.edges,
+                        *_translated(original, delta).constraints(endpoint.source),
+                    ),
+                    cancel,
+                )
+                source_range = branch.difference(ZERO, endpoint.source)
+                clipped = _translated(source_range, -delta)
+                if piece.invalid:
+                    yield _piece(endpoint.source, target, clipped, None)
+                else:
+                    shift = branch.difference(endpoint.source, target).lower
+                    assert shift is not None
+                    following.append((clipped, delta + shift))
+        pending = following
+    for original, delta in pending:
+        yield _piece(endpoint.source, target, original, delta)
 
 
 def _bounded_pieces(

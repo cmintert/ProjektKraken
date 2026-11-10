@@ -9,6 +9,7 @@ from typing import Any
 
 from src.core.calendar import CalendarConverter, CalendarDate
 from src.core.calendar_index import locate_year, month_span
+from src.core.event_offsets import offset_steps
 from src.core.event_timing.constraints import (
     Cancel,
     Interval,
@@ -149,6 +150,10 @@ def shift_anchor(
     offset = ref.get("offset", {"unit": "days", "value": ref.get("offset_days", 0)})
     if not isinstance(offset, dict):
         raise ValueError("Event offset must be an object")
+    if offset.get("unit") == "compound":
+        for step in offset_steps(offset):
+            bounds = shift_anchor(bounds, {"offset": step}, converter, cancel)
+        return bounds
     unit, value = offset.get("unit", "days"), float(offset.get("value", 0))
     if unit not in {"days", "months", "years"} or not math.isfinite(value):
         raise ValueError("Choose a finite day, month or year offset")

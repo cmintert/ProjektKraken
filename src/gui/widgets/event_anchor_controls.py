@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 from src.core.temporal_boundary_resolver import BoundaryResolver
 from src.core.temporal_context import TemporalResolutionContext
 from src.gui.utils.help_context import declare_inspection
+from src.gui.widgets.compound_offset_controls import CompoundOffsetControls
 from src.gui.widgets.editor_presentation import DisclosureButton
 from src.gui.widgets.event_offset_input import EventOffsetInput
 from src.gui.widgets.wrapping_combo_box import WrappingComboBox
@@ -88,6 +89,8 @@ class EventAnchorControls(QWidget):
             ("Calendar years", "years"),
         ):
             self.unit.addItem(caption, value)
+        if calculated_only:
+            self.unit.addItem("Years, months and days", "compound")
         offset = self._original.get("offset") or {
             "unit": "days",
             "value": self._original.get("offset_days", 0),
@@ -103,6 +106,7 @@ class EventAnchorControls(QWidget):
                 index = control.count() - 1
             control.setCurrentIndex(index)
         self.offset.setValue(float(offset.get("value", 0)))
+        self.compound = CompoundOffsetControls(offset, self)
         for caption, field_control in (
             ("Event endpoint", self.endpoint),
             ("Boundary date", self.relative),
@@ -114,6 +118,11 @@ class EventAnchorControls(QWidget):
                 form.addRow(caption, field_control)
             else:
                 field_control.hide()
+        form.addRow(self.compound)
+        self._offset_label = form.labelForField(self.offset)
+        self.unit.currentIndexChanged.connect(self._show_offset)
+        self.compound.changed.connect(self._edited)
+        self._show_offset()
         hint = QLabel("Before/after records an unknown date.")
         hint.setWordWrap(True)
         hint.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
@@ -127,6 +136,7 @@ class EventAnchorControls(QWidget):
             self._original.get("endpoint") == "end"
             or self._original.get("relation", "at") != "at"
             or offset.get("value", 0)
+            or offset.get("unit") == "compound"
         )
         self.disclosure.setChecked(expanded)
         advanced.setVisible(expanded)
@@ -139,6 +149,13 @@ class EventAnchorControls(QWidget):
         """Refresh names and precision without emitting an authoring change."""
         self._context = context
         self._feedback()
+
+    def _show_offset(self) -> None:
+        compound = self.unit.currentData() == "compound"
+        self.compound.setVisible(compound)
+        self.offset.setVisible(not compound)
+        if self._offset_label is not None:
+            self._offset_label.setVisible(not compound)
 
     def use_map_help(self) -> None:
         """Give shared controls map-specific inspection destinations at composition."""
@@ -185,6 +202,10 @@ class EventAnchorControls(QWidget):
         declare_inspection(
             self.unit, "event-follow-unit|event.timing|help-inspect-event-follow-unit"
         )
+        declare_inspection(
+            self.compound,
+            "event-follow-components|event.timing|help-inspect-event-follow-offset",
+        )
 
     def anchor(self) -> dict[str, Any]:
         """Preserve the complete reference until an explicit edit occurs."""
@@ -194,9 +215,15 @@ class EventAnchorControls(QWidget):
         result.pop("offset_days", None)
         unit = self.unit.currentData()
         offset = {"unit": unit, "value": self.offset.value()}
+        if unit == "compound":
+            offset = self.compound.offset()
         converter = self._context.converter()
         if unit != "days" and converter:
             offset["calendar_id"] = converter._config.id
+        original_offset = self._original.get("offset") or {}
+        if unit == "compound" and original_offset.get("unit") == "compound":
+            if original_offset.get("calendar_id"):
+                offset["calendar_id"] = original_offset["calendar_id"]
         result.update(
             anchor_id=self._anchor_id,
             endpoint=self.endpoint.currentData(),

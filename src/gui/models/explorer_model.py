@@ -17,9 +17,10 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QBrush, QColor
 
 from src.core.calendar import CalendarConverter
+from src.core.category_palette import category_role
 from src.core.entities import Entity
 from src.core.events import Event
-from src.gui.utils.color_utils import get_hashed_color
+from src.core.theme_manager import ThemeManager
 from src.gui.utils.theme_connections import connect_theme
 
 logger = logging.getLogger(__name__)
@@ -44,6 +45,7 @@ class ExplorerModel(QAbstractListModel):
     ItemTypeRole = Qt.ItemDataRole.UserRole + 2
     ItemNameRole = Qt.ItemDataRole.UserRole + 3
     ItemObjectRole = Qt.ItemDataRole.UserRole + 4
+    CategoryRole = Qt.ItemDataRole.UserRole + 5
 
     def __init__(self, parent: Optional[QObject] = None) -> None:
         """Initialize the explorer model.
@@ -58,8 +60,6 @@ class ExplorerModel(QAbstractListModel):
         self._use_hashed_colors: bool = False
 
         # Theme colors
-        from src.core.theme_manager import ThemeManager
-
         theme = ThemeManager().get_theme()
         self.color_event = QColor(theme["event_main"])
         self.color_entity = QColor(theme["entity_main"])
@@ -235,18 +235,7 @@ class ExplorerModel(QAbstractListModel):
                 return f"{obj.name} [{date_str}]"
 
         elif role == Qt.ItemDataRole.ForegroundRole:
-            # Return color
-            if self._use_hashed_colors:
-                # Hash based on the object's type attribute to group similar items
-                obj_type = getattr(obj, "type", "")
-                seed = f"{item_type}:{obj_type}"
-                color = get_hashed_color(seed)
-                return QBrush(color)
-
-            if item_type == "entity":
-                return QBrush(self.color_entity)
-            else:
-                return QBrush(self.color_event)
+            return self._foreground(item_type, obj.type)
 
         elif role == Qt.ItemDataRole.CheckStateRole:
             # Support checkboxes
@@ -267,7 +256,23 @@ class ExplorerModel(QAbstractListModel):
         elif role == self.ItemObjectRole:
             return obj
 
+        elif role == self.CategoryRole:
+            return obj.type if item_type == "entity" else None
+
+        elif role in {
+            Qt.ItemDataRole.ToolTipRole,
+            Qt.ItemDataRole.AccessibleTextRole,
+        }:
+            return f"{obj.name} ({item_type.title()}: {obj.type})"
+
         return None
+
+    def _foreground(self, item_kind: str, category: str) -> QBrush:
+        """Use category semantics only when the creator enables type coloring."""
+        if self._use_hashed_colors:
+            theme = ThemeManager().get_theme()
+            return QBrush(QColor(theme[category_role(item_kind, category)]))
+        return QBrush(self.color_entity if item_kind == "entity" else self.color_event)
 
     def setData(
         self,

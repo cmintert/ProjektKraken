@@ -90,8 +90,8 @@ def test_unified_list_colors_update_on_theme_change(unified_list_widget, theme_m
 
     # Mock initial theme with all required keys
     initial_theme = base_theme | {
-        "accent_secondary": "#000000",
-        "primary": "#000000",
+        "event_main": "#000000",
+        "entity_main": "#000000",
         "text_main": "#FFFFFF",  # Required for checkbox style
         "surface": "#000000",
         "border": "#333333",
@@ -129,8 +129,8 @@ def test_unified_list_colors_update_on_theme_change(unified_list_widget, theme_m
 
     # Change theme
     new_theme = base_theme | {
-        "accent_secondary": "#aabbcc",  # Event color
-        "primary": "#ddeeff",  # Entity color
+        "event_main": "#aabbcc",
+        "entity_main": "#ddeeff",
         "text_main": "#FFFFFF",  # Required for checkbox style
         "surface": "#000000",
         "border": "#333333",

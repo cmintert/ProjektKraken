@@ -29,6 +29,55 @@ from src.services.transfer_import import prepare_import
 pytestmark = pytest.mark.ci_fast
 
 
+def test_compound_offset_persistence_cascade_and_serialized_undo_redo(
+    db_service, prepare_timing_command
+):
+    from src.core.calendar import CalendarConverter
+
+    config = CalendarConfig.create_default()
+    config.is_active = True
+    db_service.insert_calendar_config(config)
+    converter = CalendarConverter(config)
+    source = Event("Root", converter.start_of_day(2020, 1, 10), id="root")
+    child = Event("Child", 4, id="child")
+    for event in (source, child):
+        db_service.insert_event(event)
+    offset = {
+        "unit": "compound",
+        "direction": 1,
+        "years": 5,
+        "months": 3,
+        "days": 12.25,
+        "calendar_id": config.id,
+    }
+    timing = EventTimingDefinition(
+        EndpointDefinition("event", anchor_id="event:root", offset=offset)
+    )
+    command = prepare_timing_command(
+        UpdateEventCommand(child.id, {"attributes": timing.apply({})})
+    )
+    assert command.execute(db_service).success
+    saved = db_service.get_event(child.id)
+    assert saved.lore_date == converter.start_of_day(2025, 4, 22) + 0.25
+    assert EventTimingDefinition.from_event(saved).start.offset == offset
+    replay = ApplyEventTimingPlanCommand.from_dict(command.to_dict())
+    replay.undo(db_service)
+    assert db_service.get_event(child.id).to_dict() == child.to_dict()
+    assert replay.execute(db_service).success
+    assert db_service.get_event(child.id).to_dict() == saved.to_dict()
+    move = prepare_timing_command(
+        UpdateEventCommand(
+            source.id, {"lore_date": converter.start_of_day(2021, 2, 10)}
+        )
+    )
+    assert move.execute(db_service).success
+    assert db_service.get_event(child.id).lore_date == (
+        converter.start_of_day(2026, 5, 22) + 0.25
+    )
+    move.undo(db_service)
+    assert db_service.get_event(child.id).to_dict() == saved.to_dict()
+
+
 def calculated_event(db):
     event = Event(
         "Manual authority",

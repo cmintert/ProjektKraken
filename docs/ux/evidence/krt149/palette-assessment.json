@@ -1,0 +1,135 @@
+{
+  "source": "https://www.inf.ufrgs.br/~oliveira/pubs_files/CVD_Simulation/CVD_Simulation.html",
+  "method": "Machado 2009 severity 100, linear sRGB; CIELAB D65 deltaE76 minimum among sample types. Simulation is diagnostic, not human acceptance.",
+  "matrices": {
+    "protanopia": [
+      [
+        0.152286,
+        1.052583,
+        -0.204868
+      ],
+      [
+        0.114503,
+        0.786281,
+        0.099216
+      ],
+      [
+        -0.003882,
+        -0.048116,
+        1.051998
+      ]
+    ],
+    "deuteranopia": [
+      [
+        0.367322,
+        0.860646,
+        -0.227968
+      ],
+      [
+        0.280085,
+        0.672501,
+        0.047413
+      ],
+      [
+        -0.01182,
+        0.04294,
+        0.968881
+      ]
+    ],
+    "tritanopia": [
+      [
+        1.255528,
+        -0.076749,
+        -0.178779
+      ],
+      [
+        -0.078411,
+        0.930809,
+        0.147602
+      ],
+      [
+        0.004733,
+        0.691367,
+        0.3039
+      ]
+    ]
+  },
+  "themes": {
+    "dark_mode": {
+      "minimum_text_contrast": 6.034,
+      "minimum_deltaE76_all_slots": {
+        "normal": 21.03,
+        "protanopia": 3.29,
+        "deuteranopia": 2.47,
+        "tritanopia": 8.04
+      },
+      "old_sample_minimum_deltaE76": 13.86,
+      "new_sample_minimum_deltaE76": 0.0
+    },
+    "light_mode": {
+      "minimum_text_contrast": 5.787,
+      "minimum_deltaE76_all_slots": {
+        "normal": 24.83,
+        "protanopia": 4.89,
+        "deuteranopia": 1.48,
+        "tritanopia": 9.19
+      },
+      "old_sample_minimum_deltaE76": 13.86,
+      "new_sample_minimum_deltaE76": 0.0
+    },
+    "fantasy_mode": {
+      "minimum_text_contrast": 6.705,
+      "minimum_deltaE76_all_slots": {
+        "normal": 21.03,
+        "protanopia": 3.29,
+        "deuteranopia": 2.47,
+        "tritanopia": 8.04
+      },
+      "old_sample_minimum_deltaE76": 13.86,
+      "new_sample_minimum_deltaE76": 0.0
+    },
+    "imperial_mode": {
+      "minimum_text_contrast": 8.021,
+      "minimum_deltaE76_all_slots": {
+        "normal": 21.03,
+        "protanopia": 3.29,
+        "deuteranopia": 2.47,
+        "tritanopia": 8.04
+      },
+      "old_sample_minimum_deltaE76": 13.86,
+      "new_sample_minimum_deltaE76": 0.0
+    },
+    "cyberpunk_mode": {
+      "minimum_text_contrast": 8.731,
+      "minimum_deltaE76_all_slots": {
+        "normal": 21.03,
+        "protanopia": 3.29,
+        "deuteranopia": 2.47,
+        "tritanopia": 8.04
+      },
+      "old_sample_minimum_deltaE76": 13.86,
+      "new_sample_minimum_deltaE76": 0.0
+    },
+    "muted_light_mode": {
+      "minimum_text_contrast": 5.109,
+      "minimum_deltaE76_all_slots": {
+        "normal": 24.83,
+        "protanopia": 4.89,
+        "deuteranopia": 1.48,
+        "tritanopia": 9.19
+      },
+      "old_sample_minimum_deltaE76": 13.86,
+      "new_sample_minimum_deltaE76": 0.0
+    }
+  },
+  "sample_types": [
+    "Character",
+    "Location",
+    "Faction",
+    "Item",
+    "Concept",
+    "Species",
+    "Custom guild"
+  ],
+  "interpretation": "All-slot normal-vision distances assess palette spacing. Sample distances include intentional custom-type slot collisions; zero is expected. Simulated close pairs require the written type cue, not a unique-color claim."
+}

@@ -166,6 +166,9 @@ treaty begins; this example does not require changing the demo world.
    its **Start** or **End** endpoint.
 4. Enter an offset. **Days** accepts signed fractional values; calendar months
    and years require whole numbers and use the selected calendar's actual rules.
+   For a combined interval, choose **Years, months and days**, select the
+   **Direction**, and enter each nonnegative component. Years and months must
+   be whole numbers; days may include a fraction.
 5. Choose **Save Changes**, review any cascade, and choose **Apply changes**. Reopen the
    Event and check the saved reference and calculated result.
 
@@ -173,6 +176,16 @@ The same controls are available for the start. All four start/end combinations
 are supported. A source without an authored end cannot supply an end date.
 Self references and endpoint dependency cycles are rejected; use **Duration**
 to define an Event's end relative to its own start.
+
+Combined offsets apply years first, then months, then days. **Before endpoint**
+subtracts each component in that same order. Each intermediate calendar date
+must exist: 29 February plus one year is unresolved in a non-leap year, even
+if the next component would move into March. Dates are never clamped to a
+month's last day. The active calendar supplies leap rules, month lengths and
+year-specific months; arithmetic includes year zero between years −1 and 1.
+The time of day is retained before the day component is applied. Undo restores
+the saved reference and all affected calculated dates; subtracting an interval
+is not a promise to reverse a prior calendar calculation.
 
 Changing a source recalculates its dependents, including Map and Relation date
 windows. Interval ordering and chronology may narrow the feasible dates without
@@ -266,12 +279,19 @@ occurrence without an end cannot supply End; a zero-duration interval can.
 (help-inspect-event-follow-offset)=
 
 **Offset** — Add a signed amount to the source endpoint. Negative values place
-the calculated date earlier. Fractional values are available for Days.
+the calculated date earlier. Fractional values are available for Days. For
+**Years, months and days**, choose Before/After endpoint and enter separate
+nonnegative components. Years and months must be whole numbers. Components
+apply in years, months, days order, with every intermediate date required to
+exist for every possible source date.
 
 (help-inspect-event-follow-unit)=
 
-**Offset unit** — Choose Days, Calendar months, or Calendar years. Calendar
-units require whole amounts and valid target dates for every possible source.
+**Offset unit** — Choose Days, Calendar months, Calendar years, or
+Years, months and days. Existing single-unit offsets retain their signed value.
+Calendar units require whole amounts and valid target dates for every possible
+source. Edit combined offsets here; Timeline Adjust offset dragging cannot
+rewrite their components. Move chain remains subject to timing validation.
 
 (help-inspect-event-timing-evidence)=
 

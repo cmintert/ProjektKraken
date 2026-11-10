@@ -10,6 +10,7 @@ from fractions import Fraction
 from typing import Any
 
 from src.core.calendar import CalendarConverter
+from src.core.event_offsets import offset_steps
 from src.core.event_timing.constraints import (
     Cancel,
     Constraint,
@@ -166,9 +167,13 @@ def _add_reference(
     problem.dependencies[node] = source
     problem.connect(source, node)
     offset = endpoint.offset or {"unit": "days", "value": 0}
-    if offset.get("unit") == "days" or not offset.get("value"):
+    steps = offset_steps(offset)
+    if all(step["unit"] == "days" or not step.get("value") for step in steps):
         problem.equality(
-            source, node, float(offset.get("value", 0)), f"reference:{node}"
+            source,
+            node,
+            sum(float(step.get("value", 0)) for step in steps),
+            f"reference:{node}",
         )
     else:
         problem.calendars.append((node, endpoint))

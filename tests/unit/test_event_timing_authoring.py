@@ -16,6 +16,55 @@ from src.gui.widgets.event_editor import EventEditorWidget
 pytestmark = pytest.mark.ci_fast
 
 
+def test_compound_controls_preserve_loaded_draft_and_require_explicit_save(qtbot):
+    root = Event("Root", 0, id="root")
+    event = Event("Child", 4, id="child")
+    editor, converter = editor_for(qtbot, event, [root])
+    editor.resize(360, 900)
+    editor.show()
+    source = editor.temporal_widget.source_start
+    source.mode.setCurrentIndex(source.mode.findData("event"))
+    source.events.setCurrentIndex(source.events.findData("event:root"))
+    controls = source.options
+    controls.disclosure.setChecked(True)
+    controls.unit.setCurrentIndex(controls.unit.findData("compound"))
+    controls.compound.years.setValue(5)
+    controls.compound.months.setValue(3)
+    controls.compound.days.setValue(12.25)
+    controls.compound.direction.setCurrentIndex(1)
+    definition = source.definition()
+    assert definition.offset == {
+        "unit": "compound",
+        "direction": -1,
+        "years": 5,
+        "months": 3,
+        "days": 12.25,
+        "calendar_id": converter._config.id,
+    }
+    requests = []
+    editor.save_requested.connect(requests.append)
+    assert editor.has_unsaved_temporal_changes()
+    controls.set_context(source._context)
+    assert source.definition() == definition
+    source.load(definition)
+    assert source.definition() == definition
+    controls = source.options
+    assert controls.disclosure.isChecked()
+    # Tab/Enter/Escape remain owned by the local numeric field.
+    from PySide6.QtCore import Qt
+
+    field = controls.compound.days
+    field.setFocus()
+    field.lineEdit().selectAll()
+    qtbot.keyClicks(field, "2.5")
+    qtbot.keyClick(field, Qt.Key.Key_Escape)
+    assert field.value() == 12.25
+    qtbot.keyClick(field, Qt.Key.Key_Return)
+    assert not requests
+    assert controls.compound.isVisibleTo(editor)
+    assert not controls.offset.isVisibleTo(editor)
+
+
 def editor_for(qtbot, event, sources):
     parent = QWidget()
     parent.worker = MagicMock()

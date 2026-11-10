@@ -1,5 +1,37 @@
 # Authoring interaction audit v1 — KRT-46
 
+KRT-145/KRT-149 implementation (2026-11-10): Event start/end → Follow Event →
+Endpoint and offset… → Years, months and days exposes direction and three
+components inside the existing disclosure. Standard theme-owned inputs retain
+Tab/Enter/Escape ownership, local draft cancellation and explicit Save/review.
+Calculation applies years, months, days in order with strict intermediate dates,
+custom-calendar/year-zero rules and no loss of source uncertainty. Serialized
+undo/redo and cascades retain the authored offset. Timeline Adjust offset rejects
+compound rewrites and directs editing to the inspector.
+
+Explorer's existing Color items by type route now uses category roles distinct
+from object identity, status and dependency strands. Entity rows reserve a
+written type cue when long names shorten; full/custom types remain accessible.
+Native focus, selection, checks, filters and Graph authored styles remain.
+Contracts 1/2/4/5/6/7/8/9 apply; no interaction exception or rule revision.
+The category-role extension is also recorded in the authoritative Linear visual
+vocabulary. Standard numeric, combo, disclosure and native item-view presentation
+uses existing shared QSS/StyleHelper roles, without local color variants.
+
+Verification: 221 focused timing, persistence, Explorer, Graph-visual and Help
+regressions passed. Ruff, mypy, complexity, visual and Help inventory checks
+passed. Production-QSS offscreen renders cover six themes, 320 px compound
+controls and 360 px Explorer, focus/selection and disabled states. Dark/light
+samples were visually inspected. [Palette assessment](evidence/krt149/palette-assessment.json)
+records contrast and CIELAB distances with Machado severity-100 simulations.
+All category text exceeds 5.1:1 on applicable backgrounds. Some simulated
+color pairs remain close and custom types can share a slot; the written type is
+the non-color cue. Images remain local under evidence/krt145 and evidence/krt149.
+Owner human verification for both fixes was accepted on 2026-11-10, with the
+passed automated tests trusted for delivery. This acceptance is separate from
+independently measured native DPI and fresh KA-04/KA-20 task-performance evidence;
+offscreen checks do not establish human task improvement.
+
 KRT-94 implementation (2026-10-24): Tab/Shift+Tab wrap within the visible pane's
 active panel and tab strip. F6/Shift+F6 move between visible regions; workspace
 activation stays explicit. Wiki suggestions dismiss on Tab and accept a

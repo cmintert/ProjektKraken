@@ -85,6 +85,10 @@ def _calendar_offset(
     converter: CalendarConverter | None,
 ) -> EndpointDefinition:
     offset = deepcopy(start.offset or {})
+    if offset.get("unit") == "compound":
+        raise ValueError(
+            "Edit compound offsets in the inspector to preserve components."
+        )
     if converter is None or offset.get("calendar_id") != converter._config.id:
         raise ValueError("The offset's authored calendar is unavailable.")
     source = _exact(resolution, start.source)

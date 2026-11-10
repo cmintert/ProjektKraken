@@ -3,6 +3,8 @@
 import re
 from collections.abc import Mapping
 
+from src.core.category_palette import CATEGORY_ROLES
+
 TEXT_CONTRAST = 4.5
 CONTROL_CONTRAST = 3.0
 SRGB_LINEAR_THRESHOLD = 0.04045
@@ -37,6 +39,7 @@ SEMANTIC_ROLES = (
 )
 REQUIRED_VISUAL_ROLES = (
     SEMANTIC_ROLES
+    + CATEGORY_ROLES
     + DEPENDENCY_ROLES
     + tuple(
         f"action_{role}_{state}_{part}"
@@ -96,6 +99,7 @@ def contrast_failures(theme: Mapping[str, str]) -> list[str]:
             "link_neutral",
             "supporting_text",
             "supporting_caption",
+            *CATEGORY_ROLES,
         ):
             if contrast(theme[foreground], theme[background]) < TEXT_CONTRAST:
                 failures.append(f"{foreground}/{background}: text contrast < 4.5")

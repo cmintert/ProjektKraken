@@ -9580,6 +9580,16 @@
       "binding": "scale_action",
       "label": "Scale and distance calibration",
       "kind": "QAction"
+    },
+    {
+      "id": "event-follow-components",
+      "topic_id": "event.timing",
+      "target": "help-inspect-event-follow-offset",
+      "source": "src/gui/widgets/event_anchor_controls.py",
+      "symbol": "EventAnchorControls.use_event_help",
+      "binding": "self.compound",
+      "label": "Offset components",
+      "kind": "CompoundOffsetControls"
     }
   ],
   "factory_exemptions": [
@@ -17226,8 +17236,8 @@
     {
       "source": "src/gui/widgets/event_anchor_controls.py",
       "symbol": "EventAnchorControls.__init__",
-      "sha256": "e504a4285e729084ed7828967c5f52b344e06c2f5e1c78633431f7267da68307",
-      "review_note": "KRT-113: Shared controls keep Map/Relation before-after semantics; calculated Event mode limits references to endpoint plus offset. Existing Map/Relation explanations remain valid."
+      "sha256": "3a1a62a808259d3f114d7ea6de659cee8402b27ce14f8009fa935ada76e1acae",
+      "review_note": "KRT-145: reviewed compound selection, separate direction/components and inherited Event offset Help. Event instructions specify ordered strict calendar arithmetic, explicit Save/review, uncertainty, year zero and guarded Timeline dragging. Relation and Map single-unit routes remain unchanged. Owner human verification accepted on 2026-11-10."
     },
     {
       "source": "src/gui/widgets/event_anchor_controls.py",
@@ -17250,8 +17260,8 @@
     {
       "source": "src/gui/widgets/event_anchor_controls.py",
       "symbol": "EventAnchorControls.use_event_help",
-      "sha256": "8b3df440900cffd3d4b72860e87e3c7953ef09744a456ebd6e7c20821abd9d4f",
-      "review_note": "KRT-113: Distinct Event follow meanings explain source endpoint availability, signed offsets, whole calendar units and disclosure without saving."
+      "sha256": "4c8f2a02228871cd6ba341a4fca9095f5c86a5d61ad31d6e73809b5967a40775",
+      "review_note": "KRT-145: reviewed compound selection, separate direction/components and inherited Event offset Help. Event instructions specify ordered strict calendar arithmetic, explicit Save/review, uncertainty, year zero and guarded Timeline dragging. Relation and Map single-unit routes remain unchanged. Owner human verification accepted on 2026-11-10."
     },
     {
       "source": "src/gui/widgets/event_timing_source.py",

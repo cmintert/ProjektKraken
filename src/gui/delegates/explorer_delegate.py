@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 
 from src.core.theme_manager import ThemeManager
 from src.gui.models.explorer_filter_proxy import ExplorerFilterProxyModel
+from src.gui.models.explorer_model import ExplorerModel
 from src.gui.utils.style_helper import StyleHelper
 
 PINNED_CAPTION = "Active item · Hidden by filters"
@@ -20,6 +21,39 @@ PINNED_CAPTION = "Active item · Hidden by filters"
 
 class ExplorerDelegate(QStyledItemDelegate):
     """Retain native row affordances and explain the active filter exception."""
+
+    def initStyleOption(
+        self,
+        option: QStyleOptionViewItem,
+        index: QModelIndex | QPersistentModelIndex,
+    ) -> None:
+        """Reserve space for the textual type cue before eliding a long name."""
+        super().initStyleOption(option, index)
+        category = index.data(ExplorerModel.CategoryRole)
+        if not category:
+            return
+        opt = cast(Any, option)
+        widget = opt.widget
+        style = widget.style() if widget is not None else QApplication.style()
+        width = (
+            style.subElementRect(
+                QStyle.SubElement.SE_ItemViewItemText, option, widget
+            ).width()
+            - 4
+        )
+        if width <= 0:
+            return
+        metrics = opt.fontMetrics
+        suffix = metrics.elidedText(
+            f"({category})", Qt.TextElideMode.ElideRight, max(1, width // 2)
+        )
+        available = max(1, width - metrics.horizontalAdvance(" " + suffix))
+        name = metrics.elidedText(
+            str(index.data(ExplorerModel.ItemNameRole)),
+            Qt.TextElideMode.ElideRight,
+            available,
+        )
+        opt.text = f"{name} {suffix}"
 
     def _caption_rect(self, option: QStyleOptionViewItem) -> QRect:
         """Measure wrapping against the actual viewport and native checkbox."""
