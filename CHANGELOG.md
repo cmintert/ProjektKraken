@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-10
-**Commit:** 342966c73da76b1ef5c9a8ae82be67fcc2c24f64
+**Commit:** f701885dcf14aab3d0aec35f8ff1bc6afab3543a
 ---
 
 # Changelog
@@ -12,6 +12,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-11-10)* **Persistent custom-type colors (KRT-149 follow-up)**: Replaced
+  predefined categories and colliding hashes with 24 theme-aware palette entries
+  assigned to each world's actual types. Assignments travel with the database,
+  survive restart/filtering/sorting and remain unchanged when types are added.
+  Retained inactive assignments for undo/re-add and balanced reuse after palette
+  exhaustion. Added portable persistence, thread-delivery and collision regressions;
+  updated Explorer Help and the visual vocabulary. Owner human verification accepted.
 
 - *(2026-11-10)* **Explorer type differentiation (KRT-149)**: Replaced nearby
   hashed hues with stable theme-owned category colors that meet text contrast

@@ -58,6 +58,7 @@ class ExplorerModel(QAbstractListModel):
         self._calendar_converter: Optional[CalendarConverter] = None
         self._checked_ids: set[tuple[str, str]] = set()
         self._use_hashed_colors: bool = False
+        self._category_assignments: dict[str, int] = {}
 
         # Theme colors
         theme = ThemeManager().get_theme()
@@ -271,8 +272,20 @@ class ExplorerModel(QAbstractListModel):
         """Use category semantics only when the creator enables type coloring."""
         if self._use_hashed_colors:
             theme = ThemeManager().get_theme()
-            return QBrush(QColor(theme[category_role(item_kind, category)]))
+            role = category_role(item_kind, category, self._category_assignments)
+            if role is not None:
+                return QBrush(QColor(theme[role]))
         return QBrush(self.color_entity if item_kind == "entity" else self.color_event)
+
+    def set_category_assignments(self, assignments: dict[str, int]) -> None:
+        """Render a detached settings snapshot without changing row state."""
+        self._category_assignments = dict(assignments)
+        if self._items:
+            self.dataChanged.emit(
+                self.index(0, 0),
+                self.index(len(self._items) - 1, 0),
+                [Qt.ItemDataRole.ForegroundRole],
+            )
 
     def setData(
         self,

@@ -536,6 +536,10 @@ class UnifiedListWidget(QWidget):
 
         self._render_list()
 
+    def set_category_assignments(self, assignments: dict[str, int]) -> None:
+        """Forward the current world's presentation snapshot to the source model."""
+        self._model.set_category_assignments(assignments)
+
     def apply_lore_effects(self, effects: list[LoreMutationEffect]) -> None:
         """Apply worker-confirmed lore mutations without resetting the list."""
         deletions = [effect for effect in effects if effect["operation"] == "delete"]

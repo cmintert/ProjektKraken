@@ -7,7 +7,7 @@ import pytest
 from PySide6.QtCore import QRect, Qt
 from PySide6.QtWidgets import QListView, QStyleOptionViewItem
 
-from src.core.category_palette import CATEGORY_ROLES, category_role
+from src.core.category_palette import CATEGORY_ROLES, assign_categories, category_role
 from src.core.entities import Entity
 from src.core.theme_defaults import DEFAULT_THEMES
 from src.core.theme_manager import ThemeManager
@@ -24,17 +24,20 @@ def test_category_palette_text_contrast_and_distinct_standard_types(theme):
     for role in CATEGORY_ROLES:
         for background in ("app_bg", "surface"):
             assert contrast(theme[role], theme[background]) >= 4.5
-    types = ["Character", "Location", "Faction", "Item", "Concept", "Species"]
-    assert len({category_role("entity", value) for value in types}) == len(types)
+    types = ["Character", "Concept", "Deity", "Entirely custom type"]
+    assignments = assign_categories({}, [("entity", value) for value in types])
+    assert len({category_role("entity", value, assignments) for value in types}) == len(
+        types
+    )
+    assert len(CATEGORY_ROLES) == 24
+    assert len({theme[role] for role in CATEGORY_ROLES}) == 24
 
 
-def test_category_role_is_case_insensitive_and_independent_of_visible_types():
-    assert category_role("entity", " Character ") == category_role(
-        "entity", "character"
-    )
-    assert category_role("entity", "Custom guild") == category_role(
-        "entity", "Custom guild"
-    )
+def test_category_role_preserves_exact_names_and_ignores_visible_types():
+    types = [("entity", value) for value in ("Character", "character", "Custom guild")]
+    assignments = assign_categories({}, types)
+    assert len(set(assignments.values())) == 3
+    assert assign_categories(assignments, types[:1]) == assignments
 
 
 def test_long_name_retains_type_and_full_accessible_text(qtbot):
@@ -65,6 +68,8 @@ def test_custom_types_recolor_without_changing_checks_or_names(qapp, monkeypatch
     entity = Entity(name="Council", type="Custom guild")
     model = ExplorerModel()
     model.set_items([("entity", entity)])
+    assignments = assign_categories({}, [("entity", entity.type)])
+    model.set_category_assignments(assignments)
     index = model.index(0, 0)
     model.setData(index, Qt.CheckState.Checked, Qt.ItemDataRole.CheckStateRole)
     original = index.data(Qt.ItemDataRole.DisplayRole)
@@ -73,6 +78,6 @@ def test_custom_types_recolor_without_changing_checks_or_names(qapp, monkeypatch
         monkeypatch.setattr(ThemeManager, "get_theme", lambda self: theme)
         model._on_theme_changed(theme)
         color = index.data(Qt.ItemDataRole.ForegroundRole).color().name()
-        assert color == theme[category_role("entity", entity.type)].lower()
+        assert color == theme[category_role("entity", entity.type, assignments)].lower()
         assert index.data(Qt.ItemDataRole.CheckStateRole) == Qt.CheckState.Checked
         assert index.data(Qt.ItemDataRole.DisplayRole) == original

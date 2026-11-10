@@ -339,6 +339,9 @@ class AppCoordinator(QObject):
         from src.app.mcp_composition import compose_mcp
 
         self.mcp = compose_mcp(self.main_window, self.settings)
+        from src.app.category_palette_composition import compose_category_palette
+
+        self.category_palette = compose_category_palette(self.main_window)
 
     def validate_world(self, editorial_checks: bool = False) -> str:
         """Request world validation on the DatabaseWorker thread.

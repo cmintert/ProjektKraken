@@ -1,5 +1,36 @@
 # Authoring interaction audit v1 — KRT-46
 
+KRT-149 follow-up (2026-11-10): the owner screenshot exposed a collision between
+Concept and user-defined Deity in the earlier eight-slot hash mapping. That
+implementation is superseded by 24 theme-owned, perceptually ordered entries and
+portable world-owned assignments for exact Entity/Event type identities. There
+are no predefined types. Initial allocation considers all saved types; adding a
+type takes an unused entry without changing prior assignments. Removing a type
+retains its entry for undo/re-add; after 24 reservations, least-used entries are
+shared. Written type cues remain essential, especially under color-vision changes.
+
+The existing **Color items by type** route and shared native row/QSS presentation
+remain. Assignment snapshots update only foreground presentation, preserving
+selection, checks, filters, sort order, drafts and playhead. Contracts
+2/4/5/6/7/8/9 apply; no new authoring surface or interaction exception. A
+feature-owned queued task maintains derived settings on the database thread;
+world identity, initialization generation and request sequence reject stale
+results. The same role extension is recorded in Linear's authoritative vocabulary.
+
+Verification: targeted startup/dependency/palette checks passed (113 tests),
+followed by Explorer, persistence, real queued delivery and Help regressions
+(80 tests; groups overlap). Repository-wide Ruff and mypy, complexity, visual and
+Help policies passed; offline Help and strict Sphinx builds passed. Six-theme
+320 px renders cover the originally colliding Character/Concept/Deity list and
+disabled states. Dark/light normal and Machado severity-100 simulation samples
+were inspected. [The 24-entry assessment](evidence/krt149/palette24-assessment.json)
+records minimum text contrast of 4.503:1 and normal-vision CIELAB spacing above
+14 across each full palette. Some simulated pairs remain close; neither 24 slots
+nor distinct RGB values guarantee human discrimination. Images remain local.
+Owner human verification for this follow-up was accepted on 2026-11-10.
+Independent prose/live Help and native-DPI evidence remains separate from that
+acceptance.
+
 KRT-145/KRT-149 implementation (2026-11-10): Event start/end → Follow Event →
 Endpoint and offset… → Years, months and days exposes direction and three
 components inside the existing disclosure. Standard theme-owned inputs retain

@@ -555,8 +555,15 @@ alter event dates.
 **Color items by type** — Use theme-aware category colors in Project Explorer.
 Entity rows retain their written type beside the name, including when long
 names are shortened. The full name and type remain in the tooltip and accessible
-text. Custom types receive a stable palette entry; colors can be shared, so use
-the written type to distinguish them. Turning this off restores Entity/Event
+text. The world has 24 theme-aware palette entries. Its saved Entity and Event
+types receive unused entries automatically, without predefined type names.
+Adding a type preserves previous assignments. Filtering, sorting, reopening and
+portable world copies retain the saved assignments; changing themes changes the
+palette's appearance while retaining each type's slot. Removed types retain their
+assignments so undo or re-adding the same type restores its color. After all 24
+entries are allocated, later types share the least-used entries; use the written
+type to distinguish them. Until settings are loaded, rows use ordinary identity
+colors. Turning this off restores Entity/Event
 identity colors. This view option does not change Graph Visual Lexicon styles,
 authored colors or Timeline date meaning.
 

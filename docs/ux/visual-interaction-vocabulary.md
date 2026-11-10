@@ -219,11 +219,17 @@ appears only for keyboard focus, matching other timeline marks.
 
 ## Explorer category cues — 2026-11-10 (KRT-149)
 
-`category_0` through `category_7` are theme-owned, optional type-category text
+`category_0` through `category_23` are theme-owned, optional type-category text
 colors. They meet 4.5:1 contrast on Explorer backgrounds in every palette and
-recovery theme. Stable normalized type assignments do not depend on the visible
-or filtered set. Custom types may share a slot; color never asserts unique type
-identity. These roles are distinct from Entity/Event identity, temporal strands
+recovery theme. Assignments belong to the portable world database and use exact
+authored type names and object kinds, without predefined categories or hashes.
+First allocation uses all saved world types and perceptually spaced unused slots;
+later types retain all existing assignments. Filtering, sorting, theme changes,
+reopening and removing types never redistribute assigned slots. Inactive entries
+remain reserved for undo/re-add. After 24 entries are allocated, later types use
+the least-used slots; the written type remains essential. Pending snapshots use
+ordinary identity colors rather than an invented assignment. These roles are
+distinct from Entity/Event identity, temporal strands
 and warning/success states.
 
 Entity rows reserve room for the written type before shortening long names.

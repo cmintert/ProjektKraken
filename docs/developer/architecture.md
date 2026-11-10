@@ -1,5 +1,25 @@
 # Architecture and Threading
 
+## Portable type color assignments
+
+`CategoryPaletteCoordinator` coalesces confirmed world-load and command signals.
+Its feature-owned `CategoryPaletteTask` runs on the existing database thread,
+using `CategoryPaletteRepository` to read distinct saved Entity/Event types and
+atomically extend `explorer_category_palette_v1` in `system_meta`. These are
+derived presentation preferences, like initial settings policy, rather than lore
+commands or undo history. Existing assignments remain reserved when a type is
+removed. Database backup/portable copies carry the mapping; read-only databases
+receive a detached mapping without writes. Unsupported stored schemas are retained
+and logged instead of being overwritten. No worker slot, main-window responsibility
+or cross-thread database access is introduced.
+
+Queued snapshots carry database identity, initialization generation and request
+sequence; stale or failed replies cannot replace the current mapping. The source
+model only renders supplied assignments and preserves rows, selections and checks.
+There is no type vocabulary or fallback hash in the view. Until the snapshot
+arrives, existing Entity/Event identity colors apply. Theme-owned slots retain
+their identity across palette changes, with written types as the non-color cue.
+
 ## Optional local MCP access
 
 `McpCoordinator` receives narrow world/database providers and the existing DB

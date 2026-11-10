@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 from PySide6.QtCore import Qt
 
-from src.core.category_palette import category_role
+from src.core.category_palette import assign_categories, category_role
 from src.core.events import Event
 from src.core.theme_manager import ThemeManager
 from src.gui.models.explorer_model import ExplorerModel
@@ -41,23 +41,30 @@ class TestExplorerModelHashedColors:
         assert args[2] == [Qt.ItemDataRole.ForegroundRole]
 
     def test_hashed_colors_generate_stable_hues(self, model):
-        """Stable type assignments survive case differences and repeated queries."""
-        assert category_role("entity", "Character") == category_role(
-            "entity", "character"
+        """Existing assignments survive adding an arbitrary new type."""
+        saved = assign_categories({}, [("entity", "Concept")])
+        updated = assign_categories(saved, [("entity", "Deity")])
+        assert category_role("entity", "Concept", saved) == category_role(
+            "entity", "Concept", updated
         )
 
     def test_hashed_colors_vary_by_type(self, model):
         """Common entity types occupy different palette slots."""
         theme = ThemeManager().get_theme()
+        assignments = assign_categories(
+            {}, [("entity", "Character"), ("entity", "Location")]
+        )
         assert (
-            theme[category_role("entity", "Character")]
-            != theme[category_role("entity", "Location")]
+            theme[category_role("entity", "Character", assignments)]
+            != theme[category_role("entity", "Location", assignments)]
         )
 
     def test_data_returns_hashed_color_when_enabled(self, model):
         """Verify data returns the hashed color when enabled."""
         event1 = Event(id="e1", name="Alpha Test", type="TestEvent", lore_date=100)
         model.set_items([("event", event1)])
+        assignments = assign_categories({}, [("event", "TestEvent")])
+        model.set_category_assignments(assignments)
 
         index = model.index(0, 0)
 
@@ -68,6 +75,8 @@ class TestExplorerModelHashedColors:
         model.set_use_hashed_colors(True)
         hashed_brush = model.data(index, Qt.ItemDataRole.ForegroundRole)
 
-        expected = ThemeManager().get_theme()[category_role("event", "TestEvent")]
+        expected = ThemeManager().get_theme()[
+            category_role("event", "TestEvent", assignments)
+        ]
         assert hashed_brush.color().name() == expected.lower()
         assert hashed_brush.color().name() != default_brush.color().name()

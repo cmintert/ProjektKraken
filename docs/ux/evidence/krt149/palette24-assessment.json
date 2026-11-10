@@ -1,0 +1,127 @@
+{
+  "palette_size": 24,
+  "allocation": "World database system_meta/explorer_category_palette_v1; exact type and object kind; unused maximin-ordered slots first, then least-used slot; retain inactive assignments.",
+  "example_assignments": {
+    "[\"entity\",\"Character\"]": 0,
+    "[\"entity\",\"Concept\"]": 1,
+    "[\"entity\",\"Deity\"]": 2
+  },
+  "after_adding_Religion": {
+    "[\"entity\",\"Character\"]": 0,
+    "[\"entity\",\"Concept\"]": 1,
+    "[\"entity\",\"Deity\"]": 2,
+    "[\"entity\",\"Religion\"]": 3
+  },
+  "simulation_source": "https://www.inf.ufrgs.br/~oliveira/pubs_files/CVD_Simulation/CVD_Simulation.html",
+  "simulation_matrices": {
+    "protanopia": [
+      [
+        0.152286,
+        1.052583,
+        -0.204868
+      ],
+      [
+        0.114503,
+        0.786281,
+        0.099216
+      ],
+      [
+        -0.003882,
+        -0.048116,
+        1.051998
+      ]
+    ],
+    "deuteranopia": [
+      [
+        0.367322,
+        0.860646,
+        -0.227968
+      ],
+      [
+        0.280085,
+        0.672501,
+        0.047413
+      ],
+      [
+        -0.01182,
+        0.04294,
+        0.968881
+      ]
+    ],
+    "tritanopia": [
+      [
+        1.255528,
+        -0.076749,
+        -0.178779
+      ],
+      [
+        -0.078411,
+        0.930809,
+        0.147602
+      ],
+      [
+        0.004733,
+        0.691367,
+        0.3039
+      ]
+    ]
+  },
+  "human_acceptance": "Owner human verification accepted 2026-11-10; independent native-DPI evidence remains separate",
+  "themes": {
+    "dark_mode": {
+      "minimum_text_contrast": 4.503,
+      "minimum_deltaE76_all_24": {
+        "normal": 14.033,
+        "protanopia": 0.111,
+        "deuteranopia": 0.65,
+        "tritanopia": 4.117
+      }
+    },
+    "light_mode": {
+      "minimum_text_contrast": 5.148,
+      "minimum_deltaE76_all_24": {
+        "normal": 14.161,
+        "protanopia": 1.057,
+        "deuteranopia": 1.667,
+        "tritanopia": 3.283
+      }
+    },
+    "fantasy_mode": {
+      "minimum_text_contrast": 5.003,
+      "minimum_deltaE76_all_24": {
+        "normal": 14.033,
+        "protanopia": 0.111,
+        "deuteranopia": 0.65,
+        "tritanopia": 4.117
+      }
+    },
+    "imperial_mode": {
+      "minimum_text_contrast": 5.985,
+      "minimum_deltaE76_all_24": {
+        "normal": 14.033,
+        "protanopia": 0.111,
+        "deuteranopia": 0.65,
+        "tritanopia": 4.117
+      }
+    },
+    "cyberpunk_mode": {
+      "minimum_text_contrast": 6.515,
+      "minimum_deltaE76_all_24": {
+        "normal": 14.033,
+        "protanopia": 0.111,
+        "deuteranopia": 0.65,
+        "tritanopia": 4.117
+      }
+    },
+    "muted_light_mode": {
+      "minimum_text_contrast": 4.544,
+      "minimum_deltaE76_all_24": {
+        "normal": 14.161,
+        "protanopia": 1.057,
+        "deuteranopia": 1.667,
+        "tritanopia": 3.283
+      }
+    }
+  },
+  "interpretation": "All 24 colors are distinct in each theme and satisfy normal text contrast. Some simulated color pairs are close; written type names remain essential. Screenshot samples show the originally colliding three types; images remain local, untracked."
+}
