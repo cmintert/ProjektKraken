@@ -611,7 +611,8 @@ def test_inherited_summary_shows_impossible_joint_presence(qtbot):
     )
     qtbot.addWidget(dialog)
     assert (
-        "With group dates (Old reign): not present" in dialog._temporal_summary.text()
+        "With group dates (Old reign: from unbounded, until Handover): "
+        "not present at the viewed date." in dialog._temporal_summary.text()
     )
 
 

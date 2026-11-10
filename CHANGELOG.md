@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-10
-**Commit:** 6a91b4449bdbfcd12532ad6198ece87ff1d3dcdb
+**Commit:** 35145dd3571f7237ea248d5819a952c551673a09
 ---
 
 # Changelog
@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-11-10)* **Map summary regression coverage**: Updated the inherited
+  presence-summary assertion to include the group date bounds already shown
+  by the settings dialog, retaining the joint-presence check.
 
 - *(2026-11-10)* **Consistent completion feedback and Event labels (KRT-156)**: Show
   "Deleted" only after confirmed deletion, in a nonmodal notification that
