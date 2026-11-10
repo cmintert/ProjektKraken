@@ -1,6 +1,7 @@
 """Standard GUI spacing and interaction constants."""
 
 WORKSPACE_CONTENT_INSET = 12
+COMPLETION_FEEDBACK_TIMEOUT_MS = 2500
 
 
 class Spacing:

@@ -16,7 +16,7 @@ def test_explorer_model_renders_discriminated_items(qapp):
     model.set_items([("event", event), ("entity", entity)])
 
     assert model.data(model.index(0, 0), Qt.ItemDataRole.DisplayRole) == (
-        "[12.0] Arrival"
+        "Arrival [12.0]"
     )
     assert model.data(model.index(1, 0), Qt.ItemDataRole.DisplayRole) == (
         "Harbor (Location)"

@@ -30,6 +30,24 @@ def test_empty_state(widget):
     assert "No timeline events" in html or html == ""
 
 
+def test_event_card_leads_with_name_then_complete_date(widget, monkeypatch):
+    """Name-first cards preserve timing and association content."""
+    monkeypatch.setattr(TimelineDisplayWidget, "_calendar_converter", None)
+    widget.set_relations(
+        [
+            {
+                "id": "r1",
+                "source_id": "e1",
+                "source_event_name": "Arrival",
+                "source_event_date": 100.0,
+                "attributes": {},
+            },
+        ]
+    )
+    text = widget._text_display.toPlainText()
+    assert text.index("Arrival") < text.index("100.0")
+
+
 @pytest.mark.parametrize(
     ("event_dates", "viewed", "expected_order"),
     [
@@ -262,7 +280,7 @@ def test_unknown_event_date_is_not_epoch_or_relation_validity(widget):
     display = widget.get_display_text()
     assert display.index("Epoch event") < display.index("Viewing:")
     assert display.index("Viewing:") < display.index("Date unknown")
-    assert display.index("Date unknown") < display.index("Undated event")
+    assert display.index("Undated event") < display.index("Date unknown")
     assert "-100.0" not in display
 
 

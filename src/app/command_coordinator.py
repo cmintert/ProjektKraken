@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, cast
 
 from PySide6.QtCore import QObject, Signal, Slot
 
+from src.app.command_feedback import present_deletion_feedback
 from src.core.operation_trace import event as trace_event
 from src.core.operation_trace import new_trace, safe_id
 
@@ -402,6 +403,8 @@ class CommandCoordinator(QObject):
                 # Emit snapshots for UI (fast, no I/O)
                 self._emit_history_changed()
                 self.log_stack_state()
+
+            present_deletion_feedback(result, self.window)
 
         else:
             if not is_undo_redo and "temporal_dependencies" in result.data:

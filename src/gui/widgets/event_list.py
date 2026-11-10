@@ -106,8 +106,7 @@ class EventListWidget(QWidget):
         self.empty_state.hide()
 
         for event in events:
-            # Display: Date - Name (Type)
-            label = f"[{event.lore_date}] {event.name} ({event.type})"
+            label = f"{event.name} [{event.lore_date}] ({event.type})"
             item = QListWidgetItem(label)
             item.setData(100, event.id)  # Store ID in custom role
             self.list_widget.addItem(item)

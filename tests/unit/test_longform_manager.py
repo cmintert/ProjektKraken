@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from PySide6.QtCore import QObject
-from PySide6.QtWidgets import QApplication, QMessageBox
+from PySide6.QtWidgets import QApplication
 
 from src.app.longform_manager import LongformManager
 
@@ -42,7 +42,7 @@ def manager(fake_window):
 def test_successful_vault_export_shows_transient_result(
     mock_message_box, manager, fake_window
 ):
-    """Successful vault exports should use the shared transient result modal."""
+    """Successful vault exports use shared nonmodal completion feedback."""
     manager.on_vault_export_finished(
         {
             "success": True,
@@ -53,22 +53,20 @@ def test_successful_vault_export_shows_transient_result(
     )
 
     message = "Exported 3 files to C:/tmp/vault"
-    fake_window.status_bar.showMessage.assert_called_once_with(message, 5000)
-    mock_message_box.assert_called_once_with(
-        "Obsidian Export Complete",
+    fake_window.status_bar.showMessage.assert_called_once_with(message, 2500)
+    mock_message_box.notify.assert_called_once_with(
+        fake_window,
+        "Exported",
         message,
-        1500,
-        QMessageBox.Icon.Information,
-        parent=fake_window,
     )
-    mock_message_box.return_value.exec.assert_called_once_with()
+    mock_message_box.return_value.exec.assert_not_called()
 
 
-@patch("src.app.longform_manager.AutoClosingMessageBox")
+@patch("src.app.longform_manager.QMessageBox.critical")
 def test_failed_vault_export_shows_transient_result(
     mock_message_box, manager, fake_window
 ):
-    """Failed vault exports should show a concise transient error modal."""
+    """Failed vault exports remain readable until acknowledged."""
     manager.on_vault_export_finished(
         {
             "success": False,
@@ -82,10 +80,7 @@ def test_failed_vault_export_shows_transient_result(
         "Export completed with errors: disk full; permission denied", 5000
     )
     mock_message_box.assert_called_once_with(
+        fake_window,
         "Obsidian Export Failed",
         "Vault export failed: disk full; permission denied",
-        1500,
-        QMessageBox.Icon.Critical,
-        parent=fake_window,
     )
-    mock_message_box.return_value.exec.assert_called_once_with()

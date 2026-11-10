@@ -19,6 +19,7 @@ from src.commands.longform_commands import (
     RemoveLongformEntryCommand,
 )
 from src.core.logging_config import get_logger
+from src.gui.ui_constants import COMPLETION_FEEDBACK_TIMEOUT_MS
 from src.gui.widgets.auto_closing_message_box import AutoClosingMessageBox
 from src.services.longform_builder import DEFAULT_POSITION_GAP
 
@@ -477,26 +478,16 @@ class LongformManager(QObject):
         )
         if bool(result.get("success", False)):
             message = f"Exported {files_created} files to {output_dir}"
-            self.window.status_bar.showMessage(message, 5000)
-            popup = AutoClosingMessageBox(
-                "Obsidian Export Complete",
-                message,
-                1500,
-                QMessageBox.Icon.Information,
-                parent=self.window,
-            )
-            popup.exec()
+            self.window.status_bar.showMessage(message, COMPLETION_FEEDBACK_TIMEOUT_MS)
+            AutoClosingMessageBox.notify(self.window, "Exported", message)
             logger.info("Vault export complete: %d files", files_created)
             return
         error_summary = "; ".join(errors[:3]) or "Unknown export error"
         message = f"Export completed with errors: {error_summary}"
         self.window.status_bar.showMessage(message, 5000)
-        popup = AutoClosingMessageBox(
+        QMessageBox.critical(
+            self.window,
             "Obsidian Export Failed",
             f"Vault export failed: {error_summary}",
-            1500,
-            QMessageBox.Icon.Critical,
-            parent=self.window,
         )
-        popup.exec()
         logger.warning("Vault export errors: %s", errors)

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-10
-**Commit:** 89c3df085350daa0ff537db040557f95681352fd
+**Commit:** 6a91b4449bdbfcd12532ad6198ece87ff1d3dcdb
 ---
 
 # Changelog
@@ -12,6 +12,16 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-11-10)* **Consistent completion feedback and Event labels (KRT-156)**: Show
+  "Deleted" only after confirmed deletion, in a nonmodal notification that
+  disappears after 2.5 seconds. Keep checked items when deletion is canceled
+  or fails. Share the same nonmodal 2.5-second presentation for other undoable
+  deletions, document removals, relation creation and Obsidian exports. Export
+  errors remain visible until acknowledged. Event lists and linked Event cards
+  now lead with the name, followed by the date. Notification expiry explicitly
+  hides the window, arms its timer after presentation, and cannot be postponed
+  by repeated show events. Added notification lifecycle logging for diagnosis.
 
 - *(2026-11-09)* **Filtered Explorer authoring (KRT-148)**: Kept the active
   Entity or Event independent of filtered list refreshes. Creation preserves

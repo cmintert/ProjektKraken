@@ -38,6 +38,7 @@ from src.core.entities import Entity
 from src.core.events import Event
 from src.gui.models.explorer_filter_proxy import ExplorerFilterProxyModel
 from src.gui.models.explorer_model import ExplorerItem, ExplorerModel
+from src.gui.ui_constants import COMPLETION_FEEDBACK_TIMEOUT_MS
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.utils.theme_connections import connect_theme
@@ -447,6 +448,7 @@ class UnifiedListWidget(QWidget):
         self._proxy_model.setSortRole(ExplorerFilterProxyModel.SourceOrderRole)
         self._proxy_model.sort(0, Qt.SortOrder.AscendingOrder)
         self._active_item: tuple[str, str] | None = None
+        self._delete_feedback: AutoClosingMessageBox | None = None
 
         # List (with drag support and virtualization)
         self.list_widget = DraggableListView()
@@ -536,8 +538,40 @@ class UnifiedListWidget(QWidget):
 
     def apply_lore_effects(self, effects: list[LoreMutationEffect]) -> None:
         """Apply worker-confirmed lore mutations without resetting the list."""
+        deletions = [effect for effect in effects if effect["operation"] == "delete"]
+        names = (
+            {
+                (kind, obj.id): obj.name
+                for kind, objects in (
+                    ("event", self._events),
+                    ("entity", self._entities),
+                )
+                for obj in objects
+            }
+            if deletions
+            else {}
+        )
+        deleted_names = [
+            names.get((effect["object_type"], effect["object_id"]), "item")
+            for effect in deletions
+        ]
         with self._presentation_update():
             self._apply_lore_rows(effects)
+        if deleted_names:
+            self._show_deleted_feedback(deleted_names)
+
+    def _show_deleted_feedback(self, names: list[str]) -> None:
+        """Show brief, nonmodal feedback only for confirmed deletions."""
+        message = (
+            f"Deleted '{names[0]}'."
+            if len(names) == 1
+            else f"Deleted {len(names)} items."
+        )
+        message += "\n\nUndo with Ctrl+Z."
+        self.status_message_requested.emit(
+            message.replace("\n\n", " "), COMPLETION_FEEDBACK_TIMEOUT_MS
+        )
+        self._delete_feedback = AutoClosingMessageBox.notify(self, "Deleted", message)
 
     def _apply_lore_rows(self, effects: list[LoreMutationEffect]) -> None:
         """Patch complete source rows, leaving all filtering to the proxy."""
@@ -914,7 +948,7 @@ class UnifiedListWidget(QWidget):
         self._delete_items(items_to_delete)
 
     def _delete_items(self, items_to_delete: List[tuple[str, str, str]]) -> None:
-        """Emit deletion requests and show undo guidance.
+        """Emit deletion intent; confirmed effects provide completion feedback.
 
         Args:
             items_to_delete: Item type, ID, and display name tuples.
@@ -923,24 +957,6 @@ class UnifiedListWidget(QWidget):
         # Proceed with deletion immediately since it's undoable (Unblocking)
         for item_type, item_id, _ in items_to_delete:
             self.delete_requested.emit(item_type, item_id)
-
-        # Show self-closing short delete confirmation modal (Unblocking UX)
-        count = len(items_to_delete)
-        if count == 1:
-            msg = f"Deletion requested for '{items_to_delete[0][2]}'.\n\nCompleted deletions can be undone with Ctrl+Z."
-        else:
-            msg = f"Deletion requested for {count} items.\n\nCompleted deletions can be undone with Ctrl+Z."
-
-        # Emit status bar message as secondary feedback
-        self.status_message_requested.emit(msg.replace("\n\n", " "), 3000)
-
-        # Show the auto-closing modal (1 second)
-        popup = AutoClosingMessageBox("Deletion Requested", msg, 1000, parent=self)
-        popup.exec()
-
-        # Optional: Clear check state after deletion to avoid stale references
-        self._model._checked_ids.clear()
-        self._update_delete_button_state()
 
     def select_item(
         self, item_type: str, item_id: str, *, reveal_hidden: bool = False

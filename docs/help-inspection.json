@@ -16344,8 +16344,8 @@
     {
       "source": "src/gui/widgets/timeline_display_widget.py",
       "symbol": "TimelineDisplayWidget._refresh_display",
-      "sha256": "1827d526c58414f04c34fe525c1e13d3465a9ed5bb34e84752a87b8750b35ae4",
-      "review_note": "KRT-146 groups linked Event cards and keeps unresolved timing outside chronological placement."
+      "sha256": "0f91e66694988115bde1c5d6eec187f253a8b3e939a15fb5bd29393d6038e841",
+      "review_note": "KRT-146 groups linked Event cards and keeps unresolved timing outside chronological placement. KRT-156 2026-11-10: linked Event cards now lead with their name and retain the complete timing caption below, including unknown dates. Chronological sorting, time markers, links, association actions, descriptions and scroll preservation remain unchanged. Updated canonical Linked events explanation; existing Help IDs retained."
     },
     {
       "source": "src/gui/widgets/timeline_display_widget.py",
@@ -16380,8 +16380,8 @@
     {
       "source": "src/gui/widgets/unified_list.py",
       "symbol": "UnifiedListWidget.__init__",
-      "sha256": "63f74e1b60dd49f9463a1bc8d893442586ae49261f4f7bd19e8bba60a5f37d2c",
-      "review_note": "Reviewed uniform filter-row heights: category/sort fields align with Filter and Clear Filters through reflow. Existing labels, shortcuts, filtering, overflow routes and explanations remain accurate; no interaction change. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate. KRT-127: adds checked-only Batch Edit through existing responsive toolbar. Existing navigation, creation and delete explanations retained; new batch route explained in workspace manual. KRT-148: reviewed active filtered-out row caption, native row actions and preserved creation filters; Explorer task, Search, category, sort and Clear Filters excerpts corrected; existing control IDs retained."
+      "sha256": "eeed5860b0b3eb3da3e00f806fb6f7c752cf6efc9a060098fdc12219ec587d9f",
+      "review_note": "Reviewed uniform filter-row heights: category/sort fields align with Filter and Clear Filters through reflow. Existing labels, shortcuts, filtering, overflow routes and explanations remain accurate; no interaction change. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate. KRT-127: adds checked-only Batch Edit through existing responsive toolbar. Existing navigation, creation and delete explanations retained; new batch route explained in workspace manual. KRT-148: reviewed active filtered-out row caption, native row actions and preserved creation filters; Explorer task, Search, category, sort and Clear Filters excerpts corrected; existing control IDs retained. 2026-11-10: Retains all existing controls, routes, keyboard ownership and styling. Adds storage for a reusable nonmodal deletion notification; no control explanation changes."
     },
     {
       "source": "src/gui/widgets/unified_list.py",
@@ -16404,8 +16404,8 @@
     {
       "source": "src/gui/widgets/unified_list.py",
       "symbol": "UnifiedListWidget._delete_items",
-      "sha256": "7103ecce6fee7d21bbae7fd2c62107457f1190ed9bd2b06d864a7b2bf0e2b0e6",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "237631676dc6276e2ebbece0d392d6851bf1c178747e4527e50e2b9365823fe4",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. 2026-11-10: Deletion intent no longer claims completion or clears checks. Worker-confirmed delete effects show Deleted for 2.5 seconds without a modal loop, retain undo guidance and clear only deleted checks. Reviewed and corrected authoring.delete procedure in events-entities-relations.md; existing Help IDs and anchors retained."
     },
     {
       "source": "src/gui/widgets/unified_list.py",

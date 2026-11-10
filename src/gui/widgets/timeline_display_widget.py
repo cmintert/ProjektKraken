@@ -230,11 +230,11 @@ class TimelineDisplayWidget(QWidget):
             has_event = anchor_id in self._event_id_map
             self._wrap_card_with_anchor(html_parts, anchor_id, has_desc or has_event)
 
-            # Header: date + event name
-            html_parts.append(f"<span class='event-date'>{date_html}</span><br>")
+            # Lead with Event identity, then retain the complete timing caption.
             html_parts.append(
-                f"<span class='event-name'>{escape(str(event_name))}</span>"
+                f"<span class='event-name'>{escape(str(event_name))}</span><br>"
             )
+            html_parts.append(f"<span class='event-date'>{date_html}</span>")
             self._append_associations(html_parts, rel["associations"])
 
             self._close_card_anchor(html_parts, anchor_id, has_desc or has_event)

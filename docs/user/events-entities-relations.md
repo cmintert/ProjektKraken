@@ -573,13 +573,16 @@ use the [Northwatch tutorial](northwatch-tutorial.md).
 ## Delete an entry deliberately
 
 1. Select the intended entry in Project and choose **Delete**.
-2. Check the name and any dependency warnings in the confirmation.
-3. Confirm only if you intend to remove the entry from the world. Choose
-   **Cancel** to keep it.
+2. If dependency or map-reference warnings appear, review them before proceeding.
+   Choose **Cancel** in a warning to keep the entry. Entries without these
+   warnings are deleted immediately.
 
-Check that the entry has disappeared from Project. This is different from
-removing an entry from one Longform document. Supported world-entry deletions
-can be undone; deleting or restoring a complete world is a separate operation.
+After deletion succeeds, the entry disappears from Project and a **Deleted**
+notification appears for 2.5 seconds. You can keep working while it is visible.
+Use **Edit → Undo** or **Ctrl+Z** to undo the deletion. Canceled or failed
+deletions keep their checked boxes and do not show a success notification.
+Deleting a world entry is different from removing it from one Longform document;
+deleting or restoring a complete world is a separate operation.
 
 (help-media-gallery)=
 
@@ -917,6 +920,9 @@ or use **Association actions** to change or remove a specific link. Removing a
 link keeps the Event and any other links to it. For characters, living status
 describes the recorded evidence at the viewed time. An unresolved transition or
 a life start without a later death can leave that status indeterminate.
+
+Linked Event cards show the name before the date, including **Date unknown**
+when timing is unresolved. Their chronological order stays unchanged.
 
 (help-inspect-src-gui-widgets-entity-editor-entityeditorwidget-build-summary-section-self-summary-checkbox)=
 

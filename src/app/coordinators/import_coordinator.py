@@ -18,6 +18,7 @@ from PySide6.QtWidgets import QDialog, QFileDialog, QMessageBox
 
 from src.app.coordinators.base_coordinator import BaseCoordinator
 from src.gui.dialogs.database_manager_dialog import DatabaseManagerDialog
+from src.gui.ui_constants import COMPLETION_FEEDBACK_TIMEOUT_MS
 from src.gui.widgets.auto_closing_message_box import AutoClosingMessageBox
 from src.services.obsidian_exporter import (
     ObsidianExportCompletion,
@@ -143,15 +144,10 @@ class ImportCoordinator(BaseCoordinator):
         """
         if snapshot["success"]:
             message = f"Exported '{snapshot['item_name']}' to {snapshot['file_path']}"
-            self.main_window.status_bar.showMessage(message, 5000)
-            popup = AutoClosingMessageBox(
-                "Obsidian Export Complete",
-                message,
-                1500,
-                QMessageBox.Icon.Information,
-                parent=self.main_window,
+            self.main_window.status_bar.showMessage(
+                message, COMPLETION_FEEDBACK_TIMEOUT_MS
             )
-            popup.exec()
+            AutoClosingMessageBox.notify(self.main_window, "Exported", message)
             logger.info(
                 "Exported %s '%s' to %s",
                 snapshot["item_type"],
@@ -161,11 +157,8 @@ class ImportCoordinator(BaseCoordinator):
             return
 
         self.main_window.status_bar.showMessage("Export failed", 3000)
-        popup = AutoClosingMessageBox(
+        QMessageBox.critical(
+            self.main_window,
             "Obsidian Export Failed",
             f"Failed to export '{snapshot['item_name']}': {snapshot['error']}",
-            1500,
-            QMessageBox.Icon.Critical,
-            parent=self.main_window,
         )
-        popup.exec()

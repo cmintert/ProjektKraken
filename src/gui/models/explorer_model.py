@@ -232,7 +232,7 @@ class ExplorerModel(QAbstractListModel):
                         if obj.lore_date is not None
                         else "Unresolved date"
                     )
-                return f"[{date_str}] {obj.name}"
+                return f"{obj.name} [{date_str}]"
 
         elif role == Qt.ItemDataRole.ForegroundRole:
             # Return color

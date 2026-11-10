@@ -1001,9 +1001,8 @@ class EditorCoordinator(BaseCoordinator):
         """Show toast notification for successful relation creation."""
         from src.gui.widgets.auto_closing_message_box import AutoClosingMessageBox
 
-        msg = "Relation created.\n\n(Ctrl+Z to Undo)"
-        popup = AutoClosingMessageBox("Success", msg, 1500, parent=self.main_window)
-        popup.exec()
+        msg = "Relation created.\n\nUndo with Ctrl+Z."
+        AutoClosingMessageBox.notify(self.main_window, "Created", msg)
 
         logger.debug("Drag-drop relation toast displayed")
 

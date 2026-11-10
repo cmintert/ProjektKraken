@@ -55,7 +55,7 @@ def test_set_events_with_data(event_list, sample_events):
 
     # Check first item
     item = event_list.list_widget.item(0)
-    assert "Event 1" in item.text()
+    assert item.text() == "Event 1 [1000.0] (generic)"
     assert item.data(100) == "event1"
 
 

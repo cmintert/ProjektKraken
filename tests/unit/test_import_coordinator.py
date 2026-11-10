@@ -7,7 +7,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from PySide6.QtCore import QObject, Signal
-from PySide6.QtWidgets import QMessageBox
 
 
 class FakeMainWindow(QObject):
@@ -98,7 +97,7 @@ class TestSingleObsidianExport:
     def test_successful_export_shows_transient_result(
         self, mock_message_box, coordinator, fake_window
     ):
-        """Successful exports should use the shared transient result modal."""
+        """Successful exports use the shared nonmodal completion presentation."""
         coordinator.on_obsidian_export_finished(
             {
                 "success": True,
@@ -111,17 +110,15 @@ class TestSingleObsidianExport:
         )
 
         message = "Exported 'The Kraken' to C:/tmp/The Kraken.md"
-        fake_window.status_bar.showMessage.assert_called_once_with(message, 5000)
-        mock_message_box.assert_called_once_with(
-            "Obsidian Export Complete",
+        fake_window.status_bar.showMessage.assert_called_once_with(message, 2500)
+        mock_message_box.notify.assert_called_once_with(
+            fake_window,
+            "Exported",
             message,
-            1500,
-            QMessageBox.Icon.Information,
-            parent=fake_window,
         )
-        mock_message_box.return_value.exec.assert_called_once_with()
+        mock_message_box.return_value.exec.assert_not_called()
 
-    @patch("src.app.coordinators.import_coordinator.AutoClosingMessageBox")
+    @patch("src.app.coordinators.import_coordinator.QMessageBox.critical")
     def test_failed_export_reports_worker_error(
         self, mock_message_box, coordinator, fake_window
     ):
@@ -139,13 +136,10 @@ class TestSingleObsidianExport:
 
         fake_window.status_bar.showMessage.assert_called_with("Export failed", 3000)
         mock_message_box.assert_called_once_with(
+            fake_window,
             "Obsidian Export Failed",
             "Failed to export 'The Kraken': disk full",
-            1500,
-            QMessageBox.Icon.Critical,
-            parent=fake_window,
         )
-        mock_message_box.return_value.exec.assert_called_once_with()
 
 
 @pytest.mark.parametrize(

@@ -244,6 +244,7 @@ excluded by the indexing rules.
 
 The selected entry opens through the normal draft safeguards. Sorting changes
 display order, not saved dates or content; filtering never deletes entries.
+Event rows show the name first, followed by the date.
 
 Creating or opening an entry keeps your search, tag and category filters. If
 those filters hide the entry you are editing, it appears once at the top of

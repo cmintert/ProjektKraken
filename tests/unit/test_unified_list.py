@@ -204,6 +204,64 @@ def test_delete_signal(unified_list, qtbot):
     assert blocker.args == ["event", "e1"]
 
 
+def test_delete_request_preserves_checks_without_claiming_success(unified_list):
+    """An unconfirmed or canceled request must not clear checks or say Deleted."""
+    unified_list.set_data([Event(id="e1", name="Arrival", lore_date=0.0)], [])
+    index = unified_list._model.index(0, 0)
+    unified_list._model.setData(
+        index, Qt.CheckState.Checked, Qt.ItemDataRole.CheckStateRole
+    )
+    status = []
+    unified_list.status_message_requested.connect(lambda *args: status.append(args))
+    unified_list._on_delete_clicked()
+    assert status == []
+    assert unified_list._delete_feedback is None
+    assert unified_list.get_checked_items() == [("event", "e1")]
+
+
+@pytest.mark.parametrize("count", [1, 2])
+def test_confirmed_delete_feedback_expires_without_modal_loop(
+    unified_list, qtbot, count
+):
+    """Persisted effects produce truthful, transient feedback and clear checks."""
+    events = [
+        Event(id=f"e{i}", name=f"Arrival {i}", lore_date=0.0) for i in range(count)
+    ]
+    unified_list.set_data(events, [])
+    for i in range(count):
+        unified_list._model.setData(
+            unified_list._model.index(i, 0),
+            Qt.CheckState.Checked,
+            Qt.ItemDataRole.CheckStateRole,
+        )
+    effects = [
+        {
+            "object_type": "event",
+            "operation": "delete",
+            "object_id": event.id,
+            "snapshot": None,
+            "relations_changed": True,
+        }
+        for event in events
+    ]
+    with patch("PySide6.QtWidgets.QMessageBox.exec") as modal:
+        unified_list.apply_lore_effects(effects)
+    modal.assert_not_called()
+    popup = unified_list._delete_feedback
+    assert popup.windowTitle() == "Deleted"
+    assert popup.text() == (
+        "Deleted 'Arrival 0'.\n\nUndo with Ctrl+Z."
+        if count == 1
+        else "Deleted 2 items.\n\nUndo with Ctrl+Z."
+    )
+    assert popup.isVisible()
+    assert popup.windowModality() == Qt.WindowModality.NonModal
+    assert popup.testAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
+    assert popup.timer.interval() == 2500
+    assert unified_list.get_checked_items() == []
+    qtbot.waitUntil(lambda: not popup.isVisible(), timeout=3500)
+
+
 @pytest.mark.parametrize(
     ("events", "entities", "expected"),
     [
