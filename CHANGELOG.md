@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-12
-**Commit:** 9313011b2f439a7e5256133e68e75cf2738704fe
+**Commit:** ec8b0856e841f013e7e95b4e9b47bdf95175a3e5
 ---
 
 # Changelog
@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-11-12)* **Description view preservation**: Kept ordinary prose with
+  trailing spaces editable in Rich view by matching the cursor check to the
+  editor's restored spaces. Added caret/source regressions and verified wiki-link
+  return preserves the original writing mode, selection and scroll position.
 
 - *(2026-11-12)* **Portable note links (KRT-159)**: Converted description
   wikilinks to allocated Obsidian filenames and retained native identity maps

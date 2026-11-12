@@ -216,3 +216,19 @@ def test_spelling_outside_legacy_cursor_mapping_remains_exact_source(qtbot, sour
     writing.set_wiki_text(source)
     assert writing.editor._view_mode == "source"
     assert writing.get_wiki_text() == source
+
+
+@pytest.mark.parametrize("source", ["Origin writing ", "Origin writing   "])
+def test_terminal_prose_spaces_keep_rich_caret_and_source(qtbot, source):
+    writing = WikiTextEdit()
+    qtbot.addWidget(writing)
+    assert parse_content(source).rich_editable
+    writing.set_wiki_text(source)
+    assert writing.editor._view_mode == "rich"
+    assert writing.editor.toPlainText() == source
+    assert writing.get_wiki_text() == source
+    cursor = writing.textCursor()
+    cursor.movePosition(QTextCursor.MoveOperation.End)
+    writing.setTextCursor(cursor)
+    writing.editor.insertPlainText("continued")
+    assert writing.get_wiki_text() == source + "continued"

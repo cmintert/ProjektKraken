@@ -249,7 +249,10 @@ def parse_content(source: str) -> ParsedMarkdownContent:
         reasons.update(parse_content("".join(lines)).source_reasons)
     elif not reasons:
         mapped_text, _ = WikiASTSerializer().to_plaintext(WikiASTParser().parse(source))
-        if mapped_text != _projection_text(tokens):
+        # The Rich editor restores terminal spaces after CommonMark rendering
+        # so the author can continue typing at the original caret position.
+        trailing_spaces = source[len(source.rstrip(" ")) :]
+        if mapped_text != _projection_text(tokens) + trailing_spaces:
             reasons.add("cursor_mapping")
     return ParsedMarkdownContent(
         source, tuple(tokens), not reasons, tuple(sorted(reasons)), environment
