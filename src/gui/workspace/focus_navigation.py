@@ -363,6 +363,11 @@ class FocusNavigationController(QObject):
         forward = event.key() != Qt.Key.Key_Backtab and not bool(
             event.modifiers() & Qt.KeyboardModifier.ShiftModifier
         )
+        if any(
+            item.property("descriptionTableNavigation")
+            for item in self._ancestors(watched)
+        ):
+            return False
         # Item delegates own cell commit/navigation. Wrap only if they leave the region.
         if any(
             isinstance(item, QAbstractItemView) for item in self._ancestors(watched)

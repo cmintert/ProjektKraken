@@ -9590,6 +9590,16 @@
       "binding": "self.compound",
       "label": "Offset components",
       "kind": "CompoundOffsetControls"
+    },
+    {
+      "id": "writing.tables",
+      "topic_id": "writing.edit",
+      "target": "help-inspect-writing-tables",
+      "source": "src/gui/widgets/wiki_tables.py",
+      "symbol": "WikiTableController.__init__",
+      "binding": "writing.tables",
+      "label": "Visual table authoring",
+      "kind": "semantic control/action"
     }
   ],
   "factory_exemptions": [
@@ -16720,8 +16730,8 @@
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
       "symbol": "WikiTextEditView._set_heading",
-      "sha256": "9fb9b28feea78425e9708a4a65d36b242df68e619d2bd242574557292bb7c36b",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "de8f3bd8b5c8c64c3cb189957b3d65620d724c9e20f5af4601d2f794e5698552",
+      "review_note": "KRT-158: heading commands remain available outside table cells; cells use inline content only. Updated canonical writing Help."
     },
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
@@ -16786,8 +16796,8 @@
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
       "symbol": "WikiTextEditView.get_wiki_text",
-      "sha256": "45219bdccbf97594f6fc75287becdca5e52ae64d38e17cc931fdf1d363ac6a28",
-      "review_note": "KRT-157: writing Help and the Markdown reference now document exact untouched source through Rich/Source/save, semantic serialization after edits, and restoration of the original projection by Undo. Existing save routes and Help destinations retain their meaning."
+      "sha256": "a63fd57f3e9346554b1e0925d5a136d0dff7e10a102bffd91297e380fc2ac628",
+      "review_note": "KRT-158: reviewed root-frame table serialization, exact unchanged-source baseline, escaped cells and surrounding prose; canonical table Help describes semantic GFM after edits."
     },
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
@@ -17412,6 +17422,30 @@
       "symbol": "MapLayerPanel._show_settings_actions",
       "sha256": "89d64e6be68f11b05ac2a4db08276984a6462fac5561eb640f853cb2f78be10d",
       "review_note": "KRT-140: reviewed explicit feature, group and surface ownership; scope captions, inherited restrictions, modeless target guards and unchanged commands. Map Help describes the named routes, icon sizing versus zoom visibility and existing rename synchronization. Human acceptance pending."
+    },
+    {
+      "source": "src/gui/widgets/wiki_tables.py",
+      "symbol": "WikiTableController.__init__",
+      "sha256": "45fc292914bf0be93fae69f796a0f415308ead5662502c5550d42fb6778a0470",
+      "review_note": "KRT-158: reviewed table menu actions, Format strikethrough, permissions and signals against the table Help excerpt."
+    },
+    {
+      "source": "src/gui/widgets/wiki_tables.py",
+      "symbol": "WikiTableController._edit",
+      "sha256": "734e1290d294fe2cb4e748d303bc9649f4e47fb7cca979021b922800b1a9b577",
+      "review_note": "KRT-158: reviewed read-only/Rich/cell guards, one edit block and focus restoration for table operations."
+    },
+    {
+      "source": "src/gui/widgets/wiki_tables.py",
+      "symbol": "WikiTableController.key",
+      "sha256": "b068094ee7d14c85a7dcdf59cce9450045f8d4925e8312063c818fa96aaa9c58",
+      "review_note": "KRT-158: reviewed non-mutating cell Tab/Shift+Tab/Enter routes and boundary exit against documented behavior."
+    },
+    {
+      "source": "src/gui/widgets/wiki_tables.py",
+      "symbol": "serialize_table",
+      "sha256": "8929880dc81c515d751ade0f52a865f262a4b7915fb5e5ac772156228680fbb6",
+      "review_note": "KRT-158: reviewed GFM header row, escaped inline content and column alignment; exact source is retained separately before edits."
     }
   ],
   "review_status": {

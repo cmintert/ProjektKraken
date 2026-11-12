@@ -30,12 +30,14 @@ their reading behavior. This compatibility handling affects the parsing buffer;
 the stored source stays intact.
 
 GFM tables contain inline cell content. Merged cells and multiline block content
-require HTML source. Visual table authoring is a later milestone.
+require HTML source and remain in Source view. For visual table authoring, see
+{ref}`Create and edit a table <help-inspect-writing-tables>`.
 
 ## Editing and preservation
 
 Rich editing supports the existing conservative vocabulary of paragraphs,
-headings through level three, bold, italic and wikilinks. Other structures remain
+headings through level three, bold, italic, wikilinks and GFM tables. Cells also
+retain strikethrough, code spans and ordinary Markdown links. Other structures remain
 editable in Source view, with a visible preservation notice.
 Source spellings outside the retained cursor mapper's vocabulary also use Source
 view so that selections continue to address the original text.

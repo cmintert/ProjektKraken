@@ -77,8 +77,11 @@ def clipboard_html_requires_source(html: str) -> bool:
 
 def requires_source_mode(source: str) -> bool:
     """Keep constructs outside the rich serializer's vocabulary verbatim."""
+    parsed = parse_content(source)
+    if any(token.type == "table_open" for token in parsed.tokens):
+        return not parsed.rich_editable
     return bool(
-        not parse_content(source).rich_editable
+        not parsed.rich_editable
         or _BLOCK_CONSTRUCT.search(source)
         or _RICH_INLINE_CONSTRUCT.search(source)
         or re.search(r"(?m)^.+\|.+\n[ \t]*\|?[ \t]*:?-{3,}", source)

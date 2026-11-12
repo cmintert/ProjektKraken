@@ -1,5 +1,14 @@
 # Authoring interaction audit v1 — KRT-46
 
+KRT-158 (2026-11-12, based on `54beba85`): descriptions gain visual GFM table
+editing through Insert → Table. Cells own Tab/Shift+Tab and Enter navigation;
+ordinary writing retains focus traversal. Structural edits are one undo step,
+and untouched source, stable link targets and surrounding prose remain intact.
+The existing secondary menus and overflow routes carry the commands. Theme-owned
+cell boundaries are transient presentation. Contracts 2/3/5/6/7/8/9 and KA-04/KA-20
+apply. See [table evidence](evidence/krt158/README.md); native/human acceptance
+and measured reader outcomes remain pending.
+
 KRT-141 (2026-11-10, implementation based on `479f4a45`): the existing
 Format → Clear Formatting / Ctrl+0 route now removes imported character colors
 and backgrounds in Rich view. A selection limits character cleanup; no selection

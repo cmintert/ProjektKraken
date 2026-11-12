@@ -80,6 +80,26 @@ def navigation(qtbot):
     return window, shell, controller, exit_focus
 
 
+def test_description_table_owns_tab_inside_workspace(navigation, qtbot):
+    from src.gui.widgets.wiki_tables import tables
+
+    _, shell, controller, _ = navigation
+    shell.show_panel("entity")
+    writing = shell.panel("entity").findChild(WikiTextEdit)
+    source = "| A | B |\n| - | - |\n| one | two |"
+    writing.set_wiki_text(source)
+    table = tables(writing.editor)[0]
+    writing.setTextCursor(table.cellAt(0, 0).firstCursorPosition())
+    writing.editor.setFocus()
+    qtbot.keyClick(writing.editor, Qt.Key.Key_Tab)
+    assert QApplication.focusWidget() is writing.editor
+    assert table.cellAt(writing.textCursor()).column() == 1
+    qtbot.keyClick(writing.editor, Qt.Key.Key_Backtab)
+    assert table.cellAt(writing.textCursor()).column() == 0
+    assert controller._region_for(QApplication.focusWidget()) == "center"
+    assert writing.get_wiki_text() == source
+
+
 @pytest.mark.parametrize("forward", [True, False])
 @pytest.mark.parametrize("preset", [item.id for item in BUILTIN_WORKSPACES])
 def test_tab_cycles_active_region_without_edits(navigation, qtbot, preset, forward):

@@ -170,6 +170,8 @@ class WritingToolbarPresentation(QObject):
         """Share the live link actions after the wrapper has created them."""
         owner = self.owner
         menu = self._menus["Insert"]
+        owner.editor._tables.install_menu(menu)
+        self._menus["Format"].addAction(owner.editor._tables.strike)
         owner.action_link_entry.setToolTip("Link to an existing entry")
         for action in (
             owner.action_link_entry,

@@ -11,6 +11,7 @@ from typing import Any, cast
 
 from markdown_it import MarkdownIt
 from markdown_it.renderer import RendererHTML
+from markdown_it.rules_block.table import escapedSplit
 from markdown_it.token import Token
 from mdit_py_plugins.deflist import deflist_plugin
 from mdit_py_plugins.footnote import footnote_plugin
@@ -20,7 +21,7 @@ from src.core.markdown_extensions import (
     prepare_compatibility,
     wikilink,
 )
-from src.core.markdown_html import authored_html, clean_html
+from src.core.markdown_html import authored_html, clean_html, is_safe_url
 from src.core.wiki_ast import WikiASTParser, WikiASTSerializer
 
 PROFILE_VERSION = 1
@@ -115,6 +116,40 @@ def resolve_wikilinks_in_source(source: str, resolver: WikiLinkResolver) -> str:
     return source
 
 
+def _unrepresentable_links(tokens: Iterable[Token]) -> bool:
+    """Reject navigation whose semantics the editable projection cannot retain."""
+    for token in _walk(tokens):
+        target = (
+            str(token.meta["target"])
+            if token.type == "kraken_wikilink"
+            else str(token.attrGet("href") or "")
+            if token.type == "link_open"
+            else ""
+        )
+        if re.match(r"[A-Za-z][\w+.-]*:", target) and not target.startswith("id:"):
+            if token.type == "kraken_wikilink" or not is_safe_url(target):
+                return True
+    return False
+
+
+def _table_shape_safe(source: str, ranges: list[list[int]]) -> bool:
+    """Keep overfull rows in Source rather than dropping parser-ignored cells."""
+    lines = source.splitlines()
+    for start, end in ranges:
+        width = 0
+        for index in [start, *range(start + 2, end)]:
+            cells = escapedSplit(lines[index].strip())
+            if cells and not cells[0]:
+                cells.pop(0)
+            if cells and not cells[-1]:
+                cells.pop()
+            if index == start:
+                width = len(cells)
+            elif len(cells) > width:
+                return False
+    return True
+
+
 def parse_content(source: str) -> ParsedMarkdownContent:
     """Parse locally and identify content outside the conservative Rich subset."""
     environment: dict[str, Any] = {}
@@ -134,17 +169,57 @@ def parse_content(source: str) -> ParsedMarkdownContent:
         "hardbreak",
         "kraken_wikilink",
     }
-    reasons = {token.type for token in _walk(tokens) if token.type not in supported}
+    table_tokens = {
+        "table_open",
+        "table_close",
+        "thead_open",
+        "thead_close",
+        "tbody_open",
+        "tbody_close",
+        "tr_open",
+        "tr_close",
+        "th_open",
+        "th_close",
+        "td_open",
+        "td_close",
+    }
+    cell_tokens = supported | {
+        "s_open",
+        "s_close",
+        "code_inline",
+        "link_open",
+        "link_close",
+    }
+    reasons: set[str] = set()
+    in_table = False
+    table_ranges = []
+    for token in tokens:
+        if token.type == "table_open":
+            in_table = True
+            if token.map:
+                table_ranges.append(token.map)
+        allowed = cell_tokens | table_tokens if in_table else supported
+        reasons.update(
+            child.type for child in _walk([token]) if child.type not in allowed
+        )
+        if token.type == "table_close":
+            in_table = False
     if any(token.tag in {"h4", "h5", "h6"} for token in tokens):
         reasons.add("heading_level")
     if environment.get("references") or environment.get("kraken_abbreviations"):
         reasons.add("definitions")
-    for token in _walk(tokens):
-        if token.type == "kraken_wikilink":
-            target = str(token.meta["target"])
-            if re.match(r"[A-Za-z][\w+.-]*:", target) and not target.startswith("id:"):
-                reasons.add("unrepresentable_link")
-    if not reasons:
+    if _unrepresentable_links(tokens):
+        reasons.add("unrepresentable_link")
+    if table_ranges:
+        if not _table_shape_safe(
+            str(environment["kraken_source_buffer"]), table_ranges
+        ):
+            reasons.add("overfull_table")
+        lines = source.splitlines(keepends=True)
+        for start, end in table_ranges:
+            lines[start:end] = ["\n"] * (end - start)
+        reasons.update(parse_content("".join(lines)).source_reasons)
+    elif not reasons:
         mapped_text, _ = WikiASTSerializer().to_plaintext(WikiASTParser().parse(source))
         if mapped_text != _projection_text(tokens):
             reasons.add("cursor_mapping")

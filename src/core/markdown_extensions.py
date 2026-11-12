@@ -102,6 +102,7 @@ def prepare_compatibility(state: StateCore) -> None:
                 lines[line] = _escape_aliases(lines[line], parser)
     state.env["kraken_abbreviations"] = abbreviations
     state.src = "\n".join(lines)
+    state.env["kraken_source_buffer"] = state.src
 
 
 def expand_abbreviations(state: StateCore) -> None:

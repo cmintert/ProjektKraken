@@ -252,6 +252,9 @@ class WikiTextEditView(QTextEdit):
         from src.gui.widgets.wiki_edit_history import WikiEditHistory
 
         self._history = WikiEditHistory(self)
+        from src.gui.widgets.wiki_tables import WikiTableController
+
+        self._tables = WikiTableController(self)
 
     def _setup_actions(self) -> None:
         """Setup formatting actions with shortcuts."""
@@ -351,6 +354,20 @@ class WikiTextEditView(QTextEdit):
                 mapped = mapping(character_offset)
             positions.append(len(destination[:mapped].encode("utf-16-le")) // 2)
         anchor, position = positions
+        from src.gui.widgets.wiki_table_selection import map_table_selection
+        from src.gui.widgets.wiki_tables import has_table
+
+        if has_table(source):
+            projection = QTextDocument()
+            projection.setHtml(
+                render_content(parse_content(source), RenderTarget.EDITOR)
+            )
+            anchor, position = map_table_selection(
+                source,
+                self.document() if self._view_mode == "rich" else projection,
+                self._view_mode == "source",
+                [cursor.anchor(), cursor.position()],
+            )
         mode = "source" if self._view_mode == "rich" else "rich"
         self._history.suspended = True
         try:
@@ -447,8 +464,17 @@ class WikiTextEditView(QTextEdit):
             except UnicodeDecodeError:
                 logger.warning("Clipboard Markdown is not valid UTF-8")
             else:
+                if self._tables.paste(markdown):
+                    return
                 self._insert_source_text(markdown)
                 return
+        if source.hasText() and self._tables.paste(text):
+            return
+        if self._view_mode == "rich" and self.textCursor().currentTable() is not None:
+            cursor = self.textCursor()
+            cursor.insertText(text.replace("\r\n", " ").replace("\n", " "))
+            self.setTextCursor(cursor)
+            return
         if source.hasText() and (
             requires_source_mode(text) or ("\n" in text and not html)
         ):
@@ -871,6 +897,8 @@ class WikiTextEditView(QTextEdit):
             return
 
         html_body = render_content(parse_content(text), RenderTarget.EDITOR)
+        # Header membership is structural, not an implicit authored bold mark.
+        html_body = re.sub(r"<(\/?)th(?=[\s>])", r"<\1td", html_body)
 
         # 3. Get theme CSS and wrap content with embedded stylesheet
         # Embedding CSS directly in HTML ensures Qt applies it correctly
@@ -883,7 +911,9 @@ class WikiTextEditView(QTextEdit):
         was_blocked = self.blockSignals(True)
         try:
             self.setHtml(html_content)
+            self._tables.remember_code()
             self._apply_document_typography()
+            self._tables.prepare()
             # CommonMark trims terminal paragraph spaces. Keep the authoring
             # caret's trailing space available for the next word or link.
             trailing_spaces = len(text) - len(text.rstrip(" "))
@@ -910,6 +940,10 @@ class WikiTextEditView(QTextEdit):
             return self.toPlainText()
         if self.document().isEmpty():
             return self._preserved_source("")
+        from src.gui.widgets.wiki_tables import document_blocks, tables
+
+        if tables(self):
+            return self._preserved_source("\n\n".join(document_blocks(self)))
 
         result = []
         block = self.document().begin()
@@ -1238,6 +1272,15 @@ class WikiTextEditView(QTextEdit):
             targets.add(fmt.anchorHref())
         return targets.pop() if len(targets) == 1 else ""
 
+    def focusNextPrevChild(self, next: bool) -> bool:  # noqa: N802
+        """Let tables own cell traversal; ordinary writing retains focus traversal."""
+        if hasattr(self, "_tables") and self.property("descriptionTableNavigation"):
+            key = Qt.Key.Key_Tab if next else Qt.Key.Key_Backtab
+            return self._tables.key(
+                QKeyEvent(QKeyEvent.Type.KeyPress, key, Qt.KeyboardModifier.NoModifier)
+            )
+        return super().focusNextPrevChild(next)
+
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Handles key press events for wiki link completion and formatting shortcuts.
 
@@ -1267,6 +1310,9 @@ class WikiTextEditView(QTextEdit):
             ):
                 event.ignore()
                 return
+
+        if self._tables.key(event):
+            return
 
         is_source_mode = hasattr(self, "_view_mode") and self._view_mode == "source"
         if not is_source_mode and event.text() and not self.textCursor().hasSelection():
@@ -1414,6 +1460,8 @@ class WikiTextEditView(QTextEdit):
         In Rich mode: Applies font size from ThemeManager
 
         """
+        if self._view_mode == "rich" and self.textCursor().currentTable() is not None:
+            return
         if self._view_mode == "source":
             self._set_markdown_heading(level)
         else:
@@ -1716,6 +1764,12 @@ class WikiTextEditView(QTextEdit):
         """
         # First let the default text editor rendering happen
         super().paintEvent(event)
+        from PySide6.QtGui import QPainter
+
+        if hasattr(self, "_tables"):
+            table_painter = QPainter(self.viewport())
+            self._tables.paint(table_painter)
+            table_painter.end()
 
         # We only draw gutters in rich mode to avoid clashes with markdown hashes
         if (

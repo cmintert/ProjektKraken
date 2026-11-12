@@ -19,22 +19,23 @@ prose and supported formatting, or **Markdown source** to edit the exact stored 
 5. Use **Save Changes**, or wait for the inspector's separate save status,
    then reopen the same entry to check the stored description.
 
-Rich view supports paragraphs, headings from `#` through `###`, bold, italic and wiki
-links. In Rich view, choose **Format → Clear Formatting** to remove heading,
+Rich view supports paragraphs, headings from `#` through `###`, bold, italic, wiki
+links and GFM tables. In Rich view, choose **Format → Clear Formatting** to remove heading,
 bold, italic and pasted text colors or backgrounds. Select the text to clean;
 with no selection, the action cleans the current paragraph. Paragraph backgrounds
 and headings are reset for each affected paragraph. Links and paragraph breaks
 remain. Use **Undo** once to restore the previous formatting, then save the
 description with **Save Changes** when ready.
 
-Descriptions containing tables, lists, code or other Markdown that Rich view cannot
+Descriptions containing lists, block code or other Markdown that Rich view cannot
 safely preserve open in Source view. Those constructs remain editable and are saved
 exactly; switching views does not convert them into supported Rich formatting.
 
-**Example:** Write a character biography in Rich view. If you add a Markdown table of
-titles and dates, continue editing it in Source view.
+**Example:** Write a character biography in Rich view, then insert a table of titles
+and dates and edit its cells directly.
 
-Pasting Markdown that contains tables, lists, code or other unsupported formatting
+Pasting a supported Markdown table renders editable cells. Pasting lists, block
+code or other unsupported formatting
 switches the description to Source view and keeps the pasted Markdown. If the
 clipboard provides HTML for those structures without recognizable Markdown,
 Source view keeps the HTML markup, including table rows, cells and empty cells.
@@ -90,7 +91,34 @@ Save the description with its inspector's **Save Changes** action.
 **Source indentation and tab character** — In editable Markdown source, Indent
 adds four spaces to the current or selected lines; Outdent removes one leading
 tab or up to four spaces. Tab character inserts a literal tab or replaces the
-selection. Each command is one text Undo step. Plain Tab always moves focus.
+selection. Each command is one text Undo step. In Source view, plain Tab moves focus.
+
+(help-inspect-writing-tables)=
+
+### Create and edit a table
+
+1. In editable Rich view, place the caret outside an existing table.
+2. Choose **Insert → Table → Insert table**. A table with two columns, a header
+   row and two empty body rows appears. You can also paste a GFM Markdown table.
+3. Click a cell and type. Use **Tab** or **Shift+Tab** to move between cells.
+   At the last or first cell, these keys leave the table for the surrounding
+   writing. **Enter** moves to the next row in the same column, leaving the table
+   after its final row. These keys do not insert rows or paragraphs.
+4. With the caret in a cell, open **Insert → Table** to insert or delete rows or
+   columns, delete the table, or align the current column. The first row always
+   supplies the column headings; deleting it promotes the next row.
+5. Use **Bold**, **Italic**, **Format → Strikethrough** or **Link to entry…** for
+   inline cell content. Headings are unavailable inside cells. Existing code spans
+   and ordinary Markdown links retain their meaning.
+6. Choose **Save Changes**, then reopen the entry to check the result.
+
+Use **Edit → Undo** to reverse a table operation in one step. Table commands are
+disabled in Source and read-only descriptions. An untouched table retains its
+original Markdown spelling; after edits, Kraken writes a standard GFM table,
+including escaped cell pipes and column alignment. Merged cells and multiline
+blocks remain outside GFM table authoring. Multiline plain-text paste into a cell
+becomes inline text. Descriptions with other unsupported structures still use
+Source view to preserve the complete draft.
 
 (help-writing-links)=
 

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-12
-**Commit:** 4275a1cae7d88a7be73a247ff93c93b324763864
+**Commit:** 54beba853b4c11ce4a94cfed26063a9435649cbf
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-11-12)* **Visual description tables (KRT-158)**: Rendered GFM tables as
+  editable cells with row/column operations, column alignment, inline formatting
+  and cell keyboard navigation. Preserved exact untouched source, stable links,
+  surrounding prose, local and persistent undo, and GFM save/reopen behavior.
+  Added focused regressions and updated editor Help and the Markdown reference.
 
 - *(2026-11-12)* **Shared Markdown profile (KRT-157)**: Unified description,
   Longform and document-export parsing on CommonMark with tables, strikethrough,

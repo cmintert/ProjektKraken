@@ -1,7 +1,8 @@
 # KRT-157 shared Markdown profile
 
-Reviewed on 12 November 2026 against preservation commit `4275a1ca` and the
-uncommitted parser migration in the regular checkout.
+Reviewed on 12 November 2026 against preservation commit `4275a1ca`. The parser
+migration was subsequently committed as `54beba85` at the owner's instruction to
+trust the recorded tests. Normal commit hooks passed; no push was requested.
 
 ## Implemented contract
 
