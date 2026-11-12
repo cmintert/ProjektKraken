@@ -8,6 +8,8 @@ from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules, copy_metadata
 
+from scripts.markdown_licenses import collect_markdown_licenses
+
 ROOT = Path(SPECPATH)
 
 # Generate with build-only docs tooling, including for direct spec invocations.
@@ -32,6 +34,8 @@ datas += collect_data_files("pyvis", includes=["templates/**"])
 datas.append((str(ROOT / "docs" / "_build" / "help"), "help"))
 datas += copy_metadata("keyring")
 datas += collect_data_files("docx")
+markdown_notices = collect_markdown_licenses(ROOT / "build" / "markdown-licenses")
+datas.append((str(markdown_notices), "third_party_licenses"))
 
 hiddenimports = [
     "PySide6.QtSvg",

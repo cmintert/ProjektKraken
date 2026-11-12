@@ -8,9 +8,15 @@ from pathlib import Path
 from typing import Any
 from xml.etree.ElementTree import Element, SubElement
 
-import markdown  # type: ignore[import-untyped]  # Markdown ships no type information.
 from PySide6.QtCore import QMarginsF, QUrl
 from PySide6.QtGui import QPageLayout, QPageSize, QPdfWriter, QTextDocument
+
+from src.core.markdown_content import (
+    RenderTarget,
+    parse_content,
+    render_content,
+    resolve_wikilinks_in_source,
+)
 
 
 class _TreeParser(HTMLParser):
@@ -46,6 +52,12 @@ def document_snapshot(
     """Capture ordered narrative, readable wiki links, and contained local images."""
     title = str(options.get("title") or "Longform document")
     names = {item["name"]: item["id"] for item in sequence}
+    identities = {f"id:{item['id']}": item["id"] for item in sequence}
+
+    def wiki_link(target: str, label: str) -> str | None:
+        identity = identities.get(target) or names.get(target)
+        return f"#item-{identity}" if identity else None
+
     lines = [f"# {title}", ""]
     warnings: list[str] = []
     if options.get("contents"):
@@ -68,17 +80,10 @@ def document_snapshot(
         lines.append("")
         content = item.get("content", "")
 
-        def wiki_link(match: re.Match[str]) -> str:
-            target, _, label = match.group(1).partition("|")
-            label = label or target
-            return f"[{label}](#item-{names[target]})" if target in names else label
-
-        content = re.sub(r"(?<!!)\[\[([^\]]+)\]\]", wiki_link, content)
+        content = resolve_wikilinks_in_source(content, wiki_link)
         lines += [content, ""]
     text = "\n".join(lines)
-    rendered = markdown.markdown(
-        text, extensions=["tables", "fenced_code", "sane_lists"]
-    )
+    rendered = render_content(parse_content(text), RenderTarget.EXPORT, wiki_link)
     tree = _TreeParser()
     tree.feed(rendered)
     root = Path(world_path).resolve() if world_path else None
@@ -127,6 +132,16 @@ def document_snapshot(
         "span",
         "br",
         "hr",
+        "s",
+        "del",
+        "sup",
+        "sub",
+        "abbr",
+        "dl",
+        "dt",
+        "dd",
+        "div",
+        "section",
     }
     for node in tree.root.iter():
         if node.tag not in supported:
@@ -213,7 +228,12 @@ class _WordRenderer:
         self.bookmark_index = 0
 
     def inline(
-        self, node: Element, paragraph: Any, bold: bool = False, italic: bool = False
+        self,
+        node: Element,
+        paragraph: Any,
+        bold: bool = False,
+        italic: bool = False,
+        strike: bool = False,
     ) -> None:
         from docx.oxml import OxmlElement
         from docx.oxml.ns import qn
@@ -247,6 +267,7 @@ class _WordRenderer:
         if node.text:
             run = paragraph.add_run(node.text)
             run.bold, run.italic = bold, italic
+            run.font.strike = strike or node.tag in {"s", "del"}
             if node.tag == "code":
                 run.font.name = "Consolas"
         for child in node:
@@ -255,10 +276,12 @@ class _WordRenderer:
                 paragraph,
                 bold or child.tag in {"strong", "b"},
                 italic or child.tag in {"em", "i"},
+                strike or child.tag in {"s", "del"},
             )
             if child.tail:
                 run = paragraph.add_run(child.tail)
                 run.bold, run.italic = bold, italic
+                run.font.strike = strike
 
     def block(self, node: Element, container: Any) -> None:
         if node.tag == "table":
@@ -270,9 +293,19 @@ class _WordRenderer:
                 table.style = "Table Grid"
                 for i, row in enumerate(rows):
                     for j, cell in enumerate(row):
+                        from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+                        paragraph = table.cell(i, j).paragraphs[0]
+                        alignment = {
+                            "left": WD_ALIGN_PARAGRAPH.LEFT,
+                            "center": WD_ALIGN_PARAGRAPH.CENTER,
+                            "right": WD_ALIGN_PARAGRAPH.RIGHT,
+                        }.get(cell.get("align", ""))
+                        if alignment is not None:
+                            paragraph.alignment = alignment
                         self.inline(
                             cell,
-                            table.cell(i, j).paragraphs[0],
+                            paragraph,
                             cell.tag == "th",
                         )
         elif node.tag in {"ul", "ol"}:

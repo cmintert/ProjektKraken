@@ -3,6 +3,8 @@
 import re
 from html.parser import HTMLParser
 
+from src.core.markdown_content import parse_content
+
 _BLOCK_CONSTRUCT = re.compile(
     r"(?m)^(?:[ \t]{4,}|[ \t]{0,3}(?:[-+*] |\d+[.)] |> |```|~~~|"
     r"#{4,6} |\| |: |(?:---|\*\*\*|___)\s*$))"
@@ -76,7 +78,8 @@ def clipboard_html_requires_source(html: str) -> bool:
 def requires_source_mode(source: str) -> bool:
     """Keep constructs outside the rich serializer's vocabulary verbatim."""
     return bool(
-        _BLOCK_CONSTRUCT.search(source)
+        not parse_content(source).rich_editable
+        or _BLOCK_CONSTRUCT.search(source)
         or _RICH_INLINE_CONSTRUCT.search(source)
         or re.search(r"(?m)^.+\|.+\n[ \t]*\|?[ \t]*:?-{3,}", source)
     )

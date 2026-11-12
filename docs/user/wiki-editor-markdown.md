@@ -45,6 +45,13 @@ Use **Edit → Undo** to reverse a paste. Undo and Redo follow your edits across
 Rich/Source view changes and may return to the view where an edit was made.
 Pasted web links retain ordinary Markdown link syntax when saved.
 
+An unedited description keeps its original Markdown spelling and blank-line
+spacing through view changes and saving. Longform and document export use the
+same reading rules for tables, strikethrough, URL recognition and existing
+footnotes, definition lists and abbreviations. See the
+[Markdown profile](markdown-reference.md) for the supported syntax and
+destination behavior.
+
 **Related:** {ref}`Wiki links <help-writing-links>` · {ref}`Focus writing
 <help-writing-focus>` · {ref}`Add details <help-authoring-details>`
 

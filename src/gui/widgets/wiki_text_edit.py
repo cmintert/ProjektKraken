@@ -6,7 +6,6 @@ A specialized QTextEdit that supports WikiLink navigation via Ctrl+Click.
 import logging
 import re
 from collections import Counter
-from html import escape
 from typing import Any, List, Optional, Tuple, cast
 
 import shiboken6
@@ -58,6 +57,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.command import LoreMutationEffect
+from src.core.markdown_content import RenderTarget, parse_content, render_content
 from src.core.theme_manager import ThemeManager
 from src.core.wiki_ast import CursorMapper, WikiASTParser, WikiASTSerializer
 from src.core.wiki_markdown_grammar import (
@@ -333,7 +333,6 @@ class WikiTextEditView(QTextEdit):
         scroll = self.verticalScrollBar().value()
         serializer = WikiASTSerializer()
         ast = WikiASTParser().parse(source)
-        _, ast = serializer.to_markdown(ast)
         plain_text, ast = serializer.to_plaintext(ast)
         mapper = CursorMapper(ast)
         mapping = mapper.html_to_md if self._view_mode == "rich" else mapper.md_to_html
@@ -398,12 +397,14 @@ class WikiTextEditView(QTextEdit):
 
     def setPlainText(self, text: str) -> None:  # noqa: N802
         """Treat an external text replacement as a fresh history baseline."""
+        self._clear_source_baseline()
         super().setPlainText(text)
         if hasattr(self, "_history") and not self._history.suspended:
             self._history.reset()
 
     def setHtml(self, text: str) -> None:  # noqa: N802
         """Keep programmatic HTML replacement separate from user edit history."""
+        self._clear_source_baseline()
         super().setHtml(text)
         if hasattr(self, "_history") and not self._history.suspended:
             self._history.reset()
@@ -863,38 +864,13 @@ class WikiTextEditView(QTextEdit):
 
     def _load_wiki_text(self, text: str) -> None:
         """Populate a projection while its owner suppresses history recording."""
-        import markdown  # type: ignore[import-untyped]  # Package has no typing marker
-
         if self._view_mode == "source":
             with QSignalBlocker(self):
                 self.setPlainText(text)
             self._current_wiki_text = text
             return
 
-        # Do not store the raw incoming text here; canonicalize after rendering
-        # The canonical form will be set after setHtml() to preserve linebreaks and ensure reliable equality checks
-
-        # 1. Pre-process WikiLinks [[Target|Label]] -> Markdown [Label](Target)
-        # Markdown library processes standard links [Label](URL) naturally.
-        pattern = re.compile(r"\[\[([^]|]+)(?:\|([^]]+))?\]\]")
-
-        def replace_link_md(match: re.Match) -> str:
-            """Convert WikiLink syntax to Markdown link syntax.
-
-            Checks validity of target against known items.
-            """
-            target = match[1].strip()
-            label = match[2] if match[2] else target
-
-            href = escape(target, quote=True)
-            visible_label = escape(label)
-            return f'<a href="{href}">{visible_label}</a>'
-
-        md_text = pattern.sub(replace_link_md, text)
-
-        # 2. Convert Markdown to HTML
-        # extensions=['extra'] enables tables, attr_list, def_list, etc.
-        html_body = markdown.markdown(md_text, extensions=["extra", "nl2br"])
+        html_body = render_content(parse_content(text), RenderTarget.EDITOR)
 
         # 3. Get theme CSS and wrap content with embedded stylesheet
         # Embedding CSS directly in HTML ensures Qt applies it correctly
@@ -908,12 +884,21 @@ class WikiTextEditView(QTextEdit):
         try:
             self.setHtml(html_content)
             self._apply_document_typography()
+            # CommonMark trims terminal paragraph spaces. Keep the authoring
+            # caret's trailing space available for the next word or link.
+            trailing_spaces = len(text) - len(text.rstrip(" "))
+            if trailing_spaces:
+                cursor = QTextCursor(self.document())
+                cursor.movePosition(QTextCursor.MoveOperation.End)
+                cursor.insertText(" " * trailing_spaces)
         finally:
             self.blockSignals(was_blocked)
 
         # Update internal canonical wiki text after rendering so comparisons and
         # cursor mapping respect linebreaks and rendered output
-        self._current_wiki_text = self.get_wiki_text()
+        self.document().setProperty("krakenProjectionSource", self.get_wiki_text())
+        self.document().setProperty("krakenOriginalSource", text)
+        self._current_wiki_text = text
         self._update_link_colors()
 
     def get_wiki_text(self) -> str:
@@ -924,7 +909,7 @@ class WikiTextEditView(QTextEdit):
         if hasattr(self, "_view_mode") and self._view_mode == "source":
             return self.toPlainText()
         if self.document().isEmpty():
-            return ""
+            return self._preserved_source("")
 
         result = []
         block = self.document().begin()
@@ -959,7 +944,21 @@ class WikiTextEditView(QTextEdit):
         if trailing_empty_count > 0:
             output += "\n" * trailing_empty_count
 
-        return output
+        return self._preserved_source(output)
+
+    def _clear_source_baseline(self) -> None:
+        self.document().setProperty("krakenOriginalSource", None)
+        self.document().setProperty("krakenProjectionSource", None)
+
+    def _preserved_source(self, serialized: str) -> str:
+        document = self.document()
+        original = document.property("krakenOriginalSource")
+        if (
+            isinstance(original, str)
+            and document.property("krakenProjectionSource") == serialized
+        ):
+            return original
+        return serialized
 
     def get_headings(self) -> List[Tuple[int, str, int]]:
         """Extracts headings from the document.

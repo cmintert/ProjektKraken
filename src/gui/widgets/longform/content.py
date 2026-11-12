@@ -5,10 +5,8 @@ Handles the rendering of the longform document content using a lightweight QText
 
 import contextlib
 import logging
-import re
 from typing import Any, Dict, List, Optional
 
-import markdown  # type: ignore[import-untyped]  # Package has no py.typed marker.
 from PySide6.QtCore import QPoint, Qt, QUrl, Signal, Slot
 from PySide6.QtGui import (
     QDesktopServices,
@@ -19,6 +17,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QApplication, QTextBrowser, QWidget
 
+from src.core.markdown_content import RenderTarget, parse_content, render_content
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.theme_connections import connect_theme
 
@@ -206,27 +205,7 @@ class LongformContentWidget(QTextBrowser):
 
     def _render_markdown_fragment(self, md_text: str) -> str:
         """Convert a fragment of Markdown to HTML (no CSS/HTML wrapping)."""
-        # 1. Process WikiLinks [[Target|Label]] -> Markdown [Label](Target)
-        pattern = re.compile(r"\[\[([^]|]+)(?:\|([^]]+))?\]\]")
-
-        def replace_link(match: re.Match) -> str:
-            """Replace wiki link with markdown link.
-
-            Args:
-                match: Regex match object for wiki link.
-
-            Returns:
-                Markdown-formatted link string.
-            """
-            target = match.group(1).strip()
-            label = match.group(2).strip() if match.group(2) else target
-            # Convert to standard Markdown link
-            return f"[{label}]({target})"
-
-        md_text = pattern.sub(replace_link, md_text)
-
-        # 2. Convert to HTML
-        return markdown.markdown(md_text, extensions=["extra", "nl2br"])
+        return render_content(parse_content(md_text), RenderTarget.DESKTOP)
 
     def _wrap_html(self, html_body: str) -> str:
         """Wrap HTML body with CSS and standard tags."""

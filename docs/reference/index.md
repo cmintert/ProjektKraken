@@ -6,6 +6,7 @@
 cli
 cli-verification
 configuration
+../user/markdown-reference
 database-schema
 ```
 

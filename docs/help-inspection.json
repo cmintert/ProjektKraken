@@ -16786,8 +16786,8 @@
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
       "symbol": "WikiTextEditView.get_wiki_text",
-      "sha256": "75f0465061dab959677821eb50e2f91048b861e405d28b1a381c3a0678b8842c",
-      "review_note": "KRT-150: empty Rich documents serialize as empty text, avoiding a spurious newline during source-preserving paste; saved descriptions and Help save routes retain their meaning."
+      "sha256": "45219bdccbf97594f6fc75287becdca5e52ae64d38e17cc931fdf1d363ac6a28",
+      "review_note": "KRT-157: writing Help and the Markdown reference now document exact untouched source through Rich/Source/save, semantic serialization after edits, and restoration of the original projection by Undo. Existing save routes and Help destinations retain their meaning."
     },
     {
       "source": "src/gui/widgets/wiki_text_edit.py",

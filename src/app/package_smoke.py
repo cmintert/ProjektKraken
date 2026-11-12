@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 from PySide6.QtWidgets import QApplication, QLabel
 
 from src.app.help_package_probe import probe_help
+from src.app.markdown_package_probe import probe_markdown
 from src.core.logging_config import get_logger
 from src.core.paths import get_executable_dir, get_resource_path
 from src.core.version import VERSION
@@ -46,6 +47,7 @@ class PackageSmokeReport:
     resources_checked: tuple[str, ...]
     errors: tuple[str, ...]
     help_evidence: dict[str, object] = field(default_factory=dict)
+    markdown_evidence: dict[str, object] = field(default_factory=dict)
 
 
 def parse_package_smoke_options(argv: list[str]) -> PackageSmokeOptions | None:
@@ -183,10 +185,14 @@ class PackageSmokeController:
         logger.info("Package smoke build metadata evidence collected")
 
         help_evidence: dict[str, object] = {}
+        markdown_evidence: dict[str, object] = {}
         try:
             help_evidence = probe_help()
+            markdown_evidence = probe_markdown(
+                Path(get_resource_path("third_party_licenses"))
+            )
         except (OSError, ValueError, RuntimeError) as exc:
-            errors.append(f"Packaged Help validation failed: {exc}")
+            errors.append(f"Packaged content validation failed: {exc}")
 
         logger.info("Constructing About dialog for version evidence")
         about = AboutDialog(self._window)
@@ -209,6 +215,7 @@ class PackageSmokeController:
             resources_checked=resources_checked,
             errors=tuple(errors),
             help_evidence=help_evidence,
+            markdown_evidence=markdown_evidence,
         )
 
     def _finish(self, report: PackageSmokeReport, exit_code: int) -> None:

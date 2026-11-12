@@ -16,7 +16,9 @@ dependencies = [
     "geojson==3.2.0",
     "keyring==25.6.0",
     "pyvis==0.3.2",
-    "Markdown==3.10",
+    "markdown-it-py==4.2.0",
+    "linkify-it-py==2.2.0",
+    "mdit-py-plugins==0.7.0",
     "python-docx==1.2.0",
     "python-frontmatter==1.1.0",
     "nh3==0.3.7",
@@ -42,7 +44,7 @@ dev = [
 ]
 docs = [
     "Sphinx==8.2.3",
-    "myst-parser==4.0.1",
+    "myst-parser==5.1.0",
     "furo==2025.9.25",
     "sphinxcontrib-mermaid>=1.0.0",
 ]

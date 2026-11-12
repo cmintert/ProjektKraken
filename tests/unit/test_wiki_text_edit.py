@@ -789,11 +789,8 @@ def test_empty_lines_preserved(qtbot):
     # But mainly verify get_wiki_text returns it back
     output_text = widget.get_wiki_text()
 
-    # Note: Markdown conversion standardizes multiple blank lines
-    # into a single paragraph break
-    # So "Line 2\n\n\nLine 3" becomes "Line 2\n\nLine 3"
-    expected_normalized = "Line 1\n\nLine 2\n\nLine 3"
-    assert output_text == expected_normalized
+    # An untouched rich projection retains the exact original source spacing.
+    assert output_text == input_text
 
 
 def test_empty_lines_manual_entry(qtbot):

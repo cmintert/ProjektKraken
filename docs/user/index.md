@@ -110,6 +110,7 @@ northwatch-tutorial
 workspace
 events-entities-relations
 wiki-editor-markdown
+markdown-reference
 timeline-and-calendars
 event-recurrence
 maps

@@ -127,6 +127,8 @@ class WikiASTParser:
                 heading_node = self._parse_heading(line, line_start)
                 if heading_node:
                     root.add_child(heading_node)
+                else:
+                    root.add_child(self._parse_paragraph(line, line_start))
             else:
                 # Paragraph
                 para_node = self._parse_paragraph(line, line_start)

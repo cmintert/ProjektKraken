@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-12
-**Commit:** 029759376f5ad49f24b81f74ac3ca4f7b9946168
+**Commit:** 4275a1cae7d88a7be73a247ff93c93b324763864
 ---
 
 # Changelog
@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-11-12)* **Shared Markdown profile (KRT-157)**: Unified description,
+  Longform and document-export parsing on CommonMark with tables, strikethrough,
+  URL recognition, identity-bearing wikilinks and existing reading extensions.
+  Preserved exact unedited source and visible line breaks. Added sanitized HTML
+  structure rendering, DOCX strike/alignment, dependency alignment, packaged
+  parser/licence checks, cross-destination regressions and a Markdown reference.
 
 - *(2026-11-12)* **Pasted Markdown preservation (KRT-150)**: Keep pasted Markdown
   structures in Source view and preserve unsupported HTML clipboard structures as
