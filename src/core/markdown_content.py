@@ -26,6 +26,7 @@ from src.core.wiki_ast import WikiASTParser, WikiASTSerializer
 
 PROFILE_VERSION = 1
 WikiLinkResolver = Callable[[str, str], str | None]
+WikiLinkRewriter = Callable[[str, str, str, bool], str | None]
 
 
 class _ContentParser(MarkdownIt):
@@ -88,32 +89,59 @@ def _projection_text(tokens: list[Token]) -> str:
     return "\n".join(blocks)
 
 
-def resolve_wikilinks_in_source(source: str, resolver: WikiLinkResolver) -> str:
-    """Prepare portable document links without rewriting literal examples."""
+def rewrite_wikilinks_in_source(source: str, rewrite: WikiLinkRewriter) -> str:
+    """Rewrite semantic links in place; None retains the exact original token."""
     parser = _parser()
     offsets = [0]
-    for line in source.splitlines(keepends=True):
-        offsets.append(offsets[-1] + len(line))
+    offsets.extend(match.end() for match in re.finditer(r"\r\n|\r|\n", source))
+    if offsets[-1] != len(source):
+        offsets.append(len(source))
+    blocks = parser.parse(source)
+    table_ranges = [
+        (offsets[token.map[0]], offsets[token.map[1]])
+        for token in blocks
+        if token.type == "table_open" and token.map is not None
+    ]
     replacements: dict[int, tuple[int, str]] = {}
-    for block in MarkdownIt("commonmark").parse(source):
+    visited: set[tuple[int, int]] = set()
+    for block in blocks:
         if block.type != "inline" or block.map is None:
             continue
         start, end = (offsets[line] for line in block.map)
+        if (start, end) in visited:
+            continue
+        visited.add((start, end))
         children: list[Token] = []
         parser.inline.parse(source[start:end], parser, {}, children)
         for token in children:
             if token.type != "kraken_wikilink":
                 continue
-            href = resolver(str(token.meta["target"]), token.content)
-            label = token.content.replace("[", "\\[").replace("]", "\\]")
-            replacement = f"[{label}]({href})" if href else label
-            replacements[start + token.meta["start"]] = (
-                start + token.meta["end"],
-                replacement,
+            first = start + token.meta["start"]
+            last = start + token.meta["end"]
+            replacement = rewrite(
+                str(token.meta["target"]),
+                token.content,
+                source[first:last],
+                any(left <= first < right for left, right in table_ranges),
             )
+            if replacement is not None:
+                replacements[first] = (last, replacement)
     for start, (end, replacement) in sorted(replacements.items(), reverse=True):
         source = source[:start] + replacement + source[end:]
     return source
+
+
+def resolve_wikilinks_in_source(source: str, resolver: WikiLinkResolver) -> str:
+    """Prepare portable document links without rewriting literal examples."""
+
+    def rewrite(target: str, label: str, original: str, in_table: bool) -> str:
+        href = resolver(target, label)
+        label = label.replace("[", "\\[").replace("]", "\\]")
+        if in_table:
+            label = re.sub(r"(?<!\\)((?:\\\\)*)\|", r"\1\\|", label)
+        return f"[{label}]({href})" if href else label
+
+    return rewrite_wikilinks_in_source(source, rewrite)
 
 
 def _unrepresentable_links(tokens: Iterable[Token]) -> bool:

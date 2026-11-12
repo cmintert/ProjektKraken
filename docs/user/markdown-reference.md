@@ -53,6 +53,11 @@ HTML code elements remain literal. Internal links retain stable targets while
 display labels can differ. Markdown references and asserted world relationships
 remain separate parts of the world model.
 
+Native note export converts body wikilinks to the allocated Obsidian filenames
+and records the converted targets for reimport. See
+{ref}`Edit and reimport linked notes <help-portable-note-links>` for the supported
+round trip, filename/selection behavior and limits on renamed or newly added links.
+
 ## HTML and destination behavior
 
 Basic HTML formatting and table structure are rendered through a shared sanitizer.

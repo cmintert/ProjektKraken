@@ -16,6 +16,8 @@ def note_frontmatter(
     relations: list[dict[str, Any]],
     readable_relations: list[dict[str, str]],
     context: dict[str, Any],
+    link_targets: dict[str, str] | None = None,
+    unresolved_targets: list[str] | None = None,
 ) -> list[str]:
     """Serialize all keys and scalar types using safe YAML rather than quoting."""
     record = item.to_dict()
@@ -45,6 +47,10 @@ def note_frontmatter(
         "context": context,
         "related_projection": readable_relations,
     }
+    if link_targets:
+        meta["kraken"]["link_targets"] = dict(link_targets)
+    if unresolved_targets:
+        meta["kraken"]["unresolved_link_targets"] = list(unresolved_targets)
     return [
         "---",
         yaml.safe_dump(meta, allow_unicode=True, sort_keys=False).rstrip(),
@@ -93,6 +99,12 @@ def read_native_note(
         )
     if description == native.get("body_projection"):
         description = row.get("description", "")
+    elif "link_targets" in native:
+        from src.services.portable_note_links import restore_note_links
+
+        description = restore_note_links(
+            description, native["link_targets"], native.get("unresolved_link_targets")
+        )
     row.update(
         name=meta.get("title", row.get("name")),
         type=meta.get("type", row.get("type")),

@@ -6,6 +6,7 @@ Creates flat folder structure with duplicate name handling.
 
 import logging
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -13,6 +14,7 @@ from typing import Any, Dict, List, Optional, TypedDict, Union
 
 from src.core.entities import Entity
 from src.core.events import Event
+from src.services.portable_note_links import PortableNoteLinks
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +58,10 @@ class ObsidianExporter:
     """
 
     # Characters not allowed in filenames
-    INVALID_FILENAME_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
+    INVALID_FILENAME_CHARS = re.compile(r'[<>:"/\\|?*#^\[\]%\x00-\x1f]')
+    RESERVED_FILENAME = re.compile(
+        r"^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)", re.IGNORECASE
+    )
     MAX_FILENAME_LENGTH = 200  # Leave room for counter and .md extension
 
     def __init__(self, db_service: Any) -> None:
@@ -72,6 +77,8 @@ class ObsidianExporter:
         self,
         output_dir: Path,
         include_relations: bool = True,
+        *,
+        name_candidates: Mapping[str, list[str]] | None = None,
     ) -> ExportResult:
         """Export all entities and events to a folder as Obsidian-compatible .md files.
 
@@ -113,9 +120,8 @@ class ObsidianExporter:
             item.id: self._get_unique_filename(item.name, used_filenames)
             for item in [*entities, *events]
         }
-        id_to_name = {
-            item_id: Path(filename).stem for item_id, filename in filenames.items()
-        }
+        links = PortableNoteLinks([*entities, *events], filenames, name_candidates)
+        id_to_name = links.targets
 
         # Export entities
         for entity in entities:
@@ -126,7 +132,7 @@ class ObsidianExporter:
                     if include_relations
                     else []
                 )
-                content = self._build_entity_markdown(entity, relations)
+                content = self._build_entity_markdown(entity, relations, links)
                 filename = filenames[entity.id]
                 filepath = (output_dir / filename).resolve()
 
@@ -153,7 +159,7 @@ class ObsidianExporter:
                     if include_relations
                     else []
                 )
-                content = self._build_event_markdown(event, relations)
+                content = self._build_event_markdown(event, relations, links)
                 filename = filenames[event.id]
                 filepath = (output_dir / filename).resolve()
 
@@ -214,7 +220,8 @@ class ObsidianExporter:
         """
         sanitized = self.INVALID_FILENAME_CHARS.sub("", name)
         sanitized = sanitized.strip(". ")  # Remove leading/trailing dots and spaces
-        return sanitized if sanitized else "Untitled"
+        sanitized = sanitized or "Untitled"
+        return f"_{sanitized}" if self.RESERVED_FILENAME.match(sanitized) else sanitized
 
     def _get_relations_for_item(
         self, item_id: str, id_to_name: Dict[str, str]
@@ -279,15 +286,14 @@ class ObsidianExporter:
             else []
         )
 
+        filename = self._get_unique_filename(item.name, {})
+        links = PortableNoteLinks([], {item.id: filename})
         if isinstance(item, Entity):
-            content = self._build_entity_markdown(item, relations)
+            content = self._build_entity_markdown(item, relations, links)
         else:
-            content = self._build_event_markdown(item, relations)
+            content = self._build_event_markdown(item, relations, links)
 
-        filename = self._sanitize_filename(item.name)
-        if not filename:
-            filename = "Untitled"
-        filepath = (output_dir / f"{filename}.md").resolve()
+        filepath = (output_dir / filename).resolve()
 
         if not filepath.is_relative_to(output_dir):
             logger.error(f"Security: filename '{filename}' attempts traversal")
@@ -314,7 +320,11 @@ class ObsidianExporter:
         return None
 
     def _native_frontmatter(
-        self, item: Entity | Event, relations: List[Dict[str, str]]
+        self,
+        item: Entity | Event,
+        relations: List[Dict[str, str]],
+        link_targets: dict[str, str] | None = None,
+        unresolved_targets: list[str] | None = None,
     ) -> List[str]:
         from src.services.native_notes import note_frontmatter
         from src.services.transfer_context import export_context
@@ -327,10 +337,15 @@ class ObsidianExporter:
         data = {"entities": [], "events": [], "relations": outgoing}
         data["events" if isinstance(item, Event) else "entities"] = [item.to_dict()]
         context, _warnings = export_context(self._db, data)
-        return note_frontmatter(item, outgoing, relations, context)
+        return note_frontmatter(
+            item, outgoing, relations, context, link_targets, unresolved_targets
+        )
 
     def _build_entity_markdown(
-        self, entity: Entity, relations: List[Dict[str, str]]
+        self,
+        entity: Entity,
+        relations: List[Dict[str, str]],
+        links: PortableNoteLinks | None = None,
     ) -> str:
         """Build complete markdown content for an entity.
 
@@ -342,7 +357,13 @@ class ObsidianExporter:
             Complete markdown string with frontmatter and content.
 
         """
-        lines = self._native_frontmatter(entity, relations)
+        description, targets = (
+            links.project(entity.description or "")
+            if links
+            else (entity.description, {})
+        )
+        unresolved = links.unresolved_targets(entity.description or "") if links else []
+        lines = self._native_frontmatter(entity, relations, targets, unresolved)
 
         # Summary blockquote
         summary = self._get_summary_blockquote(entity.attributes)
@@ -357,8 +378,8 @@ class ObsidianExporter:
             lines.append("")
 
         # Body content
-        if entity.description:
-            lines.append(entity.description.strip())
+        if description:
+            lines.append(description.strip())
             lines.append("")
 
         # Related section
@@ -374,7 +395,10 @@ class ObsidianExporter:
         return finalize_note("\n".join(lines))
 
     def _build_event_markdown(
-        self, event: Event, relations: List[Dict[str, str]]
+        self,
+        event: Event,
+        relations: List[Dict[str, str]],
+        links: PortableNoteLinks | None = None,
     ) -> str:
         """Build complete markdown content for an event.
 
@@ -386,7 +410,11 @@ class ObsidianExporter:
             Complete markdown string with frontmatter and content.
 
         """
-        lines = self._native_frontmatter(event, relations)
+        description, targets = (
+            links.project(event.description or "") if links else (event.description, {})
+        )
+        unresolved = links.unresolved_targets(event.description or "") if links else []
+        lines = self._native_frontmatter(event, relations, targets, unresolved)
 
         # Summary blockquote
         summary = self._get_summary_blockquote(event.attributes)
@@ -401,8 +429,8 @@ class ObsidianExporter:
             lines.append("")
 
         # Body content
-        if event.description:
-            lines.append(event.description.strip())
+        if description:
+            lines.append(description.strip())
             lines.append("")
 
         # Related section

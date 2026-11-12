@@ -122,8 +122,49 @@ where they cannot replace the note's native fields. Ordinary third-party notes
 without native metadata retain their existing frontmatter/prose import behavior.
 
 Note exports copy supported local images into the vault's `assets/` folder.
-Relation links use the exported note filenames, including suffixes for duplicate
-names. Missing or outside-world images appear in the export review warnings.
+Relation links and description wikilinks use the exported note filenames,
+including suffixes for duplicate names. Missing or outside-world images appear
+in the export review warnings.
+
+(help-portable-note-links)=
+
+### Edit and reimport linked notes
+
+1. Export **Markdown / Obsidian notes** using the Export Lore procedure above.
+   Use **All lore** when you want the complete linked set of notes.
+2. Open the resulting folder in Obsidian. A description link to an included
+   entry points to its actual note filename, while retaining its display label.
+   For example, a second note named Aldric can be linked as
+   `[[Aldric (2)|the ruler]]`. Aliases in table cells use an escaped pipe, such as
+   `[[Aldric (2)\|the ruler]]`.
+3. Edit the descriptions or link labels. Keep the exported filenames and native
+   `kraken` frontmatter for automatic identity restoration. The readable title
+   field can change without changing the record's identity.
+4. In Kraken, choose **Import → Add files…** or **Add folder…**, then **Review…**.
+   Choose **Merge** or **Replace** for records whose edits you want to apply;
+   the default **Skip** keeps the current record unchanged.
+5. Check the description changes and destination records. Known exported targets
+   regain their stable Kraken links. Then choose **Import reviewed changes**.
+   Use **Edit → Undo** to reverse the completed import.
+
+Unedited native descriptions recover their exact original Markdown. Edited native
+descriptions retain the new prose while converted links recover their recorded
+target identities. This works with duplicate or sanitized note names and links
+to either Events or Entities. Code examples, escaped wikilinks, HTML attributes
+and embeds are not converted.
+
+Links to records outside the export remain in their authored form. Ambiguous
+name-only links are preserved rather than assigned to an arbitrary record;
+Obsidian may interpret such names according to the files in its vault. Kraken
+keeps them distinct from converted ID links on reimport. If both usable filename
+spellings conflict with unresolved targets, export reports the conflict instead
+of creating an ambiguous identity map.
+
+Only targets recorded by that note's export map can regain IDs automatically.
+Newly added links, changed destinations or renamed note files may fall outside
+that map and remain named links. Inspect those changes in the import review.
+Third-party notes without native metadata continue to use ordinary Markdown
+import behavior. Prose links do not create asserted Relationships.
 
 ## Publish Longform
 

@@ -1,7 +1,10 @@
 # KRT-158 visual description tables
 
 Implementation on 12 November 2026, based on parser commit `54beba85`.
-This table-authoring work remains uncommitted.
+Table authoring was committed as `9313011b`. On 12 November 2026 the owner
+confirmed in the running application that tables and related behavior work.
+This is owner acceptance of the observed table workflow; no separate DPI matrix,
+documentation reader session or original-conlang round trip is claimed.
 
 ## Contract and interaction review
 
@@ -64,4 +67,5 @@ Changed handler fingerprints are reviewed individually.
 [Documentation review](../../../developer/documentation-review.md) and
 [reader-observation](../../../developer/documentation-reader-testing.md) evidence
 remain distinct. Human prose/live Help approval, independent reader outcomes
-and native acceptance are pending.
+and formal native-DPI coverage remain pending. Owner in-app table acceptance is
+recorded above.

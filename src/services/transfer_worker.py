@@ -18,6 +18,7 @@ from src.services.db_service import DatabaseService
 from src.services.longform_builder import build_longform_sequence
 from src.services.markdown_assets import copy_markdown_images, markdown_image_warnings
 from src.services.obsidian_exporter import ObsidianExporter
+from src.services.portable_note_links import note_name_candidates
 from src.services.repositories.transfer_repository import lore_data, revision, snapshot
 from src.services.transfer_context import export_context
 from src.services.transfer_document import document_snapshot, write_docx, write_pdf
@@ -147,6 +148,11 @@ class TransferWorker(QObject):
             "warnings": warnings,
         }
         if request["format"] == "notes":
+            result["note_name_candidates"] = note_name_candidates(
+                (row["id"], row["name"])
+                for kind in ("entities", "events")
+                for row in state[kind]
+            )
             world_path = request.get("world", {}).get("path", "")
             for record in [*data["entities"], *data["events"]]:
                 warnings.extend(
@@ -233,7 +239,9 @@ class TransferWorker(QObject):
                 elif key == "notes":
                     note_result = ObsidianExporter(
                         _SnapshotRecords(data)
-                    ).export_to_folder(output)
+                    ).export_to_folder(
+                        output, name_candidates=prepared.get("note_name_candidates")
+                    )
                     if not note_result.success:
                         raise ValueError("\n".join(note_result.errors))
                     for note in output.glob("*.md"):

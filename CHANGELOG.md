@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-12
-**Commit:** 54beba853b4c11ce4a94cfed26063a9435649cbf
+**Commit:** 9313011b2f439a7e5256133e68e75cf2738704fe
 ---
 
 # Changelog
@@ -13,11 +13,19 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-11-12)* **Portable note links (KRT-159)**: Converted description
+  wikilinks to allocated Obsidian filenames and retained native identity maps
+  for edited-note reimport. Preserved aliases, table cells, literal examples and
+  unresolved references, including ambiguity outside an export selection.
+  Hardened note filenames, added export/import/undo regressions and documented
+  the supported round trip and its limits.
+
 - *(2026-11-12)* **Visual description tables (KRT-158)**: Rendered GFM tables as
   editable cells with row/column operations, column alignment, inline formatting
   and cell keyboard navigation. Preserved exact untouched source, stable links,
   surrounding prose, local and persistent undo, and GFM save/reopen behavior.
   Added focused regressions and updated editor Help and the Markdown reference.
+  Owner confirmed table behavior in the running application on 12 November 2026.
 
 - *(2026-11-12)* **Shared Markdown profile (KRT-157)**: Unified description,
   Longform and document-export parsing on CommonMark with tables, strikethrough,
