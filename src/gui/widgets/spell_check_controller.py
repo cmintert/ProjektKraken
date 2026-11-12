@@ -8,7 +8,7 @@ from typing import cast
 
 import shiboken6
 from PySide6.QtCore import QObject, QSettings, Qt, QThread, QTimer, Signal, Slot
-from PySide6.QtGui import QColor, QTextCharFormat, QTextCursor
+from PySide6.QtGui import QColor, QTextCharFormat, QTextCursor, QTextDocument
 from PySide6.QtWidgets import QApplication, QMenu, QTextEdit
 
 from src.core.theme_manager import ThemeManager
@@ -75,6 +75,13 @@ class SpellCheckController(QObject):
     def _view(self) -> QTextEdit | None:
         editor = self._editor()
         return editor if editor is not None and shiboken6.isValid(editor) else None
+
+    def bind_document(self, previous: QTextDocument, current: QTextDocument) -> None:
+        """Invalidate requests and observe the newly active writing projection."""
+        previous.contentsChanged.disconnect(self._document_changed)
+        current.contentsChanged.connect(self._document_changed)
+        self._generation += 1
+        self._text_changed()
 
     @Slot()
     def _text_changed(self) -> None:

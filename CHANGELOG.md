@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-11-10
-**Commit:** 479f4a454f3a9a87f2cb7c9177c4072028be5766
+**Last Updated:** 2026-11-12
+**Commit:** 029759376f5ad49f24b81f74ac3ca4f7b9946168
 ---
 
 # Changelog
@@ -12,6 +12,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+
+- *(2026-11-12)* **Pasted Markdown preservation (KRT-150)**: Keep pasted Markdown
+  structures in Source view and preserve unsupported HTML clipboard structures as
+  editable markup. Retain table cells, lists, quotes, code, strikethrough and
+  Unicode through save/reopen. Preserve native Undo/Redo across Rich/Source view
+  changes, retain Markdown reference definitions, and save pasted web links using
+  standard Markdown syntax. Added clipboard, selection, history and persistence
+  regressions and updated editor Help.
 
 - *(2026-11-10)* **Pasted description formatting (KRT-141)**: Clear Formatting
   removes imported text colors and backgrounds from the selection or current

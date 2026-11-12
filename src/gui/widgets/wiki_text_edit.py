@@ -11,6 +11,7 @@ from typing import Any, List, Optional, Tuple, cast
 
 import shiboken6
 from PySide6.QtCore import (
+    QMimeData,
     QModelIndex,
     QPoint,
     QSignalBlocker,
@@ -27,6 +28,7 @@ from PySide6.QtGui import (
     QFont,
     QFontMetricsF,
     QKeyEvent,
+    QKeySequence,
     QMouseEvent,
     QPaintEvent,
     QShowEvent,
@@ -58,7 +60,10 @@ from PySide6.QtWidgets import (
 from src.core.command import LoreMutationEffect
 from src.core.theme_manager import ThemeManager
 from src.core.wiki_ast import CursorMapper, WikiASTParser, WikiASTSerializer
-from src.core.wiki_markdown_grammar import requires_source_mode
+from src.core.wiki_markdown_grammar import (
+    clipboard_html_requires_source,
+    requires_source_mode,
+)
 from src.gui.constants import SEMANTIC_COMPLETION_MIN_PREFIX_LEN
 from src.gui.dialogs.spell_check_settings_dialog import (
     SpellCheckSettingsDialog as SpellCheckSettingsDialog,
@@ -124,7 +129,8 @@ class SectionManager:
 
     def schedule_analysis(self) -> None:
         """Schedule a background analysis of the document."""
-        self._analyze_timer.start()
+        if shiboken6.isValid(self._analyze_timer):
+            self._analyze_timer.start()
 
     def _analyze_document(self) -> None:
         """Iterate over blocks and assign hashed section IDs."""
@@ -193,6 +199,7 @@ class WikiTextEditView(QTextEdit):
         self._peek_cursor: QCursor | None = None
         self._peek_cursor_color = ""
         self._section_manager = SectionManager(self.document())
+        self._section_manager._analyze_timer.setParent(self)
         self._current_wiki_text = ""  # Store for re-rendering on theme change
 
         # Enable mouse tracking for hover effects if desired
@@ -234,6 +241,7 @@ class WikiTextEditView(QTextEdit):
         self._visual_highlighter = WikiPresentationHighlighter(
             self.document(), self.link_presentation, tm.get_theme()
         )
+        self._visual_highlighter.setParent(self)
 
         # Setup Shortcuts using QActions
         self._setup_actions()
@@ -241,6 +249,9 @@ class WikiTextEditView(QTextEdit):
         # Spell / grammar check (LanguageTool)
         self.spell_check = SpellCheckController(self)
         self.document_replacing.connect(self.spell_check.clear)
+        from src.gui.widgets.wiki_edit_history import WikiEditHistory
+
+        self._history = WikiEditHistory(self)
 
     def _setup_actions(self) -> None:
         """Setup formatting actions with shortcuts."""
@@ -314,91 +325,148 @@ class WikiTextEditView(QTextEdit):
         self.view_mode_changed.emit(self._view_mode)
 
     def _switch_view_mode(self) -> None:
-        """Toggles between Rich HTML view and Markdown Source view.
+        """Convert presentation while retaining the original native edit history."""
+        source = self.get_wiki_text()
+        if self._view_mode == "source" and requires_source_mode(source):
+            return
+        cursor = self.textCursor()
+        scroll = self.verticalScrollBar().value()
+        serializer = WikiASTSerializer()
+        ast = WikiASTParser().parse(source)
+        _, ast = serializer.to_markdown(ast)
+        plain_text, ast = serializer.to_plaintext(ast)
+        mapper = CursorMapper(ast)
+        mapping = mapper.html_to_md if self._view_mode == "rich" else mapper.md_to_html
+        origin = self.toPlainText().encode("utf-16-le")
+        destination = source if self._view_mode == "rich" else plain_text
+        positions = []
+        for offset in (cursor.anchor(), cursor.position()):
+            character_offset = len(origin[: offset * 2].decode("utf-16-le"))
+            if (
+                self._view_mode == "rich"
+                and cursor.hasSelection()
+                and offset == cursor.selectionEnd()
+            ):
+                mapped = mapping(character_offset - 1) + 1
+            else:
+                mapped = mapping(character_offset)
+            positions.append(len(destination[:mapped].encode("utf-16-le")) // 2)
+        anchor, position = positions
+        mode = "source" if self._view_mode == "rich" else "rich"
+        self._history.suspended = True
+        try:
+            document = QTextDocument(self._history)
+            self._history.watch(document)
+            self._adopt_document(document, mode)
+            self._load_wiki_text(source)
+            document.clearUndoRedoStacks()
+        finally:
+            self._history.suspended = False
+        cursor = QTextCursor(document)
+        maximum = document.characterCount() - 1
+        cursor.setPosition(max(0, min(anchor, maximum)))
+        cursor.setPosition(
+            max(0, min(position, maximum)), QTextCursor.MoveMode.KeepAnchor
+        )
+        self.setTextCursor(cursor)
+        self.verticalScrollBar().setValue(scroll)
+        self._history.prune()
 
-        Uses AST for pixel-perfect cursor position preservation.
-        """
-        # Capture cursor position before switching
-        old_cursor_pos = self.textCursor().position()
-        old_scroll = self.verticalScrollBar().value()
+    def _adopt_document(self, document: QTextDocument, mode: str) -> None:
+        """Rebind transient analysis whenever the active projection changes."""
+        self.document_replacing.emit()
+        old_document = self.document()
+        self._view_mode = mode
+        self.setAcceptRichText(mode == "rich")
+        if old_document is not document:
+            old_document.contentsChanged.disconnect(
+                self._section_manager.schedule_analysis
+            )
+            self._section_manager._analyze_timer.stop()
+            self.setDocument(document)
+            self._section_manager.document = document
+            document.contentsChanged.connect(self._section_manager.schedule_analysis)
+            self._visual_highlighter.setDocument(document)
+            self.spell_check.bind_document(old_document, document)
+        self.setFont(QFont("Consolas" if mode == "source" else "Segoe UI", 10))
+        self._apply_theme_stylesheet()
+        self._section_manager.schedule_analysis()
 
-        if self._view_mode == "rich":
-            # Rich -> Source: Map HTML cursor to MD cursor
-            md_text = self.get_wiki_text()
+    def undo(self) -> None:
+        """Undo a user edit, including one made before a view conversion."""
+        self._history.move(redo=False)
 
-            # Build AST for cursor mapping
-            parser = WikiASTParser()
-            serializer = WikiASTSerializer()
-            ast = parser.parse(md_text)
-            _, ast = serializer.to_markdown(ast)
-            _, ast = serializer.to_plaintext(ast)
-            mapper = CursorMapper(ast)
+    def setPlainText(self, text: str) -> None:  # noqa: N802
+        """Treat an external text replacement as a fresh history baseline."""
+        super().setPlainText(text)
+        if hasattr(self, "_history") and not self._history.suspended:
+            self._history.reset()
 
-            # Map cursor position from HTML (PlainText) to MD
-            new_cursor_pos = mapper.html_to_md(old_cursor_pos)
+    def setHtml(self, text: str) -> None:  # noqa: N802
+        """Keep programmatic HTML replacement separate from user edit history."""
+        super().setHtml(text)
+        if hasattr(self, "_history") and not self._history.suspended:
+            self._history.reset()
 
-            # Switch mode
-            self._view_mode = "source"
+    def redo(self) -> None:
+        """Restore the next user edit in its owning Rich or Source document."""
+        self._history.move(redo=True)
 
-            # Apply monospace font for source editing
-            from PySide6.QtGui import QFont
+    def createStandardContextMenu(self, *args: Any) -> QMenu:  # noqa: N802
+        """Expose shared description history in both context and Edit menus."""
+        menu = super().createStandardContextMenu(*args)
+        if self.isReadOnly():
+            return menu
+        for action, callback, enabled in zip(
+            menu.actions()[:2],
+            (self.undo, self.redo),
+            (self._history.can_undo(), self._history.can_redo()),
+            strict=True,
+        ):
+            action.triggered.disconnect()
+            action.triggered.connect(callback)
+            action.setEnabled(enabled and not self.isReadOnly())
+        return menu
 
-            mono_font = QFont("Consolas")
-            if not mono_font.exactMatch():
-                mono_font = QFont("Courier New")
-            mono_font.setPointSize(10)
-            self.setFont(mono_font)
+    def canInsertFromMimeData(self, source: QMimeData) -> bool:  # noqa: N802
+        """Allow HTML-only source preservation through native Paste and drop."""
+        return not self.isReadOnly() and (
+            source.hasText() or source.hasHtml() or source.hasFormat("text/markdown")
+        )
 
-            self.setPlainText(md_text)
-
-            # Restore cursor (clamped to valid range)
-            doc_length = self.document().characterCount()
-            new_cursor_pos = min(new_cursor_pos, doc_length - 1)
-            new_cursor_pos = max(0, new_cursor_pos)
-            cursor = self.textCursor()
-            cursor.setPosition(new_cursor_pos)
-            self.setTextCursor(cursor)
-
-            # Restore scroll position
-            self.verticalScrollBar().setValue(old_scroll)
-        else:
-            # Source -> Rich: Set view mode and force re-render via set_wiki_text
-            if requires_source_mode(self.toPlainText()):
+    def insertFromMimeData(self, source: QMimeData) -> None:  # noqa: N802
+        """Preserve clipboard structures that cannot round-trip through Rich view."""
+        if self.isReadOnly():
+            return
+        text = source.text()
+        html = source.html()
+        if source.hasFormat("text/markdown"):
+            try:
+                markdown = bytes(source.data("text/markdown").data()).decode("utf-8")
+            except UnicodeDecodeError:
+                logger.warning("Clipboard Markdown is not valid UTF-8")
+            else:
+                self._insert_source_text(markdown)
                 return
-            self._view_mode = "rich"
+        if source.hasText() and (
+            requires_source_mode(text) or ("\n" in text and not html)
+        ):
+            self._insert_source_text(text)
+        elif source.hasHtml() and clipboard_html_requires_source(html):
+            self._insert_source_text(html)
+        elif self._view_mode == "source":
+            self._insert_source_text(text if source.hasText() else html)
+        else:
+            super().insertFromMimeData(source)
 
-            # Reset to standard theme font
-            from PySide6.QtGui import QFont
-
-            self.setFont(QFont("Segoe UI", 10))  # Will be further refined by stylesheet
-
-            md_text = self.toPlainText()
-
-            # Map cursor position from MD to HTML (PlainText)
-            # Build AST for cursor mapping
-            parser = WikiASTParser()
-            serializer = WikiASTSerializer()
-            ast = parser.parse(md_text)
-            _, ast = serializer.to_markdown(ast)
-            _, ast = serializer.to_plaintext(ast)
-            mapper = CursorMapper(ast)
-            new_cursor_pos = mapper.md_to_html(old_cursor_pos)
-
-            self.set_wiki_text(md_text, force=True)
-
-            # Restore cursor (clamped to valid range)
-            doc_length = self.document().characterCount()
-            new_cursor_pos = min(new_cursor_pos, doc_length - 1)
-            new_cursor_pos = max(0, new_cursor_pos)
-            cursor = self.textCursor()
-            cursor.setPosition(new_cursor_pos)
-            self.setTextCursor(cursor)
-
-            # Restore scroll position
-            self.verticalScrollBar().setValue(old_scroll)
-
-        self._update_link_colors()
-        self.view_mode_changed.emit(self._view_mode)
+    def _insert_source_text(self, text: str) -> None:
+        if self._view_mode != "source":
+            self.toggle_view_mode()
+        cursor = self.textCursor()
+        cursor.beginEditBlock()
+        cursor.insertText(text)
+        cursor.endEditBlock()
+        self.setTextCursor(cursor)
 
     def set_link_resolver(self, link_resolver: Any) -> None:
         """Sets the link resolver for checking broken links.
@@ -777,39 +845,29 @@ class WikiTextEditView(QTextEdit):
         self.setStyleSheet(widget_qss)
 
     def set_wiki_text(self, text: Optional[str], force: bool = False) -> None:
-        """Sets the content using WikiLink syntax, converting it to HTML anchors.
-
-        Uses the 'markdown' library for rich text rendering.
-        """
-        import markdown  # type: ignore[import-untyped]  # Package has no typing marker
-
-        if text is None:
-            text = ""
-
-        switched_to_source = requires_source_mode(text) and self._view_mode != "source"
-        if switched_to_source:
-            self._view_mode = "source"
-            self.setFont(QFont("Consolas", 10))
-            self.view_mode_changed.emit("source")
-
-        # Check if text is identical to avoid unnecessary reload
-        # This applies to BOTH Rich and Source modes.
-        if not force and not switched_to_source and self.get_wiki_text() == text:
+        """Load saved Markdown, preserving unsupported syntax in Source view."""
+        text = text or ""
+        mode = "source" if requires_source_mode(text) else self._view_mode
+        if not force and mode == self._view_mode and self.get_wiki_text() == text:
             self._current_wiki_text = text
             return
+        self._history.suspended = True
+        try:
+            self._adopt_document(self.document(), mode)
+            self._load_wiki_text(text)
+        finally:
+            self._history.suspended = False
+        self._history.reset()
+        self._update_link_colors()
+        self.view_mode_changed.emit(mode)
 
-        self.document_replacing.emit()
+    def _load_wiki_text(self, text: str) -> None:
+        """Populate a projection while its owner suppresses history recording."""
+        import markdown  # type: ignore[import-untyped]  # Package has no typing marker
 
-        # If in Source mode, just set the raw text and ignore HTML rendering
-        if hasattr(self, "_view_mode") and self._view_mode == "source":
-            # Block signals to prevent textChanged during programmatic update
-            was_blocked = self.blockSignals(True)
-            try:
+        if self._view_mode == "source":
+            with QSignalBlocker(self):
                 self.setPlainText(text)
-            finally:
-                self.blockSignals(was_blocked)
-
-            # Update internal store so switching back works
             self._current_wiki_text = text
             return
 
@@ -865,6 +923,8 @@ class WikiTextEditView(QTextEdit):
         """
         if hasattr(self, "_view_mode") and self._view_mode == "source":
             return self.toPlainText()
+        if self.document().isEmpty():
+            return ""
 
         result = []
         block = self.document().begin()
@@ -1023,7 +1083,19 @@ class WikiTextEditView(QTextEdit):
         # 1. WikiLinks (Anchor)
         if fmt.isAnchor():
             href = fmt.anchorHref()
-            if href == text:
+            if not href.startswith("id:") and re.match(
+                r"(?:[A-Za-z][A-Za-z0-9+.-]*:|[/#]|\.\.?/)", href
+            ):
+                label = (
+                    text.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
+                )
+                destination = href.replace("<", "%3C").replace(">", "%3E")
+                text = (
+                    f"[{label}](<{destination}>)"
+                    if " " in href
+                    else f"[{label}]({destination})"
+                )
+            elif href == text:
                 text = f"[[{text}]]"
             elif href.startswith("id:") and text:
                 text = f"[[{href}|{text}]]"
@@ -1178,6 +1250,12 @@ class WikiTextEditView(QTextEdit):
             event: QKeyEvent from PySide6.
 
         """
+        if event.matches(QKeySequence.StandardKey.Undo):
+            self.undo()
+            return
+        if event.matches(QKeySequence.StandardKey.Redo):
+            self.redo()
+            return
         self._refresh_modifier_cursor(event)
         # Check for formatting shortcuts first
         if self._completer and (popup := self._completer.popup()) and popup.isVisible():
@@ -1998,12 +2076,17 @@ class WikiTextEdit(QFrame):
         main_layout.addWidget(self.toolbar)
         self._setup_link_controls(main_layout)
         self.toolbar_presentation.install_link_actions()
+        self.source_banner = QFrame()
+        self.source_banner.setObjectName("TemporalSnapshotBanner")
+        source_layout = QVBoxLayout(self.source_banner)
         self.source_notice = QLabel(
-            "Exact Markdown source. Rich view requires the supported syntax only."
+            "Exact source. Some Markdown and HTML structures require Source view."
         )
+        self.source_notice.setObjectName("TemporalSnapshotLabel")
         self.source_notice.setWordWrap(True)
-        self.source_notice.hide()
-        main_layout.addWidget(self.source_notice)
+        source_layout.addWidget(self.source_notice)
+        self.source_banner.hide()
+        main_layout.addWidget(self.source_banner)
 
         # Content Container (TOC + Editor)
         content_container = QWidget(self)
@@ -2227,7 +2310,7 @@ class WikiTextEdit(QFrame):
                 "Exact Markdown source. Rich view is available after removing "
                 "unsupported syntax."
             )
-        self.source_notice.setVisible(mode == "source")
+        self.source_banner.setVisible(mode == "source")
 
     def _apply_style(self) -> None:
         """Apply the current theme styling to the widget."""
@@ -2240,6 +2323,9 @@ class WikiTextEdit(QFrame):
             f"{StyleHelper.get_editor_toolbar_style()}"
         )
         self.setStyleSheet(style)
+        self.source_banner.setStyleSheet(
+            StyleHelper.get_temporal_snapshot_banner_style()
+        )
 
     def _on_theme_changed(self, theme: dict) -> None:
         """Handle theme change event by reapplying styles.

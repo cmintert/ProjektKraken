@@ -79,7 +79,7 @@ def test_pasted_colors_clear_with_atomic_undo_links_and_theme(
     assert editor.toPlainText() == text
     assert (editor.textCursor().anchor(), editor.textCursor().position()) == bounds
     assert editor.get_wiki_text() == (
-        "Pasted [[id:entity-1|Alpha]] [[https://example.com|Web]]\n\nSecond paragraph"
+        "Pasted [[id:entity-1|Alpha]] [Web](https://example.com)\n\nSecond paragraph"
     )
     cleaned = editor.document().toHtml()
     editor.undo()

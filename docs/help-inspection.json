@@ -16582,8 +16582,8 @@
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
       "symbol": "WikiTextEdit.__init__",
-      "sha256": "e65142a7e62ee8d58dda7ebfa8a391435114a06ab7073b9b5a093852e81cc41b",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
+      "sha256": "603115a5abf0d2f09a887d0cfdbf404b00621ae297413657c4063c5530732d61",
+      "review_note": "KRT-150: existing writing Help now explains exact Markdown/HTML clipboard preservation. The Source notice uses the shared neutral mode banner with wrapped text; no new authoring commands or Help destinations are introduced."
     },
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
@@ -16594,8 +16594,8 @@
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
       "symbol": "WikiTextEdit._apply_style",
-      "sha256": "4ee872634b40679c917f3859bd27ea5ed959f5c9a9a85e3b34ccaccc3c7b6503",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "6ead3295397a4fb432ef1edcd2faa764d55047d9b80aea01f445d4a2be19a8e5",
+      "review_note": "KRT-150: the Source preservation notice uses shared mode banner roles and refreshes with the existing theme subscription. Writing controls and Help destinations retain their meaning."
     },
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
@@ -16624,8 +16624,8 @@
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
       "symbol": "WikiTextEdit._sync_mode_action",
-      "sha256": "f33f3e25b0343264898f74249fbfa72f3102ff4fbff8a85db44c4b47f561c1cf",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "370353a9d85ee1dbf10b9416d978e61264fe61b0df18fcd5b219f0b4ac875c12",
+      "review_note": "KRT-150: Source mode reveals the existing preservation notice through a shared mode banner. The View commands and supported-syntax restriction remain documented in writing Help."
     },
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
@@ -16708,8 +16708,8 @@
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
       "symbol": "WikiTextEditView._process_fragment",
-      "sha256": "fca34f4ea022e7bba3b0eb4df38eee6ed3ce83f92be3fbe66e02adbe2cedb40f",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "d3923c67a31a8080d9e6a9fe2d093404e7540299507a67aad1dc73de99a79ebb",
+      "review_note": "KRT-150: writing Help now documents standard Markdown serialization for pasted web links; stable ID and name wikilinks retain their existing syntax."
     },
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
@@ -16786,8 +16786,8 @@
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
       "symbol": "WikiTextEditView.get_wiki_text",
-      "sha256": "7d88117fa622dfbd8777ae4e844bd4b9fef93dbfe6b9b7a9ff8d7c66ee2119a4",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "75f0465061dab959677821eb50e2f91048b861e405d28b1a381c3a0678b8842c",
+      "review_note": "KRT-150: empty Rich documents serialize as empty text, avoiding a spurious newline during source-preserving paste; saved descriptions and Help save routes retain their meaning."
     },
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
@@ -16798,8 +16798,8 @@
     {
       "source": "src/gui/widgets/wiki_text_edit.py",
       "symbol": "WikiTextEditView.set_wiki_text",
-      "sha256": "a31998c1db1b1d40224046bc65319ca0d08f97a171c970de234521b7a285039d",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "c6f7d92c61ba70dcdd35a5bf426da29179e8e102c11ffe576cb64a98287136a7",
+      "review_note": "KRT-150: writing Help documents source preservation for unsupported Markdown and HTML, and undo across view changes. Programmatic loads establish a fresh history baseline; source/save Help destinations are retained."
     },
     {
       "source": "src/gui/widgets/writing_toolbar.py",

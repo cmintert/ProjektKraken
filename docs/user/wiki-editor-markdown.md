@@ -34,6 +34,17 @@ exactly; switching views does not convert them into supported Rich formatting.
 **Example:** Write a character biography in Rich view. If you add a Markdown table of
 titles and dates, continue editing it in Source view.
 
+Pasting Markdown that contains tables, lists, code or other unsupported formatting
+switches the description to Source view and keeps the pasted Markdown. If the
+clipboard provides HTML for those structures without recognizable Markdown,
+Source view keeps the HTML markup, including table rows, cells and empty cells.
+You can edit and save that source. Rich view becomes available when the description
+uses only its supported formatting.
+
+Use **Edit → Undo** to reverse a paste. Undo and Redo follow your edits across
+Rich/Source view changes and may return to the view where an edit was made.
+Pasted web links retain ordinary Markdown link syntax when saved.
+
 **Related:** {ref}`Wiki links <help-writing-links>` · {ref}`Focus writing
 <help-writing-focus>` · {ref}`Add details <help-authoring-details>`
 
