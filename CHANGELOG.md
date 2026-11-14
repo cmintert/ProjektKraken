@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-14
-**Commit:** 9525fc4c
+**Commit:** 08b05910
 ---
 
 # Changelog
@@ -29,6 +29,10 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-14)* **Entity editor**: Kept the description source caption and
+  value on one row with wrapping for longer values; added narrow and wide
+  inspector layout regression coverage.
 
 - *(2026-11-14)* Run Linux smoke tests under a software-rendered virtual
   display, allowing the real startup test to use OpenGL-capable Qt views.

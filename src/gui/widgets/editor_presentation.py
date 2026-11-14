@@ -458,8 +458,11 @@ class EditorPresentation(QObject):
             self._source_label = source_label
             source_label.setHidden(editor.description_source_label.isHidden())
             editor.description_source_label.installEventFilter(self)
-            column_layout.addWidget(source_label)
-            column_layout.addWidget(editor.description_source_label)
+            source_layout = QHBoxLayout()
+            source_layout.setContentsMargins(0, 0, 0, 0)
+            source_layout.addWidget(source_label, 0, Qt.AlignmentFlag.AlignTop)
+            source_layout.addWidget(editor.description_source_label, 1)
+            column_layout.addLayout(source_layout)
             form.takeRow(editor.new_description_actions)
             column_layout.addWidget(editor.new_description_actions)
 

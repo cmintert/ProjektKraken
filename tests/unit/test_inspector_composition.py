@@ -657,6 +657,25 @@ def test_entity_source_caption_tracks_its_field_visibility(editor):
     assert label.isHidden()
 
 
+def test_entity_source_caption_shares_a_row_at_inspector_widths(editor, qtbot):
+    if not isinstance(editor, EntityEditorWidget):
+        return
+    label = editor._presentation._source_label
+    value = editor.description_source_label
+    value.setText("Entity baseline")
+    value.show()
+    for width in (360, 900):
+        editor.resize(width, 720)
+
+        def aligned():
+            assert label.isVisible()
+            assert value.isVisible()
+            assert label.geometry().top() == value.geometry().top()
+            assert label.geometry().right() < value.geometry().left()
+
+        qtbot.waitUntil(aligned)
+
+
 def test_opening_supporting_tools_never_generates_or_mutates(editor, qtbot):
     summary_requests = []
     generated_text = []
