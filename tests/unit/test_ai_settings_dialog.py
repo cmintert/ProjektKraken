@@ -32,6 +32,18 @@ def test_dialog_has_save_status_label(dialog):
     assert dialog.save_status_label.text() == ""
 
 
+@pytest.mark.parametrize(
+    ("label", "object_type"),
+    [("All", "all"), ("Entities", "entity"), ("Events", "event")],
+)
+def test_rebuild_selection_emits_object_type(dialog, qtbot, label, object_type):
+    """Each visible rebuild choice sends its supported service type."""
+    dialog.rebuild_combo.setCurrentText(label)
+    with qtbot.waitSignal(dialog.rebuild_index_requested) as signal:
+        dialog.btn_rebuild.click()
+    assert signal.args == [object_type]
+
+
 def test_save_shows_saved_feedback_immediately(dialog, qtbot):
     """Test that save_settings shows 'Saved' feedback."""
     # Trigger save

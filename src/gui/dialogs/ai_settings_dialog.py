@@ -659,7 +659,9 @@ class AISettingsDialog(QDialog):
             QComboBox(),
             "src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-rebuild-combo|settings.ai|help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-create-knowledge-base-page-self-rebuild-combo",
         )
-        self.rebuild_combo.addItems(["All", "Entities", "Events"])
+        self.rebuild_combo.addItem("All", "all")
+        self.rebuild_combo.addItem("Entities", "entity")
+        self.rebuild_combo.addItem("Events", "event")
         rebuild_layout.addWidget(self.rebuild_combo, stretch=1)
         self.btn_rebuild = declare_inspection(
             QPushButton("Rebuild Index"),
@@ -1405,11 +1407,7 @@ class AISettingsDialog(QDialog):
     @Slot()
     def _on_rebuild_clicked(self) -> None:
         """Handle rebuild button click."""
-        obj_type = (
-            self.rebuild_combo.currentText().lower().rstrip("s")
-        )  # entities->entity
-        if obj_type == "all":
-            obj_type = "all"
+        obj_type = self.rebuild_combo.currentData()
 
         logger.info(f"Rebuild index requested for type: {obj_type}")
         self.rebuild_index_requested.emit(obj_type)

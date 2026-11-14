@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-14
-**Commit:** fe14e5b27c227ee140283cd3e7ee5ab49f102c4d
+**Commit:** 58d6e6ee486b0f87bd9a31ae7d9add43dcd12276
 ---
 
 # Changelog
@@ -29,6 +29,9 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-14)* **Entity search index rebuild**: Fixed the Entities-only
+  rebuild option sending an invalid object type; added selection regressions.
 
 - *(2026-11-14)* **Consistent temporal rendering (KRT-163)**: Replaced competing
   date renderers with one canonical presentation for Timeline Events, collapsed
