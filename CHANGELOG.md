@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-14
-**Commit:** 574d4fc8
+**Commit:** 363a5b87f8177a8b2b0648da6d5b79e96406252b
 ---
 
 # Changelog
@@ -29,6 +29,9 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-14)* Fixed import ordering in two timeline evidence scripts so
+  GitHub's Ruff check passes.
 
 - *(2026-11-14)* Updated five reviewed test inventory identities to match
   committed shutdown and temporal-rendering regression changes.

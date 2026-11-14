@@ -23,11 +23,11 @@ sys.path.insert(0, str(ROOT))
 from PySide6.QtCore import QSettings
 from PySide6.QtGui import QFont, QFontDatabase, QTransform
 from PySide6.QtWidgets import QApplication
+from src.core.temporal_display import event_temporal_display
 
 from src.core.calendar import CalendarConfig, CalendarConverter
 from src.core.date_parser import DateParser
 from src.core.events import Event
-from src.core.temporal_display import event_temporal_display
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.timeline.event_item import EventItem
 from src.gui.widgets.timeline.timeline_view import TimelineView
