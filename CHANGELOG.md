@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-14
-**Commit:** fed6b7cd4e1102d5376e2be82cdf9ce80cbb4727
+**Commit:** de35678ad499a611626f102b3161a7da25cff863
 ---
 
 # Changelog
@@ -29,6 +29,9 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-14)* Pinned the lean Qt smoke runner to Ubuntu 24.04 to avoid
+  unreviewed operating-system changes from ubuntu-latest.
 
 - *(2026-11-14)* Enabled Python crash stacks in the Linux smoke job to
   diagnose the remaining post-startup native crash.
