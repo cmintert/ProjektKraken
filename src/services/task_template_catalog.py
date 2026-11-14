@@ -16,9 +16,8 @@ from src.core.ai_generation import (
 )
 from src.services.prompt_loader import PromptLoader
 
-SUPPORTED_TEMPLATE_VARIABLES = frozenset(
-    {"name", "type", "description", "lore_date"}
-)
+SUPPORTED_TEMPLATE_VARIABLES = frozenset({"name", "type", "description", "lore_date"})
+TEMPLATE_PREFERENCES_VERSION = 2
 LEGACY_BUNDLED_IDS = frozenset(
     {
         "description_default",
@@ -79,6 +78,7 @@ class TaskTemplateCatalog:
                     intent=intent,
                     content=loaded.content,
                     source=TaskTemplateSource.BUILT_IN,
+                    operation=str(loaded.metadata.get("operation", "custom")),
                 )
             )
         return tuple(templates)
@@ -117,7 +117,8 @@ class TaskTemplateCatalog:
                 candidate
                 for candidate in existing
                 if candidate.template_id != template.template_id
-                and candidate.name.strip().casefold() == template.name.strip().casefold()
+                and candidate.name.strip().casefold()
+                == template.name.strip().casefold()
             ),
             None,
         )
@@ -141,6 +142,9 @@ class TaskTemplateCatalog:
         """Upgrade v1 preferences and import non-bundled legacy templates once."""
         if preferences.version >= AI_GENERATION_PREFERENCES_VERSION:
             return preferences
+
+        if preferences.version >= TEMPLATE_PREFERENCES_VERSION:
+            return replace(preferences, version=AI_GENERATION_PREFERENCES_VERSION)
 
         imported = list(preferences.custom_task_templates)
         known_names = {template.name.strip().casefold() for template in imported}

@@ -1,0 +1,12 @@
+---
+version: 1.0
+template_id: expand_creative
+name: Expand - Creative proposals
+description: Propose new lore for author review while preserving existing content
+operation: expand_creative
+intent: update
+author: ProjektKraken Team
+created: 2026-11-14
+tags: [expand, creative]
+---
+Expand the description of {name}. You may propose new lore consistent with the source. Preserve established facts, qualifiers, beliefs and uncertainty. Preserve all existing tables, literal blocks, Markdown structure and wiki links unchanged. Return the complete description without explicit dates or commentary. Return only the finished description. New lore is a proposal for author review, not established evidence.

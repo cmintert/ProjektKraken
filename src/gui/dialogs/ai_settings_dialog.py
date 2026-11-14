@@ -940,6 +940,24 @@ class AISettingsDialog(QDialog):
         self.template_intent_combo.addItem("Update", TaskIntent.UPDATE.value)
         self.template_intent_combo.addItem("General", TaskIntent.GENERAL.value)
         meta_form.addRow("Intent:", self.template_intent_combo)
+        self.template_operation_combo = declare_inspection(
+            QComboBox(), "template-operation|writing.ai|help-template-operation"
+        )
+        for operation in (
+            "custom",
+            "create",
+            "revise",
+            "condense",
+            "expand_grounded",
+            "expand_creative",
+        ):
+            self.template_operation_combo.addItem(
+                operation.replace("_", " ").title(), operation
+            )
+        meta_form.addRow("Task behaviour:", self.template_operation_combo)
+        self.template_operation_combo.currentIndexChanged.connect(
+            self._mark_template_editor_dirty
+        )
 
         right_layout.addWidget(meta_group)
 
@@ -1083,6 +1101,7 @@ class AISettingsDialog(QDialog):
         self.template_name_edit.clear()
         self.template_description_edit.clear()
         self.template_intent_combo.setCurrentIndex(2)
+        self.template_operation_combo.setCurrentIndex(0)
         self.template_content_edit.clear()
         self.template_name_edit.setFocus()
         self.btn_delete_template.setEnabled(False)
@@ -1104,6 +1123,7 @@ class AISettingsDialog(QDialog):
             description=description,
             intent=intent,
             content=content,
+            operation=str(self.template_operation_combo.currentData()),
             source=TaskTemplateSource.WORLD,
         )
         custom = self.get_custom_task_templates()
@@ -1182,6 +1202,9 @@ class AISettingsDialog(QDialog):
         self.template_intent_combo.setCurrentIndex(
             self.template_intent_combo.findData(source.intent.value)
         )
+        self.template_operation_combo.setCurrentIndex(
+            max(0, self.template_operation_combo.findData(source.operation))
+        )
         self.template_content_edit.setPlainText(source.content)
         self._template_editor_dirty = True
         self.btn_delete_template.setEnabled(False)
@@ -1231,6 +1254,7 @@ class AISettingsDialog(QDialog):
             self.template_description_edit,
             self.template_content_edit,
             self.template_intent_combo,
+            self.template_operation_combo,
         ):
             widget.blockSignals(True)
         self.template_name_edit.setText(template.name)
@@ -1238,12 +1262,16 @@ class AISettingsDialog(QDialog):
         self.template_intent_combo.setCurrentIndex(
             self.template_intent_combo.findData(template.intent.value)
         )
+        self.template_operation_combo.setCurrentIndex(
+            max(0, self.template_operation_combo.findData(template.operation))
+        )
         self.template_content_edit.setPlainText(template.content)
         for widget in (
             self.template_name_edit,
             self.template_description_edit,
             self.template_content_edit,
             self.template_intent_combo,
+            self.template_operation_combo,
         ):
             widget.blockSignals(False)
         built_in = template.source == TaskTemplateSource.BUILT_IN
@@ -1258,6 +1286,7 @@ class AISettingsDialog(QDialog):
             self.template_name_edit,
             self.template_description_edit,
             self.template_intent_combo,
+            self.template_operation_combo,
             self.template_content_edit,
         ):
             widget.setEnabled(enabled)
@@ -1269,6 +1298,7 @@ class AISettingsDialog(QDialog):
         self.template_description_edit.setReadOnly(read_only)
         self.template_content_edit.setReadOnly(read_only)
         self.template_intent_combo.setEnabled(not read_only)
+        self.template_operation_combo.setEnabled(not read_only)
 
     @Slot()
     def _mark_template_editor_dirty(self) -> None:
@@ -1779,6 +1809,11 @@ class AISettingsDialog(QDialog):
 
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         return AIGenerationPreferences(
+            budget_mode=str(settings.value("ai_gen_budget_mode", "manual")),
+            operation=str(settings.value("ai_gen_operation", "custom")),
+            include_undated=bool(
+                settings.value("ai_gen_include_undated", False, type=bool)
+            ),
             persona=self.system_prompt_edit.toPlainText(),
             max_tokens=self.max_tokens_input.value(),
             temperature_percent=self.temperature_input.value(),
@@ -1817,6 +1852,9 @@ class AISettingsDialog(QDialog):
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
             settings.setValue("ai_gen_system_prompt", preferences.persona)
             settings.setValue("ai_gen_max_tokens", preferences.max_tokens)
+            settings.setValue("ai_gen_budget_mode", preferences.budget_mode)
+            settings.setValue("ai_gen_operation", preferences.operation)
+            settings.setValue("ai_gen_include_undated", preferences.include_undated)
             settings.setValue("ai_gen_temperature", preferences.temperature_percent)
             settings.setValue("ai_gen_rag_enabled", preferences.rag_enabled)
             settings.setValue("ai_gen_rag_limit", preferences.rag_limit)

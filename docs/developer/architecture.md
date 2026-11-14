@@ -22,6 +22,15 @@ their identity across palette changes, with written types as the non-color cue.
 
 ## Optional local MCP access
 
+Generation integrity uses pure Markdown-aware checks in `generation_quality`.
+Both review and session experiments retain provider termination separately from
+mechanical findings and unverified factual fidelity. `generation_context_policy`
+selects generation-only evidence from detached Entity context: weaker associations
+are excluded and undated baseline references require opt-in in dated modes. Human
+World Context and saved state are unchanged. Preview retains exact selected text
+and omission warnings; Entity and Event use the same background preparation.
+Task operations and Auto/Manual allowance settings travel with world preferences.
+
 Local generation experiments use a separate, explicitly opted-in session scope.
 The shared `GenerationWorker` lives in the services layer; its original GUI import
 remains available. `GenerationExperiments` owns bounded, in-memory jobs and frozen

@@ -13,6 +13,7 @@ from src.core.ai_generation import (
     TaskTemplate,
     TaskTemplateSource,
 )
+from src.core.authoring_context import EntityAuthoringContext
 from src.gui.widgets.llm_generation_widget import GenerationWorker, LLMGenerationWidget
 
 
@@ -89,7 +90,7 @@ def test_generation_worker_injects_entity_context_independently_of_spatial(
     lookup_context,
     _format_context,
 ) -> None:
-    lookup_context.return_value = MagicMock()
+    lookup_context.return_value = EntityAuthoringContext(entity_id="entity-id")
     request = GenerationRequest(
         prompt={
             "system": "System",

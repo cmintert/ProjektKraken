@@ -21,6 +21,11 @@ from src.core.ai_generation import (
 )
 from src.core.description_date_policy import find_description_dates
 from src.core.generation_experiment import fingerprint, render_variant
+from src.core.generation_quality import (
+    assessment_dict,
+    estimate_tokens,
+    output_allowance,
+)
 from src.core.mcp_access import MAX_RESULT_BYTES, McpFailure
 from src.services.generation_embeddings import (
     LocalGenerationEmbeddings,
@@ -132,6 +137,7 @@ class GenerationExperiments(QObject):
     ) -> dict[str, Any]:
         prefs = AIGenerationPreferences.from_dict(snapshot["preferences"])
         subject = snapshot["subject"]
+        operation = str(args.get("operation", "custom"))
         task = str(args.get("task", ""))
         template_id = args.get("template_id")
         if template_id:
@@ -139,9 +145,29 @@ class GenerationExperiments(QObject):
                 *TaskTemplateCatalog().built_in_templates(),
                 *prefs.custom_task_templates,
             )
+            operation = next(
+                (t.operation for t in templates if t.template_id == template_id),
+                operation,
+            )
             task = next(
                 (t.content for t in templates if t.template_id == template_id), ""
             )
+        editing = operation in {"revise", "condense"}
+
+        def selected(key: str, default: bool) -> bool:
+            value = args.get(key)
+            return default if value is None else bool(value)
+
+        authoring_enabled = selected("include_world_context", not editing)
+        prefs = replace(
+            prefs,
+            rag_enabled=selected(
+                "include_retrieved", prefs.rag_enabled and not editing
+            ),
+            spatial_enabled=selected(
+                "include_spatial", prefs.spatial_enabled and not editing
+            ),
+        )
         if not task.strip():
             raise McpFailure("INVALID_INPUT", "TASK_REQUIRED")
         context = {
@@ -161,7 +187,7 @@ class GenerationExperiments(QObject):
         prompt = builder.construct_prompt(
             details,
             task,
-            include_authoring_placeholder=True,
+            include_authoring_placeholder=authoring_enabled,
             include_rag_placeholder=prefs.rag_enabled,
             include_spatial_placeholder=bool(args.get("active_map_id"))
             and prefs.spatial_enabled,
@@ -169,7 +195,11 @@ class GenerationExperiments(QObject):
         )
         request = GenerationRequest(
             prompt,
-            max_tokens=prefs.max_tokens,
+            max_tokens=(
+                output_allowance(str(subject.get("description", "")), operation)
+                if prefs.budget_mode == "auto"
+                else prefs.max_tokens
+            ),
             temperature=prefs.temperature_percent / 100,
             db_path=database,
             target_id=args["target_id"],
@@ -177,7 +207,10 @@ class GenerationExperiments(QObject):
             rag_enabled=prefs.rag_enabled,
             rag_limit=prefs.rag_limit,
             retrieval_query=build_retrieval_query(task, context),
-            authoring_context_enabled=True,
+            authoring_context_enabled=authoring_enabled,
+            include_undated=bool(args.get("include_undated", False)),
+            operation=operation,
+            budget_mode=prefs.budget_mode,
             entity_context_mode=args.get("context_mode", "all_history"),
             authoring_date=args.get("lore_day"),
             active_map_id=args.get("active_map_id"),
@@ -186,7 +219,11 @@ class GenerationExperiments(QObject):
         )
         embedding: EmbeddingProvider | None = None
         config = settings.pop("_embedding")
-        if prefs.rag_enabled:
+        dated = (
+            request.object_type == "event"
+            or request.entity_context_mode != "all_history"
+        )
+        if prefs.rag_enabled and (request.include_undated or not dated):
             if config["provider"] == "lmstudio":
                 url = config["lm_url"] or "http://localhost:1234/v1/embeddings"
                 if urlsplit(url).hostname not in {"localhost", "127.0.0.1", "::1"}:
@@ -229,6 +266,7 @@ class GenerationExperiments(QObject):
             "filter_reasoning": prefs.filter_reasoning,
             "baseline": prepared.prompt,
             "parameters": {
+                "operation": operation,
                 "model": settings.get("generation_model", ""),
                 "temperature": request.temperature,
                 "max_tokens": request.max_tokens,
@@ -244,6 +282,7 @@ class GenerationExperiments(QObject):
             "source": {
                 "kind": args["kind"],
                 "id": args["target_id"],
+                "description": subject.get("description", ""),
             },
         }
 
@@ -355,19 +394,28 @@ class GenerationExperiments(QObject):
             "trial_id": trial,
             "state": "running",
             "prompt": prompt,
+            "variant": args.get("variant") or {},
         }
         entry["keys"][key] = signature, trial
-        self._launch(identifier, trial, self._generate, entry, prompt)
+        self._launch(
+            identifier, trial, self._generate, entry, prompt, args.get("variant") or {}
+        )
         self.changed.emit()
         return {"trial_id": trial, "state": "running"}
 
     def _generate(
-        self, entry: dict[str, Any], prompt: dict[str, str]
+        self,
+        entry: dict[str, Any],
+        prompt: dict[str, str],
+        variant: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         prepared = replace(
             PreparedGeneration.from_dict(entry["prepared"]), prompt=prompt
         )
-        request = GenerationRequest(**{**entry["request"], "prepared": prepared})
+        request_data = {**entry["request"], "prepared": prepared}
+        if variant and "max_tokens" in variant:
+            request_data["max_tokens"] = variant["max_tokens"]
+        request = GenerationRequest(**request_data)
         from src.services.providers.lmstudio_provider import LMStudioProvider
 
         settings = entry["settings"]
@@ -409,6 +457,22 @@ class GenerationExperiments(QObject):
             else reply.content
         )
         return {
+            **assessment_dict(
+                entry.get("source", {}).get("description", ""),
+                presented,
+                reply.finish_reason,
+            ),
+            "effective_max_tokens": request.max_tokens,
+            "excluded_block_ids": (variant or {}).get("exclude", []),
+            "block_token_estimates": {
+                key: estimate_tokens(value)
+                for key, value in entry.get("blocks", {}).items()
+                if key not in (variant or {}).get("exclude", [])
+            },
+            "model_context_window": None,
+            "prompt_tokens_estimate": {
+                key: estimate_tokens(value) for key, value in prompt.items()
+            },
             "raw_text": reply.content,
             "presented_text": presented,
             "model": reply.model,

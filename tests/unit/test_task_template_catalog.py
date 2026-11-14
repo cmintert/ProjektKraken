@@ -17,7 +17,9 @@ from src.services.task_template_catalog import (
 )
 
 
-def _world_template(name: str = "World Task", content: str = "Use {name}") -> TaskTemplate:
+def _world_template(
+    name: str = "World Task", content: str = "Use {name}"
+) -> TaskTemplate:
     return TaskTemplate(
         template_id=str(uuid.uuid4()),
         name=name,
@@ -53,10 +55,14 @@ def test_bundled_catalog_contains_only_four_authoring_tasks() -> None:
         "create_complete_description",
         "revise_clarity_flow",
         "expand_grounded_detail",
+        "expand_creative",
         "condense_essential_version",
     }
     assert all(template.source == TaskTemplateSource.BUILT_IN for template in templates)
-    assert all("Return only the finished description" in template.content for template in templates)
+    assert all(
+        "Return only the finished description" in template.content
+        for template in templates
+    )
 
 
 def test_merge_keeps_built_ins_read_only_and_world_template_mutable() -> None:
@@ -115,6 +121,6 @@ def test_v1_migration_imports_only_unknown_legacy_families(tmp_path: Path) -> No
 
     migrated = catalog.migrate_preferences(AIGenerationPreferences(version=1))
 
-    assert migrated.version == 2
+    assert migrated.version == 3
     assert [item.name for item in migrated.custom_task_templates] == ["Personal Voice"]
     assert migrated.custom_task_templates[0].source == TaskTemplateSource.WORLD

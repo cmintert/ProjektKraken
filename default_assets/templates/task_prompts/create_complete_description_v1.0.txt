@@ -3,6 +3,7 @@ version: 1.0
 template_id: create_complete_description
 name: Create — Complete Description
 description: Write a self-contained description from the supplied world context
+operation: create
 intent: create
 author: ProjektKraken Team
 created: 2026-07-22

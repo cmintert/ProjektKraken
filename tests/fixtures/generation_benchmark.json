@@ -1,0 +1,162 @@
+[
+  {
+    "id": "repeated_links",
+    "operation": "condense",
+    "source": "[[Port]] trades with [[Hill]] and [[Port]].",
+    "task": "Condense this description. Preserve facts, qualifiers, attributions, uncertainty, links, tables and literal blocks. Return the complete description without explicit dates or commentary.",
+    "expectation": "Preserve all three link occurrences.",
+    "evidence": "No additional world evidence supplied."
+  },
+  {
+    "id": "id_alias",
+    "operation": "revise",
+    "source": "The [[id:abc|Silver River]] carries cargo.",
+    "task": "Revise this description. Preserve facts, qualifiers, attributions, uncertainty, links, tables and literal blocks. Return the complete description without explicit dates or commentary.",
+    "expectation": "Preserve ID and alias.",
+    "evidence": "No additional world evidence supplied."
+  },
+  {
+    "id": "table",
+    "operation": "condense",
+    "source": "| Person | Role |\n| :--- | ---: |\n| [[Ada]] | **Often** a guide |\n",
+    "task": "Condense this description. Preserve facts, qualifiers, attributions, uncertainty, links, tables and literal blocks. Return the complete description without explicit dates or commentary.",
+    "expectation": "Preserve table bytes.",
+    "evidence": "No additional world evidence supplied."
+  },
+  {
+    "id": "belief",
+    "operation": "revise",
+    "source": "The villagers believe the spring heals wounds.",
+    "task": "Revise this description. Preserve facts, qualifiers, attributions, uncertainty, links, tables and literal blocks. Return the complete description without explicit dates or commentary.",
+    "expectation": "Retain belief attribution.",
+    "evidence": "No additional world evidence supplied."
+  },
+  {
+    "id": "qualifier",
+    "operation": "condense",
+    "source": "Guides are often required in the pass.",
+    "task": "Condense this description. Preserve facts, qualifiers, attributions, uncertainty, links, tables and literal blocks. Return the complete description without explicit dates or commentary.",
+    "expectation": "Do not turn often into always.",
+    "evidence": "No additional world evidence supplied."
+  },
+  {
+    "id": "ambiguous_attribution",
+    "operation": "revise",
+    "source": "Some credit Ada, others Mira, with the discovery.",
+    "task": "Revise this description. Preserve facts, qualifiers, attributions, uncertainty, links, tables and literal blocks. Return the complete description without explicit dates or commentary.",
+    "expectation": "Leave attribution unresolved.",
+    "evidence": "No additional world evidence supplied."
+  },
+  {
+    "id": "direction",
+    "operation": "expand_grounded",
+    "source": "The road leads toward the northern coast.",
+    "task": "Expand Grounded this description. Preserve facts, qualifiers, attributions, uncertainty, links, tables and literal blocks. Return the complete description without explicit dates or commentary.",
+    "expectation": "Do not invent a destination or reverse direction.",
+    "evidence": "No additional world evidence supplied."
+  },
+  {
+    "id": "toll",
+    "operation": "expand_grounded",
+    "source": "A modest toll is collected.",
+    "task": "Expand Grounded this description. Preserve facts, qualifiers, attributions, uncertainty, links, tables and literal blocks. Return the complete description without explicit dates or commentary.",
+    "expectation": "Collector and amount remain undocumented.",
+    "evidence": "No additional world evidence supplied."
+  },
+  {
+    "id": "travel_time",
+    "operation": "expand_grounded",
+    "source": "Barges navigate the river.",
+    "task": "Expand Grounded this description. Preserve facts, qualifiers, attributions, uncertainty, links, tables and literal blocks. Return the complete description without explicit dates or commentary.",
+    "expectation": "Do not invent travel duration.",
+    "evidence": "No additional world evidence supplied."
+  },
+  {
+    "id": "co_placement",
+    "operation": "expand_grounded",
+    "source": "A coastal road.",
+    "task": "Expand Grounded this description. Preserve facts, qualifiers, attributions, uncertainty, links, tables and literal blocks. Return the complete description without explicit dates or commentary.",
+    "expectation": "Sharing a map does not establish a route.",
+    "evidence": "Port and Ridge appear on the same map. No road endpoints are recorded."
+  },
+  {
+    "id": "shared_tag",
+    "operation": "create",
+    "source": "A guild.",
+    "task": "Create this description. Preserve facts, qualifiers, attributions, uncertainty, links, tables and literal blocks. Return the complete description without explicit dates or commentary.",
+    "expectation": "Shared classification does not establish membership.",
+    "evidence": "Guild and Council share the tag Trade. No membership relation is recorded."
+  },
+  {
+    "id": "future_event",
+    "operation": "create",
+    "source": "A settlement.",
+    "task": "Create this description. Preserve facts, qualifiers, attributions, uncertainty, links, tables and literal blocks. Return the complete description without explicit dates or commentary.",
+    "expectation": "A future founding must not be treated as past.",
+    "evidence": "Viewing day 5: founding occurs on day 10; status not yet occurred. Undated reference calls the settlement a bustling capital."
+  },
+  {
+    "id": "uncertain_window",
+    "operation": "create",
+    "source": "A settlement.",
+    "task": "Create this description. Preserve facts, qualifiers, attributions, uncertainty, links, tables and literal blocks. Return the complete description without explicit dates or commentary.",
+    "expectation": "Occurrence within an uncertain founding window remains possible.",
+    "evidence": "Viewing day 15: founding may occur from day 10 until day 20. Its exact occurrence is unknown. Undated reference calls the settlement a bustling capital."
+  },
+  {
+    "id": "after_window",
+    "operation": "create",
+    "source": "A settlement.",
+    "task": "Create this description. Preserve facts, qualifiers, attributions, uncertainty, links, tables and literal blocks. Return the complete description without explicit dates or commentary.",
+    "expectation": "A past founding does not establish centuries of growth.",
+    "evidence": "Viewing day 21: founding occurred within [10,20). No later development is recorded. Undated reference calls it an ancient capital."
+  },
+  {
+    "id": "expired_relation",
+    "operation": "create",
+    "source": "A diplomat.",
+    "task": "Create this description. Preserve facts, qualifiers, attributions, uncertainty, links, tables and literal blocks. Return the complete description without explicit dates or commentary.",
+    "expectation": "A past alliance must not be asserted current.",
+    "evidence": "The diplomat was allied with the Council before day 10. Viewing day 15: that alliance has ended."
+  },
+  {
+    "id": "missing_evidence",
+    "operation": "expand_grounded",
+    "source": "A quiet harbour.",
+    "task": "Expand Grounded this description. Preserve facts, qualifiers, attributions, uncertainty, links, tables and literal blocks. Return the complete description without explicit dates or commentary.",
+    "expectation": "Little evidence permits a light edit.",
+    "evidence": "No additional world evidence supplied."
+  },
+  {
+    "id": "creative",
+    "operation": "expand_creative",
+    "source": "A quiet harbour.",
+    "task": "Expand Creative this description. Preserve facts, qualifiers, attributions, uncertainty, links, tables and literal blocks. Return the complete description without explicit dates or commentary.",
+    "expectation": "New lore is permitted as author-reviewed proposals.",
+    "evidence": "No additional world evidence supplied."
+  },
+  {
+    "id": "literal_link",
+    "operation": "revise",
+    "source": "Use `[[example]]` as literal syntax.",
+    "task": "Revise this description. Preserve facts, qualifiers, attributions, uncertainty, links, tables and literal blocks. Return the complete description without explicit dates or commentary.",
+    "expectation": "Do not treat a literal example as a semantic link.",
+    "evidence": "No additional world evidence supplied."
+  },
+  {
+    "id": "nested_list",
+    "operation": "condense",
+    "source": "- Trade\n  - [[Port]]\n- Travel\n",
+    "task": "Condense this description. Preserve facts, qualifiers, attributions, uncertainty, links, tables and literal blocks. Return the complete description without explicit dates or commentary.",
+    "expectation": "Retain list nesting and links.",
+    "evidence": "No additional world evidence supplied."
+  },
+  {
+    "id": "long_output",
+    "operation": "expand_grounded",
+    "source": "The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. The city contains a library, a harbour and a market. ",
+    "task": "Expand Grounded this description. Preserve facts, qualifiers, attributions, uncertainty, links, tables and literal blocks. Return the complete description without explicit dates or commentary.",
+    "expectation": "Return a complete description; score cutoff separately.",
+    "evidence": "No additional world evidence supplied."
+  }
+]

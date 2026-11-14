@@ -187,6 +187,11 @@ class AISearchManager(QObject):
         """Persist current creative settings via the queued DB worker path."""
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         preferences = AIGenerationPreferences(
+            budget_mode=str(settings.value("ai_gen_budget_mode", "manual")),
+            operation=str(settings.value("ai_gen_operation", "custom")),
+            include_undated=bool(
+                settings.value("ai_gen_include_undated", False, type=bool)
+            ),
             persona=str(settings.value("ai_gen_system_prompt", DEFAULT_SYSTEM_PROMPT)),
             max_tokens=cast(int, settings.value("ai_gen_max_tokens", 512, type=int)),
             temperature_percent=cast(

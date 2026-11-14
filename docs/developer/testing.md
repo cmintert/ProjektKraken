@@ -124,3 +124,23 @@ Mypy is a required repository-wide CI check. `python -m mypy src` must pass
 with zero diagnostics; no error baseline or changed-files exception is used.
 `pyrightconfig.json` remains available for IDE diagnostics, but Pyright is not
 a separate CI gate.
+
+
+## Generation reliability evaluation
+
+`tests/fixtures/generation_benchmark.json` declares 20 general cases, independent
+of sample-world names. Use these expectations for blinded model scoring of
+meaning preservation, time qualification, unsupported additions and usefulness.
+Mechanical structure checks do not validate these semantic expectations.
+
+Freeze each condition's exact messages, model, sampling settings, source revision
+and allowance before running. Repeat every case three times per condition with
+the same settings. Record raw/presented output, finish reason, usage and latency;
+retain prompt hashes and selected/omitted blocks. Keep the token-limit comparison
+separate: replay identical input with 512 and 1,024 output tokens. Separate
+source-only, undated-reference and co-placement ablations from layout changes.
+Randomize condition labels for author scoring, then reveal the mapping and report
+per-case counts; do not report a universal model failure rate or claim quality
+improvement from deterministic test success. Model runs and human scoring remain
+pending until actual evidence is recorded. MCP experiment paging is independent
+of provider output cutoffs; follow every next_offset.

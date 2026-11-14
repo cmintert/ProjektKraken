@@ -9600,6 +9600,76 @@
       "binding": "writing.tables",
       "label": "Visual table authoring",
       "kind": "semantic control/action"
+    },
+    {
+      "id": "generation-source-diff",
+      "topic_id": "writing.ai",
+      "target": "help-generation-source-diff",
+      "source": "src/gui/dialogs/generation_review_dialog.py",
+      "symbol": "GenerationReviewDialog._setup_ui",
+      "binding": "self.source_diff",
+      "label": "Source comparison",
+      "kind": "QPlainTextEdit"
+    },
+    {
+      "id": "generation-warning-override",
+      "topic_id": "writing.ai",
+      "target": "help-generation-warning-override",
+      "source": "src/gui/dialogs/generation_review_dialog.py",
+      "symbol": "GenerationReviewDialog._setup_ui",
+      "binding": "self.override_btn",
+      "label": "Apply despite warnings",
+      "kind": "QPushButton"
+    },
+    {
+      "id": "generation-operation",
+      "topic_id": "writing.ai",
+      "target": "help-generation-operation",
+      "source": "src/gui/widgets/llm_generation_widget.py",
+      "symbol": "LLMGenerationWidget._setup_quality_controls",
+      "binding": "self.operation_combo",
+      "label": "Task behaviour",
+      "kind": "QComboBox"
+    },
+    {
+      "id": "generation-auto-budget",
+      "topic_id": "writing.ai",
+      "target": "help-generation-auto-budget",
+      "source": "src/gui/widgets/llm_generation_widget.py",
+      "symbol": "LLMGenerationWidget._setup_quality_controls",
+      "binding": "self.auto_budget_cb",
+      "label": "Automatic output allowance",
+      "kind": "QCheckBox"
+    },
+    {
+      "id": "generation-undated-reference",
+      "topic_id": "writing.ai",
+      "target": "help-generation-undated-reference",
+      "source": "src/gui/widgets/llm_generation_widget.py",
+      "symbol": "LLMGenerationWidget._setup_quality_controls",
+      "binding": "self.undated_cb",
+      "label": "Include undated reference prose",
+      "kind": "QCheckBox"
+    },
+    {
+      "id": "template-operation",
+      "topic_id": "writing.ai",
+      "target": "help-template-operation",
+      "source": "src/gui/dialogs/ai_settings_dialog.py",
+      "symbol": "AISettingsDialog._create_templates_page",
+      "binding": "self.template_operation_combo",
+      "label": "Task behaviour",
+      "kind": "QComboBox"
+    },
+    {
+      "id": "prepared-context-details",
+      "topic_id": "writing.ai",
+      "target": "help-prepared-context-details",
+      "source": "src/gui/dialogs/prepared_generation_dialog.py",
+      "symbol": "PreparedGenerationDialog.__init__",
+      "binding": "self.context_details",
+      "label": "Context used",
+      "kind": "QPlainTextEdit"
     }
   ],
   "factory_exemptions": [
@@ -10580,8 +10650,9 @@
     {
       "source": "src/gui/dialogs/ai_settings_dialog.py",
       "symbol": "AISettingsDialog._create_templates_page",
-      "sha256": "e0e9c795d826d591d4d48810c335e204623fb488d8f68b91bdcfa9f9ea864c4a",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "ab6617287a5750ea3cd9ebc82eb4896b62db9a37f14a0c72872d55c96c3bb6d6",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes.",
+      "review": "KRT-161: reviewed portable task operation editing and frozen context disclosure against writing.ai. Native/human review pending."
     },
     {
       "source": "src/gui/dialogs/ai_settings_dialog.py",
@@ -10592,8 +10663,9 @@
     {
       "source": "src/gui/dialogs/ai_settings_dialog.py",
       "symbol": "AISettingsDialog._load_template_editor",
-      "sha256": "e32b8b3505007310567027b64ce1d6db91b276dc6b02f3366f8e719fa4a2c60b",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "d8859ce95918a8fc2d8773e7f42612088da4932afd930d0b8ae968f3458a851c",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes.",
+      "review": "KRT-161: reviewed portable task operation editing and frozen context disclosure against writing.ai. Native/human review pending."
     },
     {
       "source": "src/gui/dialogs/ai_settings_dialog.py",
@@ -10622,8 +10694,9 @@
     {
       "source": "src/gui/dialogs/ai_settings_dialog.py",
       "symbol": "AISettingsDialog._on_duplicate_template",
-      "sha256": "959da4c617438de35735a710e9e760c8463bb29bfada6cf559d41e1bc19d2a23",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "bfdd87b265b89abcbc814c11fb9ccca5efac85c2c868ad8da385c5e6e1efd34f",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes.",
+      "review": "KRT-161: reviewed portable task operation editing and frozen context disclosure against writing.ai. Native/human review pending."
     },
     {
       "source": "src/gui/dialogs/ai_settings_dialog.py",
@@ -10646,8 +10719,9 @@
     {
       "source": "src/gui/dialogs/ai_settings_dialog.py",
       "symbol": "AISettingsDialog._on_new_template",
-      "sha256": "751ee538ad98e3ac366aa7bcc51c0cfcd5fe616cf5e5622d0f93e2aeacc2e1f8",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "339f0bc3f6e58490abdbb05c0b275005bc45b2e88b02c0ec083cf1d36bb1d8d3",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes.",
+      "review": "KRT-161: reviewed portable task operation editing and frozen context disclosure against writing.ai. Native/human review pending."
     },
     {
       "source": "src/gui/dialogs/ai_settings_dialog.py",
@@ -10670,8 +10744,9 @@
     {
       "source": "src/gui/dialogs/ai_settings_dialog.py",
       "symbol": "AISettingsDialog._on_save_template",
-      "sha256": "48d15ad042d728198e2d36790092ef2423e387948fb729e46f09cf8873136eec",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "1d7e77ac2b18f88258630539bb799d78aa5962f93d45836ac2644d444fa51b55",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes.",
+      "review": "KRT-161: reviewed portable task operation editing and frozen context disclosure against writing.ai. Native/human review pending."
     },
     {
       "source": "src/gui/dialogs/ai_settings_dialog.py",
@@ -10694,14 +10769,16 @@
     {
       "source": "src/gui/dialogs/ai_settings_dialog.py",
       "symbol": "AISettingsDialog._set_template_editor_enabled",
-      "sha256": "b1a002702022231415c1957c58b81c1181a1300e7b467638aac94aff15f62f02",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "35f5901e38652caa1f992406c2bb188223d028c5117089dd224bcc71bfd29d20",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes.",
+      "review": "KRT-161: reviewed portable task operation editing and frozen context disclosure against writing.ai. Native/human review pending."
     },
     {
       "source": "src/gui/dialogs/ai_settings_dialog.py",
       "symbol": "AISettingsDialog._set_template_editor_read_only",
-      "sha256": "2ff0c3966bc554ad2499447251dc633c0afa16939d3a5360ec0db109e50ba7ff",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "89ff6c5dcb3dab6b958e2b8cf8662a3217dbc82d4ad065fce6f6a557a426971c",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes.",
+      "review": "KRT-161: reviewed portable task operation editing and frozen context disclosure against writing.ai. Native/human review pending."
     },
     {
       "source": "src/gui/dialogs/ai_settings_dialog.py",
@@ -11222,8 +11299,9 @@
     {
       "source": "src/gui/dialogs/generation_review_dialog.py",
       "symbol": "GenerationReviewDialog._on_append_clicked",
-      "sha256": "1bb1b97155e806301c66691741e7e7714003ec3b9c28891e49be8302ffd9af4c",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "61690b9c9871bd661528df06f62f095bedd62f0526bb7a39a5d417ae89bec20b",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes.",
+      "review": "KRT-161: reviewed warning guards and side-effect-free preference loading against updated writing.ai guidance. Human/native review pending."
     },
     {
       "source": "src/gui/dialogs/generation_review_dialog.py",
@@ -11240,8 +11318,9 @@
     {
       "source": "src/gui/dialogs/generation_review_dialog.py",
       "symbol": "GenerationReviewDialog._on_replace_clicked",
-      "sha256": "1198f6133a130b050012b1eb87cf3799f400db609bae088982d6942744460efe",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "6d70e1374222d891b5948831e77cfa00714cf596ef684898d3a12de155e076ec",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes.",
+      "review": "KRT-161: reviewed warning guards and side-effect-free preference loading against updated writing.ai guidance. Human/native review pending."
     },
     {
       "source": "src/gui/dialogs/generation_review_dialog.py",
@@ -11258,14 +11337,16 @@
     {
       "source": "src/gui/dialogs/generation_review_dialog.py",
       "symbol": "GenerationReviewDialog._setup_ui",
-      "sha256": "9b268525165e076dd894e09e68649f52a6c16e2268805727ffd9bbf65176b2f4",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "8aee6e6927f438765c82bce55afad01adb175fd27a24ac9311dddea9371f8928",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes.",
+      "review": "KRT-161: reviewed explicit reply completeness and disabled manual allowance in Auto mode against canonical generation guidance; native/human acceptance pending."
     },
     {
       "source": "src/gui/dialogs/generation_review_dialog.py",
       "symbol": "GenerationReviewDialog._validate_date_policy",
-      "sha256": "4125393f439902f9ee499fc2dbede7180c9e9fc4aebcf8fa9e437f983722ac49",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "5c5f72f6e93f3d81ee846507fed8a84a53c69865112ce99f031be3244464bb4e",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes.",
+      "review": "KRT-161: source/candidate diff keeps separate lines even without trailing newlines; date and mechanical review guidance remains accurate."
     },
     {
       "source": "src/gui/dialogs/go_to_date_dialog.py",
@@ -13208,8 +13289,9 @@
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
       "symbol": "LLMGenerationWidget.__init__",
-      "sha256": "27167e6fca3128014294c307352d490499cd49d7f5c308973344e4aa823c4cf0",
-      "review_note": "KRT-96: Entity generation adds the documented shared session Context mode and prepared-preview state; existing provider, task and review controls remain unchanged. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
+      "sha256": "cdccd70183a96738383eeea9e8c89db7c945809643dd400fa54d7120ed43d176",
+      "review_note": "KRT-96: Entity generation adds the documented shared session Context mode and prepared-preview state; existing provider, task and review controls remain unchanged. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate.",
+      "review": "KRT-161: reviewed creator-visible task label, isolated initial settings load and theme refresh; updated writing.ai remains accurate. Native/human acceptance pending."
     },
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
@@ -13292,8 +13374,9 @@
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
       "symbol": "LLMGenerationWidget._load_settings",
-      "sha256": "d5121377ddfc42835ed16857f3265e1b4b71e0b7da53c2b6fc28b4745494a021",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "f7d6e88cc3d613bcc4f9b1f611874e95e24c241326502d20963da3302adcfee4",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes.",
+      "review": "KRT-161: reviewed explicit reply completeness and disabled manual allowance in Auto mode against canonical generation guidance; native/human acceptance pending."
     },
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
@@ -13310,8 +13393,9 @@
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
       "symbol": "LLMGenerationWidget._on_generation_complete",
-      "sha256": "293822ba6b5e2c95d6aea243b257c39e9b42589441ca272877c1349e79b90b14",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "8ace17abad9fd8289439ef3d4fc84e882cd587c37b8609cbf291c15642d38c31",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes.",
+      "review": "KRT-161: reviewed source-only task defaults, explicit warning override, estimated budgeting and reference selection against updated writing.ai guidance; human/native acceptance pending."
     },
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
@@ -13322,8 +13406,9 @@
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
       "symbol": "LLMGenerationWidget._on_preview_clicked",
-      "sha256": "ac1c5d8aa483c9b67adb02105ab2c730d100c7d45696ac8da001dd364a22c539",
-      "review_note": "KRT-96: Entity Preview prepares messages in the background and exposes Generate/Refresh/Close; canonical World Context instructions and new inspection targets describe frozen send and stale refresh. Event preview retains its existing behavior."
+      "sha256": "f8d912573697325e437d2946a242b01635aebd22a55d133eb4b158376a685ab9",
+      "review_note": "KRT-96: Entity Preview prepares messages in the background and exposes Generate/Refresh/Close; canonical World Context instructions and new inspection targets describe frozen send and stale refresh. Event preview retains its existing behavior.",
+      "review": "KRT-161: reviewed source-only task defaults, explicit warning override, estimated budgeting and reference selection against updated writing.ai guidance; human/native acceptance pending."
     },
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
@@ -13358,8 +13443,9 @@
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
       "symbol": "LLMGenerationWidget._on_use_template_clicked",
-      "sha256": "d52c7b10df30142f1ca1ddc1d382e2216584489e7af0228eefa0158f261b0248",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "8ae0047d9188b2988234428161b68d3da5e462d15bc796eafc1eb5a85b446dfe",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes.",
+      "review": "KRT-161: reviewed source-only task defaults, explicit warning override, estimated budgeting and reference selection against updated writing.ai guidance; human/native acceptance pending."
     },
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
@@ -13406,8 +13492,9 @@
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
       "symbol": "LLMGenerationWidget._save_settings",
-      "sha256": "d4a05caed1cdb65cb3f08201ba39d2aedf9c36562e8b084ef7a398f3359b75f3",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "f470e649e32cbe5d192aa476814347ecee9e3566ff9460961a8d721c59d3afb5",
+      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes.",
+      "review": "KRT-161: reviewed creator-visible task label, isolated initial settings load and theme refresh; updated writing.ai remains accurate. Native/human acceptance pending."
     },
     {
       "source": "src/gui/widgets/llm_generation_widget.py",
@@ -17198,8 +17285,9 @@
     {
       "source": "src/gui/dialogs/prepared_generation_dialog.py",
       "symbol": "PreparedGenerationDialog.__init__",
-      "sha256": "bf0fa18f6b39ba77731f1a986adbafb025e12584a2f0df91465e810f07108af0",
-      "review_note": "KRT-96: new inspection paragraphs describe exact read-only messages, Generate from the frozen snapshot, Refresh, and Close without generation. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
+      "sha256": "3b665605cee87404c86f685b76fc667a17f2a890d353f945f59c0d603db1932f",
+      "review_note": "KRT-96: new inspection paragraphs describe exact read-only messages, Generate from the frozen snapshot, Refresh, and Close without generation. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate.",
+      "review": "KRT-161: reviewed portable task operation editing and frozen context disclosure against writing.ai. Native/human review pending."
     },
     {
       "source": "src/gui/dialogs/prepared_generation_dialog.py",
@@ -17446,6 +17534,12 @@
       "symbol": "serialize_table",
       "sha256": "8929880dc81c515d751ade0f52a865f262a4b7915fb5e5ac772156228680fbb6",
       "review_note": "KRT-158: reviewed GFM header row, escaped inline content and column alignment; exact source is retained separately before edits."
+    },
+    {
+      "source": "src/gui/widgets/llm_generation_widget.py",
+      "symbol": "LLMGenerationWidget._setup_quality_controls",
+      "sha256": "b851a7ef48801912b58ca4a23269a15cc8ebf15827a7fc0364dd49a9c962455f",
+      "review": "KRT-161: reviewed explicit reply completeness and disabled manual allowance in Auto mode against canonical generation guidance; native/human acceptance pending."
     }
   ],
   "review_status": {

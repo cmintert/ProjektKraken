@@ -49,7 +49,7 @@ index.
 
 1. Select an event or entity.
 2. Open its generation section.
-3. Choose Create, Revise, Expand, or Condense.
+3. Choose Create, Revise, grounded Expand, creative Expand, or Condense.
 4. Apply the template to the editable prompt.
 5. Generate and review the response.
 6. Choose **Replace**, **Append**, or **Discard**.
@@ -61,6 +61,31 @@ accepting action, and use supported text/content Undo if an accepted edit is wro
 
 Selecting a template does not overwrite the draft. Generated text is not
 inserted until you explicitly apply it.
+
+### Review safeguards and task behaviour
+
+Applying Revise or Condense turns off World Context, retrieved context and spatial
+context. Enable the desired controls explicitly to add evidence to that task.
+Task behaviour remains selected when you edit the prompt. Creative expansion
+permits proposed new lore; grounded expansion should preserve established facts.
+
+Automatic output allowance estimates a budget from source length and task. The
+estimate is not a measured model token count. Existing saved numeric settings
+remain manual. A larger allowance does not establish factual accuracy.
+
+Review compares the source with the candidate. Changed links, heading/list
+structure, tables or literal blocks disable ordinary Replace. Tables include
+cell contents and alignment. Append checks repeated source references and blocks.
+A token-limit cutoff disables both ordinary actions. **Apply despite warnings...**
+offers a separate explicit Replace or Append choice. Explicit dates and stale
+editor context remain blocked. Save and reopen the entry after applying it;
+Discard leaves the description unchanged.
+
+Dated generation excludes undated retrieved passages and baseline reference
+prose unless **Include undated reference prose** is selected. Shared tags, map
+co-placement and co-appearances are excluded from generation grounding. Ordinary
+World Context retains those associations. Included reference prose does not
+establish that its claims applied at the selected date.
 
 ### World Context
 
@@ -959,3 +984,31 @@ context mode and viewing date. Wait for preparation to finish before generating.
 (help-prepared-generation-close)=
 
 **Close prompt preview** — Leave the preview without generating or changing lore.
+
+(help-generation-source-diff)=
+
+**Source comparison.** Shows a textual difference between the source and editable candidate. It does not verify factual truth.
+
+(help-generation-warning-override)=
+
+**Apply despite warnings.** Opens an explicit Replace or Append choice for structural changes or cutoffs. Explicit dates and stale editor context remain blocked.
+
+(help-generation-operation)=
+
+**Task behaviour.** Identifies the requested operation. Applying Revise or Condense disables extra context; changing prompt wording retains the operation.
+
+(help-generation-auto-budget)=
+
+**Automatic output allowance.** Estimates a complete-description output allowance from the source and task. Turn it off to use the numeric allowance; estimates do not measure model tokens.
+
+(help-generation-undated-reference)=
+
+**Include undated reference prose.** Includes undated reference text in dated generation. This reference does not establish what was true at the selected date.
+
+(help-template-operation)=
+
+**Task behaviour.** Choose the operation for a world-owned task template. Bundled operations remain read-only; duplicate a bundled template before changing it.
+
+(help-prepared-context-details)=
+
+**Context used.** Expand Context used to inspect exact excerpts, selection reasons, source identities, estimates and omissions. Close Preview to adjust the context controls, then prepare again; Generate sends the displayed frozen messages.

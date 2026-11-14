@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-14
-**Commit:** e184229318c76f99950d4a4db1975de8c5d7305d
+**Commit:** 32793e52cb1756d90260452e12811d9498befe4a
 ---
 
 # Changelog
@@ -12,6 +12,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-11-14)* **Generation review safeguards (KRT-161)**: Added mechanical
+  link/table/structure checks, source comparison and explicit warning overrides,
+  task operations with source-only editing defaults, creative expansion,
+  estimated automatic output allowances and portable preferences. Generation
+  excludes weak associations and undated references in dated modes by default;
+  MCP trials support context exclusions, output limits and completion findings.
+  Added synthetic regressions and evaluation fixtures; updated AI guidance and Help.
 
 - *(2026-11-14)* **Local generation experiments (KRT-160)**: Added session-scoped
   MCP jobs for comparing local LM Studio generations and temporary prompt layouts

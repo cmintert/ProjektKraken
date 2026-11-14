@@ -30,6 +30,18 @@ def register_generation_tools(
         ] = "all_history",
         lore_day: float | None = None,
         active_map_id: str | None = None,
+        operation: Literal[
+            "custom",
+            "create",
+            "revise",
+            "condense",
+            "expand_grounded",
+            "expand_creative",
+        ] = "custom",
+        include_undated: bool = False,
+        include_world_context: bool | None = None,
+        include_retrieved: bool | None = None,
+        include_spatial: bool | None = None,
     ) -> dict[str, Any]:
         """Freeze saved inputs for local trials. Poll the returned experiment ID."""
         return await call(
@@ -43,6 +55,11 @@ def register_generation_tools(
                 "context_mode": context_mode,
                 "lore_day": lore_day,
                 "active_map_id": active_map_id,
+                "operation": operation,
+                "include_undated": include_undated,
+                "include_world_context": include_world_context,
+                "include_retrieved": include_retrieved,
+                "include_spatial": include_spatial,
             },
         )
 
@@ -70,7 +87,8 @@ def register_generation_tools(
     ) -> dict[str, Any]:
         """Run baseline or temporary order/headings/instruction/separator variant.
 
-        Every immutable block ID must appear exactly once in order. Facts and
+        Retained block IDs must appear once. Optional authoring/retrieved/spatial
+        blocks may be excluded with exclude; max_tokens overrides output allowance. Facts and
         application policy cannot be replaced. No run or experiment-count quotas apply.
         """
         return await call(

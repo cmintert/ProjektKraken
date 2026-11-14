@@ -477,3 +477,19 @@ refresh for that session; tool calls cannot enable it or install models.
 **Activity details** shows the latest 200 requests in memory: operation, returned
 record IDs, outcome, elapsed time and byte count. It does not store query text,
 returned prose or credentials. Closing Kraken clears this history.
+
+### Generation comparison controls
+
+Preparation accepts an explicit operation and `include_undated` reference choice.
+Optional `include_world_context`, `include_retrieved` and `include_spatial` flags
+override task defaults for deliberate evidence comparisons.
+Revise and Condense use source-only defaults. Trial variants accept `exclude`
+for optional `authoring`, `retrieved` and `spatial` frozen blocks; source and task
+cannot be removed. `max_tokens` overrides the output allowance without changing
+the baseline messages when it is the only variant. Neither option changes the
+saved world or promotes a prompt.
+
+Job state `completed` describes execution. Separate `completion_status` reports
+`complete`, `incomplete` or `unknown` provider termination. `findings` reports
+mechanical structure changes; factual fidelity remains unverified. Prompt token
+estimates use UTF-8 length, independently of actual provider usage totals.

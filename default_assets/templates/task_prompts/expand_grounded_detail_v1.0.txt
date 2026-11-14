@@ -3,6 +3,7 @@ version: 1.0
 template_id: expand_grounded_detail
 name: Expand — Grounded Detail
 description: Enrich an existing description while keeping additions consistent
+operation: expand_grounded
 intent: update
 author: ProjektKraken Team
 created: 2026-07-22
@@ -11,8 +12,6 @@ tags: [expand, detail, description]
 
 Expand the existing description of {name} with concrete, grounded detail. Return the complete expanded description. Preserve every established fact, proper name, deliberate uncertainty, Markdown element, and [[Wiki Link]], but remove explicit dates while retaining their stable underlying facts. Add useful texture and implications supported by the supplied context, but do not create new named people, places, events, or other unsupported canon.
 
-SOURCE DESCRIPTION — copy its Markdown markers and [[Wiki Links]] verbatim into the expanded version:
-{description}
 
 The response is invalid if any heading marker, list marker, or [[Wiki Link]] from the source is missing or altered.
 

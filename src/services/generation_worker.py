@@ -17,6 +17,7 @@ from src.services.authoring_context_builder import (
     lookup_entity_authoring_context,
     lookup_event_authoring_context,
 )
+from src.services.generation_context_policy import select_entity_evidence
 from src.services.rag_service import RAGService, retrieval_exclusion_kwargs
 from src.services.spatial_context_builder import lookup_spatial_context
 
@@ -106,6 +107,7 @@ class GenerationWorker(QThread):
         self.entity_context_mode = (
             request.entity_context_mode if request else "all_history"
         )
+        self.include_undated = request.include_undated if request else True
         self.provider = provider
         raw_prompt: object = request.prompt if request is not None else prompt
         self.prompt = _normalize_generation_prompt(raw_prompt)
@@ -152,6 +154,14 @@ class GenerationWorker(QThread):
     def _apply_rag_to_prompt(self) -> None:
         """Inject RAG context into the prompt."""
         # Check if RAG is useful/enabled
+        dated = self.object_type == "event" or self.entity_context_mode != "all_history"
+        if dated and not self.include_undated:
+            self.context_warnings.append(
+                "Undated retrieved prose excluded at the selected date."
+            )
+            if isinstance(self.prompt, dict):
+                self.prompt["user"] = self.prompt["user"].replace("{{RAG_CONTEXT}}", "")
+            return
         if not self.rag_enabled or not self.db_path:
             return
 
@@ -303,6 +313,17 @@ class GenerationWorker(QThread):
                         "World Context is unavailable. Refresh before generating."
                     )
                 if entity_context is not None:
+                    entity_context = select_entity_evidence(
+                        entity_context,
+                        include_undated=self.include_undated,
+                    )
+                    if (
+                        entity_context.mode != "all_history"
+                        and not self.include_undated
+                    ):
+                        self.context_warnings.append(
+                            "Undated baseline references excluded."
+                        )
                     context_text = format_entity_authoring_context(entity_context)
                     values = [
                         item.event.lore_date
@@ -403,6 +424,7 @@ class GenerationWorker(QThread):
                 self.spatial_context_used,
                 self.description_date_values,
                 self.source_references,
+                tuple(self.context_warnings),
             )
         prepared = self.prepared
         self.prompt = dict(prepared.prompt)

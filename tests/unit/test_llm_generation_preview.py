@@ -23,6 +23,7 @@ def widget(qtbot, tmp_path):
     settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
     settings.clear()
     widget = LLMGenerationWidget()
+    widget.undated_cb.setChecked(True)  # These tests explicitly exercise raw retrieval.
     qtbot.addWidget(widget)
     yield widget
     QSettings.setDefaultFormat(original_format)
@@ -76,8 +77,9 @@ def _assert_preview_rag_success(mock_rag_cls, widget, qtbot, world_context_enabl
     def capture_preview(dialog):
         qtbot.waitUntil(lambda: widget._prepared_request is not None)
         text_edits = dialog.findChildren(QPlainTextEdit)
-        assert len(text_edits) == 1
-        captured["display_text"] = text_edits[0].toPlainText()
+        assert len(text_edits) == 2
+        assert dialog.context_details.isReadOnly()
+        captured["display_text"] = dialog.text.toPlainText()
         return 0
 
     # Patch only exec(), retaining a real dialog and child widgets so layout
@@ -188,3 +190,25 @@ def test_preview_and_generation_use_identical_retrieval_arguments(
 
     assert preview_call == mock_rag_cls.return_value.get_context.call_args
     assert worker.prompt["user"].count("Relevant conflict") == 1
+
+
+def test_quality_defaults_do_not_overwrite_saved_settings(widget, qtbot):
+    settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+    settings.setValue("ai_gen_max_tokens", 3072)
+    settings.setValue("ai_gen_budget_mode", "auto")
+    settings.setValue("ai_gen_operation", "condense")
+    other = LLMGenerationWidget()
+    qtbot.addWidget(other)
+    assert other.max_tokens_spin.value() == 3072
+    assert other.auto_budget_cb.isChecked()
+    assert other.operation_combo.currentData() == "condense"
+    assert int(settings.value("ai_gen_max_tokens")) == 3072
+
+
+def test_fresh_generation_uses_auto_budget(widget, qtbot):
+    settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+    settings.clear()
+    other = LLMGenerationWidget()
+    qtbot.addWidget(other)
+    assert other.auto_budget_cb.isChecked()
+    assert not settings.contains("ai_gen_max_tokens")

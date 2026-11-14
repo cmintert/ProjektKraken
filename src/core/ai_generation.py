@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-AI_GENERATION_PREFERENCES_VERSION = 2
+AI_GENERATION_PREFERENCES_VERSION = 3
 
 
 class TaskIntent(str, Enum):
@@ -34,6 +34,7 @@ class TaskTemplate:
     intent: TaskIntent
     content: str
     source: TaskTemplateSource = TaskTemplateSource.WORLD
+    operation: str = "custom"
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "TaskTemplate":
@@ -55,6 +56,7 @@ class TaskTemplate:
             intent=intent,
             content=str(data.get("content", "")),
             source=source,
+            operation=str(data.get("operation", "custom")),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -66,6 +68,7 @@ class TaskTemplate:
             "intent": self.intent.value,
             "content": self.content,
             "source": self.source.value,
+            "operation": self.operation,
         }
 
 
@@ -87,6 +90,7 @@ class PreparedGeneration:
     spatial_context: str | None = None
     description_date_values: tuple[float, ...] = ()
     source_references: tuple[tuple[str, str], ...] = ()
+    context_warnings: tuple[str, ...] = ()
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "PreparedGeneration":
@@ -104,6 +108,7 @@ class PreparedGeneration:
             data.get("spatial_context"),
             tuple(float(value) for value in data.get("description_date_values", [])),
             tuple(tuple(item) for item in data.get("source_references", [])),
+            tuple(str(item) for item in data.get("context_warnings", [])),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -115,6 +120,7 @@ class PreparedGeneration:
             "spatial_context": self.spatial_context,
             "description_date_values": list(self.description_date_values),
             "source_references": list(self.source_references),
+            "context_warnings": list(self.context_warnings),
         }
 
 
@@ -139,6 +145,9 @@ class GenerationRequest:
     authoring_context_enabled: bool = False
     authoring_date: float | None = None
     entity_context_mode: str = "all_history"
+    include_undated: bool = True
+    operation: str = "custom"
+    budget_mode: str = "manual"
     prepared: PreparedGeneration | None = None
 
     def to_dict(self) -> dict[str, Any]:
@@ -161,6 +170,9 @@ class GenerationRequest:
             "authoring_context_enabled": self.authoring_context_enabled,
             "authoring_date": self.authoring_date,
             "entity_context_mode": self.entity_context_mode,
+            "include_undated": self.include_undated,
+            "operation": self.operation,
+            "budget_mode": self.budget_mode,
             "prepared": self.prepared.to_dict() if self.prepared is not None else None,
         }
 
@@ -235,6 +247,9 @@ class AIGenerationPreferences:
     version: int = AI_GENERATION_PREFERENCES_VERSION
     persona: str = ""
     max_tokens: int = 512
+    budget_mode: str = "auto"
+    operation: str = "custom"
+    include_undated: bool = False
     temperature_percent: int = 70
     rag_enabled: bool = True
     rag_limit: int = 3
@@ -270,6 +285,11 @@ class AIGenerationPreferences:
             version=int(data.get("version", 1)),
             persona=str(data.get("persona", "")),
             max_tokens=int(data.get("max_tokens", 512)),
+            budget_mode=str(
+                data.get("budget_mode", "manual" if "max_tokens" in data else "auto")
+            ),
+            operation=str(data.get("operation", "custom")),
+            include_undated=bool(data.get("include_undated", False)),
             temperature_percent=int(data.get("temperature_percent", 70)),
             rag_enabled=bool(data.get("rag_enabled", True)),
             rag_limit=int(data.get("rag_limit", 3)),
@@ -293,6 +313,9 @@ class AIGenerationPreferences:
             "version": self.version,
             "persona": self.persona,
             "max_tokens": self.max_tokens,
+            "budget_mode": self.budget_mode,
+            "operation": self.operation,
+            "include_undated": self.include_undated,
             "temperature_percent": self.temperature_percent,
             "rag_enabled": self.rag_enabled,
             "rag_limit": self.rag_limit,

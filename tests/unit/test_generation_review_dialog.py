@@ -126,3 +126,29 @@ class TestGenerationReviewDialog:
         assert result["action"] == ReviewAction.DISCARD
         # Text should still be available for logging purposes
         assert result["text"] == "Test text"
+
+
+def test_structure_loss_blocks_replace_but_keeps_discard(qapp):
+    from src.gui.dialogs.generation_review_dialog import GenerationReviewDialog
+
+    dialog = GenerationReviewDialog("Plain prose.", source_text="[[Port]]")
+    assert not dialog.replace_btn.isEnabled()
+    assert dialog.discard_btn.isEnabled()
+    dialog._on_replace_clicked()
+    assert dialog.action is None
+    dialog.text_edit.setPlainText("[[Port]]")
+    assert dialog.replace_btn.isEnabled()
+    dialog.close()
+
+
+def test_truncation_requires_explicit_override(qapp):
+    from src.core.ai_generation import ModelReply
+    from src.gui.dialogs.generation_review_dialog import GenerationReviewDialog
+
+    dialog = GenerationReviewDialog(
+        "unfinished", reply=ModelReply("unfinished", finish_reason="length")
+    )
+    assert not dialog.replace_btn.isEnabled()
+    assert not dialog.append_btn.isEnabled()
+    assert dialog.override_btn.isEnabled()
+    dialog.close()

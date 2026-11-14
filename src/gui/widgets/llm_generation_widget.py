@@ -35,6 +35,7 @@ from src.core.ai_generation import (
     TaskTemplate,
 )
 from src.core.description_date_policy import find_description_dates
+from src.core.generation_quality import output_allowance
 from src.core.logging_config import get_world_audit_log_path
 from src.core.operation_trace import safe_stack
 from src.core.theme_manager import ThemeManager
@@ -149,8 +150,8 @@ class LLMGenerationWidget(QWidget):
 
         """
         super().__init__(parent)
-        self._generation_target_id: str | None = None
-        self._generation_source_hash: str | None = None
+        self._initializing_generation = True
+        self._init_generation_identity()
         self._audit_interaction_id: str | None = None
         self._audit_started_at: float | None = None
         self._audit_provider_id = "unknown"
@@ -342,7 +343,7 @@ class LLMGenerationWidget(QWidget):
             ["{name}", "{type}", "{description}", "{lore_date}"]
         )
         self.custom_prompt_edit.textChanged.connect(self._on_prompt_text_changed)
-        main_layout.addWidget(self.custom_prompt_edit)
+        self._setup_quality_controls(main_layout)
 
         # Separator line before buttons
         self.sep2 = QFrame()
@@ -418,7 +419,7 @@ class LLMGenerationWidget(QWidget):
         # ...
 
         # Load settings
-        self._load_settings()
+        self._finish_initial_settings()
         self._sync_context_controls()
         theme_manager = ThemeManager()
         connect_theme(self, self._on_theme_changed)
@@ -427,6 +428,18 @@ class LLMGenerationWidget(QWidget):
 
         self.controls_scroll = scroll_section_contents(self)
         self.controls_scroll.setAccessibleName("Writing generation controls")
+
+    def _init_generation_identity(self) -> None:
+        """Initialize the identity guard before controls can emit signals."""
+        self._generation_target_id: str | None = None
+        self._generation_source_hash: str | None = None
+
+    def _finish_initial_settings(self) -> None:
+        """Read defaults without writing a partially constructed form."""
+        try:
+            self._load_settings()
+        finally:
+            self._initializing_generation = False
 
     def _build_world_context_status_row(self, layout: QVBoxLayout) -> None:
         """Create the Event World Context transparency controls."""
@@ -565,6 +578,40 @@ class LLMGenerationWidget(QWidget):
         logger.info("LLMGenerationWidget: refreshing settings")
         self._load_settings()
 
+    def _setup_quality_controls(self, layout: QVBoxLayout) -> None:
+        """Expose task permissions without embedding generation policy in the view."""
+        layout.addWidget(self.custom_prompt_edit)
+        self.operation_combo = declare_inspection(
+            QComboBox(), "generation-operation|writing.ai|help-generation-operation"
+        )
+        for label, value in (
+            ("Custom", "custom"),
+            ("Create", "create"),
+            ("Revise", "revise"),
+            ("Condense", "condense"),
+            ("Expand grounded", "expand_grounded"),
+            ("Expand creatively - proposes new lore", "expand_creative"),
+        ):
+            self.operation_combo.addItem(label, value)
+        self.operation_combo.setAccessibleName("Task behaviour")
+        layout.addWidget(QLabel("Task behaviour:"))
+        layout.addWidget(self.operation_combo)
+        self.auto_budget_cb = declare_inspection(
+            QCheckBox("Automatic output allowance (estimated)"),
+            "generation-auto-budget|writing.ai|help-generation-auto-budget",
+        )
+        layout.addWidget(self.auto_budget_cb)
+        self.undated_cb = declare_inspection(
+            QCheckBox("Include undated reference prose"),
+            "generation-undated-reference|writing.ai|help-generation-undated-reference",
+        )
+        layout.addWidget(self.undated_cb)
+
+        self.operation_combo.currentIndexChanged.connect(self._save_settings)
+        self.auto_budget_cb.toggled.connect(self.max_tokens_spin.setDisabled)
+        self.auto_budget_cb.toggled.connect(self._save_settings)
+        self.undated_cb.toggled.connect(self._save_settings)
+
     @Slot()
     def _on_template_combo_changed(self) -> None:
         """Update selector affordances without overwriting the draft."""
@@ -579,6 +626,13 @@ class LLMGenerationWidget(QWidget):
         template = self._find_task_template(self.template_combo.currentData())
         if template is None:
             return
+        self.operation_combo.setCurrentIndex(
+            max(0, self.operation_combo.findData(template.operation))
+        )
+        if template.operation in {"revise", "condense"}:
+            self.rag_cb.setChecked(False)
+            self.world_context_cb.setChecked(False)
+            self.spatial_cb.setChecked(False)
         self._loading_prompt = True
         try:
             self.custom_prompt_edit.setPlainText(template.content)
@@ -657,12 +711,36 @@ class LLMGenerationWidget(QWidget):
                 self.provider_combo.setCurrentIndex(index)
             self.provider_combo.blockSignals(False)
 
+            controls = (self.undated_cb, self.auto_budget_cb, self.operation_combo)
+            for control in controls:
+                control.blockSignals(True)
+            self.undated_cb.setChecked(
+                read_bool_setting(settings, "ai_gen_include_undated", False)
+            )
             # Load generation options
+            self.auto_budget_cb.setChecked(
+                settings.value(
+                    "ai_gen_budget_mode",
+                    "manual" if settings.contains("ai_gen_max_tokens") else "auto",
+                )
+                == "auto"
+            )
+            self.operation_combo.setCurrentIndex(
+                max(
+                    0,
+                    self.operation_combo.findData(
+                        settings.value("ai_gen_operation", "custom")
+                    ),
+                )
+            )
+            for control in controls:
+                control.blockSignals(False)
             self.max_tokens_spin.blockSignals(True)
             self.max_tokens_spin.setValue(
                 read_int_setting(settings, "ai_gen_max_tokens", 512)
             )
             self.max_tokens_spin.blockSignals(False)
+            self.max_tokens_spin.setDisabled(self.auto_budget_cb.isChecked())
 
             self.temperature_spin.blockSignals(True)
             self.temperature_spin.setValue(
@@ -738,10 +816,18 @@ class LLMGenerationWidget(QWidget):
     @Slot()
     def _save_settings(self) -> None:
         """Save current settings to QSettings."""
+        if self._initializing_generation:
+            return
         try:
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
             settings.setValue("ai_gen_last_provider", self.provider_combo.currentText())
             settings.setValue("ai_gen_max_tokens", self.max_tokens_spin.value())
+            settings.setValue(
+                "ai_gen_budget_mode",
+                "auto" if self.auto_budget_cb.isChecked() else "manual",
+            )
+            settings.setValue("ai_gen_operation", self.operation_combo.currentData())
+            settings.setValue("ai_gen_include_undated", self.undated_cb.isChecked())
             settings.setValue("ai_gen_temperature", self.temperature_spin.value())
             settings.setValue("ai_gen_rag_enabled", self.rag_cb.isChecked())
             settings.setValue("ai_gen_spatial_enabled", self.spatial_cb.isChecked())
@@ -777,6 +863,8 @@ class LLMGenerationWidget(QWidget):
                     self.custom_prompt_edit.toPlainText(),
                 )
 
+            if hasattr(self, "_preview_epoch"):
+                self.invalidate_context_preview()
             self.preferences_changed.emit()
 
         except Exception as e:
@@ -1116,7 +1204,14 @@ class LLMGenerationWidget(QWidget):
         # Create worker
         return GenerationRequest(
             prompt=dict(prompt),
-            max_tokens=self.max_tokens_spin.value(),
+            max_tokens=(
+                output_allowance(
+                    str(current_context.get("existing_description", "")),
+                    str(self.operation_combo.currentData()),
+                )
+                if self.auto_budget_cb.isChecked()
+                else self.max_tokens_spin.value()
+            ),
             temperature=temperature,
             db_path=db_path,
             rag_limit=self._get_rag_limit(),
@@ -1124,6 +1219,9 @@ class LLMGenerationWidget(QWidget):
             exclude_names=tuple(exclude_names),
             target_id=object_id,
             source_hash=self._hash_source_description(current_context),
+            include_undated=self.undated_cb.isChecked(),
+            operation=str(self.operation_combo.currentData()),
+            budget_mode="auto" if self.auto_budget_cb.isChecked() else "manual",
             object_type=object_type,
             active_map_id=active_map_id,
             playhead_date=playhead_date,
@@ -1451,6 +1549,7 @@ class LLMGenerationWidget(QWidget):
         known_date_values = self._known_generation_dates()
         dialog = GenerationReviewDialog(
             generated_text=filtered_text,
+            source_text=str(current_context.get("existing_description", "")),
             parent=self,
             reply=reply,
             month_names=month_names,
@@ -1787,14 +1886,14 @@ class LLMGenerationWidget(QWidget):
             include_rag_placeholder=self.rag_cb.isChecked(),
             include_spatial_placeholder=self.spatial_cb.isChecked(),
             include_authoring_placeholder=self.world_context_cb.isChecked(),
-            object_type="entity",
+            object_type=str(context.get("object_type", "entity")),
         )
         request = self._capture_generation_request(
             prompt,
             self.temperature_spin.value() / 100.0,
             self._resolve_db_path(),
             str(context.get("object_id") or "") or None,
-            "entity",
+            str(context.get("object_type", "entity")),
             build_retrieval_query(task, context),
         )
         epoch = self._preview_epoch
@@ -1846,9 +1945,12 @@ class LLMGenerationWidget(QWidget):
             self._preview_error(epoch, "Prepared context is invalid. Choose Refresh.")
             return
         self._prepared_request = replace(request, prepared=prepared)
+        self._preview_dialog.present_context(prepared)
         self._preview_dialog.present(
             prepared.prompt,
-            self._prepared_preview_caption(request),
+            self._prepared_preview_caption(request)
+            + " "
+            + " ".join(prepared.context_warnings),
         )
 
     def _prepared_preview_caption(self, request: GenerationRequest) -> str:
@@ -1861,7 +1963,10 @@ class LLMGenerationWidget(QWidget):
                 converter.format_datetime(date) if converter else format(date, ".12g")
             )
             caption += f"; viewing {display}"
-        return caption + ". Generate sends these exact messages."
+        return (
+            caption
+            + f"; output allowance {request.max_tokens} tokens. Generate sends these exact messages."
+        )
 
     def _generate_prepared_preview(self) -> None:
         request = self._prepared_request
@@ -1895,7 +2000,7 @@ class LLMGenerationWidget(QWidget):
     def _on_preview_clicked(self) -> None:
         """Show prompt preview dialog."""
         context = self._get_generation_context()
-        if context and context.get("object_type") == "entity":
+        if context and context.get("object_type") in {"entity", "event"}:
             self._open_entity_prompt_preview()
             return
         if not context:

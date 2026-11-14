@@ -5,6 +5,7 @@ description field.
 """
 
 import logging
+from difflib import unified_diff
 from typing import Optional
 
 from PySide6.QtCore import Slot
@@ -13,6 +14,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QPlainTextEdit,
     QVBoxLayout,
     QWidget,
@@ -24,8 +26,10 @@ from src.core.ai_generation import (
     ModelReply,
 )
 from src.core.description_date_policy import find_description_dates
+from src.core.generation_quality import assess_candidate, completion_status
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
 logger = logging.getLogger(__name__)
@@ -52,6 +56,7 @@ class GenerationReviewDialog(QDialog):
         month_names: tuple[str, ...] = (),
         era_names: tuple[str, ...] = (),
         known_date_values: tuple[float, ...] = (),
+        source_text: str = "",
     ) -> None:
         """Initialize the generation review dialog.
 
@@ -68,6 +73,7 @@ class GenerationReviewDialog(QDialog):
 
         # State
         self.reply = reply
+        self._source_text = source_text
         self._month_names = month_names
         self._era_names = era_names
         self._known_date_values = known_date_values
@@ -76,6 +82,18 @@ class GenerationReviewDialog(QDialog):
         self.comment: Optional[str] = None
 
         self._setup_ui(generated_text)
+        connect_theme(self, self._apply_theme)
+        self._apply_theme()
+
+    def _apply_theme(self, _theme: dict | None = None) -> None:
+        """Refresh review controls without changing the candidate or caret."""
+        self.setStyleSheet(StyleHelper.get_dialog_base_style())
+        for edit in (self.text_edit, self.source_diff):
+            edit.setStyleSheet(StyleHelper.get_input_field_style())
+        for label in (self.structure_warning, self.date_warning):
+            label.setStyleSheet(StyleHelper.get_error_label_style())
+        self.override_btn.setStyleSheet(StyleHelper.get_secondary_button_style())
+        self.replace_btn.setStyleSheet(StyleHelper.get_primary_button_style())
 
     def _setup_ui(self, generated_text: str) -> None:
         """Set up the dialog UI.
@@ -99,8 +117,7 @@ class GenerationReviewDialog(QDialog):
             details = []
             if self.reply.model:
                 details.append(self.reply.model)
-            if self.reply.finish_reason:
-                details.append(f"finish: {self.reply.finish_reason}")
+            details.append("Reply " + completion_status(self.reply.finish_reason))
             if details:
                 reply_details = QLabel(" · ".join(details))
                 reply_details.setStyleSheet(
@@ -124,6 +141,24 @@ class GenerationReviewDialog(QDialog):
         self.text_edit.setStyleSheet(StyleHelper.get_input_field_style())
         main_layout.addWidget(self.text_edit, stretch=1)
 
+        self.source_diff = declare_inspection(
+            QPlainTextEdit(),
+            "generation-source-diff|writing.ai|help-generation-source-diff",
+        )
+        self.source_diff.setReadOnly(True)
+        self.source_diff.setAccessibleName("Source compared with candidate")
+        main_layout.addWidget(self.source_diff)
+        self.structure_warning = QLabel()
+        self.structure_warning.setWordWrap(True)
+        self.structure_warning.setStyleSheet(StyleHelper.get_error_label_style())
+        main_layout.addWidget(self.structure_warning)
+        self.override_btn = declare_inspection(
+            QPushButton("Apply despite warnings..."),
+            "generation-warning-override|writing.ai|help-generation-warning-override",
+        )
+        self.override_btn.setStyleSheet(StyleHelper.get_secondary_button_style())
+        self.override_btn.clicked.connect(self._override_findings)
+        main_layout.addWidget(self.override_btn)
         self.date_warning = QLabel()
         self.date_warning.setWordWrap(True)
         self.date_warning.setStyleSheet(StyleHelper.get_error_label_style())
@@ -217,8 +252,30 @@ class GenerationReviewDialog(QDialog):
             known_date_values=self._known_date_values,
         )
         valid = not violations
-        self.append_btn.setEnabled(valid)
-        self.replace_btn.setEnabled(valid)
+        self.source_diff.setPlainText(
+            "\n".join(
+                unified_diff(
+                    self._source_text.splitlines(),
+                    self.get_text().splitlines(),
+                    fromfile="Source",
+                    tofile="Candidate",
+                    lineterm="",
+                )
+            )
+        )
+        self.source_diff.setVisible(bool(self._source_text))
+        reason = self.reply.finish_reason if self.reply else None
+        replacement = assess_candidate(self._source_text, self.get_text(), reason)
+        appended = assess_candidate(
+            self._source_text, self.get_text(), reason, "append"
+        )
+        self.append_btn.setEnabled(valid and not appended)
+        self.replace_btn.setEnabled(valid and not replacement)
+        messages = list(dict.fromkeys(item.message for item in replacement + appended))
+        self.structure_warning.setText(" ".join(messages))
+        self.structure_warning.setVisible(bool(messages))
+        self.override_btn.setVisible(bool(messages))
+        self.override_btn.setEnabled(valid)
         if valid:
             self.date_warning.clear()
             self.date_warning.hide()
@@ -233,6 +290,34 @@ class GenerationReviewDialog(QDialog):
             )
             self.date_warning.show()
         return valid
+
+    @Slot()
+    def _override_findings(self) -> None:
+        """Accept the current candidate through an explicit action decision."""
+        if not self._validate_date_policy():
+            return
+        candidate = self.get_text()
+        box = QMessageBox(self)
+        box.setWindowTitle("Apply despite warnings")
+        box.setText(self.structure_warning.text())
+        replace_button = box.addButton(
+            "Replace despite warnings", QMessageBox.ButtonRole.AcceptRole
+        )
+        append_button = box.addButton(
+            "Append despite warnings", QMessageBox.ButtonRole.AcceptRole
+        )
+        box.addButton(QMessageBox.StandardButton.Cancel)
+        box.exec()
+        if box.clickedButton() not in (replace_button, append_button):
+            return
+        if self.get_text() != candidate or not self._validate_date_policy():
+            return
+        self.action = (
+            GenerationApplyMode.REPLACE
+            if box.clickedButton() is replace_button
+            else GenerationApplyMode.APPEND
+        )
+        self.accept()
 
     def get_text(self) -> str:
         """Get the current text from the editor.
@@ -293,6 +378,8 @@ class GenerationReviewDialog(QDialog):
         """Handle Replace button click."""
         if not self._validate_date_policy():
             return
+        if not self.replace_btn.isEnabled():
+            return
         self.action = GenerationApplyMode.REPLACE
         logger.info("User chose to replace description with generated content")
         self.accept()
@@ -301,6 +388,8 @@ class GenerationReviewDialog(QDialog):
     def _on_append_clicked(self) -> None:
         """Handle Append button click."""
         if not self._validate_date_policy():
+            return
+        if not self.append_btn.isEnabled():
             return
         self.action = GenerationApplyMode.APPEND
         logger.info("User chose to append generated content to description")
