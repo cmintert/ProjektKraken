@@ -227,5 +227,8 @@ class PackageSmokeController:
             encoding="utf-8",
         )
         logger.info("Package smoke report written; closing application")
+        self._window.shutdown_finished.connect(
+            lambda result: QApplication.exit(exit_code if result.get("success") else 1)
+        )
+        self._window.setProperty("krakenInternalExit", True)
         self._window.close()
-        QApplication.exit(exit_code)

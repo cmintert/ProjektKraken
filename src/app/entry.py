@@ -7,6 +7,7 @@ Separated from MainWindow to allow for easier testing and future refactoring.
 import os
 import sys
 
+import shiboken6
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -107,6 +108,7 @@ def main() -> None:
         "diagnostics" if diagnostic_mode else "normal",
     )
 
+    app = None
     try:
         logger.info("Starting Application...")
 
@@ -213,7 +215,7 @@ def main() -> None:
 
         logger.info("Entering Event Loop...")
         exit_code = app.exec()
-        cleanup_app()
+        cleanup_app(app)
         sys.exit(exit_code)
     except Exception as exc:
         record_startup_exception(exc)
@@ -225,12 +227,16 @@ def main() -> None:
         except Exception:
             pass
         finally:
-            cleanup_app()
+            cleanup_app(app)
         sys.exit(1)
 
 
-def cleanup_app() -> None:
+def cleanup_app(app: QApplication | None = None) -> None:
     """Performs global cleanup operations before exit."""
+    # QApplication owns native widgets, including closed windows still held by
+    # Python. Destroy them while logging and Qt diagnostics can capture teardown.
+    if app is not None and shiboken6.isValid(app):
+        shiboken6.delete(app)
     logger.info("Shimmying down the drain pipe...Shutting down logging.")
     try:
         shutdown_logging()

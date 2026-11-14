@@ -108,6 +108,40 @@ def test_entity_snapshot_projects_explicit_legacy_event_reference(db_service):
     assert row["historical_event"]["lore_date"] is None
 
 
+def test_legacy_event_references_are_batched_and_missing_references_stay_missing(
+    db_service,
+):
+    subject = Entity(name="Ada", type="character")
+    witness = Entity(name="Witness", type="character")
+    other = Entity(name="Other", type="character")
+    event = Event(
+        name="Undated record", lore_date=None, attributes={"note": "uncertain"}
+    )
+    for entity in (subject, witness, other):
+        db_service.insert_entity(entity)
+    db_service.insert_event(event)
+    db_service.insert_relation(subject.id, witness.id, "birth", {"event_id": event.id})
+    db_service.insert_relation(witness.id, subject.id, "death", {"event_id": event.id})
+    db_service.insert_relation(subject.id, other.id, "death", {"event_id": "missing"})
+    connection = db_service.require_connection()
+    statements = []
+    connection.set_trace_callback(statements.append)
+    try:
+        snapshot = DetailSnapshotService(db_service).load_entity(subject.id)
+    finally:
+        connection.set_trace_callback(None)
+    projected = [
+        row["historical_event"]
+        for row in snapshot.relations + snapshot.incoming_relations
+        if "historical_event" in row
+    ]
+    assert projected == [event.to_dict(), event.to_dict()]
+    missing = next(row for row in snapshot.relations if row["target_id"] == other.id)
+    assert "historical_event" not in missing
+    queries = [sql for sql in statements if "SELECT * FROM events WHERE id IN" in sql]
+    assert len(queries) == 1
+
+
 def test_large_relation_fanout_uses_chunk_bounded_metadata_queries(db_service):
     source = Event(name="Source", lore_date=1.0)
     db_service.insert_event(source)

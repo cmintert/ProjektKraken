@@ -27,13 +27,21 @@ class WikiEditHistory(QObject):
         self._entries: list[tuple[QTextDocument, str]] = []
         self._position = 0
         self._documents: set[QTextDocument] = set()
+        # The active document must die with QTextEdit's native text control,
+        # before its viewport/paint device. Only inactive projections belong here.
+        self._document_owner = view.document().parent()
         self.watch(view.document())
 
     def watch(self, document: QTextDocument) -> None:
-        """Own a projection independently of QTextEdit's active document."""
-        document.setParent(self)
+        """Track edit commands without changing native document ownership."""
         self._documents.add(document)
         document.undoCommandAdded.connect(lambda: self._added(document))
+
+    def adopt(self, document: QTextDocument) -> None:
+        """Retain the old projection and restore native active-document ownership."""
+        self.view.document().setParent(self)
+        document.setParent(self._document_owner)
+        self.view.setDocument(document)
 
     def _added(self, document: QTextDocument) -> None:
         if self.suspended:

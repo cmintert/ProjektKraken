@@ -32,6 +32,18 @@ def manager(mock_window):
     return mgr
 
 
+def test_shutdown_rejects_late_initialization_and_index_requests(manager, mock_window):
+    manager._pending_indices.add(("entity", "old"))
+    manager._index_timer.start(10000)
+    manager.shutdown()
+    manager._on_index_object_requested("entity", "late")
+    manager.on_db_initialized(True)
+    assert not manager._pending_indices
+    assert not manager._index_timer.isActive()
+    assert manager.database_initialized is None
+    mock_window.data_coordinator.load_data.assert_not_called()
+
+
 # ---------------------------------------------------------------------------
 # Debounce behaviour
 # ---------------------------------------------------------------------------
@@ -49,9 +61,7 @@ class TestIndexDebounce:
         }.get(key, "")
 
         emitted = []
-        manager._index_single_requested.connect(
-            lambda *args: emitted.append(args)
-        )
+        manager._index_single_requested.connect(lambda *args: emitted.append(args))
 
         manager._on_index_object_requested("entity", "abc-123")
 
@@ -68,9 +78,7 @@ class TestIndexDebounce:
         }.get(key, "")
 
         emitted = []
-        manager._index_single_requested.connect(
-            lambda *args: emitted.append(args)
-        )
+        manager._index_single_requested.connect(lambda *args: emitted.append(args))
 
         manager._on_index_object_requested("entity", "abc-123")
 
@@ -90,17 +98,13 @@ class TestIndexDebounce:
         }.get(key, "")
 
         emitted = []
-        manager._index_single_requested.connect(
-            lambda *args: emitted.append(args)
-        )
+        manager._index_single_requested.connect(lambda *args: emitted.append(args))
 
         # Simulate 5 rapid autosaves (each distinct object is retained).
         for i in range(5):
             manager._on_index_object_requested("entity", f"id-{i}")
 
-        assert manager._pending_indices == {
-            ("entity", f"id-{i}") for i in range(5)
-        }
+        assert manager._pending_indices == {("entity", f"id-{i}") for i in range(5)}
 
         # Flush once.
         manager._flush_pending_index()
@@ -111,9 +115,7 @@ class TestIndexDebounce:
         }
 
     @patch("src.app.worker_manager.QSettings")
-    def test_disabled_auto_index_does_not_start_timer(
-        self, mock_qsettings, manager
-    ):
+    def test_disabled_auto_index_does_not_start_timer(self, mock_qsettings, manager):
         """When ai_auto_index_on_save is False, timer must not start."""
         mock_qsettings.return_value.value.side_effect = lambda key, *a, **kw: {
             "ai_auto_index_on_save": False,
@@ -131,9 +133,7 @@ class TestIndexDebounce:
         mock_qsettings.return_value.value.side_effect = lambda key, *a, **kw: ""
 
         emitted = []
-        manager._index_single_requested.connect(
-            lambda *args: emitted.append(args)
-        )
+        manager._index_single_requested.connect(lambda *args: emitted.append(args))
 
         manager._flush_pending_index()
 
@@ -153,9 +153,7 @@ class TestIndexDebounce:
         manager.window.worker = None
 
         emitted = []
-        manager._index_single_requested.connect(
-            lambda *args: emitted.append(args)
-        )
+        manager._index_single_requested.connect(lambda *args: emitted.append(args))
 
         manager._flush_pending_index()  # must not crash
         assert emitted == []

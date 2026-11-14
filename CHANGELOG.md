@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-14
-**Commit:** 32793e52cb1756d90260452e12811d9498befe4a
+**Commit:** 6914528af0431fa0cf281f53765b51ce529d990e
 ---
 
 # Changelog
@@ -29,6 +29,15 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-14)* **Clean shutdown (KRT-162)**: Preserved native ownership of active
+  description documents to prevent paint-device warnings during teardown while
+  retaining Rich/Source undo history. Database cleanup now completes through
+  queued signals without blocking the GUI or forcibly terminating its worker;
+  native widgets are destroyed before logging and diagnostics stop.
+  Routed batched legacy Event enrichment through its repository, removing an
+  unnecessary database facade method and restoring the architecture gate.
+  Added subprocess, worker lifecycle, undo and legacy-reference regressions.
 
 - *(2026-11-12)* **Description view preservation**: Kept ordinary prose with
   trailing spaces editable in Rich view by matching the cursor check to the

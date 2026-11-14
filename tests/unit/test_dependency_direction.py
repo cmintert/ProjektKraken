@@ -53,6 +53,20 @@ def test_map_temporal_coordinator_keeps_narrow_snapshot_dependencies():
     )
 
 
+def test_shutdown_coordinator_has_no_window_or_database_service_dependency():
+    modules = {
+        module
+        for _, module in _imported_modules(
+            _SOURCE_ROOT / "app/coordinators/shutdown_coordinator.py"
+        )
+    }
+    assert not any(
+        module.startswith(("src.gui", "src.commands", "src.services.db_service"))
+        or module == "src.app.main_window"
+        for module in modules
+    )
+
+
 def test_activity_workspaces_have_no_world_mutation_dependencies():
     """Keep local layouts separate from commands, workers and application facades."""
     for relative in (

@@ -39,7 +39,6 @@ def main() -> None:
         patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.worker_manager.QThread"),
         patch("src.app.main_window.QTimer"),
-        patch("src.app.main_window.invoke_method", return_value=True),
     ):
         window = MainWindow()
         window.backup_coordinator.restore_shutdown_complete = True

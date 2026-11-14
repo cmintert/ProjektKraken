@@ -34,7 +34,7 @@ def test_logging_shutdown():
         mock_shutdown.assert_called_once()
 
 
-def test_mainwindow_close_event_cleanups_worker(qapp, qtbot, mock_db_service):
+def test_mainwindow_close_waits_for_worker_confirmation(qapp, qtbot, mock_db_service):
     """
     Test that MainWindow.closeEvent triggers worker cleanup and thread quit.
     Note: We need the 'qapp' fixture (pytest-qt) or a manual generic setup.
@@ -70,12 +70,30 @@ def test_mainwindow_close_event_cleanups_worker(qapp, qtbot, mock_db_service):
 
             # Mock unsaved changes check to return True (safe to close)
             window.check_unsaved_changes = MagicMock(return_value=True)
+            shutdown = MagicMock(pending=False, complete=False)
+            window._shutdown_coordinator = shutdown
+            window.command_coordinator = MagicMock()
 
             window.closeEvent(event)
 
+            event.ignore.assert_called_once()
+            event.accept.assert_not_called()
+            shutdown.start.assert_called_once()
+            assert window.command_coordinator.mutations_suspended
+            assert not window.isEnabled()
+            mock_thread.quit.assert_not_called()
+            mock_thread.wait.assert_not_called()
+
+            # Repeated close attempts must not submit cleanup twice.
+            shutdown.pending = True
+            window.closeEvent(MagicMock())
+            shutdown.start.assert_called_once()
+
+            shutdown.complete = True
+            shutdown.pending = False
+            event = MagicMock()
+            window.closeEvent(event)
             event.accept.assert_called_once()
-            mock_thread.quit.assert_called_once()
-            mock_thread.wait.assert_called_once()
 
 
 def test_mainwindow_close_calls_worker_cleanup_logic(qapp, qtbot):
@@ -86,7 +104,6 @@ def test_mainwindow_close_calls_worker_cleanup_logic(qapp, qtbot):
         patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.worker_manager.QThread.start"),
         patch("src.app.main_window.QTimer"),
-        patch("src.app.main_window.invoke_method") as mock_invoke,
         patch("src.app.main_window.QSettings") as MockSettings,
     ):
         # Configure QSettings mock to return None to avoid restoreGeometry TypeError
@@ -104,19 +121,29 @@ def test_mainwindow_close_calls_worker_cleanup_logic(qapp, qtbot):
         window.check_unsaved_changes = MagicMock(return_value=True)
         window.worker_thread.quit = MagicMock(wraps=window.worker_thread.quit)
         window.worker_thread.wait = MagicMock(wraps=window.worker_thread.wait)
+        shutdown = MagicMock(pending=False, complete=False)
+        window._shutdown_coordinator = shutdown
 
         event = MagicMock()
         window.closeEvent(event)
 
-        # Verify cleanup requested
-        # invokeMethod(worker, "cleanup", ...)
-        args, _ = mock_invoke.call_args_list[0]
-        assert args[0] == window.worker
-        assert args[1] == "cleanup"
+        shutdown.start.assert_called_once()
+        window.worker_thread.quit.assert_not_called()
+        window.worker_thread.wait.assert_not_called()
 
-        # Verify thread quit and wait
-        window.worker_thread.quit.assert_called_once()
-        window.worker_thread.wait.assert_called_once()
+        # The final close reports a failed cleanup rather than silently accepting it.
+        with (
+            patch("src.app.main_window.QMessageBox.warning") as warning,
+            patch.object(window, "close") as close,
+        ):
+            window._on_shutdown_finished({"success": False, "error": "close failed"})
+            assert "close failed" in warning.call_args.args[2]
+            close.assert_called_once()
+            window.setProperty("krakenInternalExit", True)
+            warning.reset_mock()
+            window._on_shutdown_finished({"success": False, "error": "close failed"})
+            warning.assert_not_called()
+        shutdown.complete = True
 
 
 def test_cleanup_app_shuts_down_logging():

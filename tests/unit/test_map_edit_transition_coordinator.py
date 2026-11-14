@@ -228,6 +228,7 @@ def test_close_event_is_ignored_until_guard_approves(qapp, monkeypatch, decision
         lambda _delay, callback: callbacks.append(callback),
     )
     window = SimpleNamespace(
+        _shutdown_coordinator=SimpleNamespace(pending=False, complete=False),
         backup_coordinator=SimpleNamespace(
             restore_in_progress=False, restore_shutdown_complete=False
         ),

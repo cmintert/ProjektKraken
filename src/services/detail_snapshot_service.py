@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generic, TypeVar
 
+from src.services.repositories.event_repository import EventRepository
+
 if TYPE_CHECKING:
     from src.core.entities import Entity
     from src.core.events import Event
@@ -91,7 +93,7 @@ class DetailSnapshotService:
                     candidates.append((identity, row))
         if not candidates:
             return
-        events = self._db_service.get_events_by_ids(
+        events = EventRepository(self._db_service.require_connection()).get_by_ids(
             list(dict.fromkeys(identity for identity, _ in candidates))
         )
         for identity, row in candidates:

@@ -51,11 +51,17 @@ from src.app.constants import (
     WINDOW_TITLE,
 )
 from src.app.coordinators.app_coordinator import AppCoordinator
+from src.app.coordinators.shutdown_coordinator import (
+    ShutdownCoordinator,
+    save_shutdown_state,
+    stop_authoring,
+    stop_background_work,
+)
 from src.app.data_handler import DataHandler
 from src.app.intelligence_analysis_manager import IntelligenceAnalysisManager
 from src.app.longform_manager import LongformManager
 from src.app.map_handler import MapHandler
-from src.app.qt_invocation import invoke_method, invoke_queued
+from src.app.qt_invocation import invoke_queued
 from src.app.timeline_grouping_manager import TimelineGroupingManager
 from src.app.ui_manager import UIManager
 from src.app.worker_manager import WorkerManager
@@ -286,6 +292,7 @@ class MainWindow(QMainWindow):
     )  # (tags: list|None, rel_types: list|None)
     # Emitted after deferred database startup reaches a terminal state.
     startup_completed = Signal(bool)
+    shutdown_finished = Signal(dict)
 
     # WorkerManager injects these during phase-one initialization.
     worker: DatabaseWorker
@@ -384,6 +391,9 @@ class MainWindow(QMainWindow):
         # Init Services (Worker Thread)
         self.worker_manager = WorkerManager(self)
         self.worker_manager.init_worker()
+        shutdown = ShutdownCoordinator(self.worker, self.worker_thread, self)
+        self._shutdown_coordinator = shutdown
+        shutdown.finished.connect(self._on_shutdown_finished)
         self.intelligence_analysis_manager = IntelligenceAnalysisManager(self)
 
         # Initialize state variables
@@ -585,6 +595,9 @@ class MainWindow(QMainWindow):
         # Status Bar
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
+        self._shutdown_coordinator.waiting.connect(
+            lambda: self.status_bar.showMessage("Waiting for database cleanup…")
+        )
         self.app_coordinator.trajectory_edit.bind_ui()
         self.app_coordinator.feature_geometry.bind_ui()
         self.app_coordinator.bind_map_edits()
@@ -713,6 +726,8 @@ class MainWindow(QMainWindow):
         Initializes database, connects signals, restores state.
         Called via QTimer.singleShot after event loop is running.
         """
+        if self._shutdown_coordinator.pending or self._shutdown_coordinator.complete:
+            return
         from src.core.logging_config import get_logger
 
         logger = get_logger(__name__)
@@ -1048,9 +1063,15 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event: QCloseEvent) -> None:
         """Handles application close event.
 
-        Saves window geometry/state and strictly cleans up worker thread. Also checks
-        for unsaved changes.
+        Resolve unsaved changes, save workspace state, then queue worker cleanup.
+        A second close is accepted only after the worker thread has stopped.
         """
+        if self._shutdown_coordinator.complete:
+            event.accept()
+            return
+        if self._shutdown_coordinator.pending:
+            event.ignore()
+            return
         if self.backup_coordinator.restore_in_progress:
             event.ignore()
             return
@@ -1098,40 +1119,43 @@ class MainWindow(QMainWindow):
                 event.ignore()
                 return
 
-        # Save outer geometry and machine-independent workspace state separately.
-        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        settings.setValue("geometry", self.saveGeometry())
-        self.workspace_coordinator.flush()
-
-        # Save Persistent Widget States
-        if hasattr(self, "timeline"):
-            self.timeline.save_state()
-
-        # Stop debounce timers to prevent callbacks during shutdown
-        self.longform_manager.shutdown()
-        if hasattr(self, "data_coordinator"):
-            self.data_coordinator.stop_graph_reload_timer()
-            self.data_coordinator.stop_semantic_debounce_timer()
-
-        # Stop auto-backup timer if running
-        if self.backup_service is not None:
-            self.backup_service.stop_auto_backup()
-
-        self.ai_search_manager.shutdown()
-        self.intelligence_analysis_manager.shutdown()
-
-        # Cleanup Worker
-        invoke_method(
-            self.worker, "cleanup", Qt.ConnectionType.BlockingQueuedConnection
+        save_shutdown_state(
+            self.saveGeometry(),
+            self.workspace_coordinator.flush,
+            self.timeline.save_state,
         )
+        stop_background_work(
+            self.longform_manager,
+            self.data_coordinator,
+            self.backup_service,
+            self.ai_search_manager,
+            self.intelligence_analysis_manager,
+        )
+        stop_authoring(
+            getattr(self, "command_coordinator", None),
+            self.worker_manager,
+            *(
+                getattr(self.app_coordinator, name, None)
+                for name in ("event_timing", "timeline_movement", "category_palette")
+            ),
+        )
+        self.setEnabled(False)
+        self.status_bar.showMessage("Closing world…")
+        event.ignore()
+        self._shutdown_coordinator.start()
 
-        self.worker_thread.quit()
-        if not self.worker_thread.wait(2000):  # 2000ms timeout
-            logger.warning("Worker thread did not quit in time. Terminating...")
-            self.worker_thread.terminate()
-            self.worker_thread.wait()  # Wait for terminate to complete
-
-        event.accept()
+    @Slot(dict)
+    def _on_shutdown_finished(self, result: dict) -> None:
+        """Report cleanup errors before completing the already approved close."""
+        if not result.get("success") and not self.property("krakenInternalExit"):
+            QMessageBox.warning(
+                self,
+                "Shutdown cleanup failed",
+                "Some resources could not be closed cleanly.\n\n"
+                + str(result.get("error", "See the application log for details.")),
+            )
+        self.close()
+        self.shutdown_finished.emit(result)
 
     # TimelineDataProvider interface implementation
     def get_group_metadata(

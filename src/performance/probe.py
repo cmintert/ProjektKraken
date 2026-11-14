@@ -65,7 +65,9 @@ def parse_performance_probe_options(
     parser.add_argument("--performance-probe-profile", required=True)
     parser.add_argument("--performance-probe-repetitions", type=int, required=True)
     parser.add_argument("--performance-probe-scrub-positions", type=int, default=300)
-    parser.add_argument("--performance-probe-playback-seconds", type=float, default=60.0)
+    parser.add_argument(
+        "--performance-probe-playback-seconds", type=float, default=60.0
+    )
     parser.add_argument("--performance-probe-timeout", type=float, default=600.0)
     parser.add_argument("--performance-probe-visible", action="store_true")
     parser.add_argument("--performance-probe-trace", type=Path)
@@ -166,7 +168,9 @@ class PerformanceProbeController(QObject):
     def _on_startup_completed(self, success: bool) -> None:
         if self._completed:
             return
-        self._record("startup.first_usable", (time.perf_counter() - self._started) * 1000)
+        self._record(
+            "startup.first_usable", (time.perf_counter() - self._started) * 1000
+        )
         if not success:
             self._errors.append("Application startup reported failure.")
             self._finish(1)
@@ -394,7 +398,9 @@ class PerformanceProbeController(QObject):
                 QApplication.processEvents()
                 all_consumers.append((time.perf_counter() - started) * 1000.0)
             convergence_started = time.perf_counter()
-            self._wait_until(lambda: resolved_count >= len(positions), timeout_ms=60_000)
+            self._wait_until(
+                lambda: resolved_count >= len(positions), timeout_ms=60_000
+            )
             convergence_ms = (time.perf_counter() - convergence_started) * 1000.0
             try:
                 self._window.worker.entity_state_resolved.disconnect(resolved)
@@ -439,9 +445,7 @@ class PerformanceProbeController(QObject):
         )
         self._record("playbar.consumer_activation", elapsed)
         if not completed:
-            self._warnings.append(
-                "Timed out activating the entity temporal consumer."
-            )
+            self._warnings.append("Timed out activating the entity temporal consumer.")
 
     def _measure_playback(self) -> None:
         if self._options.playback_seconds <= 0:
@@ -510,7 +514,11 @@ class PerformanceProbeController(QObject):
             (
                 "mutation.create_entity",
                 CreateEntityCommand(
-                    {"id": entity_id, "name": "Performance Probe Entity", "type": "Person"}
+                    {
+                        "id": entity_id,
+                        "name": "Performance Probe Entity",
+                        "type": "Person",
+                    }
                 ),
             ),
             (
@@ -609,9 +617,7 @@ class PerformanceProbeController(QObject):
             except RuntimeError:
                 pass
         if not completed:
-            self._warnings.append(
-                f"Timed out running {command.__class__.__name__}."
-            )
+            self._warnings.append(f"Timed out running {command.__class__.__name__}.")
         return elapsed, metadata
 
     def _measure_repeated(self, name: str, action: Callable[[], object]) -> None:
@@ -660,7 +666,9 @@ class PerformanceProbeController(QObject):
         started = time.perf_counter()
         action()
         loop.exec()
-        stopped = finished_at if timestamp_at_signal and finished_at else time.perf_counter()
+        stopped = (
+            finished_at if timestamp_at_signal and finished_at else time.perf_counter()
+        )
         elapsed = (stopped - started) * 1000.0
         timeout.stop()
         try:
@@ -689,8 +697,11 @@ class PerformanceProbeController(QObject):
         self._completed = True
         self._watchdog.stop()
         self._write_report(status="complete")
+        self._window.shutdown_finished.connect(
+            lambda result: QApplication.exit(exit_code if result.get("success") else 1)
+        )
+        self._window.setProperty("krakenInternalExit", True)
         self._window.close()
-        QApplication.exit(exit_code)
 
     def _checkpoint(self) -> None:
         """Persist completed scenario evidence before starting more work."""

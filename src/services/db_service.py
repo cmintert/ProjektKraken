@@ -323,12 +323,6 @@ class DatabaseService:
         """
         return self.get_events()
 
-    def get_events_by_ids(self, event_ids: list[str]) -> dict[str, Event]:
-        """Return the existing Events for explicit references in one batched read."""
-        if not self._connection:
-            self.connect()
-        return self._event_repo.get_by_ids(event_ids)
-
     def get_events(self, event_type: Optional[str] = None) -> List[Event]:
         """Retrieves events, optionally filtered by type.
 

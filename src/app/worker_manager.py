@@ -76,6 +76,7 @@ class WorkerManager(QObject):
         super().__init__()
         self.window = main_window
         self.database_initialized: bool | None = None
+        self._closing = False
         self.package_smoke_callback: Callable[[bool], None] | None = None
 
         self.index_excluded_attributes: list[str] = []
@@ -436,6 +437,8 @@ class WorkerManager(QObject):
             object_id: UUID of the object to re-index.
 
         """
+        if self._closing:
+            return
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         auto_index = settings.value("ai_auto_index_on_save", False)
         if isinstance(auto_index, str):
@@ -485,6 +488,8 @@ class WorkerManager(QObject):
             success: True if connection succeeded, False otherwise.
 
         """
+        if self._closing:
+            return
         self.database_initialized = success
         if success:
             # Timeline callbacks read immutable snapshots cached on the GUI thread.
@@ -565,6 +570,12 @@ class WorkerManager(QObject):
     def on_timeline_grouping_loaded(self, payload: object) -> None:
         """Forward worker-loaded grouping state to the grouping manager."""
         self.window.grouping_manager.on_grouping_snapshot_loaded(payload)
+
+    def shutdown(self) -> None:
+        """Stop indexing and ignore initialization replies after close is approved."""
+        self._closing = True
+        self._index_timer.stop()
+        self._pending_indices.clear()
 
     @Slot(str)
     def on_world_theme_loaded(self, theme_name: str) -> None:

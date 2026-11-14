@@ -399,7 +399,7 @@ class WikiTextEditView(QTextEdit):
                 self._section_manager.schedule_analysis
             )
             self._section_manager._analyze_timer.stop()
-            self.setDocument(document)
+            self._history.adopt(document)
             self._section_manager.document = document
             document.contentsChanged.connect(self._section_manager.schedule_analysis)
             self._visual_highlighter.setDocument(document)
