@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-14
-**Commit:** 6d64eaf6de20da1b6ea0f83bccbb0efb75706cef
+**Commit:** 78e88e62
 ---
 
 # Changelog
@@ -29,6 +29,9 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 
 - *(2026-11-14)* Semantic search result selection now loads the corresponding
   Entity or Event through guarded navigation, preserving Explorer filters.
@@ -269,6 +272,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
+
 - *(2026-11-07)* **Architecture (KRT-119)**: Moved the MCP database-provider
   type to its worker-side read task, preserving the app-layer dependency
   boundary without changing queued reads or session behavior.
@@ -419,6 +425,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
+
 - *(2026-10-30)* **Contextual Help**: Recorded the Help impact review for the
   Event end-controls layout; existing explanations and anchors remain accurate.
 
@@ -552,6 +561,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
+
 - *(2026-10-24)* **Reviewed test inventory (KRT-55, KRT-108, KRT-94)**:
   Reconciled nine retired test IDs with the settings and workspace changes.
   The two spell-dialog action cases now use shared inline-toggle coverage;
@@ -637,6 +649,9 @@ All notable changes to this project will be documented in this file.
 ## [0.20.1]
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 
 - *(2026-10-21)* **Windows beta packaging (KRT-100)**: Update Pillow and
   certifi to audited releases and force UTF-8 output for the package workflow's
@@ -884,6 +899,9 @@ All notable changes to this project will be documented in this file.
   release-preflight requirements.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 
 - *(2026-10-12)* **Map layer theme lifecycle (KRT-84)**: Replaced an unpaired
   layout-change notification with decoration updates, preventing corrupted layer
@@ -1199,6 +1217,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
+
 - *(2026-10-05)* **Choice wheel navigation (KRT-52, KRT-45 review)**: Unfocused
   relation, date, type and metadata dropdowns scroll their surrounding form
   without changing values or stealing editing focus. Shared controls preserve
@@ -1320,6 +1341,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
+
 - *(2026-09-29)* **Release regression**: Kept disclosed date qualification
   controls within narrow event inspectors, updated editor tests for
   day-precision representative times, and stopped repeated application of the
@@ -1401,6 +1425,9 @@ All notable changes to this project will be documented in this file.
   stale spell-check responses.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 
 - *(2026-09-29)* **Entity creation**: Opened newly created Explorer entities in
   the editor, revealed selections hidden by filters, and guarded unsaved drafts
@@ -1613,6 +1640,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
+
 - *(2026-08-29)* **Raster / Pillow**: Removed the deprecated explicit PNG mode
   override while preserving exact 16-bit raster values across encoding.
 
@@ -1723,6 +1753,9 @@ All notable changes to this project will be documented in this file.
   controls.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 
 - *(2026-08-23)* **Timeline / Theming**: Refreshed existing event markers and
   their labels when the active theme changes.
@@ -1865,6 +1898,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
+
 - *(2026-08-13)* **CI / Packaged Smoke**: Increased the bounded executable
   cold-start allowance for hosted Windows runners and retained application and
   PyInstaller diagnostics when the package gate fails.
@@ -1877,6 +1913,9 @@ All notable changes to this project will be documented in this file.
   version 0.19.3.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 
 - *(2026-08-13)* **Packaging / Windows Extraction**: Shortened the ZIP's root
   directory and added an archive-entry length gate so normal user extraction
@@ -1894,6 +1933,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
+
 - *(2026-08-13)* **Packaging / Clean Runner**: Classified the optional SciPy
   compatibility import warning emitted by the hash-pinned PyInstaller hooks.
 
@@ -1907,6 +1949,9 @@ All notable changes to this project will be documented in this file.
   gate.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 
 - *(2026-08-13)* **Packaging / Clean Checkout**: Tracked the offline PyVis graph
   runtime assets required by clean Windows CI builds and classified PyInstaller
@@ -1960,6 +2005,9 @@ All notable changes to this project will be documented in this file.
   changing autosave or portable world formats.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 
 - *(2026-08-12)* **Analysis / UI**: Matched result-row selection to the Project
   Explorer, preserved readable themed contrast, and expanded wrapped result text
@@ -2121,6 +2169,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
+
 - *(2026-08-09)* **Map / Lore**: Used refreshed stored summaries for marker
   tooltips after event and entity changes, and formatted trajectory edit dates
   with the active calendar.
@@ -2211,6 +2262,9 @@ All notable changes to this project will be documented in this file.
 - *(2026-07-22)* **AI / Task Templates**: Added four intent-based description tasks plus portable per-world custom templates with create, edit, duplicate, and delete workflows.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 
 - *(2026-08-02)* **Map / Keyframes**: Exposed the first-keyframe action for
   selected entity markers while keeping event markers ineligible, with
@@ -2371,6 +2425,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
+
 - *(2026-04-30)* **Wiki / Relations**: Fixed `ProcessWikiLinksCommand` deduplication using hardcoded offset `0`; now uses `candidate.span[0]` so distinct wikilink spans to the same target each produce their own `mentions` relation instead of being falsely collapsed.
 - *(2026-04-30)* **Wiki / DB**: Added DB migration to remove pre-existing duplicate `mentions` rows and create partial unique expression index `uq_mentions_src_tgt_offset` on `(source_id, target_id, start_offset)` to enforce uniqueness at the database layer.
 - *(2026-04-27)* **Map / UX**: Moved breadcrumb navigation to its own row below the main toolbar to prevent label overflow on narrower windows.
@@ -2398,6 +2455,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
+
 - *(2026-04-21)* **Raster / UX**: Replaced modal `QColorDialog` with non-modal `InlineColorPickerPopover` in the palette editor; synced all paint-value peers to prevent UI feedback loops.
 - *(2026-04-19)* **Raster / UX**: Fixed keyboard focus not transferring to the map view on edit start, causing Space key to toggle edit mode off instead of activating hold-to-pan.
 - *(2026-04-19)* **Raster / UX**: Fixed edit toggle, passive sample, gradient sub-mode sync, cursor overlay refresh after zoom, and Ctrl+scroll brush resize; fixed Escape key stopping raster editing and resetting the toggle.
@@ -2419,6 +2479,9 @@ All notable changes to this project will be documented in this file.
 - *(2026-04-11)* **GUI**: Added `EmptyStateWidget` to Event and Entity inspectors with "New Event" / "New Entity" actions wired to the editor coordinator.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 
 - *(2026-04-15)* **Analysis**: Fixed DB connection leak in `RAGService._fetch_relations_for_results`; corrected direction-swap handling and confidence hardcoding in relation inference.
 - *(2026-04-16)* **CI**: Resolved ruff lint failures; added Qt system libraries (`libegl1`) to CI test jobs to fix `ImportError: libEGL.so.1` on Ubuntu runners.
@@ -2450,6 +2513,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
+
 - **Raster / Display**: Preserve passthrough for colour (RGBA) rasters to avoid black tiles and ensure original colours are shown.
 - **Raster / UX**: Make brush defaults usable for continuous mode (bump default paint value) and fix visibility/opacity/falloff issues.
 - **Raster / Blend**: Resolve broken raster layer blending modes and ensure correct blend-mode persistence and undo handling.
@@ -2471,6 +2537,9 @@ All notable changes to this project will be documented in this file.
 - *(2026-03-28)* **AI**: Per-world AI audit logging — added per-world `ai_audit_log.txt` support, rating and optional comment fields in generation review dialog, and logging utilities to route audit entries to world-specific audit files.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 
 - *(2026-03-28)* **Map / UI**: Reworked map toolbar and layer panel spacing; fixed destructive button styling and hover states for clearer visual hierarchy.
 - *(2026-03-14 → 2026-03-12)* **Raster / Map**: Multiple raster import and map behavior fixes — improved flood-fill, marker deletion validation, non-blocking raster image analysis, resampling defaults, and passthrough handling for color rasters.
@@ -2497,6 +2566,9 @@ All notable changes to this project will be documented in this file.
 - *(2026-03-03)* **Architecture**: Implemented `SummaryService` injection into Event and Entity editors for status management.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 - *(2026-03-03)* **Stability**: Hardened `SheetBuilder` with `RuntimeError` guards for height adjustments during layout reloads.
 - *(2026-03-03)* **Stability**: Integrated `shiboken6.isValid` checks in `WikiTextEdit` to prevent C++ destruction crashes.
 - *(2026-03-01)* **Bug**: Resolved cursor jumping issues in WikiTextEdit and inspectors by normalizing newline handling and suppressing redundant change signals.
@@ -2541,6 +2613,9 @@ All notable changes to this project will be documented in this file.
 - *(2026-02-22)* **UI**: Refined UI based on review recommendations, standardizing component behavior.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 - *(2026-03-01)* **Bug**: Fixed tag restoration in delete commands during undo operations.
 - *(2026-03-01)* **Bug**: Implemented automatic wiki link validation refresh that updates link colors (red/blue) immediately upon loading entity data.
 - *(2026-02-28)* **Stability**: Fixed "deleted C++ object" crash in Tag Editor.
@@ -2585,6 +2660,9 @@ All notable changes to this project will be documented in this file.
   - Enabled dock nesting, resizing, redocking, and robust splitter configuration.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 - *(2026-02-22)* **Stability**: Fixed dock collapse regression by ensuring `reset_layout` consistently positions all docks.
 - *(2026-02-21)* **Stability**: Fixed `FastInjectCoordinator` startup crash by deferring manager access.
 - *(2026-02-21)* **Bug**: Enforced `DragPill` max width constraint to fix UI layout issues.
@@ -2647,6 +2725,9 @@ All notable changes to this project will be documented in this file.
   - Populates entity description with the body of the Markdown file.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 - *(2026-02-17)* **Graph**: Fixed "Image file not found" warnings in Relationship Graph by supporting bundled default icon resolution.
 - *(2026-02-17)* **Graph**: Fixed shape revert bug in Lexicon Editor where user-selected shapes were overridden by images.
 - *(2026-02-17)* **Graph**: Fixed `AttributeError` in `DataCoordinator` occurring during graph lexicon handling.
@@ -2681,6 +2762,9 @@ All notable changes to this project will be documented in this file.
   - Automatically re-initializes provider connections when API keys or URLs change.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 - *(2026-02-14)* **AI**: Fixed "Prompt Editor" autosave not triggering correctly in Settings Dialog.
   - Ensures custom prompt templates are persisted reliably when switching tabs or closing the dialog.
 - *(2026-02-14)* **Bug**: Fixed AI summaries not loading on restart by removing `summary_service` guard in `EventEditor`.
@@ -2726,6 +2810,9 @@ All notable changes to this project will be documented in this file.
   - Integrated with `MapGraphicsView` for seamless creation and manipulation.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 - *(2026-02-10)* **UI**: Fixed visual state of toolbar toggle buttons (Snap, Draw Path).
   - Updated `StyleHelper` to correctly target `QPushButton` in toolbar styles.
   - Added specific `:checked` pseudo-state styling to clearly indicate active tools.
@@ -2741,6 +2828,9 @@ All notable changes to this project will be documented in this file.
 - *(2026-02-08)* **UI**: Updated `ShortcutManager` and "Keyboard Shortcuts" dialog with new hotkeys (Navigate Link, Choose Relation Type, Deselect) and improved categorization.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 - *(2026-02-08)* **Bug**: Fixed duplicate End Date field appearing in the Event Inspector.
 
 ### Documentation
@@ -2761,6 +2851,9 @@ All notable changes to this project will be documented in this file.
 - *(2026-02-03)* **UI**: Implemented Async Gallery Loading and Smart Attribute Editing for better responsiveness.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 - *(2026-02-07)* **UI**: multiple drag-and-drop regression fixes covering selection state preservation and delayed inspection logic.
 - *(2026-02-05)* **UI**: Fixed Project Explorer multi-select checkboxes not persisting correct state during filtering.
 - *(2026-02-04)* **Timeline**: Prevented playhead from accidentally moving selected events during scrub operations.
@@ -2791,6 +2884,9 @@ All notable changes to this project will be documented in this file.
   - Timeline display automatically refreshes when theme changes.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 - *(2026-02-03)* **Bug**: Fixed `GenerationContextProvider` reference error in `LLMGenerationWidget`.
 - *(2026-02-03)* **Testing**: Resolved theme-related test failures by ensuring complete theme dictionaries in mocks.
 
@@ -2812,6 +2908,9 @@ All notable changes to this project will be documented in this file.
 - *(2026-02-02)* **UI**: Unified destructive button behavior across all editors - Remove buttons now disable when nothing is selected and show warning color when enabled.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 - *(2026-02-02)* **Core**: Fixed triplicate startup logging by centralized logging initialization.
 - *(2026-02-02)* **GUI**: Fixed relation reselection bug where items could not be reselected after deselection.
 
@@ -2827,6 +2926,9 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-27)* **UI**: Added "Save as Default Layout" menu action for easier workspace configuration.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 - *(2026-02-02)* **UI**: Fixed infinite resize loop and separator rendering issues in Map Dock to prevent layout instability.
 - *(2026-01-29)* **Timeline**: Fixed duration bars scaling correctly with zoom level.
 - *(2026-01-29)* **Timeline**: Fixed Fit View to include full event durations and respect actual viewport size.
@@ -2859,6 +2961,9 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-26)* **Refactor**: Moved `sqlite3` import to `DatabaseWorker` to ensure proper thread affinity for SQLite objects.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 - *(2026-01-26)* **Bug**: Fixed regression where Longform Search bar failed to toggle visibility correctly on Escape or Ctrl+F.
 - *(2026-01-26)* **Stability**: Fixed theme compliance for `CompactDateWidget`, `CompactDurationWidget`, and `DescriptionEditor`.
 - *(2026-01-26)* **Testing**: Mocked `QMessageBox` in `UnifiedListWidget` tests to prevent hanging in headless environments.
@@ -2902,6 +3007,9 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-20)* **Import**: Implemented robust deduplication logic using `external_id` and `source_name` metadata to prevent ambiguity.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 - *(2026-01-21)* **UI**: Fixed stale/ghost selections persisting in `UnifiedListWidget` when items are filtered out or list is repopulated.
 - *(2026-01-20)* **Import**: Prevented duplicate relations from being created on JSON re-import by checking for existing relations before creation.
 - *(2026-01-20)* **Import**: Resolved "Ambiguous Entity" errors by ensuring import logic checks source metadata before name matching.
@@ -2945,6 +3053,9 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-19)* **Timeline**: Added performance logging to `drawForeground`, `repack_events`, `fit_all`, and `wheelEvent` for diagnostic monitoring.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 - *(2026-01-19)* **AI Search**: Fixed entity/event selection from search results by correcting signal emission in click handlers and replacing non-existent method call with proper `UnifiedListWidget.select_item()` access.
 - *(2026-01-19)* **Timeline**: Fixed Fit View to include Playhead and Current Time in the visible range.
 - *(2026-01-19)* **Timeline**: Fixed panning clipping by updating Scene Rect calculation to include Playhead/Current Time positions.
@@ -3028,6 +3139,9 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-13)* **Graph**: Stabilized Graph View layout by enforcing a deterministic physics seed.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 - *(2026-01-18)* **Graph**: Restored "Close" capability for Graph Dock and improved widget stability.
 - *(2026-01-17)* **Testing**: Fixed Windows platform-specific test failures in `test_backup_config.py`, `test_asset_store.py`, and `test_paths.py`.
 - *(2026-01-17)* **Bug**: Fixed asset store entity→entities pluralization and added `img_`/`thumb_` prefixes.
@@ -3096,6 +3210,9 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-06)* **Testing**: Added ON DELETE CASCADE test for `moving_features.marker_id` FK.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 - *(2026-01-12)* **Bug**: Fixed persistent bug where Project Explorer filter state (tags) was lost upon item save/reload.
 - *(2026-01-12)* **Bug**: Fixed Project Explorer selection incorrectly jumping to random items when the selected item becomes filtered out.
 - *(2026-01-12)* **Stability**: Fixed Windows-specific AppData path virtualization issues for Microsoft Store Python installations.
@@ -3133,6 +3250,9 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-04)* **Docs**: Established formal release policy and added status checking tools.
 
 ### Fixed
+
+- *(2026-11-14)* Updated five reviewed test inventory identities to match
+  committed shutdown and temporal-rendering regression changes.
 - *(2026-01-01)* **Stability**: Resolved startup crash caused by corrupted `QSettings`.
 - *(2026-01-02)* **Stability**: Fixed startup crash caused by manager classes not inheriting from `QObject`.
 - *(2026-01-02)* **Stability**: Fixed "QThread: Destroyed while thread is still running" warning on exit.

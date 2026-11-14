@@ -928,7 +928,7 @@
     "tests/test_shutdown.py::test_database_worker_cleanup": [],
     "tests/test_shutdown.py::test_logging_shutdown": [],
     "tests/test_shutdown.py::test_mainwindow_close_calls_worker_cleanup_logic": [],
-    "tests/test_shutdown.py::test_mainwindow_close_event_cleanups_worker": [],
+    "tests/test_shutdown.py::test_mainwindow_close_waits_for_worker_confirmation": [],
     "tests/test_unsaved_changes.py::test_editor_init_not_dirty": [],
     "tests/test_unsaved_changes.py::test_entity_editor_dirty_tracking": [],
     "tests/test_unsaved_changes.py::test_event_editor_dirty_tracking": [],
@@ -10162,10 +10162,10 @@
     "tests/unit/test_temporal_display.py::test_duration_visual_grammar_and_short_symbol": [
       "ci_fast"
     ],
-    "tests/unit/test_temporal_display.py::test_exact_fill_is_distinct_from_day_window[False]": [
+    "tests/unit/test_temporal_display.py::test_exact_fill_is_distinct_from_month_window[False]": [
       "ci_fast"
     ],
-    "tests/unit/test_temporal_display.py::test_exact_fill_is_distinct_from_day_window[True]": [
+    "tests/unit/test_temporal_display.py::test_exact_fill_is_distinct_from_month_window[True]": [
       "ci_fast"
     ],
     "tests/unit/test_temporal_display.py::test_explicit_single_occurrence_clears_duration_without_changing_year": [
@@ -10189,10 +10189,10 @@
     "tests/unit/test_temporal_display.py::test_point_visual_grammar[14 June 1209 14:30:15-20-exact-False]": [
       "ci_fast"
     ],
-    "tests/unit/test_temporal_display.py::test_point_visual_grammar[14 June 1209-20-window-True]": [
+    "tests/unit/test_temporal_display.py::test_point_visual_grammar[14 June 1209-20-exact-False]": [
       "ci_fast"
     ],
-    "tests/unit/test_temporal_display.py::test_point_visual_grammar[14 June 1209-24-window-False]": [
+    "tests/unit/test_temporal_display.py::test_point_visual_grammar[14 June 1209-24-exact-False]": [
       "ci_fast"
     ],
     "tests/unit/test_temporal_display.py::test_point_visual_grammar[June 1209-0.1-window-True]": [
