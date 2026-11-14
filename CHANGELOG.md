@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-14
-**Commit:** 58d6e6ee486b0f87bd9a31ae7d9add43dcd12276
+**Commit:** 6d64eaf6de20da1b6ea0f83bccbb0efb75706cef
 ---
 
 # Changelog
@@ -29,6 +29,11 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-14)* Semantic search result selection now loads the corresponding
+  Entity or Event through guarded navigation, preserving Explorer filters.
+  Matched result typography and selection colors to Project Explorer and added
+  entity/event navigation regressions.
 
 - *(2026-11-14)* **Entity search index rebuild**: Fixed the Entities-only
   rebuild option sending an invalid object type; added selection regressions.

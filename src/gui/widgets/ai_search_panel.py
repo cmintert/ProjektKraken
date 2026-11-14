@@ -56,18 +56,22 @@ class SearchResultItem(QWidget):
         super().__init__(parent)
         self.object_type = object_type
         self.object_id = object_id
+        self._selected = False
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(4, 4, 4, 4)
 
-        # Name label (bold)
-        name_label = QLabel(f"<b>{name}</b>")
+        # Use the Explorer's ordinary row typography and literal object names.
+        name_label = QLabel(name)
+        name_label.setTextFormat(Qt.TextFormat.PlainText)
+        self.name_label = name_label
         name_label.setWordWrap(True)
         layout.addWidget(name_label, stretch=3)
 
-        # Type badge
+        # Match the Explorer's parenthesized type cue.
         type_text = obj_subtype if obj_subtype else object_type
-        self.type_label = QLabel(f"[{type_text}]")
+        self.type_label = QLabel(f"({type_text})")
+        self.type_label.setTextFormat(Qt.TextFormat.PlainText)
         layout.addWidget(self.type_label, stretch=1)
 
         # Score label
@@ -87,17 +91,22 @@ class SearchResultItem(QWidget):
 
     @Slot(dict)
     def _apply_theme(self, theme: dict) -> None:
-        """Apply current theme tokens to result metadata and hover state."""
+        """Keep row text consistent with native Explorer selection colors."""
         type_color = (
             theme["event_main"] if self.object_type == "event" else theme["entity_main"]
         )
-        self.type_label.setStyleSheet(f"color: {type_color}; font-size: 10px;")
-        self.score_label.setStyleSheet(f"color: {theme['text_dim']}; font-size: 10px;")
-        self.setStyleSheet(
-            "#searchResultItem:hover {"
-            f"background-color: {theme.get('surface_alt', theme['surface'])};"
-            "}"
-        )
+        foreground = theme["selection_text"] if self._selected else type_color
+        self.name_label.setStyleSheet(f"color: {foreground};")
+        if self._selected:
+            type_color = foreground
+        score_color = foreground if self._selected else theme["text_dim"]
+        self.type_label.setStyleSheet(f"color: {type_color};")
+        self.score_label.setStyleSheet(f"color: {score_color};")
+
+    def set_selected(self, selected: bool) -> None:
+        """Reflect selection while letting the item view paint its background."""
+        self._selected = selected
+        self._apply_theme(ThemeManager().get_theme())
 
     def sizeHint(self) -> QSize:
         """Ensure item has sufficient height."""
@@ -193,6 +202,7 @@ class AISearchPanelWidget(QWidget):
             "src-gui-widgets-ai-search-panel-aisearchpanelwidget-init-self-results-list|ai.search|help-inspect-src-gui-widgets-ai-search-panel-aisearchpanelwidget-init-self-results-list",
         )
         self.results_list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
+        self.results_list.itemSelectionChanged.connect(self._sync_result_selection)
         self.results_list.itemClicked.connect(self._on_result_clicked)
         self.results_list.itemActivated.connect(self._on_result_activated)
         results_layout.addWidget(self.results_list)
@@ -216,6 +226,15 @@ class AISearchPanelWidget(QWidget):
 
         # Add stretch to push everything to the top
         main_layout.addStretch()
+
+    @Slot()
+    def _sync_result_selection(self) -> None:
+        """Use selection text roles for all labels in the selected result."""
+        for row in range(self.results_list.count()):
+            item = self.results_list.item(row)
+            widget = self.results_list.itemWidget(item)
+            if isinstance(widget, SearchResultItem):
+                widget.set_selected(item.isSelected())
 
     @Slot()
     def _on_search_clicked(self) -> None:

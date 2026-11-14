@@ -399,8 +399,9 @@ class AISearchManager(QObject):
             object_id: Object UUID.
 
         """
-        self.window.workspace.show_panel("project")
-        self.window.unified_list.select_item(object_type, object_id)
+        self.window.navigation_coordinator.set_global_selection(
+            object_type, object_id, source_panel="ai_search"
+        )
 
     @Slot()
     def refresh_search_index_status(self) -> None:

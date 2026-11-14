@@ -47,6 +47,29 @@ def identities(widget):
 
 
 @pytest.mark.parametrize("kind", ["entity", "event"])
+def test_semantic_result_loads_filtered_target(context, kind):
+    from src.app.ai_search_manager import AISearchManager
+
+    widget = context.unified_list
+    widget.set_data(
+        [Event(id="target", name="Target", lore_date=3.0)],
+        [Entity(id="target", name="Target", type="Person")],
+    )
+    widget.search_bar.setText("unmatched")
+    manager = AISearchManager(context)
+    manager.on_search_result_selected(kind, "target")
+
+    assert context.navigation_coordinator.selected_id == "target"
+    assert context.navigation_coordinator.selected_type == kind
+    assert widget._active_item == (kind, "target")
+    assert widget.search_bar.text() == "unmatched"
+    getattr(context.data_coordinator, f"load_{kind}_details").assert_called_once_with(
+        "target"
+    )
+    context.workspace.show_panel.assert_called_with(kind)
+
+
+@pytest.mark.parametrize("kind", ["entity", "event"])
 @pytest.mark.parametrize("filter_kind", ["search", "tags", "type"])
 def test_active_pin_survives_refresh_without_navigation(
     context, qtbot, kind, filter_kind
