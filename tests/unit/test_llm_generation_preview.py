@@ -28,7 +28,7 @@ def widget(qtbot, tmp_path):
     QSettings.setDefaultFormat(original_format)
 
 
-@patch("src.gui.widgets.llm_generation_widget.RAGService")
+@patch("src.services.generation_worker.RAGService")
 def test_preview_rag_success(mock_rag_cls, widget, qtbot):
     """Verify preview works correctly with RAGService."""
     _assert_preview_rag_success(
@@ -36,7 +36,7 @@ def test_preview_rag_success(mock_rag_cls, widget, qtbot):
     )
 
 
-@patch("src.gui.widgets.llm_generation_widget.RAGService")
+@patch("src.services.generation_worker.RAGService")
 def test_preview_rag_with_world_context(mock_rag_cls, widget, qtbot):
     _assert_preview_rag_success(mock_rag_cls, widget, qtbot, world_context_enabled=True)
 
@@ -91,7 +91,7 @@ def _assert_preview_rag_success(mock_rag_cls, widget, qtbot, world_context_enabl
             "src.gui.widgets.llm_generation_widget.QMessageBox.warning"
         ) as mock_warning,
         patch(
-            "src.gui.widgets.llm_generation_widget.lookup_entity_authoring_context",
+            "src.services.generation_worker.lookup_entity_authoring_context",
             return_value=EntityAuthoringContext("northwatch-id"),
         ),
     ):
@@ -115,7 +115,7 @@ def _assert_preview_rag_success(mock_rag_cls, widget, qtbot, world_context_enabl
         assert ("[Authoritative Context]" in display_text) == world_context_enabled
 
 
-@patch("src.gui.widgets.llm_generation_widget.RAGService")
+@patch("src.services.generation_worker.RAGService")
 @pytest.mark.parametrize("rag_enabled,rag_limit", [(False, "2"), (True, "0")])
 def test_preview_skips_retrieval_when_disabled_or_zero(
     mock_rag_cls, widget, rag_enabled, rag_limit
@@ -135,7 +135,7 @@ def test_preview_skips_retrieval_when_disabled_or_zero(
     mock_rag_cls.assert_not_called()
 
 
-@patch("src.gui.widgets.llm_generation_widget.RAGService")
+@patch("src.services.generation_worker.RAGService")
 def test_preview_and_generation_use_identical_retrieval_arguments(
     mock_rag_cls, widget, qtbot
 ):

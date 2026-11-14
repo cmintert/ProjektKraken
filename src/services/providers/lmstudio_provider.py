@@ -60,6 +60,7 @@ class LMStudioProvider(Provider):
         timeout: int = 30,
         max_retries: int = 3,
         use_chat_api: bool = True,
+        request_session: requests.Session | None = None,
     ) -> None:
         """Initialize LM Studio provider.
 
@@ -103,6 +104,7 @@ class LMStudioProvider(Provider):
 
         self.api_key = api_key
         self.timeout = timeout
+        self._request_session = request_session
         self.max_retries = max_retries
         self._dimension: Optional[int] = None
         self._active_response: Optional[requests.Response] = None
@@ -175,7 +177,7 @@ class LMStudioProvider(Provider):
         def _embed_impl() -> np.ndarray:
             """Inner implementation for retry wrapper."""
             payload = {"input": texts, "model": self.model}
-            response = requests.post(
+            response = self._post(
                 self.embed_url,
                 json=payload,
                 headers=self._make_headers(),
@@ -307,7 +309,7 @@ class LMStudioProvider(Provider):
                 temperature,
             )
 
-            response = requests.post(
+            response = self._post(
                 self.generate_url,
                 json=payload,
                 headers=self._make_headers(),
@@ -413,7 +415,7 @@ class LMStudioProvider(Provider):
             payload["stop"] = stop
         return payload
 
-    async def stream_generate(  # noqa: C901
+    async def stream_generate(
         self,
         prompt: Any,
         max_tokens: int = 512,
@@ -458,7 +460,7 @@ class LMStudioProvider(Provider):
 
             def _make_request() -> requests.Response:
                 """Make HTTP request to streaming endpoint."""
-                return requests.post(
+                return self._post(
                     self.generate_url,
                     json=payload,
                     headers=self._make_headers(),
@@ -520,14 +522,7 @@ class LMStudioProvider(Provider):
                                 chunk["tool_calls_delta"] = tool_calls_delta
                             if finish_reason:
                                 chunk["finish_reason"] = finish_reason
-                            if data.get("usage"):
-                                chunk["usage"] = data["usage"]
-                            if data.get("model"):
-                                chunk["model"] = data["model"]
-                            if data.get("system_fingerprint"):
-                                chunk["system_fingerprint"] = data["system_fingerprint"]
-                            if data.get("stats"):
-                                chunk["provider_metadata"] = {"stats": data["stats"]}
+                            chunk.update(self._stream_metadata(data))
 
                             yield chunk
 
@@ -542,6 +537,24 @@ class LMStudioProvider(Provider):
             ) from e
         finally:
             self._active_response = None
+
+    @staticmethod
+    def _stream_metadata(data: Dict[str, Any]) -> Dict[str, Any]:
+        """Preserve optional completion metadata independently of SSE parsing."""
+        metadata = {
+            key: data[key]
+            for key in ("usage", "model", "system_fingerprint")
+            if data.get(key)
+        }
+        if data.get("stats"):
+            metadata["provider_metadata"] = {"stats": data["stats"]}
+        return metadata
+
+    def _post(self, url: str, **kwargs: Any) -> requests.Response:
+        """Use an optional restricted transport without changing normal providers."""
+        if self._request_session is not None:
+            return self._request_session.post(url, allow_redirects=False, **kwargs)
+        return requests.post(url, **kwargs)
 
     def cancel_current_request(self) -> None:
         """Abort an active streaming response, if one exists."""
@@ -561,7 +574,7 @@ class LMStudioProvider(Provider):
             start_time = time.time()
 
             # Test embeddings endpoint with minimal request
-            response = requests.post(
+            response = self._post(
                 self.embed_url,
                 json={"input": ["test"], "model": self.model},
                 headers=self._make_headers(),
@@ -617,7 +630,7 @@ class LMStudioProvider(Provider):
                     }
 
                 # Try a minimal generation request
-                response = requests.post(
+                response = self._post(
                     self.generate_url,
                     json=payload,
                     headers=self._make_headers(),

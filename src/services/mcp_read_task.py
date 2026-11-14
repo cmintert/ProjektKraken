@@ -62,6 +62,14 @@ class McpReadTask(QObject):
                 raise McpFailure("TIMEOUT")
             if database is None or str(database.db_path) != request["database"]:
                 raise McpFailure("WORLD_CHANGED")
+            if request["tool"] == "prepare_generation_experiment":
+                from src.services.generation_experiment_snapshot import (
+                    capture_experiment,
+                )
+
+                result = capture_experiment(database, request)
+                self.finished.emit({"request_id": identifier, "result": result})
+                return
             if request.get("semantic_state") == "ready" and not self._semantic.ready(
                 request["generation"], self._service.revision(database)
             ):

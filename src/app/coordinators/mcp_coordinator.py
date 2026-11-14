@@ -12,7 +12,9 @@ from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import QObject, Qt, QThread, QTimer, Signal, Slot
 
-from src.core.mcp_access import SHARING_SCOPES, failure
+from src.core.generation_experiment_names import EXPERIMENT_TOOLS
+from src.core.mcp_access import SHARING_SCOPES, McpFailure, failure
+from src.services.generation_experiments import GenerationExperiments
 from src.services.mcp_compact import record_ids
 from src.services.mcp_read_task import DatabaseProvider, McpReadTask
 from src.services.mcp_session import McpSession
@@ -53,6 +55,11 @@ class McpCoordinator(QObject):
         self._activity: deque[dict[str, Any]] = deque(maxlen=200)
         self._requests: dict[str, tuple[str, float, int]] = {}
         self._lore_epoch = 0
+        self._experiments = GenerationExperiments(self)
+        self._experiments.changed.connect(self._emit)
+        self._experiments.prepared.connect(self._verify_experiment)
+        self._experiment_verifications: dict[str, str] = {}
+        self._experiment_preparations: dict[str, tuple[str, dict[str, Any]]] = {}
         self._scopes: tuple[str, ...] = ()
         self._local_model = local_model or (
             lambda: "sentence-transformers/all-MiniLM-L6-v2"
@@ -85,6 +92,8 @@ class McpCoordinator(QObject):
 
     def _expired(self, identifier: str) -> bool:
         session = self._session
+        if identifier in self._experiment_verifications:
+            return session is None or not session.active
         if session is not None and identifier == self._preparation_id:
             return not session.active or self._semantic_state != "preparing"
         return session is None or session.expired(identifier)
@@ -142,6 +151,9 @@ class McpCoordinator(QObject):
     def stop(self, reason: str = "SESSION_ENDED") -> None:
         """Revoke before asynchronous socket shutdown; never wait on the GUI."""
         self._semantic_refresh.stop()
+        self._experiments.reset()
+        self._experiment_preparations.clear()
+        self._experiment_verifications.clear()
         if self._session is not None:
             self._session.revoke(reason)
         self._poll.start()
@@ -261,6 +273,9 @@ class McpCoordinator(QObject):
             self._stop_changed_world()
             return
         if not session.expired(request["request_id"]):
+            if request["tool"] in EXPERIMENT_TOOLS:
+                if self._dispatch_experiment(request):
+                    return
             if request["tool"] == "get_time_context":
                 try:
                     request["view_context"] = self._capture_view()
@@ -283,6 +298,13 @@ class McpCoordinator(QObject):
     @Slot(dict)
     def _completed(self, response: dict[str, Any]) -> None:
         session = self._session
+        identifier = self._experiment_verifications.pop(response["request_id"], None)
+        if identifier is not None:
+            if session is not None:
+                self._experiments.publish(
+                    identifier, response["result"].get("revision", "")
+                )
+            return
         request = self._requests.pop(response["request_id"], None)
         if session is None or request is None:
             return
@@ -290,6 +312,36 @@ class McpCoordinator(QObject):
             self._stop_changed_world()
             return
         result = response["result"]
+        preparation = self._experiment_preparations.pop(response["request_id"], None)
+        if preparation is not None:
+            identifier, arguments = preparation
+            try:
+                if session.expired(response["request_id"]):
+                    raise McpFailure("TIMEOUT")
+                if request[2] != self._lore_epoch:
+                    raise McpFailure("WORLD_CHANGED")
+                if "revision" not in result:
+                    raise McpFailure(result.get("status", "INTERNAL_ERROR"))
+                self._experiments.prepare(
+                    identifier,
+                    result,
+                    arguments,
+                    session.world["database"],
+                    session.world["world_id"],
+                )
+                result = self._experiment_result(
+                    {
+                        "experiment_id": identifier,
+                        "state": "preparing",
+                    }
+                )
+            except McpFailure as exc:
+                self._experiments.entries[identifier]["state"] = "failed"
+                result = exc.as_result()
+            except Exception:
+                self._experiments.entries[identifier]["state"] = "failed"
+                result = failure("INTERNAL_ERROR")
+            response["result"] = result
         if request[2] != self._lore_epoch:
             result = failure("WORLD_CHANGED")
             response["result"] = result
@@ -312,12 +364,81 @@ class McpCoordinator(QObject):
     def invalidate(self, *_args: Any) -> None:
         """Reject queued results whose saved lore changed before delivery."""
         self._lore_epoch += 1
+        for entry in self._experiments.entries.values():
+            if entry["state"] == "preparing":
+                entry["state"] = "failed"
+                entry["error"] = "WORLD_CHANGED"
         if self._semantic_state in {"ready", "preparing", "stale"}:
             self._semantic_state = "stale"
             self._preparation_id = ""
             self._reset.emit()
             self._semantic_refresh.start()
             self._emit()
+
+    def _verify_experiment(self, identifier: str) -> None:
+        """Queue final revision verification without extending a protocol request."""
+        if self._session is None:
+            return
+        request_id = "experiment:" + secrets.token_urlsafe(18)
+        self._experiment_verifications[request_id] = identifier
+        self.requested.emit(
+            {
+                **self._session.world,
+                "generation": self._session.generation,
+                "request_id": request_id,
+                "tool": "prepare_generation_experiment",
+                "arguments": {"_verify": True},
+            }
+        )
+
+    def _experiment_result(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Wrap detached job data with current session identity."""
+        assert self._session is not None
+        return {
+            "schema_version": 1,
+            "status": "OK",
+            "data": data,
+            "world_id": self._session.world["world_id"],
+            "session_generation": self._session.generation,
+        }
+
+    def _dispatch_experiment(self, request: dict[str, Any]) -> bool:
+        """Admit local jobs separately from revision-sensitive factual reads."""
+        assert self._session is not None
+        try:
+            if "generation" not in self._scopes:
+                raise McpFailure("SCOPE_DISABLED")
+            args = request["arguments"]
+            if args.get("active_map_id") and "maps" not in self._scopes:
+                raise McpFailure("SCOPE_DISABLED")
+            if (
+                args.get("expected_world_id", request["world_id"])
+                != request["world_id"]
+            ):
+                raise McpFailure("WORLD_CHANGED")
+            if (
+                args.get("expected_session_generation", request["generation"])
+                != request["generation"]
+            ):
+                raise McpFailure("UNAVAILABLE", "SESSION_ENDED")
+            if request["tool"] == "prepare_generation_experiment":
+                identifier, fresh = self._experiments.reserve(args)
+                if fresh:
+                    self._experiment_preparations[request["request_id"]] = (
+                        identifier,
+                        args,
+                    )
+                    return False
+                data = {"experiment_id": identifier}
+            else:
+                data = self._experiments.call(request["tool"], args)
+            result = self._experiment_result(data)
+        except McpFailure as exc:
+            result = exc.as_result()
+        except (KeyError, TypeError, ValueError):
+            result = failure("INVALID_INPUT")
+        self._session.complete({"request_id": request["request_id"], "result": result})
+        return True
 
     @staticmethod
     def _record_ids(value: Any) -> list[str]:

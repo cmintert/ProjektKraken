@@ -69,7 +69,7 @@ def test_preparation_runs_off_gui_thread_and_never_calls_provider(qtbot):
     )
     try:
         with patch(
-            "src.gui.widgets.llm_generation_widget.lookup_entity_authoring_context",
+            "src.services.generation_worker.lookup_entity_authoring_context",
             side_effect=lookup,
         ):
             with qtbot.waitSignal(worker.context_prepared) as result:

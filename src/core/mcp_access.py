@@ -2,14 +2,16 @@
 
 from typing import Any
 
+from src.core.generation_experiment_names import EXPERIMENT_TOOLS
+
 MAX_REQUEST_BYTES = 16 * 1024
 MAX_RESULT_BYTES = 64 * 1024
 MAX_IMAGE_RESULT_BYTES = 512 * 1024
-SHARING_SCOPES = ("longform", "maps", "attachments", "images", "semantic")
+SHARING_SCOPES = ("longform", "maps", "attachments", "images", "semantic", "generation")
 PAGE_SIZE = 25
 MAX_PENDING = 4
 DEADLINE_SECONDS = 10.0
-TOOLS = (
+TOOLS = EXPERIMENT_TOOLS + (
     "list_calendars",
     "read_calendar_section",
     "get_time_context",
@@ -38,7 +40,9 @@ TOOLS = (
 DISCLOSURE = (
     "Connected AI clients can read saved content in this world. Returned content "
     "may be sent to their AI provider. Stopping sharing prevents further access; "
-    "it cannot retract content already returned."
+    "it cannot retract content already returned. Enabling local generation "
+    "experiments also allows bounded local inference and sharing exact prompts "
+    "and generated responses with connected clients."
 )
 
 

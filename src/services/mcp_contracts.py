@@ -37,7 +37,11 @@ class ReadPayload(TypedDict, total=False):
     view_version: int | None
     observed_at_utc: str | None
     system_time: dict[str, Any] | None
-    content: dict[str, Any]
+    content: dict[str, Any] | str
+    experiment_id: str
+    trial_id: str
+    state: str
+    next_offset: int | None
     references: dict[str, dict[str, Any]]
 
 
@@ -87,7 +91,12 @@ def require_scope(request: dict[str, Any], scope: str) -> None:
 def capabilities(request: dict[str, Any]) -> dict[str, Any]:
     """Describe limits without exposing paths, model settings or credentials."""
     return {
-        "read_only": True,
+        "read_only": "generation" not in request.get("scopes", []),
+        "saved_world_writes": False,
+        "generation": {
+            "retention": "sharing_session",
+            "job_deadline_seconds": 300,
+        },
         "schema_versions": [1],
         "scopes": {key: key in request.get("scopes", []) for key in SHARING_SCOPES},
         "limits": {

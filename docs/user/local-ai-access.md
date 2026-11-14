@@ -19,6 +19,43 @@ Your assistant has its own account and availability requirements.
 5. In your assistant, ask it to identify the shared world, then retrieve a known
    Entity or Event. Check the returned record IDs and dates against Kraken.
 
+## Test local generation prompts
+
+This optional development workflow needs a configured LM Studio server on this
+computer. It sends selected prompts and generated responses to the connected
+assistant for evaluation. It does not save descriptions or change task templates.
+
+1. Stop sharing if it is active. Expand **Additional sharing options** and select
+   **Allow local generation experiments**.
+2. Choose **Enable for this session**. Wait for **Active**.
+3. Ask your assistant to prepare an experiment for a saved Entity or Event and a
+   specific writing task. Unsaved editor drafts are excluded. For a date-scoped
+   Entity context, supply the viewing date; map context also requires map sharing.
+4. Ask it to run the baseline, inspect the result, and compare temporary variants.
+   Variants can change instructions, headings and section order, while the factual
+   blocks and original task remain unchanged. The assistant polls experiment and
+   trial identifiers until preparation or generation completes.
+5. Review the assistant's evidence and recommendations before making a separate
+   development change to Kraken's prompts.
+
+There are no run or experiment-count quotas. One experiment job runs at a time.
+Preparation does not generate text. Results remain in memory: **Stop sharing**, changing the
+world, restoring a backup or closing Kraken removes access and cancels active work.
+An assistant can also cancel an individual experiment. Cancellation may take time
+to reach the local server; completed content already sent to an assistant cannot
+be recalled.
+
+Saved lore edits leave an already prepared experiment's facts frozen at its
+reported revision. Prepare a new experiment to test newer facts. Edits during
+preparation cause preparation to fail instead of mixing revisions. A failed local
+model request does not fall back to a cloud model. Retrieval uses local embeddings;
+cached sentence-transformer models are loaded without downloads.
+
+Each session can retain 32 MiB of evidence. Large results are returned in text
+pages; assistants must follow `next_offset` to read the complete JSON. Experiment
+content is not
+automatically written to the AI audit log.
+
 The default shares the current world's saved Entity/Event facts, calendar rules
 and relationship inventory. Time-context reads also observe world Now and the live
 playhead. Separate session options add Longform structure, map

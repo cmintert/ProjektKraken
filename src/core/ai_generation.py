@@ -86,6 +86,7 @@ class PreparedGeneration:
     rag_context: str | None = None
     spatial_context: str | None = None
     description_date_values: tuple[float, ...] = ()
+    source_references: tuple[tuple[str, str], ...] = ()
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "PreparedGeneration":
@@ -102,6 +103,7 @@ class PreparedGeneration:
             data.get("rag_context"),
             data.get("spatial_context"),
             tuple(float(value) for value in data.get("description_date_values", [])),
+            tuple(tuple(item) for item in data.get("source_references", [])),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -112,6 +114,7 @@ class PreparedGeneration:
             "rag_context": self.rag_context,
             "spatial_context": self.spatial_context,
             "description_date_values": list(self.description_date_values),
+            "source_references": list(self.source_references),
         }
 
 

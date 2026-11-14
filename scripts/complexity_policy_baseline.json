@@ -58,13 +58,6 @@
       "reason": "Existing production complexity reviewed for KRT-36; untouched debt only, executable edits must strictly improve."
     },
     {
-      "id": "c901-74f12f9185eb",
-      "path": "src/services/providers/lmstudio_provider.py",
-      "symbol": "LMStudioProvider.stream_generate",
-      "ceiling": 17,
-      "reason": "Existing production complexity reviewed for KRT-36; untouched debt only, executable edits must strictly improve."
-    },
-    {
       "id": "c901-8eddf5e7d055",
       "path": "src/gui/widgets/map/map_data_buffer.py",
       "symbol": "ColorMap.from_rgb_image",

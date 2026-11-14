@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-11-12
-**Commit:** ec8b0856e841f013e7e95b4e9b47bdf95175a3e5
+**Last Updated:** 2026-11-14
+**Commit:** e184229318c76f99950d4a4db1975de8c5d7305d
 ---
 
 # Changelog
@@ -10,6 +10,15 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Added
+
+- *(2026-11-14)* **Local generation experiments (KRT-160)**: Added session-scoped
+  MCP jobs for comparing local LM Studio generations and temporary prompt layouts
+  against frozen source blocks, with explicit local consent and no run or
+  experiment-count quotas. Desktop and MCP generation share the extracted
+  background worker. Added lifecycle, transport and settings regressions and
+  updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
 

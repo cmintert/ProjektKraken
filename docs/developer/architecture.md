@@ -22,6 +22,17 @@ their identity across palette changes, with written types as the non-color cue.
 
 ## Optional local MCP access
 
+Local generation experiments use a separate, explicitly opted-in session scope.
+The shared `GenerationWorker` lives in the services layer; its original GUI import
+remains available. `GenerationExperiments` owns bounded, in-memory jobs and frozen
+prompt evidence. The existing database-thread task captures saved subjects and
+preferences, then verifies the revision again after background preparation.
+Prepared snapshots cross queued boundaries as detached dictionaries. Inference
+uses the same worker as desktop generation, with pinned loopback-only transport.
+Factual reads still reject lore revision changes; prepared experiments retain
+their original revision until sharing is revoked. Generation never enters the
+command or editor-application paths, and does not write AI audit content.
+
 `McpCoordinator` receives narrow world/database providers and the existing DB
 thread. Its feature-owned `McpReadTask` executes fixed reads under a scoped SQLite
 authorizer and returns detached factual snapshots. `McpReadService` adapts existing

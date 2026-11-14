@@ -17,10 +17,10 @@ from src.gui.widgets.llm_generation_widget import GenerationWorker, LLMGeneratio
 
 
 @patch(
-    "src.gui.widgets.llm_generation_widget.format_event_authoring_context",
+    "src.services.generation_worker.format_event_authoring_context",
     return_value="[Authoritative Context]\nKnown fact",
 )
-@patch("src.gui.widgets.llm_generation_widget.lookup_event_authoring_context")
+@patch("src.services.generation_worker.lookup_event_authoring_context")
 def test_generation_worker_injects_event_context_without_rag(
     lookup_context,
     _format_context,
@@ -59,7 +59,7 @@ def test_generation_worker_injects_event_context_without_rag(
     )
 
 
-@patch("src.gui.widgets.llm_generation_widget.lookup_event_authoring_context")
+@patch("src.services.generation_worker.lookup_event_authoring_context")
 def test_generation_worker_skips_disabled_event_context(lookup_context) -> None:
     """Opting out performs no authoring-context lookup."""
     request = GenerationRequest(
@@ -81,10 +81,10 @@ def test_generation_worker_skips_disabled_event_context(lookup_context) -> None:
 
 
 @patch(
-    "src.gui.widgets.llm_generation_widget.format_entity_authoring_context",
+    "src.services.generation_worker.format_entity_authoring_context",
     return_value="[Authoritative Context]\nDurable fact",
 )
-@patch("src.gui.widgets.llm_generation_widget.lookup_entity_authoring_context")
+@patch("src.services.generation_worker.lookup_entity_authoring_context")
 def test_generation_worker_injects_entity_context_independently_of_spatial(
     lookup_context,
     _format_context,
@@ -314,7 +314,7 @@ def test_generation_review_audit_preserves_raw_and_edited_text(widget):
     assert review_kwargs["comment"] == "Missed the requested tone"
 
 
-@patch("src.gui.widgets.llm_generation_widget.RAGService")
+@patch("src.services.generation_worker.RAGService")
 def test_rag_service_called(mock_rag_cls, widget, qtbot):
     """Test that RAG service is instantiated and called when enabled."""
     # Setup mock
@@ -360,7 +360,7 @@ def test_rag_service_called(mock_rag_cls, widget, qtbot):
     assert "Retrieved Context" in worker.prompt
 
 
-@patch("src.gui.widgets.llm_generation_widget.RAGService")
+@patch("src.services.generation_worker.RAGService")
 def test_generation_worker_excludes_current_object_by_identity(mock_rag_cls):
     mock_rag_cls.return_value.get_context.return_value = "Other Harbor"
     worker = GenerationWorker(
@@ -381,7 +381,7 @@ def test_generation_worker_excludes_current_object_by_identity(mock_rag_cls):
     )
 
 
-@patch("src.gui.widgets.llm_generation_widget.RAGService")
+@patch("src.services.generation_worker.RAGService")
 def test_generation_worker_uses_request_query_and_exact_exclusion(mock_rag_cls):
     mock_rag_cls.return_value.get_context.return_value = ""
     request = GenerationRequest(
@@ -408,7 +408,7 @@ def test_generation_worker_uses_request_query_and_exact_exclusion(mock_rag_cls):
     assert worker.prompt["user"].endswith("Long prose " * 60)
 
 
-@patch("src.gui.widgets.llm_generation_widget.RAGService")
+@patch("src.services.generation_worker.RAGService")
 def test_generation_worker_legacy_request_falls_back_to_prompt(mock_rag_cls):
     request = GenerationRequest(
         prompt={"system": "System", "user": "Legacy task {{RAG_CONTEXT}}"},
@@ -424,7 +424,7 @@ def test_generation_worker_legacy_request_falls_back_to_prompt(mock_rag_cls):
     )
 
 
-@patch("src.gui.widgets.llm_generation_widget.RAGService")
+@patch("src.services.generation_worker.RAGService")
 @pytest.mark.parametrize("rag_enabled,rag_limit", [(False, 2), (True, 0)])
 def test_generation_worker_skips_retrieval_when_disabled_or_zero(
     mock_rag_cls, rag_enabled, rag_limit

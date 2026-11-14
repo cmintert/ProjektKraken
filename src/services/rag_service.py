@@ -12,7 +12,11 @@ import sqlite3
 from contextlib import closing
 from typing import Any, Dict, List, Optional
 
-from src.services.search_service import create_search_service
+from src.services.search_service import (
+    EmbeddingProvider,
+    SearchService,
+    create_search_service,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +43,12 @@ class RAGService:
     # irrelevant context from being injected into the prompt.
     DEFAULT_MIN_SCORE: float = 0.25
 
-    def __init__(self, db_path: str, min_score: Optional[float] = None) -> None:
+    def __init__(
+        self,
+        db_path: str,
+        min_score: Optional[float] = None,
+        embedding_provider: EmbeddingProvider | None = None,
+    ) -> None:
         """Initialize RAG Service.
 
         Args:
@@ -50,6 +59,9 @@ class RAGService:
 
         """
         self.db_path = db_path
+        self.embedding_provider = embedding_provider
+        self.source_references: tuple[tuple[str, str], ...] = ()
+        self.last_error: str | None = None
         self.min_score = min_score if min_score is not None else self.DEFAULT_MIN_SCORE
 
     def search(
@@ -75,7 +87,11 @@ class RAGService:
                 sqlite3.connect(self.db_path, check_same_thread=False)
             ) as conn:
                 conn.row_factory = sqlite3.Row
-                search_service = create_search_service(conn)
+                search_service = (
+                    SearchService(conn, self.embedding_provider)
+                    if self.embedding_provider is not None
+                    else create_search_service(conn)
+                )
                 cleaned_query = self._clean_query(query)
                 logger.debug(
                     "RAG search query_chars=%d cleaned_chars=%d object_type=%s",
@@ -109,6 +125,7 @@ class RAGService:
                 return merged
 
         except Exception as error:
+            self.last_error = "RETRIEVAL_UNAVAILABLE"
             logger.error("RAG search failed error_type=%s", type(error).__name__)
             return []
 
@@ -162,6 +179,13 @@ class RAGService:
 
         # Enrich each result with directed relation lines fetched from the DB.
         relation_map = self._fetch_relations_for_results(results)
+        self.source_references = tuple(
+            (
+                str(row.get("object_type", "")),
+                str(row.get("object_id") or row.get("id", "")),
+            )
+            for row in results
+        )
 
         return self._format_results(results, relation_map=relation_map)
 

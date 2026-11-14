@@ -74,6 +74,7 @@ class McpAccessWidget(QWidget):
             ("attachments", "Share attachment captions and metadata"),
             ("images", "Share map and attachment image previews"),
             ("semantic", "Enable local semantic search"),
+            ("generation", "Allow local generation experiments"),
         ):
             checkbox = declare_inspection(
                 QCheckBox(text, self.scope_choices),

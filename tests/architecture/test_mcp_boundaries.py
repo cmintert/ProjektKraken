@@ -45,6 +45,13 @@ def test_read_service_is_independent_of_protocol_and_ui():
     )
 
 
+def test_shared_generation_worker_has_no_ui_or_application_dependencies():
+    names = imports(ROOT / "src/services/generation_worker.py")
+    assert not any(
+        name.startswith(("src.gui", "src.app", "src.commands", "mcp")) for name in names
+    )
+
+
 def test_coordinator_has_no_application_facade_dependency():
     source = (ROOT / "src/app/coordinators/mcp_coordinator.py").read_text(
         encoding="utf-8"
