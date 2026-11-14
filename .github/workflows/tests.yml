@@ -60,7 +60,9 @@ jobs:
         env:
           QT_QPA_PLATFORM: xcb
           LIBGL_ALWAYS_SOFTWARE: "1"
-        run: xvfb-run -a python -m pytest -m smoke -q --maxfail=1
+        run: |
+          xvfb-run -a env QT_DEBUG_PLUGINS=1 python -c "from PySide6.QtWidgets import QApplication; app = QApplication([])"
+          xvfb-run -a python -m pytest -m smoke -q --maxfail=1
 
   release-plan:
     name: Plan full release regression

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-14
-**Commit:** 08b05910
+**Commit:** b865a4c9cdbedb316deafb6864191e514fb4b0c9
 ---
 
 # Changelog
@@ -29,6 +29,9 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-14)* Added an uncaptured Qt display probe to diagnose Linux
+  smoke-runner initialization failures before test collection.
 
 - *(2026-11-14)* **Entity editor**: Kept the description source caption and
   value on one row with wrapping for longer values; added narrow and wide
