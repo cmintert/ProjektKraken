@@ -43,6 +43,7 @@ jobs:
       - name: Repository-wide Ruff
         run: python -m ruff check
       - name: Changed-source policies
+        shell: bash
         env:
           BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before || 'HEAD^' }}
         run: |

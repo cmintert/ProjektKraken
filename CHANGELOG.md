@@ -30,6 +30,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-11-14)* Kept changed-source policy commands on Bash when running
+  smoke CI on Windows so the base-ref environment variable expands correctly.
+
 - *(2026-11-14)* Run the lean smoke suite on Windows, the primary desktop
   platform, retaining all assertions. Removed temporary native-debugger wiring.
   Linux startup still exposes a PySide application-event-filter native crash.
