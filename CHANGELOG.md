@@ -30,6 +30,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-11-14)* Enabled Python crash stacks in the Linux smoke job to
+  diagnose the remaining post-startup native crash.
+
 - *(2026-11-14)* Installed missing XCB shape and fixes libraries for the
   Linux smoke job's virtual display; retained a quiet Qt startup probe.
 
