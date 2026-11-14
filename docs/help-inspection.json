@@ -10638,8 +10638,8 @@
     {
       "source": "src/gui/dialogs/ai_settings_dialog.py",
       "symbol": "AISettingsDialog._create_knowledge_base_page",
-      "sha256": "3d504589304a0c756c220d85f97a0ad9db54b366208e48b2db9409b478164b19",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "4d6bcfddf5ff40f44c647963ce22e13bd64f0fbbd5619222da9f56f78cb513e2",
+      "review_note": "Reviewed rebuild filter item data: All, Entities and Events retain their documented scope; canonical filter explanations remain accurate."
     },
     {
       "source": "src/gui/dialogs/ai_settings_dialog.py",
@@ -10738,8 +10738,8 @@
     {
       "source": "src/gui/dialogs/ai_settings_dialog.py",
       "symbol": "AISettingsDialog._on_rebuild_clicked",
-      "sha256": "f25bb1b4bda8aef2eb2bae1d11027c01bf19f8d9fcfd2f183925289299e29663",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "4fa78ef4612ac071870195cd27164aef795bb938528e06b65af5e94421a40a1e",
+      "review_note": "Reviewed singular entity/event worker identifiers: rebuild dispatch now matches the documented selected scope; no Help wording change required."
     },
     {
       "source": "src/gui/dialogs/ai_settings_dialog.py",
@@ -12059,8 +12059,8 @@
     {
       "source": "src/gui/widgets/ai_search_panel.py",
       "symbol": "AISearchPanelWidget.__init__",
-      "sha256": "63056b99d585cd3d3e25fc672eaeb2c6f0e5f39be91fe22513714c66c73538fe",
-      "review_note": "Reviewed panel inset/margin changes only in AISearchPanelWidget.__init__: existing control identities, labels, eligibility, keyboard actions, task destinations and authoring state are unchanged. Canonical control explanations remain accurate; no new interaction or exception is introduced."
+      "sha256": "cf57dcb3737809b4e890b6fdf02a2f163d8ef994df1b2b70e0364b1677820bb2",
+      "review_note": "Reviewed selection styling synchronization: existing result click and Enter routes remain accurate; selection uses Explorer theme roles. Native and human review pending."
     },
     {
       "source": "src/gui/widgets/ai_search_panel.py",
