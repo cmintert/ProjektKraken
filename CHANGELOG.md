@@ -30,6 +30,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-11-14)* Capture the startup subprocess's native crash backtrace
+  in smoke CI while preserving its actual exit-code assertion.
+
 - *(2026-11-14)* Pinned the lean Qt smoke runner to Ubuntu 24.04 to avoid
   unreviewed operating-system changes from ubuntu-latest.
 
