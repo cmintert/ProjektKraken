@@ -48,7 +48,9 @@ raise SystemExit(app.exec())
         timeout=35,
         env={
             **os.environ,
-            "QT_QPA_PLATFORM": "offscreen",
+            # The full shell includes OpenGL views; use the CI virtual display
+            # when supplied, retaining offscreen for local headless runs.
+            "QT_QPA_PLATFORM": os.environ.get("QT_QPA_PLATFORM", "offscreen"),
             "QTWEBENGINE_CHROMIUM_FLAGS": "--disable-gpu",
             "QT_OPENGL": "software",
             "QSG_RHI_BACKEND": "software",
