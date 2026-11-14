@@ -263,7 +263,7 @@ def test_paint_uses_cached_presentations_and_masks_captions(
     view.set_events(sample())
     monkeypatch.setattr(
         module,
-        "event_temporal_presentation",
+        "present_event",
         Mock(side_effect=AssertionError("paint resolved timing")),
     )
     painter, image = painting
@@ -301,15 +301,11 @@ def test_zero_duration_end_and_coincident_dates(view, painting):
 
 def test_unresolved_end_has_no_connector(view, painting):
     records = sample("end")
-    records[0].attributes["_temporal_v2"] = {
-        "projection": {
-            "start": {"coordinate": 1},
-            "end": {"error": "Unavailable", "coordinate": None},
-            "has_end": True,
-            "duration_authored": True,
-            "duration": 2,
-        }
-    }
+    records[0].attributes = EventTimingDefinition(
+        EndpointDefinition(instant=1),
+        "independent",
+        end=EndpointDefinition("event", anchor_id="event:missing-end"),
+    ).apply({})
     view.set_events(records)
     assert not view._dependencies.curves(list(view._event_items.values()), painting[0])[
         0
@@ -438,13 +434,13 @@ def test_uncertain_duration_end_uses_single_span_and_semantic_anchor(view, paint
 @pytest.mark.parametrize("scale", [0.001, 1.2])
 def test_independent_uncertain_endpoint_ports_keep_authored_anchors(qapp, scale):
     from src.core.calendar import CalendarConfig, CalendarConverter
-    from src.core.temporal_presentation import event_temporal_presentation
+    from src.core.event_timing.presentation import present_event
     from src.gui.widgets.timeline.dependency_layer import _DisplaySnapshot, _port
     from tests.unit.test_timeline_presentation import authored
 
     converter = CalendarConverter(CalendarConfig.create_default())
     owner = authored(converter, "June 1218", end="October 1218")
-    presentation = event_temporal_presentation(owner, converter)
+    presentation = present_event(owner, converter)
     snapshot = _DisplaySnapshot(presentation, {})
     item = EventItem(owner, scale)
     layout = snapshot.layout(item)

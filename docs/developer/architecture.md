@@ -466,10 +466,32 @@ The data coordinator sends playhead/mode snapshots over a queued signal to
 the worker. Widgets consume evaluated snapshots; they only control the reveal
 policy. Incremental edge updates freeze layout when node identities are
 unchanged, retaining pan, zoom, and selection. Timeline future/past cues use
-evidence bounds. `event_temporal_display` derives the possible envelope and
-any certainly occupied interior from hard bounds. The Timeline paints these
-on one track and its lane packer reserves the full envelope; a representative
-coordinate is used for layout and snapping, never as an asserted start.
+evidence bounds. Temporal rendering follows one pipeline (KRT-163):
+
+```text
+Saved timing -> EventTimingDefinition -> canonical resolution
+             -> present_event / TemporalPresentation -> geometry -> painter
+```
+
+`src/core/event_timing/presentation.py` owns the immutable rendering contract and
+occurrence classification. Original precision, qualification and explicit-limit
+provenance travel with detached endpoint snapshots through reference chains and
+resolution serialization. Numeric and authored records use the same builder;
+there are no alternate legacy renderers or forwarding APIs. Standalone inputs
+normalize through the canonical resolver, while accepted world projections reuse
+their resolution. Bounded immutable presentation caching keys complete input facts
+and calendar configuration; snapshot definition/calendar checks reject stale views.
+
+Ordinary items prepare presentation on Event/calendar changes. Painting, zoom,
+hit regions and lane geometry consume this model without solving or reclassifying
+time. Collapsed groups, recurring circles, Entity Timeline captions, authoring
+previews and navigation use the same classification. Numeric instants and
+asserted/calculated day-and-finer dates receive precise marks, while month/year
+precision and explicit uncertainty retain windows/halos/caps. The mathematical
+precision intervals remain unchanged. Possible/certain presence and authored
+duration remain separate; a representative coordinate never becomes evidence.
+The Timeline retains its single mark/span row and its lane packer reserves its
+painted extents. Recurrence placement, clustering and zoom visibility are unchanged.
 
 No existing numeric date is automatically reinterpreted. The optional legacy
 precision review assistant, EDTF export, and derived database indexes are not

@@ -6,10 +6,9 @@ from typing import Any
 
 from src.core.calendar import CalendarConfig, CalendarConverter
 from src.core.entities import Entity
+from src.core.event_timing.presentation import TemporalDisplay, present_event
 from src.core.events import Event
 from src.core.mcp_access import McpFailure
-from src.core.temporal_display import TemporalDisplay
-from src.core.temporal_presentation import event_temporal_presentation
 from src.services.db_service import DatabaseService
 from src.services.mcp_temporal import (
     McpTemporalReader,
@@ -50,7 +49,7 @@ def event_timing(
             "presence": dict(unavailable),
             "authored_duration": None,
         }
-    presentation = event_temporal_presentation(projected, converter)
+    presentation = present_event(projected, converter)
     result: dict[str, Any] = {
         "calendar_available": converter is not None,
         "start": display_fields(presentation.start),

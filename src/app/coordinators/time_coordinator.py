@@ -9,8 +9,8 @@ from PySide6.QtWidgets import QDialog, QMessageBox
 from src.app.coordinators.base_coordinator import BaseCoordinator
 from src.app.qt_invocation import invoke_queued
 from src.core.calendar import CalendarConfig, CalendarConverter
+from src.core.event_timing.presentation import event_navigation_context
 from src.core.events import Event
-from src.core.temporal_presentation import event_navigation_context
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow

@@ -8,7 +8,7 @@ from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from src.core.calendar import CalendarConverter
-from src.core.temporal_presentation import event_navigation_context
+from src.core.event_timing.presentation import event_navigation_context
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.theme_connections import connect_theme
 

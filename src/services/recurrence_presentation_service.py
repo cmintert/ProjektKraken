@@ -4,6 +4,7 @@ import math
 from dataclasses import dataclass
 
 from src.core.calendar import CalendarConverter
+from src.core.event_timing.presentation import TemporalDisplay, present_event
 from src.core.events import Event
 from src.core.recurrence import (
     Occurrence,
@@ -98,6 +99,7 @@ class RecurrenceProjection:
     occurrences: tuple[Occurrence, ...] = ()
     error: str = ""
     next_index: int | None = None
+    presentation: TemporalDisplay | None = None
 
 
 def project_recurrence(
@@ -122,6 +124,11 @@ def project_recurrence(
         if major_step > nominal[rule.frequency] * 1.01:
             return RecurrenceProjection(event)
         page = occurrences_in_window(event, converter, start, end, cursor=cursor)
-        return RecurrenceProjection(event, page.occurrences, next_index=page.next_index)
+        return RecurrenceProjection(
+            event,
+            page.occurrences,
+            next_index=page.next_index,
+            presentation=present_event(event, converter).start,
+        )
     except (ValueError, TypeError, KeyError, OverflowError) as exc:
         return RecurrenceProjection(event, error=str(exc))

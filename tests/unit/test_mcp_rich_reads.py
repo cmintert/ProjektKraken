@@ -446,7 +446,7 @@ def test_cursor_rejects_other_world_session_and_tool_even_with_same_args(db_serv
 
 
 def test_date_range_keeps_strict_bounds_and_disjoint_alternatives():
-    from src.core.temporal_display import TemporalDisplay
+    from src.core.event_timing.presentation import TemporalDisplay
     from src.services.mcp_browse import overlap
 
     display = TemporalDisplay(1, 8, explicit_window=True)

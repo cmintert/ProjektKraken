@@ -4,9 +4,8 @@ import math
 from collections.abc import Callable
 from typing import Any
 
+from src.core.event_timing.presentation import TemporalDisplay, present_event
 from src.core.mcp_access import PAGE_SIZE, McpFailure
-from src.core.temporal_display import TemporalDisplay
-from src.core.temporal_presentation import event_temporal_presentation
 from src.services.db_service import DatabaseService
 from src.services.mcp_facts import event_timing, saved_tags
 from src.services.mcp_temporal import McpTemporalReader, calendar_converter
@@ -166,7 +165,7 @@ def browse_batch(
                     "unresolved"
                     if projected is None or row["temporal"]["presence"]["unresolved"]
                     else overlap(
-                        event_temporal_presentation(projected, converter).presence,
+                        present_event(projected, converter).presence,
                         filters["date_from"],
                         filters["date_to"],
                         row["temporal"]["presence"].get("possible_ranges"),

@@ -10,12 +10,11 @@ from PySide6.QtGui import QImage, QPainter
 
 from src.core.calendar import CalendarConfig, CalendarConverter
 from src.core.date_parser import DateParser
-from src.core.events import Event
-from src.core.temporal_display import event_temporal_display
-from src.core.temporal_presentation import (
+from src.core.event_timing.presentation import (
     event_navigation_context,
-    event_temporal_presentation,
+    present_event,
 )
+from src.core.events import Event
 from src.core.theme_manager import ThemeManager
 from src.core.visual_roles import contrast
 from src.gui.widgets.timeline import EventItem, TimelineWidget
@@ -33,7 +32,7 @@ def test_label_bounds_follow_text_instead_of_fixed_width(qapp):
     font = QFont("Segoe UI", 10)
     font.setBold(True)
     event = Event(id="short", name="Short", lore_date=0)
-    presentation = event_temporal_presentation(event, None)
+    presentation = present_event(event, None)
     short = timeline_item_layout(presentation, event.name, 20, font)
     long_name = "A very long event name " * 8
     long = timeline_item_layout(presentation, long_name, 20, font)
@@ -93,12 +92,15 @@ def authored(converter, text, duration=0, end=None):
 def test_single_span_preserves_authored_duration_and_uncertainty(calendar, qapp, text):
     owner = authored(calendar, text, 3)
     before = deepcopy(owner.to_dict())
-    presentation = event_temporal_presentation(owner, calendar)
-    assert presentation.presence == event_temporal_display(owner, calendar)
+    presentation = present_event(owner, calendar)
+    assert presentation.presence == present_event(owner, calendar).presence
     assert owner.to_dict() == before
     layout = timeline_item_layout(presentation, owner.name, 2.4)
     assert [row.label for row in layout.rows] == [""]
-    assert layout.rows[0].presence
+    assert layout.rows[0].presence == (
+        presentation.presence.possible_start is not None
+        and presentation.presence.possible_end is not None
+    )
     assert presentation.authored_duration == 3
     assert layout.rows[0].geometry.mode != "unresolved"
     if presentation.presence.possible_start is None:
@@ -107,7 +109,7 @@ def test_single_span_preserves_authored_duration_and_uncertainty(calendar, qapp,
 
 
 def test_presence_threshold_does_not_show_a_separate_duration_measure(calendar, qapp):
-    presentation = event_temporal_presentation(authored(calendar, "1218", 3), calendar)
+    presentation = present_event(authored(calendar, "1218", 3), calendar)
     broad = timeline_item_layout(presentation, "Council", 0.02)
     close = timeline_item_layout(presentation, "Council", 2.4)
     assert len(broad.rows) == len(close.rows) == 1
@@ -119,7 +121,7 @@ def test_presence_threshold_does_not_show_a_separate_duration_measure(calendar, 
 
 
 def test_independent_endpoints_do_not_invent_an_authored_length(calendar, qapp):
-    presentation = event_temporal_presentation(
+    presentation = present_event(
         authored(calendar, "June 1218", 120, "October 1218"), calendar
     )
     assert presentation.authored_duration is None
@@ -138,7 +140,7 @@ def test_date_text_is_hover_only_and_does_not_reserve_layout_space(
     owner = authored(calendar, "June 1218", duration, end)
     item = EventItem(owner)
     tooltip = item.toolTip()
-    presentation = event_temporal_presentation(owner, calendar)
+    presentation = present_event(owner, calendar)
     layout = item._layout()
     long_caption = replace(
         presentation,
@@ -172,9 +174,7 @@ def test_point_event_has_only_its_name_beside_the_mark(qapp):
 def test_invalid_calendar_still_uses_actual_error_symbol(calendar, qapp):
     owner = authored(calendar, "1218", 3)
     owner.attributes["_temporal_v2"]["expression"]["calendar_id"] = "missing"
-    layout = timeline_item_layout(
-        event_temporal_presentation(owner, calendar), "Council", 1
-    )
+    layout = timeline_item_layout(present_event(owner, calendar), "Council", 1)
     assert len(layout.rows) == 1
     assert layout.rows[0].geometry.mode == "unresolved"
 
@@ -239,13 +239,18 @@ def test_collapsed_band_receives_uncertainty_and_legacy_dates_stay_exact(
         "Council", ThemeManager().get_theme()["event_main"], 2, 0, 1, True
     )
     starts = [
-        event_temporal_presentation(authored(calendar, text), calendar).start
+        present_event(authored(calendar, text), calendar).start
         for text in ("1218", "c. 1218")
     ]
     band.set_event_presentations(starts)
     assert band.presentations == tuple(starts)
     assert band.get_height() == 24
-    band.set_event_dates([1, 2])
+    band.set_event_presentations(
+        [
+            present_event(Event(name="Group event", lore_date=date), None).start
+            for date in [1, 2]
+        ]
+    )
     assert [(p.possible_start, p.possible_end) for p in band.presentations] == [
         (1, 1),
         (2, 2),

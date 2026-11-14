@@ -5,9 +5,8 @@ Measures timeline bounds and delegates detached, stable lane packing.
 
 from PySide6.QtGui import QFont, QFontMetrics
 
+from src.core.event_timing.presentation import TemporalDisplay, present_event
 from src.core.events import Event
-from src.core.temporal_display import TemporalDisplay
-from src.core.temporal_presentation import event_temporal_presentation
 from src.core.timeline_layout import (
     TimelineLayoutInput,
     TimelineLayoutSnapshot,
@@ -78,7 +77,7 @@ class TimelineLanePacker:
             if event.lore_date is None:
                 continue
             layout = timeline_item_layout(
-                event_temporal_presentation(event, EventItem._calendar_converter),
+                present_event(event, EventItem._calendar_converter),
                 event.name,
                 self.scale_factor,
             )
@@ -116,7 +115,7 @@ class TimelineLanePacker:
 
         """
         layout = timeline_item_layout(
-            event_temporal_presentation(event, EventItem._calendar_converter),
+            present_event(event, EventItem._calendar_converter),
             event.name,
             self.scale_factor,
         )

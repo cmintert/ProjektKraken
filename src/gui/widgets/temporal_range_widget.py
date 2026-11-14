@@ -572,11 +572,11 @@ class TemporalRangeWidget(QWidget):
         self.source_end.set_context(context, owner)
         event = next((item for item in context.events() if item.id == owner), None)
         if event is not None:
+            from src.core.event_timing.presentation import present_event
             from src.core.event_timing.projection import project_event
-            from src.core.temporal_display import event_temporal_display
 
             projected = project_event(event, context.resolution)
-            display = event_temporal_display(projected, context.converter())
+            display = present_event(projected, context.converter()).presence
             self.calculated_timing.setText(
                 "Saved calculation: "
                 + display.caption

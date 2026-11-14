@@ -8,6 +8,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QImage, QPainter
 from PySide6.QtWidgets import QWidget
 
+from src.core.event_timing.presentation import present_event
 from src.core.events import Event
 from src.core.recurrence import RECURRENCE_ATTRIBUTE, RecurrenceRule
 from src.core.theme_manager import ThemeManager
@@ -23,7 +24,12 @@ pytestmark = pytest.mark.ci_fast
 def test_circle_stays_at_date_when_label_needs_edge_space(qtbot, date_x):
     parent = QWidget()
     qtbot.addWidget(parent)
-    marker = OccurrenceMarker("New Year's Eve", "Year 1, December 31", parent)
+    marker = OccurrenceMarker(
+        "New Year's Eve",
+        "Year 1, December 31",
+        parent,
+        presentation=present_event(Event(name="Occurrence", lore_date=0), None).start,
+    )
     marker.place_at(date_x, 320)
     assert marker.x() + marker.anchor_x == date_x
     assert marker.geometry().left() >= 0
@@ -59,7 +65,12 @@ def test_circle_uses_event_identity_in_each_theme(qtbot, isolated_theme_manager,
     manager.set_theme(theme, persist=False)
     parent = QWidget()
     qtbot.addWidget(parent)
-    marker = OccurrenceMarker("Festival", "Year 1", parent)
+    marker = OccurrenceMarker(
+        "Festival",
+        "Year 1",
+        parent,
+        presentation=present_event(Event(name="Occurrence", lore_date=0), None).start,
+    )
     marker.place_at(100, 320)
     image = marker.grab().toImage()
     assert image.pixelColor(round(marker.anchor_x), 20) == QColor(

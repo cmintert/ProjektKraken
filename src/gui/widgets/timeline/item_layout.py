@@ -6,8 +6,7 @@ from math import ceil
 from PySide6.QtCore import QRectF
 from PySide6.QtGui import QFont, QFontMetricsF
 
-from src.core.temporal_display import TemporalDisplay
-from src.core.temporal_presentation import TemporalPresentation
+from src.core.event_timing.presentation import TemporalDisplay, TemporalPresentation
 from src.gui.widgets.timeline.temporal_geometry import (
     TemporalGeometry,
     project_temporal_geometry,
@@ -80,7 +79,9 @@ def _layered_rows(
             presentation.start, presentation.presence.anchor, scale
         )
         value = "Span not bounded"
-    return (TemporalRow("", presence, 0, value=value, presence=True),)
+    return (
+        TemporalRow("", presence, 0, value=value, presence=presence.mode == "duration"),
+    )
 
 
 def timeline_item_layout(

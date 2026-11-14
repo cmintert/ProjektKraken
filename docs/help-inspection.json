@@ -17460,8 +17460,8 @@
     {
       "source": "src/gui/widgets/timeline/occurrence_marker.py",
       "symbol": "OccurrenceMarker.paintEvent",
-      "sha256": "ce961e9552a455d45dbd497c8aff0108118823521e6eb9b73ea3a0aa806dd930",
-      "review_note": "KRT-131: native vector circle reuses shared Event paint, colors and typography. Date anchor remains independent of fitted label geometry. Only focused marks have an outline; keyboard, tooltip and selection meaning remain. Visual vocabulary synchronized with Linear; human review pending."
+      "sha256": "542ed84ab290238a35391e11acf3213f237e62a79f17a30b081478b1cda89b09",
+      "review_note": "KRT-131: native vector circle reuses shared Event paint, colors and typography. Date anchor remains independent of fitted label geometry. Only focused marks have an outline; keyboard, tooltip and selection meaning remain. Visual vocabulary synchronized with Linear; human review pending. KRT-163: Source and representative composed captures from the six-theme render set reviewed. Circle geometry now consumes canonical occurrence presentation instead of constructing an exact glyph locally. Valid repeats still require an asserted day; pins, labels, selection/focus and keyboard behavior remain accurate in event-recurrence.md. Native/live Help and human review remain pending."
     },
     {
       "source": "src/gui/dialogs/lifecycle_event_dialog.py",

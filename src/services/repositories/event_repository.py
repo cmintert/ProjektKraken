@@ -4,12 +4,24 @@ Handles CRUD operations for Event entities in the database.
 """
 
 import logging
-from typing import List, Optional
+from copy import deepcopy
+from typing import Any, List, Optional
 
 from src.core.events import Event
 from src.services.repositories.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
+
+
+def _authored_attributes(event: Event) -> dict[str, Any]:
+    """Keep detached rendering snapshots out of saved Event assertions."""
+    attributes = deepcopy(event.attributes)
+    metadata = attributes.get("_temporal_v2")
+    if isinstance(metadata, dict):
+        metadata.pop("projection", None)
+        if not metadata:
+            attributes.pop("_temporal_v2")
+    return attributes
 
 
 class EventRepository(BaseRepository):
@@ -52,7 +64,7 @@ class EventRepository(BaseRepository):
                     event.lore_date,
                     event.lore_duration,
                     event.description,
-                    self._serialize_json(event.attributes),
+                    self._serialize_json(_authored_attributes(event)),
                     event.created_at,
                     event.modified_at,
                 ),
@@ -164,7 +176,7 @@ class EventRepository(BaseRepository):
                 event.lore_date,
                 event.lore_duration,
                 event.description,
-                self._serialize_json(event.attributes),
+                self._serialize_json(_authored_attributes(event)),
                 event.created_at,
                 event.modified_at,
             )

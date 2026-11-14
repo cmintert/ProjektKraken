@@ -180,6 +180,7 @@ class RecurrenceStrip(QWidget):
             label,
             caption,
             self,
+            presentation=projection.presentation,
             pinned=not projection.error and caption != "More occurrences…",
         )
         button.setProperty("sourceEventId", event.id if len(rows) == 1 else None)

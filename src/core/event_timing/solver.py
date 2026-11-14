@@ -241,7 +241,9 @@ def resolve_world(
     problem = compile_timing(events, converter, cancel)
     while True:
         result = TemporalWorldResolution(
-            problem.fingerprint, issues=list(problem.issues)
+            problem.fingerprint,
+            issues=list(problem.issues),
+            definitions=dict(problem.definitions),
         )
         result.calendar_json = converter._config.to_json() if converter else None
         invalid_calendars: set[str] = set()

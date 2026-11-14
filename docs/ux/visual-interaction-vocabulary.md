@@ -123,10 +123,19 @@ per ordinary Event while preserving authored meaning and existing hover details.
 KRT-50/KRT-57/KRT-58 extend this vocabulary to the world timeline.
 This does not change stored temporal assertions or the authoring interaction contract.
 
-- Occurrence marks answer when an event might start: precise points are filled;
-  finite precision/occurrence windows use hollow anchors and caps; unbounded
-  approximate dates use uncapped halos; one-sided assertions retain their hard
-  cap and open direction. Hollow anchors are layout positions, not exact dates.
+- Occurrence marks answer when an Event might start. Numeric instants and
+  asserted/calculated dates specifying a day, hour, minute or second use filled
+  marks unless explicit uncertainty or limits apply. Month/year precision and
+  finite occurrence windows use hollow anchors and caps. Precision intervals
+  remain intact in temporal calculations; they do not by themselves imply a
+  hollow marker for a specified day or finer date. Unbounded approximate dates
+  use uncapped halos; one-sided assertions retain their hard cap and open
+  direction. Hollow anchors are layout positions, not exact dates.
+- KRT-163 (2026-11-14): one canonical temporal presentation supplies ordinary,
+  collapsed and recurring marks, captions and navigation feedback. Storage format
+  cannot change marker meaning. Followed dates retain source meaning; ambiguous
+  alternatives remain windows. Repeats retain circular glyphs and the existing
+  strip/zoom policy. This changes presentation, not saved assertions or bounds.
 - Ordinary timeline Events show their name and one occurrence mark or span bar.
   Uncertain starts with a duration and independently asserted endpoints show
   only the compact unlabeled span bar; separate Starts, Ends and Duration rows

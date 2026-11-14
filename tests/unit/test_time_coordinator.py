@@ -322,8 +322,8 @@ def test_real_timeline_context_follows_authoring_guard(
 ):
     from src.core.calendar import CalendarConfig, CalendarConverter
     from src.core.date_parser import DateParser
+    from src.core.event_timing.presentation import event_navigation_context
     from src.core.events import Event
-    from src.core.temporal_presentation import event_navigation_context
     from src.gui.widgets.timeline import EventItem, TimelineWidget
 
     converter = CalendarConverter(CalendarConfig.create_default())

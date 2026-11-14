@@ -2,14 +2,62 @@
 
 from __future__ import annotations
 
+import json
+from dataclasses import dataclass, replace
 from fractions import Fraction
-from typing import TYPE_CHECKING, Any
+from functools import lru_cache
+from typing import TYPE_CHECKING, Any, Literal
+
+from src.core.temporal_expression import (
+    TemporalExpression,
+    TemporalPrecision,
+    TemporalQualifier,
+)
 
 if TYPE_CHECKING:
     from src.core.calendar import CalendarConverter
     from src.core.event_timing.resolution import TemporalWorldResolution
     from src.core.events import Event
-    from src.core.temporal_display import TemporalDisplay
+
+
+OccurrenceKind = Literal["exact", "window", "soft", "one_sided", "unresolved"]
+
+
+@dataclass(frozen=True)
+class TemporalDisplay:
+    """Immutable meaning and bounds of one temporal presentation channel."""
+
+    possible_start: float | None
+    possible_end: float | None
+    certain_start: float | None = None
+    certain_end: float | None = None
+    caption: str = "Timing unresolved"
+    kind: Literal["point", "duration"] = "point"
+    precision: TemporalPrecision | None = None
+    qualifier: TemporalQualifier = TemporalQualifier.ASSERTED
+    anchor: float = 0.0
+    explicit_window: bool = False
+    error: bool = False
+    occurrence: OccurrenceKind = "unresolved"
+    ranges: tuple[tuple[float | None, float | None, bool, bool], ...] = ()
+
+
+@dataclass(frozen=True)
+class TemporalPresentation:
+    """Single rendering contract for occurrence, length and possible presence."""
+
+    start: TemporalDisplay
+    end: TemporalDisplay | None
+    authored_duration: float | None
+    presence: TemporalDisplay
+
+    @property
+    def layered(self) -> bool:
+        """Use a presence span for independent ends or uncertain duration starts."""
+        return not self.presence.error and (
+            self.end is not None
+            or (self.authored_duration is not None and self.start.occurrence != "exact")
+        )
 
 
 def _number(value: str | None) -> float | None:
@@ -155,50 +203,213 @@ def explain_timing(
     return "\n\n".join(sections)
 
 
-def projection_display(
-    event: Event, converter: CalendarConverter | None, channel: str = "presence"
-) -> TemporalDisplay:
-    """Present uncertainty, independent ends and authored duration independently."""
-    from src.core.temporal_display import TemporalDisplay
+def _classify(
+    lower: float | None,
+    upper: float | None,
+    expression: TemporalExpression | None,
+    endpoint: dict[str, Any],
+) -> OccurrenceKind:
+    """Choose occurrence meaning once, independently of zoom or storage format."""
+    if endpoint.get("error") or not endpoint.get("verified", True):
+        return "unresolved"
+    if lower is None and upper is None:
+        return "soft"
+    if lower is None or upper is None:
+        return "one_sided"
+    if len(endpoint.get("ranges", [])) > 1:
+        return "window"
+    if expression is not None:
+        if (
+            expression.explicit_outer_start is not None
+            or expression.explicit_outer_end is not None
+        ):
+            return "window"
+        if expression.qualifier not in {
+            TemporalQualifier.ASSERTED,
+            TemporalQualifier.CALCULATED,
+        }:
+            return "window"
+        return (
+            "window"
+            if expression.precision in {TemporalPrecision.YEAR, TemporalPrecision.MONTH}
+            else "exact"
+        )
+    return "exact" if lower == upper else "window"
 
-    projection = event.attributes["_temporal_v2"]["projection"]
-    start, end = projection["start"], projection["end"]
-    selected = end if channel == "end" else start
-    lower, upper = _limits(selected)
-    anchor = selected.get("coordinate")
-    if anchor is None:
-        anchor = event.lore_date if event.lore_date is not None else 0.0
-    error = bool(selected.get("error"))
-    caption = endpoint_caption(selected, converter)
-    interval = channel == "presence" and projection.get("has_end", False)
-    certain_start = certain_end = None
-    if interval:
-        end_lower, end_upper = _limits(end)
-        if end.get("error"):
-            caption += " · End unresolved"
-            error = True
-        else:
-            certain_start, certain_end = upper, end_lower
-            upper = end_upper
-            caption = f"Starts: {endpoint_caption(start, converter)} · Ends: {endpoint_caption(end, converter)}"
-        duration = projection.get("duration")
-        if duration is not None:
-            label = (
-                "Duration"
-                if projection.get("duration_authored")
-                else "Calculated duration"
-            )
-            caption += f" · {label}: {duration:g} days"
-    if certain_start is None or certain_end is None or certain_start >= certain_end:
-        certain_start = certain_end = None
+
+def _endpoint_display(
+    endpoint: dict[str, Any],
+    converter: CalendarConverter | None,
+) -> TemporalDisplay:
+    """Combine resolved ranges with their original assertion provenance."""
+    lower, upper = _limits(endpoint)
+    meaning = endpoint.get("meaning", {})
+    data = meaning.get("expression")
+    expression = (
+        TemporalExpression.from_dict(data)
+        if data and not endpoint.get("error")
+        else None
+    )
+    occurrence = _classify(lower, upper, expression, endpoint)
+    caption = endpoint_caption(endpoint, converter, include_time=True)
+    if (
+        expression is None
+        and converter is None
+        and lower == upper
+        and lower is not None
+    ):
+        caption = f"{lower:.1f}"
+    if (
+        expression is not None
+        and not meaning.get("derived")
+        and not endpoint.get("error")
+    ):
+        bounds = expression.resolve_bounds(converter) if converter else None
+        if bounds is not None and (lower, upper) == (
+            bounds.hard_start,
+            bounds.hard_end,
+        ):
+            caption = expression.display_text(converter)
+            if occurrence != "exact":
+                caption += " · exact date unknown"
     return TemporalDisplay(
         lower,
         upper,
-        certain_start,
-        certain_end,
-        caption,
-        kind="duration" if interval else "point",
-        anchor=anchor,
-        explicit_window=lower != upper,
-        error=error,
+        caption=caption,
+        precision=expression.precision if expression else None,
+        qualifier=expression.qualifier if expression else TemporalQualifier.ASSERTED,
+        anchor=endpoint.get("coordinate") or 0.0,
+        explicit_window=bool(
+            expression
+            and (
+                expression.explicit_outer_start is not None
+                or expression.explicit_outer_end is not None
+            )
+        ),
+        error=occurrence == "unresolved",
+        occurrence=occurrence,
+        ranges=tuple(
+            (_number(first), _number(last), first_closed, last_closed)
+            for first, last, first_closed, last_closed in endpoint.get("ranges", [])
+        ),
     )
+
+
+def _presence(
+    start: TemporalDisplay,
+    end: TemporalDisplay,
+    duration: float | None,
+    authored: bool,
+) -> TemporalDisplay:
+    """Retain possible/certain presence without turning precision into duration."""
+    certain_start, certain_end = start.possible_end, end.possible_start
+    if certain_start is None or certain_end is None or certain_start >= certain_end:
+        certain_start = certain_end = None
+    caption = f"Starts: {start.caption} · Ends: {end.caption}"
+    if duration is not None:
+        label = "Duration" if authored else "Calculated duration"
+        caption += f" · {label}: {duration:g} days"
+    return replace(
+        start,
+        possible_end=end.possible_end,
+        certain_start=certain_start,
+        certain_end=certain_end,
+        caption=caption,
+        kind="duration",
+        error=start.error or end.error,
+        occurrence="unresolved" if start.error or end.error else start.occurrence,
+        ranges=(),
+    )
+
+
+def present_event(
+    event: Event, converter: CalendarConverter | None
+) -> TemporalPresentation:
+    """Build the sole immutable rendering model from an accepted timing snapshot.
+
+    Detached standalone callers normalize through the same resolver. Prepared
+    world snapshots already contain resolution and never invoke the solver.
+    """
+    return _present_snapshot(
+        json.dumps(event.to_dict(), sort_keys=True),
+        converter._config.to_json() if converter else None,
+    )
+
+
+def _snapshot(event: Event) -> dict[str, Any] | None:
+    """Read only structurally valid derived metadata; malformed sources resolve as errors."""
+    metadata = event.attributes.get("_temporal_v2")
+    value = metadata.get("projection") if isinstance(metadata, dict) else None
+    return value if isinstance(value, dict) else None
+
+
+@lru_cache(maxsize=2048)
+def _present_snapshot(
+    event_json: str, calendar_json: str | None
+) -> TemporalPresentation:
+    """Cache by complete source facts and calendar, never by a mutable object id."""
+    from src.core.calendar import CalendarConfig, CalendarConverter
+    from src.core.event_timing.definitions import EventTimingDefinition
+    from src.core.event_timing.projection import project_event
+    from src.core.event_timing.solver import resolve_world
+    from src.core.events import Event
+
+    event = Event.from_dict(json.loads(event_json))
+    converter = (
+        CalendarConverter(CalendarConfig.from_json(calendar_json))
+        if calendar_json
+        else None
+    )
+    projection = _snapshot(event)
+    try:
+        definition = EventTimingDefinition.from_event(event).to_dict()
+    except (ValueError, TypeError, KeyError):
+        definition = None
+    if (
+        not projection
+        or definition is None
+        or "meaning" not in projection.get("start", {})
+        or projection.get("definition") != definition
+        or projection.get("calendar_json") != calendar_json
+    ):
+        result = resolve_world([event], converter)
+        event = project_event(event, result)
+        projection = _snapshot(event)
+        if not projection:
+            endpoint = result.endpoints[f"event:{event.id}"]
+            unknown = TemporalDisplay(
+                None,
+                None,
+                error=True,
+                caption="Date unknown"
+                if event.lore_date is None and not event.attributes.get("_temporal_v2")
+                else endpoint.error or "Timing unresolved",
+            )
+            return TemporalPresentation(unknown, None, None, unknown)
+    start = _endpoint_display(projection["start"], converter)
+    authored = projection.get("duration_authored", False)
+    duration = projection.get("duration")
+    end = (
+        _endpoint_display(projection["end"], converter)
+        if projection.get("has_end")
+        else None
+    )
+    presence = _presence(start, end, duration, authored) if end is not None else start
+    return TemporalPresentation(
+        start, end if not authored else None, duration if authored else None, presence
+    )
+
+
+def event_navigation_context(
+    event: Event, converter: CalendarConverter | None
+) -> dict[str, object]:
+    """Describe navigation using exactly the same meaning as the painted marker."""
+    start = present_event(event, converter).start
+    return {
+        "event_id": event.id,
+        "name": event.name,
+        "caption": start.caption,
+        "uncertain": start.occurrence != "exact",
+        "unresolved": start.error,
+        "time": event.lore_date,
+    }

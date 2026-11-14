@@ -23,11 +23,11 @@ from PySide6.QtWidgets import (
     QStyleOptionGraphicsItem,
     QWidget,
 )
+from shiboken6 import isValid
 
 from src.core.calendar import CalendarConverter
+from src.core.event_timing.presentation import TemporalDisplay, present_event
 from src.core.events import Event
-from src.core.temporal_display import TemporalDisplay, event_temporal_display
-from src.core.temporal_presentation import event_temporal_presentation
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.timeline.item_layout import (
@@ -67,6 +67,7 @@ class EventItem(QGraphicsItem):
     _calendar_revision = 0
     _font_revision = 0
     _font_app: weakref.ReferenceType[QApplication] | None = None
+    _instances: weakref.WeakSet["EventItem"] = weakref.WeakSet()
 
     @classmethod
     def _font_changed(cls, _font: object) -> None:
@@ -84,7 +85,7 @@ class EventItem(QGraphicsItem):
             int: Height in pixels.
 
         """
-        presentation = event_temporal_presentation(event, cls._calendar_converter)
+        presentation = present_event(event, cls._calendar_converter)
         return timeline_item_layout(presentation, event.name, 1).height
 
     @classmethod
@@ -92,6 +93,12 @@ class EventItem(QGraphicsItem):
         """Sets the calendar converter for date formatting."""
         cls._calendar_converter = converter
         cls._calendar_revision += 1
+        for item in tuple(cls._instances):
+            if isValid(item):
+                item.prepareGeometryChange()
+                item._presentation = present_event(item.event, converter)
+                item._update_temporal_tooltip()
+                item.update()
 
     def __init__(self, event: Event, scale_factor: float = 10.0) -> None:
         """Initializes an EventBlock.
@@ -110,6 +117,8 @@ class EventItem(QGraphicsItem):
             EventItem._font_app = weakref.ref(app)
             app.fontChanged.connect(EventItem._font_changed)
         self.event = event
+        self._presentation = present_event(event, self._calendar_converter)
+        self._instances.add(self)
         self.scale_factor = scale_factor
         self._layout_key: tuple[object, ...] | None = None
         self._layout_cache: TimelineItemLayout | None = None
@@ -221,6 +230,7 @@ class EventItem(QGraphicsItem):
         """
         self.prepareGeometryChange()
         self.event = event
+        self._presentation = present_event(event, self._calendar_converter)
         self.refresh_theme(ThemeManager().get_theme())
         self.setPos(event.require_date() * self.scale_factor, self.y())
         self._update_temporal_tooltip()
@@ -229,11 +239,12 @@ class EventItem(QGraphicsItem):
         """Change calculated geometry without theme or tooltip reconstruction."""
         self.prepareGeometryChange()
         self.event = event
+        self._presentation = present_event(event, self._calendar_converter)
         self.setPos(event.require_date() * self.scale_factor, self.y())
         self.update()
 
     def _update_temporal_tooltip(self) -> None:
-        display = event_temporal_display(self.event, self._calendar_converter)
+        display = self._presentation.presence
         self.setToolTip(
             f"{self.event.name}\n{display.caption}\n"
             "Solid diamond: precise point. Hollow diamond: layout anchor, "
@@ -254,7 +265,7 @@ class EventItem(QGraphicsItem):
 
     def _display_rect(self, display: TemporalDisplay) -> QRectF:
         """Return the same screen geometry used by painting and hit testing."""
-        if event_temporal_presentation(self.event, self._calendar_converter).layered:
+        if self._presentation.layered:
             return self._layout().rows[-1].rect
         geometry = self._geometry(display)
         return QRectF(geometry.left, -8, geometry.right - geometry.left, 16)
@@ -273,9 +284,7 @@ class EventItem(QGraphicsItem):
             self._font_revision,
         )
         if key != self._layout_key or self._layout_cache is None:
-            presentation = event_temporal_presentation(
-                self.event, self._calendar_converter
-            )
+            presentation = self._presentation
             self._layout_cache = timeline_item_layout(
                 presentation, self.event.name, self.scale_factor * self._zoom_level
             )

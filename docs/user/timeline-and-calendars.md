@@ -164,18 +164,21 @@ A bare range such as `961–964` asks whether the event occurred sometime within
 that range or lasted from one endpoint to the other. An occurrence window
 does not become a duration. A duration retains the precision of both dates.
 
-The timeline draws precise numeric and minute/second occurrences as solid
-diamonds. Hour, day, month, and year precision use a hollow diamond at a layout
-anchor inside a dotted, capped possible-date window. The hollow diamond does not
-assert an exact date. An explicitly bounded occurrence also uses capped dots;
+The Timeline draws numeric instants and asserted or calculated dates specifying
+a day, hour, minute or second as solid diamonds, unless explicit uncertainty or
+occurrence limits apply. Month and year precision use a hollow diamond at a
+layout anchor inside a dotted, capped possible-date window. The hollow diamond
+does not assert an exact date. A specified day or finer date keeps its saved
+precision even though its marker is solid. An explicitly bounded occurrence also
+uses capped dots;
 a one-sided bound has one cap and a fading open end. Approximate or uncertain
 dates without hard limits have a fixed-size soft halo, not a measured date
 range. At wide zoom levels, narrow windows collapse to a compact symbol; zooming
 in restores their calendar-sized span without changing the saved precision.
 
 For durations, hatching shows possible presence and a solid bar marks only the
-period when the event is certainly ongoing. A question mark indicates timing
-that cannot be bounded on the current calendar. Dragging keeps the date's
+period when the event is certainly ongoing. A question mark indicates unresolved
+timing, a missing reference, or an unavailable calendar. Dragging keeps the date's
 precision. Snapping to a representative position does not make that position
 the event's exact historical date. A displayed span between partial endpoints
 is a layout value, not an assertion of an exact number of elapsed days.

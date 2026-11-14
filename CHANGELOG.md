@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-14
-**Commit:** 6914528af0431fa0cf281f53765b51ce529d990e
+**Commit:** fe14e5b27c227ee140283cd3e7ee5ab49f102c4d
 ---
 
 # Changelog
@@ -29,6 +29,15 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-14)* **Consistent temporal rendering (KRT-163)**: Replaced competing
+  date renderers with one canonical presentation for Timeline Events, collapsed
+  groups, repeating occurrences, captions and navigation. Asserted/calculated
+  dates specifying a day or finer now use filled markers consistently; actual
+  uncertainty retains its windows, halos and caps. Preserved source precision,
+  mathematical bounds and authored data; removed superseded rendering APIs.
+  Added parity and persistence regressions, architecture guards, a six-theme
+  render tool, and synchronized manual, Help review and visual-contract updates.
 
 - *(2026-11-14)* **Clean shutdown (KRT-162)**: Preserved native ownership of active
   description documents to prevent paint-device warnings during teardown while

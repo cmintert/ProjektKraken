@@ -16,11 +16,11 @@ from PySide6.QtGui import (
 
 from src.core.calendar import CalendarConverter
 from src.core.command import LoreMutationEffect
-from src.core.events import Event
-from src.core.temporal_presentation import (
+from src.core.event_timing.presentation import (
     TemporalPresentation,
-    event_temporal_presentation,
+    present_event,
 )
+from src.core.events import Event
 from src.core.timeline_dependencies import (
     Endpoint,
     TimelineDependency,
@@ -247,18 +247,14 @@ class TimelineDependencyLayer:
         """Resolve presentation at hydration, never during background painting."""
         self._settled_pairs = []
         self._display = {
-            event.id: _DisplaySnapshot(
-                event_temporal_presentation(event, converter), {}
-            )
+            event.id: _DisplaySnapshot(present_event(event, converter), {})
             for event in events
             if event.lore_date is not None
         }
 
     def update_preview(self, event: Event, converter: CalendarConverter | None) -> None:
         """Refresh transient caption geometry without changing accepted topology."""
-        self._display[event.id] = _DisplaySnapshot(
-            event_temporal_presentation(event, converter), {}
-        )
+        self._display[event.id] = _DisplaySnapshot(present_event(event, converter), {})
         if self.preview_active:
             self._preview_changed.add(event.id)
             self._preview_cache = None

@@ -35,8 +35,8 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import QGraphicsLineItem, QGraphicsView, QSizePolicy, QWidget
 
 from src.core.command import LoreMutationEffect
+from src.core.event_timing.presentation import event_navigation_context
 from src.core.events import Event
-from src.core.temporal_presentation import event_navigation_context
 from src.core.theme_manager import ThemeManager
 from src.core.timeline_visibility import DependencyVisibility
 from src.gui.utils.theme_connections import connect_theme

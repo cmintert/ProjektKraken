@@ -3,8 +3,7 @@
 from dataclasses import dataclass
 from typing import Literal
 
-from src.core.temporal_display import TemporalDisplay
-from src.core.temporal_expression import TemporalPrecision, TemporalQualifier
+from src.core.event_timing.presentation import TemporalDisplay
 
 WINDOW_DETAIL_PX = 24.0
 COMPACT_WINDOW_PX = 16.0
@@ -38,7 +37,7 @@ def project_temporal_geometry(
 ) -> TemporalGeometry:
     """Use true time coordinates only when their width is readable."""
     scale = pixels_per_day
-    if display.error:
+    if display.occurrence == "unresolved":
         return TemporalGeometry("unresolved", -8, 8)
 
     start = display.possible_start
@@ -81,7 +80,7 @@ def project_temporal_geometry(
             certain_right=certain_right,
         )
 
-    if display.explicit_window and (start is None or end is None):
+    if display.occurrence == "one_sided":
         bound = start if start is not None else end
         assert bound is not None
         cap = (bound - display.anchor) * scale
@@ -101,19 +100,13 @@ def project_temporal_geometry(
             cap_right=True,
         )
 
-    if start is None or end is None:
+    if display.occurrence == "soft":
         return TemporalGeometry("soft", -SOFT_HALO_PX / 2, SOFT_HALO_PX / 2)
 
-    exact = (
-        not display.explicit_window
-        and display.qualifier
-        in {TemporalQualifier.ASSERTED, TemporalQualifier.CALCULATED}
-        and display.precision
-        in {None, TemporalPrecision.MINUTE, TemporalPrecision.SECOND}
-    )
-    if exact:
+    if display.occurrence == "exact":
         return TemporalGeometry("exact", -POINT_MARKER_PX / 2, POINT_MARKER_PX / 2)
 
+    assert start is not None and end is not None
     left = (start - display.anchor) * scale
     right = (end - display.anchor) * scale
     compact = right - left < WINDOW_DETAIL_PX

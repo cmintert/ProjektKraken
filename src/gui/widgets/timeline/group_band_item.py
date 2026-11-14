@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.core.temporal_display import TemporalDisplay
+from src.core.event_timing.presentation import TemporalDisplay
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.timeline.temporal_geometry import project_temporal_geometry
@@ -257,18 +257,6 @@ class GroupBandItem(QGraphicsObject):
         self.latest_date = latest_date if latest_date is not None else 0.0
         self._update_tooltip()
         self.update()
-
-    def set_event_dates(self, event_dates: list) -> None:
-        """Set the event dates for tick mark rendering.
-
-        Args:
-            event_dates: List of lore_dates for events in this group
-
-        """
-        self.event_dates = event_dates
-        self.set_event_presentations(
-            [TemporalDisplay(date, date, anchor=date) for date in event_dates]
-        )
 
     def set_event_presentations(
         self, presentations: list[TemporalDisplay], captions: list[str] | None = None

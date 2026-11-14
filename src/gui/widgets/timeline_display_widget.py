@@ -14,8 +14,8 @@ from PySide6.QtCore import QEvent, QObject, QPoint, Qt, Signal
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QLabel, QTextBrowser, QToolTip, QVBoxLayout, QWidget
 
+from src.core.event_timing.presentation import TemporalDisplay, present_event
 from src.core.events import Event
-from src.core.temporal_display import TemporalDisplay, event_temporal_display
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.theme_connections import connect_theme
 
@@ -381,18 +381,15 @@ class TimelineDisplayWidget(QWidget):
     def _event_timing(self, relation: dict[str, Any]) -> TemporalDisplay:
         date = self._get_event_date(relation)
         attributes = relation.get("source_event_attributes") or {}
-        if attributes.get("_temporal_v2"):
-            return event_temporal_display(
-                Event(
-                    name=relation.get("source_event_name") or "Event",
-                    lore_date=date,
-                    lore_duration=relation.get("source_event_duration"),
-                    attributes=attributes,
-                ),
-                self._calendar_converter,
-            )
-        caption = "Date unknown" if date is None else self._format_date(date)
-        return TemporalDisplay(date, date, caption=caption)
+        return present_event(
+            Event(
+                name=relation.get("source_event_name") or "Event",
+                lore_date=date,
+                lore_duration=relation.get("source_event_duration"),
+                attributes=attributes,
+            ),
+            self._calendar_converter,
+        ).presence
 
     def clear(self) -> None:
         """Clear the timeline display."""

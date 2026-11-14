@@ -54,13 +54,40 @@ def project_event(event: Event, result: TemporalWorldResolution) -> Event:
     if definition.end_mode == "none":
         duration = 0.0
     attributes = deepcopy(event.attributes)
-    if semantic or not start.verified:
-        metadata = attributes.setdefault("_temporal_v2", {})
-        metadata["projection"] = {
-            "start": endpoint_signature(start),
-            "end": endpoint_signature(result.endpoints.get(f"event:{event.id}:end")),
-            "duration": duration,
-            "has_end": definition.end_mode != "none",
-            "duration_authored": definition.end_mode == "duration",
-        }
+    metadata = attributes.setdefault("_temporal_v2", {})
+    metadata["projection"] = {
+        "definition": definition.to_dict(),
+        "calendar_json": result.calendar_json,
+        "start": _presentation_endpoint(start, result),
+        "end": _presentation_endpoint(
+            result.endpoints.get(f"event:{event.id}:end"), result
+        ),
+        "duration": duration,
+        "has_end": definition.end_mode != "none",
+        "duration_authored": definition.end_mode == "duration",
+    }
     return replace(event, lore_date=date, lore_duration=duration, attributes=attributes)
+
+
+def _presentation_endpoint(
+    endpoint: EndpointResolution | None, result: TemporalWorldResolution
+) -> Any:
+    """Carry authored meaning through references without classifying appearance."""
+    if endpoint is None:
+        return None
+    snapshot = endpoint_signature(endpoint)
+    node = endpoint.identity
+    seen: set[str] = set()
+    while node in result.definitions and node not in seen:
+        seen.add(node)
+        definition = result.definitions[node]
+        if definition.kind == "manual":
+            snapshot["meaning"] = {
+                "expression": deepcopy(definition.expression),
+                "instant": definition.instant,
+                "derived": node != endpoint.identity,
+            }
+            break
+        node = definition.source
+    snapshot.setdefault("meaning", {})
+    return snapshot

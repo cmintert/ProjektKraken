@@ -13,6 +13,7 @@ from src.core.event_timing.constraints import (
     Interval,
     merge_intervals,
 )
+from src.core.event_timing.definitions import EndpointDefinition
 from src.core.temporal_expression import ResolvedTemporalBounds
 
 
@@ -129,6 +130,7 @@ class TemporalWorldResolution:
     )
     issues: list[TimingIssue] = field(default_factory=list)
     calendar_json: str | None = None
+    definitions: dict[str, EndpointDefinition] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize exact solved branches without callbacks or runtime handles."""
@@ -176,6 +178,9 @@ class TemporalWorldResolution:
         return {
             "fingerprint": self.fingerprint,
             "calendar_json": self.calendar_json,
+            "definitions": {
+                key: value.to_dict() for key, value in self.definitions.items()
+            },
             "endpoints": endpoints,
             "components": components,
             "issues": [issue.to_dict() for issue in self.issues],
@@ -186,6 +191,10 @@ class TemporalWorldResolution:
         """Rehydrate a solved generation without repeating disjunctive search."""
         result = cls(data["fingerprint"])
         result.calendar_json = data.get("calendar_json")
+        result.definitions = {
+            key: EndpointDefinition.from_dict(value)
+            for key, value in data.get("definitions", {}).items()
+        }
         for node, item in data["endpoints"].items():
             ranges = tuple(
                 Interval(

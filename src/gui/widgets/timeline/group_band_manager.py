@@ -11,7 +11,7 @@ from PySide6.QtCore import QObject, QPoint, Signal
 from PySide6.QtWidgets import QGraphicsScene, QMenu
 
 from src.core.calendar import CalendarConverter
-from src.core.temporal_presentation import event_temporal_presentation
+from src.core.event_timing.presentation import present_event
 from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.timeline.event_item import EventItem
 from src.gui.widgets.timeline.group_band_item import GroupBandItem
@@ -173,9 +173,7 @@ class GroupBandManager(QObject):
         self, band: GroupBandItem, events: list, converter: CalendarConverter | None
     ) -> None:
         """Supply occurrence marks and authored duration captions from cached events."""
-        presentations = [
-            event_temporal_presentation(event, converter) for event in events
-        ]
+        presentations = [present_event(event, converter) for event in events]
         band.set_event_presentations(
             [projection.start for projection in presentations],
             [

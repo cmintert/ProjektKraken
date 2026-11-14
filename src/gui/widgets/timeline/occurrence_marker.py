@@ -12,8 +12,9 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QAbstractButton, QWidget
 
+from src.core.event_timing.presentation import TemporalDisplay
 from src.core.theme_manager import ThemeManager
-from src.gui.widgets.timeline.temporal_geometry import TemporalGeometry
+from src.gui.widgets.timeline.temporal_geometry import project_temporal_geometry
 from src.gui.widgets.timeline.temporal_painter import paint_occurrence
 
 
@@ -54,13 +55,22 @@ class OccurrenceMarker(QAbstractButton):
     """Button semantics with Event glyph painting, not a rectangular button face."""
 
     def __init__(
-        self, name: str, caption: str, parent: QWidget, *, pinned: bool = True
+        self,
+        name: str,
+        caption: str,
+        parent: QWidget,
+        *,
+        presentation: TemporalDisplay | None,
+        pinned: bool = True,
     ) -> None:
         """Retain keyboard/selection behavior and an unframed circular date pin."""
         super().__init__(parent)
         self.setText(name)
         self.caption = caption
         self.pinned = pinned
+        self._geometry = (
+            project_temporal_geometry(presentation, 1) if presentation else None
+        )
         self.anchor_x = 0.0
         self._label_x = 13.0
         self._label_width = 0.0
@@ -93,12 +103,12 @@ class OccurrenceMarker(QAbstractButton):
             if self.isChecked()
             else "supporting_text"
         )
-        if self.pinned and self._pin_visible:
+        if self.pinned and self._pin_visible and self._geometry is not None:
             painter.save()
             painter.translate(self.anchor_x, 20)
             paint_occurrence(
                 painter,
-                TemporalGeometry("exact", -8, 8),
+                self._geometry,
                 QColor(theme["event_main"]),
                 QColor(theme[boundary_role]),
                 self.isChecked(),

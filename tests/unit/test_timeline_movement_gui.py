@@ -265,14 +265,14 @@ def test_item_measurement_is_cached_and_invalidated_by_font_and_snapshot(
 
     _widget, item, _, _ = moving_timeline
     first = item._layout()
-    measure = module.event_temporal_presentation
+    measure = module.present_event
     calls = []
 
     def counted(*args):
         calls.append(1)
         return measure(*args)
 
-    monkeypatch.setattr(module, "event_temporal_presentation", counted)
+    monkeypatch.setattr(module, "present_event", counted)
     for _ in range(100):
         assert item._layout() is first
         item.boundingRect()

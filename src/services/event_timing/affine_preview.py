@@ -6,7 +6,7 @@ from copy import deepcopy
 from fractions import Fraction
 from typing import Any
 
-from src.core.event_timing.definitions import EventTimingDefinition
+from src.core.event_timing.definitions import EVENT_TIMING_SCHEMA, EventTimingDefinition
 from src.core.events import Event
 from src.services.event_timing.movement import MovementIndex, _bounded
 
@@ -72,6 +72,14 @@ def translated_preview(
             if projection is not None
             else _bounded(float(Fraction(previous["lore_date"]) + delta))
         )
+        if projection is not None:
+            # Translation updates authored definitions as well as coordinates;
+            # presentation must accept this generation rather than solve an
+            # isolated follower without its source world.
+            if row.get("schema") == EVENT_TIMING_SCHEMA:
+                projection["definition"] = deepcopy(row["timing"])
+            else:
+                projection["definition"]["start"]["instant"] = date
         duration = index.definitions[key].duration_days
         if duration is not None:
             _bounded(float(Fraction(date) + Fraction(duration)))

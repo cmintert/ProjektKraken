@@ -9,8 +9,8 @@ from PySide6.QtWidgets import QStyleOptionGraphicsItem
 
 from src.core.calendar import CalendarConfig, CalendarConverter
 from src.core.date_parser import DateParser
+from src.core.event_timing.presentation import present_event
 from src.core.events import Event
-from src.core.temporal_display import event_temporal_display
 from src.core.temporal_expression import TemporalPrecision
 from src.gui.widgets.temporal_range_widget import TemporalRangeWidget
 from src.gui.widgets.timeline.event_item import EventItem
@@ -42,7 +42,7 @@ def test_single_occurrence_caption_respects_known_day(authored_date, exact_day):
         attributes={"_temporal_v2": {"schema": 1, "expression": expression.to_dict()}},
     )
 
-    display = event_temporal_display(event, converter)
+    display = present_event(event, converter).presence
 
     assert display is not None
     assert display.caption.startswith(authored_date)
@@ -59,7 +59,7 @@ def test_year_extent_is_calendar_bound_not_midpoint(qtbot, duration):
         lore_duration=duration,
         attributes={"_temporal_v2": {"schema": 1, "expression": expression.to_dict()}},
     )
-    display = event_temporal_display(event, converter)
+    display = present_event(event, converter).presence
     assert display.possible_start == converter.start_of_year(961)
     assert display.possible_end == converter.start_of_year(962) + duration
     assert (display.certain_start is not None) == (duration > 365)
@@ -84,7 +84,7 @@ def test_soft_dates_never_get_finite_duration_envelopes():
         lore_duration=365,
         attributes={"_temporal_v2": {"schema": 1, "expression": expression.to_dict()}},
     )
-    display = event_temporal_display(event, converter)
+    display = present_event(event, converter).presence
     assert display.possible_start is display.possible_end is None
     assert display.certain_start is None
 
@@ -124,13 +124,13 @@ def test_separate_end_assertion_controls_extent():
             }
         },
     )
-    display = event_temporal_display(event, converter)
+    display = present_event(event, converter).presence
     assert display.possible_end == converter.start_of_year(964)
     assert display.certain_start == converter.start_of_year(962)
     assert display.certain_end == converter.start_of_year(963)
-    legacy = event_temporal_display(
+    legacy = present_event(
         Event(name="Legacy", lore_date=5, lore_duration=10), converter
-    )
+    ).presence
     assert legacy.kind == "duration"
     assert (legacy.possible_start, legacy.possible_end) == (5, 15)
     assert (legacy.certain_start, legacy.certain_end) == (5, 15)
@@ -142,8 +142,8 @@ def test_separate_end_assertion_controls_extent():
         (None, 20, "exact", False),
         ("14 June 1209 14:30", 20, "exact", False),
         ("14 June 1209 14:30:15", 20, "exact", False),
-        ("14 June 1209", 20, "window", True),
-        ("14 June 1209", 24, "window", False),
+        ("14 June 1209", 20, "exact", False),
+        ("14 June 1209", 24, "exact", False),
         ("June 1209", 0.1, "window", True),
         ("1209", 0.1, "window", False),
         ("c. 14 June 1209", 20, "soft", False),
@@ -167,7 +167,7 @@ def test_point_visual_grammar(authored, scale, mode, compact):
         if expression
         else {},
     )
-    display = event_temporal_display(event, converter)
+    display = present_event(event, converter).presence
     geometry = project_temporal_geometry(display, scale)
     assert display.kind == "point"
     assert geometry.mode == mode
@@ -180,9 +180,9 @@ def test_point_visual_grammar(authored, scale, mode, compact):
 
 def test_duration_visual_grammar_and_short_symbol():
     converter = CalendarConverter(CalendarConfig.create_default())
-    precise = event_temporal_display(
+    precise = present_event(
         Event(name="Legacy", lore_date=100, lore_duration=10), converter
-    )
+    ).presence
     full = project_temporal_geometry(precise, 1)
     short = project_temporal_geometry(precise, 0.5)
     assert full.mode == short.mode == "duration"
@@ -203,7 +203,7 @@ def test_duration_visual_grammar_and_short_symbol():
         lore_duration=365,
         attributes={"_temporal_v2": {"schema": 1, "expression": approximate.to_dict()}},
     )
-    display = event_temporal_display(event, converter)
+    display = present_event(event, converter).presence
     assert display.kind == "duration"
     assert project_temporal_geometry(display, 20).mode == "unresolved"
 
@@ -215,7 +215,7 @@ def test_duration_visual_grammar_and_short_symbol():
         attributes={"_temporal_v2": {"schema": 1, "expression": year.to_dict()}},
     )
     compact = project_temporal_geometry(
-        event_temporal_display(uncertain, converter), 0.001
+        present_event(uncertain, converter).presence, 0.001
     )
     assert compact.compact is True
     assert compact.certain_left is not None
@@ -234,10 +234,10 @@ def test_hour_precision_and_missing_calendar():
         lore_date=hour.representative_time(converter),
         attributes={"_temporal_v2": {"schema": 1, "expression": hour.to_dict()}},
     )
-    display = event_temporal_display(event, converter)
-    assert project_temporal_geometry(display, 20).compact is True
-    assert project_temporal_geometry(display, 600).compact is False
-    unavailable = event_temporal_display(event, None)
+    display = present_event(event, converter).presence
+    assert project_temporal_geometry(display, 20).mode == "exact"
+    assert project_temporal_geometry(display, 600).mode == "exact"
+    unavailable = present_event(event, None).presence
     assert unavailable.error is True
     assert project_temporal_geometry(unavailable, 20).mode == "unresolved"
 
@@ -246,7 +246,7 @@ def test_item_geometry_and_lane_width_follow_zoom(qtbot):
     from src.gui.widgets.timeline_lane_packer import TimelineLanePacker
 
     converter = CalendarConverter(CalendarConfig.create_default())
-    expression = DateParser(converter._config).parse_expression("14 June 1209")
+    expression = DateParser(converter._config).parse_expression("June 1209")
     event = Event(
         name="Day",
         lore_date=expression.representative_time(converter),
@@ -254,17 +254,17 @@ def test_item_geometry_and_lane_width_follow_zoom(qtbot):
     )
     EventItem.set_calendar_converter(converter)
     try:
-        item = EventItem(event, scale_factor=20)
+        item = EventItem(event, scale_factor=0.5)
         before = event.attributes.copy()
-        compact = item._display_rect(event_temporal_display(event, converter))
+        compact = item._display_rect(present_event(event, converter).presence)
         assert compact.width() == 16
         assert item.shape().contains(compact.center())
         item.set_zoom(2)
-        full = item._display_rect(event_temporal_display(event, converter))
-        assert full.width() == 40
+        full = item._display_rect(present_event(event, converter).presence)
+        assert full.width() == 30
         assert item.boundingRect().contains(full)
-        packer = TimelineLanePacker(40)
-        assert packer._calculate_visual_duration(event) >= full.width() / 40
+        packer = TimelineLanePacker(1)
+        assert packer._calculate_visual_duration(event) >= full.width()
         item.update_event(event)
         assert event.attributes == before
     finally:
@@ -273,7 +273,7 @@ def test_item_geometry_and_lane_width_follow_zoom(qtbot):
 
 def test_semantic_window_moves_with_drag_without_changing_evidence(qtbot):
     converter = CalendarConverter(CalendarConfig.create_default())
-    expression = DateParser(converter._config).parse_expression("14 June 1209")
+    expression = DateParser(converter._config).parse_expression("June 1209")
     event = Event(
         name="Dragged day",
         lore_date=expression.representative_time(converter),
@@ -282,12 +282,12 @@ def test_semantic_window_moves_with_drag_without_changing_evidence(qtbot):
     EventItem.set_calendar_converter(converter)
     try:
         item = EventItem(event, scale_factor=20)
-        original = item._display_rect(event_temporal_display(event, converter))
+        original = item._display_rect(present_event(event, converter).presence)
         original_position = item.x()
         item._is_dragging = True
         item._initial_y = item.y()
         item.setPos(original_position + 100, item.y())
-        moved = item._display_rect(event_temporal_display(event, converter))
+        moved = item._display_rect(present_event(event, converter).presence)
         assert moved == original
         assert item.x() == original_position + 100
         assert event.attributes["_temporal_v2"]["expression"] == expression.to_dict()
@@ -297,9 +297,9 @@ def test_semantic_window_moves_with_drag_without_changing_evidence(qtbot):
 
 
 @pytest.mark.parametrize("selected", [False, True])
-def test_exact_fill_is_distinct_from_day_window(qtbot, selected):
+def test_exact_fill_is_distinct_from_month_window(qtbot, selected):
     converter = CalendarConverter(CalendarConfig.create_default())
-    expression = DateParser(converter._config).parse_expression("14 June 1209")
+    expression = DateParser(converter._config).parse_expression("June 1209")
     day = Event(
         name="Day",
         lore_date=expression.representative_time(converter),

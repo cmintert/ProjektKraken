@@ -3,8 +3,8 @@
 from typing import Any
 
 from src.core.ai_generation import AIGenerationPreferences
+from src.core.event_timing.presentation import present_event
 from src.core.mcp_access import McpFailure
-from src.core.temporal_presentation import event_temporal_presentation
 from src.services.db_service import DatabaseService
 from src.services.mcp_contracts import check_preconditions
 from src.services.mcp_read_service import McpReadService, read_guard
@@ -40,9 +40,7 @@ def capture_experiment(
         if kind == "event":
             event = db.get_event(args["target_id"])
             if event is not None:
-                caption = event_temporal_presentation(
-                    event, calendar_converter(db)
-                ).start.caption
+                caption = present_event(event, calendar_converter(db)).start.caption
         return {
             "revision": revision,
             "subject": subject.to_dict(),

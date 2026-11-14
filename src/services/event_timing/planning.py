@@ -518,10 +518,18 @@ def prepare_change(
         errors = [error for error in errors if error not in allowed]
     projected = [_projection(event, after) for event in events]
     previous = {event.id: event.to_dict() for event in before_events}
+    previous_views = {
+        event.id: _projection(event, before).to_dict() for event in before_events
+    }
     updated = {
         event.id: event.to_dict()
         for event in projected
-        if previous.get(event.id) != event.to_dict()
+        if previous_views.get(event.id) != event.to_dict()
+        or (
+            event.id in previous
+            and (previous[event.id]["lore_date"], previous[event.id]["lore_duration"])
+            != (event.lore_date, event.lore_duration)
+        )
     }
     base_fingerprint = snapshot_fingerprint(snapshot)
     consequences = _consequences(
