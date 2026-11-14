@@ -41,21 +41,8 @@ window.show()
 QTimer.singleShot(20000, window.close)
 raise SystemExit(app.exec())
 """
-    command = [sys.executable, "-c", source, str(tmp_path)]
-    if os.environ.get("KRAKEN_SMOKE_GDB") == "1":
-        command = [
-            "gdb",
-            "--return-child-result",
-            "--batch",
-            "-ex",
-            "run",
-            "-ex",
-            "thread apply all bt",
-            "--args",
-            *command,
-        ]
     result = subprocess.run(
-        command,
+        [sys.executable, "-c", source, str(tmp_path)],
         capture_output=True,
         text=True,
         timeout=35,

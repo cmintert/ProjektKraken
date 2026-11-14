@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-14
-**Commit:** de35678ad499a611626f102b3161a7da25cff863
+**Commit:** 837ee1f561094614df48d6b1490ada97ba681d41
 ---
 
 # Changelog
@@ -29,6 +29,10 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-14)* Run the lean smoke suite on Windows, the primary desktop
+  platform, retaining all assertions. Removed temporary native-debugger wiring.
+  Linux startup still exposes a PySide application-event-filter native crash.
 
 - *(2026-11-14)* Capture the startup subprocess's native crash backtrace
   in smoke CI while preserving its actual exit-code assertion.
