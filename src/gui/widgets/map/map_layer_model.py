@@ -616,12 +616,15 @@ class MapLayerModel(QAbstractItemModel):
             return False
         old_row = old_parent.children.index(node)
         old_parent_index = self.index_from_node(old_parent)
+        new_parent = self.node_from_index(target_parent_index)
 
         self.beginRemoveRows(old_parent_index, old_row, old_row)
         old_parent.children.pop(old_row)
         self.endRemoveRows()
 
-        new_parent = self.node_from_index(target_parent_index)
+        # Removal can shift the destination group's row. Announce insertion
+        # with its current index so proxy mappings and persistent indexes agree.
+        target_parent_index = self.index_from_node(new_parent)
         insert_row = min(target_row, len(new_parent.children))
         self.beginInsertRows(target_parent_index, insert_row, insert_row)
         new_parent.children.insert(insert_row, node)

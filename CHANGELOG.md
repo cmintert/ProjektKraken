@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-15
-**Commit:** 2aef75263309dbec57f1d68f977d5ce119c7f187
+**Commit:** 38366e1b89a372cc0dc37b8fd3e62a72d7be5f3d
 ---
 
 # Changelog
@@ -43,6 +43,12 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-15)* **Map layers (KRT-166)**: Rebuilt the destination group index
+  after layer removal when moving a layer, preserving proxy mappings and sibling
+  indexes when the group's row shifts. Added proxy lifecycle regressions with
+  temporal filtering enabled and disabled. This fixes the confirmed move-helper
+  defect; the reported rapid Timeline scrubbing crash remains under investigation.
 
 - *(2026-11-15)* **Maps (KRT-165)**: Restored the captured viewing date after
   signal delivery when playback advances during neighboring-region object choice,
