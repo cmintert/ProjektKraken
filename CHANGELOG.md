@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-15
-**Commit:** 38366e1b89a372cc0dc37b8fd3e62a72d7be5f3d
+**Commit:** 013d0f8e9235e20e1252a2f7847f1ad2f62f2a9d
 ---
 
 # Changelog
@@ -43,6 +43,10 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-15)* **Packaging**: Moved the isolated region-geometry database
+  probe to the offline CLI layer, restoring the application dependency contract
+  while preserving packaged smoke verification and geometry workflow coverage.
 
 - *(2026-11-15)* **Map layers (KRT-166)**: Rebuilt the destination group index
   after layer removal when moving a layer, preserving proxy mappings and sibling

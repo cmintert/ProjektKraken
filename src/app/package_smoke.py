@@ -12,7 +12,7 @@ from PySide6.QtWidgets import QApplication, QLabel
 
 from src.app.help_package_probe import probe_help
 from src.app.markdown_package_probe import probe_markdown
-from src.app.region_package_probe import probe_region_geometry
+from src.cli.region_package_probe import probe_region_geometry
 from src.core.logging_config import get_logger
 from src.core.paths import get_executable_dir, get_resource_path
 from src.core.version import VERSION

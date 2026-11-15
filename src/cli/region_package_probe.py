@@ -1,4 +1,4 @@
-"""Exercise the packaged geometry engine against an isolated test database."""
+"""Offline packaged geometry probe owning an isolated temporary database."""
 
 from contextlib import closing
 from pathlib import Path

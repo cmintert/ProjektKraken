@@ -7,7 +7,7 @@ from PySide6.QtCore import QPointF
 from PySide6.QtGui import QPixmap, QTransform
 from PySide6.QtWidgets import QGraphicsPixmapItem
 
-from src.app.region_package_probe import probe_region_geometry
+from src.cli.region_package_probe import probe_region_geometry
 from src.commands.feature_geometry_commands import ReplaceFeatureGeometryStatesCommand
 from src.core.border_trace import RingPosition, border_routes, simple_draft
 from src.core.feature_geometry_state import (
