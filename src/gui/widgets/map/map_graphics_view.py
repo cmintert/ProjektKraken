@@ -232,6 +232,8 @@ class MapGraphicsView(QGraphicsView):
 
     # -- Drawing mode signals --
     drawing_finished = Signal(str, list)
+    drawing_proposed = Signal(object)
+    neighbor_region_requested = Signal(str)
     drawing_cancelled = Signal()
     border_trace_changed = Signal()
 

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-15
-**Commit:** 8f0668eafd5b1dd2723d571dbc3206406b3e732f
+**Commit:** 54012c443b12727800a9fcb64c294c0331e87847
 ---
 
 # Changelog
@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-11-15)* **Maps (KRT-164)**: Added Draw neighboring region to subtract
+  an existing border from a retained drawing, preview the result and create an
+  independent region. Preserved canceled/failed drafts, exact shared edges and
+  one-step object-plus-region undo; guarded source changes and date transitions.
+  Added focused regressions, packaged command probing and contextual Help;
+  updated architecture and verification notes.
 
 - *(2026-11-15)* **Maps**: Added existing-border tracing and previewed region
   cuts, including holes in Base Geometry and dated states. Extended editing,

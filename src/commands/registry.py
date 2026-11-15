@@ -102,6 +102,7 @@ def _init_registry() -> None:
         UpdateMarkerColorCommand,
         UpdateMarkerCommand,
     )
+    from src.commands.neighbor_region_command import CreateNeighborRegionCommand
     from src.commands.raster_commands import (
         CreateRasterLayerCommand,
         DeleteRasterLayerCommand,
@@ -138,6 +139,7 @@ def _init_registry() -> None:
             "CreateLifecycleEventCommand": CreateLifecycleEventCommand,
             "ChangeLifecycleAssociationCommand": ChangeLifecycleAssociationCommand,
             "CreateEventCommand": CreateEventCommand,
+            "CreateNeighborRegionCommand": CreateNeighborRegionCommand,
             "UpdateEventCommand": UpdateEventCommand,
             "DeleteEventCommand": DeleteEventCommand,
             "AddRelationCommand": AddRelationCommand,

@@ -92,14 +92,73 @@ class AppCoordinator(QObject):
         from src.gui.dialogs.map_edit_transition_dialog import decide_map_transition
 
         window = self.main_window
-        self.map_edits = MapEditTransitionCoordinator(
-            [self.trajectory_edit, self.feature_geometry],
+        self.bind_neighbor_regions()
+        self.map_edits: MapEditTransitionCoordinator = MapEditTransitionCoordinator(
+            [self.trajectory_edit, self.feature_geometry, self.neighbor_regions],
             lambda: str(getattr(window.current_world, "id", "")),
             lambda reason, status: decide_map_transition(reason, status, window),
             lambda message: window.status_bar.showMessage(message, 5000),
             self,
         )
         window.map_widget.edit_transition_handler = self.map_edits.request_transition
+
+    def bind_neighbor_regions(self) -> None:
+        """Compose neighboring-region ownership with explicit UI/command ports."""
+        if hasattr(self, "neighbor_regions"):
+            return
+        from PySide6.QtCore import Qt
+
+        from src.app.coordinators.neighbor_region_coordinator import (
+            NeighborRegionCoordinator,
+            NeighborRegionPorts,
+        )
+
+        window = self.main_window
+        widget = window.map_widget
+        self.neighbor_regions = NeighborRegionCoordinator(
+            NeighborRegionPorts(
+                view=widget.view,
+                controls=widget.neighbor_region_controls,
+                map_id=widget.get_selected_map_id,
+                world_id=lambda: str(getattr(window.current_world, "id", "")),
+                date=window.timeline.get_playhead_time,
+                format_date=lambda date: window.calendar_converter.format_date(date)
+                if window.calendar_converter
+                else f"lore day {date:g}",
+                choose_object=lambda: widget._choose_map_object(
+                    "Link Neighboring Region"
+                ),
+                create_entity=self.context_tags.create_entity_command,
+                create_event=self.context_tags.create_event_command,
+                submit=window.command_requested.emit,
+                begin_drawing=widget._begin_region_drawing,
+                set_date=window.timeline.set_playhead_time,
+                transition=widget.request_edit_transition,
+                reload_map=window.data_handler.reload_markers.emit,
+                feedback=lambda message: window.status_bar.showMessage(message, 5000),
+                pause_playback=lambda: window.timeline.toggle_playback()
+                if window.timeline.view.is_playing()
+                else None,
+                refresh_source=self.refresh_neighbor_source,
+            ),
+            self,
+        )
+        self.time.playhead_guard = self.neighbor_regions.guard_playhead
+        window.data_handler.markers_ready.connect(
+            self.neighbor_regions.on_markers_ready
+        )
+        window.data_handler.feature_geometry_states_ready.connect(
+            self.neighbor_regions.on_states_ready
+        )
+        window.worker.command_finished.connect(
+            self.neighbor_regions.on_command_finished,
+            Qt.ConnectionType.QueuedConnection,
+        )
+
+    def refresh_neighbor_source(self, map_id: str) -> None:
+        """Reload saved input after a rejected neighbor creation without losing it."""
+        for method in ("load_markers", "load_feature_geometry_states"):
+            invoke_queued(self.main_window.worker, method, Q_ARG(str, map_id))
 
     def show_icon_library(self) -> None:
         """Open the active world's standalone icon manager."""

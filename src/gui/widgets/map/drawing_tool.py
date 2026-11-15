@@ -17,10 +17,11 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.border_trace import simple_draft
-from src.core.region_geometry import MIN_REGION_AREA, Point, signed_area
+from src.core.region_geometry import MIN_REGION_AREA, Geometry, Point, signed_area
 from src.core.theme_manager import ThemeManager
 from src.gui.constants import MAP_LAYER_Z_UI_OVERLAY
 from src.gui.widgets.map.border_trace_tool import BorderTraceTool
+from src.gui.widgets.map.region_paths import region_path
 from src.gui.widgets.map.region_preview import RegionPreview
 from src.gui.widgets.map.snapping_manager import SnappingManager
 
@@ -63,6 +64,8 @@ class DrawingTool:
         self._drawing_vertices: list[QPointF] = []  # scene coordinates
         self._drawing_preview_item: Optional[QGraphicsPathItem] = None
         self._drawing_dots: list[QGraphicsItem] = []  # vertex dots
+        self.retain_draft = False
+        self.paused = False
 
     # ------------------------------------------------------------------
     # Properties
@@ -115,6 +118,7 @@ class DrawingTool:
             feature_type: 'path' or 'region'.
         """
         self._drawing_mode = feature_type
+        self.retain_draft = self.paused = False
         self.trace.cancel()
         self._copied_points.clear()
         self._drawing_vertices.clear()
@@ -127,6 +131,7 @@ class DrawingTool:
     def cancel_drawing(self) -> None:
         """Exits drawing mode without saving."""
         self._drawing_mode = None
+        self.retain_draft = self.paused = False
         self.trace.cancel()
         self._copied_points.clear()
         self._drawing_vertices.clear()
@@ -173,6 +178,10 @@ class DrawingTool:
             return
         geometry = [{"x": x, "y": y} for x, y in points]
 
+        if self.retain_draft:
+            self._view.drawing_proposed.emit(geometry)
+            return
+
         feature_type = self._drawing_mode
         logger.info(f"Drawing finished: {feature_type} with {len(geometry)} vertices")
 
@@ -199,6 +208,9 @@ class DrawingTool:
         """
         if not self._drawing_mode or not self._view.pixmap_item:
             return False
+
+        if self.paused:
+            return True
 
         if self.trace.active:
             self.trace.pick(scene_pos, self.draft_points())
@@ -230,6 +242,8 @@ class DrawingTool:
         if not self._drawing_mode:
             return False
 
+        if self.paused:
+            return True
         self._view.setCursor(Qt.CursorShape.CrossCursor)
         if self.trace.active:
             self.trace.hover(scene_pos)
@@ -280,6 +294,34 @@ class DrawingTool:
             else self._normal_point(pos)
             for i, pos in enumerate(self._drawing_vertices)
         )
+
+    def show_retained_preview(self, geometries: tuple[Geometry, ...] | None) -> None:
+        """Pause drawing for a result, or restore its unmodified input outline."""
+        self.paused = geometries is not None
+        self.trace.cancel()
+        for dot in self._drawing_dots:
+            dot.setVisible(not self.paused)
+        if self._drawing_preview_item is not None:
+            self._view.graphics_scene.removeItem(self._drawing_preview_item)
+            self._drawing_preview_item = None
+        if geometries is None:
+            if self._drawing_vertices:
+                self._update_drawing_preview(self._drawing_vertices[-1])
+        elif self._view.pixmap_item is not None:
+            path = QPainterPath()
+            path.setFillRule(Qt.FillRule.OddEvenFill)
+            rect = self._view.pixmap_item.sceneBoundingRect()
+            for geometry in geometries:
+                path.addPath(region_path(geometry, rect))
+            preview = RegionPreview(self._view.graphics_scene)
+            preview.show_path(path, filled=True)
+            self._drawing_preview_item = preview
+        self._view.border_trace_changed.emit()
+
+    def restyle_preview(self) -> None:
+        """Refresh a retained drawing/result without changing its coordinates."""
+        if isinstance(self._drawing_preview_item, RegionPreview):
+            self._drawing_preview_item.restyle()
 
     def _normal_point(self, pos: QPointF) -> Point:
         x, y = self._view.coord_system.to_normalized(pos)

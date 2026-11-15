@@ -1,6 +1,7 @@
 """Coordinate calendar configuration and current lore time."""
 
 import logging
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Optional
 
 from PySide6.QtCore import Q_ARG, Signal, Slot
@@ -37,6 +38,7 @@ class TimeCoordinator(BaseCoordinator):
         self._follow_after_save: float | None = None
         self._pending_go_to_date: float | None = None
         self._resolve_request_id = 0
+        self.playhead_guard: Callable[[float], bool] | None = None
 
     def _accepts_navigation(self, time: float) -> bool:
         """Allow disclosure only after the existing dirty-draft guard accepts."""
@@ -289,6 +291,8 @@ class TimeCoordinator(BaseCoordinator):
     @Slot(float)
     def on_playhead_changed(self, time: float) -> None:
         """Refreshes entity inspector based on playhead time."""
+        if self.playhead_guard is not None and not self.playhead_guard(time):
+            return
         self._bind_navigation_guard()
         if self._pending_go_to_date is not None and time != self._pending_go_to_date:
             self._pending_go_to_date = None

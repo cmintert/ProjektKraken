@@ -589,6 +589,30 @@ coordinates represent unresolved placement; authored definitions remain evidence
 The immutable `TemporalResolutionContext` carries a shared solved generation to
 presentation consumers, including serialized exact branches for cache reuse.
 
+## Neighboring-region creation
+
+`AppCoordinator.bind_neighbor_regions()` composes `NeighborRegionCoordinator`
+using explicit view/control ports, context-aware object command factories and
+the existing submission signal. The coordinator owns the source/date snapshot,
+retained outline, preview and save acknowledgement. It participates in
+`MapEditTransitionCoordinator`; `TimeCoordinator` consumes an injected playhead
+guard. Widgets render supplied stages and emit intents; geometry subtraction stays
+in `core.region_geometry`.
+
+```text
+Feature actions / drawing controls
+  -> NeighborRegionCoordinator -> cut_region(drawn outline, source snapshot)
+  -> CreateNeighborRegionCommand (or object + region CompositeCommand)
+  -> existing CommandCoordinator / DatabaseWorker command dispatch
+  -> worker-owned repositories and persistent undo history
+```
+
+`CreateNeighborRegionCommand` specializes marker creation, checking its source
+inside the first-save transaction. New object + region creation uses the existing
+atomic composite. The saved region is independent: redo restores its exact saved
+shape rather than recomputing against a later source. No new slot or feature
+responsibility is added to the database worker, map handler or main window.
+
 ## Temporal Entity World Context
 
 Entity World Context is a read-only projection. The builder retains legacy

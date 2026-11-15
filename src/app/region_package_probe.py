@@ -4,6 +4,7 @@ from contextlib import closing
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from src.commands.neighbor_region_command import CreateNeighborRegionCommand
 from src.core.feature_geometry_state import (
     FeatureGeometryState,
     resolve_feature_geometry,
@@ -32,7 +33,12 @@ def probe_region_geometry() -> dict[str, object]:
         relations = _reopen_fixture(db_path)
     if relations != ("inside", "separate", "inside"):
         raise RuntimeError(f"Packaged dated lake failed after reopening: {relations}")
-    return {"holes": 1, "reopened": True, "lake_center_relations": relations}
+    return {
+        "holes": 1,
+        "reopened": True,
+        "lake_center_relations": relations,
+        "neighbor_creation": True,
+    }
 
 
 def _store_fixture(db_path: str, shore: RegionPolygon, carved: RegionPolygon) -> None:
@@ -57,6 +63,40 @@ def _store_fixture(db_path: str, shore: RegionPolygon, carved: RegionPolygon) ->
             x, y = feature_anchor(geometry)
             states.append(FeatureGeometryState(marker.id, date, geometry, x, y))
         service.feature_geometry_repo.replace_marker_states(marker.id, states)
+        _create_neighbor(service, marker, carved)
+
+
+def _create_neighbor(
+    service: DatabaseService, source: Marker, polygon: RegionPolygon
+) -> None:
+    """Exercise the packaged guarded command, exact border, undo and redo."""
+    outline = RegionPolygon(((0.7, 0.3), (0.9, 0.3), (0.9, 0.7), (0.7, 0.7)))
+    result = cut_region(outline, polygon)
+    if result.status != "ready":
+        raise RuntimeError("Packaged neighboring-region difference failed.")
+    geometry = result.polygons[0].to_geometry()
+    x, y = feature_anchor(geometry)
+    command = CreateNeighborRegionCommand(
+        {
+            "id": "package-probe-neighbor",
+            "map_id": source.map_id,
+            "object_id": "package-probe-neighbor",
+            "object_type": "entity",
+            "feature_type": "region",
+            "geometry": geometry,
+            "x": x,
+            "y": y,
+        },
+        source.id,
+        _CUT_DATE,
+        polygon.to_geometry(),
+    )
+    if not command.execute(service).success:
+        raise RuntimeError("Packaged neighboring-region creation failed.")
+    command = CreateNeighborRegionCommand.from_dict(command.to_dict())
+    command.undo(service)
+    if not command.execute(service).success:
+        raise RuntimeError("Packaged neighboring-region redo failed.")
 
 
 def _reopen_fixture(db_path: str) -> tuple[str, ...]:
@@ -65,6 +105,16 @@ def _reopen_fixture(db_path: str) -> tuple[str, ...]:
         marker = service.get_marker(_REGION_ID)
         if marker is None:
             raise RuntimeError("Packaged region fixture did not reopen.")
+        neighbor = service.get_marker("package-probe-neighbor")
+        if neighbor is None or neighbor.geometry is None:
+            raise RuntimeError("Packaged neighboring region did not reopen.")
+        shape = RegionPolygon.from_geometry(neighbor.geometry).validated()
+        original = RegionPolygon.from_geometry(marker.geometry or []).validated()
+        if (
+            shape.intersection(original).area != 0
+            or shape.bounds[0] != original.bounds[2]
+        ):
+            raise RuntimeError("Packaged shared border did not survive reopening.")
         states = service.feature_geometry_repo.get_states(marker.id)
         center = SpatialGeometry("point", ((0.5, 0.5),))
         relations = []

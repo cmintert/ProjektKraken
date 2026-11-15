@@ -121,6 +121,12 @@ def feature_actions(context: FeatureContext) -> tuple[FeatureAction, ...]:
                 FeatureAction("journey", label, enabled=available, reason=reason)
             )
         primary.extend(_appearance_actions(context))
+    if context.kind == "region":
+        primary.append(
+            FeatureAction(
+                "neighbor", "Draw neighboring region", enabled=available, reason=reason
+            )
+        )
     return tuple(
         primary
         + [FeatureAction("validity", "Visibility dates…")]
@@ -200,6 +206,7 @@ _INSPECTION_ACTIONS = {
     "geometry": "feature.geometry|map.historical-geometry|help-inspect-feature-geometry",
     "style": "feature.style|map.appearance|help-inspect-feature-style",
     "history": "feature.history|map.historical-geometry|help-inspect-feature-history",
+    "neighbor": "feature.neighbor|map.features|help-inspect-neighbor-region",
     "appearance": "feature.appearance|map.appearance|help-inspect-feature-appearance",
     "icon": "feature.icon|map.icons|help-inspect-feature-icon",
     "journey": "feature.journey|map.trajectories|help-inspect-feature-journey",
@@ -508,6 +515,7 @@ class FeatureActionPresenter(QObject):
         self, object_id: str, action_id: str, guard: Callable[[], bool]
     ) -> None:
         routes: dict[str, Callable[[], None]] = {
+            "neighbor": lambda: self.view.neighbor_region_requested.emit(object_id),
             "properties": lambda: self.panel.edit_properties(object_id),
             "unlock": lambda: self.view.unlock_feature(object_id),
             "lock": lambda: self.view.set_feature_locked(object_id, True),

@@ -168,6 +168,9 @@ class InteractionHandler:
     ) -> None:
         """Delegate shared action IDs to the original handlers and signals."""
         common: dict[str, Callable[[], None]] = {
+            "neighbor": lambda: self._view.neighbor_region_requested.emit(
+                item.marker_id
+            ),
             "lock": lambda: self._view.set_feature_locked(item.marker_id, True),
             "unlock": lambda: self._view.unlock_feature(item.marker_id),
             "geometry": lambda: self._view.feature_geometry_edit_requested.emit(

@@ -134,6 +134,46 @@ colour, and line pattern. Available patterns are **Solid**, **Dotted**,
 **Short Dash**, **Long Dash**, and **Dash Dot**. The chosen pattern applies to
 the whole path and is saved as part of its global feature style.
 
+(draw-neighboring-region)=
+
+## Draw a neighboring region
+
+Use an existing region's border to shape a new region without tracing its vertices.
+The new shape is your drawn outline minus the existing region's filled area.
+
+1. Move to the intended viewing date and select the existing region.
+2. Choose **Feature actions → Draw neighboring region**. The source region must
+   be visible, unlocked and present at the viewing date.
+3. Draw an outline that overlaps its border. Space-pan and wheel zoom still work;
+   **Trace border** remains available while drawing.
+4. Choose **Preview new region** to inspect the remaining area, then **Use result**.
+5. Choose **Confirm** and link the new region to an unplaced Entity/Event or create
+   one. The completed save is one undoable operation.
+
+The strip identifies the source and captured date. **Back to drawing** restores
+the original outline so you can continue adding vertices. To replace earlier
+vertices, cancel and start again. Canceling the object picker or a failed save keeps your draft.
+In the preview or accepted-result step, **Escape** returns to drawing; a further
+**Escape**, or **Cancel neighbor**, discards the whole draft. Playback pauses before
+asking you to resolve a date change. An active Trace step
+owns Enter/Escape first. Changing map, world or viewing date asks you to resolve
+the unfinished neighbor. If the source border changes, preview again before saving.
+
+(help-inspect-neighbor-region)=
+
+> Draw neighboring region subtracts the selected region's displayed shape at the
+> captured viewing date from your outline. Preview new region shows the remainder;
+> Use result accepts only the working copy. Confirm links and saves the new region.
+> Back to drawing restores the outline; canceling linking or a failed save keeps it.
+> The source is unchanged. The new region has its own Base Geometry and does not
+> follow later source edits. Existence dates are separate; none are added for you.
+
+One connected result, including holes, can be saved. Empty, invalid or disconnected
+results cannot be accepted; split pieces are all shown and none are silently dropped.
+If there is no overlap, return to drawing and cross the source border.
+View the saved regions together to verify their shared edge. Undo removes the new
+region; when its linked object was created with it, that creation is undone too.
+
 (help-map-historical-geometry)=
 
 ## Dated path and region geometry

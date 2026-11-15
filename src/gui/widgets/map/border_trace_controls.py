@@ -62,7 +62,7 @@ class BorderTraceControls(QWidget):
     def refresh(self) -> None:
         """Refresh control visibility, status, and confirm availability."""
         trace = self._tool.trace
-        self.setVisible(self._tool.drawing_mode == "region")
+        self.setVisible(self._tool.drawing_mode == "region" and not self._tool.paused)
         self.start.setVisible(not trace.active)
         self.cancel.setVisible(trace.active)
         self.switch.setVisible(trace.has_routes)

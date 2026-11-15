@@ -9680,6 +9680,26 @@
       "binding": "self.regions",
       "label": "Cutter region",
       "kind": "QComboBox"
+    },
+    {
+      "id": "feature.neighbor",
+      "topic_id": "map.features",
+      "target": "help-inspect-neighbor-region",
+      "source": "src/gui/widgets/map/feature_actions.py",
+      "symbol": "feature_actions",
+      "binding": "neighbor",
+      "label": "Draw neighboring region",
+      "kind": "FeatureAction"
+    },
+    {
+      "id": "neighbor-region-step",
+      "topic_id": "map.features",
+      "target": "help-inspect-neighbor-region",
+      "source": "src/gui/widgets/map/neighbor_region_controls.py",
+      "symbol": "NeighborRegionControls._button",
+      "binding": "button",
+      "label": "Neighbor drawing step",
+      "kind": "WrappingPushButton"
     }
   ],
   "factory_exemptions": [
@@ -9928,8 +9948,8 @@
     {
       "source": "src/commands/composite_command.py",
       "symbol": "CompositeCommand.execute",
-      "sha256": "843ce94440e9d7d7849075f8026b7c00001075294199227c4a84a2780f0b930f",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "e652e8a6076876092de3a5f9f33f91b651baa11d9f557b2f55ee58788c5d9981",
+      "review_note": "KRT-164: recognized specialized CreateMarkerCommand instances for map-scoped reload after atomic neighboring-object creation. Same one-step transactional creation and unchanged source semantics are documented in maps.md."
     },
     {
       "source": "src/commands/composite_command.py",
@@ -13839,8 +13859,8 @@
     {
       "source": "src/gui/widgets/map/feature_actions.py",
       "symbol": "FeatureActionPresenter._execute",
-      "sha256": "9f236c9d51c7900c4e0081788a5021658b8797ef1636d8bfa4a05c1bcebe56ba",
-      "review_note": "KRT-140: reviewed explicit feature, group and surface ownership; scope captions, inherited restrictions, modeless target guards and unchanged commands. Map Help describes the named routes, icon sizing versus zoom visibility and existing rename synchronization. Human acceptance pending."
+      "sha256": "b94d7ac04b6f74a2f70c10b4492507ea2479a95367d8b9500a5e54bdcd540e79",
+      "review_note": "KRT-164: neighboring-region intent dispatches the captured object ID after the existing target/date and transition guards. Existing action meanings stay accurate."
     },
     {
       "source": "src/gui/widgets/map/feature_actions.py",
@@ -13959,8 +13979,8 @@
     {
       "source": "src/gui/widgets/map/interaction_handler.py",
       "symbol": "InteractionHandler.execute_feature_action",
-      "sha256": "b74a00f43a34ab255a6cb1e37b47a79ab375c1cea373cfd302fa78121a72d312",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "66d5ed35b1ec6950b8727af277d14878e454a3af43ebc321332573052da14ad7",
+      "review_note": "KRT-164: context-menu neighboring-region intent uses the same view signal as the visible selected-feature route; no direct geometry mutation or save."
     },
     {
       "source": "src/gui/widgets/map/interaction_handler.py",
@@ -14907,8 +14927,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget.__init__",
-      "sha256": "c5a4520aa1c1f0a9d476f88d987cbbebc3e34be404147a49bad02a107e7575e4",
-      "review_note": "Reviewed Cut and Trace composition: existing map control meanings remain accurate. Cutter inspection and nested Confirm/Escape behavior are documented in maps.md; construction does not save drafts."
+      "sha256": "2027720d270b6aa48721faae1b509b594d1eb51622c941cf026ad7ae85a6e2d9",
+      "review_note": "KRT-164: composed the neighbor context strip and persistent step controls; the new maps task explains their local acceptance and save roles."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -15171,8 +15191,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._on_theme_changed",
-      "sha256": "fa5971f21be290d10cc271436d2b06545c5a4555cbbd523fe13a94097732c6dd",
-      "review_note": "Reviewed restyling of Cut and Trace overlays and controls: theme changes do not accept a cutter, save geometry or discard the draft. Existing theme and geometry explanations remain accurate."
+      "sha256": "6326793d1184a4b53098a26a3c01f4ca1a442879e4e04ddc34c91225973c9498",
+      "review_note": "KRT-164: retained drawing/result previews restyle without accepting, clearing or persisting geometry. Existing theme behavior remains accurate."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -15267,8 +15287,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._update_mode_indicator",
-      "sha256": "c9eea031f29e9b3827f06780f83d14ea3cf48b9e43ba72937f479abbfc2f147b",
-      "review_note": "Reviewed hidden parent action bar during Cut/Trace: local controls expose accept/cancel while the parent draft remains active. The cutter explanation distinguishes Use cut from parent Confirm."
+      "sha256": "72f8c9e7f79e974ce03ce3bfe93fa9bce3a6bc92a00188208f8f093c4728d8c7",
+      "review_note": "KRT-164: neighboring-region strip replaces ordinary parent actions and hides while Trace owns keyboard input. Restoring Trace preserves the parent drawing. Canonical maps task describes source/date, local steps and nested cancellation."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -15291,20 +15311,20 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget.active_map_session_mode",
-      "sha256": "daa21603ebbcb37b3bdaa21e2e898ce8f5f6808ba64dcd37f5bf4f98d4fc235e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "625ab9eddf953f0984ae2316e5249effe1ccbc8a47a5baea331925f623afda91",
+      "review_note": "KRT-164: neighboring-region ownership precedes its retained region drawing. Canonical maps task identifies the mode and guarded context changes."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget.cancel_active_session",
-      "sha256": "238f4ce8c4ba9ec08e6dbe4abf0207e4ba54bc66105b8fafa6e877d6c90ae68a",
-      "review_note": "Reviewed closing Cut before parent cancellation, including the pending-command guard. The cutter explanation distinguishes Cancel cut from discarding the parent geometry edit."
+      "sha256": "d7a4eaa5b694521854b7b6641d0cfc71b257b68d6f54461154ef098b0cc64cd1",
+      "review_note": "KRT-164: Cancel neighbor discards the retained session only when not saving; Escape unwinds preview/acceptance first. New maps task explains both."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget.confirm_active_session",
-      "sha256": "629bb8acad3eec0c4cfbe56417b84cb8cb389c1c2f16bf857eb5994cbe970bce",
-      "review_note": "Reviewed Enter/Confirm ownership: preview or accept the active Cut step, accept an active Trace, otherwise persist through the existing parent path. The cutter explanation documents local acceptance versus saving."
+      "sha256": "ecbacce5d07bacc6859663cb5f1f2758081ec5065f53e94f94425effaf7d21a2",
+      "review_note": "KRT-164: Enter confirms active Trace first, then neighbor preview/use/save steps. Existing geometry Cut path remains first. Canonical maps task distinguishes local acceptance from saving."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -15315,8 +15335,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget.is_active_map_session_valid",
-      "sha256": "a309e94c18cf052a334b7deb189059479d04535fb060df40d274427f01ccff9f",
-      "review_note": "Reviewed disabled parent Confirm during active Cut or invalid geometry. The cutter explanation describes rejected outcomes and the required Preview cut, Use cut, Confirm sequence."
+      "sha256": "2ea0f827f251f76642566e8eb5e05933269000d8fbe9eeeb5c5e760d1a42f560",
+      "review_note": "KRT-164: neighbor Confirm reflects drawn vertex eligibility, ready preview or accepted result; pending/invalid states cannot save. Canonical maps task documents rejected outcomes."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -17506,8 +17526,8 @@
     {
       "source": "src/gui/widgets/map/feature_actions.py",
       "symbol": "feature_actions",
-      "sha256": "62d753dcf0ee989fa02cb20fdfcbbf19b40d09401bf229c86836999c55419125",
-      "review_note": "KRT-140: reviewed explicit feature, group and surface ownership; scope captions, inherited restrictions, modeless target guards and unchanged commands. Map Help describes the named routes, icon sizing versus zoom visibility and existing rename synchronization. Human acceptance pending."
+      "sha256": "59942bd7a675726c5ec3bdab84d02dc8e87f23a0593160c70a2a6d2e6f52ce62",
+      "review_note": "KRT-164: visible Draw neighboring region is region-only and follows the shared lock/date/canvas eligibility. New canonical maps task documents source preservation and retained creation."
     },
     {
       "source": "src/gui/widgets/map/map_layer_panel.py",
@@ -17556,6 +17576,66 @@
       "symbol": "RegionCutControls.__init__",
       "sha256": "a8753c78549cc65a8e69a86adf2f5abced12b106474e63328b0ddecfc325e4ef",
       "review_note": "Reviewed copied candidate selection and Preview cut/Use cut/Cancel cut against the coordinator and focused workflow tests. New canonical cutter explanation records date/Base scope, separate parent saving and rejected results. Shared action flow preserves control identities and focus order at narrow widths. Human prose and native review pending."
+    },
+    {
+      "source": "src/gui/widgets/map/neighbor_region_controls.py",
+      "symbol": "NeighborRegionControls._button",
+      "sha256": "21e674180f0618c008faddc961decac82ae10bfb6fa97ba0686424710be82e5d",
+      "review_note": "KRT-164: all persistent neighbor step buttons resolve to the same canonical workflow explanation. Shared wrapping actions retain complete labels, keyboard identity and theme roles at narrow widths."
+    },
+    {
+      "source": "src/gui/widgets/map/neighbor_region_controls.py",
+      "symbol": "NeighborRegionControls.present",
+      "sha256": "c943211480b921ab979dac6524fd474273c4aab7ea56235b3c8bb5b6e3576791",
+      "review_note": "KRT-164: reviewed renders supplied drawing/preview/accepted/pending states and disabled Use result prerequisites; no persistence against the canonical neighboring-region task."
+    },
+    {
+      "source": "src/gui/widgets/map/neighbor_region_controls.py",
+      "symbol": "NeighborRegionControls.confirm_step",
+      "sha256": "d8c7d11700dc00608b48f9d863e5bb9d2a4fab8a5923e5c89e885cf2b546e9fa",
+      "review_note": "KRT-164: reviewed Enter previews, accepts or saves exactly the current local step against the canonical neighboring-region task."
+    },
+    {
+      "source": "src/app/coordinators/neighbor_region_coordinator.py",
+      "symbol": "NeighborRegionCoordinator.start",
+      "sha256": "3b663e7e8850e0c824b3165335a0c1c8445d678fce57618f597a80cf9f723795",
+      "review_note": "KRT-164: reviewed visible source and frozen displayed date; ordinary drawing stays separate against maps.md. Native/human acceptance is tracked separately."
+    },
+    {
+      "source": "src/app/coordinators/neighbor_region_coordinator.py",
+      "symbol": "NeighborRegionCoordinator.preview",
+      "sha256": "9c79f0be86679704a804a320a89208a97df38cbf5f4a473de7ac38d23f6f230f",
+      "review_note": "KRT-164: reviewed drawing minus source, explicit source refresh, all-piece preview and rejected unchanged/empty/split/invalid output against maps.md. Native/human acceptance is tracked separately."
+    },
+    {
+      "source": "src/app/coordinators/neighbor_region_coordinator.py",
+      "symbol": "NeighborRegionCoordinator.accept_result",
+      "sha256": "d1726d0eb4c14f445c178fac40c9c2845b423969b8ab32181ba4a2fb4e4e9cd9",
+      "review_note": "KRT-164: reviewed exact coordinates accepted locally without saving against maps.md. Native/human acceptance is tracked separately."
+    },
+    {
+      "source": "src/app/coordinators/neighbor_region_coordinator.py",
+      "symbol": "NeighborRegionCoordinator.back_to_drawing",
+      "sha256": "833dc931ee6cfbeba8222b4ee4164a83a938dae315812da69f03f4eb9a93435f",
+      "review_note": "KRT-164: original placed vertices are retained so drawing can continue. maps.md explicitly explains cancel/restart when earlier vertices need replacement."
+    },
+    {
+      "source": "src/app/coordinators/neighbor_region_coordinator.py",
+      "symbol": "NeighborRegionCoordinator.save",
+      "sha256": "a7307dd6a6aad10fc423f78b4465afbf18397fa79088db5a6b36df6072176f49",
+      "review_note": "KRT-164: reviewed nonmutating object choice, retained picker cancel/failure and atomic object-plus-region creation against maps.md. Native/human acceptance is tracked separately."
+    },
+    {
+      "source": "src/app/coordinators/neighbor_region_coordinator.py",
+      "symbol": "NeighborRegionCoordinator.guard_playhead",
+      "sha256": "113f56fc5996a061d7bd1cb14345306440a9351cab65413b6e8fb3ec981ec82b",
+      "review_note": "KRT-164: paused playback and restored the captured viewing date before the shared Apply/Keep editing/Discard guard; object linking retains local ownership. maps.md documents the date boundary."
+    },
+    {
+      "source": "src/app/coordinators/neighbor_region_coordinator.py",
+      "symbol": "NeighborRegionCoordinator.on_command_finished",
+      "sha256": "5ca8708c97de17963dd37e7b268f722764c455709c0c1a515f9c24c000ca980b",
+      "review_note": "KRT-164: only matching success closes the draft; failure retains it and reloads saved source geometry/states for another preview. Specialized history refresh restores independent saved geometry. Canonical maps task covers save failure recovery."
     }
   ],
   "review_status": {

@@ -19,6 +19,7 @@ northwatch-demo
 :maxdepth: 1
 :caption: Verification evidence
 
+evidence/krt164/README
 evidence/krt14/README
 evidence/krt18/verification
 evidence/krt18/map-art-direction

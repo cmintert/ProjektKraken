@@ -63,6 +63,7 @@ from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 from src.gui.widgets.map.map_layer_model import MapLayerModel
 from src.gui.widgets.map.map_layer_panel import MapLayerPanel
 from src.gui.widgets.map.marker_item import MarkerItem
+from src.gui.widgets.map.neighbor_region_controls import NeighborRegionControls
 from src.gui.widgets.map.raster_legend_widget import RasterLegendWidget
 from src.gui.widgets.map.region_cut_controls import RegionCutControls
 from src.gui.widgets.menu_section import add_menu_section
@@ -298,6 +299,9 @@ class MapWidget(
         self._build_feature_geometry_edit_strip(layout)
         self.border_trace_controls = BorderTraceControls(self.view, self)
         layout.addWidget(self.border_trace_controls)
+        self.neighbor_region_controls = NeighborRegionControls(self)
+        layout.addWidget(self.neighbor_region_controls)
+        self.neighbor_region_controls.changed.connect(self._update_mode_indicator)
 
         self._build_trajectory_date_panel(layout)
 
@@ -1600,6 +1604,9 @@ class MapWidget(
     @Slot()
     def active_map_session_mode(self) -> str | None:
         """Return the active map authoring/editing session identifier."""
+        neighbor = getattr(self, "neighbor_region_controls", None)
+        if neighbor is not None and neighbor.active:
+            return "neighbor_region"
         if self.view.is_placing_marker:
             return "marker"
         if self.view.is_drawing:
@@ -1615,6 +1622,13 @@ class MapWidget(
     def is_active_map_session_valid(self) -> bool:
         """Return whether the active map session can currently be confirmed."""
         mode = self.active_map_session_mode()
+        if mode == "neighbor_region":
+            controls = self.neighbor_region_controls
+            return (
+                controls.stage == "accepted"
+                or controls.ready
+                or (controls.stage == "drawing" and self.view._drawing_tool.can_finish)
+            )
         if mode == "marker":
             return self.view.has_marker_placement_preview
         if mode in {"path", "region"}:
@@ -1635,6 +1649,9 @@ class MapWidget(
             return
         if self.view._drawing_tool.trace.active:
             self.view._drawing_tool.accept_trace()
+            return
+        if self.neighbor_region_controls.active:
+            self.neighbor_region_controls.confirm_step()
             return
         if not self.is_active_map_session_valid():
             return
@@ -1662,6 +1679,9 @@ class MapWidget(
         if trace.active:
             trace.cancel()
             return True
+        if self.neighbor_region_controls.stage in {"preview", "accepted"}:
+            self.neighbor_region_controls.back_requested.emit()
+            return True
         return False
 
     @Slot()
@@ -1671,6 +1691,9 @@ class MapWidget(
             return
         self.region_cut_controls.close_cut()
         mode = self.active_map_session_mode()
+        if mode == "neighbor_region":
+            self.neighbor_region_controls.cancel_requested.emit()
+            return
         if mode == "marker":
             self.view.cancel_marker_placement()
         elif mode in {"path", "region"}:
@@ -2160,6 +2183,7 @@ class MapWidget(
         self._apply_theme_styles()
         self.border_trace_controls.restyle()
         self.region_cut_controls.restyle()
+        self.view._drawing_tool.restyle_preview()
 
     def _apply_mode_indicator_style(self, mode: str) -> None:
         """Applies themed style to the mode indicator label.
@@ -2281,9 +2305,15 @@ class MapWidget(
 
         active = self.active_map_session_mode() is not None
         subtool_active = (
-            self.region_cut_controls.active or self.view._drawing_tool.trace.active
+            self.region_cut_controls.active
+            or self.view._drawing_tool.trace.active
+            or self.neighbor_region_controls.active
         )
         if subtool_active:
+            self.neighbor_region_controls.setVisible(
+                self.neighbor_region_controls.active
+                and not self.view._drawing_tool.trace.active
+            )
             self.overlay_banner.hide()
         self.map_edit_action_bar.setVisible(active and not subtool_active)
         self.btn_confirm_map_edit.setEnabled(self.is_active_map_session_valid())

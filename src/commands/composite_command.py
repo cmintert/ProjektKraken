@@ -110,7 +110,7 @@ class CompositeCommand(BaseCommand):
                     index_requests.append(
                         {"object_type": "event", "object_id": str(object_id)}
                     )
-            if command_name == "CreateMarkerCommand":
+            if isinstance(command, CreateMarkerCommand):
                 map_id = getattr(command, "map_id", None)
                 if map_id and str(map_id) not in marker_map_ids:
                     marker_map_ids.append(str(map_id))
@@ -213,6 +213,7 @@ class CompositeCommand(BaseCommand):
         }
         if self._is_object_marker_creation():
             allowed.add("CreateMarkerCommand")
+            allowed.add("CreateNeighborRegionCommand")
         if not self.commands or any(
             command.__class__.__name__ not in allowed for command in self.commands
         ):
