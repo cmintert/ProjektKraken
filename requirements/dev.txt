@@ -5,4 +5,5 @@ pytest-qt==4.5.0
 pytest-cov==7.0.0
 ruff==0.14.10
 mypy==1.19.0
+types-shapely==2.1.0.20261030
 packaging>=25

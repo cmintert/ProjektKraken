@@ -5,7 +5,7 @@ from __future__ import annotations
 import copy
 import time
 import uuid
-from collections import defaultdict
+from collections import Counter, defaultdict
 from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import Q_ARG, QObject, Qt, Signal, Slot
@@ -23,9 +23,11 @@ from src.core.feature_geometry_state import (
     validate_feature_geometry,
 )
 from src.core.marker import FEATURE_TYPE_PATH, FEATURE_TYPE_REGION, Marker
+from src.core.region_geometry import CutResult, Geometry, RegionPolygon, cut_region
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
+    from src.gui.widgets.map.region_cut_controls import RegionCutControls
 
 
 class FeatureGeometryCoordinator(QObject):
@@ -53,11 +55,11 @@ class FeatureGeometryCoordinator(QObject):
         session = self._session
         if session is None:
             return None
+        controls = self._cut_controls()
+        cut_draft = controls is not None and controls.has_draft
         valid = True
         try:
-            validate_feature_geometry(
-                session["feature_type"], session["working_geometry"]
-            )
+            self._validate_draft(session, session["working_geometry"])
         except ValueError:
             valid = False
         pending = self._pending_command_id is not None
@@ -70,26 +72,33 @@ class FeatureGeometryCoordinator(QObject):
             "target_id": session["marker_id"],
             "object_id": session["object_id"],
             "label": session["label"],
-            "dirty": session["working_geometry"] != session["original_geometry"],
+            "dirty": cut_draft
+            or session["working_geometry"] != session["original_geometry"],
             "new": session["target_type"] == "new_state",
             "pending": pending,
             "conflicted": session["conflicted"],
             "command_id": self._pending_command_id,
-            "can_apply": valid and not session["conflicted"] and not pending,
+            "can_apply": valid
+            and not session["conflicted"]
+            and not pending
+            and not cut_draft,
             "explanation": "Resolve invalid geometry or discard and reload "
             "changes made elsewhere before applying.",
         }
 
     def apply_for_transition(self) -> None:
         """Persist the retained working geometry."""
+        controls = self._cut_controls()
+        if controls is not None and not controls.has_draft:
+            controls.close_cut()
         self.apply_edit()
 
     def discard_for_transition(self) -> None:
         """Deliberately restore authoritative geometry."""
         self.cancel_edit()
 
-    @Slot(str, list)
-    def on_preview_changed(self, object_id: str, geometry: list) -> None:
+    @Slot(str, object)
+    def on_preview_changed(self, object_id: str, geometry: Geometry) -> None:
         """Retain copied preview vertices without persistence."""
         if (
             self._session is not None
@@ -97,6 +106,20 @@ class FeatureGeometryCoordinator(QObject):
             and self._session["object_id"] == object_id
         ):
             self._session["working_geometry"] = copy.deepcopy(geometry)
+            self._update_draft_error(self._session)
+
+    def _update_draft_error(self, session: dict[str, Any]) -> None:
+        geometry = session["working_geometry"]
+        if self._cut_controls() is None or session["conflicted"]:
+            return
+        if not (isinstance(geometry, dict) or session.get("strict_region")):
+            return
+        error = ""
+        try:
+            self._validate_draft(session, geometry)
+        except ValueError as exc:
+            error = str(exc)
+        self._window.map_widget.set_feature_geometry_draft_error(error)
 
     def _completion(self, success: bool) -> dict[str, Any]:
         return {
@@ -135,6 +158,9 @@ class FeatureGeometryCoordinator(QObject):
             return
         widget = self._window.map_widget
         if session["conflicted"]:
+            controls = self._cut_controls()
+            if controls is not None:
+                controls.set_target(None)
             widget.show_feature_geometry_edit(
                 f"Geometry — {session['label']}",
                 "Changed elsewhere — draft retained; discard and reload to continue",
@@ -158,9 +184,16 @@ class FeatureGeometryCoordinator(QObject):
         session["pixmap_id"] = id(widget.view.pixmap_item)
         editor.finish_vertex_editing(emit_geometry_change=False)
         geometry = copy.deepcopy(session["working_geometry"])
-        x, y = calculate_feature_anchor(geometry)
+        try:
+            x, y = calculate_feature_anchor(geometry)
+        except ValueError:
+            x, y = item._anchor_x, item._anchor_y
         item.set_geometry(geometry, x, y)
         editor.start_vertex_editing(item, managed_session=True)
+        controls = self._cut_controls()
+        if controls is not None:
+            controls.rebind_preview()
+        self._update_draft_error(session)
 
     def bind_ui(self) -> None:
         """Connect main-thread snapshots, playhead changes, and command effects."""
@@ -180,6 +213,11 @@ class FeatureGeometryCoordinator(QObject):
         widget.feature_geometry_cancel_requested.connect(self.cancel_edit)
         widget.view.feature_geometry_preview_changed.connect(self.on_preview_changed)
         widget.marker_scene_updated.connect(self._check_and_rebind)
+        controls = self._cut_controls()
+        if controls is not None:
+            controls.pick_requested.connect(self._pick_cutter)
+            controls.preview_requested.connect(self._preview_cut)
+            controls.accepted.connect(self._accept_cut)
         self._bound = True
 
     @Slot(str)
@@ -388,11 +426,124 @@ class FeatureGeometryCoordinator(QObject):
                 map_id, marker_id, states, replacement, "Delete Geometry State"
             )
 
+    def _cut_controls(self) -> RegionCutControls | None:
+        return getattr(self._window.map_widget, "region_cut_controls", None)
+
+    def _cut_session(self) -> dict[str, Any] | None:
+        session = self._session
+        if (
+            session is None
+            or session["feature_type"] != FEATURE_TYPE_REGION
+            or session["conflicted"]
+            or self._pending_command_id is not None
+        ):
+            return None
+        return session
+
+    @Slot()
+    def _pick_cutter(self) -> None:
+        session = self._cut_session()
+        controls = self._cut_controls()
+        if session is None or controls is None:
+            return
+        date = (
+            None
+            if session["target_type"] == "base"
+            else float(session["target"]["effective_date"])
+        )
+        converter = getattr(self._window, "calendar_converter", None)
+        source = (
+            "Base Geometry"
+            if date is None
+            else (converter.format_date(date) if converter else f"lore day {date:g}")
+        )
+        controls.show_candidates(self._cutter_candidates(session, date), source)
+
+    def _cutter_candidates(
+        self, session: dict[str, Any], date: float | None
+    ) -> list[tuple[str, Geometry]]:
+        map_id = session["map_id"]
+        snapshots = self._markers_by_map.get(map_id, {})
+        states = self._states_by_map.get(map_id, {})
+        view = self._window.map_widget.view
+        eligible = []
+        for marker_id, snapshot in snapshots.items():
+            if (
+                marker_id == session["marker_id"]
+                or snapshot["feature_type"] != FEATURE_TYPE_REGION
+            ):
+                continue
+            if date is not None and not view.is_temporally_valid(
+                str(snapshot["object_id"]), at_date=date
+            ):
+                continue
+            marker = Marker.from_dict(snapshot)
+            geometry = (
+                marker.geometry
+                if date is None
+                else resolve_feature_geometry(
+                    marker, states.get(marker_id, []), date
+                ).geometry
+            )
+            if geometry:
+                eligible.append((marker.label or "Unnamed region", marker_id, geometry))
+        totals = Counter(label for label, _, _ in eligible)
+        indices: Counter[str] = Counter()
+        candidates = []
+        for label, _, geometry in sorted(
+            eligible, key=lambda row: (row[0].casefold(), row[1])
+        ):
+            indices[label] += 1
+            display = (
+                f"{label} ({indices[label]} of {totals[label]})"
+                if totals[label] > 1
+                else label
+            )
+            candidates.append((display, copy.deepcopy(geometry)))
+        return candidates
+
+    @Slot(object)
+    def _preview_cut(self, cutter: Geometry) -> None:
+        session = self._cut_session()
+        controls = self._cut_controls()
+        if session is None or controls is None:
+            return
+        original = session["working_geometry"]
+        try:
+            result = cut_region(
+                RegionPolygon.from_geometry(original),
+                RegionPolygon.from_geometry(cutter),
+            )
+        except (TypeError, KeyError, ValueError) as exc:
+            result = CutResult(
+                (), "invalid", f"Cannot read the cutter or target: {exc}"
+            )
+        controls.show_result(result, original)
+
+    @Slot(object)
+    def _accept_cut(self, geometry: Geometry) -> None:
+        session = self._cut_session()
+        if session is None:
+            return
+        session["working_geometry"] = copy.deepcopy(geometry)
+        session["strict_region"] = True
+        session["scene_item_id"] = None
+        self._rebind_preview()
+
+    @staticmethod
+    def _validate_draft(session: dict[str, Any], geometry: Geometry) -> None:
+        validate_feature_geometry(session["feature_type"], geometry)
+        if session.get("strict_region") and isinstance(geometry, list):
+            RegionPolygon.from_geometry(geometry).validated()
+
     @Slot()
     def apply_edit(self) -> None:
         """Validate the preview and persist it as one undoable operation."""
         session = self._session
         if session is None or self._pending_command_id is not None:
+            return
+        controls = self._cut_controls()
+        if controls is not None and controls.active:
             return
         if session["conflicted"]:
             self._window.statusBar().showMessage(
@@ -401,7 +552,7 @@ class FeatureGeometryCoordinator(QObject):
             return
         geometry = copy.deepcopy(session["working_geometry"])
         try:
-            validate_feature_geometry(session["feature_type"], geometry)
+            self._validate_draft(session, geometry)
             anchor_x, anchor_y = calculate_feature_anchor(geometry)
         except ValueError as exc:
             self._window.statusBar().showMessage(str(exc), 5000)
@@ -584,6 +735,13 @@ class FeatureGeometryCoordinator(QObject):
         }
         self._window.map_widget.view.set_temporal_authoring_override(object_id, True)
         self._window.map_widget.set_feature_geometry_edit_available(True)
+        controls = self._cut_controls()
+        if controls is not None:
+            controls.set_target(
+                object_id
+                if marker_snapshot["feature_type"] == FEATURE_TYPE_REGION
+                else None
+            )
         source = self._source_label(target_type, target)
         self._window.map_widget.show_feature_geometry_edit(
             f"Geometry — {marker_snapshot.get('label', 'Feature')}", source

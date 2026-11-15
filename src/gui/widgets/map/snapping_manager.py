@@ -30,6 +30,8 @@ from PySide6.QtCore import QPointF, QRectF
 from PySide6.QtGui import QTransform
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsScene
 
+from src.core.border_trace import RingPosition
+from src.core.region_geometry import geometry_rings
 from src.gui.constants import MAP_SNAP_RADIUS_PX
 
 logger = logging.getLogger(__name__)
@@ -66,6 +68,8 @@ class SnapResult:
     snap_type: SnapType = SnapType.NONE
     source_item: Optional[QGraphicsItem] = None
     distance: float = float("inf")
+    ring_index: int = 0
+    ring_position: RingPosition | None = None
 
 
 def point_to_segment_distance(
@@ -108,6 +112,21 @@ def point_to_segment_distance(
     dx = p.x() - cx
     dy = p.y() - cy
     return math.sqrt(dx * dx + dy * dy), closest
+
+
+def _segment_fraction(start: QPointF, end: QPointF, point: QPointF) -> float:
+    dx, dy = end.x() - start.x(), end.y() - start.y()
+    length_squared = dx * dx + dy * dy
+    if length_squared == 0.0:
+        return 0.0
+    return max(
+        0.0,
+        min(
+            1.0,
+            ((point.x() - start.x()) * dx + (point.y() - start.y()) * dy)
+            / length_squared,
+        ),
+    )
 
 
 class SnappingManager:
@@ -158,6 +177,9 @@ class SnappingManager:
         query_pos: QPointF,
         view_transform: QTransform,
         exclude_items: Optional[Set[QGraphicsItem]] = None,
+        *,
+        trace: bool = False,
+        source: tuple[QGraphicsItem, int] | None = None,
     ) -> SnapResult:
         """Finds the best snap target near a query position.
 
@@ -180,7 +202,7 @@ class SnappingManager:
             result containing the original query_pos.
 
         """
-        if not self._enabled:
+        if not self._enabled and not trace:
             return SnapResult(pos=QPointF(query_pos))
 
         # Convert screen pixel radius → scene units
@@ -204,7 +226,7 @@ class SnappingManager:
         best_edge = SnapResult(pos=QPointF(query_pos))
 
         for item in candidates:
-            if item in exclude:
+            if item in exclude or (trace and not self._trace_candidate(item, source)):
                 continue
 
             # Only snap to feature items that have geometry
@@ -217,19 +239,18 @@ class SnappingManager:
             if rect.width() <= 0 or rect.height() <= 0:
                 continue
 
-            scene_points = self._geometry_to_scene(geometry, rect)
-
-            # Check vertex snap (priority 1)
-            vertex_result = self._check_vertices(
-                query_pos, scene_points, scene_radius, item
-            )
-            if vertex_result.snapped and vertex_result.distance < best_vertex.distance:
-                best_vertex = vertex_result
-
-            # Check edge snap (priority 2)
-            edge_result = self._check_edges(query_pos, scene_points, scene_radius, item)
-            if edge_result.snapped and edge_result.distance < best_edge.distance:
-                best_edge = edge_result
+            for index, ring in enumerate(geometry_rings(geometry)):
+                if source is not None and index != source[1]:
+                    continue
+                points = self._geometry_to_scene(ring, rect)
+                vertex = self._check_vertices(query_pos, points, scene_radius, item)
+                edge = self._check_edges(query_pos, points, scene_radius, item)
+                if vertex.distance < best_vertex.distance:
+                    vertex.ring_index = index
+                    best_vertex = vertex
+                if edge.distance < best_edge.distance:
+                    edge.ring_index = index
+                    best_edge = edge
 
         # Vertex snap has priority over edge snap
         if best_vertex.snapped:
@@ -238,6 +259,19 @@ class SnappingManager:
             return best_edge
 
         return SnapResult(pos=QPointF(query_pos))
+
+    @staticmethod
+    def _trace_candidate(
+        item: QGraphicsItem, source: tuple[QGraphicsItem, int] | None
+    ) -> bool:
+        from src.gui.widgets.map.feature_items import RegionItem
+
+        return (
+            isinstance(item, RegionItem)
+            and not item._temporal_ghost
+            and item.isVisible()
+            and (source is None or item is source[0])
+        )
 
     @staticmethod
     def _geometry_to_scene(
@@ -280,7 +314,7 @@ class SnappingManager:
 
         """
         best = SnapResult(pos=QPointF(query))
-        for pt in scene_points:
+        for i, pt in enumerate(scene_points):
             dx = pt.x() - query.x()
             dy = pt.y() - query.y()
             dist = math.sqrt(dx * dx + dy * dy)
@@ -291,6 +325,7 @@ class SnappingManager:
                     snap_type=SnapType.VERTEX,
                     source_item=item,
                     distance=dist,
+                    ring_position=RingPosition(i, 0.0),
                 )
         return best
 
@@ -337,5 +372,6 @@ class SnappingManager:
                     snap_type=SnapType.EDGE,
                     source_item=item,
                     distance=dist,
+                    ring_position=RingPosition(i, _segment_fraction(a, b, closest)),
                 )
         return best

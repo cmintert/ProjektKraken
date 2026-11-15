@@ -58,6 +58,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.calendar import CalendarConverter
+from src.core.region_geometry import Geometry
 from src.core.theme_manager import ThemeManager
 from src.gui.constants import (
     MAP_LAYER_BASEMAP_NODE_ID,
@@ -232,11 +233,12 @@ class MapGraphicsView(QGraphicsView):
     # -- Drawing mode signals --
     drawing_finished = Signal(str, list)
     drawing_cancelled = Signal()
+    border_trace_changed = Signal()
 
     # -- Feature editing signals --
     feature_style_changed = Signal(str, dict)
-    feature_geometry_preview_changed = Signal(str, list)
-    feature_geometry_changed = Signal(str, list)
+    feature_geometry_preview_changed = Signal(str, object)
+    feature_geometry_changed = Signal(str, object)
     feature_geometry_edit_requested = Signal(str)
     feature_geometry_manage_requested = Signal(str)
     feature_geometry_cancel_requested = Signal()
@@ -761,6 +763,7 @@ class MapGraphicsView(QGraphicsView):
                 logger.error(f"Failed to load map image: {image_path}")
                 return False
 
+            self._drawing_tool.trace.cancel()
             if self.pixmap_item:
                 self.graphics_scene.removeItem(self.pixmap_item)
 
@@ -960,7 +963,7 @@ class MapGraphicsView(QGraphicsView):
         description: Optional[str] = None,
         lore_date: Optional[float] = None,
         feature_type: str = "point",
-        geometry: Optional[list] = None,
+        geometry: Geometry | None = None,
         style: Optional[dict] = None,
         visual_attributes: Optional[dict] = None,
     ) -> None:
@@ -1013,7 +1016,7 @@ class MapGraphicsView(QGraphicsView):
     def update_feature_geometry(
         self,
         marker_id: str,
-        geometry: list[dict[str, float]],
+        geometry: Geometry,
         anchor_x: float,
         anchor_y: float,
     ) -> None:
@@ -1860,6 +1863,8 @@ class MapGraphicsView(QGraphicsView):
 
     def set_playhead_time(self, time: float) -> None:
         """Recompute historical feature visibility for a new playhead."""
+        if self._playhead_time != float(time):
+            self._drawing_tool.trace.cancel()
         self._playhead_time = float(time)
         if self._layer_model is not None:
             self._layer_model.set_current_time(self._playhead_time)
@@ -1878,14 +1883,16 @@ class MapGraphicsView(QGraphicsView):
             self._temporal_authoring_overrides.discard(marker_id)
         self._apply_effective_layer_visibility()
 
-    def is_temporally_valid(self, marker_id: str) -> bool:
+    def is_temporally_valid(
+        self, marker_id: str, *, at_date: float | None = None
+    ) -> bool:
         """Return whether a vector feature exists at the current playhead."""
         if self._layer_model is None:
             return True
         node = self._layer_model.find_node_by_id(marker_id)
         if node is None:
             return True
-        return self._layer_model.temporal_validity(node).valid
+        return self._layer_model.temporal_validity(node, at_date=at_date).valid
 
     def _apply_effective_layer_visibility(self) -> None:
         """Apply manual, ancestor, zoom, and temporal visibility together."""
@@ -2048,10 +2055,23 @@ class MapGraphicsView(QGraphicsView):
             pan.end()
         return super().viewportEvent(event)
 
+    def _handle_cut_mouse_press(self, event: QMouseEvent) -> bool:
+        if event.button() != Qt.MouseButton.LeftButton:
+            return False
+        map_widget = self._find_map_widget()
+        if map_widget is None or not map_widget.region_cut_controls.active:
+            return False
+        if not map_widget.region_cut_controls.handle_mouse_press(
+            self.mapToScene(event.position().toPoint())
+        ):
+            return False
+        event.accept()
+        return True
+
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Handle mouse press: raster edit, drawing, calibration, or normal."""
         # Space held-to-pan takes absolute priority over every sub-system.
-        if self._space_pan.press(event):
+        if self._space_pan.press(event) or self._handle_cut_mouse_press(event):
             return
 
         # Raster editing mode (highest priority).
@@ -2260,7 +2280,8 @@ class MapGraphicsView(QGraphicsView):
                 event.accept()
                 return
             if event.key() == Qt.Key.Key_Escape:
-                map_widget.cancel_active_session()
+                if not map_widget.cancel_map_subtool():
+                    map_widget.cancel_active_session()
                 event.accept()
                 return
 
@@ -2336,6 +2357,7 @@ class MapGraphicsView(QGraphicsView):
         if self._raster_edit_tool.handle_key_escape():
             return True
         if self._drawing_tool.handle_key_escape():
+            event.accept()
             return True
         if self._vertex_editor.handle_key_escape():
             return True

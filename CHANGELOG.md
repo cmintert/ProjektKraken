@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-11-14
-**Commit:** 837ee1f561094614df48d6b1490ada97ba681d41
+**Last Updated:** 2026-11-15
+**Commit:** 8f0668eafd5b1dd2723d571dbc3206406b3e732f
 ---
 
 # Changelog
@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-11-15)* **Maps**: Added existing-border tracing and previewed region
+  cuts, including holes in Base Geometry and dated states. Extended editing,
+  persistence, spatial relations and raster sampling to preserve excluded areas.
+  Added the schema compatibility gate, Shapely runtime and packaging dependencies,
+  packaged geometry probe and focused workflow regression coverage. Replaced
+  touched drawing color exceptions with shared theme-based previews.
 
 - *(2026-11-14)* **Generation review safeguards (KRT-161)**: Added mechanical
   link/table/structure checks, source comparison and explicit warning overrides,
@@ -29,6 +36,9 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-15)* Wrapped region trace and cutter actions at narrow map widths.
+  Added cutter inspection Help and reviewed the affected map edit explanations.
 
 - *(2026-11-14)* Kept changed-source policy commands on Bash when running
   smoke CI on Windows so the base-ref environment variable expands correctly.

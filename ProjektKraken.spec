@@ -33,6 +33,7 @@ datas = [
 datas += collect_data_files("pyvis", includes=["templates/**"])
 datas.append((str(ROOT / "docs" / "_build" / "help"), "help"))
 datas += copy_metadata("keyring")
+datas += copy_metadata("shapely")
 datas += collect_data_files("docx")
 markdown_notices = collect_markdown_licenses(ROOT / "build" / "markdown-licenses")
 datas.append((str(markdown_notices), "third_party_licenses"))

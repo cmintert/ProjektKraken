@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional
 from PySide6.QtCore import QPointF, Qt
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsView
 
+from src.core.region_geometry import Geometry, Ring, copy_geometry, geometry_rings
 from src.gui.constants import (
     MAP_EDIT_DASH_PATTERN,
     MAP_EDIT_STROKE_COLOR,
@@ -65,7 +66,7 @@ class VertexEditor:
         self._vertex_handles: list[DraggableEditHandle[int]] = []
         self._midpoint_handles: list[MidpointEditHandle[int]] = []
         self._editing_original_style: Optional[Dict[str, Any]] = None
-        self._editing_original_geometry: list[dict[str, float]] | None = None
+        self._editing_original_geometry: Geometry | None = None
         self._managed_session = False
 
     # ------------------------------------------------------------------
@@ -126,19 +127,7 @@ class VertexEditor:
         item._style["stroke_width"] = self._EDIT_STROKE_WIDTH
         item.update()
 
-        rect = self._view.pixmap_item.sceneBoundingRect()
-        for i, pt in enumerate(geometry):
-            sx = rect.left() + pt["x"] * rect.width()
-            sy = rect.top() + pt["y"] * rect.height()
-            handle = DraggableEditHandle(
-                i, self._on_vertex_moved, self._on_vertex_deleted
-            )
-            handle.setPos(sx, sy)
-            handle.set_notifications_enabled(True)
-            handle.setZValue(MAP_LAYER_Z_UI_OVERLAY + 1)
-            self._view.graphics_scene.addItem(handle)
-            self._vertex_handles.append(handle)
-
+        self._rebuild_vertex_handles(item)
         self._rebuild_midpoint_handles()
         self._view.setDragMode(QGraphicsView.DragMode.NoDrag)
         logger.info(
@@ -160,7 +149,7 @@ class VertexEditor:
                 torn down.
         """
         finished_id: Optional[str] = None
-        finished_geometry: Optional[list] = None
+        finished_geometry: Geometry | None = None
 
         if self._editing_feature_id:
             item = self._view.feature_items.get(self._editing_feature_id)
@@ -172,7 +161,7 @@ class VertexEditor:
                     item.update()
                 if emit_geometry_change and item._geometry:
                     finished_id = self._editing_feature_id
-                    finished_geometry = list(item._geometry)
+                    finished_geometry = copy_geometry(item._geometry)
 
         # Clear editing state BEFORE emitting signal so that
         # is_editing_vertices returns False when _update_mode_indicator
@@ -296,19 +285,12 @@ class VertexEditor:
         nx = max(0.0, min(1.0, nx))
         ny = max(0.0, min(1.0, ny))
 
-        if index < len(item._geometry):
-            pt = item._geometry[index]
-            pt["x"] = round(nx, NORMALIZED_COORD_PRECISION)
-            pt["y"] = round(ny, NORMALIZED_COORD_PRECISION)
-            if isinstance(item, PathItem):
-                item._build_path()
-                item._position_label()
-            elif isinstance(item, RegionItem):
-                item._build_polygon()
-                item._position_label()
-            item.prepareGeometryChange()
-            item.update()
-
+        vertices = _ring_indices(item)
+        if index < len(vertices):
+            ring, vertex = vertices[index]
+            ring[vertex]["x"] = round(nx, NORMALIZED_COORD_PRECISION)
+            ring[vertex]["y"] = round(ny, NORMALIZED_COORD_PRECISION)
+            self._refresh_item(item)
             self._update_midpoint_positions()
             self._emit_preview(item)
 
@@ -347,22 +329,16 @@ class VertexEditor:
             return
 
         min_verts = 3 if isinstance(item, RegionItem) else 2
-        if len(item._geometry) <= min_verts:
+        ring, vertex = _ring_indices(item)[index]
+        if len(ring) <= min_verts:
             logger.warning(
                 f"Cannot delete vertex: minimum {min_verts} vertices required"
             )
             return
 
-        del item._geometry[index]
+        del ring[vertex]
 
-        if isinstance(item, PathItem):
-            item._build_path()
-            item._position_label()
-        elif isinstance(item, RegionItem):
-            item._build_polygon()
-            item._position_label()
-        item.prepareGeometryChange()
-        item.update()
+        self._refresh_item(item)
 
         self._rebuild_vertex_handles(item)
         self._rebuild_midpoint_handles()
@@ -390,16 +366,10 @@ class VertexEditor:
             "x": round(nx, NORMALIZED_COORD_PRECISION),
             "y": round(ny, NORMALIZED_COORD_PRECISION),
         }
-        item._geometry.insert(segment_index + 1, new_pt)
+        ring, vertex = _ring_indices(item, segments=True)[segment_index]
+        ring.insert(vertex + 1, new_pt)
 
-        if isinstance(item, PathItem):
-            item._build_path()
-            item._position_label()
-        elif isinstance(item, RegionItem):
-            item._build_polygon()
-            item._position_label()
-        item.prepareGeometryChange()
-        item.update()
+        self._refresh_item(item)
 
         self._rebuild_vertex_handles(item)
         self._rebuild_midpoint_handles()
@@ -412,6 +382,21 @@ class VertexEditor:
     # Handle management
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _refresh_item(item: PathItem | RegionItem) -> None:
+        item.prepareGeometryChange()
+        if isinstance(item, PathItem):
+            item._build_path()
+        else:
+            item._build_polygon()
+        item._position_label()
+        item.update()
+
+    def set_handles_visible(self, visible: bool) -> None:
+        """Suspend vertex edits while a cutter owns map input."""
+        for handle in (*self._vertex_handles, *self._midpoint_handles):
+            handle.setVisible(visible)
+
     def _rebuild_midpoint_handles(self) -> None:
         """Rebuilds ghost midpoint handles between each pair of vertices."""
         for mh in self._midpoint_handles:
@@ -423,15 +408,9 @@ class VertexEditor:
             return
 
         rect = self._view.pixmap_item.sceneBoundingRect()
-        geometry = item._geometry
-        n = len(geometry)
-        is_region = isinstance(item, RegionItem)
-        seg_count = n if is_region else n - 1
-
-        for i in range(seg_count):
-            j = (i + 1) % n
-            pt_a = geometry[i]
-            pt_b = geometry[j]
+        for i, (ring, index) in enumerate(_ring_indices(item, segments=True)):
+            pt_a = ring[index]
+            pt_b = ring[(index + 1) % len(ring)]
             mx = (pt_a["x"] + pt_b["x"]) / 2.0
             my = (pt_a["y"] + pt_b["y"]) / 2.0
             sx = rect.left() + mx * rect.width()
@@ -449,17 +428,11 @@ class VertexEditor:
             return
 
         rect = self._view.pixmap_item.sceneBoundingRect()
-        geometry = item._geometry
-        n = len(geometry)
-        is_region = isinstance(item, RegionItem)
-        seg_count = n if is_region else n - 1
-
-        for idx, mh in enumerate(self._midpoint_handles):
-            if idx >= seg_count:
-                break
-            j = (idx + 1) % n
-            pt_a = geometry[idx]
-            pt_b = geometry[j]
+        for mh, (ring, index) in zip(
+            self._midpoint_handles, _ring_indices(item, segments=True)
+        ):
+            pt_a = ring[index]
+            pt_b = ring[(index + 1) % len(ring)]
             mx = (pt_a["x"] + pt_b["x"]) / 2.0
             my = (pt_a["y"] + pt_b["y"]) / 2.0
             sx = rect.left() + mx * rect.width()
@@ -480,7 +453,8 @@ class VertexEditor:
             return
 
         rect = self._view.pixmap_item.sceneBoundingRect()
-        for i, pt in enumerate(item._geometry):
+        for i, (ring, index) in enumerate(_ring_indices(item)):
+            pt = ring[index]
             sx = rect.left() + pt["x"] * rect.width()
             sy = rect.top() + pt["y"] * rect.height()
             handle = DraggableEditHandle(
@@ -491,3 +465,14 @@ class VertexEditor:
             handle.setZValue(MAP_LAYER_Z_UI_OVERLAY + 1)
             self._view.graphics_scene.addItem(handle)
             self._vertex_handles.append(handle)
+
+
+def _ring_indices(
+    item: PathItem | RegionItem, *, segments: bool = False
+) -> list[tuple[Ring, int]]:
+    """Map flat handle indices to their ring and local index."""
+    return [
+        (ring, index)
+        for ring in geometry_rings(item._geometry)
+        for index in range(len(ring) - int(segments and isinstance(item, PathItem)))
+    ]

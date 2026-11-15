@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QGraphicsItem
 
 from src.core.marker import FEATURE_TYPE_PATH, FEATURE_TYPE_REGION
 from src.core.marker_appearance import MARKER_ICON_ID_ATTRIBUTE
+from src.core.region_geometry import Geometry
 from src.gui.constants import MAP_LAYER_Z_MARKERS
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.marker_item import MarkerItem
@@ -49,7 +50,7 @@ class MarkerManager:
         description: Optional[str] = None,
         lore_date: Optional[float] = None,
         feature_type: str = "point",
-        geometry: Optional[list] = None,
+        geometry: Geometry | None = None,
         style: Optional[dict] = None,
         visual_attributes: Optional[Dict] = None,
     ) -> None:
@@ -169,7 +170,7 @@ class MarkerManager:
     def update_feature_geometry(
         self,
         marker_id: str,
-        geometry: list[dict[str, float]],
+        geometry: Geometry,
         anchor_x: float,
         anchor_y: float,
     ) -> None:

@@ -170,6 +170,9 @@ def _apply(conn: sqlite3.Connection, version: int) -> bool:
         from src.services.migrations.event_timing import migrate_event_timing
 
         migrate_event_timing(conn)
+    elif version == steps.REGION_HOLES_VERSION:
+        # The version gate protects the new JSON payload. Old rows decode as-is.
+        pass
     return False
 
 

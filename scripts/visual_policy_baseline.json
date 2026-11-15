@@ -1088,34 +1088,6 @@
       "source": "tint.setAlpha(25)"
     },
     {
-      "key": "src/gui/widgets/map/drawing_tool.py|DrawingTool._add_drawing_vertex|literal-color|217395977d074a07",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in DrawingTool._add_drawing_vertex; migrate this expression when its presentation path is next touched.",
-      "source": "dot.setPen(QPen(QColor(_t.get(\"surface\", \"#1A1A1A\")), 1))"
-    },
-    {
-      "key": "src/gui/widgets/map/drawing_tool.py|DrawingTool._add_drawing_vertex|literal-color|ff0d44b25e5b27c9",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in DrawingTool._add_drawing_vertex; migrate this expression when its presentation path is next touched.",
-      "source": "dot.setBrush(QBrush(QColor(_t.get(\"error\", \"#e74c3c\"))))"
-    },
-    {
-      "key": "src/gui/widgets/map/drawing_tool.py|DrawingTool._update_drawing_preview|literal-color|ff0d44b25e5b27c9",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in DrawingTool._update_drawing_preview; migrate this expression when its presentation path is next touched.",
-      "source": "_err = QColor(_t.get(\"error\", \"#e74c3c\"))"
-    },
-    {
-      "key": "src/gui/widgets/map/drawing_tool.py|DrawingTool._update_drawing_preview|local-color-derivation|4e76d809f6f3f48e",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in DrawingTool._update_drawing_preview; migrate this expression when its presentation path is next touched.",
-      "source": "_fill.setAlpha(40)"
-    },
-    {
       "key": "src/gui/widgets/map/interaction_handler.py|_safe_color_css|literal-color|dad8252028023902",
       "count": 1,
       "category": "legacy",

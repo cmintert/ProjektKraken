@@ -9,16 +9,19 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Literal, Sequence
+from typing import TYPE_CHECKING, Literal, Sequence
 
-Point = tuple[float, float]
+from src.core.region_geometry import MIN_REGION_AREA, Geometry, Point, RegionPolygon
+
+if TYPE_CHECKING:
+    from shapely.geometry.base import BaseGeometry
+
 GeometryKind = Literal["point", "path", "region"]
 RelationKind = Literal[
     "separate", "touches", "crosses", "inside", "contains", "overlaps"
 ]
 _DEGENERATE_SEGMENT_LENGTH_SQUARED = 1e-24
 _MIN_DISTINCT_PATH_POINTS = 2
-_MIN_REGION_AREA = 1e-12
 
 
 @dataclass(frozen=True)
@@ -27,6 +30,7 @@ class SpatialGeometry:
 
     kind: GeometryKind
     points: tuple[Point, ...]
+    holes: tuple[tuple[Point, ...], ...] = ()
 
     @classmethod
     def from_feature(
@@ -34,7 +38,7 @@ class SpatialGeometry:
         feature_type: str,
         x: float,
         y: float,
-        geometry: Sequence[dict[str, float]] | None,
+        geometry: Geometry | None,
     ) -> SpatialGeometry | None:
         """Convert stored feature data, rejecting malformed extended geometry."""
         if feature_type == "point":
@@ -46,6 +50,8 @@ class SpatialGeometry:
             )
         if feature_type not in {"path", "region"} or geometry is None:
             return None
+        if isinstance(geometry, dict):
+            return _explicit_region(feature_type, geometry)
         minimum = 2 if feature_type == "path" else 3
         if len(geometry) < minimum:
             return None
@@ -60,14 +66,22 @@ class SpatialGeometry:
             if not _in_normalized_bounds(point):
                 return None
             points.append(point)
-        if (
-            feature_type == "path"
-            and len(set(points)) < _MIN_DISTINCT_PATH_POINTS
-        ):
+        if feature_type == "path" and len(set(points)) < _MIN_DISTINCT_PATH_POINTS:
             return None
-        if feature_type == "region" and abs(_signed_area(points)) <= _MIN_REGION_AREA:
+        if feature_type == "region" and abs(_signed_area(points)) <= MIN_REGION_AREA:
             return None
         return cls(feature_type, tuple(points))  # type: ignore[arg-type]
+
+
+def _explicit_region(feature_type: str, geometry: Geometry) -> SpatialGeometry | None:
+    if feature_type != "region":
+        return None
+    try:
+        polygon = RegionPolygon.from_geometry(geometry)
+        polygon.validated()
+    except (TypeError, ValueError, KeyError):
+        return None
+    return SpatialGeometry("region", polygon.outer, polygon.holes)
 
 
 @dataclass(frozen=True)
@@ -97,7 +111,8 @@ def relate_geometries(
     """Return the directed relation between two validated geometries."""
     scaled_source = _scale_geometry(source, metric)
     scaled_target = _scale_geometry(target, metric)
-    kind, source_point, target_point = _classify(
+    classify = _classify_with_holes if source.holes or target.holes else _classify
+    kind, source_point, target_point = classify(
         scaled_source, scaled_target, metric.tolerance
     )
     distance = _distance(source_point, target_point)
@@ -107,6 +122,75 @@ def relate_geometries(
         source_point=_unscale_point(source_point, metric),
         target_point=_unscale_point(target_point, metric),
     )
+
+
+def _classify_with_holes(
+    source: SpatialGeometry, target: SpatialGeometry, tolerance: float
+) -> tuple[RelationKind, Point, Point]:
+    from shapely.ops import nearest_points
+
+    first, second = _geos_shape(source), _geos_shape(target)
+    if not first.is_valid or not second.is_valid:
+        a, b = _closest_between_segments(_segments(source), _segments(target))
+        return ("touches" if _distance(a, b) <= tolerance else "separate", a, b)
+
+    nearest_source, nearest_target = nearest_points(first, second)
+    kind = _filled_relation(source.kind, target.kind, first, second, tolerance)
+    return (
+        kind,
+        (float(nearest_source.x), float(nearest_source.y)),
+        (float(nearest_target.x), float(nearest_target.y)),
+    )
+
+
+def _geos_shape(geometry: SpatialGeometry) -> BaseGeometry:
+    from shapely.geometry import LineString, Polygon
+    from shapely.geometry import Point as GeosPoint
+
+    if geometry.kind == "point":
+        return GeosPoint(*geometry.points[0])
+    if geometry.kind == "path":
+        return LineString(geometry.points)
+    return Polygon(geometry.points, geometry.holes)
+
+
+def _filled_relation(
+    source_kind: GeometryKind,
+    target_kind: GeometryKind,
+    first: BaseGeometry,
+    second: BaseGeometry,
+    tolerance: float,
+) -> RelationKind:
+    if source_kind == "point":
+        return _point_region_relation(first, second, tolerance)
+    if target_kind == "point":
+        return _inverse_kind(_point_region_relation(second, first, tolerance))
+    if first.equals(second):
+        return "overlaps"
+    if second.covers(first) and not second.boundary.covers(first):
+        return "inside"
+    if first.covers(second) and not first.boundary.covers(second):
+        return "contains"
+    if first.crosses(second):
+        return "crosses"
+    if first.touches(second):
+        if (
+            "path" in (source_kind, target_kind)
+            and first.intersection(second).length > tolerance
+        ):
+            return "overlaps"
+        return "touches"
+    if first.intersects(second):
+        return "overlaps"
+    return "touches" if first.distance(second) <= tolerance else "separate"
+
+
+def _point_region_relation(
+    point: BaseGeometry, region: BaseGeometry, tolerance: float
+) -> RelationKind:
+    if region.boundary.distance(point) <= tolerance:
+        return "touches"
+    return "inside" if region.contains(point) else "separate"
 
 
 def _classify(
@@ -185,9 +269,11 @@ def _classify_path_region(
     ):
         point = intersections[0][0] if intersections else path.points[0]
         return "crosses", point, point
-    if all(location != "outside" for location in locations) and any(
-        location == "inside" for location in locations
-    ) and not any(item[1] for item in intersections):
+    if (
+        all(location != "outside" for location in locations)
+        and any(location == "inside" for location in locations)
+        and not any(item[1] for item in intersections)
+    ):
         point = path.points[0]
         return "inside", point, point
     if intersections:
@@ -246,7 +332,15 @@ def _classify_region_region(
 
 
 def _segments(geometry: SpatialGeometry) -> tuple[tuple[Point, Point], ...]:
+    if geometry.holes:
+        return tuple(
+            pair
+            for ring in (geometry.points, *geometry.holes)
+            for pair in zip(ring, ring[1:] + ring[:1])
+        )
     points = geometry.points
+    if geometry.kind == "point":
+        return ((points[0], points[0]),)
     pairs = [(points[index], points[index + 1]) for index in range(len(points) - 1)]
     if geometry.kind == "region":
         pairs.append((points[-1], points[0]))
@@ -310,17 +404,22 @@ def _segment_intersections(
     results: list[tuple[Point, bool, bool]] = []
     for source_segment in source:
         for target_segment in target:
-            intersection = _segment_intersection(
-                source_segment[0], source_segment[1], target_segment[0], target_segment[1], tolerance
+            intersection = segment_intersection(
+                source_segment[0],
+                source_segment[1],
+                target_segment[0],
+                target_segment[1],
+                tolerance,
             )
             if intersection is not None:
                 results.append(intersection)
     return results
 
 
-def _segment_intersection(
+def segment_intersection(
     a: Point, b: Point, c: Point, d: Point, tolerance: float
 ) -> tuple[Point, bool, bool] | None:
+    """Return the contact point and whether segments cross or overlap."""
     ab = (b[0] - a[0], b[1] - a[1])
     cd = (d[0] - c[0], d[1] - c[1])
     ab_length = math.hypot(*ab)
@@ -358,8 +457,7 @@ def _segment_intersection(
     ):
         point = (a[0] + t * ab[0], a[1] + t * ab[1])
         proper = (
-            t_tolerance < t < 1.0 - t_tolerance
-            and u_tolerance < u < 1.0 - u_tolerance
+            t_tolerance < t < 1.0 - t_tolerance and u_tolerance < u < 1.0 - u_tolerance
         )
         return point, proper, False
     return None
@@ -376,12 +474,9 @@ def _point_in_polygon(
     previous = polygon[-1]
     for current in polygon:
         if (current[1] > y) != (previous[1] > y):
-            crossing_x = (
-                (previous[0] - current[0])
-                * (y - current[1])
-                / (previous[1] - current[1])
-                + current[0]
-            )
+            crossing_x = (previous[0] - current[0]) * (y - current[1]) / (
+                previous[1] - current[1]
+            ) + current[0]
             if x < crossing_x:
                 inside = not inside
         previous = current
@@ -414,6 +509,10 @@ def _scale_geometry(
             (point[0] * metric.x_scale, point[1] * metric.y_scale)
             for point in geometry.points
         ),
+        tuple(
+            tuple((x * metric.x_scale, y * metric.y_scale) for x, y in ring)
+            for ring in geometry.holes
+        ),
     )
 
 
@@ -435,7 +534,10 @@ def _same_polygon(
     if len(source) != len(target):
         return False
     return all(
-        any(_distance(source_point, target_point) <= tolerance for target_point in target)
+        any(
+            _distance(source_point, target_point) <= tolerance
+            for target_point in target
+        )
         for source_point in source
     )
 
@@ -462,11 +564,14 @@ def _in_normalized_bounds(point: Point) -> bool:
 
 
 def _signed_area(points: Sequence[Point]) -> float:
-    return sum(
-        points[index][0] * points[(index + 1) % len(points)][1]
-        - points[(index + 1) % len(points)][0] * points[index][1]
-        for index in range(len(points))
-    ) / 2.0
+    return (
+        sum(
+            points[index][0] * points[(index + 1) % len(points)][1]
+            - points[(index + 1) % len(points)][0] * points[index][1]
+            for index in range(len(points))
+        )
+        / 2.0
+    )
 
 
 def _distance(first: Point, second: Point) -> float:

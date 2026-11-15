@@ -9670,6 +9670,16 @@
       "binding": "self.context_details",
       "label": "Context used",
       "kind": "QPlainTextEdit"
+    },
+    {
+      "id": "region-cut-cutter",
+      "topic_id": "map.historical-geometry",
+      "target": "help-inspect-region-cut-cutter",
+      "source": "src/gui/widgets/map/region_cut_controls.py",
+      "symbol": "RegionCutControls.__init__",
+      "binding": "self.regions",
+      "label": "Cutter region",
+      "kind": "QComboBox"
     }
   ],
   "factory_exemptions": [
@@ -14897,8 +14907,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget.__init__",
-      "sha256": "3b82b497eb38fa097f55eb91c50403e70e928356ba11b75728baf134e05082a6",
-      "review_note": "Reviewed panel inset/margin changes only in MapWidget.__init__: existing control identities, labels, eligibility, keyboard actions, task destinations and authoring state are unchanged. Canonical control explanations remain accurate; no new interaction or exception is introduced. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
+      "sha256": "c5a4520aa1c1f0a9d476f88d987cbbebc3e34be404147a49bad02a107e7575e4",
+      "review_note": "Reviewed Cut and Trace composition: existing map control meanings remain accurate. Cutter inspection and nested Confirm/Escape behavior are documented in maps.md; construction does not save drafts."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -14939,8 +14949,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._build_feature_geometry_edit_strip",
-      "sha256": "ffad11bf1791b1fd21e9f28d6f3b635ecc818c409ef9e04a3fbd0e1a04e830de",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "1d48e32276d83afa800bc37095f86840b5664bfe91121cd3cef2b7193c2898e4",
+      "review_note": "Reviewed the region cutter and invalid-draft feedback in the existing geometry strip. maps.md now explains copied cutter selection, preview, Use cut, parent Confirm and nested cancellation."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -15071,8 +15081,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._on_geometry_changed",
-      "sha256": "7b183d5611bec4ca064c7c4ae14c075531de66443bab73b6b47b5254daa445a8",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "68304a90474e1079a2a3f640c4e8828090a2325f9ba4013db7e4535ca59b2c4f",
+      "review_note": "Reviewed the extended region geometry signal payload. Completion still refreshes mode presentation; the existing geometry explanation remains accurate and saving stays coordinator-owned."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -15101,8 +15111,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._on_mode_indicator_clicked",
-      "sha256": "c4e13b4acd0e9465e292527a0e71cec21538fa49d0cf211fa53516c086e8b25e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "993400064c2345256867661b452ba883f78f98af6013b7a4c822b48e6734b7da",
+      "review_note": "Reviewed cancellation order: cancel the active Cut or Trace subtool before discarding the parent edit. The new cutter explanation documents the retained parent draft."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -15161,8 +15171,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._on_theme_changed",
-      "sha256": "7efa6ac4b80a88a35761d268765488b5f5e34aae20148dbd8ff936dc3fd6c934",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "fa5971f21be290d10cc271436d2b06545c5a4555cbbd523fe13a94097732c6dd",
+      "review_note": "Reviewed restyling of Cut and Trace overlays and controls: theme changes do not accept a cutter, save geometry or discard the draft. Existing theme and geometry explanations remain accurate."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -15257,8 +15267,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._update_mode_indicator",
-      "sha256": "6be925233729e4ba4656b3ed41a523ea7651971b07d1fff9f42acb20ba18d366",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "c9eea031f29e9b3827f06780f83d14ea3cf48b9e43ba72937f479abbfc2f147b",
+      "review_note": "Reviewed hidden parent action bar during Cut/Trace: local controls expose accept/cancel while the parent draft remains active. The cutter explanation distinguishes Use cut from parent Confirm."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -15287,14 +15297,14 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget.cancel_active_session",
-      "sha256": "195de0e365ea81fb26e09ba3f4533f1c5c90c4cf848344cf27b127fd9b6c3699",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "238f4ce8c4ba9ec08e6dbe4abf0207e4ba54bc66105b8fafa6e877d6c90ae68a",
+      "review_note": "Reviewed closing Cut before parent cancellation, including the pending-command guard. The cutter explanation distinguishes Cancel cut from discarding the parent geometry edit."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget.confirm_active_session",
-      "sha256": "964c03120afbeb8b4d5690fb24b0e90bb27c2153da72676ecfe395784300008c",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "629bb8acad3eec0c4cfbe56417b84cb8cb389c1c2f16bf857eb5994cbe970bce",
+      "review_note": "Reviewed Enter/Confirm ownership: preview or accept the active Cut step, accept an active Trace, otherwise persist through the existing parent path. The cutter explanation documents local acceptance versus saving."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -15305,8 +15315,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget.is_active_map_session_valid",
-      "sha256": "cc97f32e19119bf16c7cdf4ea8106a09b2940d266a9e23ddecc727ff0b367db5",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "a309e94c18cf052a334b7deb189059479d04535fb060df40d274427f01ccff9f",
+      "review_note": "Reviewed disabled parent Confirm during active Cut or invalid geometry. The cutter explanation describes rejected outcomes and the required Preview cut, Use cut, Confirm sequence."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -17540,6 +17550,12 @@
       "symbol": "LLMGenerationWidget._setup_quality_controls",
       "sha256": "b851a7ef48801912b58ca4a23269a15cc8ebf15827a7fc0364dd49a9c962455f",
       "review": "KRT-161: reviewed explicit reply completeness and disabled manual allowance in Auto mode against canonical generation guidance; native/human acceptance pending."
+    },
+    {
+      "source": "src/gui/widgets/map/region_cut_controls.py",
+      "symbol": "RegionCutControls.__init__",
+      "sha256": "a8753c78549cc65a8e69a86adf2f5abced12b106474e63328b0ddecfc325e4ef",
+      "review_note": "Reviewed copied candidate selection and Preview cut/Use cut/Cancel cut against the coordinator and focused workflow tests. New canonical cutter explanation records date/Base scope, separate parent saving and rejected results. Shared action flow preserves control identities and focus order at narrow widths. Human prose and native review pending."
     }
   ],
   "review_status": {

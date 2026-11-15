@@ -228,9 +228,7 @@ def _sample_pixel_value(file_path: str, norm_x: float, norm_y: float) -> Optiona
             width, height = im.size
             if width <= 0 or height <= 0:
                 return None
-            raw = im.getpixel(
-                (int(norm_x * (width - 1)), int(norm_y * (height - 1)))
-            )
+            raw = im.getpixel((int(norm_x * (width - 1)), int(norm_y * (height - 1))))
     except (OSError, ValueError):
         return None
 
@@ -314,9 +312,7 @@ def sample_raster_path_semantics(
             if pixels and segment and pixels[-1] == segment[0]:
                 segment = segment[1:]
             pixels.extend(segment)
-        labels = [
-            _label_for_pixel(image, pixel, value_entity_map) for pixel in pixels
-        ]
+        labels = [_label_for_pixel(image, pixel, value_entity_map) for pixel in pixels]
     finally:
         image.close()
     transitions = _smooth_transitions(labels)
@@ -332,6 +328,8 @@ def sample_raster_region_semantics(
     file_path: str,
     points: tuple[tuple[float, float], ...],
     value_entity_map: dict,
+    *,
+    holes: tuple[tuple[tuple[float, float], ...], ...] = (),
 ) -> Optional[str]:
     """Return leading semantic classes by covered raster-cell area."""
     if len(points) < _MIN_REGION_POINTS or not _valid_vem(value_entity_map):
@@ -348,7 +346,12 @@ def sample_raster_region_semantics(
 
         mask = PilImage.new("1", (width, height), 0)
         polygon = [_normalized_pixel(point, width, height) for point in points]
-        ImageDraw.Draw(mask).polygon(polygon, fill=1)
+        draw = ImageDraw.Draw(mask)
+        draw.polygon(polygon, fill=1)
+        for hole in holes:
+            draw.polygon(
+                [_normalized_pixel(point, width, height) for point in hole], fill=0
+            )
         image_values = np.asarray(image)
         mask_values = np.asarray(mask, dtype=bool)
         covered = image_values[mask_values]
@@ -393,9 +396,7 @@ def _open_discrete_raster(file_path: str) -> tuple[Any, int, int] | None:
 
 
 def _valid_vem(value_entity_map: dict) -> bool:
-    return isinstance(value_entity_map, dict) and bool(
-        value_entity_map.get("mappings")
-    )
+    return isinstance(value_entity_map, dict) and bool(value_entity_map.get("mappings"))
 
 
 def _in_normalized_bounds(point: tuple[float, float]) -> bool:
@@ -627,14 +628,14 @@ def analyse_image(path: str) -> ImageAnalysisResult:
         mode_converted=mode_converted,
         value_metadata=value_metadata,
     )
+
+
 def gradient_from_rgb_image(image: Any, stop_count: int = 12) -> dict[str, Any]:
     """Extract a deterministic luminance-ordered gradient from an RGB image."""
     rgb = np.asarray(image.convert("RGB"), dtype=np.uint8).reshape(-1, 3)
     if rgb.size == 0:
         raise ValueError("Cannot extract a palette from an empty image")
-    luminance = (
-        0.2126 * rgb[:, 0] + 0.7152 * rgb[:, 1] + 0.0722 * rgb[:, 2]
-    )
+    luminance = 0.2126 * rgb[:, 0] + 0.7152 * rgb[:, 1] + 0.0722 * rgb[:, 2]
     order = np.argsort(luminance, kind="stable")
     sorted_rgb = rgb[order]
     if np.all(sorted_rgb == sorted_rgb[0]):

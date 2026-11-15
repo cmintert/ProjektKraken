@@ -177,6 +177,29 @@ layer assignment remain global.
 Base Geometry cannot be deleted, and two geometry states cannot share a date. Point
 markers use ordinary positions or trajectories rather than dated border states.
 
+### Cut an area out of a region
+
+1. Start editing the region's border at the intended date, or choose Base Geometry
+   in **Manage historical borders…**.
+2. Choose **Cut area**, then **Draw cutter** to outline the area to remove, or
+   **Pick region** to choose an existing region from **Cutter region**.
+3. Choose **Preview cut**. Review the area that remains, then choose **Use cut**.
+4. Choose **Confirm** to save the edited border as one undoable change.
+
+(help-inspect-region-cut-cutter)=
+
+> Cutter region supplies a copied shape to subtract from the border being edited.
+> For a dated edit, candidates use their shape and existence at that edit's date;
+> Base Geometry uses their undated shapes. The source region stays unchanged.
+> Preview cut shows the result; Use cut accepts it into the working copy but does
+> not save it. Confirm saves the parent border edit. Cancel cut or Escape discards
+> the cutter and keeps the parent edit open; a further Escape discards that edit.
+
+An invalid cut, a cut that removes the whole region, or one that splits it into
+separate pieces cannot be accepted. Cancel the cut and choose a different cutter.
+An area wholly inside the border becomes a hole; a cutter crossing the outer
+border trims the outline. Later dated shapes remain unchanged.
+
 (help-map-visibility)=
 
 ## Temporal visibility

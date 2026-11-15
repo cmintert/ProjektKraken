@@ -21,7 +21,6 @@ from PySide6.QtGui import (
     QPainter,
     QPainterPath,
     QPen,
-    QPolygonF,
 )
 from PySide6.QtWidgets import (
     QGraphicsItem,
@@ -33,6 +32,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.region_geometry import (
+    Geometry,
+    RegionPolygon,
+    copy_geometry,
+    geometry_rings,
+)
 from src.gui.constants import (
     MAP_FEATURE_CLICK_THRESHOLD_PX,
     MAP_FEATURE_DEFAULT_DASH_PATTERN,
@@ -54,6 +59,7 @@ from src.gui.constants import (
     TEMPORAL_FUTURE_OPACITY,
 )
 from src.gui.widgets.map.map_label_item import MapLabelItem
+from src.gui.widgets.map.region_paths import region_path
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +83,7 @@ LABEL_FONT_FAMILY = MAP_FEATURE_LABEL_FONT_FAMILY
 LABEL_FONT_SIZE = MAP_FEATURE_LABEL_FONT_SIZE
 LABEL_COLOR = MAP_FEATURE_LABEL_COLOR
 
+
 class _FeatureItemBase(QGraphicsObject):
     """Abstract base for vector map features (paths, regions).
 
@@ -96,7 +103,7 @@ class _FeatureItemBase(QGraphicsObject):
         object_type: str,
         label: str,
         pixmap_item: QGraphicsPixmapItem,
-        geometry: List[Dict[str, float]],
+        geometry: Geometry,
         style: Optional[Dict[str, Any]] = None,
         description: Optional[str] = None,
         lore_date: Optional[float] = None,
@@ -121,7 +128,7 @@ class _FeatureItemBase(QGraphicsObject):
         self.object_type = object_type
         self.label = label
         self.pixmap_item = pixmap_item
-        self._geometry = geometry
+        self._geometry = copy_geometry(geometry)
         self._style = style or {}
         self.lore_date = lore_date
         self._description = description or ""
@@ -278,9 +285,7 @@ class _FeatureItemBase(QGraphicsObject):
     def set_locked(self, locked: bool) -> None:
         """Prevent canvas selection and clicks while retaining hover tooltips."""
         self._locked = bool(locked)
-        self.setFlag(
-            QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, not self._locked
-        )
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, not self._locked)
         self.setAcceptedMouseButtons(
             Qt.MouseButton.NoButton if self._locked else Qt.MouseButton.AllButtons
         )
@@ -451,7 +456,7 @@ class _FeatureItemBase(QGraphicsObject):
         if not self._geometry:
             return props
 
-        pts = [(p["x"], p["y"]) for p in self._geometry]
+        pts = [(p["x"], p["y"]) for p in geometry_rings(self._geometry)[0]]
         props["vertex_count"] = len(pts)
         return props
 
@@ -471,7 +476,7 @@ class PathItem(_FeatureItemBase):
         object_type: str,
         label: str,
         pixmap_item: QGraphicsPixmapItem,
-        geometry: List[Dict[str, float]],
+        geometry: Geometry,
         anchor_x: float,
         anchor_y: float,
         style: Optional[Dict[str, Any]] = None,
@@ -519,7 +524,7 @@ class PathItem(_FeatureItemBase):
         rect = self.pixmap_item.sceneBoundingRect()
         self._scene_points = []
         self._path = QPainterPath()
-        for i, pt in enumerate(self._geometry):
+        for i, pt in enumerate(geometry_rings(self._geometry)[0]):
             sx = rect.left() + pt["x"] * rect.width()
             sy = rect.top() + pt["y"] * rect.height()
             sp = QPointF(sx, sy)
@@ -530,11 +535,11 @@ class PathItem(_FeatureItemBase):
                 self._path.lineTo(sp)
 
     def set_geometry(
-        self, geometry: List[Dict[str, float]], anchor_x: float, anchor_y: float
+        self, geometry: Geometry, anchor_x: float, anchor_y: float
     ) -> None:
         """Replace geometry safely without recreating the graphics item."""
         self.prepareGeometryChange()
-        self._geometry = [dict(point) for point in geometry]
+        self._geometry = copy_geometry(geometry)
         self._anchor_x = anchor_x
         self._anchor_y = anchor_y
         self._build_path()
@@ -611,7 +616,7 @@ class PathItem(_FeatureItemBase):
         props: Dict[str, Any] = {"feature_type": "path"}
         if not self._geometry:
             return props
-        pts = [(p["x"], p["y"]) for p in self._geometry]
+        pts = [(p["x"], p["y"]) for p in geometry_rings(self._geometry)[0]]
         props["vertex_count"] = len(pts)
         props["segment_count"] = max(0, len(pts) - 1)
         if self._map_width_meters <= 0:
@@ -640,7 +645,7 @@ class RegionItem(_FeatureItemBase):
         object_type: str,
         label: str,
         pixmap_item: QGraphicsPixmapItem,
-        geometry: List[Dict[str, float]],
+        geometry: Geometry,
         anchor_x: float,
         anchor_y: float,
         style: Optional[Dict[str, Any]] = None,
@@ -677,27 +682,27 @@ class RegionItem(_FeatureItemBase):
         )
         self._anchor_x = anchor_x
         self._anchor_y = anchor_y
-        self._polygon = QPolygonF()
+        self._polygon = QPainterPath()
+        self._preview_suppressed = False
         self._build_polygon()
 
+    def set_preview_suppressed(self, suppressed: bool) -> None:
+        """Temporarily replace the target painting with a cut preview."""
+        self._preview_suppressed = suppressed
+        self.update()
+
     def _build_polygon(self) -> None:
-        """Converts normalized geometry → scene-coordinates QPolygonF."""
-        if not self.pixmap_item or not self._geometry:
-            return
-        rect = self.pixmap_item.sceneBoundingRect()
-        points: List[QPointF] = []
-        for pt in self._geometry:
-            sx = rect.left() + pt["x"] * rect.width()
-            sy = rect.top() + pt["y"] * rect.height()
-            points.append(QPointF(sx, sy))
-        self._polygon = QPolygonF(points)
+        """Build the odd-even fill path from independent closed rings."""
+        self._polygon = region_path(
+            self._geometry, self.pixmap_item.sceneBoundingRect()
+        )
 
     def set_geometry(
-        self, geometry: List[Dict[str, float]], anchor_x: float, anchor_y: float
+        self, geometry: Geometry, anchor_x: float, anchor_y: float
     ) -> None:
         """Replace geometry safely without recreating the graphics item."""
         self.prepareGeometryChange()
-        self._geometry = [dict(point) for point in geometry]
+        self._geometry = copy_geometry(geometry)
         self._anchor_x = anchor_x
         self._anchor_y = anchor_y
         self._build_polygon()
@@ -726,11 +731,7 @@ class RegionItem(_FeatureItemBase):
             QPainterPath enclosing the filled polygon area.
 
         """
-        path = QPainterPath()
-        if not self._polygon.isEmpty():
-            path.addPolygon(self._polygon)
-            path.closeSubpath()
-        return path
+        return self._polygon
 
     def paint(
         self,
@@ -746,7 +747,7 @@ class RegionItem(_FeatureItemBase):
             widget: Target widget.
 
         """
-        if self._polygon.isEmpty():
+        if self._preview_suppressed or self._polygon.isEmpty():
             return
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
@@ -756,7 +757,7 @@ class RegionItem(_FeatureItemBase):
             sel_pen.setCosmetic(True)
             painter.setPen(sel_pen)
             painter.setBrush(Qt.BrushStyle.NoBrush)
-            painter.drawPolygon(self._polygon)
+            painter.drawPath(self._polygon)
 
         # Fill + stroke
         painter.setBrush(
@@ -765,7 +766,7 @@ class RegionItem(_FeatureItemBase):
             else QBrush(self._fill_color(DEFAULT_REGION_FILL_COLOR))
         )
         painter.setPen(self._make_pen(DEFAULT_REGION_STROKE_COLOR))
-        painter.drawPolygon(self._polygon)
+        painter.drawPath(self._polygon)
 
     def _compute_spatial_properties(self) -> Dict[str, Any]:
         """Computes spatial properties for a region feature in metric units.
@@ -781,10 +782,9 @@ class RegionItem(_FeatureItemBase):
         props: Dict[str, Any] = {"feature_type": "region"}
         if not self._geometry:
             return props
-        pts = [(p["x"], p["y"]) for p in self._geometry]
-        n = len(pts)
+        n = sum(map(len, geometry_rings(self._geometry)))
         props["vertex_count"] = n
-        props["segment_count"] = n  # closed polygon
+        props["segment_count"] = n
         if self._map_width_meters <= 0:
             props["calibration_required"] = True
             return props
@@ -792,22 +792,7 @@ class RegionItem(_FeatureItemBase):
         w = self._map_width_meters
         h = self._map_height_meters()
 
-        # Shoelace area (scaled to real-world square meters)
-        area = 0.0
-        for i in range(n):
-            j = (i + 1) % n
-            x0, y0 = pts[i][0] * w, pts[i][1] * h
-            x1, y1 = pts[j][0] * w, pts[j][1] * h
-            area += x0 * y1
-            area -= x1 * y0
-        props["area"] = abs(area) / 2.0
-
-        # Perimeter (scaled to real-world meters)
-        perimeter = 0.0
-        for i in range(n):
-            j = (i + 1) % n
-            dx = (pts[j][0] - pts[i][0]) * w
-            dy = (pts[j][1] - pts[i][1]) * h
-            perimeter += math.sqrt(dx * dx + dy * dy)
-        props["perimeter"] = perimeter
+        polygon = RegionPolygon.from_geometry(self._geometry)
+        props["area"] = polygon.area * w * h
+        props["perimeter"] = polygon.perimeter(w, h)
         return props

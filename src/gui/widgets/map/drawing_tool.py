@@ -16,8 +16,12 @@ from PySide6.QtWidgets import (
     QGraphicsView,
 )
 
+from src.core.border_trace import simple_draft
+from src.core.region_geometry import MIN_REGION_AREA, Point, signed_area
 from src.core.theme_manager import ThemeManager
 from src.gui.constants import MAP_LAYER_Z_UI_OVERLAY
+from src.gui.widgets.map.border_trace_tool import BorderTraceTool
+from src.gui.widgets.map.region_preview import RegionPreview
 from src.gui.widgets.map.snapping_manager import SnappingManager
 
 if TYPE_CHECKING:
@@ -51,6 +55,8 @@ class DrawingTool:
         """Initialize drawing state for a map graphics view."""
         self._view = view
         self._snapping_manager = snapping_manager
+        self.trace = BorderTraceTool(view, snapping_manager)
+        self._copied_points: dict[int, Point] = {}
 
         # Drawing state
         self._drawing_mode: Optional[str] = None  # None, "path", or "region"
@@ -88,6 +94,8 @@ class DrawingTool:
     @property
     def can_finish(self) -> bool:
         """Return whether the current drawing draft has valid geometry."""
+        if self.trace.active:
+            return False
         if self._drawing_mode == "path":
             return len(self._drawing_vertices) >= MINIMUM_PATH_VERTICES
         if self._drawing_mode == "region":
@@ -107,19 +115,25 @@ class DrawingTool:
             feature_type: 'path' or 'region'.
         """
         self._drawing_mode = feature_type
+        self.trace.cancel()
+        self._copied_points.clear()
         self._drawing_vertices.clear()
         self._clear_drawing_preview()
         self._view.setDragMode(QGraphicsView.DragMode.NoDrag)
         self._view.setCursor(Qt.CursorShape.CrossCursor)
+        self._view.border_trace_changed.emit()
         logger.info(f"Drawing mode started: {feature_type}")
 
     def cancel_drawing(self) -> None:
         """Exits drawing mode without saving."""
         self._drawing_mode = None
+        self.trace.cancel()
+        self._copied_points.clear()
         self._drawing_vertices.clear()
         self._clear_drawing_preview()
         self._view.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         self._view.setCursor(Qt.CursorShape.ArrowCursor)
+        self._view.border_trace_changed.emit()
         self._view.drawing_cancelled.emit()
         logger.info("Drawing cancelled")
 
@@ -129,6 +143,8 @@ class DrawingTool:
         Converts scene-coordinate vertices to normalized coordinates
         and emits ``drawing_finished(feature_type, geometry)``.
         """
+        if self.trace.active:
+            return
         if not self._drawing_mode or not self._view.pixmap_item:
             self.cancel_drawing()
             return
@@ -145,27 +161,31 @@ class DrawingTool:
             return
 
         # Convert scene coords to normalized
-        geometry = []
-        for sp in self._drawing_vertices:
-            nx, ny = self._view.coord_system.to_normalized(sp)
-            nx, ny = self._view.coord_system.clamp_normalized(nx, ny)
-            geometry.append(
-                {
-                    "x": round(nx, NORMALIZED_COORD_PRECISION),
-                    "y": round(ny, NORMALIZED_COORD_PRECISION),
-                }
-            )
+        points = self.draft_points()
+        if self._drawing_mode == "region" and not simple_draft(points, closed=True):
+            self.trace.report("The region's border crosses or repeats itself.")
+            return
+        if (
+            self._drawing_mode == "region"
+            and abs(signed_area(points)) <= MIN_REGION_AREA
+        ):
+            self.trace.report("The drawn region needs more filled area.")
+            return
+        geometry = [{"x": x, "y": y} for x, y in points]
 
         feature_type = self._drawing_mode
         logger.info(f"Drawing finished: {feature_type} with {len(geometry)} vertices")
 
         # Clean up drawing state
         self._drawing_mode = None
+        self.trace.cancel()
+        self._copied_points.clear()
         self._drawing_vertices.clear()
         self._clear_drawing_preview()
         self._view.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         self._view.setCursor(Qt.CursorShape.ArrowCursor)
 
+        self._view.border_trace_changed.emit()
         self._view.drawing_finished.emit(feature_type, geometry)
 
     def handle_mouse_press(self, scene_pos: QPointF) -> bool:
@@ -179,6 +199,10 @@ class DrawingTool:
         """
         if not self._drawing_mode or not self._view.pixmap_item:
             return False
+
+        if self.trace.active:
+            self.trace.pick(scene_pos, self.draft_points())
+            return True
 
         item_pos = self._view.pixmap_item.mapFromScene(scene_pos)
         if self._view.pixmap_item.contains(item_pos):
@@ -207,6 +231,9 @@ class DrawingTool:
             return False
 
         self._view.setCursor(Qt.CursorShape.CrossCursor)
+        if self.trace.active:
+            self.trace.hover(scene_pos)
+            return True
         snap_result = self._snapping_manager.snap_point(
             scene_pos, self._view.transform()
         )
@@ -233,6 +260,9 @@ class DrawingTool:
         Returns:
             True if the event was consumed.
         """
+        if self.trace.active:
+            self.trace.cancel()
+            return True
         if self._drawing_mode:
             self.cancel_drawing()
             return True
@@ -242,25 +272,60 @@ class DrawingTool:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _add_drawing_vertex(self, scene_pos: QPointF) -> None:
+    def draft_points(self) -> tuple[Point, ...]:
+        """Return authored coordinates, retaining the precise copied border."""
+        return tuple(
+            self._copied_points[i]
+            if i in self._copied_points
+            else self._normal_point(pos)
+            for i, pos in enumerate(self._drawing_vertices)
+        )
+
+    def _normal_point(self, pos: QPointF) -> Point:
+        x, y = self._view.coord_system.to_normalized(pos)
+        x, y = self._view.coord_system.clamp_normalized(x, y)
+        return (
+            round(x, NORMALIZED_COORD_PRECISION),
+            round(y, NORMALIZED_COORD_PRECISION),
+        )
+
+    def accept_trace(self) -> None:
+        """Append the chosen arc to the region draft."""
+        if not self.trace.can_use:
+            return
+        from src.gui.widgets.map.region_paths import scene_point
+
+        assert self._view.pixmap_item is not None
+        rect = self._view.pixmap_item.sceneBoundingRect()
+        for point in self.trace.append_points(self.draft_points()):
+            self._copied_points[len(self._drawing_vertices)] = point
+            self._add_drawing_vertex(scene_point(point, rect), refresh=False)
+        self._update_drawing_preview(self._drawing_vertices[-1])
+        self.trace.cancel()
+
+    def _add_drawing_vertex(self, scene_pos: QPointF, *, refresh: bool = True) -> None:
         """Adds a vertex to the current drawing.
 
         Args:
             scene_pos: The vertex position in scene coordinates.
+            refresh: Redraw immediately for an individual vertex.
         """
+        if not self.trace.active and self.trace.message:
+            self.trace.report("")
         self._drawing_vertices.append(scene_pos)
 
         # Add visible dot
         dot = QGraphicsEllipseItem(-3, -3, 6, 6)
         dot.setPos(scene_pos)
-        _t = ThemeManager().get_theme()
-        dot.setBrush(QBrush(QColor(_t.get("error", "#e74c3c"))))
-        dot.setPen(QPen(QColor(_t.get("surface", "#1A1A1A")), 1))
+        theme = ThemeManager().get_theme()
+        dot.setBrush(QBrush(QColor(theme["selection_bg"])))
+        dot.setPen(QPen(QColor(theme["surface"]), 1))
         dot.setZValue(MAP_LAYER_Z_UI_OVERLAY)
         self._view.graphics_scene.addItem(dot)
         self._drawing_dots.append(dot)
 
-        self._update_drawing_preview(scene_pos)
+        if refresh:
+            self._update_drawing_preview(scene_pos)
 
     def _update_drawing_preview(self, mouse_pos: QPointF) -> None:
         """Updates the rubber-band preview path during drawing.
@@ -289,19 +354,9 @@ class DrawingTool:
         ):
             path.lineTo(self._drawing_vertices[0])
 
-        self._drawing_preview_item = QGraphicsPathItem(path)
-        _t = ThemeManager().get_theme()
-        _err = QColor(_t.get("error", "#e74c3c"))
-        pen = QPen(_err, 2)
-        pen.setCosmetic(True)
-        pen.setStyle(Qt.PenStyle.DashLine)
-        self._drawing_preview_item.setPen(pen)
-        if self._drawing_mode == "region":
-            _fill = QColor(_err)
-            _fill.setAlpha(40)
-            self._drawing_preview_item.setBrush(QBrush(_fill))
-        self._drawing_preview_item.setZValue(MAP_LAYER_Z_UI_OVERLAY)
-        self._view.graphics_scene.addItem(self._drawing_preview_item)
+        preview = RegionPreview(self._view.graphics_scene)
+        preview.show_path(path, filled=self._drawing_mode == "region")
+        self._drawing_preview_item = preview
 
     def _clear_drawing_preview(self) -> None:
         """Removes all drawing preview items from the scene."""

@@ -12,7 +12,15 @@ import logging
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast
+
+from src.core.region_geometry import (
+    Geometry,
+    RegionPolygon,
+    feature_anchor,
+    geometry_rings,
+    ring_points,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +79,7 @@ class MapFeature:
     created_at: float = field(default_factory=time.time)
     modified_at: float = field(default_factory=time.time)
     feature_type: str = FEATURE_TYPE_POINT
-    geometry: Optional[List[Dict[str, float]]] = None
+    geometry: Optional[Geometry] = None
     style: Optional[Dict[str, Any]] = None
 
     # ------------------------------------------------------------------
@@ -110,14 +118,14 @@ class MapFeature:
 
         """
         if self.geometry:
-            return [(pt["x"], pt["y"]) for pt in self.geometry]
+            return list(ring_points(geometry_rings(self.geometry)[0]))
         return [(self.x, self.y)]
 
     # ------------------------------------------------------------------
     # Geometry helpers
     # ------------------------------------------------------------------
 
-    def set_geometry(self, coords: Optional[List[Dict[str, float]]]) -> None:
+    def set_geometry(self, coords: Optional[Geometry]) -> None:
         """Sets geometry and auto-recalculates the Anchor to the visual center.
 
         For paths the anchor becomes the midpoint; for regions it becomes
@@ -133,7 +141,7 @@ class MapFeature:
             return
 
         self.geometry = coords
-        cx, cy = self._compute_centroid(coords)
+        cx, cy = feature_anchor(coords)
         self.x = cx
         self.y = cy
 
@@ -189,12 +197,11 @@ class MapFeature:
         """
         if self.feature_type != FEATURE_TYPE_REGION:
             return 0.0
-        pts = self.points
-        if len(pts) < _POLYGON_MIN_POINTS:
+        if not self.geometry or len(self.points) < _POLYGON_MIN_POINTS:
             return 0.0
-        # Close the polygon by appending the first point
-        closed = list(pts) + [pts[0]]
-        return self._segment_length_sum(closed, map_width, map_height)
+        return RegionPolygon.from_geometry(self.geometry).perimeter(
+            map_width, map_height
+        )
 
     def compute_area(self, map_width: float = 1.0, map_height: float = 1.0) -> float:
         """Computes the area of a region feature using the Shoelace formula.
@@ -212,19 +219,9 @@ class MapFeature:
         """
         if self.feature_type != FEATURE_TYPE_REGION:
             return 0.0
-        pts = self.points
-        if len(pts) < _POLYGON_MIN_POINTS:
+        if not self.geometry or len(self.points) < _POLYGON_MIN_POINTS:
             return 0.0
-        # Shoelace formula
-        n = len(pts)
-        total = 0.0
-        for i in range(n):
-            x0 = pts[i][0] * map_width
-            y0 = pts[i][1] * map_height
-            x1 = pts[(i + 1) % n][0] * map_width
-            y1 = pts[(i + 1) % n][1] * map_height
-            total += x0 * y1 - x1 * y0
-        return abs(total) / 2.0
+        return RegionPolygon.from_geometry(self.geometry).area * map_width * map_height
 
     def compute_segment_count(self) -> int:
         """Returns the number of line segments in the geometry.
@@ -237,7 +234,7 @@ class MapFeature:
         if len(pts) < _LINE_MIN_POINTS:
             return 0
         if self.feature_type == FEATURE_TYPE_REGION:
-            return len(pts)  # closed polygon
+            return sum(len(ring) for ring in geometry_rings(self.geometry or []))
         return len(pts) - 1  # open polyline
 
     @property
@@ -255,7 +252,9 @@ class MapFeature:
         """
         props: Dict[str, Any] = {
             "feature_type": self.feature_type,
-            "vertex_count": len(self.points),
+            "vertex_count": sum(map(len, geometry_rings(self.geometry)))
+            if self.geometry
+            else 1,
             "segment_count": self.compute_segment_count(),
             "bounding_box": self.get_bounding_box(),
         }
@@ -336,15 +335,16 @@ class MapFeature:
 
         """
         geometry_raw = data.get("geometry")
-        geometry: Optional[List[Dict[str, float]]] = None
-        if geometry_raw is not None:
-            if isinstance(geometry_raw, str):
-                try:
-                    geometry = json.loads(geometry_raw)
-                except (json.JSONDecodeError, TypeError):
-                    geometry = None
-            elif isinstance(geometry_raw, list):
-                geometry = geometry_raw
+        if isinstance(geometry_raw, str):
+            try:
+                geometry_raw = json.loads(geometry_raw)
+            except (json.JSONDecodeError, TypeError):
+                geometry_raw = None
+        geometry: Geometry | None = None
+        if isinstance(geometry_raw, list):
+            geometry = geometry_raw
+        elif isinstance(geometry_raw, dict) and set(geometry_raw) == {"outer", "holes"}:
+            geometry = cast(Geometry, geometry_raw)
 
         style_raw = data.get("style")
         style: Optional[Dict[str, Any]] = None

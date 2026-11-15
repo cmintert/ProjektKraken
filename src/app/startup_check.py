@@ -21,6 +21,7 @@ REQUIRED_MODULES = (
     ("python-dotenv", "dotenv"),
     ("numpy", "numpy"),
     ("Requests", "requests"),
+    ("shapely", "shapely"),
     ("markdown-it-py", "markdown_it"),
     ("linkify-it-py", "linkify_it"),
     ("mdit-py-plugins", "mdit_py_plugins"),

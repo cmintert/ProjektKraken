@@ -44,6 +44,7 @@ from src.commands.map_commands import (
 )
 from src.core.logging_config import get_logger
 from src.core.map import MapLayerNode
+from src.core.region_geometry import Geometry, feature_anchor, geometry_rings
 from src.services.map_nesting_service import MapNestingService, NestingValidationError
 from src.services.marker_icon_catalog import MarkerIconCatalog
 from src.services.repositories.map_repository import MapRepository
@@ -358,8 +359,8 @@ class MapHandler(QObject):
         self.command_requested.emit(cmd)
         logger.info(f"Style updated for {marker_id}")
 
-    @Slot(str, list)
-    def on_feature_geometry_changed(self, marker_id: str, geometry: list) -> None:
+    @Slot(str, object)
+    def on_feature_geometry_changed(self, marker_id: str, geometry: Geometry) -> None:
         """Persists a feature geometry change via UpdateMarkerCommand.
 
         Recalculates the anchor to the centroid of the new geometry.
@@ -374,13 +375,12 @@ class MapHandler(QObject):
             logger.warning(f"No marker mapping for geometry update: {marker_id}")
             return
 
-        # Recalculate anchor (centroid)
-        n = len(geometry)
-        if n > 0:
-            cx = sum(pt["x"] for pt in geometry) / n
-            cy = sum(pt["y"] for pt in geometry) / n
-        else:
-            cx, cy = 0.5, 0.5
+        n = sum(map(len, geometry_rings(geometry)))
+        try:
+            cx, cy = feature_anchor(geometry) if n else (0.5, 0.5)
+        except ValueError as exc:
+            logger.warning("Invalid feature geometry: %s", exc)
+            return
 
         cmd = UpdateMarkerCommand(
             actual_marker_id, {"geometry": geometry, "x": cx, "y": cy}

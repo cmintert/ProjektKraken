@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QApplication, QLabel
 
 from src.app.help_package_probe import probe_help
 from src.app.markdown_package_probe import probe_markdown
+from src.app.region_package_probe import probe_region_geometry
 from src.core.logging_config import get_logger
 from src.core.paths import get_executable_dir, get_resource_path
 from src.core.version import VERSION
@@ -48,6 +49,7 @@ class PackageSmokeReport:
     errors: tuple[str, ...]
     help_evidence: dict[str, object] = field(default_factory=dict)
     markdown_evidence: dict[str, object] = field(default_factory=dict)
+    region_geometry_evidence: dict[str, object] = field(default_factory=dict)
 
 
 def parse_package_smoke_options(argv: list[str]) -> PackageSmokeOptions | None:
@@ -194,6 +196,8 @@ class PackageSmokeController:
         except (OSError, ValueError, RuntimeError) as exc:
             errors.append(f"Packaged content validation failed: {exc}")
 
+        region_geometry_evidence = probe_region_geometry()
+
         logger.info("Constructing About dialog for version evidence")
         about = AboutDialog(self._window)
         about_text = {label.text() for label in about.findChildren(QLabel)}
@@ -216,6 +220,7 @@ class PackageSmokeController:
             errors=tuple(errors),
             help_evidence=help_evidence,
             markdown_evidence=markdown_evidence,
+            region_geometry_evidence=region_geometry_evidence,
         )
 
     def _finish(self, report: PackageSmokeReport, exit_code: int) -> None:

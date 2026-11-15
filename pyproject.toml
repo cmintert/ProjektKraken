@@ -24,6 +24,7 @@ dependencies = [
     "nh3==0.3.7",
     "numpy==2.4.2",
     "requests==2.34.2",
+    "shapely==2.1.2",
     "python-dotenv==1.2.2",
     "starlette==1.6.0",
     "httpx==0.28.1",
@@ -40,6 +41,7 @@ dev = [
     "pytest-cov==7.0.0",
     "ruff==0.14.10",
     "mypy==1.19.0",
+    "types-shapely==2.1.0.20261030",
     "packaging>=25",
 ]
 docs = [

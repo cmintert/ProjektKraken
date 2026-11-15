@@ -324,12 +324,10 @@ class SpatialContextBuilder:
                     abs_path, geometry.points[0][0], geometry.points[0][1], vem
                 )
             elif geometry.kind == "path":
-                label = sample_raster_path_semantics(
-                    abs_path, geometry.points, vem
-                )
+                label = sample_raster_path_semantics(abs_path, geometry.points, vem)
             else:
                 label = sample_raster_region_semantics(
-                    abs_path, geometry.points, vem
+                    abs_path, geometry.points, vem, holes=geometry.holes
                 )
             if not label:
                 continue
@@ -375,13 +373,14 @@ class SpatialContextBuilder:
         for other in all_markers:
             if other.id == marker.id:
                 continue
-            if other.object_id == marker.object_id and other.object_type == marker.object_type:
+            if (
+                other.object_id == marker.object_id
+                and other.object_type == marker.object_type
+            ):
                 continue
             if not self._is_temporally_valid(map_obj, other, lore_date):
                 continue
-            resolved_other = self._resolve_marker_geometry(
-                map_obj, other, lore_date
-            )
+            resolved_other = self._resolve_marker_geometry(map_obj, other, lore_date)
             if resolved_other is None:
                 continue
             target_geometry = self._spatial_geometry(resolved_other)
@@ -418,9 +417,7 @@ class SpatialContextBuilder:
             marker.feature_type, marker.x, marker.y, marker.geometry
         )
 
-    def _geometry_metric(
-        self, map_obj: Map, width_m: float | None
-    ) -> GeometryMetric:
+    def _geometry_metric(self, map_obj: Map, width_m: float | None) -> GeometryMetric:
         """Build aspect-correct distance scales and a half-pixel tolerance."""
         size = self._map_image_size(map_obj)
         if size is None:
@@ -565,9 +562,7 @@ class SpatialContextBuilder:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _format_relation(
-        relation: GeometryRelation, width_m: Optional[float]
-    ) -> str:
+    def _format_relation(relation: GeometryRelation, width_m: Optional[float]) -> str:
         """Render one directed topological or separation relation."""
         if relation.kind != "separate":
             return relation.kind
@@ -606,10 +601,7 @@ class SpatialContextBuilder:
             lines.append(f"- Nearby: {pieces}")
         return "\n".join(lines)
 
-
-    def _resolve_detail_advisory(
-        self, map_obj: Map, marker: Marker
-    ) -> Optional[str]:
+    def _resolve_detail_advisory(self, map_obj: Map, marker: Marker) -> Optional[str]:
         """Return an advisory when resolved geometry intersects a child footprint.
 
         Only fires when:
@@ -761,9 +753,7 @@ def lookup_spatial_context(
                 feature_geometry_repo=feature_geometry_repo,
                 trajectory_repo=trajectory_repo,
             )
-            return builder.build(
-                object_id, object_type, active_map_id, lore_date
-            )
+            return builder.build(object_id, object_type, active_map_id, lore_date)
         finally:
             conn.close()
     except Exception:

@@ -41,6 +41,7 @@ from PySide6.QtWidgets import (
 from src.core.calendar import CalendarConverter
 from src.core.map import Map
 from src.core.marker_appearance import MarkerIconAnchor
+from src.core.region_geometry import Geometry
 from src.core.theme_manager import ThemeManager
 from src.core.trajectory_edit import TrajectoryEditSnapshot
 from src.gui.mixins.map_calibration_mixin import MapCalibrationMixin
@@ -54,6 +55,7 @@ from src.gui.utils.style_helper import StyleHelper
 from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
+from src.gui.widgets.map.border_trace_controls import BorderTraceControls
 from src.gui.widgets.map.feature_actions import FeatureActionPresenter
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.layer_navigation_focus import LayerNavigationFocus
@@ -62,6 +64,7 @@ from src.gui.widgets.map.map_layer_model import MapLayerModel
 from src.gui.widgets.map.map_layer_panel import MapLayerPanel
 from src.gui.widgets.map.marker_item import MarkerItem
 from src.gui.widgets.map.raster_legend_widget import RasterLegendWidget
+from src.gui.widgets.map.region_cut_controls import RegionCutControls
 from src.gui.widgets.menu_section import add_menu_section
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 
@@ -190,7 +193,7 @@ class MapWidget(
     # feature_created carries (map_id, obj_id, obj_type, name, feature_type, geometry)
     feature_created = Signal(str, str, str, str, str, list)
     feature_style_changed = Signal(str, dict)  # marker_id, new style
-    feature_geometry_changed = Signal(str, list)  # marker_id, new geometry
+    feature_geometry_changed = Signal(str, object)  # marker_id, new geometry
     feature_geometry_edit_requested = Signal(str)
     feature_geometry_manage_requested = Signal(str)
     feature_geometry_apply_requested = Signal()
@@ -278,6 +281,7 @@ class MapWidget(
         )
         self._feature_geometry_edit_pending = False
         self._feature_geometry_apply_available = True
+        self._feature_geometry_draft_error = ""
         self._accepted_map_id: str | None = None
         self.edit_transition_handler: (
             Callable[[str, Callable[[], None]], None] | None
@@ -292,6 +296,8 @@ class MapWidget(
         self._build_breadcrumb(layout)
         self._build_trajectory_edit_strip(layout)
         self._build_feature_geometry_edit_strip(layout)
+        self.border_trace_controls = BorderTraceControls(self.view, self)
+        layout.addWidget(self.border_trace_controls)
 
         self._build_trajectory_date_panel(layout)
 
@@ -675,6 +681,15 @@ class MapWidget(
         self.feature_geometry_edit_source.setWordWrap(True)
         heading.addWidget(self.feature_geometry_edit_source, 1)
         geometry_layout.addLayout(heading)
+        self.geometry_draft_feedback = QLabel(self.feature_geometry_edit_strip)
+        self.geometry_draft_feedback.setWordWrap(True)
+        self.geometry_draft_feedback.hide()
+        geometry_layout.addWidget(self.geometry_draft_feedback)
+        self.region_cut_controls = RegionCutControls(
+            self.view, self.feature_geometry_edit_strip
+        )
+        self.region_cut_controls.mode_changed.connect(self._update_mode_indicator)
+        geometry_layout.addWidget(self.region_cut_controls)
         self.btn_geometry_discard_reload = declare_inspection(
             QPushButton("Discard and reload", self),
             "src-gui-widgets-map-widget-mapwidget-build-feature-geometry-edit-strip-self-btn-geometry-discard-reload|map.historical-geometry|help-inspect-src-gui-widgets-map-widget-mapwidget-build-feature-geometry-edit-strip-self-btn-geometry-discard-reload",
@@ -1553,7 +1568,8 @@ class MapWidget(
     @Slot()
     def _on_mode_indicator_clicked(self) -> None:
         """Cancel the current map edit when the active-mode pill is clicked."""
-        self.cancel_active_session()
+        if not self.cancel_map_subtool():
+            self.cancel_active_session()
 
     @Slot()
     def _on_add_marker_clicked(self) -> None:
@@ -1607,12 +1623,19 @@ class MapWidget(
             return (
                 not self._feature_geometry_edit_pending
                 and self._feature_geometry_apply_available
+                and not self._feature_geometry_draft_error
+                and not self.region_cut_controls.active
             )
         return mode in {"marker_appearance", "footprint"}
 
     @Slot()
     def confirm_active_session(self) -> None:
-        """Confirm the active map session through its existing persistence path."""
+        """Confirm the active step or save the parent geometry session."""
+        if self.region_cut_controls.confirm_step():
+            return
+        if self.view._drawing_tool.trace.active:
+            self.view._drawing_tool.accept_trace()
+            return
         if not self.is_active_map_session_valid():
             return
         mode = self.active_map_session_mode()
@@ -1631,11 +1654,22 @@ class MapWidget(
             self.view.finish_footprint_edit()
         self._update_mode_indicator()
 
+    def cancel_map_subtool(self) -> bool:
+        """Cancel an in-progress cut or trace before its parent edit."""
+        if self.region_cut_controls.close_cut():
+            return True
+        trace = self.view._drawing_tool.trace
+        if trace.active:
+            trace.cancel()
+            return True
+        return False
+
     @Slot()
     def cancel_active_session(self) -> None:
         """Discard the active map session without persisting its working copy."""
         if self._feature_geometry_edit_pending:
             return
+        self.region_cut_controls.close_cut()
         mode = self.active_map_session_mode()
         if mode == "marker":
             self.view.cancel_marker_placement()
@@ -1652,8 +1686,8 @@ class MapWidget(
             self.view.cancel_footprint_edit()
         self._update_mode_indicator()
 
-    @Slot(str, list)
-    def _on_geometry_changed(self, marker_id: str, geometry: list) -> None:
+    @Slot(str, object)
+    def _on_geometry_changed(self, marker_id: str, geometry: Geometry) -> None:
         """Refreshes mode indicator when vertex editing completes.
 
         Args:
@@ -1933,7 +1967,7 @@ class MapWidget(
         description: Optional[str] = None,
         lore_date: Optional[float] = None,
         feature_type: str = "point",
-        geometry: Optional[list] = None,
+        geometry: Geometry | None = None,
         style: Optional[dict] = None,
         visual_attributes: Optional[dict] = None,
     ) -> None:
@@ -1988,7 +2022,7 @@ class MapWidget(
     def update_feature_geometry(
         self,
         marker_id: str,
-        geometry: list[dict[str, float]],
+        geometry: Geometry,
         anchor_x: float,
         anchor_y: float,
     ) -> None:
@@ -2000,6 +2034,8 @@ class MapWidget(
         self.feature_geometry_edit_label.setText(label)
         self.feature_geometry_edit_source.setText(source)
         self.feature_geometry_edit_strip.show()
+        self.geometry_draft_feedback.hide()
+        self._feature_geometry_draft_error = ""
         self._feature_geometry_edit_pending = False
         self._update_mode_indicator()
 
@@ -2017,13 +2053,28 @@ class MapWidget(
         self.btn_geometry_discard_reload.setEnabled(
             not self._feature_geometry_edit_pending
         )
-        self.btn_confirm_map_edit.setToolTip(explanation)
+        self.btn_confirm_map_edit.setToolTip(
+            explanation or self._feature_geometry_draft_error
+        )
+        self._update_mode_indicator()
+
+    def set_feature_geometry_draft_error(self, explanation: str) -> None:
+        """Disable Apply for an invalid draft while keeping its handles editable."""
+        if explanation == self._feature_geometry_draft_error:
+            return
+        self._feature_geometry_draft_error = explanation
+        self.geometry_draft_feedback.setText(explanation)
+        self.geometry_draft_feedback.setVisible(bool(explanation))
+        if self._feature_geometry_apply_available:
+            self.btn_confirm_map_edit.setToolTip(explanation)
         self._update_mode_indicator()
 
     def hide_feature_geometry_edit(self) -> None:
         """Hide working-copy controls after apply or cancellation."""
+        self.region_cut_controls.set_target(None)
         self.feature_geometry_edit_strip.hide()
         self._feature_geometry_apply_available = True
+        self._feature_geometry_draft_error = ""
         self.btn_geometry_discard_reload.hide()
         self._feature_geometry_edit_pending = False
         self._update_mode_indicator()
@@ -2107,6 +2158,8 @@ class MapWidget(
     def _on_theme_changed(self, _theme: dict) -> None:
         """Refresh locally styled map controls after a theme change."""
         self._apply_theme_styles()
+        self.border_trace_controls.restyle()
+        self.region_cut_controls.restyle()
 
     def _apply_mode_indicator_style(self, mode: str) -> None:
         """Applies themed style to the mode indicator label.
@@ -2227,7 +2280,12 @@ class MapWidget(
             self.view.setCursor(Qt.CursorShape.ArrowCursor)
 
         active = self.active_map_session_mode() is not None
-        self.map_edit_action_bar.setVisible(active)
+        subtool_active = (
+            self.region_cut_controls.active or self.view._drawing_tool.trace.active
+        )
+        if subtool_active:
+            self.overlay_banner.hide()
+        self.map_edit_action_bar.setVisible(active and not subtool_active)
         self.btn_confirm_map_edit.setEnabled(self.is_active_map_session_valid())
         self.btn_cancel_map_edit.setEnabled(
             active and not self._feature_geometry_edit_pending
@@ -2271,7 +2329,8 @@ class MapWidget(
                 event.accept()
                 return
             if event.key() == Qt.Key.Key_Escape:
-                self.cancel_active_session()
+                if not self.cancel_map_subtool():
+                    self.cancel_active_session()
                 event.accept()
                 return
         if event.key() == Qt.Key.Key_Escape:

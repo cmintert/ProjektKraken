@@ -783,9 +783,12 @@ class MapLayerModel(QAbstractItemModel):
         self._date_formatter = formatter
         self._emit_all_data_changed()
 
-    def temporal_validity(self, node: MapLayerNode) -> ResolvedLayerTemporalValidity:
+    def temporal_validity(
+        self, node: MapLayerNode, *, at_date: float | None = None
+    ) -> ResolvedLayerTemporalValidity:
         """Use the shared evaluator for vector features and their group ancestors."""
-        if self._current_time is None:
+        date = self._current_time if at_date is None else at_date
+        if date is None:
             return ResolvedLayerTemporalValidity(
                 applicable=node.layer_type
                 in VECTOR_LAYER_TYPES | {MAP_LAYER_TYPE_GROUP},
@@ -795,7 +798,7 @@ class MapLayerModel(QAbstractItemModel):
         return resolve_layer_temporal_validity(
             self._root,
             node.id,
-            self._current_time,
+            date,
             self.calendar_converter,
             anchors=self._temporal_anchors,
             constraints=self._temporal_constraints,

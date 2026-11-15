@@ -16,12 +16,14 @@ MIGRATION_IDS = (
     "002_mfjson_trajectories",
     "003_canonical_relations",
     "004_event_timing",
+    "005_region_holes",
 )
 CURRENT_VERSION = len(MIGRATION_IDS)
 STRUCTURAL_VERSION = 1
 TRAJECTORY_VERSION = 2
 RELATION_VERSION = 3
 EVENT_TIMING_VERSION = 4
+REGION_HOLES_VERSION = 5
 LEGACY_POINT_FIELDS = 3
 COORDINATE_FIELDS = 2
 LEGACY_FOREIGN_KEY_TABLES = ("markers", "event_tags", "entity_tags")

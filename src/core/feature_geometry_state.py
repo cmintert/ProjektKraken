@@ -11,8 +11,14 @@ from dataclasses import dataclass, field
 from typing import Any, Literal, Sequence
 
 from src.core.marker import FEATURE_TYPE_PATH, FEATURE_TYPE_REGION, MapFeature
+from src.core.region_geometry import (
+    Geometry,
+    RegionPolygon,
+    feature_anchor,
+    geometry_rings,
+    ring_points,
+)
 
-Geometry = list[dict[str, float]]
 GeometrySource = Literal["base", "dated"]
 
 
@@ -29,6 +35,11 @@ def validate_feature_geometry(feature_type: str, geometry: Geometry) -> None:
     minimum = 2 if feature_type == FEATURE_TYPE_PATH else 3
     if feature_type not in {FEATURE_TYPE_PATH, FEATURE_TYPE_REGION}:
         raise ValueError("Dated geometry is available only for paths and regions.")
+    if isinstance(geometry, dict):
+        if feature_type != FEATURE_TYPE_REGION:
+            raise ValueError("Only regions can have holes.")
+        RegionPolygon.from_geometry(geometry).validated()
+        return
     if len(geometry) < minimum:
         raise ValueError(
             f"{feature_type.title()} geometry requires at least {minimum} vertices."
@@ -46,13 +57,7 @@ def validate_feature_geometry(feature_type: str, geometry: Geometry) -> None:
 
 def calculate_feature_anchor(geometry: Geometry) -> tuple[float, float]:
     """Return the existing arithmetic-mean anchor for a geometry."""
-    if not geometry:
-        raise ValueError("Geometry cannot be empty.")
-    count = len(geometry)
-    return (
-        sum(float(point["x"]) for point in geometry) / count,
-        sum(float(point["y"]) for point in geometry) / count,
-    )
+    return feature_anchor(geometry)
 
 
 @dataclass(frozen=True)
@@ -84,10 +89,17 @@ class FeatureGeometryState:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "FeatureGeometryState":
         """Reconstruct a state from a repository or command snapshot."""
-        geometry = [
-            {"x": float(point["x"]), "y": float(point["y"])}
-            for point in data["geometry"]
-        ]
+        raw: Geometry = data["geometry"]
+        outer, *holes = geometry_rings(raw)
+
+        def decode(ring: list[dict[str, float]]) -> list[dict[str, float]]:
+            return [{"x": x, "y": y} for x, y in ring_points(ring)]
+
+        geometry: Geometry = (
+            {"outer": decode(outer), "holes": [decode(ring) for ring in holes]}
+            if holes
+            else decode(outer)
+        )
         return cls(
             id=str(data.get("id") or uuid.uuid4()),
             marker_id=str(data["marker_id"]),

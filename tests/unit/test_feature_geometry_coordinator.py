@@ -1,7 +1,8 @@
 """Cached playback tests for the dated geometry coordinator."""
 
 import pytest
-from PySide6.QtCore import QCoreApplication, QObject, Signal
+from PySide6.QtCore import QCoreApplication, QObject, QPointF, Qt, Signal
+from PySide6.QtGui import QPixmap
 
 from src.app.coordinators.feature_geometry_coordinator import (
     FeatureGeometryCoordinator,
@@ -11,6 +12,164 @@ from src.commands.feature_geometry_commands import (
     ReplaceFeatureGeometryStatesCommand,
     UpdateFeatureBaseGeometryCommand,
 )
+from src.core.region_geometry import RegionPolygon
+from src.gui.widgets.map_widget import MapWidget
+
+
+def _square(low, high):
+    return RegionPolygon(((low, low), (high, low), (high, high), (low, high)))
+
+
+def test_region_cut_controls_copy_cutter_at_the_fixed_edit_date(
+    qtbot, tmp_path, monkeypatch, init_theme_manager
+):
+    window = _Window()
+    widget = MapWidget()
+    qtbot.addWidget(widget)
+    window.map_widget = widget
+    monkeypatch.setattr(widget, "get_selected_map_id", lambda: "map")
+    widget.resize(540, 600)
+    widget.show()
+    image = tmp_path / "map.png"
+    pixmap = QPixmap(600, 600)
+    pixmap.fill(Qt.GlobalColor.white)
+    assert pixmap.save(str(image))
+    assert widget.view.load_map(str(image))
+    coordinator = FeatureGeometryCoordinator(window)
+    coordinator.bind_ui()
+
+    target = _square(0.1, 0.9)
+    dated_lake = _square(0.4, 0.6)
+    base_lake = _square(0.3, 0.7)
+    _add_test_regions(widget, coordinator, target, base_lake)
+
+    coordinator.on_states_ready(
+        "map",
+        [
+            {
+                "id": "dated-lake",
+                "marker_id": "lake-marker",
+                "effective_date": 1220,
+                "geometry": dated_lake.to_geometry(),
+                "anchor_x": 0.5,
+                "anchor_y": 0.5,
+            }
+        ],
+    )
+    commands = []
+    window.command_requested.connect(commands.append)
+    window.timeline.time = 1220
+    coordinator.start_edit_at_playhead("object")
+    window.timeline.time = 1200
+    coordinator.on_playhead_changed(1200)
+    editor = widget.region_cut_controls
+    assert editor.start.isVisible()
+    qtbot.keyClick(editor.start, Qt.Key.Key_Space)
+    assert editor.active
+    qtbot.mouseClick(editor.pick, Qt.MouseButton.LeftButton)
+    assert editor.regions.itemText(0) == "Lake"
+    editor.regions.setCurrentIndex(0)
+    assert editor.regions.currentData() == dated_lake.to_geometry()
+    qtbot.mouseClick(editor.preview, Qt.MouseButton.LeftButton)
+    assert editor.use.isEnabled()
+    assert not widget.is_active_map_session_valid()
+    assert widget.view.feature_items["object"]._geometry == target.to_geometry()
+    qtbot.keyClick(widget.view, Qt.Key.Key_Escape)
+    assert not editor.active
+    assert coordinator.is_active and not commands
+
+    qtbot.mouseClick(editor.start, Qt.MouseButton.LeftButton)
+    qtbot.mouseClick(editor.pick, Qt.MouseButton.LeftButton)
+    editor.regions.setCurrentIndex(0)
+    qtbot.mouseClick(editor.preview, Qt.MouseButton.LeftButton)
+    qtbot.mouseClick(editor.use, Qt.MouseButton.LeftButton)
+    assert not commands
+    assert len(widget.view._vertex_editor._vertex_handles) == 8
+    qtbot.keyClick(widget.view, Qt.Key.Key_Return)
+    assert len(commands) == 1
+    state = commands[0].after_states[0]
+    assert state["effective_date"] == 1220
+    assert set(RegionPolygon.from_geometry(state["geometry"]).holes[0]) == set(
+        dated_lake.outer
+    )
+
+
+def _add_test_regions(widget, coordinator, target, cutter):
+    snapshots = []
+    for marker_id, object_id, label, polygon in (
+        ("marker", "object", "Region", target),
+        ("lake-marker", "lake", "Lake", cutter),
+    ):
+        geometry = polygon.to_geometry()
+        snapshots.append(
+            {
+                **_marker_snapshot(),
+                "id": marker_id,
+                "object_id": object_id,
+                "label": label,
+                "feature_type": "region",
+                "geometry": geometry,
+                "x": 0.5,
+                "y": 0.5,
+            }
+        )
+        widget.view.add_marker(
+            object_id,
+            "entity",
+            label,
+            0.5,
+            0.5,
+            feature_type="region",
+            geometry=geometry,
+        )
+    coordinator.on_markers_ready("map", snapshots)
+
+
+def test_trace_controls_append_a_route_and_escape_preserves_draft(
+    qtbot, tmp_path, init_theme_manager
+):
+    widget = MapWidget()
+    qtbot.addWidget(widget)
+    widget.resize(650, 620)
+    widget.show()
+    image = tmp_path / "map.png"
+    pixmap = QPixmap(400, 400)
+    pixmap.fill(Qt.GlobalColor.white)
+    assert pixmap.save(str(image))
+    view = widget.view
+    assert view.load_map(str(image))
+    source = _square(0.25, 0.75)
+    view.add_marker(
+        "region",
+        "entity",
+        "Source",
+        0.5,
+        0.5,
+        feature_type="region",
+        geometry=source.to_geometry(),
+    )
+    view.start_drawing("region")
+    controls = widget.border_trace_controls
+    assert controls.start.isVisible()
+    qtbot.mouseClick(controls.start, Qt.MouseButton.LeftButton)
+    qtbot.mouseClick(
+        view.viewport(),
+        Qt.MouseButton.LeftButton,
+        pos=view.mapFromScene(QPointF(100, 100)),
+    )
+    qtbot.mouseClick(
+        view.viewport(),
+        Qt.MouseButton.LeftButton,
+        pos=view.mapFromScene(QPointF(100, 300)),
+    )
+    assert controls.accept.isEnabled()
+    qtbot.mouseClick(controls.switch, Qt.MouseButton.LeftButton)
+    qtbot.mouseClick(controls.accept, Qt.MouseButton.LeftButton)
+    assert view._drawing_tool.draft_points() == source.outer
+    qtbot.mouseClick(controls.start, Qt.MouseButton.LeftButton)
+    qtbot.keyClick(view, Qt.Key.Key_Escape)
+    assert view.is_drawing
+    assert view._drawing_tool.draft_points() == source.outer
 
 
 class _Item:
@@ -41,9 +200,7 @@ class _View(QObject):
         self.feature_items = {"object": _Item()}
         self._vertex_editor = _VertexEditor()
 
-    def set_temporal_authoring_override(
-        self, _object_id: str, _enabled: bool
-    ) -> None:
+    def set_temporal_authoring_override(self, _object_id: str, _enabled: bool) -> None:
         """Mirror the production view contract for coordinator tests."""
 
 
@@ -283,10 +440,18 @@ def test_geometry_draft_survives_recreated_scene_item_and_detects_conflict():
     coordinator.bind_ui()
     snapshot = _marker_snapshot()
     coordinator.on_markers_ready("map", [snapshot])
-    coordinator._start_session("map", "marker", snapshot, "base", {
-        "geometry": snapshot["geometry"], "anchor_x": snapshot["x"],
-        "anchor_y": snapshot["y"],
-    }, [])
+    coordinator._start_session(
+        "map",
+        "marker",
+        snapshot,
+        "base",
+        {
+            "geometry": snapshot["geometry"],
+            "anchor_x": snapshot["x"],
+            "anchor_y": snapshot["y"],
+        },
+        [],
+    )
     working = [{"x": 0.4, "y": 0.4}, {"x": 0.8, "y": 0.8}]
     window.map_widget.view.feature_geometry_preview_changed.emit("object", working)
     working[0]["x"] = 0.99
@@ -306,8 +471,9 @@ def test_geometry_removal_retains_independent_working_copy():
     coordinator = FeatureGeometryCoordinator(window)
     coordinator.on_markers_ready("map", [_marker_snapshot()])
     coordinator.start_edit_at_playhead("object")
-    coordinator.on_preview_changed("object", [{"x": 0.4, "y": 0.4},
-                                               {"x": 0.8, "y": 0.8}])
+    coordinator.on_preview_changed(
+        "object", [{"x": 0.4, "y": 0.4}, {"x": 0.8, "y": 0.8}]
+    )
     window.map_widget.view.feature_items.clear()
     coordinator.on_markers_ready("map", [])
     assert coordinator.edit_status()["conflicted"]
@@ -327,16 +493,27 @@ def test_geometry_transition_resolves_each_target(target_type, decision):
     snapshot = _marker_snapshot()
     coordinator.on_markers_ready("map", [snapshot])
     state = FeatureGeometryState(
-        marker_id="marker", effective_date=0.0, geometry=snapshot["geometry"],
-        anchor_x=snapshot["x"], anchor_y=snapshot["y"],
+        marker_id="marker",
+        effective_date=0.0,
+        geometry=snapshot["geometry"],
+        anchor_x=snapshot["x"],
+        anchor_y=snapshot["y"],
     ).to_dict()
     before = [state] if target_type == "state" else []
     coordinator.on_states_ready("map", before)
-    target = ({"geometry": snapshot["geometry"], "anchor_x": snapshot["x"],
-               "anchor_y": snapshot["y"]} if target_type == "base" else state)
+    target = (
+        {
+            "geometry": snapshot["geometry"],
+            "anchor_x": snapshot["x"],
+            "anchor_y": snapshot["y"],
+        }
+        if target_type == "base"
+        else state
+    )
     coordinator._start_session("map", "marker", snapshot, target_type, target, before)
-    coordinator.on_preview_changed("object", [{"x": 0.4, "y": 0.4},
-                                               {"x": 0.8, "y": 0.8}])
+    coordinator.on_preview_changed(
+        "object", [{"x": 0.4, "y": 0.4}, {"x": 0.8, "y": 0.8}]
+    )
     commands, actions = [], []
     window.command_requested.connect(commands.append)
     guard = MapEditTransitionCoordinator(
@@ -349,8 +526,12 @@ def test_geometry_transition_resolves_each_target(target_type, decision):
         assert actions == [True] and commands == [] and not coordinator.is_active
     else:
         assert actions == [] and len(commands) == 1
-        coordinator.on_command_finished(CommandResult(
-            True, "saved", data={"command_id": commands[0].command_id},
-            command_name=commands[0].__class__.__name__,
-        ))
+        coordinator.on_command_finished(
+            CommandResult(
+                True,
+                "saved",
+                data={"command_id": commands[0].command_id},
+                command_name=commands[0].__class__.__name__,
+            )
+        )
         assert actions == [True] and not coordinator.is_active
