@@ -17574,8 +17574,8 @@
     {
       "source": "src/gui/widgets/map/region_cut_controls.py",
       "symbol": "RegionCutControls.__init__",
-      "sha256": "a8753c78549cc65a8e69a86adf2f5abced12b106474e63328b0ddecfc325e4ef",
-      "review_note": "Reviewed copied candidate selection and Preview cut/Use cut/Cancel cut against the coordinator and focused workflow tests. New canonical cutter explanation records date/Base scope, separate parent saving and rejected results. Shared action flow preserves control identities and focus order at narrow widths. Human prose and native review pending."
+      "sha256": "6c0f118a9e9072ad13f780c77a1201b545c526a4b8f0e1741c25a7dea31ce5db",
+      "review_note": "KRT-165: reviewed Cut this region, Draw area to remove, Choose cutting region and Preview/Use/Cancel cut against Base and dated border edits. The named edited region is always cut; the chosen cutting region stays unchanged. Captions and canonical cutter Help explain both roles, local acceptance versus parent Confirm and Escape cancellation. Six-theme 320 px composed controls and both cutter routes passed persistence/undo/redo regressions. Native/human acceptance remains pending."
     },
     {
       "source": "src/gui/widgets/map/neighbor_region_controls.py",
@@ -17628,8 +17628,8 @@
     {
       "source": "src/app/coordinators/neighbor_region_coordinator.py",
       "symbol": "NeighborRegionCoordinator.guard_playhead",
-      "sha256": "113f56fc5996a061d7bd1cb14345306440a9351cab65413b6e8fb3ec981ec82b",
-      "review_note": "KRT-164: paused playback and restored the captured viewing date before the shared Apply/Keep editing/Discard guard; object linking retains local ownership. maps.md documents the date boundary."
+      "sha256": "b13afc5da9a52880a64ea293094fe9a3df02c71a93ae7680810485ef1c195eaf",
+      "review_note": "KRT-165: reviewed deferred captured-date restoration after raw playhead fanout, including a tick while the object picker is open or immediately before it closes. Picker-owned ticks do not open another transition prompt; cancellation retains the accepted draft. Normal guarded transitions remain. Canonical maps Help remains accurate."
     },
     {
       "source": "src/app/coordinators/neighbor_region_coordinator.py",

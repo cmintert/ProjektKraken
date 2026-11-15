@@ -7,7 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from PySide6.QtCore import QPointF, Qt
+from PySide6.QtCore import QObject, QPointF, Qt, Signal
 from PySide6.QtGui import QFont, QFontDatabase, QPixmap
 from PySide6.QtWidgets import QMenu, QWidget
 
@@ -18,6 +18,7 @@ from src.app.coordinators.neighbor_region_coordinator import (
     NeighborRegionCoordinator,
     NeighborRegionPorts,
 )
+from src.app.raster_controller import RasterController
 from src.commands.base_command import CommandResult
 from src.commands.composite_command import CompositeCommand
 from src.commands.entity_commands import CreateEntityCommand
@@ -306,6 +307,56 @@ def test_transition_waits_for_atomic_creation_and_time_guard_retains_date(
     finish(n, n.submitted[0].execute(n.db))
     assert n.state["date"] == 200
     assert not guard.is_waiting
+
+
+@pytest.mark.parametrize("process_inside_picker", [True, False])
+def test_picker_tick_restores_raster_after_signal_fanout(
+    neighbor, qtbot, process_inside_picker
+):
+    n = neighbor
+    draw(n)
+    accept(n)
+
+    class Timeline(QObject):
+        changed = Signal(float)
+
+        def set_date(self, date):
+            n.state["date"] = date
+            self.changed.emit(date)
+
+    timeline = Timeline(n.widget)
+    raster = SimpleNamespace(
+        _current_lore_date=100,
+        _current_map_id=None,
+        _raster_edit_target_by_node={},
+        _map_widget=n.widget,
+    )
+    # Match production order: the guard's nested date restore finishes before
+    # the original signal reaches the raster controller.
+    timeline.changed.connect(n.coordinator.guard_playhead)
+    timeline.changed.connect(
+        lambda date: RasterController.on_playhead_changed(raster, date)
+    )
+    n.coordinator.ports.set_date = timeline.set_date
+    transitions, pauses = [], []
+    n.coordinator.ports.transition = lambda *args: transitions.append(args)
+    n.coordinator.ports.pause_playback = lambda: pauses.append(True)
+
+    def cancel_picker():
+        timeline.set_date(200)
+        assert n.state["date"] == 100
+        assert raster._current_lore_date == 200
+        if process_inside_picker:
+            qtbot.waitUntil(lambda: raster._current_lore_date == 100)
+        return None
+
+    n.coordinator.ports.choose_object = cancel_picker
+    n.coordinator.save()
+    qtbot.waitUntil(lambda: raster._current_lore_date == 100)
+    assert n.state["date"] == 100
+    assert pauses and not transitions and not n.submitted
+    assert n.widget.neighbor_region_controls.stage == "accepted"
+    assert n.coordinator.edit_status()["can_apply"]
 
 
 def test_feature_actions_and_persistent_command_registry():

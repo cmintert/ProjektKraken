@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-15
-**Commit:** 54012c443b12727800a9fcb64c294c0331e87847
+**Commit:** 2aef75263309dbec57f1d68f977d5ce119c7f187
 ---
 
 # Changelog
@@ -43,6 +43,17 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-15)* **Maps (KRT-165)**: Restored the captured viewing date after
+  signal delivery when playback advances during neighboring-region object choice,
+  keeping the raster aligned with the timeline even after picker cancellation.
+  Made **Cut this region** explicit in Base Geometry and dated border edits:
+  the named edited region loses the drawn area or another region's overlap;
+  other regions stay unchanged. Added operand captions, updated Help and
+  picker fanout plus drawn/existing-cutter save/undo/redo regressions.
+  Empty-cut warnings name the covering region, explain why Use cut is unavailable,
+  and identify the displayed outline as the region before cutting.
+  Kept narrow-layout test fonts independent of optional screenshot capture.
 
 - *(2026-11-15)* Wrapped region trace and cutter actions at narrow map widths.
   Added cutter inspection Help and reviewed the affected map edit explanations.

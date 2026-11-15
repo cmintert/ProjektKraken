@@ -740,7 +740,8 @@ class FeatureGeometryCoordinator(QObject):
             controls.set_target(
                 object_id
                 if marker_snapshot["feature_type"] == FEATURE_TYPE_REGION
-                else None
+                else None,
+                str(marker_snapshot.get("label") or "this region"),
             )
         source = self._source_label(target_type, target)
         self._window.map_widget.show_feature_geometry_edit(

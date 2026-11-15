@@ -107,10 +107,9 @@ class NeighborRegionCoordinator(QObject):
             return True
         self.ports.pause_playback()
         self.ports.set_date(d.date)
-        if self._choosing_object:
-            return False
         if not self._time_transition_pending:
             self._time_transition_pending = True
+            choosing_object = self._choosing_object
 
             def resolve() -> None:
                 self._time_transition_pending = False
@@ -119,6 +118,8 @@ class NeighborRegionCoordinator(QObject):
                 # Raw timeline fanout has now finished; restore every view before
                 # opening a modal decision, rather than leaving mixed dates.
                 self.ports.set_date(d.date)
+                if choosing_object:
+                    return
                 self.ports.transition(
                     "change the viewing date",
                     lambda: self.ports.set_date(date),

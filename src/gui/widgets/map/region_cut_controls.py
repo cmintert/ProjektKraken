@@ -37,6 +37,8 @@ class RegionCutControls(QWidget):
         self._view = view
         self._mode: CutMode = "closed"
         self._target_id: str | None = None
+        self._target_label = "this region"
+        self._cutter_label = "the drawn area"
         self._points: list[Point] = []
         self._result: CutResult | None = None
         self._original: Geometry | None = None
@@ -45,18 +47,31 @@ class RegionCutControls(QWidget):
 
         layout = QVBoxLayout(self)
         StyleHelper.apply_panel_spacing(layout)
-        self.start = self._button("Cut area", self._start, layout)
+        self.start = self._button("Cut this region", self._start, layout)
+        self.start.setToolTip(
+            "Difference: remove a drawn area or another region's overlap "
+            "from this region only."
+        )
+        self.context = QLabel(self)
+        self.context.setWordWrap(True)
+        layout.addWidget(self.context)
         choices = ActionFlowLayout()
         choices.setContentsMargins(0, 0, 0, 0)
-        self.draw = self._button("Draw cutter", self._start_drawing, choices)
-        self.pick = self._button("Pick region", self.pick_requested.emit, choices)
+        self.draw = self._button("Draw area to remove", self._start_drawing, choices)
+        self.pick = self._button(
+            "Choose cutting region", self.pick_requested.emit, choices
+        )
         choices.addStretch()
         layout.addLayout(choices)
+        self.cutter_caption = QLabel("Cut using this region (unchanged):", self)
+        self.cutter_caption.setWordWrap(True)
+        layout.addWidget(self.cutter_caption)
         self.regions = declare_inspection(
             QComboBox(self),
             "region-cut-cutter|map.historical-geometry|help-inspect-region-cut-cutter",
         )
-        self.regions.setAccessibleName("Cutter region")
+        self.regions.setAccessibleName("Cutting region (unchanged)")
+        self.cutter_caption.setBuddy(self.regions)
         self.regions.setSizeAdjustPolicy(
             QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
         )
@@ -69,6 +84,7 @@ class RegionCutControls(QWidget):
         actions.setContentsMargins(0, 0, 0, 0)
         self.preview = self._button("Preview cut", self._request_preview, actions)
         self.use = self._button("Use cut", self._accept, actions)
+        self.use.setToolTip("Keep this cut in the working copy; Confirm saves it.")
         self.cancel = self._button("Cancel cut", self.close_cut, actions)
         actions.addStretch()
         layout.addLayout(actions)
@@ -98,22 +114,28 @@ class RegionCutControls(QWidget):
             self._points or self.regions.currentIndex() >= 0 or self._result
         )
 
-    def set_target(self, object_id: str | None) -> None:
+    def set_target(self, object_id: str | None, label: str = "") -> None:
         """Show Cut for a managed region target."""
         if self._target_id != object_id:
             self.close_cut()
             self._target_id = object_id
+        self._target_label = label or "this region"
+        self.context.setText(f"Cutting {self._target_label} only")
         self.setVisible(object_id is not None)
         self._refresh()
 
     def _start(self) -> None:
-        self._set_mode("choose", "Draw a cutter or choose an existing region.")
+        self._set_mode(
+            "choose",
+            f"Remove area from {self._target_label}. Other regions stay unchanged.",
+        )
 
     def _start_drawing(self) -> None:
         self._clear_preview()
         self._points.clear()
+        self.regions.setCurrentIndex(-1)
         self._set_mode(
-            "draw", "Click the map to draw the cutter, then preview the cut."
+            "draw", f"Draw the area to remove from {self._target_label}, then preview."
         )
         self._view.setFocus(Qt.FocusReason.OtherFocusReason)
 
@@ -130,7 +152,8 @@ class RegionCutControls(QWidget):
         self.regions.blockSignals(False)
         self._set_mode(
             "pick",
-            f"Choose a cutter from {source}."
+            f"Choose a region from {source} to cut {self._target_label}. "
+            "The chosen region stays unchanged."
             if candidates
             else f"No other regions available from {source}.",
         )
@@ -142,6 +165,11 @@ class RegionCutControls(QWidget):
         geometry = self.regions.currentData()
         if geometry:
             self._show_geometry((geometry,))
+            self.message.setText(
+                f"Remove the overlap with {self.regions.currentText()} "
+                f"from {self._target_label}. "
+                f"{self.regions.currentText()} stays unchanged."
+            )
         self._refresh()
 
     def handle_mouse_press(self, pos: QPointF) -> bool:
@@ -178,8 +206,10 @@ class RegionCutControls(QWidget):
 
     def _request_preview(self) -> None:
         if self._mode == "draw" and len(self._points) >= MIN_REGION_VERTICES:
+            self._cutter_label = "the drawn area"
             self.preview_requested.emit(self._drawing_geometry())
         elif self._mode == "pick" and self.regions.currentIndex() >= 0:
+            self._cutter_label = self.regions.currentText()
             self.preview_requested.emit(self.regions.currentData())
 
     def show_result(self, result: CutResult, original: Geometry) -> None:
@@ -187,9 +217,20 @@ class RegionCutControls(QWidget):
         self._result = result
         self._original = original
         self._render_result(result, original)
-        self._set_mode(
-            "result", result.explanation or "Previewing the area that remains."
+        message = (
+            f"Preview: {self._target_label} after removing the overlap with "
+            f"{self._cutter_label}. Other regions stay unchanged. "
+            + (result.explanation or "Use cut to keep this preview; Confirm saves it.")
         )
+        if result.status == "empty":
+            message = (
+                f"Cannot use cut: {self._cutter_label} covers all of "
+                f"{self._target_label}. Nothing would remain, so Use cut is "
+                f"unavailable. The outline shown is {self._target_label} before "
+                "cutting. Cancel cut to choose a different area. "
+                "Other regions stay unchanged."
+            )
+        self._set_mode("result", message)
         (self.use if result.status == "ready" else self.cancel).setFocus(
             Qt.FocusReason.OtherFocusReason
         )
@@ -282,9 +323,11 @@ class RegionCutControls(QWidget):
 
     def _refresh(self) -> None:
         self.start.setVisible(not self.active)
+        self.context.setVisible(self.active)
         self.draw.setVisible(self._mode in ("choose", "draw", "pick"))
         self.pick.setVisible(self._mode in ("choose", "draw", "pick"))
         self.regions.setVisible(self._mode == "pick")
+        self.cutter_caption.setVisible(self._mode == "pick")
         self.message.setVisible(self.active)
         self.preview.setVisible(self._mode in ("draw", "pick"))
         self.preview.setEnabled(

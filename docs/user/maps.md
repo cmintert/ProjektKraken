@@ -219,16 +219,28 @@ markers use ordinary positions or trajectories rather than dated border states.
 
 ### Cut an area out of a region
 
+Use **Cut this region** while editing an existing region. The region where you
+start the cut is always the one that changes. Draw an area to remove, or use
+another region as the cutter. The operation subtracts that area from the edited
+region (Difference); other regions stay unchanged.
+
 1. Start editing the region's border at the intended date, or choose Base Geometry
    in **Manage historical borders…**.
-2. Choose **Cut area**, then **Draw cutter** to outline the area to remove, or
-   **Pick region** to choose an existing region from **Cutter region**.
-3. Choose **Preview cut**. Review the area that remains, then choose **Use cut**.
-4. Choose **Confirm** to save the edited border as one undoable change.
+2. Choose **Cut this region**. Check the **Cutting [region name] only** caption.
+3. Choose **Draw area to remove** to outline a temporary cut area, or
+   **Choose cutting region** to choose another region. The latter is labeled
+   **Cut using this region (unchanged)**. For example, cutting Forest using Lake
+   removes Lake's overlap from Forest; Lake stays unchanged. Drawing an area
+   likewise removes it from Forest without creating or changing another region.
+4. Choose **Preview cut**. Review the named region and area that remains, then
+   choose **Use cut**.
+5. Choose **Confirm** to save the edited border as one undoable change.
 
 (help-inspect-region-cut-cutter)=
 
-> Cutter region supplies a copied shape to subtract from the border being edited.
+> Cut using this region (unchanged) supplies a copied shape to subtract from the
+> region named in Cutting [region name] only. The edited region is the one cut.
+> Drawing a cut area also removes it from that edited region only.
 > For a dated edit, candidates use their shape and existence at that edit's date;
 > Base Geometry uses their undated shapes. The source region stays unchanged.
 > Preview cut shows the result; Use cut accepts it into the working copy but does

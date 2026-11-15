@@ -1,8 +1,13 @@
 """Cached playback tests for the dated geometry coordinator."""
 
+import json
+import os
+from pathlib import Path
+
 import pytest
 from PySide6.QtCore import QCoreApplication, QObject, QPointF, Qt, Signal
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QFont, QFontDatabase, QPixmap
+from PySide6.QtWidgets import QWidget
 
 from src.app.coordinators.feature_geometry_coordinator import (
     FeatureGeometryCoordinator,
@@ -12,7 +17,12 @@ from src.commands.feature_geometry_commands import (
     ReplaceFeatureGeometryStatesCommand,
     UpdateFeatureBaseGeometryCommand,
 )
+from src.core.feature_geometry_state import FeatureGeometryState
+from src.core.map import Map
+from src.core.marker import Marker
 from src.core.region_geometry import RegionPolygon
+from src.core.theme_manager import ThemeManager
+from src.gui.utils.action_label_metrics import action_label_geometry
 from src.gui.widgets.map_widget import MapWidget
 
 
@@ -20,15 +30,36 @@ def _square(low, high):
     return RegionPolygon(((low, low), (high, low), (high, high), (low, high)))
 
 
+@pytest.mark.ci_fast
+@pytest.mark.parametrize("target_type", ["base", "state", "new_state"])
+@pytest.mark.parametrize("theme", list(json.loads(Path("themes.json").read_text())))
+@pytest.mark.parametrize("cutter_kind", ["region", "drawn"])
 def test_region_cut_controls_copy_cutter_at_the_fixed_edit_date(
-    qtbot, tmp_path, monkeypatch, init_theme_manager
+    qtbot,
+    tmp_path,
+    monkeypatch,
+    init_theme_manager,
+    db_service,
+    target_type,
+    theme,
+    qapp,
+    cutter_kind,
 ):
     window = _Window()
     widget = MapWidget()
+    widget.view.setViewport(QWidget())
     qtbot.addWidget(widget)
     window.map_widget = widget
     monkeypatch.setattr(widget, "get_selected_map_id", lambda: "map")
-    widget.resize(540, 600)
+    tm = ThemeManager()
+    tm.apply_theme(qapp, Path("src/resources/main.qss").read_text())
+    tm.set_theme(theme, qapp, persist=False)
+    font = Path("C:/Windows/Fonts/segoeui.ttf")
+    if font.exists():
+        QFontDatabase.addApplicationFont(str(font))
+        qapp.setFont(QFont("Segoe UI", 10))
+    widget.setFixedWidth(320)
+    widget.resize(320, 1050)
     widget.show()
     image = tmp_path / "map.png"
     pixmap = QPixmap(600, 600)
@@ -42,36 +73,99 @@ def test_region_cut_controls_copy_cutter_at_the_fixed_edit_date(
     dated_lake = _square(0.4, 0.6)
     base_lake = _square(0.3, 0.7)
     _add_test_regions(widget, coordinator, target, base_lake)
-
-    coordinator.on_states_ready(
-        "map",
-        [
-            {
-                "id": "dated-lake",
-                "marker_id": "lake-marker",
-                "effective_date": 1220,
-                "geometry": dated_lake.to_geometry(),
-                "anchor_x": 0.5,
-                "anchor_y": 0.5,
-            }
-        ],
+    db_service.insert_map(Map(id="map", name="Map", image_path=str(image)))
+    for marker_id in ("marker", "lake-marker"):
+        db_service.insert_marker(
+            Marker.from_dict(coordinator.marker_snapshot("map", marker_id))
+        )
+    lake_states = db_service.feature_geometry_repo.replace_marker_states(
+        "lake-marker",
+        [FeatureGeometryState("lake-marker", 1220, dated_lake.to_geometry(), 0.5, 0.5)],
     )
+    target_states = [
+        FeatureGeometryState("marker", 1250, target.to_geometry(), 0.5, 0.5)
+    ]
+    if target_type == "state":
+        target_states.append(
+            FeatureGeometryState("marker", 1220, target.to_geometry(), 0.5, 0.5)
+        )
+    before = db_service.feature_geometry_repo.replace_marker_states(
+        "marker", target_states
+    )
+    coordinator.on_states_ready("map", [*before, *lake_states])
+    original_cutter = db_service.get_marker("lake-marker").to_dict()
     commands = []
     window.command_requested.connect(commands.append)
     window.timeline.time = 1220
-    coordinator.start_edit_at_playhead("object")
+    if target_type == "base":
+        coordinator._start_session(
+            "map",
+            "marker",
+            coordinator.marker_snapshot("map", "marker"),
+            "base",
+            {},
+            before,
+        )
+    else:
+        # Exercise the visible selected-feature route, not just the core overlay.
+        widget.feature_actions.select("object", "canvas")
+        widget.feature_geometry_edit_requested.emit("object")
     window.timeline.time = 1200
     coordinator.on_playhead_changed(1200)
     editor = widget.region_cut_controls
     assert editor.start.isVisible()
+    assert editor.start.text() == "Cut this region"
     qtbot.keyClick(editor.start, Qt.Key.Key_Space)
     assert editor.active
-    qtbot.mouseClick(editor.pick, Qt.MouseButton.LeftButton)
-    assert editor.regions.itemText(0) == "Lake"
-    editor.regions.setCurrentIndex(0)
-    assert editor.regions.currentData() == dated_lake.to_geometry()
+    assert editor.context.text() == "Cutting Region only"
+    qapp.processEvents()
+    assert not editor.preview.isEnabled()
+    for button in (editor.draw, editor.pick, editor.preview, editor.cancel):
+        if button.isVisible():
+            assert action_label_geometry(button).fits
+            assert editor.rect().contains(button.geometry())
+    expected_cutter = (
+        (base_lake if target_type == "base" else dated_lake)
+        if cutter_kind == "region"
+        else _square(0.2, 0.4)
+    )
+
+    def prepare_cutter():
+        button = editor.pick if cutter_kind == "region" else editor.draw
+        qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
+        qapp.processEvents()
+        assert editor.preview.isVisible() and not editor.preview.isEnabled()
+        assert action_label_geometry(editor.preview).fits
+        if cutter_kind == "region":
+            assert editor.regions.itemText(0) == "Lake"
+            editor.regions.setCurrentIndex(0)
+            assert editor.regions.currentData() == expected_cutter.to_geometry()
+            assert editor.message.text() == (
+                "Remove the overlap with Lake from Region. Lake stays unchanged."
+            )
+        else:
+            assert "Draw the area to remove from Region" in editor.message.text()
+            widget.view._snapping_manager.enabled = False
+            for x, y in expected_cutter.outer:
+                assert editor.handle_mouse_press(QPointF(x * 600, y * 600))
+
+    prepare_cutter()
     qtbot.mouseClick(editor.preview, Qt.MouseButton.LeftButton)
     assert editor.use.isEnabled()
+    cutter_name = "Lake" if cutter_kind == "region" else "the drawn area"
+    assert (
+        f"Region after removing the overlap with {cutter_name}" in editor.message.text()
+    )
+    qapp.processEvents()
+    assert editor.use.hasFocus()
+    for button in (editor.use, editor.cancel):
+        assert action_label_geometry(button).fits
+        assert editor.rect().contains(button.geometry())
+    evidence = os.environ.get("KRT165_EVIDENCE_DIR")
+    if evidence and target_type == "new_state":
+        output = Path(evidence)
+        output.mkdir(parents=True, exist_ok=True)
+        assert widget.grab().save(str(output / f"{theme}-320-{cutter_kind}-cut.png"))
     assert not widget.is_active_map_session_valid()
     assert widget.view.feature_items["object"]._geometry == target.to_geometry()
     qtbot.keyClick(widget.view, Qt.Key.Key_Escape)
@@ -79,19 +173,36 @@ def test_region_cut_controls_copy_cutter_at_the_fixed_edit_date(
     assert coordinator.is_active and not commands
 
     qtbot.mouseClick(editor.start, Qt.MouseButton.LeftButton)
-    qtbot.mouseClick(editor.pick, Qt.MouseButton.LeftButton)
-    editor.regions.setCurrentIndex(0)
+    prepare_cutter()
     qtbot.mouseClick(editor.preview, Qt.MouseButton.LeftButton)
     qtbot.mouseClick(editor.use, Qt.MouseButton.LeftButton)
     assert not commands
     assert len(widget.view._vertex_editor._vertex_handles) == 8
     qtbot.keyClick(widget.view, Qt.Key.Key_Return)
     assert len(commands) == 1
-    state = commands[0].after_states[0]
-    assert state["effective_date"] == 1220
-    assert set(RegionPolygon.from_geometry(state["geometry"]).holes[0]) == set(
-        dated_lake.outer
+    command = commands[0]
+    assert command.execute(db_service).success
+    if target_type == "base":
+        saved_geometry = db_service.get_marker("marker").geometry
+    else:
+        saved_geometry = next(
+            state.geometry
+            for state in db_service.feature_geometry_repo.get_states("marker")
+            if state.effective_date == 1220
+        )
+    assert set(RegionPolygon.from_geometry(saved_geometry).holes[0]) == set(
+        expected_cutter.outer
     )
+    assert db_service.get_marker("lake-marker").to_dict() == original_cutter
+    assert [
+        s.to_dict() for s in db_service.feature_geometry_repo.get_states("lake-marker")
+    ] == lake_states
+    assert command.undo(db_service).success
+    assert db_service.get_marker("marker").geometry == target.to_geometry()
+    assert [
+        s.to_dict() for s in db_service.feature_geometry_repo.get_states("marker")
+    ] == before
+    assert command.execute(db_service).success
 
 
 def _add_test_regions(widget, coordinator, target, cutter):
