@@ -18,6 +18,23 @@ pytestmark = pytest.mark.ci_fast
 @pytest.mark.parametrize(
     "relative",
     [
+        "core/map_hierarchy.py",
+        "services/history_store.py",
+        "services/command_execution.py",
+        "services/command_transactions.py",
+    ],
+)
+def test_hierarchy_and_history_have_no_ui_or_command_dependencies(relative):
+    modules = {module for _, module in _imported_modules(_SOURCE_ROOT / relative)}
+    forbidden = ["PySide6", "src.app", "src.gui", "src.commands"]
+    if relative.startswith("core/"):
+        forbidden.append("src.services")
+    assert not any(module.startswith(tuple(forbidden)) for module in modules)
+
+
+@pytest.mark.parametrize(
+    "relative",
+    [
         "core/calendar_index.py",
         "core/temporal_context.py",
         "core/temporal_shift.py",

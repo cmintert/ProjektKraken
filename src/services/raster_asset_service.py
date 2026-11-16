@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Iterable
 
 from src.core.map_state import RasterLayerState
+from src.services.command_transactions import preserve_files, record_file_changes
 
 
 class RasterAssetService:
@@ -28,11 +29,13 @@ class RasterAssetService:
     def atomic_write_bytes(self, relative_path: str, data: bytes) -> None:
         """Write bytes using a same-directory temporary file and replacement."""
         target = self.resolve(relative_path)
+        preserve_files(target)
         target.parent.mkdir(parents=True, exist_ok=True)
         temporary = target.with_name(f".{target.name}.{uuid.uuid4().hex}.tmp")
         try:
             temporary.write_bytes(data)
             os.replace(temporary, target)
+            record_file_changes(target)
         finally:
             if temporary.exists():
                 temporary.unlink()

@@ -28,7 +28,7 @@ class MigrationCoordinator(QObject):
                     self._dialog_parent,
                     "World upgraded",
                     "Your world was upgraded safely. Older undo history was "
-                    "archived because relation formats changed. New edits have "
+                    "archived to introduce restart-safe undo and redo. New edits have "
                     "a new undo history.\n\nRecovery bundle: "
                     f"{report.get('recovery_path')}",
                 )

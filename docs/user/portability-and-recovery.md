@@ -33,6 +33,19 @@ backup replaces saved world data and requires a restart after shutdown; it is
 not an ordinary undoable edit. An upgrade recovery copy serves a different
 purpose again: it preserves the pre-migration data for the compatible version.
 
+Supported saved edits retain both Undo and Redo when you reopen the same world.
+Making a new undoable edit after Undo replaces the previous Redo branch. Some
+operations retain their undo information only for the current session; reopening
+does not allow undoing past one of those operations. Up to 100 reachable edits
+are retained in each stack.
+
+The upgrade that introduces this history format starts a new undo history for
+existing worlds. Your saved lore, map content and registrations remain intact.
+The upgrade notice identifies a verified recovery bundle containing the previous
+database and command artifacts. That bundle is recovery material for the previous
+compatible application version; it is not an additional Undo action in the
+upgraded world. Read-only opening does not perform the upgrade or history reset.
+
 Use {ref}`backup and restore <help-backup-restore>` for the full procedure and
 its safety-snapshot behavior. Keep upgrade recovery instructions with their
 recovery directory. A successful restore of lore cannot recover an image file

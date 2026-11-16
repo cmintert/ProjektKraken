@@ -834,10 +834,10 @@
     "tests/integration/test_world_migrations.py::test_upgrade_preserves_map_temporal_attachment_and_calendar_state": [
       "ci_fast"
     ],
-    "tests/integration/test_world_migrations.py::test_versioned_upgrade_preserves_already_normalized_history[1]": [
+    "tests/integration/test_world_migrations.py::test_versioned_upgrade_archives_history_for_ordered_stacks[1]": [
       "ci_fast"
     ],
-    "tests/integration/test_world_migrations.py::test_versioned_upgrade_preserves_already_normalized_history[2]": [
+    "tests/integration/test_world_migrations.py::test_versioned_upgrade_archives_history_for_ordered_stacks[2]": [
       "ci_fast"
     ],
     "tests/integration/test_world_migrations.py::test_wal_backup_includes_committed_wal_and_excludes_competing_writer": [

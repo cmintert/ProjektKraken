@@ -90,6 +90,7 @@ def _execute_import(db: DatabaseService, world: World, args: argparse.Namespace)
         reviewed_command,
         verify_artifact,
     )
+    from src.services.command_execution import execute_with_history
     from src.services.history_service import HistoryService
 
     artifact = None
@@ -140,11 +141,11 @@ def _execute_import(db: DatabaseService, world: World, args: argparse.Namespace)
         )
         return REVIEW_REQUIRED
     command = reviewed_command(db, preview, plan)
-    with db.transaction():
-        result = command.execute(db)
-        if not result.success:
-            raise ValueError(result.message)
-        HistoryService(db, world.id).save_command(cast(CommandProtocol, command))
+    result = execute_with_history(
+        db, HistoryService(db, world.id), cast(CommandProtocol, command), "execute"
+    )
+    if not result.success:
+        raise ValueError(result.message)
     print("Import Successful! Reviewed changes applied; Undo is available.")
     return 0
 

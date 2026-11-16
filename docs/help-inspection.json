@@ -10284,26 +10284,26 @@
     {
       "source": "src/commands/map_crud_commands.py",
       "symbol": "RegisterDetailMapCommand.execute",
-      "sha256": "de57899cc659ef115fba682ccf2fc091a4a94fdd834933302709686eddb576df",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "a8218957b9837724da9f6777899f5c49fac3404326494e0ffad7003fe0e6bc6b",
+      "review_note": "KRT-168: reviewed unchanged master/detail control routes, single-master promotion and footprint meaning. Exact hierarchy-key snapshots now survive serialization and preserve unrelated attributes during undo; missing records fail rather than reporting success. Portability/recovery and command-history references explain restart restoration and the recovery-protected legacy-history reset. Existing map control explanations remain accurate; human prose/live Help approval is pending."
     },
     {
       "source": "src/commands/map_crud_commands.py",
       "symbol": "RegisterDetailMapCommand.undo",
-      "sha256": "4d41b76e843ece07f077ab7a1d1dd3bfdfb69ed6b7cf7ea20fd326b09c161057",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "a2f229a01006d3bca8771e555ff7f3913b48808887bb359dee6c46c6ae5ebe71",
+      "review_note": "KRT-168: reviewed unchanged master/detail control routes, single-master promotion and footprint meaning. Exact hierarchy-key snapshots now survive serialization and preserve unrelated attributes during undo; missing records fail rather than reporting success. Portability/recovery and command-history references explain restart restoration and the recovery-protected legacy-history reset. Existing map control explanations remain accurate; human prose/live Help approval is pending."
     },
     {
       "source": "src/commands/map_crud_commands.py",
       "symbol": "SetMasterMapCommand.execute",
-      "sha256": "45c6e0546ca8078df77b9bdb91ad1c7f9f0d03557779df5997a741a7fb1fa6ec",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "42223ed829a3cbca9a1d530bfd68e4fae69206e946267d94e35d4c1fad46af7f",
+      "review_note": "KRT-168: reviewed unchanged master/detail control routes, single-master promotion and footprint meaning. Exact hierarchy-key snapshots now survive serialization and preserve unrelated attributes during undo; missing records fail rather than reporting success. Portability/recovery and command-history references explain restart restoration and the recovery-protected legacy-history reset. Existing map control explanations remain accurate; human prose/live Help approval is pending."
     },
     {
       "source": "src/commands/map_crud_commands.py",
       "symbol": "SetMasterMapCommand.undo",
-      "sha256": "80bfddd4a78271fd85a7acfb9ffae35ddc43a67b81a3c2d35cb0e54e5bf59ce7",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "dd470a17ea1fcaffb76f0ba1c1a39e38f4e5e1ed1a93f66ecb263a2f6a3ff20f",
+      "review_note": "KRT-168: reviewed unchanged master/detail control routes, single-master promotion and footprint meaning. Exact hierarchy-key snapshots now survive serialization and preserve unrelated attributes during undo; missing records fail rather than reporting success. Portability/recovery and command-history references explain restart restoration and the recovery-protected legacy-history reset. Existing map control explanations remain accurate; human prose/live Help approval is pending."
     },
     {
       "source": "src/commands/map_crud_commands.py",

@@ -6,12 +6,14 @@ individual markers or the layer hierarchy.
 
 import dataclasses
 import logging
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from src.commands.base_command import BaseCommand, CommandResult
 from src.core.map import Map
 from src.core.map_constants import MAP_ROLE_DETAIL, MAP_ROLE_MASTER
+from src.core.map_hierarchy import hierarchy_attributes, restore_hierarchy_attributes
 from src.core.map_state import MapAggregateSnapshot
 from src.core.marker import Marker
 from src.services.command_artifact_store import CommandArtifactStore
@@ -88,9 +90,7 @@ class CreateMapCommand(BaseCommand):
                     )
                 elif image_created:
                     target = (world_root / self._map.image_path).resolve()
-                    if target.exists() and target.is_relative_to(
-                        world_root.resolve()
-                    ):
+                    if target.exists() and target.is_relative_to(world_root.resolve()):
                         target.unlink()
                 raise
             self._is_executed = True
@@ -259,7 +259,17 @@ class UpdateMapCommand(BaseCommand):
         Returns:
             Dictionary representation of the command.
         """
-        return {"map_id": self.map_id, "update_data": self.update_data}
+        return deepcopy(
+            {
+                "map_id": self.map_id,
+                "update_data": self.update_data,
+                "previous_map": self._previous_map.to_dict()
+                if self._previous_map
+                else None,
+                "new_map": self._new_map.to_dict() if self._new_map else None,
+                "is_executed": self._is_executed,
+            }
+        )
 
     @classmethod
     def from_dict(cls, data: dict) -> "UpdateMapCommand":
@@ -271,7 +281,15 @@ class UpdateMapCommand(BaseCommand):
         Returns:
             UpdateMapCommand instance.
         """
-        return cls(data["map_id"], data["update_data"])
+        command = cls(data["map_id"], deepcopy(data["update_data"]))
+        command._previous_map = (
+            Map.from_dict(data["previous_map"]) if data.get("previous_map") else None
+        )
+        command._new_map = (
+            Map.from_dict(data["new_map"]) if data.get("new_map") else None
+        )
+        command._is_executed = bool(data.get("is_executed", False))
+        return command
 
 
 class DeleteMapCommand(BaseCommand):
@@ -317,9 +335,7 @@ class DeleteMapCommand(BaseCommand):
             # affected maps and let the user re-register or delete them
             # explicitly first.
             all_maps = db_service.get_all_maps()
-            descendants = list(
-                MapRepository.iter_descendants(self.map_id, all_maps)
-            )
+            descendants = list(MapRepository.iter_descendants(self.map_id, all_maps))
             if descendants:
                 names = ", ".join(d.name for d in descendants)
                 return CommandResult(
@@ -405,9 +421,7 @@ class DeleteMapCommand(BaseCommand):
         return {
             "map_id": self.map_id,
             "aggregate_snapshot": (
-                self._aggregate_snapshot.to_dict()
-                if self._aggregate_snapshot
-                else None
+                self._aggregate_snapshot.to_dict() if self._aggregate_snapshot else None
             ),
             "artifact_manifest": self._artifact_manifest,
             "is_executed": self._is_executed,
@@ -426,12 +440,8 @@ class DeleteMapCommand(BaseCommand):
         command = cls(data["map_id"])
         snapshot_data = data.get("aggregate_snapshot")
         if snapshot_data:
-            command._aggregate_snapshot = MapAggregateSnapshot.from_dict(
-                snapshot_data
-            )
-            command._deleted_map = Map.from_dict(
-                command._aggregate_snapshot.map_data
-            )
+            command._aggregate_snapshot = MapAggregateSnapshot.from_dict(snapshot_data)
+            command._deleted_map = Map.from_dict(command._aggregate_snapshot.map_data)
             command._deleted_markers = [
                 Marker.from_dict(marker)
                 for marker in command._aggregate_snapshot.markers
@@ -489,6 +499,7 @@ class SetMasterMapCommand(BaseCommand):
         super().__init__()
         self.map_id = map_id
         self._previous_master_id: Optional[str] = None
+        self._hierarchy_before: dict[str, dict] | None = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Promote the target map to master, demoting any prior master.
@@ -510,6 +521,8 @@ class SetMasterMapCommand(BaseCommand):
                 )
 
             if (target.attributes or {}).get("map_role") == MAP_ROLE_MASTER:
+                if self._hierarchy_before is None:
+                    self._hierarchy_before = {}
                 # Already master — no-op, but mark executed so undo is a no-op.
                 self._is_executed = True
                 return CommandResult(
@@ -520,6 +533,14 @@ class SetMasterMapCommand(BaseCommand):
 
             all_maps = db_service.get_all_maps()
             previous = MapRepository.get_master_map(all_maps)
+            if self._hierarchy_before is None:
+                self._hierarchy_before = {
+                    target.id: hierarchy_attributes(target.attributes)
+                }
+                if previous and previous.id != self.map_id:
+                    self._hierarchy_before[previous.id] = hierarchy_attributes(
+                        previous.attributes
+                    )
             if previous and previous.id != self.map_id:
                 self._previous_master_id = previous.id
                 # A master being demoted to a plain map clears its role,
@@ -573,31 +594,43 @@ class SetMasterMapCommand(BaseCommand):
         """
         if not self._is_executed:
             return
-        try:
-            target = db_service.get_map(self.map_id)
-            if target:
-                cleared = _merge_attributes(target, {"map_role": None})
-                db_service.insert_map(cleared)
-            if self._previous_master_id:
-                previous = db_service.get_map(self._previous_master_id)
-                if previous:
-                    restored = _merge_attributes(
-                        previous, {"map_role": MAP_ROLE_MASTER}
-                    )
-                    db_service.insert_map(restored)
-            self._is_executed = False
-            logger.info(f"Undid set master: {self.map_id}")
-        except Exception as e:
-            logger.error(f"Failed to undo SetMasterMapCommand: {e}")
+        if self._hierarchy_before is None:
+            raise NestingValidationError(
+                "Legacy command has no trustworthy undo snapshot."
+            )
+        for map_id, attributes in self._hierarchy_before.items():
+            current = db_service.get_map(map_id)
+            if current is None:
+                raise NestingValidationError(f"Map not found: {map_id}")
+            db_service.insert_map(
+                dataclasses.replace(
+                    current,
+                    attributes=restore_hierarchy_attributes(
+                        current.attributes, attributes
+                    ),
+                )
+            )
+        self._is_executed = False
 
     def to_dict(self) -> dict:
         """Serialize command to dictionary."""
-        return {"map_id": self.map_id}
+        return deepcopy(
+            {
+                "map_id": self.map_id,
+                "before": self._hierarchy_before,
+                "previous_master_id": self._previous_master_id,
+                "is_executed": self._is_executed,
+            }
+        )
 
     @classmethod
     def from_dict(cls, data: dict) -> "SetMasterMapCommand":
         """Deserialize command from dictionary."""
-        return cls(data["map_id"])
+        command = cls(data["map_id"])
+        command._hierarchy_before = deepcopy(data.get("before"))
+        command._previous_master_id = data.get("previous_master_id")
+        command._is_executed = bool(data.get("is_executed", False))
+        return command
 
 
 class RegisterDetailMapCommand(BaseCommand):
@@ -631,7 +664,7 @@ class RegisterDetailMapCommand(BaseCommand):
         super().__init__()
         self.detail_map_id = detail_map_id
         self.parent_map_id = parent_map_id
-        self.registration = registration
+        self.registration = deepcopy(registration)
         self._previous_attrs: Optional[Dict[str, Any]] = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
@@ -668,9 +701,8 @@ class RegisterDetailMapCommand(BaseCommand):
                     command_name="RegisterDetailMapCommand",
                 )
 
-            self._previous_attrs = (
-                dict(detail.attributes) if detail.attributes else {}
-            )
+            if self._previous_attrs is None:
+                self._previous_attrs = hierarchy_attributes(detail.attributes)
 
             updated = _merge_attributes(
                 detail,
@@ -683,8 +715,7 @@ class RegisterDetailMapCommand(BaseCommand):
             db_service.insert_map(updated)
             self._is_executed = True
             logger.info(
-                f"Registered detail map {self.detail_map_id} under "
-                f"{self.parent_map_id}"
+                f"Registered detail map {self.detail_map_id} under {self.parent_map_id}"
             )
             return CommandResult(
                 success=True,
@@ -707,35 +738,45 @@ class RegisterDetailMapCommand(BaseCommand):
 
         """
         if not self._is_executed or self._previous_attrs is None:
-            return
+            raise NestingValidationError("No trustworthy registration undo snapshot.")
         try:
             detail = db_service.get_map(self.detail_map_id)
-            if detail:
-                restored = dataclasses.replace(
-                    detail, attributes=dict(self._previous_attrs)
-                )
-                db_service.insert_map(restored)
+            if detail is None:
+                raise NestingValidationError(f"Map not found: {self.detail_map_id}")
+            restored = dataclasses.replace(
+                detail,
+                attributes=restore_hierarchy_attributes(
+                    detail.attributes, self._previous_attrs
+                ),
+            )
+            db_service.insert_map(restored)
             self._is_executed = False
             logger.info(f"Undid detail-map registration: {self.detail_map_id}")
         except Exception as e:
             logger.error(f"Failed to undo RegisterDetailMapCommand: {e}")
+            raise
 
     def to_dict(self) -> dict:
         """Serialize command to dictionary."""
         return {
             "detail_map_id": self.detail_map_id,
             "parent_map_id": self.parent_map_id,
-            "registration": self.registration,
+            "registration": deepcopy(self.registration),
+            "before": deepcopy(self._previous_attrs),
+            "is_executed": self._is_executed,
         }
 
     @classmethod
     def from_dict(cls, data: dict) -> "RegisterDetailMapCommand":
         """Deserialize command from dictionary."""
-        return cls(
+        command = cls(
             data["detail_map_id"],
             data["parent_map_id"],
             data["registration"],
         )
+        command._previous_attrs = deepcopy(data.get("before"))
+        command._is_executed = bool(data.get("is_executed", False))
+        return command
 
 
 # ---------------------------------------------------------------------------
@@ -753,6 +794,7 @@ class RegisterDetailMapCommand(BaseCommand):
 __all__ = [
     "NestingValidationError",
 ]
+
 
 # _validate_registration is kept as a thin shim used by the Phase-1 tests
 # that import it directly.  Phase 2+ code should call

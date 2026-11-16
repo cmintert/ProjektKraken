@@ -22,14 +22,14 @@ Coordinate conventions
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Tuple
 
 from src.core.map import Map
 from src.core.map_constants import (
-    MAP_NESTING_DEPTH_CAP,
     MAP_ROLE_DETAIL,
     MAP_ROLE_MASTER,
 )
+from src.core.map_hierarchy import HierarchyError, MapHierarchy
 
 
 class NestingValidationError(ValueError):
@@ -41,7 +41,7 @@ class NestingValidationError(ValueError):
     """
 
 
-def _validate_payload(registration: Dict[str, Any]) -> None:
+def validate_registration_payload(registration: Dict[str, Any]) -> None:
     """Validate the structural shape of a registration dict.
 
     Checks mode, required numeric keys, finiteness, and positivity.
@@ -59,6 +59,13 @@ def _validate_payload(registration: Dict[str, Any]) -> None:
             "Registration mode must be 'aspect_locked_affine'."
         )
     center = registration.get("master_center_norm") or {}
+    if not isinstance(center, dict):
+        raise NestingValidationError("Registration center must be a dict.")
+    if (
+        type(registration.get("version", 1)) is not int
+        or registration.get("version", 1) != 1
+    ):
+        raise NestingValidationError("Unsupported registration version.")
     fields: Dict[str, Any] = {
         "master_center_norm.x": center.get("x"),
         "master_center_norm.y": center.get("y"),
@@ -79,6 +86,9 @@ def _validate_payload(registration: Dict[str, Any]) -> None:
         raise NestingValidationError("scale_norm must be > 0.")
     if float(fields["aspect_ratio"]) <= 0:
         raise NestingValidationError("aspect_ratio must be > 0.")
+    vertical_scale = float(fields["scale_norm"]) / float(fields["aspect_ratio"])
+    if not math.isfinite(vertical_scale) or vertical_scale <= 0:
+        raise NestingValidationError("Registration must have finite, invertible scale.")
 
 
 class MapNestingService:
@@ -139,35 +149,12 @@ class MapNestingService:
                 "Parent map must already be designated as a master or detail map."
             )
 
-        # Walk the parent chain: detect cycles and measure depth.
-        visited: set = {parent_id}
-        cursor: Optional[Map] = parent
-        depth = 1  # parent occupies depth 1; detail would be depth+1
-        while cursor is not None:
-            attrs = cursor.attributes or {}
-            next_id = attrs.get("parent_map_id")
-            if not next_id:
-                break
-            if next_id == detail_id:
-                raise NestingValidationError(
-                    "Registration would create a cycle in the nesting chain."
-                )
-            if next_id in visited:
-                raise NestingValidationError(
-                    "Existing nesting chain already contains a cycle."
-                )
-            visited.add(next_id)
-            cursor = by_id.get(next_id)
-            if cursor is None:
-                break
-            depth += 1
+        try:
+            MapHierarchy(all_maps).validate_change_parent(detail_id, parent_id)
+        except HierarchyError as exc:
+            raise NestingValidationError(str(exc)) from exc
 
-        if depth + 1 > MAP_NESTING_DEPTH_CAP:
-            raise NestingValidationError(
-                f"Nesting depth would exceed cap of {MAP_NESTING_DEPTH_CAP} levels."
-            )
-
-        _validate_payload(registration)
+        validate_registration_payload(registration)
 
     # ------------------------------------------------------------------
     # Forward transform: detail UV → parent XY
@@ -310,9 +297,7 @@ class MapNestingService:
                 # Reached the root.
                 return (current_id, current_uv)
             if parent_id in visited:
-                raise NestingValidationError(
-                    "Cycle detected during chain resolution."
-                )
+                raise NestingValidationError("Cycle detected during chain resolution.")
             registration = attrs.get("registration")
             if registration is None:
                 raise NestingValidationError(
@@ -396,23 +381,7 @@ class MapNestingService:
             NestingValidationError: If a cycle is detected.
 
         """
-        by_id: Dict[str, Map] = {m.id: m for m in all_maps}
-        visited: set = {map_id}
-        current_id = map_id
-        while True:
-            current = by_id.get(current_id)
-            if current is None:
-                break
-            parent_id = (current.attributes or {}).get("parent_map_id")
-            if not parent_id:
-                break
-            if parent_id in visited:
-                raise NestingValidationError(
-                    "Cycle detected while iterating ancestors."
-                )
-            parent = by_id.get(parent_id)
-            if parent is None:
-                break
-            visited.add(parent_id)
-            yield parent
-            current_id = parent_id
+        try:
+            yield from MapHierarchy(all_maps).ancestors(map_id)
+        except HierarchyError as exc:
+            raise NestingValidationError(str(exc)) from exc

@@ -24,6 +24,7 @@ from src.services import longform_builder
 from src.services.asset_store import AssetStore
 from src.services.attachment_service import AttachmentService
 from src.services.calendar_context_service import ensure_active_calendar
+from src.services.command_execution import execute_with_history
 from src.services.db_service import DatabaseService
 from src.services.detail_snapshot_service import DetailSnapshotService
 from src.services.migrations import MigrationError
@@ -96,7 +97,7 @@ class DatabaseWorker(QObject):
     entity_state_resolved = Signal(str, dict)  # entity_id, serialized state
 
     command_finished = Signal(CommandResult)
-    history_loaded = Signal(list)
+    history_loaded = Signal(dict)
     history_cleared = Signal(int)
     error_occurred = Signal(str)
 
@@ -278,19 +279,15 @@ class DatabaseWorker(QObject):
             self.history_service = HistoryService(self.db_service, world_id)
             for name, command_type in self._command_types.items():
                 self.history_service.register_command_type(name, command_type)
-            commands = self.history_service.load_recent_history(limit=100)
-            payloads = [
-                {
-                    "type": command.__class__.__name__,
-                    "data": command.to_dict(),
-                    "base": command.base_state_dict(),
-                }
-                for command in commands
-            ]
-            self.history_loaded.emit(payloads)
+            self.history_loaded.emit(
+                {**self.history_service.load_stacks(), "world_id": world_id}
+            )
         except Exception:
             logger.exception("Failed to initialize command history")
-            self.error_occurred.emit("Failed to initialize command history.")
+            self.history_loaded.emit({"undo": [], "redo": [], "world_id": world_id})
+            self.error_occurred.emit(
+                "Could not restore undo/redo history. Saved world data is unchanged."
+            )
 
     @Slot()
     def clear_command_history(self) -> None:
@@ -298,7 +295,18 @@ class DatabaseWorker(QObject):
         if self.history_service is None:
             self.history_cleared.emit(0)
             return
-        self.history_cleared.emit(self.history_service.clear_all_history())
+        try:
+            self.history_cleared.emit(self.history_service.clear_all_history())
+        except Exception:
+            logger.exception("Could not clear persistent history")
+            self.error_occurred.emit("Undo/redo history could not be cleared.")
+            try:
+                restored: dict[str, Any] = self.history_service.load_stacks()
+            except Exception:
+                logger.exception("Could not reload history after failed clear")
+                restored = {"undo": [], "redo": []}
+            restored["world_id"] = self.history_service.world_id
+            self.history_loaded.emit(restored)
 
     @Slot()
     def load_timeline_grouping_config(self) -> None:
@@ -745,42 +753,11 @@ class DatabaseWorker(QObject):
         try:
             self.operation_started.emit(f"Executing {command_name}...")
 
-            # Execute with the local service
-            result = command.execute(self.db_service)
-
-            # Normalize result to CommandResult
-            if isinstance(result, bool):
-                success = result
-                msg = f"{command_name} {'succeeded' if success else 'failed'}"
-                result_obj = CommandResult(
-                    success=success,
-                    message=msg,
-                    command_name=command_name,
-                    data={"command_id": command.command_id},
-                )
-            elif isinstance(result, CommandResult):
-                result_obj = result
-                # Ensure command_name is set if missing
-                if not result_obj.command_name:
-                    result_obj.command_name = command_name
-                result_obj.data.setdefault("command_id", command.command_id)
-            else:
-                # Unexpected return type
-                logger.warning(
-                    f"Command {command_name} returned unexpected type: {type(result)}"
-                )
-                result_obj = CommandResult(
-                    success=False,
-                    message="Internal Error: Invalid command result",
-                    command_name=command_name,
-                )
-
-            if (
-                result_obj.success
-                and self.history_service is not None
-                and command.persist_to_history
-            ):
-                self.history_service.save_command(command)
+            result_obj = execute_with_history(
+                self.db_service, self.history_service, command, "execute"
+            )
+            result_obj.command_name = command_name
+            result_obj.data.setdefault("command_id", command.command_id)
             if result_obj.success and self.temporal_manager is not None:
                 self.temporal_manager.clear_all_cache()
             result_obj.data["command_state"] = self._command_state(command)
@@ -852,23 +829,11 @@ class DatabaseWorker(QObject):
         command_name = command.__class__.__name__
         try:
             self.operation_started.emit(f"Undoing {command_name}...")
-            undo_result = command.undo(self.db_service)
-            if isinstance(undo_result, CommandResult):
-                result_obj = undo_result
-                result_obj.command_name = f"Undo_{command_name}"
-            else:
-                result_obj = CommandResult(
-                    success=True,
-                    message=f"Undone: {command.get_description()}",
-                    command_name=f"Undo_{command_name}",
-                )
+            result_obj = execute_with_history(
+                self.db_service, self.history_service, command, "undo"
+            )
+            result_obj.command_name = f"Undo_{command_name}"
             result_obj.data.setdefault("command_id", command.command_id)
-            if (
-                result_obj.success
-                and self.history_service is not None
-                and command.persist_to_history
-            ):
-                self.history_service.set_command_executed(command.command_id, False)
             if result_obj.success and self.temporal_manager is not None:
                 self.temporal_manager.clear_all_cache()
             result_obj.data["command_state"] = self._command_state(command)
@@ -939,35 +904,11 @@ class DatabaseWorker(QObject):
         command_name = command.__class__.__name__
         try:
             self.operation_started.emit(f"Redoing {command_name}...")
-            result = command.execute(self.db_service)
-
-            # Normalize result to CommandResult
-            if isinstance(result, bool):
-                success = result
-                msg = f"Redone: {command.get_description()}"
-                result_obj = CommandResult(
-                    success=success,
-                    message=msg,
-                    command_name=f"Redo_{command_name}",
-                )
-            elif isinstance(result, CommandResult):
-                result_obj = result
-                result_obj.message = f"Redone: {command.get_description()}"
-                result_obj.command_name = f"Redo_{command_name}"
-            else:
-                result_obj = CommandResult(
-                    success=False,
-                    message="Internal Error: Invalid command result",
-                    command_name=f"Redo_{command_name}",
-                )
-
+            result_obj = execute_with_history(
+                self.db_service, self.history_service, command, "redo"
+            )
+            result_obj.command_name = f"Redo_{command_name}"
             result_obj.data.setdefault("command_id", command.command_id)
-            if (
-                result_obj.success
-                and self.history_service is not None
-                and command.persist_to_history
-            ):
-                self.history_service.set_command_executed(command.command_id, True)
             if result_obj.success and self.temporal_manager is not None:
                 self.temporal_manager.clear_all_cache()
             result_obj.data["command_state"] = self._command_state(command)

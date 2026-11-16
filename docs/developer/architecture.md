@@ -1,5 +1,45 @@
 # Architecture and Threading
 
+## Map hierarchy integrity
+
+`MapHierarchy` in the core layer owns copied map snapshots and interprets parent
+references independently of legacy roles. Traversal is iterative; proposed moves
+validate ancestry and the complete subtree against the five-level limit.
+Repository traversal delegates to this model, including the map deletion guard.
+Diagnostics report legacy role inconsistencies without rewriting authored data.
+
+`ChangeMapParentCommand` owns structural mutation and deep before/after snapshots
+of only the hierarchy keys. It uses the worker-owned database through the normal
+command path and preserves unrelated attributes on undo. The command is registered
+for serialization; it is not yet wired into the map authoring UI.
+The still-active legacy master/detail commands also serialize exact hierarchy
+snapshots, so their current UI remains undoable after restart while A1 is pending.
+
+`HistoryStore` owns the version-2 per-world stack manifest in `system_meta`.
+The manifest, rather than timestamps or applied flags, defines the reachable
+undo/redo order. `HistoryService` serializes commands and fails closed if an
+active record cannot be reconstructed. Session-only authoring actions establish
+restart boundaries; pruning retains only contiguous reachable stack suffixes.
+An expression index resolves active command identities from the bounded manifest
+without decoding archived command rows on each edit.
+
+`execute_with_history` owns the outer command/history transaction behind the
+existing worker entry points. `command_transactions` defers command callbacks
+until that transaction completes and restores command retry state on rollback.
+Asset stores journal only touched files in temporary storage so failed history
+writes restore raster, attachment and command-artifact files as well as SQL.
+Rollback-hook failures still trigger file recovery. Content digests distinguish
+owned writes from independent replacements, which remain untouched; recovery
+continues for other safe files. A recovery failure retains its temporary directory
+and logs the failure instead of deleting the recovery material. No new worker slot,
+window responsibility or database-service feature API is introduced.
+
+Migration 006 resets legacy command rows after the existing recovery-bundle
+verification. Original history/artifacts remain in that bundle; old artifact
+files are conservatively retained in the world rather than deleted on upgrade.
+Startup delivers detached undo/redo stack dictionaries; the GUI reconstructs
+them without database access and ignores snapshots for another active world.
+
 ## Portable type color assignments
 
 `CategoryPaletteCoordinator` coalesces confirmed world-load and command signals.

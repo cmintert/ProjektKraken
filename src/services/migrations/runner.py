@@ -162,10 +162,10 @@ def _apply(conn: sqlite3.Connection, version: int) -> bool:
                 is not None
             )
             relations.normalize_relations(conn)
-            steps.validate_integrity(conn)
+            steps.validate_integrity(conn, version=steps.RELATION_VERSION)
             return had_history
         relations.install_relation_integrity(conn)
-        steps.validate_integrity(conn)
+        steps.validate_integrity(conn, version=steps.RELATION_VERSION)
     elif version == steps.EVENT_TIMING_VERSION:
         from src.services.migrations.event_timing import migrate_event_timing
 
@@ -173,6 +173,10 @@ def _apply(conn: sqlite3.Connection, version: int) -> bool:
     elif version == steps.REGION_HOLES_VERSION:
         # The version gate protects the new JSON payload. Old rows decode as-is.
         pass
+    elif version == steps.ORDERED_HISTORY_VERSION:
+        from src.services.migrations.command_history import reset_legacy_history
+
+        return reset_legacy_history(conn)
     return False
 
 
@@ -218,6 +222,9 @@ def prepare_database(
                 "INSERT INTO system_meta VALUES ('wikilink_relations_schema_version','2')"
             )
             conn.execute(LEDGER_SQL)
+            from src.services.migrations.command_history import reset_legacy_history
+
+            reset_legacy_history(conn)
             _stamp(conn, steps.CURRENT_VERSION, "created_current", "created")
             archived = False
         else:

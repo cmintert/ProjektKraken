@@ -17,6 +17,11 @@ from functools import wraps
 from typing import Any, Literal
 
 from src.core.command import CommandResult
+from src.services.command_transactions import (
+    after_command,
+    capture_command_state,
+    command_transaction,
+)
 from src.services.db_service import DatabaseService
 
 logger = logging.getLogger(__name__)
@@ -75,18 +80,20 @@ class BaseCommand(ABC):
             if transaction_factory is None:
                 return method(self, db_service)
             try:
-                with transaction_factory():
+                with command_transaction(db_service):
+                    previous_state = capture_command_state(self)
+
+                    def rolled_back() -> None:
+                        self.on_transaction_rolled_back()
+                        self.__dict__.update(previous_state)
+
+                    after_command(self.on_transaction_committed, rolled_back)
                     result = method(self, db_service)
                     if isinstance(result, CommandResult) and not result.success:
                         raise _RollbackCommandResult(result)
-                self.on_transaction_committed()
                 return result
             except _RollbackCommandResult as rollback:
-                self.on_transaction_rolled_back()
                 return rollback.result
-            except Exception:
-                self.on_transaction_rolled_back()
-                raise
 
         atomic_method._kraken_atomic = True  # type: ignore[attr-defined]
         setattr(cls, method_name, atomic_method)
@@ -117,9 +124,7 @@ class BaseCommand(ABC):
         ...
 
     @abstractmethod
-    def undo(
-        self, db_service: DatabaseService
-    ) -> "CommandResult | None":
+    def undo(self, db_service: DatabaseService) -> "CommandResult | None":
         """Reverts the action.
 
         Args:

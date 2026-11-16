@@ -9,7 +9,7 @@ from typing import Any
 
 from src.services.migrations.errors import MigrationError
 from src.services.migrations.relations import install_relation_integrity
-from src.services.migrations.schema import SCHEMA_SQL
+from src.services.migrations.schema import HISTORY_COMMAND_ID_INDEX_SQL, SCHEMA_SQL
 
 MIGRATION_IDS = (
     "001_structural_compatibility",
@@ -17,6 +17,7 @@ MIGRATION_IDS = (
     "003_canonical_relations",
     "004_event_timing",
     "005_region_holes",
+    "006_ordered_command_history",
 )
 CURRENT_VERSION = len(MIGRATION_IDS)
 STRUCTURAL_VERSION = 1
@@ -24,6 +25,7 @@ TRAJECTORY_VERSION = 2
 RELATION_VERSION = 3
 EVENT_TIMING_VERSION = 4
 REGION_HOLES_VERSION = 5
+ORDERED_HISTORY_VERSION = 6
 LEGACY_POINT_FIELDS = 3
 COORDINATE_FIELDS = 2
 LEGACY_FOREIGN_KEY_TABLES = ("markers", "event_tags", "entity_tags")
@@ -46,6 +48,8 @@ def schema_statements(version: int = CURRENT_VERSION) -> Iterator[str]:
         if version >= EVENT_TIMING_VERSION
         else SCHEMA_SQL.replace("lore_date REAL,", "lore_date REAL NOT NULL,")
     )
+    if version < ORDERED_HISTORY_VERSION:
+        sql = sql.replace(HISTORY_COMMAND_ID_INDEX_SQL, "")
     for line in sql.splitlines(keepends=True):
         statement += line
         if sqlite3.complete_statement(statement):
@@ -320,13 +324,15 @@ def validate_trajectories(conn: sqlite3.Connection, *, convert: bool) -> None:
             )
 
 
-def validate_integrity(conn: sqlite3.Connection) -> None:
+def validate_integrity(
+    conn: sqlite3.Connection, *, version: int = CURRENT_VERSION
+) -> None:
     """Verify persisted integrity and schema objects without repairing anything."""
     if conn.execute("PRAGMA quick_check").fetchone()[0] != "ok":
         raise MigrationError("Database integrity verification failed.")
     if conn.execute("PRAGMA foreign_key_check").fetchone() is not None:
         raise MigrationError("Database contains broken foreign-key references.")
-    _, expected = reference_schema()
+    _, expected = reference_schema(version)
     actual = dict(
         conn.execute(
             "SELECT name, sql FROM sqlite_master "

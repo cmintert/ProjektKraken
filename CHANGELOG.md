@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-11-15
-**Commit:** 013d0f8e9235e20e1252a2f7847f1ad2f62f2a9d
+**Last Updated:** 2026-11-16
+**Commit:** 2be03afaddac164c063a13f5a529d99e3d4e8d85
 ---
 
 # Changelog
@@ -12,6 +12,16 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-11-16)* **Map hierarchy foundation (KRT-168)**: Added a detached,
+  parent-authoritative hierarchy model and a serialized structural-change
+  command. Child deletion guards now include inconsistent legacy roles, and
+  registration validation measures the full moved subtree. Added ordered Undo
+  and Redo restoration across restarts, atomic command/history persistence and
+  asset compensation on failure. A recovery-protected upgrade starts fresh
+  history for older worlds while preserving authored data and registrations.
+  Added regression coverage and updated architecture, recovery and Help notes.
+  The new hierarchy authoring UI remains scheduled for A1.
 
 - *(2026-11-15)* **Maps (KRT-164)**: Added Draw neighboring region to subtract
   an existing border from a retained drawing, preview the result and create an
@@ -43,6 +53,11 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-16)* **Map foundation review (KRT-168)**: Accepted legacy null map
+  attributes, recovered safe assets even after rollback-hook failures while
+  preserving independent file replacements, and indexed active history lookups
+  to avoid scanning the archive on every edit. Added focused regressions.
 
 - *(2026-11-15)* **Packaging**: Moved the isolated region-geometry database
   probe to the offline CLI layer, restoring the application dependency contract

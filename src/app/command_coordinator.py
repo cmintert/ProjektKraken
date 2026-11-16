@@ -160,38 +160,22 @@ class CommandCoordinator(QObject):
             )
             return fallback
 
-    @Slot(list)
-    def load_history_payloads(self, payloads: list[dict[str, object]]) -> None:
-        """Rebuild the undo stack from worker-produced serializable payloads."""
-        try:
-            from src.commands.registry import get_command_types
+    @Slot(object)
+    def load_history_payloads(self, payloads: object) -> None:
+        """Restore both ordered stacks, or expose no unsafe partial history."""
+        from src.app.history_payloads import restore_stacks
 
-            command_types = get_command_types()
-            commands: List["BaseCommand"] = []
-            for payload in payloads[-self.max_stack_size :]:
-                command_type = str(payload.get("type", ""))
-                command_class = command_types.get(command_type)
-                if command_class is None:
-                    logger.warning("Unknown persisted command type: %s", command_type)
-                    continue
-                data = payload.get("data", {})
-                base = payload.get("base", {})
-                if not isinstance(data, dict) or not isinstance(base, dict):
-                    logger.warning(
-                        "Invalid persisted command payload: %s",
-                        command_type,
-                    )
-                    continue
-                command = command_class.from_dict(data)
-                command.restore_base_state(base)
-                commands.append(command)
-            self.undo_stack = commands
-            self.redo_stack.clear()
-            self._emit_history_changed()
-            logger.info(f"Loaded {len(commands)} commands from history")
-            self.log_stack_state()
-        except Exception as e:
-            logger.error(f"Failed to load command history: {e}")
+        world = getattr(self.window, "current_world", None)
+        if isinstance(payloads, dict) and payloads.get("world_id") is not None:
+            if world is not None and payloads["world_id"] != world.id:
+                return
+        try:
+            undo, redo = restore_stacks(payloads, self.max_stack_size)
+        except Exception:
+            logger.exception("Could not restore command history")
+            undo, redo = [], []
+        self.undo_stack, self.redo_stack = undo, redo
+        self._emit_history_changed()
 
     def execute_command(self, command: "BaseCommand") -> None:
         """Execute a command via the worker thread.
