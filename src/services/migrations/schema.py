@@ -242,9 +242,17 @@ SCHEMA_SQL = """
         """
 
 
-HISTORY_COMMAND_ID_EXPRESSION = (
+LEGACY_HISTORY_COMMAND_ID_EXPRESSION = (
     "CASE WHEN json_valid(command_data) "
     "THEN json_extract(command_data, '$._command_base.command_id') END"
+)
+HISTORY_COMMAND_ID_EXPRESSION = (
+    "CASE WHEN json_valid(command_data, 2) "
+    "THEN json_extract(command_data, '$._command_base.command_id') END"
+)
+LEGACY_HISTORY_COMMAND_ID_INDEX_SQL = (
+    "CREATE INDEX IF NOT EXISTS idx_ch_world_identity ON command_history "
+    f"(world_id, {LEGACY_HISTORY_COMMAND_ID_EXPRESSION});\n"
 )
 HISTORY_COMMAND_ID_INDEX_SQL = (
     "CREATE INDEX IF NOT EXISTS idx_ch_world_identity ON command_history "

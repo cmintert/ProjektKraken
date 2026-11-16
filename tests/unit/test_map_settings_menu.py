@@ -44,8 +44,9 @@ def test_one_settings_route_and_grouped_contents(feature_map):
     assert widget.btn_fit_view.text() == "Fit to View"
     assert list(settings_actions(widget)) == [
         "Scale and distance calibration…",
-        "Set as Master Map",
-        "Register as Detail Map…",
+        "Manage Map Hierarchy…",
+        "Make independent",
+        "Attach or change parent…",
         "Show Footprints",
         "Edit Footprint…",
         "Delete map…",
@@ -69,15 +70,15 @@ def test_one_settings_route_and_grouped_contents(feature_map):
     "label,handler",
     [
         ("Scale and distance calibration…", "_configure_map_width"),
-        ("Set as Master Map", "_on_set_master_map_clicked"),
-        ("Register as Detail Map…", "_on_register_detail_map_clicked"),
+        ("Manage Map Hierarchy…", "_on_manage_hierarchy_clicked"),
+        ("Attach or change parent…", "_on_register_detail_map_clicked"),
         ("Edit Footprint…", "_on_edit_footprint_clicked"),
         ("Delete map…", "_on_delete_map_clicked"),
     ],
 )
 def test_menu_dispatches_existing_handler(feature_map, monkeypatch, label, handler):
     widget = feature_map
-    widget.maps_data[0].attributes["map_role"] = "detail"
+    widget.maps_data[0].attributes.update(map_role="detail", parent_map_id="parent")
     widget.maps_data.append(
         Map(name="World", image_path="unused.png", attributes={"map_role": "master"})
     )
@@ -92,16 +93,16 @@ def test_menu_dispatches_existing_handler(feature_map, monkeypatch, label, handl
 def test_menu_refreshes_role_and_footprint_prerequisites(feature_map):
     widget = feature_map
     actions = settings_actions(widget)
-    assert not actions["Register as Detail Map…"].isEnabled()
-    assert actions["Register as Detail Map…"].toolTip()
-    assert not actions["Set as Master Map"].isChecked()
+    assert not actions["Attach or change parent…"].isEnabled()
+    assert not actions["Make independent"].isEnabled()
     assert not actions["Edit Footprint…"].isEnabled()
     widget.maps_data[0].attributes["map_role"] = "master"
+    widget.maps_data.append(Map(id="parent", name="Independent", image_path="x.png"))
     actions = settings_actions(widget)
-    assert actions["Set as Master Map"].isChecked()
-    assert not actions["Register as Detail Map…"].isEnabled()
-    widget.maps_data[0].attributes["map_role"] = "detail"
+    assert actions["Attach or change parent…"].isEnabled()
+    widget.maps_data[0].attributes["parent_map_id"] = "parent"
     actions = settings_actions(widget)
+    assert actions["Make independent"].isEnabled()
     assert actions["Edit Footprint…"].isEnabled()
     actions["Show Footprints"].trigger()
     assert not widget.view.footprints_visible
@@ -198,7 +199,7 @@ def test_map_settings_keyboard_overflow_and_context(
         if a.property("menuSection")
     )
     assert not next(
-        a for a in menu.actions() if a.text() == "Register as Detail Map…"
+        a for a in menu.actions() if a.text() == "Attach or change parent…"
     ).isEnabled()
     for action in menu.actions():
         if not action.isSeparator():

@@ -86,6 +86,8 @@ class AppCoordinator(QObject):
 
     def bind_map_edits(self) -> None:
         """Compose draft protection once widgets and session owners exist."""
+        from PySide6.QtCore import Qt
+
         from src.app.coordinators.map_edit_transition_coordinator import (
             MapEditTransitionCoordinator,
         )
@@ -93,8 +95,17 @@ class AppCoordinator(QObject):
 
         window = self.main_window
         self.bind_neighbor_regions()
+        hierarchy = window.map_handler.hierarchy_coordinator
+        window.worker.command_finished.connect(
+            hierarchy.on_command_finished, Qt.ConnectionType.QueuedConnection
+        )
         self.map_edits: MapEditTransitionCoordinator = MapEditTransitionCoordinator(
-            [self.trajectory_edit, self.feature_geometry, self.neighbor_regions],
+            [
+                self.trajectory_edit,
+                self.feature_geometry,
+                self.neighbor_regions,
+                hierarchy,
+            ],
             lambda: str(getattr(window.current_world, "id", "")),
             lambda reason, status: decide_map_transition(reason, status, window),
             lambda message: window.status_bar.showMessage(message, 5000),

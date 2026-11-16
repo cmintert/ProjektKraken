@@ -33,20 +33,21 @@ in the map selector. At narrow widths, open the toolbar overflow and choose
 | Section | Controls |
 | --- | --- |
 | Scale | Scale and distance calibration… |
-| Map hierarchy | Set as Master Map; Register as Detail Map… |
+| Map hierarchy | Manage Map Hierarchy…; Make independent; Attach or change parent… |
 | Detail-map footprints | Show Footprints; Edit Footprint… |
 | Separate deletion action | Delete map… |
 
 Choose **Scale and distance calibration…** to enter a known map width or begin
 measurement-based calibration. Accept the scale dialog to save its proposed
-width, or cancel to leave it unchanged. The hierarchy and footprint controls
-retain their existing prerequisites: designate a master before registering a
-detail map, and show footprints before editing a placement. **Delete map…**
+width, or cancel to leave it unchanged. Any independent map can contain detail
+maps; no master designation is required. Show footprints before editing an
+existing placement. **Delete map…**
 still asks for confirmation before deletion.
 
 Opening or dismissing Map settings does not apply a change. Feature settings
 remain in **Feature actions**, and collection settings remain in **Group actions**
 in Layers. **Fit to View** remains a separate toolbar control for navigation.
+For attachment and reorganization, see [Independent and detail maps](#master-and-detail-maps).
 
 (help-map-features)=
 
@@ -613,12 +614,56 @@ playhead time, ProjektKraken resolves the latest applicable state. Use
 **Create Editable State** when you want to branch from the currently visible
 state without changing the Base raster.
 
-## Master and detail maps
+(master-and-detail-maps)=
+(help-map-hierarchy)=
 
-Use **Map settings**, under **Map hierarchy**, to designate a master map or register another map as
-a detail map. Registered detail maps appear as footprints on their parent.
-Footprints can be shown or hidden, opened, and edited. Breadcrumb navigation
-returns through the map hierarchy.
+## Independent and detail maps
+
+Each new map is independent. Attach it to another map to make it a detail map;
+its image appears as a footprint on that parent. Several independent hierarchies
+can coexist. Only registered maps are geographically connected.
+
+### Attach or change a parent
+
+1. Open **Map settings > Manage Map Hierarchy…** and select the map to move.
+2. Choose **Attach or change parent…**, choose its parent, then choose
+   **Place on parent map**. The parent canvas opens with an unsaved image preview.
+3. Drag the body to move, a corner to scale, or the round handle to rotate.
+   Arrow keys nudge; Shift increases the nudge. Bracket keys rotate by five degrees.
+4. Use **Image opacity** to compare landmarks, **Reset rotation** to return to
+   zero, or **Zoom to footprint** to inspect the placement. **Lock placement while
+   comparing** temporarily prevents movement; unlock it to adjust again.
+5. Choose **Apply** or press Enter on the canvas to save the relationship and
+   placement together. One Undo restores the previous hierarchy and placement.
+
+The saved footprint stays visible on the parent for inspection. Click it to open
+the detail map.
+
+**Cancel** or Escape on the canvas discards the preview without changing saved
+relationships and returns to the map where placement began. Parent choice alone
+never saves a relationship. A failed save retains the preview for correction.
+Changing maps or worlds with an unfinished placement uses the same **Apply /
+Keep editing / Discard** safeguard as other protected map edits.
+
+The current map also has a direct **Attach or change parent…** action in
+Map settings. The parent picker excludes the moved map, its descendants and
+choices that would exceed the current five-level limit. Moving a hierarchy
+changes only the moved map's relationship: descendants, markers, layers, raster
+content, trajectories, historical geometry and calibrated distances stay intact.
+Changing parent starts a new manual placement; exact geographic position
+preservation is planned separately. Registration does not recalibrate either map.
+
+### Reorganize and navigate
+
+In **Manage Map Hierarchy…**, select a detail map and choose **Make independent**
+to detach it with its descendants, or **Edit placement** to adjust its current
+footprint. Detachment is one undoable action. **Navigate to map** opens the selected
+map. Deletion remains guarded while a map has descendants; move or detach them first.
+
+Click a saved footprint to enter its detail map. Use the parent button or a
+breadcrumb segment to return through its connected ancestry. Returning to a map
+restores its previous viewport where available. The selector also opens any map,
+including independent roots. **Show Footprints** changes visibility only.
 
 (help-map-calibration)=
 
@@ -1575,13 +1620,15 @@ apply any of its actions.
 
 (help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-master-action)=
 
-**Set as master map** — Designate this map as the world's master map for detail-map
-relationships.
+**Manage Map Hierarchy…** — Browse independent roots and descendants, then
+choose attachment, detachment, placement editing or navigation. Opening the dialog
+does not change saved relationships.
 
 (help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-register-action)=
 
-**Register as Detail Map…** — Designate a master map first before registering a detail
-map.
+**Attach or change parent…** — Choose a valid parent and review an unsaved
+placement on its canvas. Apply saves the relationship and placement together;
+Cancel leaves the saved hierarchy unchanged.
 
 (help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-show-footprints-action)=
 
@@ -1889,3 +1936,32 @@ inspection explains the canvas without selecting, moving or confirming a feature
 (help-inspect-map-group-dates)=
 
 **Group visibility dates** — Restrict the dates on which this group’s features are shown. Feature dates combine with these bounds rather than being replaced. Raster and base map dates are unaffected.
+
+(help-inspect-map-hierarchy-independent)=
+
+**Make independent** — Detach the selected map from its parent while retaining its
+own descendants and local content. Undo restores its previous relationship.
+
+(help-inspect-map-hierarchy-tree)=
+
+**Map hierarchy** — Select a map to attach, change parent, make independent, edit
+placement or navigate. Independent roots are separate until explicitly registered.
+A diagnostic tooltip identifies inconsistent legacy metadata without repairing it.
+
+(help-inspect-map-placement-controls)=
+
+**Placement controls** — Adjust an unsaved placement on its parent map.
+**Reset rotation** sets its rotation to zero; **Zoom to footprint** fits the preview
+in the viewport. Neither saves a relationship. Opacity and comparison locking
+are temporary aids. Use the map's **Apply** or **Cancel** actions to finish.
+
+(help-inspect-map-placement-opacity)=
+
+**Image opacity** — Adjust only the preview image transparency to compare landmarks.
+This does not change the registration, map image, raster layers or saved opacity.
+
+(help-inspect-map-placement-lock)=
+
+**Lock placement while comparing** — Temporarily prevent dragging, nudging and
+rotation while comparing images. Unlock to adjust again. Apply and Cancel remain
+available; locking does not save or permanently lock the map.

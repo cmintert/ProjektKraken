@@ -19,6 +19,7 @@ Behaviour is composed from focused mixins:
 
 import logging
 from collections.abc import Callable
+from html import escape
 from typing import Optional, cast
 
 from PySide6.QtCore import QSize, Qt, QTimer, Signal, Slot
@@ -231,6 +232,8 @@ class MapWidget(
     jump_to_time_requested = Signal(float)  # target_time
     map_settings_changed = Signal(dict)  # Map attribute updates for persistence
     # Map nesting (master / detail) signals
+    make_map_independent_requested = Signal(str)
+    placement_requested = Signal(str)
     set_master_map_requested = Signal(str)  # map_id
     register_detail_map_requested = Signal(
         str, str, dict
@@ -295,6 +298,10 @@ class MapWidget(
         self._build_toolbar(layout)
 
         self._build_breadcrumb(layout)
+        from src.gui.widgets.map.footprint_controls import FootprintControls
+
+        self.footprint_controls = FootprintControls(self.view, self)
+        layout.addWidget(self.footprint_controls)
         self._build_trajectory_edit_strip(layout)
         self._build_feature_geometry_edit_strip(layout)
         self.border_trace_controls = BorderTraceControls(self.view, self)
@@ -541,15 +548,15 @@ class MapWidget(
         breadcrumb_layout.setContentsMargins(8, 2, 8, 2)
         breadcrumb_layout.setSpacing(6)
         self.btn_parent = declare_inspection(
-            QPushButton("↑"),
+            QPushButton("Parent map"),
             "src-gui-widgets-map-widget-mapwidget-build-breadcrumb-self-btn-parent|map.features|help-inspect-src-gui-widgets-map-widget-mapwidget-build-breadcrumb-self-btn-parent",
         )
-        self.btn_parent.setFixedWidth(24)
         self.btn_parent.setToolTip("Navigate to parent map")
         self.btn_parent.clicked.connect(self._on_navigate_to_parent)
         self.btn_parent.hide()
         breadcrumb_layout.addWidget(self.btn_parent)
         self.breadcrumb_label = QLabel()
+        self.breadcrumb_label.setWordWrap(True)
         self.breadcrumb_label.setTextFormat(Qt.TextFormat.RichText)
         self.breadcrumb_label.setOpenExternalLinks(False)
         self.breadcrumb_label.linkActivated.connect(self.select_map)
@@ -1508,28 +1515,31 @@ class MapWidget(
         )
         scale_action.triggered.connect(self._configure_map_width)
         add_menu_section(menu, "Map hierarchy")
-        active_role = self._active_map_role()
-        has_master = self._world_has_master_map()
-
-        master_action = declare_inspection(
-            menu.addAction("Set as Master Map"),
+        active_map = next(
+            (m for m in self.maps_data if m.id == self.get_selected_map_id()), None
+        )
+        has_parent = bool(
+            active_map and (active_map.attributes or {}).get("parent_map_id")
+        )
+        manage_action = declare_inspection(
+            menu.addAction("Manage Map Hierarchy…"),
             "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-master-action|map.settings|help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-master-action",
         )
-        master_action.setCheckable(True)
-        master_action.setChecked(active_role == "master")
-        master_action.triggered.connect(self._on_set_master_map_clicked)
+        manage_action.triggered.connect(self._on_manage_hierarchy_clicked)
+        independent_action = declare_inspection(
+            menu.addAction("Make independent"),
+            "map.hierarchy.independent|map.settings|help-inspect-map-hierarchy-independent",
+        )
+        independent_action.setEnabled(has_parent)
+        independent_action.triggered.connect(
+            lambda: self.make_map_independent_requested.emit(self.get_selected_map_id())
+        )
 
         register_action = declare_inspection(
-            menu.addAction("Register as Detail Map…"),
+            menu.addAction("Attach or change parent…"),
             "src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-register-action|map.settings|help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-register-action",
         )
-        register_action.setEnabled(has_master and active_role != "master")
-        if not has_master:
-            register_action.setToolTip(
-                "Designate a master map first before registering a detail map."
-            )
-        elif active_role == "master":
-            register_action.setToolTip("A master map cannot also be a detail map.")
+        register_action.setEnabled(active_map is not None and len(self.maps_data) > 1)
         register_action.triggered.connect(self._on_register_detail_map_clicked)
 
         add_menu_section(menu, "Detail-map footprints")
@@ -1552,7 +1562,7 @@ class MapWidget(
         )
         edit_footprint_action.setEnabled(
             self.view.footprints_visible
-            and (bool(self.view._footprint_items) or active_role == "detail")
+            and (bool(self.view.footprint_names()) or has_parent)
         )
         if not edit_footprint_action.isEnabled():
             edit_footprint_action.setToolTip(
@@ -1640,7 +1650,9 @@ class MapWidget(
                 and not self._feature_geometry_draft_error
                 and not self.region_cut_controls.active
             )
-        return mode in {"marker_appearance", "footprint"}
+        return mode == "marker_appearance" or (
+            mode == "footprint" and not self.view.footprint_edit_conflicted
+        )
 
     @Slot()
     def confirm_active_session(self) -> None:
@@ -1780,18 +1792,19 @@ class MapWidget(
             return
 
         theme = ThemeManager().get_theme()
-        link_color = theme.get("accent_secondary", "#4DA6FF")
-        dim_color = theme.get("text_dim", "#9E9E9E")
+        link_color = theme["link_neutral"]
+        dim_color = theme["supporting_caption"]
 
         parts = []
         for i, (mid, mname) in enumerate(chain):
+            mid, mname = escape(mid, quote=True), escape(mname)
             is_last = i == len(chain) - 1
             if is_last:
                 parts.append(f'<span style="color:{dim_color};">{mname}</span>')
             else:
                 parts.append(
                     f'<a href="{mid}" style="color:{link_color};'
-                    f' text-decoration:none;">{mname}</a>'
+                    f' text-decoration:underline;">{mname}</a>'
                 )
 
         separator = f' <span style="color:{dim_color};">›</span> '
@@ -2303,6 +2316,15 @@ class MapWidget(
             # Normal cursor
             self.view.setCursor(Qt.CursorShape.ArrowCursor)
 
+        self.footprint_controls.setVisible(self.view.is_editing_footprint)
+        self.btn_confirm_map_edit.setText(
+            "Apply" if self.view.is_editing_footprint else "Confirm"
+        )
+        self.btn_confirm_map_edit.setToolTip(
+            "Apply this placement (Enter on canvas)"
+            if self.view.is_editing_footprint
+            else "Confirm this map edit (Enter)"
+        )
         active = self.active_map_session_mode() is not None
         subtool_active = (
             self.region_cut_controls.active

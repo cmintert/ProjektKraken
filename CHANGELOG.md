@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-16
-**Commit:** 2be03afaddac164c063a13f5a529d99e3d4e8d85
+**Commit:** 9951813eb4729763bacec5c647570eb4d6c46386
 ---
 
 # Changelog
@@ -12,6 +12,15 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-11-16)* **Flexible map hierarchy authoring (KRT-170)**: Added hierarchy
+  management, independent roots, attachment, reparenting and detachment. Parent
+  choice now opens a provisional image placement; Apply saves one undoable change
+  and Cancel preserves saved relationships. Added opacity, rotation reset, zoom
+  and comparison locking, protected draft transitions, viewport restoration and
+  parent-authoritative navigation. Aligned rotated preview images with their
+  registered outlines on non-square parents. Extracted feature orchestration from MapHandler;
+  updated map Help and added interaction, failure and themed-layout regressions.
 
 - *(2026-11-16)* **Map hierarchy foundation (KRT-168)**: Added a detached,
   parent-authoritative hierarchy model and a serialized structural-change
@@ -53,6 +62,12 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-16)* **History compatibility (KRT-171)**: Preserved saved Undo/Redo
+  entries containing unlimited layer zoom. A recovery-protected index upgrade
+  restores their lookup without resetting history; new layer-property snapshots
+  encode unlimited zoom losslessly as null. Corrected layer-tree Undo persistence
+  and added upgrade, rollback, reordering and restart regressions.
 
 - *(2026-11-16)* **Map foundation review (KRT-168)**: Accepted legacy null map
   attributes, recovered safe assets even after rollback-hook failures while

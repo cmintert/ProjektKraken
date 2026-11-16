@@ -34,6 +34,7 @@ from PySide6.QtGui import (
     QPen,
     QPixmap,
     QPolygonF,
+    QTransform,
 )
 from PySide6.QtWidgets import (
     QGraphicsObject,
@@ -110,6 +111,8 @@ class DetailMapFootprintItem(QGraphicsObject):
         self._ih = image_h
         self._pixmap: Optional[QPixmap] = self._load_pixmap(image_path)
 
+        self._image_opacity = 0.65
+        self._placement_locked = False
         self._edit_mode = False
         self._pre_edit_registration: Optional[Dict[str, Any]] = None
 
@@ -139,6 +142,28 @@ class DetailMapFootprintItem(QGraphicsObject):
         """Return the parent map ID."""
         return self._parent_map_id
 
+    @property
+    def display_name(self) -> str:
+        """Return the author-assigned map name."""
+        return self._name
+
+    @property
+    def placement_locked(self) -> bool:
+        """Return whether manipulation is temporarily locked."""
+        return self._placement_locked
+
+    def set_placement_locked(self, locked: bool) -> None:
+        """Lock direct and keyboard manipulation without changing registration."""
+        self._placement_locked = locked
+        self._drag_zone = _ZONE_NONE
+        self._invalidate_shape_cache()
+        self.update()
+
+    def set_image_opacity(self, opacity: float) -> None:
+        """Change only the child image opacity, preserving outline visibility."""
+        self._image_opacity = max(0.0, min(1.0, opacity))
+        self.update()
+
     def current_registration(self) -> Dict[str, Any]:
         """Return a copy of the current (possibly in-progress) registration."""
         return dict(self._registration)
@@ -154,9 +179,7 @@ class DetailMapFootprintItem(QGraphicsObject):
         self._invalidate_shape_cache()
         self.update()
 
-    def set_label_layout(
-        self, rect: Optional[QRectF], zoom_scale: float = 1.0
-    ) -> None:
+    def set_label_layout(self, rect: Optional[QRectF], zoom_scale: float = 1.0) -> None:
         """Set externally computed label placement and zoom scale.
 
         Args:
@@ -239,9 +262,7 @@ class DetailMapFootprintItem(QGraphicsObject):
             self._registration = dict(self._pre_edit_registration)
         self.set_edit_mode(False)
 
-    def nudge(
-        self, dx_norm: float, dy_norm: float
-    ) -> None:
+    def nudge(self, dx_norm: float, dy_norm: float) -> None:
         """Translate the footprint centre by a normalised delta.
 
         Args:
@@ -268,9 +289,7 @@ class DetailMapFootprintItem(QGraphicsObject):
 
         """
         reg = dict(self._registration)
-        reg["rotation_deg"] = (
-            float(reg.get("rotation_deg", 0.0)) + delta_deg
-        ) % 360.0
+        reg["rotation_deg"] = (float(reg.get("rotation_deg", 0.0)) + delta_deg) % 360.0
         self._registration = reg
         self._invalidate_shape_cache()
         self.update()
@@ -332,7 +351,7 @@ class DetailMapFootprintItem(QGraphicsObject):
         poly = QPolygonF([QPointF(*c) for c in corners])
         path.addPolygon(poly)
         path.closeSubpath()
-        if self._edit_mode:
+        if self._edit_mode and not self._placement_locked:
             for h in self._handle_positions():
                 path.addEllipse(QPointF(*h), _HANDLE_RADIUS, _HANDLE_RADIUS)
         self._shape_cache = path
@@ -354,8 +373,8 @@ class DetailMapFootprintItem(QGraphicsObject):
         """
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         theme = ThemeManager().get_theme()
-        accent = theme.get("accent_secondary", "#4DA6FF")
-        primary = theme.get("primary", "#FF9900")
+        accent = theme["mode_border"]
+        primary = theme["focus_ring"]
 
         corners = self._scene_corners()
         if not corners:
@@ -367,53 +386,34 @@ class DetailMapFootprintItem(QGraphicsObject):
         clip_path.closeSubpath()
 
         if self._pixmap is not None:
-            reg = self._registration
-            cx_px = float(reg["master_center_norm"]["x"]) * self._iw
-            cy_px = float(reg["master_center_norm"]["y"]) * self._ih
-            rot = float(reg.get("rotation_deg", 0.0))
-
-            fp_w = math.hypot(
-                corners[1][0] - corners[0][0], corners[1][1] - corners[0][1]
+            # Project the image through the same affine corners as the outline.
+            # A screen-space rotation alone disagrees on non-square parent maps.
+            top_left, top_right, _, bottom_left = [QPointF(*c) for c in corners]
+            width, height = self._pixmap.width(), self._pixmap.height()
+            image_transform = QTransform(
+                (top_right.x() - top_left.x()) / width,
+                (top_right.y() - top_left.y()) / width,
+                (bottom_left.x() - top_left.x()) / height,
+                (bottom_left.y() - top_left.y()) / height,
+                top_left.x(),
+                top_left.y(),
             )
-            fp_h = math.hypot(
-                corners[3][0] - corners[0][0], corners[3][1] - corners[0][1]
-            )
-            px_ar = self._pixmap.width() / max(1, self._pixmap.height())
-
-            # Clip trims the overflow from fill-to-fit scaling.
-            if fp_h > 0 and fp_w / fp_h >= px_ar:
-                img_w, img_h = fp_w, fp_w / px_ar
-            else:
-                img_w, img_h = fp_h * px_ar, fp_h
-
             painter.save()
+            painter.setOpacity(self._image_opacity)
             painter.setClipPath(clip_path)
-            painter.translate(cx_px, cy_px)
-            painter.rotate(rot)
-            painter.drawPixmap(
-                QRectF(-img_w / 2, -img_h / 2, img_w, img_h),
-                self._pixmap,
-                QRectF(0, 0, self._pixmap.width(), self._pixmap.height()),
-            )
+            painter.setTransform(image_transform, True)
+            painter.drawPixmap(QPointF(0, 0), self._pixmap)
             painter.restore()
 
-            # Subtle tint so the footprint reads as an overlay, not bare terrain.
-            tint = QColor(accent)
-            tint.setAlpha(25)
-            painter.setBrush(QBrush(tint))
-            painter.setPen(Qt.PenStyle.NoPen)
-            painter.drawPolygon(poly)
         else:
             # Fallback: solid fill when no image is available.
             fill_color = QColor(accent)
-            fill_color.setAlpha(45)
             painter.setBrush(QBrush(fill_color))
             painter.setPen(Qt.PenStyle.NoPen)
             painter.drawPolygon(poly)
 
         # Outline
         outline_color = QColor(accent)
-        outline_color.setAlpha(200)
         outline_w = 2.5 if self._edit_mode else 1.5
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.setPen(QPen(outline_color, outline_w))
@@ -423,7 +423,7 @@ class DetailMapFootprintItem(QGraphicsObject):
         self._draw_label(painter, theme)
 
         # Edit handles
-        if self._edit_mode:
+        if self._edit_mode and not self._placement_locked:
             self._draw_edit_handles(painter, corners, primary)
 
     # ------------------------------------------------------------------
@@ -443,7 +443,7 @@ class DetailMapFootprintItem(QGraphicsObject):
 
         pos = event.pos()
 
-        if self._edit_mode:
+        if self._edit_mode and not self._placement_locked:
             zone = self._hit_zone(pos)
             if zone != _ZONE_NONE:
                 self._drag_zone = zone
@@ -465,7 +465,11 @@ class DetailMapFootprintItem(QGraphicsObject):
             event: The scene mouse event.
 
         """
-        if not self._edit_mode or self._drag_zone == _ZONE_NONE:
+        if (
+            not self._edit_mode
+            or self._placement_locked
+            or self._drag_zone == _ZONE_NONE
+        ):
             event.ignore()
             return
 
@@ -506,9 +510,7 @@ class DetailMapFootprintItem(QGraphicsObject):
                     cy_px - self._drag_start_scene.y(),
                 )
             )
-            curr_angle = math.degrees(
-                math.atan2(pos.x() - cx_px, cy_px - pos.y())
-            )
+            curr_angle = math.degrees(math.atan2(pos.x() - cx_px, cy_px - pos.y()))
             delta = curr_angle - start_angle
             reg["rotation_deg"] = (
                 float(self._drag_start_reg["rotation_deg"]) + delta
@@ -532,6 +534,9 @@ class DetailMapFootprintItem(QGraphicsObject):
             return
 
         if self._edit_mode:
+            if self._placement_locked:
+                event.accept()
+                return
             if self._drag_zone != _ZONE_NONE:
                 self._drag_zone = _ZONE_NONE
                 self._drag_start_scene = None
@@ -581,9 +586,7 @@ class DetailMapFootprintItem(QGraphicsObject):
         top_mid_x = (corners[0][0] + corners[1][0]) / 2.0
         top_mid_y = (corners[0][1] + corners[1][1]) / 2.0
         # Normal direction: perpendicular to top edge, pointing away from centre
-        theta = math.radians(
-            float(self._registration.get("rotation_deg", 0.0))
-        )
+        theta = math.radians(float(self._registration.get("rotation_deg", 0.0)))
         # In y-down space, "up" for a rotation θ is (-sin θ, -cos θ)
         nx = -math.sin(theta)
         ny = -math.cos(theta)
@@ -646,7 +649,7 @@ class DetailMapFootprintItem(QGraphicsObject):
             Tuple of ``(font, text_width, text_height)``.
 
         """
-        scale_factor = max(0.85, min(1.6, zoom_scale ** 0.28))
+        scale_factor = max(0.85, min(1.6, zoom_scale**0.28))
         font_size = max(8.0, min(14.0, _LABEL_FONT_SIZE * scale_factor))
         font = QFont("Segoe UI")
         font.setPointSizeF(font_size)
@@ -663,7 +666,7 @@ class DetailMapFootprintItem(QGraphicsObject):
             theme: Theme dict.
 
         """
-        if self._label_rect_scene is None:
+        if self._label_rect_scene is None or self._edit_mode:
             return
         label_rect = QRectF(self._label_rect_scene)
         if label_rect.isNull():
@@ -673,11 +676,9 @@ class DetailMapFootprintItem(QGraphicsObject):
         painter.setFont(font)
         text = self._name
 
-        bg = QColor(theme.get("app_bg", "#2B2B2B"))
-        bg.setAlpha(200)
-        border = QColor(theme.get("accent_secondary", "#4DA6FF"))
-        border.setAlpha(180)
-        text_col = QColor(theme.get("text_main", "#E0E0E0"))
+        bg = QColor(theme["mode_bg"])
+        border = QColor(theme["mode_border"])
+        text_col = QColor(theme["mode_text"])
 
         painter.setBrush(QBrush(bg))
         painter.setPen(QPen(border, 1.0))
@@ -713,9 +714,7 @@ class DetailMapFootprintItem(QGraphicsObject):
             return
 
         handle_fill = QColor(primary_hex)
-        handle_fill.setAlpha(220)
-        handle_border = QColor("#ffffff")
-        handle_border.setAlpha(200)
+        handle_border = QColor(ThemeManager().get_theme()["mode_text"])
 
         # Line from top-mid to rotation handle
         top_mid = QPointF(
@@ -731,6 +730,4 @@ class DetailMapFootprintItem(QGraphicsObject):
         painter.setPen(QPen(handle_border, 1.5))
         painter.setBrush(QBrush(handle_fill))
         for i, h in enumerate(handles):
-            painter.drawEllipse(
-                QPointF(*h), _HANDLE_RADIUS, _HANDLE_RADIUS
-            )
+            painter.drawEllipse(QPointF(*h), _HANDLE_RADIUS, _HANDLE_RADIUS)

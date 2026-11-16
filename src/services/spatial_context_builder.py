@@ -41,7 +41,7 @@ from src.core.map import (
     TemporalValidityStatus,
     resolve_layer_temporal_validity,
 )
-from src.core.map_constants import MAP_DEFAULT_WIDTH_METERS, MAP_ROLE_MASTER
+from src.core.map_constants import MAP_DEFAULT_WIDTH_METERS
 from src.core.map_state import RasterLayerState
 from src.core.marker import Marker
 from src.core.spatial_geometry import (
@@ -606,8 +606,7 @@ class SpatialContextBuilder:
 
         Only fires when:
         * ``self._nesting_service`` is not ``None``.
-        * The active map's role is ``MAP_ROLE_MASTER`` (Decision 5 — when
-          a detail map is active, its own context wins; no advisory).
+        * The active map has a registered child, regardless of legacy role.
         * At least one registered child map's footprint intersects the
           resolved feature geometry.
 
@@ -625,9 +624,6 @@ class SpatialContextBuilder:
         if marker_geometry is None:
             return None
         metric = self._geometry_metric(map_obj, self._extract_width_meters(map_obj))
-        role = (map_obj.attributes or {}).get("map_role")
-        if role != MAP_ROLE_MASTER:
-            return None
         try:
             all_maps = self._map_repo.get_all_maps()
         except Exception:

@@ -20,9 +20,9 @@ from PySide6.QtCore import (
     Slot,
 )
 
-from src.app.constants import (
-    MAP_ROLE_DETAIL,
-    MAP_ROLE_MASTER,
+from src.app.coordinators.map_hierarchy_coordinator import (
+    MapHierarchyCoordinator,
+    MapHierarchyPorts,
 )
 from src.app.qt_invocation import invoke_queued
 from src.app.raster_controller import RasterController
@@ -33,7 +33,6 @@ from src.commands.map_commands import (
     CreateMarkerCommand,
     DeleteMapCommand,
     DeleteMarkerCommand,
-    RegisterDetailMapCommand,
     RenameLayerCommand,
     SetLayerOpacityCommand,
     SetMasterMapCommand,
@@ -45,9 +44,7 @@ from src.commands.map_commands import (
 from src.core.logging_config import get_logger
 from src.core.map import MapLayerNode
 from src.core.region_geometry import Geometry, feature_anchor, geometry_rings
-from src.services.map_nesting_service import MapNestingService, NestingValidationError
 from src.services.marker_icon_catalog import MarkerIconCatalog
-from src.services.repositories.map_repository import MapRepository
 
 if TYPE_CHECKING:
     from src.gui.widgets.map.map_graphics_view import MapGraphicsView
@@ -97,6 +94,32 @@ class MapHandler(QObject):
 
         """
         super().__init__()
+        self.hierarchy_coordinator = MapHierarchyCoordinator(
+            MapHierarchyPorts(
+                view=map_widget.view,
+                maps=lambda: map_widget.maps_data,
+                selected_id=map_widget.get_selected_map_id,
+                accept_selection=map_widget.accept_map_selection,
+                request_transition=map_widget.request_edit_transition,
+                cancel_session=map_widget.cancel_active_session,
+                resolve_image=map_widget._resolve_world_image_path,
+                set_status=map_widget.footprint_controls.set_status,
+                set_breadcrumb=map_widget.set_breadcrumb,
+                refresh_mode=map_widget._update_mode_indicator,
+                activate_pending_edit=map_widget._try_activate_pending_footprint_edit,
+                feedback=map_widget._show_hierarchy_error,
+            ),
+            self,
+        )
+        map_widget.make_map_independent_requested.connect(
+            self.hierarchy_coordinator.detach
+        )
+        map_widget.placement_requested.connect(
+            self.hierarchy_coordinator.edit_placement
+        )
+        self.hierarchy_coordinator.command_requested.connect(
+            self.command_requested.emit
+        )
         self._map_widget = map_widget
         self._worker = worker
         self._db_path_accessor = db_path_accessor
@@ -144,10 +167,11 @@ class MapHandler(QObject):
 
         world_root = self._world_root_accessor()
         self._map_widget.view.set_world_root(world_root)
+        self.hierarchy_coordinator.before_map_load(map_id)
         if self._map_widget.view.current_image_path != image_path:
             self._map_widget.load_map(image_path)
 
-        width_meters = selected_map.attributes.get("width_meters")
+        width_meters = (selected_map.attributes or {}).get("width_meters")
         if width_meters:
             self._map_widget.view.set_map_width_meters(float(width_meters))
         else:
@@ -796,10 +820,8 @@ class MapHandler(QObject):
             registration: Aspect-locked-affine registration payload.
 
         """
-        if not detail_map_id or not parent_map_id or not registration:
-            return
-        self.command_requested.emit(
-            RegisterDetailMapCommand(detail_map_id, parent_map_id, registration)
+        self.hierarchy_coordinator.begin_registration(
+            detail_map_id, parent_map_id, registration
         )
 
     @Slot(str)
@@ -829,79 +851,15 @@ class MapHandler(QObject):
             registration: Updated aspect-locked-affine registration.
 
         """
-        self.on_register_detail_map_requested(
-            detail_map_id, parent_map_id, registration
-        )
+        self.hierarchy_coordinator.confirm(detail_map_id, parent_map_id, registration)
 
     def _load_footprints_for_map(self, current_map: Any, all_maps: list) -> None:
-        """Load footprint overlays for the children of ``current_map``.
-
-        Only maps that have the ``master`` or ``detail`` role can have
-        children, so for ordinary maps this is a fast no-op.
-
-        Args:
-            current_map: The ``Map`` object currently loaded in the view.
-            all_maps: All maps in the current world.
-
-        """
-        role = (current_map.attributes or {}).get("map_role")
-        if role not in (MAP_ROLE_MASTER, MAP_ROLE_DETAIL):
-            self._map_widget.view.clear_footprints()
-            return
-
-        children = MapRepository.get_children_of(current_map.id, all_maps)
-        if not children:
-            self._map_widget.view.clear_footprints()
-            return
-
-        footprint_data = []
-        for child in children:
-            attrs = child.attributes or {}
-            registration = attrs.get("registration")
-            if registration is None:
-                continue
-            abs_path = self._map_widget._resolve_world_image_path(
-                child.image_path or ""
-            )
-            footprint_data.append(
-                {
-                    "id": child.id,
-                    "name": child.name,
-                    "parent_map_id": current_map.id,
-                    "registration": registration,
-                    "image_path": abs_path,
-                }
-            )
-
-        self._map_widget.view.set_footprints(footprint_data)
-        self._map_widget._try_activate_pending_footprint_edit()
+        """Delegate hierarchy overlays to the feature coordinator."""
+        self.hierarchy_coordinator.refresh_footprints(current_map, all_maps)
 
     def _load_breadcrumb_for_map(self, current_map: Any, all_maps: list) -> None:
-        """Build and display the breadcrumb chain for ``current_map``.
-
-        The chain runs from the root ancestor down to ``current_map``.
-        Plain maps (no ``map_role``) and the master map alone both
-        produce a short chain that hides the breadcrumb.
-
-        Args:
-            current_map: The ``Map`` object currently loaded in the view.
-            all_maps: All maps in the current world.
-
-        """
-        try:
-            ancestors = list(MapNestingService.iter_ancestors(current_map.id, all_maps))
-        except NestingValidationError:
-            ancestors = []
-
-        # ancestors is ordered nearest → farthest; reverse to get root first.
-        chain = [(m.id, str(getattr(m, "name", m.id))) for m in reversed(ancestors)]
-        chain.append(
-            (
-                current_map.id,
-                str(getattr(current_map, "name", current_map.id)),
-            )
-        )
-        self._map_widget.set_breadcrumb(chain)
+        """Delegate connected ancestry presentation to the feature coordinator."""
+        self.hierarchy_coordinator.refresh_breadcrumb(current_map, all_maps)
 
     # ------------------------------------------------------------------
     # Layer operations (routed through the command stack)

@@ -1,11 +1,4 @@
-"""Register Detail Map Dialog.
-
-Phase-1 entry point for marking a map as a detail child of another map.
-The user picks a parent (the world's master, or another already-registered
-detail map) and confirms.  The dialog produces a default centred,
-aspect-locked-affine registration payload — Phase 3 replaces the
-default with canvas-driven placement.
-"""
+"""Collect a parent and a suggested placement without persisting a relationship."""
 
 from __future__ import annotations
 
@@ -23,17 +16,16 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.map import Map
-from src.gui.constants import MAP_ROLE_DETAIL, MAP_ROLE_MASTER
 from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.responsive_dialog_buttons import (
     ResponsiveDialogButtonBox as QDialogButtonBox,
 )
+from src.services.map_hierarchy_options import candidate_parents
 
 logger = logging.getLogger(__name__)
 
 
-# Phase-1 default footprint: centred, quarter-width, no rotation.
-# Phase 3 overrides every value via the canvas placement tool.
+# Suggested placement, reviewed on the canvas before persistence.
 _DEFAULT_CENTER = (0.5, 0.5)
 _DEFAULT_SCALE = 0.25
 _DEFAULT_ROTATION_DEG = 0.0
@@ -45,8 +37,7 @@ class RegisterDetailMapDialog(QDialog):
     Args:
         detail_map: The map that will be registered as a detail child.
         candidate_parents: Maps eligible to act as the parent.  Already
-            filtered by the caller — must contain only master / detail
-            maps and must exclude ``detail_map`` itself.
+            filtered by the caller using canonical subtree validation.
         resolve_image_path: Callable that turns a stored ``image_path``
             (which may be relative to the world directory) into an
             absolute path on disk.  Used to read the detail map's
@@ -71,19 +62,19 @@ class RegisterDetailMapDialog(QDialog):
         self._selected_parent_id: Optional[str] = None
         self._registration: Optional[Dict[str, Any]] = None
 
-        self.setWindowTitle("Register as Detail Map")
-        self.setMinimumWidth(360)
+        self.setWindowTitle("Choose Parent Map")
+        self.resize(440, 260)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(8)
 
         intro = QLabel(
-            f"Register <b>{detail_map.name}</b> as a detail map nested "
-            "inside another map.  A default footprint is placed at the "
-            "centre of the parent — drag handles will let you adjust "
-            "placement on the parent canvas (later phase)."
+            f"Choose a parent for {detail_map.name}. Next, place its image on the "
+            "parent map. Nothing is saved until you apply the placement. "
+            "Existing descendants and map content stay unchanged."
         )
+        intro.setTextFormat(Qt.TextFormat.PlainText)
         intro.setWordWrap(True)
         layout.addWidget(intro)
 
@@ -93,14 +84,18 @@ class RegisterDetailMapDialog(QDialog):
             "src-gui-dialogs-register-detail-map-dialog-registerdetailmapdialog-init-self-parent-combo|map.features|help-inspect-src-gui-dialogs-register-detail-map-dialog-registerdetailmapdialog-init-self-parent-combo",
         )
         for m in candidate_parents:
-            role = (m.attributes or {}).get("map_role", "")
-            label = f"{m.name}  ({role})" if role else m.name
+            role = (
+                "Detail map"
+                if (m.attributes or {}).get("parent_map_id")
+                else "Independent"
+            )
+            label = f"{m.name}  ({role})"
             self._parent_combo.addItem(label, m.id)
         layout.addWidget(self._parent_combo)
 
         if not candidate_parents:
             warn = QLabel(
-                "No eligible parent maps exist yet.  Designate a master map first."
+                "No parent can accept this map and its descendants within five levels."
             )
             warn.setWordWrap(True)
             warn.setAlignment(Qt.AlignmentFlag.AlignLeft)
@@ -118,6 +113,7 @@ class RegisterDetailMapDialog(QDialog):
         buttons.rejected.connect(self.reject)
         ok_btn = buttons.button(QDialogButtonBox.StandardButton.Ok)
         if ok_btn is not None:
+            ok_btn.setText("Place on parent map")
             ok_btn.setEnabled(bool(candidate_parents))
         layout.addWidget(buttons)
 
@@ -149,7 +145,7 @@ class RegisterDetailMapDialog(QDialog):
             "scale_norm": _DEFAULT_SCALE,
             "rotation_deg": _DEFAULT_ROTATION_DEG,
             "aspect_ratio": effective,
-            "confidence": "user_confirmed",
+            "confidence": "suggested",
         }
         self.accept()
 
@@ -226,15 +222,7 @@ class RegisterDetailMapDialog(QDialog):
                 from the result).
 
         Returns:
-            Maps whose ``map_role`` is master or detail, minus the
-            detail map itself.
+            Structurally valid parent maps, including independent roots.
 
         """
-        out: List[Map] = []
-        for m in all_maps:
-            if m.id == detail_map_id:
-                continue
-            role = (m.attributes or {}).get("map_role")
-            if role in (MAP_ROLE_MASTER, MAP_ROLE_DETAIL):
-                out.append(m)
-        return out
+        return candidate_parents(all_maps, detail_map_id)

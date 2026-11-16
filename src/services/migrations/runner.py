@@ -177,6 +177,12 @@ def _apply(conn: sqlite3.Connection, version: int) -> bool:
         from src.services.migrations.command_history import reset_legacy_history
 
         return reset_legacy_history(conn)
+    elif version == steps.HISTORY_IDENTITY_VERSION:
+        from src.services.migrations.command_history import (
+            upgrade_history_identity_index,
+        )
+
+        upgrade_history_identity_index(conn)
     return False
 
 

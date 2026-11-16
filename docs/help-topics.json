@@ -371,7 +371,12 @@
       "source": "maps.md",
       "target": "help-map-settings",
       "level": "task",
-      "related_ids": ["map.calibration", "map.layers", "map.features"]
+      "related_ids": [
+        "map.calibration",
+        "map.layers",
+        "map.features",
+        "map.hierarchy"
+      ]
     },
     {
       "id": "map.layers",
@@ -499,14 +504,29 @@
       "source": "local-ai-access.md",
       "target": "help-local-ai-access",
       "level": "task",
-      "related_ids": ["settings.center"]
+      "related_ids": [
+        "settings.center"
+      ]
     },
     {
       "id": "event.recurrence",
       "source": "event-recurrence.md",
       "target": "help-event-recurrence",
       "level": "task",
-      "related_ids": ["event.timing", "timeline.viewing"]
+      "related_ids": [
+        "event.timing",
+        "timeline.viewing"
+      ]
+    },
+    {
+      "id": "map.hierarchy",
+      "source": "maps.md",
+      "target": "help-map-hierarchy",
+      "level": "task",
+      "related_ids": [
+        "map.settings",
+        "map.features"
+      ]
     }
   ]
 }

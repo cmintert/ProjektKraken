@@ -11,9 +11,26 @@ Diagnostics report legacy role inconsistencies without rewriting authored data.
 `ChangeMapParentCommand` owns structural mutation and deep before/after snapshots
 of only the hierarchy keys. It uses the worker-owned database through the normal
 command path and preserves unrelated attributes on undo. The command is registered
-for serialization; it is not yet wired into the map authoring UI.
-The still-active legacy master/detail commands also serialize exact hierarchy
-snapshots, so their current UI remains undoable after restart while A1 is pending.
+for serialization and is used by the hierarchy authoring workflow. Legacy
+master/detail commands remain registered for compatibility with saved history.
+
+`MapHierarchyCoordinator` receives explicit `MapHierarchyPorts` callbacks and view
+access rather than the map widget or application window. It owns provisional
+placement intent, expected hierarchy
+snapshots, command acknowledgement and hierarchy presentation over cached map
+records. `MapHandler` delegates its existing hierarchy entry points to it, while
+`AppCoordinator` composes it with the existing protected-edit guard and queued
+worker acknowledgements. No new worker slot, SQL access in the GUI, or
+ConnectionManager responsibility is introduced.
+
+The temporary hierarchy dialog collects intent. The parent picker supplies a
+suggested image placement; the existing footprint editor owns direct manipulation
+and the shared Apply/Cancel lifecycle. Confirmation submits one structural command.
+Failure retains the preview; externally changed hierarchy retains the preview
+with Apply disabled until explicit cancellation. Ancestor breadcrumbs and direct
+children use canonical parent references. Viewport state stays within the GUI
+thread and is restored on return or cancellation. Exact geographic placement
+preservation during reparenting remains A2 work.
 
 `HistoryStore` owns the version-2 per-world stack manifest in `system_meta`.
 The manifest, rather than timestamps or applied flags, defines the reachable

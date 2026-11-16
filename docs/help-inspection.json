@@ -6298,7 +6298,7 @@
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._populate_map_settings_menu",
       "binding": "master_action",
-      "label": "Set as Master Map",
+      "label": "Manage Map Hierarchy",
       "kind": "addAction"
     },
     {
@@ -6308,7 +6308,7 @@
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._populate_map_settings_menu",
       "binding": "register_action",
-      "label": "Register as Detail Map…",
+      "label": "Attach or change parent",
       "kind": "addAction"
     },
     {
@@ -9700,6 +9700,66 @@
       "binding": "button",
       "label": "Neighbor drawing step",
       "kind": "WrappingPushButton"
+    },
+    {
+      "id": "map.hierarchy.independent",
+      "topic_id": "map.settings",
+      "target": "help-inspect-map-hierarchy-independent",
+      "source": "src/gui/widgets/map_widget.py",
+      "symbol": "MapWidget._populate_map_settings_menu",
+      "binding": "independent_action",
+      "label": "Make independent",
+      "kind": "QAction"
+    },
+    {
+      "id": "map.hierarchy.tree",
+      "topic_id": "map.settings",
+      "target": "help-inspect-map-hierarchy-tree",
+      "source": "src/gui/dialogs/map_hierarchy_dialog.py",
+      "symbol": "MapHierarchyDialog.__init__",
+      "binding": "self.tree",
+      "label": "Map hierarchy",
+      "kind": "QTreeWidget"
+    },
+    {
+      "id": "map.placement.opacity",
+      "topic_id": "map.features",
+      "target": "help-inspect-map-placement-opacity",
+      "source": "src/gui/widgets/map/footprint_controls.py",
+      "symbol": "FootprintControls.__init__",
+      "binding": "self.opacity",
+      "label": "Image opacity",
+      "kind": "QSlider"
+    },
+    {
+      "id": "map.placement.lock",
+      "topic_id": "map.features",
+      "target": "help-inspect-map-placement-lock",
+      "source": "src/gui/widgets/map/footprint_controls.py",
+      "symbol": "FootprintControls.__init__",
+      "binding": "self.lock",
+      "label": "Lock placement while comparing",
+      "kind": "QCheckBox"
+    },
+    {
+      "id": "map.hierarchy.dialog",
+      "topic_id": "map.hierarchy",
+      "target": "help-inspect-map-hierarchy-tree",
+      "source": "src/gui/dialogs/map_hierarchy_dialog.py",
+      "symbol": "MapHierarchyDialog.__init__",
+      "binding": "self",
+      "label": "Map hierarchy",
+      "kind": "QDialog"
+    },
+    {
+      "id": "map.placement.controls",
+      "topic_id": "map.hierarchy",
+      "target": "help-inspect-map-placement-controls",
+      "source": "src/gui/widgets/map/footprint_controls.py",
+      "symbol": "FootprintControls.__init__",
+      "binding": "self",
+      "label": "Placement controls",
+      "kind": "QFrame"
     }
   ],
   "factory_exemptions": [
@@ -10170,8 +10230,8 @@
     {
       "source": "src/commands/layer_commands.py",
       "symbol": "SaveLayerTreeCommand.undo",
-      "sha256": "fb39238b61ad7e05c386cd124d1601f5012c97bc49ea425b1ffa5c75f81cba6c",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "21f8b261a5b1f0e5ed9d127165e97899b04f91da47cd708813f78b3a7b19d5c3",
+      "review_note": "KRT-171: restoring the prior tree clears the current in-memory tree before persistence, matching execute. Existing Help is accurate: one Undo restores the preceding layer order; the current tree must not overwrite that snapshot."
     },
     {
       "source": "src/commands/layer_commands.py",
@@ -11807,14 +11867,14 @@
     {
       "source": "src/gui/dialogs/register_detail_map_dialog.py",
       "symbol": "RegisterDetailMapDialog.__init__",
-      "sha256": "274e031dc4fbf3c5dfb3297fbe91a3b13f52cec84ee28ebee2ffed6bb2902e51",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "6fdc019876d3c1eaef1e33269db22ebc5299a4b7ec565be83b91302703d7e3db",
+      "review_note": "KRT-170: parent choice is provisional; Place on parent map previews a suggested registration. No master prerequisite or persistence on acceptance. Updated maps task and retained inspection anchors. Candidate labels derive Independent/Detail map status from parent references, never legacy master roles."
     },
     {
       "source": "src/gui/dialogs/register_detail_map_dialog.py",
       "symbol": "RegisterDetailMapDialog._accept",
-      "sha256": "f18dcd6c131c4992a3a749875bdf16db5ba1749d7c913c667d7e07aa0d56f992",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "2a8162db060774cb2d4aae9bb96dfc9654c37f6d26c265d00dd9790b487a0297",
+      "review_note": "KRT-170: generated aspect-correct registration is suggested, not user confirmed. The footprint editor confirms once before the hierarchy command."
     },
     {
       "source": "src/gui/dialogs/register_detail_map_dialog.py",
@@ -14927,8 +14987,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget.__init__",
-      "sha256": "2027720d270b6aa48721faae1b509b594d1eb51622c941cf026ad7ae85a6e2d9",
-      "review_note": "KRT-164: composed the neighbor context strip and persistent step controls; the new maps task explains their local acceptance and save roles."
+      "sha256": "132654b55ffacc1c2ffe1741576ded415783ae13707ca933596bcc9f3e85e8da",
+      "review_note": "KRT-170: adds session-local footprint comparison controls and intent signals. Existing controls, Help routes, protected sessions and shared confirm/cancel are retained."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -14951,8 +15011,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._build_breadcrumb",
-      "sha256": "dd3405a425bef8755e17e56ca6b9263cae7a3db5569445dfc884daa217037446",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "5cf91cb5584c1f5ceedcce96b93c94cccad0aeea732020d5b7a52f97b85bcafa",
+      "review_note": "KRT-170: parent action retains its route and guard with a complete Parent map label; path names wrap. No automatic navigation on focus."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -15263,8 +15323,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._populate_map_settings_menu",
-      "sha256": "1e7ff3ec4f99e2b05902519f4831859250dc6779c094afe1e3d644d7d765ea9b",
-      "review_note": "KRT-140 Map settings consolidation: reviewed single toolbar action, native overflow, visible non-interactive headings via shared helpers, and themed secondary action styling. Scale, master/detail registration, footprint visibility/editing and confirmed deletion retain existing handlers. Fit to View remains separate. Help task and retained excerpt anchors describe these routes; human review pending."
+      "sha256": "f18a62eb4cb3b2473ec7bdd74228e91b97e818f2690a8cfc3203408db311ad17",
+      "review_note": "KRT-170: replaces privileged master workflow with Manage Map Hierarchy, Make independent and Attach/change parent; no root prerequisite. Footprint visibility remains independent; parent relationships gate detachment and placement. Existing anchors retained and explanations revised."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -15287,8 +15347,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._update_mode_indicator",
-      "sha256": "72f8c9e7f79e974ce03ce3bfe93fa9bce3a6bc92a00188208f8f093c4728d8c7",
-      "review_note": "KRT-164: neighboring-region strip replaces ordinary parent actions and hides while Trace owns keyboard input. Restoring Trace preserves the parent drawing. Canonical maps task describes source/date, local steps and nested cancellation."
+      "sha256": "bc5057c4e022563876e30f062b219cfa28144fed199b82013ea3b4d5fa2b91b5",
+      "review_note": "KRT-170: footprint controls and shared Apply wording/tooltip describe the current placement. Other modes retain Confirm. Stale placement Apply availability is separate from cancellation."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -15335,8 +15395,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget.is_active_map_session_valid",
-      "sha256": "2ea0f827f251f76642566e8eb5e05933269000d8fbe9eeeb5c5e760d1a42f560",
-      "review_note": "KRT-164: neighbor Confirm reflects drawn vertex eligibility, ready preview or accepted result; pending/invalid states cannot save. Canonical maps task documents rejected outcomes."
+      "sha256": "4babb4d7e6b48108fd2b987e53c8759bd3e580f6c3dedc0ea9f8470bf6648cf4",
+      "review_note": "KRT-170: stale hierarchy disables footprint Apply while retaining the preview and Cancel. Existing validation for other session modes is preserved."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -17636,6 +17696,24 @@
       "symbol": "NeighborRegionCoordinator.on_command_finished",
       "sha256": "5ca8708c97de17963dd37e7b268f722764c455709c0c1a515f9c24c000ca980b",
       "review_note": "KRT-164: only matching success closes the draft; failure retains it and reloads saved source geometry/states for another preview. Specialized history refresh restores independent saved geometry. Canonical maps task covers save failure recovery."
+    },
+    {
+      "source": "src/gui/widgets/map_widget.py",
+      "symbol": "MapWidget.set_breadcrumb",
+      "sha256": "1fc67def0b38dde24d8b0167be269fc22cfb5303ad17f862707da499171568e0",
+      "review_note": "KRT-170: connected ancestry only, escaped authored names, semantic neutral links and supporting captions; independent roots hide the parent route."
+    },
+    {
+      "source": "src/gui/dialogs/map_hierarchy_dialog.py",
+      "symbol": "MapHierarchyDialog.__init__",
+      "sha256": "45cef4964d266d53930abbe93f835ed3fa6ce90c2327ed4a3d8f4b6fc1cb562a",
+      "review_note": "KRT-170: reviewed tree parent references, detached roots, diagnostics, wrapping secondary actions, complete relationship column and focus-owned actions; no writes on opening or selection. The dialog/control-group inspection also links directly to the new hierarchy task; wrapping reserves complete instructions and full relationship wording."
+    },
+    {
+      "source": "src/gui/widgets/map/footprint_controls.py",
+      "symbol": "FootprintControls.__init__",
+      "sha256": "5bb12b1c1c4afc8d1a2397cc080617f47bf253214ea4c1c26de0d416e1e91698",
+      "review_note": "KRT-170: reviewed shared mode-panel background and complete instructions, opacity slider, reset/zoom controls and comparison lock. Shared map action bar owns Apply/Cancel; these controls never persist changes. The dialog/control-group inspection also links directly to the new hierarchy task; wrapping reserves complete instructions and full relationship wording."
     }
   ],
   "review_status": {

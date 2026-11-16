@@ -608,3 +608,30 @@ def test_timeline_preview_calculation_has_no_ui_or_persistence_dependencies():
         )
         if not relative.endswith("preview_worker.py"):
             assert not any(module.startswith("PySide6") for module in modules)
+
+
+def test_map_hierarchy_authoring_does_not_acquire_worker_or_window_ownership():
+    modules = {
+        module
+        for _, module in _imported_modules(
+            _SOURCE_ROOT / "app/coordinators/map_hierarchy_coordinator.py"
+        )
+    }
+    assert not any(
+        module.startswith(
+            (
+                "src.app.main_window",
+                "src.app.connection_manager",
+                "src.services.worker",
+                "src.services.db_service",
+            )
+        )
+        for module in modules
+    )
+    modules = {
+        module
+        for _, module in _imported_modules(
+            _SOURCE_ROOT / "services/map_hierarchy_options.py"
+        )
+    }
+    assert all(module.startswith("src.core") for module in modules)

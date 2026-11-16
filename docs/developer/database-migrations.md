@@ -77,6 +77,14 @@ preserves existing geometry payloads.
 External command artifacts are never deleted by migrations. When existing history
 is reset, startup tells the user where it was archived.
 
+Migration `007_history_identity_compatibility` rebuilds only the command-identity
+index. Version-six snapshots may contain Python's `Infinity` encoding for an
+unlimited layer zoom. SQLite's JSON5-compatible validity check includes those
+payloads while continuing to exclude malformed archives. The recovery-protected
+upgrade preserves command rows, stack manifests and external artifacts verbatim;
+it does not repeat migration 006's history reset. New layer-property snapshots use
+the layer model's null representation for unlimited zoom and decode it losslessly.
+
 Read-only opens inspect without creating schema, stamping a ledger, changing
 journal mode, or producing backups. Reopening a current world validates it without
 running migration DDL or creating another recovery bundle.

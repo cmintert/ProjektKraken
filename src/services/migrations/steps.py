@@ -9,7 +9,11 @@ from typing import Any
 
 from src.services.migrations.errors import MigrationError
 from src.services.migrations.relations import install_relation_integrity
-from src.services.migrations.schema import HISTORY_COMMAND_ID_INDEX_SQL, SCHEMA_SQL
+from src.services.migrations.schema import (
+    HISTORY_COMMAND_ID_INDEX_SQL,
+    LEGACY_HISTORY_COMMAND_ID_INDEX_SQL,
+    SCHEMA_SQL,
+)
 
 MIGRATION_IDS = (
     "001_structural_compatibility",
@@ -18,6 +22,7 @@ MIGRATION_IDS = (
     "004_event_timing",
     "005_region_holes",
     "006_ordered_command_history",
+    "007_history_identity_compatibility",
 )
 CURRENT_VERSION = len(MIGRATION_IDS)
 STRUCTURAL_VERSION = 1
@@ -26,6 +31,7 @@ RELATION_VERSION = 3
 EVENT_TIMING_VERSION = 4
 REGION_HOLES_VERSION = 5
 ORDERED_HISTORY_VERSION = 6
+HISTORY_IDENTITY_VERSION = 7
 LEGACY_POINT_FIELDS = 3
 COORDINATE_FIELDS = 2
 LEGACY_FOREIGN_KEY_TABLES = ("markers", "event_tags", "entity_tags")
@@ -50,6 +56,10 @@ def schema_statements(version: int = CURRENT_VERSION) -> Iterator[str]:
     )
     if version < ORDERED_HISTORY_VERSION:
         sql = sql.replace(HISTORY_COMMAND_ID_INDEX_SQL, "")
+    elif version < HISTORY_IDENTITY_VERSION:
+        sql = sql.replace(
+            HISTORY_COMMAND_ID_INDEX_SQL, LEGACY_HISTORY_COMMAND_ID_INDEX_SQL
+        )
     for line in sql.splitlines(keepends=True):
         statement += line
         if sqlite3.complete_statement(statement):

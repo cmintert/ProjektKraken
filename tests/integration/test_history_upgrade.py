@@ -32,7 +32,7 @@ def version_five_world(tmp_path, monkeypatch):
         }
     )
     with closing(sqlite3.connect(path)) as conn:
-        conn.execute("DELETE FROM migration_history WHERE version=6")
+        conn.execute("DELETE FROM migration_history WHERE version>=6")
         conn.execute("DROP INDEX IF EXISTS idx_ch_world_identity")
         runner._stamp(conn, 5, "created_current", "created")
         conn.execute("DELETE FROM system_meta WHERE key='command_history_format'")

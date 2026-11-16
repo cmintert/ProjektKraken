@@ -464,6 +464,8 @@ class SaveLayerTreeCommand(BaseCommand):
                 else:
                     attrs.pop("layers", None)
                 map_obj.attributes = attrs
+                # Persist the restored snapshot instead of the current layer tree.
+                map_obj.layers = None
                 db_service.map_repo.insert_map(map_obj)
             self._is_executed = False
 
@@ -731,8 +733,24 @@ class UpdateLayerPropertiesCommand(BaseCommand):
         super().__init__()
         self.map_id = map_id
         self.node_id = node_id
-        self.properties = copy.deepcopy(properties)
+        self.properties = self._decode_state(properties)
         self._previous: dict[str, Any] = {}
+
+    @staticmethod
+    def _encode_state(state: dict[str, Any]) -> dict[str, Any]:
+        """Encode unlimited zoom as null, matching MapLayerNode's wire format."""
+        encoded = copy.deepcopy(state)
+        if encoded.get("max_zoom") == float("inf"):
+            encoded["max_zoom"] = None
+        return encoded
+
+    @staticmethod
+    def _decode_state(state: dict[str, Any]) -> dict[str, Any]:
+        """Restore null to unlimited zoom while accepting legacy Infinity values."""
+        decoded = copy.deepcopy(state)
+        if "max_zoom" in decoded and decoded["max_zoom"] is None:
+            decoded["max_zoom"] = float("inf")
+        return decoded
 
     @staticmethod
     def _state(node: MapLayerNode) -> dict[str, Any]:
@@ -860,8 +878,8 @@ class UpdateLayerPropertiesCommand(BaseCommand):
         return {
             "map_id": self.map_id,
             "node_id": self.node_id,
-            "properties": self.properties,
-            "previous": self._previous,
+            "properties": self._encode_state(self.properties),
+            "previous": self._encode_state(self._previous),
             "is_executed": self._is_executed,
         }
 
@@ -873,7 +891,7 @@ class UpdateLayerPropertiesCommand(BaseCommand):
             str(data["node_id"]),
             dict(data.get("properties", {})),
         )
-        command._previous = dict(data.get("previous", {}))
+        command._previous = cls._decode_state(dict(data.get("previous", {})))
         command._is_executed = bool(data.get("is_executed", True))
         return command
 
