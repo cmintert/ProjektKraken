@@ -11,6 +11,7 @@ the anchor coordinate.
 
 import logging
 import math
+from collections.abc import Sequence
 from typing import Any, Dict, List, Optional
 
 from PySide6.QtCore import QPointF, QRectF, Qt, QTimer, Signal
@@ -198,6 +199,10 @@ class _FeatureItemBase(QGraphicsObject):
             anchor.x() - label_rect.width() / 2.0,
             anchor.y() + self.label_clearance_px(),
         )
+        self._schedule_label_layout()
+
+    def _schedule_label_layout(self) -> None:
+        """Request layout from any map view displaying this feature."""
         scene = self.scene()
         if scene is None:
             return
@@ -519,11 +524,11 @@ class PathItem(_FeatureItemBase):
 
     def _build_path(self) -> None:
         """Converts normalized geometry → scene-coordinates QPainterPath."""
+        self._scene_points = []
+        self._path = QPainterPath()
         if not self.pixmap_item or not self._geometry:
             return
         rect = self.pixmap_item.sceneBoundingRect()
-        self._scene_points = []
-        self._path = QPainterPath()
         for i, pt in enumerate(geometry_rings(self._geometry)[0]):
             sx = rect.left() + pt["x"] * rect.width()
             sy = rect.top() + pt["y"] * rect.height()
@@ -533,6 +538,21 @@ class PathItem(_FeatureItemBase):
                 self._path.moveTo(sp)
             else:
                 self._path.lineTo(sp)
+        self._path.setCachingEnabled(True)
+
+    @property
+    def label_path(self) -> QPainterPath:
+        """Return the current rendered centerline for label layout."""
+        return self._path
+
+    @property
+    def label_path_points(self) -> Sequence[QPointF]:
+        """Return the vertices used by the rendered centerline."""
+        return self._scene_points
+
+    def label_stroke_width_px(self) -> float:
+        """Reserve clearance for the cosmetic stroke and selection highlight."""
+        return max(self._stroke_width(), SELECTION_PEN_WIDTH + 2)
 
     def set_geometry(
         self, geometry: Geometry, anchor_x: float, anchor_y: float
@@ -543,7 +563,12 @@ class PathItem(_FeatureItemBase):
         self._anchor_x = anchor_x
         self._anchor_y = anchor_y
         self._build_path()
+        self._schedule_label_layout()
         self.update()
+
+    def _position_label(self) -> None:
+        """Recompute placement against the edited line on the next layout pass."""
+        self._schedule_label_layout()
 
     # ------------------------------------------------------------------
     # QGraphicsItem interface

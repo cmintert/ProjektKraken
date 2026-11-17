@@ -762,7 +762,7 @@ class ConnectionManager:
         map_widget = self.window.map_widget
         map_handler = self.window.map_handler
         timeline = self.window.timeline
-        return self._connect_batch(
+        failed_count = self._connect_batch(
             [
                 (
                     map_widget,
@@ -1005,6 +1005,11 @@ class ConnectionManager:
             ],
             "MapWidget",
         )
+        # Timeline restores its playhead before the map subscribers are connected.
+        playhead_time = timeline.get_playhead_time()
+        map_handler.on_playhead_changed(playhead_time)
+        map_widget.on_time_changed(playhead_time)
+        return failed_count
 
     def connect_ai_search_panel(self) -> int:
         """Connect signals from the AI search panel widget."""

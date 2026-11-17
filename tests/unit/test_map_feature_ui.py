@@ -341,6 +341,47 @@ class TestMapGraphicsViewFactory:
         assert "p1" in view.feature_items
         assert isinstance(view.feature_items["p1"], PathItem)
 
+    def test_path_label_follows_visible_line_after_pan(self, view, qtbot) -> None:
+        """The path label stays upright, aligned and inside each visible stretch."""
+        view.resize(240, 180)
+        view.show()
+        view.setSceneRect(view.pixmap_item.boundingRect())
+        view.scale(3, 3)
+        view.centerOn(48, 69)
+        view.add_marker(
+            "p1",
+            "entity",
+            "River",
+            0.5,
+            0.5,
+            feature_type="path",
+            geometry=[{"x": 0.95, "y": 0.77}, {"x": 0.05, "y": 0.23}],
+        )
+        label = view.feature_items["p1"]._label_item
+
+        def label_bounds():
+            transform = label.deviceTransform(view.viewportTransform())
+            return transform.mapRect(label.boundingRect())
+
+        qtbot.waitUntil(label.isVisible)
+        first_pos = label.scenePos()
+        assert label.rotation() == pytest.approx(30.96, abs=0.01)
+        assert label.deviceTransform(view.viewportTransform()).m12() > 0.5
+        assert view.viewport().rect().contains(label_bounds().toAlignedRect())
+
+        view.centerOn(152, 131)
+        qtbot.waitUntil(lambda: label.scenePos().x() > first_pos.x() + 60)
+        assert label.isVisible()
+        assert label.rotation() == pytest.approx(30.96, abs=0.01)
+        assert view.viewport().rect().contains(label_bounds().toAlignedRect())
+
+        before_zoom = label_bounds().size()
+        view.scale(1.2, 1.2)
+        view._refresh_after_zoom()
+        after_zoom = label_bounds().size()
+        assert after_zoom.width() == pytest.approx(before_zoom.width())
+        assert after_zoom.height() == pytest.approx(before_zoom.height())
+
     def test_add_region_feature(self, view) -> None:
         """feature_type='region' with geometry creates a RegionItem."""
         geom = [
@@ -866,7 +907,9 @@ class TestFeatureItemStyle:
             width_spin = dialog.findChild(QDoubleSpinBox, "pathStrokeWidthSpin")
             assert width_spin is not None
             assert width_spin.minimumHeight() == 28
-            assert width_spin.buttonSymbols() == QAbstractSpinBox.ButtonSymbols.NoButtons
+            assert (
+                width_spin.buttonSymbols() == QAbstractSpinBox.ButtonSymbols.NoButtons
+            )
             decrease_button = dialog.findChild(
                 QToolButton, "pathStrokeWidthDecreaseButton"
             )

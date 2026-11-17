@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QMenu
 
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.map.connected_features import ConnectedFeatures
+from src.gui.widgets.map.map_label_item import MapLabelItem
 from tests.integration.test_connected_map_projection import read_frame
 from tests.integration.test_map_hierarchy_authoring import authoring as _authoring
 from tests.integration.test_map_hierarchy_authoring import registration
@@ -48,9 +49,30 @@ def test_connected_menu_and_point_are_visible_and_keyboard_navigable(
     menu.setActiveAction(actions[0])
     QTest.keyClick(menu, Qt.Key.Key_Return)
     assert overlay.enabled
-    overlay.display(read_frame())
+    widget.resize(360, 640)
+    widget.view.fit_to_view()
+    qtbot.wait(0)
+    frame = read_frame()
+    overlay.display(frame)
     point = overlay.items[0]
     assert point.pen().color().name() == manager.get_theme()["entity_main"].lower()
+    (label,) = point.childItems()
+    assert isinstance(label, MapLabelItem)
+    assert label._text == frame["points"][0]["label"]
+    assert label.isVisible()
+    assert label.acceptedMouseButtons() == Qt.MouseButton.NoButton
+    transform = widget.view.viewportTransform()
+    label_transform = label.deviceTransform(transform)
+    label_bounds = label_transform.mapRect(label.boundingRect()).toAlignedRect()
+    assert widget.view.viewport().rect().contains(label_bounds)
+    point_transform = point.deviceTransform(transform)
+    transform.scale(2, 2)
+    zoomed_label = label.deviceTransform(transform)
+    zoomed_point = point.deviceTransform(transform)
+    assert zoomed_label.m11() == label_transform.m11() == 1
+    assert zoomed_label.dy() - zoomed_point.dy() == pytest.approx(
+        label_transform.dy() - point_transform.dy()
+    )
     source = []
     overlay.source_requested.connect(source.append)
     widget.view.setFocus()
@@ -62,8 +84,10 @@ def test_connected_menu_and_point_are_visible_and_keyboard_navigable(
     from tests.unit.test_map_geometry_projection import geometry_snapshot
 
     overlay.display(MapProjector(geometry_snapshot()).frame("new", 0))
+    assert label.scene() is None
     assert len(overlay.items) == 1
     shape = overlay.items[0]
+    assert not shape.childItems()
     assert shape.pen().color().name() == manager.get_theme()["entity_main"].lower()
     assert shape.path().fillRule() == Qt.FillRule.OddEvenFill
     assert not shape.flags() & shape.GraphicsItemFlag.ItemIsMovable
@@ -72,8 +96,6 @@ def test_connected_menu_and_point_are_visible_and_keyboard_navigable(
     if evidence:
         output = Path(evidence)
         output.mkdir(parents=True, exist_ok=True)
-        widget.resize(360, 640)
-        widget.view.fit_to_view()
         qtbot.wait(0)
         assert (
             widget.view.viewport()
