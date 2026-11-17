@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional
 from PySide6.QtCore import QPointF, Qt
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsView
 
+from src.core.path_subdivision import is_path_bend, subdivide_path
 from src.core.region_geometry import Geometry, Ring, copy_geometry, geometry_rings
 from src.gui.constants import (
     MAP_EDIT_DASH_PATTERN,
@@ -99,6 +100,39 @@ class VertexEditor:
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
+
+    def editing_path(self) -> PathItem | None:
+        """Return the path in the active managed geometry draft, if any."""
+        item = self._view.feature_items.get(self._editing_feature_id or "")
+        if self._managed_session and isinstance(item, PathItem):
+            return item
+        return None
+
+    def can_smooth_path(self) -> bool:
+        """Return whether the current path has an interior corner to smooth."""
+        item = self.editing_path()
+        if item is None or not isinstance(item._geometry, list):
+            return False
+        points = item._geometry
+        return any(
+            is_path_bend(before, corner, after)
+            for before, corner, after in zip(
+                points, points[1:], points[2:], strict=False
+            )
+        )
+
+    def smooth_path(self) -> None:
+        """Preview one subdivision pass in the current path working copy."""
+        item = self.editing_path()
+        if item is None or not isinstance(item._geometry, list):
+            return
+        geometry = subdivide_path(item._geometry)
+        if len(geometry) == len(item._geometry):
+            return
+        item.set_geometry(geometry, item._anchor_x, item._anchor_y)
+        self._rebuild_vertex_handles(item)
+        self._rebuild_midpoint_handles()
+        self._emit_preview(item)
 
     def start_vertex_editing(
         self, item: "PathItem | RegionItem", *, managed_session: bool = False

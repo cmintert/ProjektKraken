@@ -23,7 +23,14 @@ from html import escape
 from typing import Optional, cast
 
 from PySide6.QtCore import QSettings, QSize, Qt, QTimer, Signal, Slot
-from PySide6.QtGui import QAction, QKeyEvent, QPaintEvent, QResizeEvent
+from PySide6.QtGui import (
+    QAction,
+    QKeyEvent,
+    QKeySequence,
+    QPaintEvent,
+    QResizeEvent,
+    QShortcut,
+)
 from PySide6.QtWidgets import (
     QComboBox,
     QFrame,
@@ -709,6 +716,10 @@ class MapWidget(
         )
         self.region_cut_controls.mode_changed.connect(self._update_mode_indicator)
         geometry_layout.addWidget(self.region_cut_controls)
+        self.btn_smooth_path = self._build_smooth_path_button()
+        geometry_layout.addWidget(
+            self.btn_smooth_path, alignment=Qt.AlignmentFlag.AlignLeft
+        )
         self.btn_geometry_discard_reload = declare_inspection(
             QPushButton("Discard and reload", self),
             "src-gui-widgets-map-widget-mapwidget-build-feature-geometry-edit-strip-self-btn-geometry-discard-reload|map.historical-geometry|help-inspect-src-gui-widgets-map-widget-mapwidget-build-feature-geometry-edit-strip-self-btn-geometry-discard-reload",
@@ -723,6 +734,43 @@ class MapWidget(
         geometry_layout.addWidget(self.btn_geometry_discard_reload)
         self.feature_geometry_edit_strip.hide()
         layout.addWidget(self.feature_geometry_edit_strip)
+
+    def _build_smooth_path_button(self) -> QPushButton:
+        """Expose subdivision only within a path geometry edit."""
+        button = declare_inspection(
+            QPushButton("Smooth Path", self.feature_geometry_edit_strip),
+            "map-smooth-path|map.historical-geometry|help-inspect-map-smooth-path",
+        )
+        button.hide()
+        button.clicked.connect(self.view._vertex_editor.smooth_path)
+        shortcut = QShortcut(button)
+        shortcut.setKeys(
+            [QKeySequence(Qt.Key.Key_Return), QKeySequence(Qt.Key.Key_Enter)]
+        )
+        shortcut.setContext(Qt.ShortcutContext.WidgetShortcut)
+        shortcut.activated.connect(button.click)
+        self.view.feature_geometry_preview_changed.connect(
+            self._update_smooth_path_button
+        )
+        return button
+
+    @Slot()
+    def _update_smooth_path_button(self) -> None:
+        """Match the action's availability to the current geometry draft."""
+        editor = self.view._vertex_editor
+        self.btn_smooth_path.setVisible(editor.editing_path() is not None)
+        if self._feature_geometry_edit_pending:
+            explanation = "Wait for the current edit to save."
+        elif not self._feature_geometry_apply_available:
+            explanation = "Discard and reload changes made elsewhere."
+        elif not editor.can_smooth_path():
+            explanation = "Add or move a vertex to create a corner first."
+        else:
+            explanation = ""
+        self.btn_smooth_path.setEnabled(not explanation)
+        self.btn_smooth_path.setToolTip(
+            explanation or "Round corners with editable points and keep both endpoints."
+        )
 
     def _build_trajectory_segment_panel(self, layout: QVBoxLayout) -> None:
         """Build the incoming trajectory-segment mode controls."""
@@ -2234,6 +2282,7 @@ class MapWidget(
 
     def _update_mode_indicator(self) -> None:
         """Update the active mode, instructions, and shared edit actions."""
+        self._update_smooth_path_button()
         if self.view.is_placing_marker:
             self.mode_indicator.setText("🔵 PLACING MARKER")
             self._apply_mode_indicator_style("drawing")

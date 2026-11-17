@@ -2,6 +2,16 @@
   "schema_version": 1,
   "bindings": [
     {
+      "id": "map-smooth-path",
+      "topic_id": "map.historical-geometry",
+      "target": "help-inspect-map-smooth-path",
+      "source": "src/gui/widgets/map_widget.py",
+      "symbol": "MapWidget._build_smooth_path_button",
+      "binding": "button",
+      "label": "Smooth Path",
+      "kind": "QPushButton"
+    },
+    {
       "id": "src-gui-delegates-attribute-delegate-attributedelegate-createeditor-checkbox",
       "topic_id": "authoring.details",
       "target": "help-inspect-src-gui-delegates-attribute-delegate-attributedelegate-createeditor-checkbox",
@@ -15069,8 +15079,14 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._build_feature_geometry_edit_strip",
-      "sha256": "1d48e32276d83afa800bc37095f86840b5664bfe91121cd3cef2b7193c2898e4",
-      "review_note": "Reviewed the region cutter and invalid-draft feedback in the existing geometry strip. maps.md now explains copied cutter selection, preview, Use cut, parent Confirm and nested cancellation."
+      "sha256": "e5c1a844175e7aa5ec696053a66eb962a9e24a3a7b926f56517c0179262525d9",
+      "review_note": "KRT-178 adds the path smoothing control to the geometry strip. Its own Help excerpt describes the new points. The region cutter and discard controls retain their existing behavior and explanations."
+    },
+    {
+      "source": "src/gui/widgets/map_widget.py",
+      "symbol": "MapWidget._build_smooth_path_button",
+      "sha256": "ee19ae1cb6950d2a416f4b97dcd45fabcdb7888b01e6837d2dd6095ccd66c5f3",
+      "review_note": "KRT-178 adds the Smooth Path task paragraph and inspection target. The focused button previews one pass in the working copy."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -15387,8 +15403,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._update_mode_indicator",
-      "sha256": "bc5057c4e022563876e30f062b219cfa28144fed199b82013ea3b4d5fa2b91b5",
-      "review_note": "KRT-170: footprint controls and shared Apply wording/tooltip describe the current placement. Other modes retain Confirm. Stale placement Apply availability is separate from cancellation."
+      "sha256": "5bfd2e1d535cf22f32364055b16c7dd5d368966151bcc3754e77a3bc64feafd9",
+      "review_note": "KRT-178 refreshes path smoothing availability when edit mode changes. Existing mode wording, shared confirmation, and cancellation still match their explanations."
     },
     {
       "source": "src/gui/widgets/map_widget.py",

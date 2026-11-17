@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-17
-**Commit:** cf47c7eef15cec0afda33787f1b853c555255033
+**Commit:** e5433c79499d86d7fc2e918326bf4a115b0532c5
 ---
 
 # Changelog
@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-11-17)* **Smooth Path (KRT-178)**: Added subdivision that rounds map path
+  corners with editable points and keeps both endpoints fixed. Documented the
+  preview in Help and tested confirmation, cancellation, and undo.
 
 - *(2026-11-17)* **Projected marker labels (KRT-174)**: Added compact,
   zoom-independent names beneath projected point markers. Covered label

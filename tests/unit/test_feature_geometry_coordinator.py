@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from PySide6.QtCore import QCoreApplication, QObject, QPointF, Qt, Signal
 from PySide6.QtGui import QFont, QFontDatabase, QPixmap
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QMenu, QWidget
 
 from src.app.coordinators.feature_geometry_coordinator import (
     FeatureGeometryCoordinator,
@@ -28,6 +28,98 @@ from src.gui.widgets.map_widget import MapWidget
 
 def _square(low, high):
     return RegionPolygon(((low, low), (high, low), (high, high), (low, high)))
+
+
+@pytest.mark.ci_fast
+@pytest.mark.parametrize("theme", list(json.loads(Path("themes.json").read_text())))
+def test_smooth_path_previews_editable_points_and_saves_only_on_confirm(
+    qtbot, tmp_path, monkeypatch, init_theme_manager, db_service, qapp, theme
+):
+    window = _Window()
+    widget = MapWidget()
+    widget.view.setViewport(QWidget())
+    qtbot.addWidget(widget)
+    window.map_widget = widget
+    monkeypatch.setattr(widget, "get_selected_map_id", lambda: "map")
+    manager = ThemeManager()
+    manager.apply_theme(qapp, Path("src/resources/main.qss").read_text())
+    manager.set_theme(theme, qapp, persist=False)
+    widget.setFixedWidth(320)
+    widget.resize(320, 700)
+    widget.show()
+    widget.activateWindow()
+    image = tmp_path / "map.png"
+    pixmap = QPixmap(400, 300)
+    pixmap.fill(Qt.GlobalColor.white)
+    assert pixmap.save(str(image))
+    assert widget.view.load_map(str(image))
+
+    original = [
+        {"x": 0.125, "y": 0.25},
+        {"x": 0.625, "y": 0.25},
+        {"x": 0.625, "y": 0.75},
+    ]
+    expected = [
+        original[0],
+        {"x": 0.5, "y": 0.25},
+        {"x": 0.625, "y": 0.375},
+        original[-1],
+    ]
+    snapshot = {**_marker_snapshot(), "geometry": original, "label": "Road"}
+    widget.view.add_marker(
+        "object", "entity", "Road", 0.5, 0.5, feature_type="path", geometry=original
+    )
+    coordinator = FeatureGeometryCoordinator(window)
+    coordinator.bind_ui()
+    coordinator.on_markers_ready("map", [snapshot])
+    coordinator.on_states_ready("map", [])
+    window.timeline.time = 1220
+    db_service.insert_map(Map(id="map", name="Map", image_path=str(image)))
+    db_service.insert_marker(Marker.from_dict(snapshot))
+    commands = []
+    window.command_requested.connect(commands.append)
+    widget.feature_actions.select("object", "canvas")
+    menu = QMenu(widget)
+    widget.feature_actions.populate(menu)
+    edit = next(a for a in menu.actions() if a.text() == "Edit path at current date")
+
+    button = widget.btn_smooth_path
+    assert not button.isVisible()
+    edit.trigger()
+    qapp.processEvents()
+    assert button.isVisible() and button.isEnabled()
+    assert action_label_geometry(button).fits
+    assert widget.feature_geometry_edit_strip.rect().contains(button.geometry())
+    button.setFocus()
+    qtbot.waitUntil(button.hasFocus)
+    qtbot.keyClick(button, Qt.Key.Key_Return)
+    item = widget.view.feature_items["object"]
+    assert item._geometry == expected
+    assert len(widget.view._vertex_editor._vertex_handles) == 4
+    assert not commands
+    qtbot.keyClick(widget.view, Qt.Key.Key_Escape)
+    assert item._geometry == original
+    assert not button.isVisible()
+    assert not commands
+
+    edit.trigger()
+    widget.set_feature_geometry_edit_pending(True)
+    assert button.isVisible() and not button.isEnabled()
+    widget.set_feature_geometry_edit_pending(False)
+    qtbot.mouseClick(button, Qt.MouseButton.LeftButton)
+    assert item._geometry == expected
+    widget.view.setFocus()
+    qtbot.keyClick(widget.view, Qt.Key.Key_Return)
+    assert len(commands) == 1
+    command = commands[0]
+    assert command.execute(db_service).success
+    assert db_service.get_marker("marker").geometry == original
+    states = db_service.feature_geometry_repo.get_states("marker")
+    assert [(state.effective_date, state.geometry) for state in states] == [
+        (1220, expected)
+    ]
+    assert command.undo(db_service).success
+    assert db_service.feature_geometry_repo.get_states("marker") == []
 
 
 @pytest.mark.ci_fast

@@ -187,6 +187,9 @@ Historical geometry lets one map feature have different shapes at different date
 3. Choose **Feature actions → Edit border at current date** or **Edit path at current date**.
 4. Edit the working copy, then choose **Confirm** or press **Enter**. **Cancel** or **Escape** discards the edit.
 
+While editing a path, choose **Smooth Path** to round its corners. You can
+adjust the new points before you **Confirm** the draft or **Cancel** it.
+
 View a date before the change, then return to its date to verify both shapes.
 Use Undo if the accepted state is wrong. Do not change visibility dates to
 repair the vertices of a historical border.
@@ -1547,6 +1550,11 @@ not move the Timeline back.
 
 **Discard and reload geometry** — Reload saved geometry into the current working copy,
 discarding local changes without deleting the feature.
+
+(help-inspect-map-smooth-path)=
+
+**Smooth Path** rounds corners in the working copy with editable points.
+Each pass keeps the start and end points in place.
 
 (help-inspect-src-gui-widgets-map-widget-mapwidget-build-trajectory-segment-panel-self-trajectory-arrival-mode)=
 
