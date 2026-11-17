@@ -9760,6 +9760,16 @@
       "binding": "self",
       "label": "Placement controls",
       "kind": "QFrame"
+    },
+    {
+      "id": "map.parent.keep-placement",
+      "topic_id": "map.features",
+      "target": "help-map-parent-keep-placement",
+      "source": "src/gui/dialogs/register_detail_map_dialog.py",
+      "symbol": "RegisterDetailMapDialog.__init__",
+      "binding": "self._keep_position",
+      "label": "Keep geographic placement",
+      "kind": "WrappingCheckBox"
     }
   ],
   "factory_exemptions": [
@@ -11867,14 +11877,14 @@
     {
       "source": "src/gui/dialogs/register_detail_map_dialog.py",
       "symbol": "RegisterDetailMapDialog.__init__",
-      "sha256": "6fdc019876d3c1eaef1e33269db22ebc5299a4b7ec565be83b91302703d7e3db",
-      "review_note": "KRT-170: parent choice is provisional; Place on parent map previews a suggested registration. No master prerequisite or persistence on acceptance. Updated maps task and retained inspection anchors. Candidate labels derive Independent/Detail map status from parent references, never legacy master roles."
+      "sha256": "736c176bfba533e04d11660ced5ba55304cb59b8444b0253113d71f3d296d41a",
+      "review_note": "KRT-173: parent picker offers Keep geographic placement using service-supplied availability. Change parent saves one reversible exact move; Place on parent map retains the unsaved manual preview. Updated task and both existing control explanations, retained destinations, and added the checkbox explanation."
     },
     {
       "source": "src/gui/dialogs/register_detail_map_dialog.py",
       "symbol": "RegisterDetailMapDialog._accept",
-      "sha256": "2a8162db060774cb2d4aae9bb96dfc9654c37f6d26c265d00dd9790b487a0297",
-      "review_note": "KRT-170: generated aspect-correct registration is suggested, not user confirmed. The footprint editor confirms once before the hierarchy command."
+      "sha256": "f3e6d0ef9f960bb2185eb4f3b5cbcad8cd4d3f1a63574884b473b07fae617a39",
+      "review_note": "KRT-173: preservation accepts only parent intent for worker recomputation; manual placement still builds an aspect-correct suggested preview. Updated the task to distinguish direct Change parent from preview Apply."
     },
     {
       "source": "src/gui/dialogs/register_detail_map_dialog.py",
@@ -16445,8 +16455,8 @@
     {
       "source": "src/gui/widgets/timeline/__init__.py",
       "symbol": "TimelineWidget.set_current_time_to_playhead",
-      "sha256": "a3f507ca2860dc17dc7b61ab21d21a857cf8c27bb9d6d29f3e378d7455e7832b",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "e63e14329d4943ad0e90acdccbbbcb9c456ea3bc0a3dbb0333dea900cf1b877f",
+      "review_note": "Reviewed existing baseline commit 62e1a0e3: Set Current Time asks for explicit confirmation, defaults to No, and leaves playhead navigation unchanged. Added confirmation and cancellation consequences to the timeline task and existing control explanation; no timeline code changed in A2."
     },
     {
       "source": "src/gui/widgets/timeline/__init__.py",
@@ -17714,6 +17724,24 @@
       "symbol": "FootprintControls.__init__",
       "sha256": "5bb12b1c1c4afc8d1a2397cc080617f47bf253214ea4c1c26de0d416e1e91698",
       "review_note": "KRT-170: reviewed shared mode-panel background and complete instructions, opacity slider, reset/zoom controls and comparison lock. Shared map action bar owns Apply/Cancel; these controls never persist changes. The dialog/control-group inspection also links directly to the new hierarchy task; wrapping reserves complete instructions and full relationship wording."
+    },
+    {
+      "source": "src/gui/dialogs/register_detail_map_dialog.py",
+      "symbol": "RegisterDetailMapDialog._update_preservation",
+      "sha256": "3349cb02b2b9ecce6ee7a100376e4a42ee752d1a99eb8a3e0f4ca97f45ef2198",
+      "review_note": "KRT-173: unavailable preservation is disabled with the service reason and manual alignment remains available. Same-parent preservation disables the no-op action; explicit manual editing remains possible."
+    },
+    {
+      "source": "src/gui/dialogs/register_detail_map_dialog.py",
+      "symbol": "RegisterDetailMapDialog._update_action",
+      "sha256": "e111caf6dd1afcd11bcbb115a6c3c6664e326084f1e71011a837d4325f7f2c15",
+      "review_note": "KRT-173: native acceptance text distinguishes Change parent from Place on parent map. The existing button explanation documents direct save, preview, Cancel and disabled same-parent behavior."
+    },
+    {
+      "source": "src/gui/dialogs/register_detail_map_dialog.py",
+      "symbol": "RegisterDetailMapDialog.preserves_position",
+      "sha256": "1d0b350f9d0355b98bcf91625091f393dbde0af6ba30cd0b994558d6733fb3e2",
+      "review_note": "KRT-173: explicit preservation intent requires the checkbox to be both enabled and checked; unavailable choices cannot dispatch exact moves."
     }
   ],
   "review_status": {

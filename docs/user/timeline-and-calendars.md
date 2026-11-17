@@ -103,7 +103,7 @@ worlds, or receiving changed saved timing cancels the current preview.
   and unsaved event edits remain in the editor. Partial or uncertain dates use
   the saved numeric date anchor; duration events use their start date.
 - Choose **Set Current Time** to make the playhead position the world's current
-  story time.
+  story time. Confirm **Yes** to save the change; **No** leaves it unchanged.
 - Choose **Return to Current Time** to move the playhead back to the current
   story time without changing it.
 - Enable **Snap to Events** to make manual playhead drags and ruler clicks land
@@ -574,7 +574,8 @@ current time is unchanged.
 (help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-btn-set-current-time)=
 
 **Set Current Time** — Deliberately make the playhead position the world’s current story
-time. Ordinary date navigation changes Viewing time only.
+time after confirming **Yes**. The confirmation defaults to **No**, which leaves
+world current time unchanged. Ordinary date navigation changes Viewing time only.
 
 (help-inspect-src-gui-widgets-timeline-init-timelinewidget-init-self-btn-return-present)=
 

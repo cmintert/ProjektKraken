@@ -117,6 +117,9 @@ class MapHandler(QObject):
         map_widget.placement_requested.connect(
             self.hierarchy_coordinator.edit_placement
         )
+        map_widget.preserve_map_position_requested.connect(
+            self.hierarchy_coordinator.preserve_position
+        )
         self.hierarchy_coordinator.command_requested.connect(
             self.command_requested.emit
         )

@@ -10,6 +10,7 @@ from src.app.command_coordinator import CommandCoordinator
 from src.commands.base_command import BaseCommand, CommandResult
 from src.commands.map_crud_commands import CreateMapCommand, UpdateMapCommand
 from src.commands.map_hierarchy_commands import ChangeMapParentCommand
+from src.commands.map_reparent_commands import PreserveMapPlacementCommand
 from src.commands.registry import get_command_types
 from src.core.map import Map
 from src.services.command_artifact_store import CommandArtifactStore
@@ -18,6 +19,7 @@ from src.services.command_transactions import after_command, command_transaction
 from src.services.db_service import DatabaseService
 from src.services.history_service import HistoryService
 from src.services.history_store import HistoryStore
+from src.services.map_reparenting import plan_preserved_reparent
 from src.services.migrations.schema import HISTORY_COMMAND_ID_EXPRESSION
 from src.services.raster_asset_service import RasterAssetService
 from src.services.worker import DatabaseWorker
@@ -103,6 +105,41 @@ def test_attach_subtree_reopen_undo_reopen_redo(tmp_path, qapp):
     assert db.get_map("a").attributes["parent_map_id"] == "b1"
     assert db.get_map("a1").to_dict() == before
     close_session(db, worker)
+
+
+def test_preserve_placement_reopen_undo_reopen_redo(tmp_path, qapp):
+    from tests.unit.test_map_reparenting import assert_invariant, records
+
+    path = tmp_path / "preserved.kraken"
+    db, worker, coordinator, results = open_session(path)
+    original = records()
+    for record in original:
+        db.insert_map(record)
+    plan = plan_preserved_reparent(original, "move", "new")
+    coordinator.execute_command(
+        PreserveMapPlacementCommand("move", "new", plan.expected_context)
+    )
+    assert results[-1].success
+    saved = db.get_map("move").to_dict()
+    assert_invariant(original, db.get_all_maps())
+    close_session(db, worker)
+    db, worker, coordinator, results = open_session(path)
+    try:
+        assert len(coordinator.undo_stack) == 1
+        coordinator.undo()
+        assert results[-1].success
+        assert db.get_map("move").to_dict() == original[3].to_dict()
+    finally:
+        close_session(db, worker)
+    db, worker, coordinator, results = open_session(path)
+    try:
+        assert len(coordinator.redo_stack) == 1
+        coordinator.redo()
+        assert results[-1].success
+        assert db.get_map("move").to_dict() == saved
+        assert_invariant(original, db.get_all_maps())
+    finally:
+        close_session(db, worker)
 
 
 def test_multiple_undos_and_divergence_never_resurrect_redo(tmp_path, qapp):

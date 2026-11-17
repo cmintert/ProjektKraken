@@ -4,17 +4,22 @@ import json
 import os
 import subprocess
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QPoint, QRect, Qt
 from PySide6.QtGui import QFont, QFontDatabase
 from PySide6.QtTest import QTest
+from PySide6.QtWidgets import QDialogButtonBox
 
 from src.core.theme_manager import ThemeManager
 from src.gui.dialogs.map_hierarchy_dialog import MapHierarchyDialog
+from src.gui.dialogs.register_detail_map_dialog import RegisterDetailMapDialog
+from src.gui.utils.action_label_metrics import action_label_geometry
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.map.footprint_controls import FootprintControls
+from src.services.map_reparenting import preservation_options
 from tests.integration.test_map_hierarchy_authoring import (
     authoring as _authoring,
 )
@@ -74,6 +79,67 @@ def test_hierarchy_and_comparison_controls(
     QTest.keyClick(hierarchy._buttons["navigate"], Qt.Key.Key_Return)
     assert hierarchy.intent == ("navigate", "source")
     assert not commands
+
+    maps = [
+        replace(
+            m,
+            attributes={
+                **m.attributes,
+                "parent_map_id": "source",
+                "registration": registration(),
+            },
+        )
+        if m.id == "parent"
+        else m
+        for m in widget.maps_data
+    ]
+    child = next(m for m in maps if m.id == "child")
+    candidates = RegisterDetailMapDialog.filter_candidate_parents(maps, child.id)
+    picker = RegisterDetailMapDialog(
+        child,
+        candidates,
+        preservation_options=preservation_options(maps, child.id, candidates),
+    )
+    qtbot.addWidget(picker)
+    picker.setStyleSheet(stylesheet)
+    picker.resize(width, 700)
+    picker.show()
+    picker._parent_combo.setCurrentIndex(picker._parent_combo.findData("parent"))
+    qtbot.wait(0)
+    assert picker.width() == width
+    assert picker._keep_position.isVisible()
+    assert picker._keep_position.label_geometry().fits
+    assert (
+        picker._placement_explanation.height()
+        >= picker._placement_explanation.heightForWidth(
+            picker._placement_explanation.width()
+        )
+    )
+    assert action_label_geometry(picker._apply_button).fits
+    picker._keep_position.setFocus()
+    QTest.keyClick(picker._keep_position, Qt.Key.Key_Space)
+    assert not picker.preserves_position()
+    qtbot.waitUntil(lambda: action_label_geometry(picker._apply_button).fits)
+    QTest.keyClick(picker._keep_position, Qt.Key.Key_Space)
+    picker._apply_button.setFocus()
+    assert picker._apply_button.hasFocus()
+    for button in picker.findChild(QDialogButtonBox).buttons():
+        assert action_label_geometry(button).fits
+        assert picker.rect().contains(
+            QRect(button.mapTo(picker, QPoint()), button.size())
+        )
+    picker_evidence = os.environ.get("KRT_HIERARCHY_EVIDENCE_DIR")
+    if picker_evidence:
+        Path(picker_evidence).mkdir(parents=True, exist_ok=True)
+        assert picker.grab().save(
+            str(
+                Path(picker_evidence) / f"{theme}-{width}-{font_size}-parent-picker.png"
+            )
+        )
+    QTest.keyClick(picker._apply_button, Qt.Key.Key_Return)
+    assert picker.selected_parent_id() == "parent"
+    assert picker.preserves_position()
+    assert picker.registration() is None
 
     handler.on_register_detail_map_requested("source", "parent", registration())
     controls = FootprintControls(widget.view)

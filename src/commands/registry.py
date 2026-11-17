@@ -95,6 +95,7 @@ def _init_registry() -> None:
         UpdateMapCommand,
     )
     from src.commands.map_hierarchy_commands import ChangeMapParentCommand
+    from src.commands.map_reparent_commands import PreserveMapPlacementCommand
     from src.commands.marker_commands import (
         ApplyMarkerAppearanceCommand,
         CreateMarkerCommand,
@@ -158,6 +159,7 @@ def _init_registry() -> None:
             "SetMasterMapCommand": SetMasterMapCommand,
             "RegisterDetailMapCommand": RegisterDetailMapCommand,
             "ChangeMapParentCommand": ChangeMapParentCommand,
+            "PreserveMapPlacementCommand": PreserveMapPlacementCommand,
             "UpdateCalendarConfigCommand": UpdateCalendarConfigCommand,
             "ApplyWorldSettingsCommand": ApplyWorldSettingsCommand,
             "TimelineMoveCommand": TimelineMoveCommand,

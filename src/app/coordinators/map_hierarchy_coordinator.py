@@ -10,9 +10,11 @@ from PySide6.QtCore import QObject, Signal, Slot
 
 from src.commands.base_command import CommandResult
 from src.commands.map_hierarchy_commands import ChangeMapParentCommand
+from src.commands.map_reparent_commands import PreserveMapPlacementCommand
 from src.core.map import Map
 from src.core.map_hierarchy import HierarchyError, MapHierarchy, hierarchy_attributes
 from src.services.map_nesting_service import validate_registration_payload
+from src.services.map_reparenting import plan_preserved_reparent
 
 if TYPE_CHECKING:
     from src.gui.widgets.map.map_graphics_view import MapGraphicsView
@@ -82,6 +84,29 @@ class MapHierarchyCoordinator(QObject):
         self.ports.request_transition(
             "place a map in the hierarchy",
             lambda: self._begin(map_id, parent_id, proposal),
+        )
+
+    def preserve_position(self, map_id: str, parent_id: str) -> None:
+        """Resolve protected authoring before dispatching a position-preserving move."""
+        self.ports.request_transition(
+            "change a map parent",
+            lambda: self._preserve_position(map_id, parent_id),
+        )
+
+    def _preserve_position(self, map_id: str, parent_id: str) -> None:
+        record = self._record(map_id)
+        if (
+            record is None
+            or (record.attributes or {}).get("parent_map_id") == parent_id
+        ):
+            return
+        try:
+            plan = plan_preserved_reparent(self.ports.maps(), map_id, parent_id)
+        except (ValueError, TypeError, KeyError) as exc:
+            self.ports.feedback("Cannot keep geographic placement", str(exc))
+            return
+        self.command_requested.emit(
+            PreserveMapPlacementCommand(map_id, parent_id, plan.expected_context)
         )
 
     def _begin(self, map_id: str, parent_id: str, registration: dict) -> None:

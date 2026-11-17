@@ -623,10 +623,33 @@ Each new map is independent. Attach it to another map to make it a detail map;
 its image appears as a footprint on that parent. Several independent hierarchies
 can coexist. Only registered maps are geographically connected.
 
-### Attach or change a parent
+### Change a parent while keeping geographic placement
+
+The maps must already belong to the same registered hierarchy. Saved alignments
+determine the new placement; choose the destination yourself.
 
 1. Open **Map settings > Manage Map Hierarchy…** and select the map to move.
-2. Choose **Attach or change parent…**, choose its parent, then choose
+2. Choose **Attach or change parent…** and choose its new parent.
+3. Leave **Keep geographic placement** selected and choose **Change parent**.
+   The relationship saves as one reversible change. The current canvas and
+   viewport stay in place; the hierarchy and saved footprints refresh.
+
+One Undo restores the exact previous parent and placement, including after
+reopening the world. Descendants keep their geographic placement too.
+
+The option is unavailable when maps have no shared registered ancestor, an
+alignment is missing or invalid, or preserving placement would require skew or
+an unreliable calculation. The picker explains the reason. Choose manual
+placement below instead. Kraken does not infer alignment from the images.
+For the current parent, clear **Keep geographic placement** to edit manually.
+
+(attach-or-change-a-parent)=
+
+### Attach or place a map manually
+
+1. Open **Map settings > Manage Map Hierarchy…** and select the map to move.
+2. Choose **Attach or change parent…** and choose its parent. Clear
+   **Keep geographic placement** if it is selected, then choose
    **Place on parent map**. The parent canvas opens with an unsaved image preview.
 3. Drag the body to move, a corner to scale, or the round handle to rotate.
    Arrow keys nudge; Shift increases the nudge. Bracket keys rotate by five degrees.
@@ -640,8 +663,9 @@ The saved footprint stays visible on the parent for inspection. Click it to open
 the detail map.
 
 **Cancel** or Escape on the canvas discards the preview without changing saved
-relationships and returns to the map where placement began. Parent choice alone
-never saves a relationship. A failed save retains the preview for correction.
+relationships and returns to the map where placement began. **Place on parent
+map** opens a preview; **Apply** saves it. A failed save retains the preview for
+correction.
 Changing maps or worlds with an unfinished placement uses the same **Apply /
 Keep editing / Discard** safeguard as other protected map edits.
 
@@ -650,8 +674,8 @@ Map settings. The parent picker excludes the moved map, its descendants and
 choices that would exceed the current five-level limit. Moving a hierarchy
 changes only the moved map's relationship: descendants, markers, layers, raster
 content, trajectories, historical geometry and calibrated distances stay intact.
-Changing parent starts a new manual placement; exact geographic position
-preservation is planned separately. Registration does not recalibrate either map.
+Keeping geographic placement uses the saved alignments; manual placement changes
+the image's location explicitly. Registration does not recalibrate either map.
 
 ### Reorganize and navigate
 
@@ -919,12 +943,23 @@ Inspecting a button never accepts or rejects the dialog.
 (help-inspect-src-gui-dialogs-register-detail-map-dialog-registerdetailmapdialog-init-self-parent-combo)=
 
 **Parent map** — Choose the parent map for this detail map. The relationship supports
-navigation between the maps.
+navigation between the maps. Choose **Change parent** to save with the existing
+geographic placement, or **Place on parent map** to review a manual preview.
+
+(help-map-parent-keep-placement)=
+
+**Keep geographic placement** — Use the saved alignments in a shared hierarchy
+to keep this map and its descendants in the same geographic position. The picker
+explains why this is unavailable for an unrelated or unsupported alignment.
+Clear it to place the image manually. **Change parent** saves one undoable change;
+**Place on parent map** opens a preview that saves only when you choose **Apply**.
 
 (help-inspect-src-gui-dialogs-register-detail-map-dialog-registerdetailmapdialog-init-buttons)=
 
-**Buttons** — Review the dialog’s choices, then use its acceptance or cancellation
-action. Inspecting a button never accepts or rejects the dialog.
+**Change parent / Place on parent map / Cancel** — **Change parent** saves the
+selected relationship while keeping geographic placement. **Place on parent map**
+opens an unsaved preview for manual alignment. **Cancel** leaves the relationship
+unchanged. Inspecting a button never accepts or rejects the dialog.
 
 (help-inspect-src-gui-dialogs-temporal-validity-dialog-temporalvaliditydialog-init-self-buttons)=
 

@@ -29,8 +29,20 @@ and the shared Apply/Cancel lifecycle. Confirmation submits one structural comma
 Failure retains the preview; externally changed hierarchy retains the preview
 with Apply disabled until explicit cancellation. Ancestor breadcrumbs and direct
 children use canonical parent references. Viewport state stays within the GUI
-thread and is restored on return or cancellation. Exact geographic placement
-preservation during reparenting remains A2 work.
+thread and is restored on return or cancellation.
+
+`map_reparenting` computes A2 placement proposals over detached snapshots. It
+composes source-to-root and inverse destination-to-root affine transforms within
+a registered hierarchy, rejecting missing, invalid or numerically unstable
+alignments. The result must be representable in the existing version-1
+`aspect_locked_affine` format; shear and reflection require explicit manual
+placement. No approximation or new registration format is introduced.
+`PreserveMapPlacementCommand` recomputes on the worker and guards hierarchy
+snapshots for the source and both ancestry chains before mutation or redo.
+Inherited before/after snapshots provide exact, restart-safe undo and redo while
+retaining unrelated attributes. Descendant registrations and local coordinates
+stay unchanged. The parent picker displays service-supplied availability; the
+coordinator resolves protected edits before dispatch without navigating the canvas.
 
 `HistoryStore` owns the version-2 per-world stack manifest in `system_meta`.
 The manifest, rather than timestamps or applied flags, defines the reachable

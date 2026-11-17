@@ -18,6 +18,7 @@ from PySide6.QtWidgets import QComboBox, QDialog, QInputDialog, QMessageBox, QWi
 from src.gui.constants import MAP_ROLE_MASTER
 from src.gui.dialogs.map_hierarchy_dialog import MapHierarchyDialog
 from src.gui.dialogs.register_detail_map_dialog import RegisterDetailMapDialog
+from src.services.map_reparenting import preservation_options
 
 if TYPE_CHECKING:
     from src.core.map import Map
@@ -49,6 +50,7 @@ class MapNestingMixin:
         make_map_independent_requested: SignalInstance
         placement_requested: SignalInstance
         register_detail_map_requested: SignalInstance
+        preserve_map_position_requested: SignalInstance
         edit_footprint_requested: SignalInstance
         _pending_footprint_edit_id: str | None
 
@@ -101,7 +103,7 @@ class MapNestingMixin:
         self._choose_parent_for(detail_map_id)
 
     def _choose_parent_for(self, detail_map_id: str | None) -> None:
-        """Collect a destination and emit provisional placement intent."""
+        """Collect a destination and emit exact-move or manual-preview intent."""
         if not detail_map_id:
             return
         maps = list(self.maps_data or [])
@@ -126,10 +128,14 @@ class MapNestingMixin:
             candidate_parents=candidates,
             resolve_image_path=resolver,
             parent=cast(QWidget, self),
+            preservation_options=preservation_options(maps, detail_map_id, candidates),
         )
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
         parent_id = dialog.selected_parent_id()
+        if parent_id and dialog.preserves_position():
+            self.preserve_map_position_requested.emit(detail_map_id, parent_id)
+            return
         registration = dialog.registration()
         if not parent_id or registration is None:
             return

@@ -234,6 +234,7 @@ class MapWidget(
     # Map nesting (master / detail) signals
     make_map_independent_requested = Signal(str)
     placement_requested = Signal(str)
+    preserve_map_position_requested = Signal(str, str)
     set_master_map_requested = Signal(str)  # map_id
     register_detail_map_requested = Signal(
         str, str, dict

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-17
-**Commit:** d5a5ed7a3be0a1b3aff06445277a3cd2104dde47
+**Commit:** 62e1a0e34a70873cfbdca5bed840c8dfd9031ff0
 ---
 
 # Changelog
@@ -12,6 +12,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-11-17)* **Map placement preservation (KRT-173)**: Added exact placement
+  preservation when changing parents within a registered hierarchy, with explicit
+  manual fallback for unsupported or unstable alignments. Added worker-side stale
+  ancestry checks, restart-safe Undo/Redo, geographic invariance and authoring
+  regressions, and six-theme narrow/enlarged-text checks. Updated map Help,
+  architecture and review evidence; reconciled the existing timeline confirmation
+  behavior with its Help explanation and review record.
 
 - *(2026-11-16)* **Flexible map hierarchy authoring (KRT-170)**: Added hierarchy
   management, independent roots, attachment, reparenting and detachment. Parent

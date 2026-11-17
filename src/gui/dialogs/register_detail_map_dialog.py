@@ -1,4 +1,4 @@
-"""Collect a parent and a suggested placement without persisting a relationship."""
+"""Collect parent intent for exact placement or a suggested manual preview."""
 
 from __future__ import annotations
 
@@ -20,6 +20,7 @@ from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.responsive_dialog_buttons import (
     ResponsiveDialogButtonBox as QDialogButtonBox,
 )
+from src.gui.widgets.wrapping_choices import WrappingCheckBox
 from src.services.map_hierarchy_options import candidate_parents
 
 logger = logging.getLogger(__name__)
@@ -44,6 +45,8 @@ class RegisterDetailMapDialog(QDialog):
             intrinsic aspect ratio without forcing the dialog to know
             where the world root lives.
         parent: Parent widget.
+        preservation_options: Target IDs mapped to an unavailable reason or None
+            when the application service can preserve geographic placement.
 
     """
 
@@ -53,6 +56,8 @@ class RegisterDetailMapDialog(QDialog):
         candidate_parents: List[Map],
         resolve_image_path: Optional[Callable[[str], str]] = None,
         parent: Optional[QWidget] = None,
+        *,
+        preservation_options: dict[str, str | None] | None = None,
     ) -> None:
         """Initialize detail-map registration controls."""
         super().__init__(parent)
@@ -61,6 +66,7 @@ class RegisterDetailMapDialog(QDialog):
         self._resolve_image_path = resolve_image_path
         self._selected_parent_id: Optional[str] = None
         self._registration: Optional[Dict[str, Any]] = None
+        self._preservation_options = preservation_options or {}
 
         self.setWindowTitle("Choose Parent Map")
         self.resize(440, 260)
@@ -70,9 +76,8 @@ class RegisterDetailMapDialog(QDialog):
         layout.setSpacing(8)
 
         intro = QLabel(
-            f"Choose a parent for {detail_map.name}. Next, place its image on the "
-            "parent map. Nothing is saved until you apply the placement. "
-            "Existing descendants and map content stay unchanged."
+            f"Choose a parent for {detail_map.name}. Keep placement from saved "
+            "alignments, or place the image manually."
         )
         intro.setTextFormat(Qt.TextFormat.PlainText)
         intro.setWordWrap(True)
@@ -93,6 +98,16 @@ class RegisterDetailMapDialog(QDialog):
             self._parent_combo.addItem(label, m.id)
         layout.addWidget(self._parent_combo)
 
+        self._keep_position = declare_inspection(
+            WrappingCheckBox("Keep geographic placement", self),
+            "map.parent.keep-placement|map.features|help-map-parent-keep-placement",
+        )
+        layout.addWidget(self._keep_position)
+        self._placement_explanation = QLabel(self)
+        self._placement_explanation.setTextFormat(Qt.TextFormat.PlainText)
+        self._placement_explanation.setWordWrap(True)
+        layout.addWidget(self._placement_explanation)
+
         if not candidate_parents:
             warn = QLabel(
                 "No parent can accept this map and its descendants within five levels."
@@ -112,18 +127,62 @@ class RegisterDetailMapDialog(QDialog):
         buttons.accepted.connect(self._accept)
         buttons.rejected.connect(self.reject)
         ok_btn = buttons.button(QDialogButtonBox.StandardButton.Ok)
+        self._apply_button = ok_btn
         if ok_btn is not None:
             ok_btn.setText("Place on parent map")
             ok_btn.setEnabled(bool(candidate_parents))
         layout.addWidget(buttons)
+        self._parent_combo.currentIndexChanged.connect(self._update_preservation)
+        self._keep_position.toggled.connect(self._update_action)
+        self._update_preservation()
+
+    def _update_preservation(self) -> None:
+        parent_id = self._parent_combo.currentData()
+        explanation = self._preservation_options.get(
+            parent_id, "No shared saved alignment is available. Place the map manually."
+        )
+        self._keep_position.setEnabled(explanation is None)
+        self._keep_position.setChecked(explanation is None)
+        self._placement_explanation.setText(explanation or "")
+        self._update_action()
+
+    def _update_action(self) -> None:
+        if self._apply_button is None:
+            return
+        keep = self.preserves_position()
+        same_parent = self._parent_combo.currentData() == (
+            self._detail_map.attributes or {}
+        ).get("parent_map_id")
+        self._apply_button.setText("Change parent" if keep else "Place on parent map")
+        self._apply_button.setEnabled(
+            bool(self._parent_combo.currentData()) and not (keep and same_parent)
+        )
+        if self._keep_position.isEnabled():
+            self._placement_explanation.setText(
+                "This is already the parent. Clear Keep geographic placement to "
+                "edit its placement manually."
+                if keep and same_parent
+                else "Change parent saves one reversible change using the saved "
+                "alignments."
+                if keep
+                else "Next, adjust the image on the parent map. Nothing is saved "
+                "until you apply the placement."
+            )
+
+    def preserves_position(self) -> bool:
+        """Return the explicit, available position-preservation intent."""
+        return self._keep_position.isEnabled() and self._keep_position.isChecked()
 
     def _accept(self) -> None:
-        """Build the registration payload and close with Accepted."""
+        """Accept preserved intent or build a suggested manual registration."""
         parent_id = self._parent_combo.currentData()
         if not parent_id:
             self.reject()
             return
         self._selected_parent_id = parent_id
+        if self.preserves_position():
+            self.accept()
+            return
 
         # Effective aspect ratio = intrinsic * (parent_h / parent_w).
         # This makes the footprint polygon have the correct visual shape on
