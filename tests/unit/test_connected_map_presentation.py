@@ -14,6 +14,7 @@ from src.core.theme_manager import ThemeManager
 from src.gui.widgets.map.connected_features import ConnectedFeatures
 from tests.integration.test_connected_map_projection import read_frame
 from tests.integration.test_map_hierarchy_authoring import authoring as _authoring
+from tests.integration.test_map_hierarchy_authoring import registration
 
 pytestmark = pytest.mark.ci_fast
 authoring = _authoring
@@ -103,3 +104,27 @@ def test_projected_open_path_hit_shape_excludes_implicit_fill(qapp):
     assert not item.shape().contains(QPointF(300, 100))
     assert item.shape().contains(QPointF(360, 200))
     assert item.shape().contains(QPointF(200, 40))
+
+
+def test_footprint_zoom_refreshes_and_projected_focus_owns_enter(authoring, qtbot):
+    widget, handler, commands, _, _ = authoring
+    handler.on_register_detail_map_requested("source", "parent", registration())
+    assert widget.view.is_editing_footprint
+    widget.view.fit_to_view()
+    with qtbot.waitSignal(widget.view.zoom_factor_changed) as changed:
+        widget.view.zoom_to_footprint()
+    assert changed.args[0] == widget.view.zoom_factor
+    assert widget.view.zoom_factor > 1
+
+    overlay = ConnectedFeatures(widget.view, widget.map_settings_menu)
+    overlay.enabled = True
+    overlay.display(read_frame())
+    sources = []
+    overlay.source_requested.connect(sources.append)
+    widget.view.setFocus()
+    overlay.items[0].setFocus()
+    QTest.keyClick(widget.view.viewport(), Qt.Key.Key_Return)
+    assert sources == ["old"]
+    assert widget.view.is_editing_footprint
+    assert not commands
+    overlay.clear()

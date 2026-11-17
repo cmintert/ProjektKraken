@@ -2,9 +2,11 @@
 
 import json
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtGui import QImageReader
 
 from src.core.calendar import CalendarConverter
 from src.core.feature_geometry_state import FeatureGeometryState
@@ -36,7 +38,12 @@ def read_projection_snapshot(db: DatabaseService) -> ProjectionSnapshot:
         )
         for item in items
     }
+    world_root = db.world_root or Path(db.db_path).resolve().parent
     for record in maps:
+        if record.image_path:
+            size = QImageReader(str(world_root / record.image_path)).size()
+            if not size.isEmpty():
+                snapshot.image_sizes[record.id] = (size.width(), size.height())
         for raw in db.feature_geometry_repo.get_states_for_map(record.id):
             state = FeatureGeometryState.from_dict(raw)
             snapshot.states.setdefault(state.marker_id, []).append(state)

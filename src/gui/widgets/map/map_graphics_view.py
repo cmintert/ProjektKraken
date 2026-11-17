@@ -1713,7 +1713,7 @@ class MapGraphicsView(QGraphicsView):
             self.fitInView(
                 rect.adjusted(-20, -20, 20, 20), Qt.AspectRatioMode.KeepAspectRatio
             )
-            self._layout_footprint_labels()
+            self._refresh_after_zoom()
 
     def _refresh_footprint_controls(self, *, reset: bool = False) -> None:
         widget = self._find_map_widget()
@@ -2349,30 +2349,10 @@ class MapGraphicsView(QGraphicsView):
             event.accept()
             return
         map_widget = self._find_map_widget()
-        if (
-            map_widget is not None
-            and getattr(map_widget, "_trajectory_edit_marker_id", None) is not None
-            and event.key()
-            in (
-                Qt.Key.Key_Escape,
-                Qt.Key.Key_Return,
-                Qt.Key.Key_Enter,
-                Qt.Key.Key_Delete,
-            )
+        if map_widget is not None and self._handle_map_widget_edit_key(
+            event, map_widget
         ):
-            map_widget.keyPressEvent(event)
             return
-
-        if map_widget is not None and map_widget.active_map_session_mode() is not None:
-            if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-                map_widget.confirm_active_session()
-                event.accept()
-                return
-            if event.key() == Qt.Key.Key_Escape:
-                if not map_widget.cancel_map_subtool():
-                    map_widget.cancel_active_session()
-                event.accept()
-                return
 
         if map_widget is None and self._handle_standalone_edit_key(event):
             return
@@ -2407,6 +2387,43 @@ class MapGraphicsView(QGraphicsView):
                 return
 
         super().keyPressEvent(event)
+
+    def _handle_map_widget_edit_key(
+        self, event: "QKeyEvent", map_widget: "MapWidget"
+    ) -> bool:
+        """Let a focused scene item handle Enter before applying a map draft."""
+        key = event.key()
+        is_enter = key in (Qt.Key.Key_Return, Qt.Key.Key_Enter)
+        mode = map_widget.active_map_session_mode()
+        if mode is not None and is_enter:
+            focused = self.graphics_scene.focusItem()
+            if focused is not None:
+                event.ignore()
+                self.graphics_scene.sendEvent(focused, event)
+                if event.isAccepted():
+                    return True
+
+        if getattr(
+            map_widget, "_trajectory_edit_marker_id", None
+        ) is not None and key in (
+            Qt.Key.Key_Escape,
+            Qt.Key.Key_Return,
+            Qt.Key.Key_Enter,
+            Qt.Key.Key_Delete,
+        ):
+            map_widget.keyPressEvent(event)
+            return True
+        if mode is None:
+            return False
+        if is_enter:
+            map_widget.confirm_active_session()
+        elif key == Qt.Key.Key_Escape:
+            if not map_widget.cancel_map_subtool():
+                map_widget.cancel_active_session()
+        else:
+            return False
+        event.accept()
+        return True
 
     def _handle_standalone_edit_key(self, event: "QKeyEvent") -> bool:
         """Provide Confirm/Cancel semantics when the view has no MapWidget."""
@@ -2559,6 +2576,10 @@ class MapGraphicsView(QGraphicsView):
         factor = MAP_ZOOM_IN_FACTOR if event.angleDelta().y() > 0 else zoom_out_factor
 
         self.scale(factor, factor)
+        self._refresh_after_zoom()
+
+    def _refresh_after_zoom(self) -> None:
+        """Update authored and connected presentation after a view-scale change."""
         self.zoom_factor_changed.emit(self.zoom_factor)
         self._trajectory.update_label_scales()
         self._apply_scale_dependent_visibility()

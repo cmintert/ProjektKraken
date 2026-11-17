@@ -4,11 +4,13 @@ import json
 from threading import Event
 
 import pytest
-from PySide6.QtCore import QObject, QPointF, Qt, QThread, Signal, Slot
+from PySide6.QtCore import QObject, QPointF, Qt, QThread, QTimer, Signal, Slot
+from PySide6.QtGui import QImage
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QMenu
 
 from src.app.coordinators.map_projection_coordinator import MapProjectionCoordinator
+from src.core.map import MapLayerNode
 from src.gui.widgets.map.connected_features import ConnectedFeatures
 from src.services.db_service import DatabaseService
 from src.services.map_projection_reader import MapProjectionReader, read_projection
@@ -34,6 +36,33 @@ def test_reader_never_writes_even_when_trajectory_is_invalid(db_service):
     projector = read_projection(db_service)
     assert projector.frame("new", 0)["issues"]
     assert list(connection.iterdump()) == before
+
+
+def test_absolute_layer_zoom_uses_source_pixels(tmp_path):
+    world_root = tmp_path / "world-assets"
+    world_root.mkdir()
+    db = DatabaseService(str(tmp_path / "external.kraken"), world_root=world_root)
+    db.connect()
+    data = snapshot()
+    for record in data.maps:
+        if record.id in ("old", "new"):
+            size = (4000, 2000) if record.id == "old" else (1000, 500)
+            record.image_path = f"{record.id}.png"
+            image = QImage(*size, QImage.Format.Format_RGB32)
+            image.fill(Qt.GlobalColor.gray)
+            assert image.save(str(world_root / record.image_path))
+        if record.id == "old":
+            record.layers = MapLayerNode(
+                "Layers", children=[MapLayerNode("Point", id="point", max_zoom=0.5)]
+            )
+        db.insert_map(record)
+    db.insert_marker(data.markers[0])
+    try:
+        projector = read_projection(db)
+        assert projector.frame("new", 0, zoom=1)["points"]
+        assert not projector.frame("new", 0, zoom=3)["points"]
+    finally:
+        db.close()
 
 
 class Requests(QObject):
@@ -304,3 +333,42 @@ def test_coordinator_coalesces_and_rejects_old_date_world_and_disabled_replies(
     assert not overlay.items
     coordinator.timer.stop()
     coordinator.shutdown()
+
+
+def test_scrubbing_sends_regular_updates_and_preserves_same_map_frame(authoring, qtbot):
+    widget, _, _, db, _ = authoring
+    overlay = ConnectedFeatures(widget.view, widget.map_settings_menu)
+    overlay.enabled = True
+    overlay.display(read_frame())
+    date = 0
+    thread = QThread()
+    coordinator = MapProjectionCoordinator(
+        overlay, thread, lambda: db, lambda: ":memory:", lambda: "new", lambda: date
+    )
+    coordinator.requested.disconnect(coordinator.reader.run)
+    dates = []
+
+    def complete(request):
+        dates.append(request["date"])
+        coordinator.completed({"token": request["token"], **read_frame()})
+
+    def tick():
+        nonlocal date
+        date += 1
+        coordinator.refresh_playhead()
+
+    coordinator.requested.connect(complete)
+    timer = QTimer()
+    timer.timeout.connect(tick)
+    try:
+        tick()
+        assert overlay.items
+        timer.start(5)
+        qtbot.waitUntil(lambda: len(dates) >= 2)
+        assert dates[1] > dates[0]
+        assert overlay.items
+        coordinator.refresh()
+        assert not overlay.items
+    finally:
+        timer.stop()
+        coordinator.shutdown()

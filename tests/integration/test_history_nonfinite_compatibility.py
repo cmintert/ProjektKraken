@@ -15,17 +15,18 @@ from src.core.map import Map, MapLayerNode
 from src.services.db_service import DatabaseService
 from src.services.history_store import HistoryStore
 from src.services.migrations import MigrationError, recovery, runner, steps
-from src.services.migrations.command_history import upgrade_history_identity_index
+from src.services.migrations.command_history import install_portable_history_index
 from src.services.migrations.schema import (
     HISTORY_COMMAND_ID_EXPRESSION,
-    LEGACY_HISTORY_COMMAND_ID_INDEX_SQL,
+    HISTORY_COMMAND_ID_INDEX_SQL,
+    LEGACY_HISTORY_PAYLOAD_FILTER,
 )
 from tests.integration.test_ordered_history import close_session, open_session
 
 pytestmark = [pytest.mark.integration, pytest.mark.ci_fast]
 
 
-def legacy_world(tmp_path, monkeypatch):
+def legacy_world(tmp_path, monkeypatch, version=6):
     monkeypatch.setattr(recovery, "get_backup_directory", lambda: tmp_path / "backups")
     path = tmp_path / "world.kraken"
     db, worker, coordinator, results = open_session(path)
@@ -54,9 +55,17 @@ def legacy_world(tmp_path, monkeypatch):
     close_session(db, worker)
     with closing(sqlite3.connect(path)) as conn:
         conn.execute("DROP INDEX idx_ch_world_identity")
-        conn.execute(LEGACY_HISTORY_COMMAND_ID_INDEX_SQL)
+        conn.execute("DROP INDEX idx_ch_world_legacy_payload")
+        if version == 6:
+            conn.execute(HISTORY_COMMAND_ID_INDEX_SQL)
+        else:
+            conn.execute(
+                "CREATE INDEX idx_ch_world_identity ON command_history "
+                "(world_id, CASE WHEN json_valid(command_data, 2) "
+                "THEN json_extract(command_data, '$._command_base.command_id') END)"
+            )
         conn.execute("DELETE FROM migration_history")
-        runner._stamp(conn, 6, "created_current", "created")
+        runner._stamp(conn, version, "created_current", "created")
         conn.commit()
     return path, serialized, command.command_id
 
@@ -82,17 +91,20 @@ def test_new_property_snapshots_are_strict_json_and_unlimited_zoom_is_lossless(
     assert db_service.get_map("map").layers.max_zoom == float("inf")
 
 
+@pytest.mark.parametrize("version", [6, 7])
 def test_upgrade_preserves_history_then_reorder_reopen_undo_redo(
-    tmp_path, monkeypatch, qapp
+    tmp_path, monkeypatch, qapp, version
 ):
-    path, payload, identity = legacy_world(tmp_path, monkeypatch)
+    if version == 7 and sqlite3.sqlite_version_info < (3, 45):
+        pytest.skip("The original v7 fixture requires SQLite's JSON5 index")
+    path, payload, identity = legacy_world(tmp_path, monkeypatch, version)
     with closing(sqlite3.connect(path)) as conn:
         before = conn.execute("SELECT * FROM command_history").fetchall()
         manifest = conn.execute(
             "SELECT key,value FROM system_meta WHERE key LIKE 'command_history_stacks_v2:%'"
         ).fetchall()
     db, worker, coordinator, results = open_session(path)
-    assert db.migration_status["upgraded_from"] == 6
+    assert db.migration_status["upgraded_from"] == version
     assert not db.migration_status["history_archived"]
     conn = db.require_connection()
     assert [
@@ -111,6 +123,12 @@ def test_upgrade_preserves_history_then_reorder_reopen_undo_redo(
         ("world", identity),
     ).fetchall()
     assert any("idx_ch_world_identity" in row[3] and "<expr>" in row[3] for row in plan)
+    legacy_plan = conn.execute(
+        "EXPLAIN QUERY PLAN SELECT * FROM command_history WHERE world_id=? "
+        f"AND {LEGACY_HISTORY_PAYLOAD_FILTER}",
+        ("world",),
+    )
+    assert any("idx_ch_world_legacy_payload" in row[3] for row in legacy_plan)
     recovery_path = Path(db.migration_status["recovery_path"])
     with closing(sqlite3.connect(recovery_path / "database.kraken")) as old:
         assert (
@@ -163,7 +181,7 @@ def test_identity_upgrade_failure_rolls_back_without_reset(tmp_path, monkeypatch
     stamp = runner._stamp
 
     def fail(conn, version, *args):
-        if version == steps.HISTORY_IDENTITY_VERSION:
+        if version == steps.PORTABLE_HISTORY_INDEX_VERSION:
             raise RuntimeError("index upgrade failure")
         stamp(conn, version, *args)
 
@@ -182,10 +200,10 @@ def test_identity_upgrade_failure_rolls_back_without_reset(tmp_path, monkeypatch
             == "6"
         )
         assert (
-            "json_valid(command_data, 2)"
-            not in conn.execute(
-                "SELECT sql FROM sqlite_master WHERE name='idx_ch_world_identity'"
-            ).fetchone()[0]
+            conn.execute(
+                "SELECT 1 FROM sqlite_master WHERE name='idx_ch_world_legacy_payload'"
+            ).fetchone()
+            is None
         )
         conn.row_factory = sqlite3.Row
         assert list(HistoryStore(conn, "world").rows()) == [identity]
@@ -199,7 +217,7 @@ def test_index_handles_malformed_archive_but_still_rejects_missing_active_record
             "INSERT INTO command_history(world_id,session_id,command_type,command_data,timestamp) "
             "VALUES ('world','session','Archived','{invalid archive',0)"
         )
-        upgrade_history_identity_index(conn)
+        install_portable_history_index(conn)
         store = HistoryStore(conn, "world")
         store.boundary()
         assert store.rows() == {}

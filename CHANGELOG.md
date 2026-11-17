@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-17
-**Commit:** fd96e450bdbdd33e933e84399f866a5ae9ed1394
+**Commit:** 8037ab2dd9881d75aae3842ea38493ae30f14623
 ---
 
 # Changelog
@@ -84,6 +84,12 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-17)* **Detail maps (PR #301)**: Corrected source layer zoom,
+  projected feature keyboard focus, overlays during timeline scrubbing, and
+  visibility after Zoom to Footprint. Made the history index portable to
+  older SQLite runtimes while preserving legacy undo and redo. Updated
+  migration guidance and added regression coverage.
 
 - *(2026-11-17)* **Projected path selection (KRT-175)**: Restricted open-path
   selection to the shared stroke hit area, excluding implicitly filled empty

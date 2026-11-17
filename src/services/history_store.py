@@ -4,7 +4,10 @@ import json
 import sqlite3
 from typing import Any
 
-from src.services.migrations.schema import HISTORY_COMMAND_ID_EXPRESSION
+from src.services.migrations.schema import (
+    HISTORY_COMMAND_ID_EXPRESSION,
+    LEGACY_HISTORY_PAYLOAD_FILTER,
+)
 
 HISTORY_KEY = "command_history_stacks_v2"
 STACK_LIMIT = 100
@@ -70,8 +73,10 @@ class HistoryStore:
         placeholders = ",".join("?" for _ in needed)
         for row in self.connection.execute(
             f"SELECT * FROM command_history WHERE world_id=? "
-            f"AND {HISTORY_COMMAND_ID_EXPRESSION} IN ({placeholders})",
-            (self.world_id, *sorted(needed)),
+            f"AND {HISTORY_COMMAND_ID_EXPRESSION} IN ({placeholders}) "
+            "UNION ALL SELECT * FROM command_history WHERE world_id=? "
+            f"AND {LEGACY_HISTORY_PAYLOAD_FILTER}",
+            (self.world_id, *sorted(needed), self.world_id),
         ):
             try:
                 payload = json.loads(row["command_data"])

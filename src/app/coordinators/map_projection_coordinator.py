@@ -1,4 +1,4 @@
-"""Coalesced projection requests with world/map/date generation protection."""
+"""Coalesced projection requests with world and map generation protection."""
 
 from collections.abc import Callable
 from typing import Any
@@ -88,13 +88,25 @@ class MapProjectionCoordinator(QObject):
 
     @Slot()
     def refresh(self, *_args: Any) -> None:
-        """Invalidate stale replies immediately and coalesce repeated UI changes."""
+        """Clear frames whose map, authored inputs, or presentation changed."""
         if self.stopped:
             return
         self.token += 1
-        self.dirty = True
         self.overlay.clear()
-        self.timer.start()
+        self.refresh_playhead()
+
+    @Slot()
+    def refresh_playhead(self, *_args: Any) -> None:
+        """Keep the current frame visible and sample the latest date at each send."""
+        if self.stopped:
+            return
+        self.dirty = True
+        self._schedule_send()
+
+    def _schedule_send(self) -> None:
+        """Start a bounded wait without postponing an already scheduled send."""
+        if not self.busy and self.overlay.enabled and not self.timer.isActive():
+            self.timer.start()
 
     def send(self) -> None:
         """Keep at most one worker request in flight and one latest continuation."""
@@ -123,11 +135,11 @@ class MapProjectionCoordinator(QObject):
 
     @Slot(dict)
     def completed(self, result: dict[str, Any]) -> None:
-        """Display only the latest generation; drain the latest coalesced request."""
+        """Display frames from the current context and continue to the latest date."""
         self.busy = False
         if self.stopped:
             return
         if result["token"] == self.token and self.overlay.enabled:
             self.overlay.display(result)
         if self.dirty:
-            self.timer.start()
+            self._schedule_send()

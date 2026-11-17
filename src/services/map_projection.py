@@ -28,10 +28,13 @@ class ProjectionSnapshot:
     labels: dict[tuple[str, str], str] = field(default_factory=dict)
     states: dict[str, list[FeatureGeometryState]] = field(default_factory=dict)
 
+    image_sizes: dict[str, tuple[int, int]] = field(default_factory=dict)
+
     def to_dict(self) -> dict[str, Any]:
         """Encode detached inputs for the dedicated calculation thread."""
         return {
             "maps": [m.to_dict() for m in self.maps],
+            "image_sizes": self.image_sizes,
             "markers": [m.to_dict() for m in self.markers],
             "tracks": {
                 key: [
@@ -59,6 +62,10 @@ class ProjectionSnapshot:
         return cls(
             maps=[Map.from_dict(m) for m in data["maps"]],
             markers=[Marker.from_dict(m) for m in data["markers"]],
+            image_sizes={
+                key: (width, height)
+                for key, (width, height) in data.get("image_sizes", {}).items()
+            },
             tracks={
                 key: [
                     (
@@ -105,6 +112,14 @@ class MapProjector:
         self.converter = snapshot.context.converter()
         self.shapes: dict[tuple[str, str | None], Any] = {}
 
+    def pixel_scale(self, source: str, target: str) -> float:
+        """Convert area scale from normalized coordinates to image pixels."""
+        source_size = self.snapshot.image_sizes.get(source)
+        target_size = self.snapshot.image_sizes.get(target)
+        if source_size is None or target_size is None:
+            return 1.0
+        return math.sqrt(math.prod(target_size) / math.prod(source_size))
+
     def eligible(
         self,
         marker: Marker,
@@ -120,18 +135,16 @@ class MapProjector:
         if not include_detail and scale < 1 - 1e-9:
             return False, 0
         path = self.paths[marker.map_id].get(marker.id, [])
+        absolute_zoom = zoom * scale * self.pixel_scale(marker.map_id, target)
         opacity = 1.0
         for node in path[1:]:
             comparison = (
-                fit_ratio
+                fit_ratio * scale
                 if node.attributes.get("zoom_basis") == "fit_ratio"
                 and fit_ratio is not None
-                else zoom
+                else absolute_zoom
             )
-            if (
-                not node.visible
-                or not node.min_zoom <= comparison * scale <= node.max_zoom
-            ):
+            if not node.visible or not node.min_zoom <= comparison <= node.max_zoom:
                 return False, 0
             opacity *= node.opacity
         source = self.coordinates.maps[marker.map_id]

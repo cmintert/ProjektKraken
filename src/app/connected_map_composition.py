@@ -33,7 +33,7 @@ def compose_connected_maps(
     )
     overlay.source_requested.connect(window.map_widget.select_map)
     window.map_widget.map_selected.connect(coordinator.refresh)
-    window.timeline.playhead_time_changed.connect(coordinator.refresh)
+    window.timeline.playhead_time_changed.connect(coordinator.refresh_playhead)
     window.map_widget.view.zoom_factor_changed.connect(coordinator.refresh)
     ThemeManager().theme_changed.connect(coordinator.refresh)
     window.worker.calendar_config_loaded.connect(
