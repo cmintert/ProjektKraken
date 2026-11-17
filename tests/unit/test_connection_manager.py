@@ -273,6 +273,19 @@ class TestConnectAll:
         assert "total_failed" in result
         assert "total_succeeded" in result
 
+    def test_connect_map_applies_restored_playhead(
+        self, connection_manager, mock_main_window
+    ):
+        """Both map subscribers receive the viewing time before the first map loads."""
+        timeline = mock_main_window.timeline
+        timeline.get_playhead_time.return_value = 150.25
+        timeline.get_current_time.return_value = 200.0
+
+        connection_manager.connect_map_widget()
+
+        mock_main_window.map_handler.on_playhead_changed.assert_called_once_with(150.25)
+        mock_main_window.map_widget.on_time_changed.assert_called_once_with(150.25)
+
     def test_connect_all_logs_summary(self, connection_manager, caplog):
         """Test that connect_all logs summary of connections."""
         caplog.set_level(logging.INFO)

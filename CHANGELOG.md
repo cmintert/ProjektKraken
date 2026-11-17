@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-17
-**Commit:** 18ea29d9dc2b12adea300c16fd2c608f5fbd87f3
+**Commit:** b0cdfd8e6b3eb58f36483e4d8c8042d93c0bc063
 ---
 
 # Changelog
@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-11-17)* **Projected marker labels (KRT-174)**: Added compact,
+  zoom-independent names beneath projected point markers. Covered label
+  placement, theme variants and keyboard navigation in the map presentation tests.
 
 - *(2026-11-17)* **Connected map geometry (KRT-175)**: Added read-only projection
   of dated paths and regions, preserving holes and all clipped components.
@@ -84,6 +88,10 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-17)* **Map startup**: Applied the restored timeline playhead to
+  both map subscribers before the first map loads. Added a regression that
+  distinguishes the viewing playhead from the current world date.
 
 - *(2026-11-17)* **Detail maps and rollback (PR #301)**: Applied authored
   layer settings to projected features, guarded the active canvas, isolated

@@ -29,6 +29,7 @@ from src.gui.constants import (
 )
 from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
+from src.gui.widgets.map.map_label_item import MapLabelItem
 
 
 class ProjectedPoint(QGraphicsPathItem):
@@ -52,6 +53,16 @@ class ProjectedPoint(QGraphicsPathItem):
         if data.get("feature_type") in {"path", "region"}:
             provenance = (
                 "\nDated geometry" if data.get("state_id") else "\nBase Geometry"
+            )
+        else:
+            self._label_item = MapLabelItem(data["label"], self)
+            self._label_item.setFlag(
+                self.GraphicsItemFlag.ItemIgnoresParentOpacity, False
+            )
+            self._label_item.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
+            self._label_item.setPos(
+                -self._label_item.boundingRect().width() / 2,
+                self.boundingRect().bottom() + 2,
             )
         self.setToolTip(
             f"{data['label']} — from {data['source_name']}{provenance}\n"
