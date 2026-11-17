@@ -689,6 +689,36 @@ breadcrumb segment to return through its connected ancestry. Returning to a map
 restores its previous viewport where available. The selector also opens any map,
 including independent roots. **Show Footprints** changes visibility only.
 
+(help-map-connected-features)=
+
+### View locations from connected maps
+
+Open **Map settings** and enable **Show connected map features**. The canvas
+shows read-only locations from maps in the same registered hierarchy. Nothing is
+copied into this map or its Layers tree. Disable the option to hide them.
+
+A location authored on the viewed map takes precedence, even when hidden. Other
+sources must agree on the location; conflicting eligible placements are omitted.
+Open **Map settings > View projection issues…** to see the affected source maps.
+Unrelated roots are never projected. Locations outside this map are not shown.
+
+By default, smaller-map detail stays hidden on a broader map. Enable **Include
+smaller-map detail** deliberately to include it. Source-layer visibility, inherited
+dates, opacity and scale limits still apply. The viewing playhead resolves moving
+locations before projection, including step segments and the base location before
+the first dated point. Ambiguous or invalid tracks are omitted with an explanation.
+
+Hover a hollow projected point for its source. Select it and press Enter, or
+double-click it, to open the source map through the usual protected-edit safeguard.
+Edit the authored feature there; moving or deleting the projection is unavailable.
+These display choices last for the current application session.
+
+(help-map-projection-issues)=
+
+**View projection issues** explains incompatible alignments, ambiguous tracks and
+disagreeing source placements. It does not choose a source or repair saved data.
+Correct the authored placements on their source maps, then view the result again.
+
 (help-map-calibration)=
 
 ## Calibration and queries

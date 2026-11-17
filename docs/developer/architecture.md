@@ -44,6 +44,27 @@ retaining unrelated attributes. Descendant registrations and local coordinates
 stay unchanged. The parent picker displays service-supplied availability; the
 coordinator resolves protected edits before dispatch without navigating the canvas.
 
+## Connected map display
+
+`MapCoordinates` validates saved registration chains and caches full affine
+map-to-map transforms within a shared root. Unlike reparenting, a derived display
+can represent shear without persisting a new registration format.
+`MapProjector` resolves trajectories at the playhead, source visibility/time,
+authored target precedence, ambiguity and conservative scale eligibility. Frames
+contain source identity and normalized display coordinates, never new markers.
+
+`MapProjectionReader` is a feature-owned QObject moved to the existing database
+thread. It reads through repositories without repairing invalid saved tracks;
+cached snapshots invalidate after commands, map/world/calendar changes. Requests
+and results contain serializable values. `MapProjectionCoordinator` coalesces
+changes with one request in flight and rejects obsolete generation replies.
+`connected_map_composition` wires narrow ports through AppCoordinator. No new
+DatabaseWorker, MapHandler or ConnectionManager feature responsibility is added.
+The opt-in overlay is separate from authored scene items and the Layers tree.
+Source-map navigation follows the existing protected-edit route.
+
+## Persistent command history
+
 `HistoryStore` owns the version-2 per-world stack manifest in `system_meta`.
 The manifest, rather than timestamps or applied flags, defines the reachable
 undo/redo order. `HistoryService` serializes commands and fails closed if an

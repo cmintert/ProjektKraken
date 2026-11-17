@@ -95,6 +95,9 @@ class AppCoordinator(QObject):
 
         window = self.main_window
         self.bind_neighbor_regions()
+        from src.app.connected_map_composition import compose_connected_maps
+
+        self.connected_maps = compose_connected_maps(window, self)
         hierarchy = window.map_handler.hierarchy_coordinator
         window.worker.command_finished.connect(
             hierarchy.on_command_finished, Qt.ConnectionType.QueuedConnection

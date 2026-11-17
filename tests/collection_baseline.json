@@ -2,23 +2,26 @@
   "schema": 1,
   "counts": {
     "smoke": 19,
-    "ci_fast": 2644,
+    "ci_fast": 2667,
     "slow": 1,
     "performance": 0,
-    "full": 7158,
-    "full_only": 4505
+    "full": 7183,
+    "full_only": 4507
   },
   "categories": {
     "architecture": 13,
     "cli": 134,
     "gui": 15,
-    "integration": 245,
+    "integration": 251,
     "packaging": 13,
     "performance": 16,
     "repro": 2,
-    "root": 15,
     "security": 5,
-    "unit": 6700
+    "test_image_support.py": 2,
+    "test_map_navigation.py": 4,
+    "test_shutdown.py": 5,
+    "test_unsaved_changes.py": 4,
+    "unit": 6719
   },
   "tests": {
     "tests/architecture/test_god_module_boundaries.py::test_choke_point_public_api_allows_removal": [],
@@ -406,6 +409,18 @@
     "tests/integration/test_cache_invalidation.py::test_moving_event_invalidates_linked_entities": [],
     "tests/integration/test_commands.py::test_create_event_undo": [],
     "tests/integration/test_commands.py::test_delete_event_undo": [],
+    "tests/integration/test_connected_map_projection.py::test_coordinator_coalesces_and_rejects_old_date_world_and_disabled_replies": [
+      "ci_fast"
+    ],
+    "tests/integration/test_connected_map_projection.py::test_overlay_is_opt_in_read_only_and_does_not_touch_local_features": [
+      "ci_fast"
+    ],
+    "tests/integration/test_connected_map_projection.py::test_reader_executes_on_owner_thread_and_sends_only_snapshots": [
+      "ci_fast"
+    ],
+    "tests/integration/test_connected_map_projection.py::test_reader_never_writes_even_when_trajectory_is_invalid": [
+      "ci_fast"
+    ],
     "tests/integration/test_context_tags.py::test_context_create_cleanup_and_undo_round_trip": [],
     "tests/integration/test_db_isolation.py::test_snapshot_isolation_and_refresh": [],
     "tests/integration/test_demo_world.py::test_failed_generation_does_not_publish_partial_world": [
@@ -654,7 +669,13 @@
     "tests/integration/test_worker_load_failure_delivery.py::test_failed_event_load_preserves_display_until_successful_empty_result": [
       "ci_fast"
     ],
-    "tests/integration/test_worker_semantic_index_delivery.py::test_queued_index_uses_worker_thread_and_delivers_existing_signal": [
+    "tests/integration/test_worker_semantic_index_delivery.py::test_cleanup_does_not_wait_for_inference": [
+      "ci_fast"
+    ],
+    "tests/integration/test_worker_semantic_index_delivery.py::test_details_and_save_complete_before_inference[automatic]": [
+      "ci_fast"
+    ],
+    "tests/integration/test_worker_semantic_index_delivery.py::test_details_and_save_complete_before_inference[rebuild]": [
       "ci_fast"
     ],
     "tests/integration/test_world_data_trust.py::test_dated_raster_fresh_session_and_snapshot_undo": [
@@ -4721,8 +4742,7 @@
     "tests/unit/test_embedding_reliability.py::TestDataHandlerAutoIndex::test_undo_does_not_emit_index_signal": [],
     "tests/unit/test_embedding_reliability.py::TestWorkerManagerAutoIndex::test_index_helper_checks_auto_index_setting": [],
     "tests/unit/test_embedding_reliability.py::TestWorkerManagerAutoIndex::test_worker_manager_has_index_helper": [],
-    "tests/unit/test_embedding_reliability.py::TestWorkerRebuildSignals::test_rebuild_search_index_emits_finished": [],
-    "tests/unit/test_embedding_reliability.py::TestWorkerRebuildSignals::test_rebuild_search_index_emits_progress": [],
+    "tests/unit/test_embedding_reliability.py::TestWorkerRebuildSignals::test_rebuild_search_index_emits_finished_and_progress": [],
     "tests/unit/test_embedding_reliability.py::TestWorkerRebuildSignals::test_worker_has_index_rebuild_finished_signal": [],
     "tests/unit/test_embedding_reliability.py::TestWorkerRebuildSignals::test_worker_has_index_rebuild_progress_signal": [],
     "tests/unit/test_embedding_reliability.py::TestWorkerRebuildSignals::test_worker_has_rebuild_search_index_slot": [],
@@ -7809,6 +7829,57 @@
     "tests/unit/test_map_object_picker_dialog.py::test_new_entity_preserves_custom_type": [],
     "tests/unit/test_map_object_picker_dialog.py::test_new_event_captures_name_directly": [],
     "tests/unit/test_map_object_picker_dialog.py::test_new_location_captures_name_directly": [],
+    "tests/unit/test_map_projection.py::test_detail_is_conservative_and_explicitly_opted_in": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_projection.py::test_equivalent_sources_collapse_but_disagreement_is_reported_before_clipping[0.3-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_projection.py::test_equivalent_sources_collapse_but_disagreement_is_reported_before_clipping[0.8-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_projection.py::test_equivalent_sources_collapse_but_disagreement_is_reported_before_clipping[1.8-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_projection.py::test_hidden_ancestor_opacity_and_zoom_are_respected": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_projection.py::test_inherited_half_open_temporal_eligibility[10-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_projection.py::test_inherited_half_open_temporal_eligibility[19-True]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_projection.py::test_inherited_half_open_temporal_eligibility[20-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_projection.py::test_inherited_half_open_temporal_eligibility[9-False]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_projection.py::test_map_coordinates_roundtrip_all_pairs_and_unrelated_root": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_projection.py::test_multiple_trajectories_and_broken_alignment_are_not_static_fallbacks": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_projection.py::test_trajectory_is_resolved_at_playhead_before_projection[-1-0.3]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_projection.py::test_trajectory_is_resolved_at_playhead_before_projection[0-0.2]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_projection.py::test_trajectory_is_resolved_at_playhead_before_projection[10-0.8]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_projection.py::test_trajectory_is_resolved_at_playhead_before_projection[20-0.8]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_projection.py::test_trajectory_is_resolved_at_playhead_before_projection[5-0.5]": [
+      "ci_fast"
+    ],
+    "tests/unit/test_map_projection.py::test_unique_source_is_ephemeral_and_target_authored_wins_even_when_hidden": [
+      "ci_fast"
+    ],
     "tests/unit/test_map_refactor_foundation.py::test_artifact_store_moves_and_restores_all_raster_states": [],
     "tests/unit/test_map_refactor_foundation.py::test_legacy_raster_metadata_round_trips_unchanged": [],
     "tests/unit/test_map_refactor_foundation.py::test_map_calibration_rejects_non_positive_width": [],
@@ -12148,18 +12219,21 @@
     "tests/unit/test_worker.py::test_serialized_command_result_retains_original_trace": [],
     "tests/unit/test_worker.py::test_successful_command_and_undo_invalidate_temporal_cache": [],
     "tests/unit/test_worker.py::test_summary_failure_log_excludes_exception_content": [],
-    "tests/unit/test_worker_embedding_queue.py::test_failed_embedding_drains_queue_and_emits_one_error": [],
-    "tests/unit/test_worker_embedding_queue.py::test_index_without_database_emits_nothing": [],
-    "tests/unit/test_worker_embedding_queue.py::test_reentrant_requests_are_queued_with_exclusions": [],
-    "tests/unit/test_worker_embedding_queue.py::test_reset_drops_database_bound_state_but_retains_probe": [],
-    "tests/unit/test_worker_embedding_queue.py::test_unsupported_type_reports_one_failure": [],
-    "tests/unit/test_worker_embedding_queue.py::test_worker_release_resets_semantic_state[_clear_failed_initialization]": [],
-    "tests/unit/test_worker_embedding_queue.py::test_worker_release_resets_semantic_state[cleanup]": [],
+    "tests/unit/test_worker_embedding_queue.py::test_deleted_during_inference_is_not_recreated[automatic]": [],
+    "tests/unit/test_worker_embedding_queue.py::test_deleted_during_inference_is_not_recreated[rebuild]": [],
+    "tests/unit/test_worker_embedding_queue.py::test_failed_batch_rolls_back_all_vectors": [],
+    "tests/unit/test_worker_embedding_queue.py::test_failure_is_terminal_and_explicit_retry_works[nan]": [],
+    "tests/unit/test_worker_embedding_queue.py::test_failure_is_terminal_and_explicit_retry_works[provider]": [],
+    "tests/unit/test_worker_embedding_queue.py::test_failure_is_terminal_and_explicit_retry_works[shape]": [],
+    "tests/unit/test_worker_embedding_queue.py::test_mass_queue_is_deduplicated_and_bounded": [],
+    "tests/unit/test_worker_embedding_queue.py::test_rebuild_and_updates_share_provider_and_skip_unchanged": [],
+    "tests/unit/test_worker_embedding_queue.py::test_reset_cancels_rebuild_and_new_session_reuses_path": [],
+    "tests/unit/test_worker_embedding_queue.py::test_tag_changes_during_inference_retry_current_text": [],
+    "tests/unit/test_worker_embedding_queue.py::test_unavailable_database_does_not_start_executor": [],
     "tests/unit/test_worker_filtering.py::TestWorkerFiltering::test_apply_filter_empty_config_passes_none": [],
     "tests/unit/test_worker_filtering.py::TestWorkerFiltering::test_apply_filter_flow": [],
-    "tests/unit/test_worker_index_caching.py::test_index_and_rebuild_share_one_search_service": [],
-    "tests/unit/test_worker_index_caching.py::test_rebuild_import_error_emits_one_error_and_terminal_count": [],
-    "tests/unit/test_worker_index_caching.py::test_rebuild_without_database_reports_error_without_terminal_count": [],
+    "tests/unit/test_worker_index_caching.py::test_cancelled_runner_never_loads_model": [],
+    "tests/unit/test_worker_index_caching.py::test_runner_reuses_provider_and_captured_configuration": [],
     "tests/unit/test_worker_load_failures.py::test_simple_load_contract[data-entities]": [
       "ci_fast"
     ],

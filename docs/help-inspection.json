@@ -9770,6 +9770,36 @@
       "binding": "self._keep_position",
       "label": "Keep geographic placement",
       "kind": "WrappingCheckBox"
+    },
+    {
+      "id": "map.projection.enabled",
+      "topic_id": "map.hierarchy",
+      "target": "help-map-connected-features",
+      "source": "src/gui/widgets/map/connected_features.py",
+      "symbol": "ConnectedFeatures.populate",
+      "binding": "action",
+      "label": "Show connected map features",
+      "kind": "QAction"
+    },
+    {
+      "id": "map.projection.include_detail",
+      "topic_id": "map.hierarchy",
+      "target": "help-map-connected-features",
+      "source": "src/gui/widgets/map/connected_features.py",
+      "symbol": "ConnectedFeatures.populate",
+      "binding": "action",
+      "label": "Include smaller-map detail",
+      "kind": "QAction"
+    },
+    {
+      "id": "map.projection.issues",
+      "topic_id": "map.hierarchy",
+      "target": "help-map-projection-issues",
+      "source": "src/gui/widgets/map/connected_features.py",
+      "symbol": "ConnectedFeatures.populate",
+      "binding": "issues",
+      "label": "View projection issues",
+      "kind": "QAction"
     }
   ],
   "factory_exemptions": [
@@ -17742,6 +17772,24 @@
       "symbol": "RegisterDetailMapDialog.preserves_position",
       "sha256": "1d0b350f9d0355b98bcf91625091f393dbde0af6ba30cd0b994558d6733fb3e2",
       "review_note": "KRT-173: explicit preservation intent requires the checkbox to be both enabled and checked; unavailable choices cannot dispatch exact moves."
+    },
+    {
+      "source": "src/gui/widgets/map/connected_features.py",
+      "symbol": "ConnectedFeatures.populate",
+      "sha256": "0e30d3699e8349479bc5b02cfc55661624473a1ffeb81dfe72b81f27555c6f80",
+      "review_note": "KRT-174: reviewed session-only connected display, conservative detail opt-in, disabled issues action and plain-text ambiguity explanation. Maps task documents no persistence and source editing; existing hierarchy routes remain."
+    },
+    {
+      "source": "src/gui/widgets/map/connected_features.py",
+      "symbol": "ConnectedFeatures.configure",
+      "sha256": "4c1ec3efe40a3ed53ffc602e9e1cce6f871a5be770a9819742d657b16dfa4a59",
+      "review_note": "KRT-174: reviewed session-only connected display, conservative detail opt-in, disabled issues action and plain-text ambiguity explanation. Maps task documents no persistence and source editing; existing hierarchy routes remain."
+    },
+    {
+      "source": "src/gui/widgets/map/connected_features.py",
+      "symbol": "ConnectedFeatures.show_issues",
+      "sha256": "0c51240f53d34a4683999423abc3eb6452eb2aeea87fba4566b463a7f71e910f",
+      "review_note": "KRT-174: reviewed session-only connected display, conservative detail opt-in, disabled issues action and plain-text ambiguity explanation. Maps task documents no persistence and source editing; existing hierarchy routes remain."
     }
   ],
   "review_status": {

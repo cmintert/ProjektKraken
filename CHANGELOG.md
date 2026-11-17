@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-17
-**Commit:** 62e1a0e34a70873cfbdca5bed840c8dfd9031ff0
+**Commit:** c42dbc4ceb08bc5071db50add2bbf7cef778d04b
 ---
 
 # Changelog
@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-11-17)* **Connected map points (KRT-174)**: Added opt-in, read-only
+  point projections across registered maps, with source navigation, authored
+  target precedence, conflict reporting, dated trajectories and conservative
+  scale/visibility rules. Added feature-owned worker delivery, generation guards,
+  map Help and focused regressions. Reconciled only the previously reviewed
+  search-test identity replacements in the test inventory for push validation.
 
 - *(2026-11-17)* **Map placement preservation (KRT-173)**: Added exact placement
   preservation when changing parents within a registered hierarchy, with explicit
