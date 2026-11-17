@@ -9,6 +9,7 @@ from PySide6.QtGui import QImage
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QMenu
 
+from src.app.connected_map_composition import loaded_projection_target
 from src.app.coordinators.map_projection_coordinator import MapProjectionCoordinator
 from src.core.map import MapLayerNode
 from src.gui.widgets.map.connected_features import ConnectedFeatures
@@ -27,15 +28,32 @@ def test_reader_never_writes_even_when_trajectory_is_invalid(db_service):
         db_service.insert_map(record)
     for marker in data.markers:
         db_service.insert_marker(marker)
+    valid = snapshot().markers[0]
+    valid.id, valid.object_id = "valid", "another-object"
+    db_service.insert_marker(valid)
     connection = db_service.require_connection()
     connection.execute(
-        "INSERT INTO moving_features (id,marker_id,t_start,t_end,trajectory) VALUES ('bad','point',0,1,'{}')"
+        "INSERT INTO moving_features (id,marker_id,t_start,t_end,trajectory) "
+        "VALUES ('bad','point',0,1,?)",
+        (json.dumps({"datetimes": [0], "coordinates": [[0.5]]}),),
     )
     connection.commit()
     before = list(connection.iterdump())
-    projector = read_projection(db_service)
-    assert projector.frame("new", 0)["issues"]
+    frame = read_projection(db_service).frame("new", 0)
+    assert frame["issues"]
+    assert [point["source_id"] for point in frame["points"]] == ["valid"]
     assert list(connection.iterdump()) == before
+
+
+def test_projection_target_requires_the_selected_canvas(authoring):
+    widget, _, _, _, _ = authoring
+    assert loaded_projection_target(widget) == "source"
+    record = next(record for record in widget.maps_data if record.id == "parent")
+    record.image_path += ".missing"
+    widget.select_map("parent")
+    assert widget.get_selected_map_id() == "parent"
+    assert widget.view.pixmap_item is not None
+    assert loaded_projection_target(widget) is None
 
 
 def test_absolute_layer_zoom_uses_source_pixels(tmp_path):
@@ -53,7 +71,7 @@ def test_absolute_layer_zoom_uses_source_pixels(tmp_path):
             assert image.save(str(world_root / record.image_path))
         if record.id == "old":
             record.layers = MapLayerNode(
-                "Layers", children=[MapLayerNode("Point", id="point", max_zoom=0.5)]
+                "Layers", children=[MapLayerNode("Point", id="object", max_zoom=0.5)]
             )
         db.insert_map(record)
     db.insert_marker(data.markers[0])
@@ -304,7 +322,7 @@ def test_geometry_calculation_leaves_database_thread_available(
 
 
 def test_coordinator_coalesces_and_rejects_old_date_world_and_disabled_replies(
-    authoring,
+    authoring, request
 ):
     widget, _, _, db, _ = authoring
     overlay = ConnectedFeatures(widget.view, widget.map_settings_menu)
@@ -313,6 +331,7 @@ def test_coordinator_coalesces_and_rejects_old_date_world_and_disabled_replies(
     coordinator = MapProjectionCoordinator(
         overlay, thread, lambda: db, lambda: ":memory:", lambda: "new", lambda: 0
     )
+    request.addfinalizer(coordinator.shutdown)
     coordinator.requested.disconnect(coordinator.reader.run)
     requests = []
     coordinator.requested.connect(requests.append)
@@ -331,8 +350,6 @@ def test_coordinator_coalesces_and_rejects_old_date_world_and_disabled_replies(
     overlay.enabled = False
     coordinator.completed({"token": coordinator.token, **read_frame()})
     assert not overlay.items
-    coordinator.timer.stop()
-    coordinator.shutdown()
 
 
 def test_scrubbing_sends_regular_updates_and_preserves_same_map_frame(authoring, qtbot):

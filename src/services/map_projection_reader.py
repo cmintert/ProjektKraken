@@ -63,7 +63,7 @@ def read_projection_snapshot(db: DatabaseService) -> ProjectionSnapshot:
                 points, json.loads(row["properties"] or "{}")
             )
             snapshot.tracks.setdefault(row["marker_id"], []).append((points, modes))
-        except (ValueError, TypeError, KeyError):
+        except (ValueError, TypeError, KeyError, IndexError):
             # Ambiguous/invalid tracks must not silently fall back to static data.
             snapshot.tracks[row["marker_id"]] = [([], {}), ([], {})]
     return snapshot

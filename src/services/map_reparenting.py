@@ -147,9 +147,15 @@ def plan_preserved_reparent(
     transform must agree within 1e-10 relative / 1e-12 absolute floating precision;
     genuine shear is never approximated. No map or descendant is mutated.
     """
-    hierarchy = MapHierarchy(maps)
+    return _plan_preserved_reparent(
+        MapHierarchy(maps), {record.id: record for record in maps}, map_id, parent_id
+    )
+
+
+def _plan_preserved_reparent(
+    hierarchy: MapHierarchy, records: dict[str, Map], map_id: str, parent_id: str
+) -> PreservedReparentPlan:
     hierarchy.validate_change_parent(map_id, parent_id)
-    records = {record.id: record for record in maps}
     source_path = [records[map_id], *hierarchy.ancestors(map_id)]
     target_path = [records[parent_id], *hierarchy.ancestors(parent_id)]
     if source_path[-1].id != target_path[-1].id:
@@ -186,10 +192,14 @@ def preservation_options(
     maps: list[Map], map_id: str, parents: list[Map]
 ) -> dict[str, str | None]:
     """Return availability or an explanation for the parent picker's choices."""
+    if not parents:
+        return {}
+    hierarchy = MapHierarchy(maps)
+    records = {record.id: record for record in maps}
     result: dict[str, str | None] = {}
     for parent in parents:
         try:
-            plan_preserved_reparent(maps, map_id, parent.id)
+            _plan_preserved_reparent(hierarchy, records, map_id, parent.id)
         except (ValueError, TypeError, KeyError) as exc:
             result[parent.id] = str(exc)
         else:

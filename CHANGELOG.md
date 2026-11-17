@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-17
-**Commit:** 8037ab2dd9881d75aae3842ea38493ae30f14623
+**Commit:** 18ea29d9dc2b12adea300c16fd2c608f5fbd87f3
 ---
 
 # Changelog
@@ -84,6 +84,13 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-17)* **Detail maps and rollback (PR #301)**: Applied authored
+  layer settings to projected features, guarded the active canvas, isolated
+  malformed trajectories, and corrected very small shared alignments. Reused
+  hierarchy data in the parent picker. Fixed file compensation and command
+  retry state after rollback, paused timeline playback for time confirmation,
+  and updated Help and regression coverage.
 
 - *(2026-11-17)* **Detail maps (PR #301)**: Corrected source layer zoom,
   projected feature keyboard focus, overlays during timeline scrubbing, and

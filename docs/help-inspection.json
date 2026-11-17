@@ -16485,8 +16485,8 @@
     {
       "source": "src/gui/widgets/timeline/__init__.py",
       "symbol": "TimelineWidget.set_current_time_to_playhead",
-      "sha256": "e63e14329d4943ad0e90acdccbbbcb9c456ea3bc0a3dbb0333dea900cf1b877f",
-      "review_note": "Reviewed existing baseline commit 62e1a0e3: Set Current Time asks for explicit confirmation, defaults to No, and leaves playhead navigation unchanged. Added confirmation and cancellation consequences to the timeline task and existing control explanation; no timeline code changed in A2."
+      "sha256": "28be366b83903bae3502b0044e2eeec565eb755c12559a7d8baa685646c2adad",
+      "review_note": "Set Current Time pauses playback before capturing the date for confirmation. Updated the task and inspection explanation to distinguish pausing playback from saving world current time."
     },
     {
       "source": "src/gui/widgets/timeline/__init__.py",

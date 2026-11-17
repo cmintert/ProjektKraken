@@ -1700,9 +1700,11 @@ does not change saved relationships.
 
 (help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-register-action)=
 
-**Attach or change parent…** — Choose a valid parent and review an unsaved
-placement on its canvas. Apply saves the relationship and placement together;
-Cancel leaves the saved hierarchy unchanged.
+**Attach or change parent…** — Choose a valid parent. With **Keep geographic
+placement** selected, **Change parent** saves the relationship and preserved
+placement immediately. For manual placement, **Place on parent map** opens an
+unsaved preview. **Apply** saves the relationship and placement together, and
+**Cancel** leaves the saved hierarchy unchanged.
 
 (help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-show-footprints-action)=
 

@@ -637,11 +637,15 @@ class TestCurrentTimeLine:
         assert timeline_widget.get_playhead_time() == 150.0
         assert changes == []
 
-        monkeypatch.setattr(
-            QMessageBox, "question", lambda *args: QMessageBox.StandardButton.Yes
-        )
+        timeline_widget.toggle_playback()
+        assert timeline_widget.view.is_playing()
 
-        # Click the button to set current time to playhead
+        def accept(*args):
+            assert not timeline_widget.view.is_playing()
+            assert not timeline_widget.btn_play_pause.isChecked()
+            return QMessageBox.StandardButton.Yes
+
+        monkeypatch.setattr(QMessageBox, "question", accept)
         timeline_widget.btn_set_current_time.click()
 
         # Current time should now match playhead

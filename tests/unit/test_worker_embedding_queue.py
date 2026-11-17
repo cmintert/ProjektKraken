@@ -159,8 +159,8 @@ def test_unavailable_database_does_not_start_executor(indexing):
 
 def test_failed_batch_rolls_back_all_vectors(qtbot, indexing):
     worker, db, _, _, errors, finished = indexing
-    first = Entity(name="First", type="Person")
-    second = Entity(name="Second", type="Person")
+    first = Entity(id="a-first", name="First", type="Person")
+    second = Entity(id="b-second", name="Second", type="Person")
     db.insert_entity(first)
     db.insert_entity(second)
     connection = db.require_connection()

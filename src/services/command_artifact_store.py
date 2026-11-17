@@ -54,6 +54,7 @@ class CommandArtifactStore:
                 if artifact.exists() and not source.exists():
                     source.parent.mkdir(parents=True, exist_ok=True)
                     shutil.move(str(artifact), str(source))
+                    record_file_changes(source, artifact)
             raise
 
     def restore(self, manifest: dict[str, str]) -> None:
@@ -79,6 +80,7 @@ class CommandArtifactStore:
                 if target.exists() and not artifact.exists():
                     artifact.parent.mkdir(parents=True, exist_ok=True)
                     shutil.move(str(target), str(artifact))
+                    record_file_changes(target, artifact)
             raise
 
     def discard(self, command_id: str) -> None:

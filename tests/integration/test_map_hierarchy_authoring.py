@@ -102,6 +102,9 @@ def test_candidates_include_roots_and_exclude_self_descendants_and_depth():
     assert [m.id for m in candidate_parents(maps, "0")] == []
     assert "0" in [m.id for m in candidate_parents(maps, "6")]
     assert "4" not in [m.id for m in candidate_parents(maps, "6")]
+    maps[0].attributes["parent_map_id"] = "1"
+    maps[4].attributes.pop("parent_map_id")
+    assert [m.id for m in candidate_parents(maps, "0")] == ["4", "5", "6"]
 
 
 def test_preview_cancel_preserves_database_descendants_and_origin(authoring):

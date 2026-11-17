@@ -11,6 +11,20 @@ from src.gui.widgets.map.connected_features import ConnectedFeatures
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
+    from src.gui.widgets.map_widget import MapWidget
+
+
+def loaded_projection_target(widget: "MapWidget") -> str | None:
+    """Return the selected map only when its image is on the canvas."""
+    map_id = widget.get_selected_map_id()
+    if map_id is None or widget.view.pixmap_item is None:
+        return None
+    for record in widget.maps_data:
+        if record.id == map_id and record.image_path:
+            path = widget._resolve_world_image_path(record.image_path)
+            if widget.view.current_image_path == path:
+                return map_id
+    return None
 
 
 def compose_connected_maps(
@@ -27,7 +41,7 @@ def compose_connected_maps(
         thread,
         lambda: window.worker.db_service,
         lambda: str(window.db_path),
-        window.map_widget.get_selected_map_id,
+        lambda: loaded_projection_target(window.map_widget),
         window.timeline.get_playhead_time,
         owner,
     )

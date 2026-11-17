@@ -36,6 +36,15 @@ def test_map_coordinates_roundtrip_all_pairs_and_unrelated_root():
         MapCoordinates(data.maps).point("old", "new", 0.5, 0.5)
 
 
+def test_tiny_identical_sibling_alignments_cancel():
+    data = snapshot()
+    for record in data.maps[1:3]:
+        record.attributes["registration"]["scale_norm"] = 2**-54
+    data.maps[2].attributes["registration"]["confidence"] = "user_confirmed"
+    coordinates = MapCoordinates(data.maps)
+    assert coordinates.point("old", "new", 0.2, 0.7) == pytest.approx((0.2, 0.7))
+
+
 def test_unique_source_is_ephemeral_and_target_authored_wins_even_when_hidden():
     data = snapshot()
     before = deepcopy(data)
@@ -76,7 +85,7 @@ def test_inherited_half_open_temporal_eligibility(date, visible):
                 "Group",
                 start_date=10,
                 end_date=20,
-                children=[MapLayerNode("Location", id="point", layer_type="marker")],
+                children=[MapLayerNode("Location", id="object", layer_type="marker")],
             )
         ],
     )
@@ -85,7 +94,7 @@ def test_inherited_half_open_temporal_eligibility(date, visible):
 
 def test_hidden_ancestor_opacity_and_zoom_are_respected():
     data = snapshot()
-    node = MapLayerNode("Location", id="point", layer_type="marker", opacity=0.5)
+    node = MapLayerNode("Location", id="object", layer_type="marker", opacity=0.5)
     group = MapLayerNode("Group", opacity=0.4, children=[node])
     data.maps[1].layers = MapLayerNode("Root", children=[group])
     assert MapProjector(data).frame("new", 0)["points"][0]["opacity"] == pytest.approx(
@@ -137,7 +146,7 @@ def test_large_point_frame_and_fit_ratio_policy():
     assert len(MapProjector(data).frame("new", 0)["points"]) == 2000
     node = MapLayerNode(
         "Location",
-        id="m-0",
+        id="object-0",
         layer_type="marker",
         min_zoom=2,
         attributes={"zoom_basis": "fit_ratio"},

@@ -85,6 +85,9 @@ class MapHierarchy:
 
     def ancestors(self, map_id: str) -> list[Map]:
         """Resolve nearest parent first; reject cycles and dangling references."""
+        return [deepcopy(self._maps[key]) for key in self._ancestor_ids(map_id)]
+
+    def _ancestor_ids(self, map_id: str) -> list[str]:
         visited = {map_id}
         result = []
         parent = self.parent_id(map_id)
@@ -92,7 +95,7 @@ class MapHierarchy:
             if parent in visited:
                 raise HierarchyError(f"Map ancestry contains a cycle: {parent}")
             visited.add(parent)
-            result.append(deepcopy(self._require(parent)))
+            result.append(parent)
             parent = self.parent_id(parent)
         return result
 
@@ -113,6 +116,9 @@ class MapHierarchy:
 
     def subtree_height(self, map_id: str) -> int:
         """Measure inclusive height, rejecting cycles within the subtree."""
+        return self._subtree_height(map_id, detach_root=False)
+
+    def _subtree_height(self, map_id: str, *, detach_root: bool) -> int:
         self._require(map_id)
         pending = [(map_id, 1)]
         seen: set[str] = set()
@@ -123,23 +129,39 @@ class MapHierarchy:
                 raise HierarchyError(f"Map subtree contains a cycle: {current}")
             seen.add(current)
             height = max(height, depth)
-            pending.extend((k, depth + 1) for k in self._children.get(current, []))
+            pending.extend(
+                (child, depth + 1)
+                for child in self._children.get(current, [])
+                if not (detach_root and child == map_id)
+            )
         return height
+
+    def candidate_parent_ids(self, map_id: str) -> set[str]:
+        """Filter picker options by structural rules without rebuilding map snapshots."""
+        if map_id not in self._maps:
+            return set()
+        max_depth = MAP_NESTING_DEPTH_CAP - self._subtree_height(
+            map_id, detach_root=True
+        )
+        excluded = {map_id, *(record.id for record in self.descendants(map_id))}
+        result = set()
+        for parent_id in self._maps.keys() - excluded:
+            try:
+                depth = 1 + len(self._ancestor_ids(parent_id))
+            except HierarchyError:
+                continue
+            if depth <= max_depth:
+                result.add(parent_id)
+        return result
 
     def validate_change_parent(self, map_id: str, parent_id: str | None) -> None:
         """Validate the resulting affected tree, allowing a broken edge repair."""
-        source = self._require(map_id)
-        attrs = deepcopy(source.attributes)
-        attrs.pop("parent_map_id", None)
-        if parent_id is not None:
-            self._require(parent_id)
-            attrs["parent_map_id"] = parent_id
-        proposed = MapHierarchy(
-            replace(m, attributes=attrs) if m.id == map_id else m
-            for m in self._maps.values()
-        )
-        depth = len(proposed.ancestors(map_id))
-        height = proposed.subtree_height(map_id)
+        self._require(map_id)
+        path = [] if parent_id is None else [parent_id, *self._ancestor_ids(parent_id)]
+        if map_id in path:
+            raise HierarchyError(f"Map ancestry contains a cycle: {map_id}")
+        depth = len(path)
+        height = self._subtree_height(map_id, detach_root=True)
         if depth + height > MAP_NESTING_DEPTH_CAP:
             raise HierarchyError(
                 f"Nesting depth would exceed cap of {MAP_NESTING_DEPTH_CAP} levels."

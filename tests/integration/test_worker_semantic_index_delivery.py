@@ -1,7 +1,8 @@
 """Foreground commands remain available during blocked background inference."""
 
 import sqlite3
-from threading import Event
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event, Thread
 
 import numpy as np
 import pytest
@@ -76,17 +77,19 @@ def running_worker(qapp, qtbot, db_service, tmp_path, monkeypatch):
         signal.connect(slot, Qt.ConnectionType.QueuedConnection)
     thread.started.connect(worker.initialize_db, Qt.ConnectionType.QueuedConnection)
     thread.finished.connect(worker.deleteLater)
-    with qtbot.waitSignal(worker.initialized, timeout=5000) as initialized:
-        thread.start()
-    assert initialized.args == [True]
     try:
+        with qtbot.waitSignal(worker.initialized, timeout=5000) as initialized:
+            thread.start()
+        assert initialized.args == [True]
         yield worker, requests, provider, path, entity, event, thread
     finally:
         provider.release.set()
-        with qtbot.waitSignal(worker.cleanup_finished, timeout=5000):
-            requests.cleanup.emit()
-        thread.quit()
-        assert thread.wait(5000)
+        try:
+            with qtbot.waitSignal(worker.cleanup_finished, timeout=5000):
+                requests.cleanup.emit()
+        finally:
+            thread.quit()
+            assert thread.wait(5000)
 
 
 @pytest.mark.parametrize("mode", ["automatic", "rebuild"])
@@ -125,13 +128,30 @@ def test_details_and_save_complete_before_inference(qapp, qtbot, running_worker,
     assert all(t != thread and t != qapp.thread() for t in provider.threads)
 
 
-def test_cleanup_does_not_wait_for_inference(qtbot, running_worker):
+def test_cleanup_does_not_wait_for_inference(qtbot, running_worker, monkeypatch):
     worker, requests, provider, path, entity, _, _ = running_worker
-    requests.index.emit("entity", entity.id, [])
+    executors = []
+
+    def capture_executor(**kwargs):
+        executor = ThreadPoolExecutor(**kwargs)
+        executors.append(executor)
+        return executor
+
+    monkeypatch.setattr(
+        "src.services.semantic_index_task.ThreadPoolExecutor", capture_executor
+    )
+    requests.index.emit("entity", [entity.id], [])
     qtbot.waitUntil(provider.entered.is_set, timeout=5000)
     with qtbot.waitSignal(worker.cleanup_finished, timeout=2000):
         requests.cleanup.emit()
     assert not provider.release.is_set()
     provider.release.set()
+    # Joining the executor also waits for the future's completion callback.
+    retired = Thread(target=executors[0].shutdown, daemon=True)
+    retired.start()
+    qtbot.waitUntil(lambda: not retired.is_alive(), timeout=5000)
+    # Round-trip through the worker after any queued result has been posted.
+    with qtbot.waitSignal(worker.cleanup_finished, timeout=2000):
+        requests.cleanup.emit()
     with sqlite3.connect(path) as connection:
         assert connection.execute("SELECT COUNT(*) FROM embeddings").fetchone()[0] == 0

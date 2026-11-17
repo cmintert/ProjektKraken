@@ -420,6 +420,52 @@ def test_hook_failure_still_recovers_safe_files(
     assert list(tmp_path.glob("kraken-command-*/recovery.json"))
 
 
+def test_rollback_hook_failure_restores_command_retry_state(db_service):
+    class FailingCompensation(CreateMapCommand):
+        def on_transaction_rolled_back(self):
+            raise OSError("rollback hook failed")
+
+    command = FailingCompensation(
+        {"name": "Retry", "image_path": "retry.png", "id": "retry"}
+    )
+    with pytest.raises(OSError, match="rollback hook failed"):
+        with command_transaction(db_service, restore_retry_state=True):
+            assert command.execute(db_service).success
+            assert command.is_executed
+            raise RuntimeError("history failed")
+    assert not command.is_executed
+    assert db_service.get_map("retry") is None
+
+
+@pytest.mark.parametrize("operation", ["stash", "restore"])
+def test_failed_artifact_compensation_keeps_outer_rollback_consistent(
+    db_service, tmp_path, operation
+):
+    assets = RasterAssetService(tmp_path)
+    store = CommandArtifactStore(tmp_path)
+    relative_path = "maps/raster.bin"
+    target = tmp_path / relative_path
+    assets.atomic_write_bytes(relative_path, b"original")
+    manifest = {}
+    if operation == "restore":
+        manifest = store.stash("command", [relative_path])
+        assert not target.exists()
+    if operation == "stash":
+        with pytest.raises(ValueError, match="Path escapes world root"):
+            with command_transaction(db_service):
+                assets.atomic_write_bytes(relative_path, b"replacement")
+                store.stash("command", [relative_path, "../escape"])
+        assert target.read_bytes() == b"original"
+    else:
+        artifact_path = tmp_path / manifest[relative_path]
+        with pytest.raises(ValueError, match="Path escapes world root"):
+            with command_transaction(db_service):
+                assets.atomic_write_bytes(manifest[relative_path], b"replacement")
+                store.restore({**manifest, "../escape": manifest[relative_path]})
+        assert not target.exists()
+        assert artifact_path.read_bytes() == b"original"
+
+
 def test_active_history_lookup_is_indexed_and_decoding_is_bounded(
     db_service, monkeypatch
 ):

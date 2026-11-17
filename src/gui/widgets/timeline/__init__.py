@@ -422,6 +422,8 @@ class TimelineWidget(QWidget):
 
         This is the typical workflow: move playhead, then set as current time.
         """
+        if self.view.is_playing():
+            self.toggle_playback()
         playhead_time = self.get_playhead_time()
         reply = QMessageBox.question(
             self,

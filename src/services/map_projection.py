@@ -134,7 +134,7 @@ class MapProjector:
         scale = math.sqrt(abs(a * e - b * d))
         if not include_detail and scale < 1 - 1e-9:
             return False, 0
-        path = self.paths[marker.map_id].get(marker.id, [])
+        path = self.paths[marker.map_id].get(marker.object_id, [])
         absolute_zoom = zoom * scale * self.pixel_scale(marker.map_id, target)
         opacity = 1.0
         for node in path[1:]:
@@ -152,7 +152,7 @@ class MapProjector:
             source.layers
             and not resolve_layer_temporal_validity(
                 source.layers,
-                marker.id,
+                marker.object_id,
                 date,
                 self.converter,
                 anchors=self.anchors,

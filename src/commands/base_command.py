@@ -84,8 +84,10 @@ class BaseCommand(ABC):
                     previous_state = capture_command_state(self)
 
                     def rolled_back() -> None:
-                        self.on_transaction_rolled_back()
-                        self.__dict__.update(previous_state)
+                        try:
+                            self.on_transaction_rolled_back()
+                        finally:
+                            self.__dict__.update(previous_state)
 
                     after_command(self.on_transaction_committed, rolled_back)
                     result = method(self, db_service)
