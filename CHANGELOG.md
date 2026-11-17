@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-17
-**Commit:** c42dbc4ceb08bc5071db50add2bbf7cef778d04b
+**Commit:** 2b5556d26d1e65aff0290209e300edd2bcf63b38
 ---
 
 # Changelog
@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-11-17)* **Connected map geometry (KRT-175)**: Added read-only projection
+  of dated paths and regions, preserving holes and all clipped components.
+  Display-only simplification retains topology and source identity. Moved
+  projection calculation to a dedicated thread with serialized captures, cached
+  source geometry and orderly shutdown. Added topology, responsiveness, rendering
+  and larger-data regressions; updated map Help and architecture evidence.
 
 - *(2026-11-17)* **Connected map points (KRT-174)**: Added opt-in, read-only
   point projections across registered maps, with source navigation, authored

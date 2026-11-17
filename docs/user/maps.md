@@ -691,10 +691,11 @@ including independent roots. **Show Footprints** changes visibility only.
 
 (help-map-connected-features)=
 
-### View locations from connected maps
+### View features from connected maps
 
 Open **Map settings** and enable **Show connected map features**. The canvas
-shows read-only locations from maps in the same registered hierarchy. Nothing is
+shows read-only points, paths and region outlines from maps in the same registered
+hierarchy. Nothing is
 copied into this map or its Layers tree. Disable the option to hide them.
 
 A location authored on the viewed map takes precedence, even when hidden. Other
@@ -708,10 +709,18 @@ dates, opacity and scale limits still apply. The viewing playhead resolves movin
 locations before projection, including step segments and the base location before
 the first dated point. Ambiguous or invalid tracks are omitted with an explanation.
 
-Hover a hollow projected point for its source. Select it and press Enter, or
+Hover a projected feature for its source. Select it and press Enter, or
 double-click it, to open the source map through the usual protected-edit safeguard.
 Edit the authored feature there; moving or deleting the projection is unavailable.
 These display choices last for the current application session.
+
+Paths and regions use the geometry effective at the viewing playhead. Regions
+retain their holes and all disconnected pieces after clipping to this map; paths
+can leave and re-enter without connecting separate visible fragments. Outlines
+distinguish these read-only projections from authored features. Zooming may
+simplify the display within half a screen pixel while preserving components and
+holes. It never simplifies or clips the saved source geometry. Base Geometry and
+dated replacements remain available for editing on the source map.
 
 (help-map-projection-issues)=
 

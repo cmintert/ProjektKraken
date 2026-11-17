@@ -1,6 +1,7 @@
 """Connected display retains native actions and semantic identity in all themes."""
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -56,3 +57,26 @@ def test_connected_menu_and_point_are_visible_and_keyboard_navigable(
     QTest.keyClick(widget.view.viewport(), Qt.Key.Key_Return)
     assert source == ["old"]
     assert not commands
+    from src.services.map_projection import MapProjector
+    from tests.unit.test_map_geometry_projection import geometry_snapshot
+
+    overlay.display(MapProjector(geometry_snapshot()).frame("new", 0))
+    assert len(overlay.items) == 1
+    shape = overlay.items[0]
+    assert shape.pen().color().name() == manager.get_theme()["entity_main"].lower()
+    assert shape.path().fillRule() == Qt.FillRule.OddEvenFill
+    assert not shape.flags() & shape.GraphicsItemFlag.ItemIsMovable
+    assert "Base Geometry" in shape.toolTip()
+    evidence = os.environ.get("KRT_PROJECTION_EVIDENCE")
+    if evidence:
+        output = Path(evidence)
+        output.mkdir(parents=True, exist_ok=True)
+        widget.resize(360, 640)
+        widget.view.fit_to_view()
+        qtbot.wait(0)
+        assert (
+            widget.view.viewport()
+            .grab()
+            .save(str(output / f"{theme}-{font_size}-geometry.png"))
+        )
+    overlay.clear()

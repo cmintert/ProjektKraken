@@ -7,6 +7,7 @@ from typing import Any
 from PySide6.QtCore import QObject, Signal, Slot
 
 from src.core.calendar import CalendarConverter
+from src.core.feature_geometry_state import FeatureGeometryState
 from src.core.temporal_context import TemporalResolutionContext
 from src.core.trajectory import apply_trajectory_metadata, mfjson_to_keyframes
 from src.services.db_service import DatabaseService
@@ -15,7 +16,7 @@ from src.services.map_projection import MapProjector, ProjectionSnapshot
 DatabaseProvider = Callable[[], DatabaseService | None]
 
 
-def read_projection(db: DatabaseService) -> MapProjector:
+def read_projection_snapshot(db: DatabaseService) -> ProjectionSnapshot:
     """Read authored inputs without repairing, pruning or writing any saved row."""
     maps = db.get_all_maps()
     markers = [m for record in maps for m in db.get_markers_for_map(record.id)]
@@ -35,6 +36,12 @@ def read_projection(db: DatabaseService) -> MapProjector:
         )
         for item in items
     }
+    for record in maps:
+        for raw in db.feature_geometry_repo.get_states_for_map(record.id):
+            state = FeatureGeometryState.from_dict(raw)
+            snapshot.states.setdefault(state.marker_id, []).append(state)
+    for states in snapshot.states.values():
+        states.sort(key=lambda state: state.effective_date)
     rows = (
         db.require_connection()
         .execute(
@@ -52,7 +59,12 @@ def read_projection(db: DatabaseService) -> MapProjector:
         except (ValueError, TypeError, KeyError):
             # Ambiguous/invalid tracks must not silently fall back to static data.
             snapshot.tracks[row["marker_id"]] = [([], {}), ([], {})]
-    return MapProjector(snapshot)
+    return snapshot
+
+
+def read_projection(db: DatabaseService) -> MapProjector:
+    """Provide a synchronous service entry point for offline callers and tests."""
+    return MapProjector(read_projection_snapshot(db))
 
 
 class MapProjectionReader(QObject):
@@ -64,13 +76,13 @@ class MapProjectionReader(QObject):
         """Retain a provider called exclusively after queued worker delivery."""
         super().__init__()
         self.database = database
-        self._projector: MapProjector | None = None
+        self._snapshot = ""
         self._identity: tuple[int, str, int] | None = None
 
     @Slot(dict)
     def run(self, request: dict[str, Any]) -> None:
-        """Build one dated frame; never emit database objects across threads."""
-        result = {"token": request["token"], "points": [], "issues": []}
+        """Capture only; geometry and chronology calculations run elsewhere."""
+        result: dict[str, Any] = {"token": request["token"], "points": [], "issues": []}
         try:
             db = self.database()
             if db is None or str(db.db_path) != request["world"]:
@@ -79,20 +91,11 @@ class MapProjectionReader(QObject):
                 )
             identity = id(db), str(db.db_path), request["revision"]
             if identity != self._identity:
-                self._projector = read_projection(db)
+                self._snapshot = json.dumps(read_projection_snapshot(db).to_dict())
                 self._identity = identity
-            assert self._projector is not None
-            result.update(
-                self._projector.frame(
-                    request["target"],
-                    request["date"],
-                    zoom=request["zoom"],
-                    fit_ratio=request.get("fit_ratio"),
-                    include_detail=request["include_detail"],
-                )
-            )
+            result.update(snapshot=self._snapshot, request=request)
         except Exception as exc:
             result["issues"] = [f"Connected features unavailable: {exc}"]
-            self._projector = None
+            self._snapshot = ""
             self._identity = None
         self.completed.emit(result)

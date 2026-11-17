@@ -1,15 +1,16 @@
 """Read-only shared-point display policy; persisted markers remain authoritative."""
 
 import math
-from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Any
 
+from src.core.feature_geometry_state import FeatureGeometryState
 from src.core.map import Map, MapLayerNode, resolve_layer_temporal_validity
 from src.core.marker import Marker
 from src.core.temporal_context import TemporalResolutionContext
 from src.core.trajectory import Keyframe, SegmentKey, SegmentMode, interpolate_position
 from src.services.map_coordinates import MapCoordinates
+from src.services.map_geometry_projection import projection_frame
 
 
 @dataclass
@@ -25,6 +26,56 @@ class ProjectionSnapshot:
         default_factory=TemporalResolutionContext
     )
     labels: dict[tuple[str, str], str] = field(default_factory=dict)
+    states: dict[str, list[FeatureGeometryState]] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Encode detached inputs for the dedicated calculation thread."""
+        return {
+            "maps": [m.to_dict() for m in self.maps],
+            "markers": [m.to_dict() for m in self.markers],
+            "tracks": {
+                key: [
+                    {
+                        "points": [asdict(p) for p in points],
+                        "modes": [[a, b, mode] for (a, b), mode in modes.items()],
+                    }
+                    for points, modes in tracks
+                ]
+                for key, tracks in self.tracks.items()
+            },
+            "context": asdict(self.context),
+            "labels": [
+                [kind, key, label] for (kind, key), label in self.labels.items()
+            ],
+            "states": {
+                key: [s.to_dict() for s in states]
+                for key, states in self.states.items()
+            },
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "ProjectionSnapshot":
+        """Reconstruct private models; no GUI/database object crosses threads."""
+        return cls(
+            maps=[Map.from_dict(m) for m in data["maps"]],
+            markers=[Marker.from_dict(m) for m in data["markers"]],
+            tracks={
+                key: [
+                    (
+                        [Keyframe(**p) for p in track["points"]],
+                        {(a, b): mode for a, b, mode in track["modes"]},
+                    )
+                    for track in tracks
+                ]
+                for key, tracks in data["tracks"].items()
+            },
+            context=TemporalResolutionContext(**data["context"]),
+            labels={(kind, key): label for kind, key, label in data["labels"]},
+            states={
+                key: [FeatureGeometryState.from_dict(s) for s in states]
+                for key, states in data["states"].items()
+            },
+        )
 
 
 def layer_paths(root: MapLayerNode | None) -> dict[str, list[MapLayerNode]]:
@@ -52,6 +103,7 @@ class MapProjector:
         self.anchors = snapshot.context.anchors()
         self.constraints = snapshot.context.constraints()
         self.converter = snapshot.context.converter()
+        self.shapes: dict[tuple[str, str | None], Any] = {}
 
     def eligible(
         self,
@@ -117,72 +169,15 @@ class MapProjector:
         zoom: float = 1,
         include_detail: bool = False,
         fit_ratio: float | None = None,
+        pixel_size: tuple[float, float] | None = None,
     ) -> dict[str, Any]:
-        """Build a deterministic ephemeral frame, reporting conflicting sources."""
-        local = {
-            (m.object_type, m.object_id)
-            for m in self.snapshot.markers
-            if m.map_id == target
-        }
-        candidates: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
-        issues: list[str] = []
-        blocked: set[tuple[str, str]] = set()
-        root = self.coordinates.chain(target)[0]
-        for marker in self.snapshot.markers:
-            key = marker.object_type, marker.object_id
-            if marker.map_id == target or key in local or not marker.is_point:
-                continue
-            try:
-                if self.coordinates.root(marker.map_id) != root:
-                    continue
-                eligible, opacity = self.eligible(
-                    marker, target, date, zoom, include_detail, fit_ratio
-                )
-                if not eligible:
-                    continue
-                x, y = self.coordinates.point(
-                    marker.map_id, target, *self.position(marker, date)
-                )
-                if not all(math.isfinite(v) for v in (x, y)):
-                    raise ValueError("Nonfinite location")
-                # Resolve ambiguity before containment: an outside competing source
-                # must not make an inside placement appear uniquely authoritative.
-                candidates[key].append(
-                    {
-                        "source_id": marker.id,
-                        "source_map": marker.map_id,
-                        "source_name": self.coordinates.maps[marker.map_id].name,
-                        "object_id": marker.object_id,
-                        "object_type": marker.object_type,
-                        "label": self.snapshot.labels.get(
-                            key, marker.label or marker.object_id
-                        ),
-                        "x": x,
-                        "y": y,
-                        "opacity": opacity,
-                    }
-                )
-            except (ValueError, KeyError, TypeError, OverflowError) as exc:
-                issues.append(f"{marker.label or marker.object_id}: {exc}")
-                blocked.add(key)
-        points = []
-        for key, alternatives in sorted(candidates.items()):
-            if key in blocked:
-                continue
-            alternatives.sort(key=lambda p: (p["source_map"], p["source_id"]))
-            chosen = alternatives[0]
-            if any(
-                not math.isclose(p[axis], chosen[axis], abs_tol=1e-8, rel_tol=0)
-                for p in alternatives[1:]
-                for axis in ("x", "y")
-            ):
-                issues.append(
-                    f"{chosen['label']}: conflicting placements on "
-                    + ", ".join(p["source_name"] for p in alternatives)
-                )
-                continue
-            if 0 <= chosen["x"] <= 1 and 0 <= chosen["y"] <= 1:
-                points.append(
-                    {**chosen, "sources": [p["source_id"] for p in alternatives]}
-                )
-        return {"points": points, "issues": issues}
+        """Resolve authoritative representations before display-only clipping."""
+        return projection_frame(
+            self,
+            target,
+            date,
+            zoom=zoom,
+            include_detail=include_detail,
+            fit_ratio=fit_ratio,
+            pixel_size=pixel_size,
+        )

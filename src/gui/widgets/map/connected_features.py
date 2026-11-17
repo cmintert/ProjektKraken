@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 )
 from shiboken6 import isValid
 
+from src.core.projected_geometry import ProjectedGeometry
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
@@ -36,8 +37,13 @@ class ProjectedPoint(QGraphicsPathItem):
         self.setFlag(self.GraphicsItemFlag.ItemIsFocusable)
         self.setAcceptedMouseButtons(Qt.MouseButton.LeftButton)
         self.setOpacity(data["opacity"])
+        provenance = ""
+        if data.get("feature_type") in {"path", "region"}:
+            provenance = (
+                "\nDated geometry" if data.get("state_id") else "\nBase Geometry"
+            )
         self.setToolTip(
-            f"{data['label']} — from {data['source_name']}\n"
+            f"{data['label']} — from {data['source_name']}{provenance}\n"
             "Read-only projection. Double-click or press Enter to open the source map."
         )
 
@@ -50,7 +56,11 @@ class ProjectedPoint(QGraphicsPathItem):
         """Enter follows the source; editing keys never mutate a projection."""
         if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
             self.activate()
-        event.accept()
+            event.accept()
+        elif event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
+            event.accept()
+        else:
+            super().keyPressEvent(event)
 
 
 class ConnectedFeatures(QObject):
@@ -140,3 +150,57 @@ class ConnectedFeatures(QObject):
             item.setZValue(100)
             self.view.graphics_scene.addItem(item)
             self.items.append(item)
+        for data in frame.get("geometries", []):
+            shape = ProjectedShape(
+                data,
+                bounds.width(),
+                bounds.height(),
+                partial(self.source_requested.emit, data["source_map"]),
+            )
+            shape.setZValue(99)
+            self.view.graphics_scene.addItem(shape)
+            self.items.append(shape)
+
+
+class ProjectedShape(ProjectedPoint):
+    """One read-only source item containing every clipped line/polygon component."""
+
+    def __init__(
+        self,
+        data: dict[str, Any],
+        width: float,
+        height: float,
+        activate: Callable[[], None],
+    ) -> None:
+        """Build independent closed rings using odd-even hole-aware hit geometry."""
+        super().__init__(data, activate)
+        self.setFlag(self.GraphicsItemFlag.ItemIgnoresTransformations, False)
+        geometry = ProjectedGeometry.from_dict(data)
+        path = QPainterPath()
+        path.setFillRule(Qt.FillRule.OddEvenFill)
+        for polygon in geometry.polygons:
+            for ring in (polygon.outer, *polygon.holes):
+                self._append_ring(path, ring, width, height, closed=True)
+        for line in geometry.lines:
+            self._append_ring(path, line, width, height, closed=False)
+        self.setPath(path)
+        pen = self.pen()
+        pen.setCosmetic(True)
+        self.setPen(pen)
+
+    @staticmethod
+    def _append_ring(
+        path: QPainterPath,
+        points: tuple[tuple[float, float], ...],
+        width: float,
+        height: float,
+        *,
+        closed: bool,
+    ) -> None:
+        if not points:
+            return
+        path.moveTo(points[0][0] * width, points[0][1] * height)
+        for x, y in points[1:]:
+            path.lineTo(x * width, y * height)
+        if closed:
+            path.closeSubpath()

@@ -63,6 +63,22 @@ DatabaseWorker, MapHandler or ConnectionManager feature responsibility is added.
 The opt-in overlay is separate from authored scene items and the Layers tree.
 Source-map navigation follows the existing protected-edit route.
 
+`ProjectedGeometry` is an ephemeral, serializable multipolygon/multiline display
+model. The shared projector resolves canonical dated geometry, compares complete
+unclipped representations (including point-versus-geometry conflicts), then uses
+Shapely affine transformation and unit-map clipping. Every surviving polygon,
+hole and line component is retained. Screen-dependent, topology-preserving
+simplification uses a half-pixel error budget and falls back to unsimplified
+geometry if component or hole counts change. Source topology is cached by marker
+and immutable state identity. Invalid source topology is reported without anchor
+fallback, repair or persistence. The overlay uses independent odd-even rings and
+one selectable source item across all fragments; authoring and Layers remain local.
+Capture serializes detached source inputs on the database thread; chronology,
+topology and projection run on a dedicated feature calculation thread. One
+coalesced pipeline owns both stages, cached geometry and orderly shutdown. No
+database connection or live QObject enters calculation. A blocked-calculation
+regression verifies that queued database reads still complete.
+
 ## Persistent command history
 
 `HistoryStore` owns the version-2 per-world stack manifest in `system_meta`.

@@ -3,6 +3,7 @@
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QObject, Qt
+from PySide6.QtWidgets import QApplication
 
 from src.app.coordinators.map_projection_coordinator import MapProjectionCoordinator
 from src.core.theme_manager import ThemeManager
@@ -48,4 +49,7 @@ def compose_connected_maps(
     window.worker.maps_loaded.connect(
         coordinator.invalidate, Qt.ConnectionType.QueuedConnection
     )
+    application = QApplication.instance()
+    if application is not None:
+        application.aboutToQuit.connect(coordinator.shutdown)
     return coordinator

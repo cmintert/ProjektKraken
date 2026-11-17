@@ -1,9 +1,11 @@
 """Read-only worker delivery, generation guards and actual overlay integration."""
 
 import json
+from threading import Event
 
 import pytest
-from PySide6.QtCore import QObject, Qt, QThread, Signal, Slot
+from PySide6.QtCore import QObject, QPointF, Qt, QThread, Signal, Slot
+from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QMenu
 
 from src.app.coordinators.map_projection_coordinator import MapProjectionCoordinator
@@ -100,7 +102,7 @@ def test_reader_executes_on_owner_thread_and_sends_only_snapshots(
                     "include_detail": False,
                 }
             )
-        assert result.args[0]["points"]
+        assert json.loads(result.args[0]["snapshot"])["markers"]
         json.dumps(result.args[0], allow_nan=False)
     finally:
         with qtbot.waitSignal(closer.closed):
@@ -142,6 +144,136 @@ def read_frame():
     return MapProjector(snapshot()).frame("new", 0)
 
 
+def test_dated_geometry_reader_and_overlay_preserve_every_saved_row(authoring):
+    from src.core.feature_geometry_state import FeatureGeometryState
+    from tests.unit.test_map_geometry_projection import geometry_snapshot
+
+    widget, handler, commands, db, _ = authoring
+    data = geometry_snapshot()
+    image = widget.maps_data[0].image_path
+    for record in data.maps:
+        record.image_path = image
+        db.insert_map(record)
+    for marker in data.markers:
+        db.insert_marker(marker)
+    state = FeatureGeometryState("shape", 10, data.markers[0].geometry, 0.2, 0.5)
+    db.feature_geometry_repo.replace_marker_states("shape", [state])
+    handler.on_maps_ready(db.get_all_maps())
+    widget.select_map("new")
+    before = list(db.require_connection().iterdump())
+    frame = read_projection(db).frame("new", 10)
+    assert frame["geometries"][0]["state_id"] == state.id
+    overlay = ConnectedFeatures(widget.view, widget.map_settings_menu)
+    overlay.display(frame)
+    assert len(overlay.items) == 1
+    item = overlay.items[0]
+    width, height = (
+        widget.view.pixmap_item.boundingRect().width(),
+        widget.view.pixmap_item.boundingRect().height(),
+    )
+    assert item.path().contains(QPointF(0.2 * width, 0.1 * height))
+    assert item.path().contains(QPointF(0.8 * width, 0.5 * height))
+    assert not item.path().contains(QPointF(0.2 * width, 0.375 * height))  # Hole.
+    assert not item.path().contains(QPointF(0.5 * width, 0.5 * height))  # Split gap.
+    item.setSelected(True)
+    item.setFocus()
+    widget.view.setFocus()
+    QTest.keyClick(widget.view.viewport(), Qt.Key.Key_Delete)
+    assert not commands
+    assert list(db.require_connection().iterdump()) == before
+    pending = []
+    widget.edit_transition_handler = lambda reason, continuation: pending.append(
+        continuation
+    )
+    overlay.source_requested.connect(widget.select_map)
+    item.activate()
+    assert widget.get_selected_map_id() == "new" and pending
+    pending[0]()
+    assert widget.get_selected_map_id() == "old"
+    assert list(db.require_connection().iterdump()) == before
+
+
+def test_geometry_calculation_leaves_database_thread_available(
+    authoring, tmp_path, qtbot, monkeypatch
+):
+    from src.services.map_projection import MapProjector
+
+    widget, _, _, _, _ = authoring
+    path = tmp_path / "parallel.kraken"
+    seed = DatabaseService(str(path))
+    seed.connect()
+    data = snapshot()
+    for record in data.maps:
+        seed.insert_map(record)
+    for marker in data.markers:
+        seed.insert_marker(marker)
+    seed.close()
+    thread = QThread()
+    holder = []
+
+    def database():
+        assert QThread.currentThread() == thread
+        if not holder:
+            db = DatabaseService(str(path))
+            db.connect()
+            holder.append(db)
+        return holder[0]
+
+    overlay = ConnectedFeatures(widget.view, widget.map_settings_menu)
+    coordinator = MapProjectionCoordinator(
+        overlay, thread, database, lambda: str(path), lambda: "new", lambda: 0
+    )
+    probe = MapProjectionReader(database)
+    probe.moveToThread(thread)
+    thread.finished.connect(probe.deleteLater)
+    requests = Requests()
+    requests.run.connect(probe.run, Qt.ConnectionType.QueuedConnection)
+    closer = ConnectionOwner(holder)
+    closer.moveToThread(thread)
+    thread.finished.connect(closer.deleteLater)
+    requests.close.connect(closer.close, Qt.ConnectionType.QueuedConnection)
+    entered, release = Event(), Event()
+    original = MapProjector.frame
+
+    def blocked(self, *args, **kwargs):
+        assert QThread.currentThread() != thread
+        entered.set()
+        assert release.wait(5)
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(MapProjector, "frame", blocked)
+    thread.start()
+    try:
+        overlay.enabled = True
+        coordinator.refresh()
+        coordinator.send()
+        qtbot.waitUntil(entered.is_set)
+        # A second real DB request completes while the CPU stage is held.
+        with qtbot.waitSignal(probe.completed) as result:
+            requests.run.emit(
+                {
+                    "token": 20,
+                    "world": str(path),
+                    "revision": 1,
+                    "target": "new",
+                    "date": 0,
+                    "zoom": 1,
+                    "include_detail": False,
+                }
+            )
+        assert result.args[0]["snapshot"]
+        assert not overlay.items
+        release.set()
+        qtbot.waitUntil(lambda: bool(overlay.items))
+    finally:
+        release.set()
+        coordinator.shutdown()
+        with qtbot.waitSignal(closer.closed):
+            requests.close.emit()
+        thread.quit()
+        assert thread.wait(5000)
+
+
 def test_coordinator_coalesces_and_rejects_old_date_world_and_disabled_replies(
     authoring,
 ):
@@ -171,3 +303,4 @@ def test_coordinator_coalesces_and_rejects_old_date_world_and_disabled_replies(
     coordinator.completed({"token": coordinator.token, **read_frame()})
     assert not overlay.items
     coordinator.timer.stop()
+    coordinator.shutdown()

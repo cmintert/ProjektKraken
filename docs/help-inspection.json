@@ -17790,6 +17790,36 @@
       "symbol": "ConnectedFeatures.show_issues",
       "sha256": "0c51240f53d34a4683999423abc3eb6452eb2aeea87fba4566b463a7f71e910f",
       "review_note": "KRT-174: reviewed session-only connected display, conservative detail opt-in, disabled issues action and plain-text ambiguity explanation. Maps task documents no persistence and source editing; existing hierarchy routes remain."
+    },
+    {
+      "source": "src/gui/widgets/map/connected_features.py",
+      "symbol": "ProjectedPoint.__init__",
+      "sha256": "0f8d1ea4f2bd0dedfb5bc81c97e84df78c542d6b413cfbbf3a2e58dad6e608c3",
+      "review_note": "KRT-175: reviewed read-only point/path/region display, complete clipped components and independent odd-even holes. Source tooltip shows Base Geometry or dated state; Enter/double-click navigates via the protected source route and Delete cannot author. Maps task now covers geometry, topology and display-only simplification; existing Help destinations retained."
+    },
+    {
+      "source": "src/gui/widgets/map/connected_features.py",
+      "symbol": "ProjectedPoint.keyPressEvent",
+      "sha256": "825f5491277f648f04fd14c5f78258f0c6c0530d8d8745712f378c4c2c592925",
+      "review_note": "KRT-175: reviewed read-only point/path/region display, complete clipped components and independent odd-even holes. Source tooltip shows Base Geometry or dated state; Enter/double-click navigates via the protected source route and Delete cannot author. Maps task now covers geometry, topology and display-only simplification; existing Help destinations retained."
+    },
+    {
+      "source": "src/gui/widgets/map/connected_features.py",
+      "symbol": "ProjectedPoint.mouseDoubleClickEvent",
+      "sha256": "3c97886211fe3b2a44ab94cd1bf081e8579487fcd862600ede414ee80683905d",
+      "review_note": "KRT-175: reviewed read-only point/path/region display, complete clipped components and independent odd-even holes. Source tooltip shows Base Geometry or dated state; Enter/double-click navigates via the protected source route and Delete cannot author. Maps task now covers geometry, topology and display-only simplification; existing Help destinations retained."
+    },
+    {
+      "source": "src/gui/widgets/map/connected_features.py",
+      "symbol": "ProjectedShape.__init__",
+      "sha256": "36a87d6f52fa90daea7901db9f318a3dbf6726ea19b8b40a04fb3e187f2951b5",
+      "review_note": "KRT-175: reviewed read-only point/path/region display, complete clipped components and independent odd-even holes. Source tooltip shows Base Geometry or dated state; Enter/double-click navigates via the protected source route and Delete cannot author. Maps task now covers geometry, topology and display-only simplification; existing Help destinations retained."
+    },
+    {
+      "source": "src/gui/widgets/map/connected_features.py",
+      "symbol": "ConnectedFeatures.display",
+      "sha256": "892072cfe5f51cd630c9f6694bd0ec6c528361b627451ffc938b3dd717572d71",
+      "review_note": "KRT-175: reviewed read-only point/path/region display, complete clipped components and independent odd-even holes. Source tooltip shows Base Geometry or dated state; Enter/double-click navigates via the protected source route and Delete cannot author. Maps task now covers geometry, topology and display-only simplification; existing Help destinations retained."
     }
   ],
   "review_status": {
