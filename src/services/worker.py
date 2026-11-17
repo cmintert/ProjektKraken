@@ -118,6 +118,7 @@ class DatabaseWorker(QObject):
     # Index rebuild signals
     index_rebuild_progress = Signal(int, int, int)  # (done, total, pct)
     index_rebuild_finished = Signal(int, int, int)  # (indexed, unchanged, failed)
+    index_job_state = Signal(dict)  # session-scoped rebuild lifecycle
 
     # Analysis signals
     validation_complete = Signal(str, str, object)  # job_id, world_id, report
@@ -160,6 +161,7 @@ class DatabaseWorker(QObject):
                 rebuild_progress=self.index_rebuild_progress.emit,
                 rebuild_finished=self.index_rebuild_finished.emit,
                 suggestions_ready=self.semantic_suggestions_ready.emit,
+                job_state=self.index_job_state.emit,
             )
         )
 
@@ -1062,10 +1064,11 @@ class DatabaseWorker(QObject):
             self.error_occurred.emit("Failed to load grouping data.")
 
     @Slot(str, str, list)
+    @Slot(str, object, list)
     def index_object(
         self,
         object_type: str,
-        object_id: str,
+        object_id: str | list[str],
         excluded_attributes: Optional[List[str]] = None,
     ) -> None:
         """Index an object through the worker-owned semantic service."""
@@ -1444,6 +1447,7 @@ class DatabaseWorker(QObject):
         """
         if hasattr(self, "summary_service") and self.summary_service:
             self.summary_service.reset_provider()
+        self._semantic_index.reset_database()
         logger.info("DatabaseWorker: AI settings refreshed")
 
     def _run_analysis_command(

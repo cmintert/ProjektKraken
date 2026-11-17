@@ -106,6 +106,27 @@ def test_activity_workspaces_have_no_world_mutation_dependencies():
             )
 
 
+def test_inference_runner_has_no_database_or_gui_dependency():
+    """Desktop inference may only consume detached provider inputs."""
+    path = _SOURCE_ROOT / "services/semantic_index_task.py"
+    assert all(
+        module.split(".")[1] in {"core", "services"}
+        for _, module in _imported_modules(path)
+        if module.startswith("src.")
+    )
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    runner = next(
+        node
+        for node in tree.body
+        if isinstance(node, ast.ClassDef) and node.name == "EmbeddingRunner"
+    )
+    forbidden = {"database", "db_service", "conn", "connection", "execute", "commit"}
+    assert not any(
+        isinstance(node, ast.Attribute) and node.attr in forbidden
+        for node in ast.walk(runner)
+    )
+
+
 def test_semantic_index_has_one_service_owner_and_thin_worker_slots():
     """KRT-101 keeps indexing state below the public Qt worker boundary."""
     service_path = _SOURCE_ROOT / "services/worker_semantic_index_service.py"

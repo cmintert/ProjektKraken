@@ -681,30 +681,16 @@ class SubprocessSentenceTransformersProvider(EmbeddingProvider):
 # =============================================================================
 
 
-class SearchService:
-    """Service for managing semantic search indexes and queries.
-
-    Handles text extraction, embedding generation, and similarity search for entities
-    and events.
-    """
+class SearchIndexStorage:
+    """Prepare documents and store vectors on the owning database thread."""
 
     def __init__(
-        self, db_connection: sqlite3.Connection, provider: EmbeddingProvider
+        self, connection: sqlite3.Connection, model: str, dimension: int
     ) -> None:
-        """Initialize search service.
-
-        Args:
-            db_connection: SQLite database connection.
-            provider: Embedding provider instance.
-
-        """
-        self.conn = db_connection
-        self.provider = provider
-        self.model = provider.get_model_name()
-        self.dimension = provider.get_dimension()
-
-        logger.info(f"SearchService initialized with model: {self.model}")
-        logger.info(f"Embedding dimension: {self.dimension}")
+        """Bind storage to a connection and detached provider metadata."""
+        self.conn = connection
+        self.model = model
+        self.dimension = dimension
 
     def _get_tags_for_object(
         self, object_type: str, object_id: str
@@ -735,184 +721,6 @@ class SearchService:
         """
         cursor = self.conn.execute(sql, (object_id,))
         return [{"name": row[0]} for row in cursor.fetchall()]
-
-    def index_entity(
-        self, entity_id: str, excluded_attributes: Optional[List[str]] = None
-    ) -> None:
-        """Index a single entity.
-
-        Args:
-            entity_id: Entity UUID.
-            excluded_attributes: Optional list of attribute keys to exclude.
-
-        Raises:
-            ValueError: If entity not found.
-
-        """
-        # Fetch entity
-        cursor = self.conn.execute("SELECT * FROM entities WHERE id = ?", (entity_id,))
-        row = cursor.fetchone()
-        if not row:
-            raise ValueError(f"Entity {entity_id} not found")
-
-        # Convert row to dict
-        entity_data = dict(row)
-        if entity_data.get("attributes"):
-            entity_data["attributes"] = json.loads(entity_data["attributes"])
-
-        # Create minimal entity object
-        from src.core.entities import Entity
-
-        entity = Entity.from_dict(entity_data)
-
-        # Get tags
-        tags = self._get_tags_for_object("entity", entity_id)
-
-        # Build text
-        text = build_text_for_entity(entity, tags, excluded_attributes)
-        text_hash_val = text_sha256(text)
-
-        # Check if already indexed with same text
-        existing = self.conn.execute(
-            """
-            SELECT text_hash FROM embeddings
-            WHERE object_type = ? AND object_id = ? AND model = ?
-            """,
-            ("entity", entity_id, self.model),
-        ).fetchone()
-
-        if existing and existing[0] == text_hash_val:
-            logger.debug(f"Entity {entity_id} already indexed with same text, skipping")
-            return
-
-        # Generate embedding
-        embedding = self.provider.embed([text])[0]
-        normalized = normalize_vector(embedding)
-        serialized = serialize_vector(normalized)
-
-        # Upsert into database
-        embedding_id = str(uuid.uuid4())
-        metadata = {"name": entity.name, "type": entity.type}
-
-        self.conn.execute(
-            """
-            INSERT INTO embeddings (
-                id, object_type, object_id, model, vector, vector_dim,
-                text_snippet, text_hash, metadata, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(object_type, object_id, model) DO UPDATE SET
-                vector = excluded.vector,
-                vector_dim = excluded.vector_dim,
-                text_snippet = excluded.text_snippet,
-                text_hash = excluded.text_hash,
-                metadata = excluded.metadata,
-                created_at = excluded.created_at
-            """,
-            (
-                embedding_id,
-                "entity",
-                entity_id,
-                self.model,
-                serialized,
-                self.dimension,
-                text,
-                text_hash_val,
-                json.dumps(metadata),
-                time.time(),
-            ),
-        )
-        self.conn.commit()
-
-        logger.debug("Indexed entity %s", entity_id)
-
-    def index_event(
-        self, event_id: str, excluded_attributes: Optional[List[str]] = None
-    ) -> None:
-        """Index a single event.
-
-        Args:
-            event_id: Event UUID.
-            excluded_attributes: Optional list of attribute keys to exclude.
-
-        Raises:
-            ValueError: If event not found.
-
-        """
-        # Fetch event
-        cursor = self.conn.execute("SELECT * FROM events WHERE id = ?", (event_id,))
-        row = cursor.fetchone()
-        if not row:
-            raise ValueError(f"Event {event_id} not found")
-
-        # Convert row to dict
-        event_data = dict(row)
-        if event_data.get("attributes"):
-            event_data["attributes"] = json.loads(event_data["attributes"])
-
-        # Create minimal event object
-        from src.core.events import Event
-
-        event = Event.from_dict(event_data)
-
-        # Get tags
-        tags = self._get_tags_for_object("event", event_id)
-
-        # Build text
-        text = build_text_for_event(event, tags, excluded_attributes)
-        text_hash_val = text_sha256(text)
-
-        # Check if already indexed with same text
-        existing = self.conn.execute(
-            """
-            SELECT text_hash FROM embeddings
-            WHERE object_type = ? AND object_id = ? AND model = ?
-            """,
-            ("event", event_id, self.model),
-        ).fetchone()
-
-        if existing and existing[0] == text_hash_val:
-            logger.debug(f"Event {event_id} already indexed with same text, skipping")
-            return
-
-        # Generate embedding
-        embedding = self.provider.embed([text])[0]
-        normalized = normalize_vector(embedding)
-        serialized = serialize_vector(normalized)
-
-        # Upsert into database
-        embedding_id = str(uuid.uuid4())
-        metadata = {"name": event.name, "type": event.type}
-
-        self.conn.execute(
-            """
-            INSERT INTO embeddings (
-                id, object_type, object_id, model, vector, vector_dim,
-                text_snippet, text_hash, metadata, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(object_type, object_id, model) DO UPDATE SET
-                vector = excluded.vector,
-                vector_dim = excluded.vector_dim,
-                text_snippet = excluded.text_snippet,
-                text_hash = excluded.text_hash,
-                metadata = excluded.metadata,
-                created_at = excluded.created_at
-            """,
-            (
-                embedding_id,
-                "event",
-                event_id,
-                self.model,
-                serialized,
-                self.dimension,
-                text,
-                text_hash_val,
-                json.dumps(metadata),
-                time.time(),
-            ),
-        )
-        self.conn.commit()
-
-        logger.debug("Indexed event %s", event_id)
 
     def _prepare_item_for_batch(
         self,
@@ -980,6 +788,110 @@ class SearchService:
 
         return (object_id, text, text_hash_val, metadata)
 
+    def store_vectors(
+        self,
+        object_type: str,
+        items: List[Tuple[str, str, str, Dict[str, str]]],
+        embeddings: np.ndarray,
+    ) -> Tuple[int, int]:
+        """Store validated vectors inside the caller's transaction."""
+        if embeddings.shape != (len(items), self.dimension):
+            raise ValueError("Embedding dimensions do not match the batch")
+        if not np.isfinite(embeddings).all():
+            raise ValueError("Embedding batch contains non-finite values")
+        for idx, (object_id, text, text_hash_val, metadata) in enumerate(items):
+            normalized = normalize_vector(embeddings[idx])
+            serialized = serialize_vector(normalized)
+            embedding_id = str(uuid.uuid4())
+            self.conn.execute(
+                """
+                INSERT INTO embeddings (
+                    id, object_type, object_id, model, vector, vector_dim,
+                    text_snippet, text_hash, metadata, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(object_type, object_id, model) DO UPDATE SET
+                    vector = excluded.vector,
+                    vector_dim = excluded.vector_dim,
+                    text_snippet = excluded.text_snippet,
+                    text_hash = excluded.text_hash,
+                    metadata = excluded.metadata,
+                    created_at = excluded.created_at
+                """,
+                (
+                    embedding_id,
+                    object_type,
+                    object_id,
+                    self.model,
+                    serialized,
+                    self.dimension,
+                    text,
+                    text_hash_val,
+                    json.dumps(metadata),
+                    time.time(),
+                ),
+            )
+        return (len(items), 0)
+
+
+class SearchService(SearchIndexStorage):
+    """Service for managing semantic search indexes and queries.
+
+    Handles text extraction, embedding generation, and similarity search for entities
+    and events.
+    """
+
+    def __init__(
+        self, db_connection: sqlite3.Connection, provider: EmbeddingProvider
+    ) -> None:
+        """Initialize search service.
+
+        Args:
+            db_connection: SQLite database connection.
+            provider: Embedding provider instance.
+
+        """
+        self.conn = db_connection
+        self.provider = provider
+        self.model = provider.get_model_name()
+        self.dimension = provider.get_dimension()
+
+        logger.info(f"SearchService initialized with model: {self.model}")
+        logger.info(f"Embedding dimension: {self.dimension}")
+
+    def index_entity(
+        self, entity_id: str, excluded_attributes: Optional[List[str]] = None
+    ) -> None:
+        """Synchronously index one saved Entity, preserving the CLI entry point."""
+        self._index_object("entity", entity_id, excluded_attributes)
+
+    def index_event(
+        self, event_id: str, excluded_attributes: Optional[List[str]] = None
+    ) -> None:
+        """Synchronously index one saved Event, preserving the CLI entry point."""
+        self._index_object("event", event_id, excluded_attributes)
+
+    def _index_object(
+        self, kind: str, identifier: str, exclusions: Optional[List[str]]
+    ) -> None:
+        """Compose shared preparation, inference and storage for synchronous callers."""
+        table = "entities" if kind == "entity" else "events"
+        exists = self.conn.execute(
+            f"SELECT 1 FROM {table} WHERE id = ?",
+            (identifier,),  # noqa: S608
+        ).fetchone()
+        if not exists:
+            raise ValueError(f"{kind.capitalize()} {identifier} not found")
+        item = self._prepare_item_for_batch(kind, identifier, exclusions)
+        if item is None:
+            return
+        vectors = self.provider.embed([item[1]])
+        try:
+            self.store_vectors(kind, [item], vectors)
+            self.conn.commit()
+        except Exception:
+            self.conn.rollback()
+            raise
+
     def _batch_upsert(
         self,
         object_type: str,
@@ -1006,51 +918,21 @@ class SearchService:
             return (0, len(items))
 
         succeeded = 0
-        failed = 0
-        for idx, (object_id, text, text_hash_val, metadata) in enumerate(items):
+        for position, item in enumerate(items):
             try:
-                normalized = normalize_vector(embeddings[idx])
-                serialized = serialize_vector(normalized)
-                embedding_id = str(uuid.uuid4())
-                self.conn.execute(
-                    """
-                    INSERT INTO embeddings (
-                        id, object_type, object_id, model, vector, vector_dim,
-                        text_snippet, text_hash, metadata, created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ON CONFLICT(object_type, object_id, model) DO UPDATE SET
-                        vector = excluded.vector,
-                        vector_dim = excluded.vector_dim,
-                        text_snippet = excluded.text_snippet,
-                        text_hash = excluded.text_hash,
-                        metadata = excluded.metadata,
-                        created_at = excluded.created_at
-                    """,
-                    (
-                        embedding_id,
-                        object_type,
-                        object_id,
-                        self.model,
-                        serialized,
-                        self.dimension,
-                        text,
-                        text_hash_val,
-                        json.dumps(metadata),
-                        time.time(),
-                    ),
+                self.store_vectors(
+                    object_type, [item], embeddings[position : position + 1]
                 )
                 succeeded += 1
-            except Exception as e:
-                logger.error(
-                    "Failed to upsert %s %s: %s",
-                    object_type,
-                    object_id,
-                    safe_error(e),
-                )
-                failed += 1
-
-        self.conn.commit()
-        return (succeeded, failed)
+            except Exception as exc:
+                logger.error("Failed to store embedding: %s", safe_error(exc))
+        try:
+            self.conn.commit()
+        except Exception:
+            self.conn.rollback()
+            logger.exception("Failed to commit embedding batch")
+            return (0, len(items))
+        return (succeeded, len(items) - succeeded)
 
     def _load_rebuild_ids(
         self,
@@ -1473,6 +1355,7 @@ def create_provider(
     url: Optional[str] = None,
     api_key: Optional[str] = None,
     timeout: Optional[int] = None,
+    settings: Optional[Dict[str, Any]] = None,
 ) -> EmbeddingProvider:
     """Create an embedding provider based on configuration.
 
@@ -1485,6 +1368,7 @@ def create_provider(
         url: LM Studio URL override.
         api_key: LM Studio API key override.
         timeout: LM Studio timeout override.
+        settings: Optional detached settings snapshot for asynchronous jobs.
 
     Returns:
         EmbeddingProvider: Configured provider instance.
@@ -1494,7 +1378,7 @@ def create_provider(
 
     """
     # Load settings from QSettings
-    qsettings = get_llm_settings_from_qsettings()
+    qsettings = settings if settings is not None else get_llm_settings_from_qsettings()
 
     # Determine provider (explicit > QSettings > env var)
     provider_name = (

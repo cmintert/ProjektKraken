@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-11-16
-**Commit:** 9951813eb4729763bacec5c647570eb4d6c46386
+**Last Updated:** 2026-11-17
+**Commit:** c3008fcbaa037f8552135331b9422fae0f502053
 ---
 
 # Changelog
@@ -62,6 +62,13 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-17)* **Background indexing (KRT-172)**: Moved embedding model loading
+  and inference off the database worker. Automatic indexing and manual rebuilds
+  now yield between bounded database batches, allowing Event/Entity details and
+  saves to continue. Reject stale vectors after edits, deletion, settings changes
+  and world cleanup; retain session-only queues and existing rebuild feedback.
+  Added queue, lifecycle and responsiveness regressions and documented thread ownership.
 
 - *(2026-11-16)* **History compatibility (KRT-171)**: Preserved saved Undo/Redo
   entries containing unlimited layer zoom. A recovery-protected index upgrade

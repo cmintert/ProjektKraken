@@ -688,3 +688,32 @@ preparation path runs context, RAG and spatial lookups off the GUI thread. An
 immutable prepared-generation record freezes final messages for explicit generation
 from preview, including date-policy inputs and disclosed blocks. No projection is
 persisted and these operations do not enter world command history.
+
+## Asynchronous desktop semantic indexing
+
+`WorkerSemanticIndexService` delegates desktop indexing to a lazily created
+`SemanticIndexTask` with database-worker affinity. Preparation reads at most 32
+records per queued step. `SearchIndexStorage` shares deterministic text building,
+hash checks and vector persistence with the synchronous `SearchService` APIs.
+A single inference executor owns its embedding provider and receives detached
+text batches. Provider construction and dimension discovery also run there.
+Queued replies return vectors to the database worker, which validates content
+and commits accepted results in a short transaction. Inference holds no database
+transaction or connection.
+
+Automatic saves retain the existing debounce and submit identities by type in
+one request. Pending identities are deduplicated. Rebuild scans use keyset pages;
+saved-object updates run before subsequent rebuild pages. Unchanged or deleted
+records are skipped, while changed records are retried with current text.
+Settings refresh, world initialization and database cleanup cancel the old task,
+including replies for a reopened database path. Cleanup invalidates callbacks
+and retires the executor without waiting on the GUI or database thread. Existing
+provider timeouts and Windows subprocess isolation remain in effect.
+
+Queues live only for the current session. Reopening a world requires an explicit
+rebuild to finish abandoned work. Existing progress counters update Settings;
+background progress does not replace foreground status-bar messages. Cancellation
+has a distinct session-scoped lifecycle signal and releases rebuild controls.
+Automated responsiveness tests hold inference blocked while real queued detail
+loads and serialized save commands finish. Native UI acceptance is recorded
+separately from these tests.

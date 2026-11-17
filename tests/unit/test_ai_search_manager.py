@@ -21,9 +21,7 @@ def manager(mock_window):
 
 
 @patch("src.services.semantic_search_worker.RAGService")
-def test_perform_semantic_search_uses_rag(
-    mock_rag_cls, manager, mock_window, qtbot
-):
+def test_perform_semantic_search_uses_rag(mock_rag_cls, manager, mock_window, qtbot):
     """Test that perform_semantic_search uses RAGService when db_path is available."""
     # Setup
     mock_service = MagicMock()
@@ -75,17 +73,14 @@ def test_rebuild_search_index_dispatches_to_worker(manager, mock_window):
     """Index rebuilds use the queued worker path instead of the GUI thread."""
     manager.rebuild_search_index("all")
 
-    mock_window.status_bar.showMessage.assert_called_with(
-        "Rebuilding all index...", 0
-    )
+    mock_window.ai_search_panel.set_status.assert_called_with("Rebuilding all index...")
+    mock_window.status_bar.showMessage.assert_not_called()
     mock_window.worker_manager.rebuild_index_requested.emit.assert_called_once_with(
         "all", []
     )
 
 
-def test_loading_v1_preferences_persists_v2_template_migration(
-    manager, mock_window
-):
+def test_loading_v1_preferences_persists_v2_template_migration(manager, mock_window):
     """The app manager upgrades legacy selections through the worker path."""
     manager.on_ai_preferences_loaded(
         {
@@ -95,7 +90,26 @@ def test_loading_v1_preferences_persists_v2_template_migration(
         }
     )
 
-    saved = mock_window.worker_manager.save_ai_preferences_requested.emit.call_args[0][0]
+    saved = mock_window.worker_manager.save_ai_preferences_requested.emit.call_args[0][
+        0
+    ]
     assert saved["version"] == 2
     assert saved["selected_entity_template_id"] == "create_complete_description"
     assert saved["entity_prompt_draft"] == "Keep this draft"
+
+
+def test_old_cancellation_preserves_new_rebuild_controls(manager):
+    form = MagicMock()
+    with patch.object(manager, "_settings_form", return_value=form):
+        manager.on_index_job_state({"session": "old", "job_id": "a", "state": "queued"})
+        manager.on_index_job_state(
+            {"session": "new", "job_id": "b", "state": "running"}
+        )
+        manager.on_index_job_state(
+            {"session": "old", "job_id": "a", "state": "cancelled"}
+        )
+        form.set_rebuild_in_progress.assert_called_with(True)
+        manager.on_index_job_state(
+            {"session": "new", "job_id": "b", "state": "completed"}
+        )
+        form.set_rebuild_in_progress.assert_called_with(False)
