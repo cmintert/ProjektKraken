@@ -1666,7 +1666,6 @@ class MapGraphicsView(QGraphicsView):
         """Preview one unsaved relationship after the app resolves edit guards."""
         if self.pixmap_item is None:
             return False
-        self.set_footprints_visible(True)
         old = self._footprint_items.pop(data["id"], None)
         if old is not None:
             self.graphics_scene.removeItem(old)
@@ -1775,6 +1774,8 @@ class MapGraphicsView(QGraphicsView):
         registration = item.current_registration()
         registration["confidence"] = "user_confirmed"
         self._provisional_footprint_id = None
+        item.setVisible(self._footprints_visible)
+        item.setEnabled(self._footprints_visible)
         self.footprint_edit_confirmed.emit(fid, item.parent_map_id, registration)
         self._refresh_footprint_controls()
 

@@ -14,6 +14,7 @@ from PySide6.QtWidgets import QMessageBox, QToolButton
 
 from src.core.map import Map
 from src.core.theme_manager import ThemeManager
+from src.gui.widgets.map_widget import MapWidget
 from tests.unit.test_map_feature_actions import (
     add_feature,
     click_feature,
@@ -109,6 +110,67 @@ def test_menu_refreshes_role_and_footprint_prerequisites(feature_map):
     actions = settings_actions(widget)
     assert not actions["Show Footprints"].isChecked()
     assert not actions["Edit Footprint…"].isEnabled()
+
+
+def test_map_preferences_restore_saved_choices(feature_map, qtbot):
+    widget = feature_map
+    assert settings_actions(widget)["Show Footprints"].isChecked()
+    assert widget.btn_snap.isChecked()
+    settings_actions(widget)["Show Footprints"].trigger()
+    widget.btn_snap.click()
+
+    reopened = MapWidget()
+    qtbot.addWidget(reopened)
+    assert not settings_actions(reopened)["Show Footprints"].isChecked()
+    assert not reopened.view.footprints_visible
+    assert not reopened.btn_snap.isChecked()
+    assert not reopened.view.snapping_enabled
+    settings_actions(reopened)["Show Footprints"].trigger()
+    reopened.btn_snap.click()
+
+    restored = MapWidget()
+    qtbot.addWidget(restored)
+    assert settings_actions(restored)["Show Footprints"].isChecked()
+    assert restored.view.footprints_visible
+    assert restored.btn_snap.isChecked()
+    assert restored.view.snapping_enabled
+
+
+@pytest.mark.parametrize("finish", [False, True])
+def test_footprint_preview_respects_hidden_saved_footprints(feature_map, finish):
+    widget = feature_map
+    view = widget.view
+    settings_actions(widget)["Show Footprints"].trigger()
+    data = {
+        "id": "detail",
+        "name": "Detail",
+        "parent_map_id": widget.get_selected_map_id(),
+        "registration": {
+            "master_center_norm": {"x": 0.5, "y": 0.5},
+            "scale_norm": 0.3,
+            "rotation_deg": 0.0,
+            "aspect_ratio": 1.0,
+        },
+    }
+    view.set_footprints([{**data, "id": "saved"}])
+    saved = view._footprint_items["saved"]
+    assert not saved.isVisible()
+    assert not saved.isEnabled()
+    assert view.start_provisional_footprint(data)
+    preview = view._footprint_items["detail"]
+    assert preview.isVisible() and preview.isEnabled()
+    assert not saved.isVisible()
+    assert not settings_actions(widget)["Show Footprints"].isChecked()
+
+    if finish:
+        view.finish_footprint_edit()
+        assert not preview.isVisible()
+        assert not preview.isEnabled()
+    else:
+        view.cancel_footprint_edit()
+        assert "detail" not in view.footprint_names()
+    assert not view.footprints_visible
+    assert not saved.isVisible()
 
 
 @pytest.mark.parametrize(

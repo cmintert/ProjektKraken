@@ -15027,8 +15027,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget.__init__",
-      "sha256": "132654b55ffacc1c2ffe1741576ded415783ae13707ca933596bcc9f3e85e8da",
-      "review_note": "KRT-170: adds session-local footprint comparison controls and intent signals. Existing controls, Help routes, protected sessions and shared confirm/cancel are retained."
+      "sha256": "553e84a3176a167f48110f42ad1c014e5dd6c9e42028542dd57732ab8c3aef60",
+      "review_note": "KRT-177: restore saved footprint visibility before the first map loads. The Maps guide distinguishes saved footprints from the provisional edit preview."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -15165,8 +15165,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._build_view_toggle_controls",
-      "sha256": "25866da0fce99b7a3d8df734e3ee8efe2d9c4b1fe05055459968bfdde9256247",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "a03a59f7fdfda1023de54085b436b5f174197ed75435575480e34d3aff229145",
+      "review_note": "KRT-177: initialize the Snap button and view from the same saved value. The Snap excerpt explains restart behavior."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -15273,8 +15273,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._on_snap_toggled",
-      "sha256": "a12256f3d859d9050be876c1fbc773fa09a4c2f7b4f6df20a4fb36ac3ae4b307",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "3b41eb42bcde024f753545f9c11a6c161837caad843dcb0339d12feb72c0e55a",
+      "review_note": "KRT-177: an explicit Snap click saves the local preference and applies it immediately."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -15363,8 +15363,8 @@
     {
       "source": "src/gui/widgets/map_widget.py",
       "symbol": "MapWidget._populate_map_settings_menu",
-      "sha256": "f18a62eb4cb3b2473ec7bdd74228e91b97e818f2690a8cfc3203408db311ad17",
-      "review_note": "KRT-170: replaces privileged master workflow with Manage Map Hierarchy, Make independent and Attach/change parent; no root prerequisite. Footprint visibility remains independent; parent relationships gate detachment and placement. Existing anchors retained and explanations revised."
+      "sha256": "66583cd1836c7f97b64517750816585fdda8d2fdf69653b76d96909ccd7305d2",
+      "review_note": "KRT-177: Show Footprints saves the choice when toggled. The action keeps its existing Help anchor and the Edit Footprint prerequisite reflects restored visibility."
     },
     {
       "source": "src/gui/widgets/map_widget.py",
@@ -17794,8 +17794,8 @@
     {
       "source": "src/gui/widgets/map/connected_features.py",
       "symbol": "ProjectedPoint.__init__",
-      "sha256": "0f8d1ea4f2bd0dedfb5bc81c97e84df78c542d6b413cfbbf3a2e58dad6e608c3",
-      "review_note": "KRT-175: reviewed read-only point/path/region display, complete clipped components and independent odd-even holes. Source tooltip shows Base Geometry or dated state; Enter/double-click navigates via the protected source route and Delete cannot author. Maps task now covers geometry, topology and display-only simplification; existing Help destinations retained."
+      "sha256": "75ab86ecdca62886336365167fc55143f89915b37215870100ccada10d421ee7",
+      "review_note": "KRT-174 follow-up: reviewed the name under each projected point. The Maps guide explains the read-only overlay, provenance tooltip and source navigation."
     },
     {
       "source": "src/gui/widgets/map/connected_features.py",

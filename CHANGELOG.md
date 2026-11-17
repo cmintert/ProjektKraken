@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-17
-**Commit:** 2c722a3694c9ead886cf4c2b31a99a886cee4812
+**Commit:** cf47c7eef15cec0afda33787f1b853c555255033
 ---
 
 # Changelog
@@ -88,6 +88,11 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-17)* **Map display preferences (KRT-177)**: Restored Show
+  Footprints and Snap across restarts. Kept new footprint previews usable
+  when saved footprints are hidden. Added preference and placement
+  regressions, updated Maps Help, and reviewed projected point label Help.
 
 - *(2026-11-17)* **Map path labels (KRT-176)**: Aligned labels to readable
   stretches of visible paths and used shared collision handling to keep labels

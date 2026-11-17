@@ -687,7 +687,10 @@ map. Deletion remains guarded while a map has descendants; move or detach them f
 Click a saved footprint to enter its detail map. Use the parent button or a
 breadcrumb segment to return through its connected ancestry. Returning to a map
 restores its previous viewport where available. The selector also opens any map,
-including independent roots. **Show Footprints** changes visibility only.
+including independent roots. **Show Footprints** controls the visibility of saved
+footprints across maps on this installation. Kraken restores your choice when
+you restart. A new placement preview appears while you edit it, even when saved
+footprints are hidden.
 
 (help-map-connected-features)=
 
@@ -709,7 +712,8 @@ dates, opacity and scale limits still apply. The viewing playhead resolves movin
 locations before projection, including step segments and the base location before
 the first dated point. Ambiguous or invalid tracks are omitted with an explanation.
 
-Hover a projected feature for its source. Select it and press Enter, or
+Projected points show their names below their symbols. Hover a projected
+feature for its source. Select it and press Enter, or
 double-click it, to open the source map through the usual protected-edit safeguard.
 Edit the authored feature there; moving or deleting the projection is unavailable.
 These display choices last for the current application session.
@@ -1668,7 +1672,7 @@ cancel to leave the proposed width unchanged.
 (help-inspect-src-gui-widgets-map-widget-mapwidget-build-view-toggle-controls-self-btn-snap)=
 
 **Snap** — Enable snapping while placing or editing map geometry. This helps align
-points; it does not change saved geometry by itself.
+points. Kraken restores your Snap setting when you restart.
 
 (help-inspect-src-gui-widgets-map-widget-mapwidget-build-view-toggle-controls-self-btn-legend-toggle)=
 
@@ -1708,8 +1712,8 @@ unsaved preview. **Apply** saves the relationship and placement together, and
 
 (help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-show-footprints-action)=
 
-**Show detail footprints** — Show or hide detail-map footprints on the parent map. This
-does not delete the detail maps.
+**Show Footprints** — Show or hide saved detail-map footprints on parent maps.
+Kraken remembers this choice on this installation.
 
 (help-inspect-src-gui-widgets-map-widget-mapwidget-show-map-overflow-menu-edit-footprint-action)=
 

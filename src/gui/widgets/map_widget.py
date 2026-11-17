@@ -22,7 +22,7 @@ from collections.abc import Callable
 from html import escape
 from typing import Optional, cast
 
-from PySide6.QtCore import QSize, Qt, QTimer, Signal, Slot
+from PySide6.QtCore import QSettings, QSize, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QAction, QKeyEvent, QPaintEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QComboBox,
@@ -43,6 +43,7 @@ from src.core.calendar import CalendarConverter
 from src.core.map import Map
 from src.core.marker_appearance import MarkerIconAnchor
 from src.core.region_geometry import Geometry
+from src.core.settings import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 from src.core.theme_manager import ThemeManager
 from src.core.trajectory_edit import TrajectoryEditSnapshot
 from src.gui.mixins.map_calibration_mixin import MapCalibrationMixin
@@ -73,6 +74,8 @@ from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 logger = logging.getLogger(__name__)
 
 _MINIMUM_BREADCRUMB_CHAIN_LENGTH = 2
+_SHOW_FOOTPRINTS_KEY = "map/show_footprints"
+_SNAP_ENABLED_KEY = "map/snapping_enabled"
 
 
 class NoLayoutLabel(QWidget):
@@ -283,6 +286,10 @@ class MapWidget(
         self.view = declare_inspection(
             MapGraphicsView(self),
             "view.src-gui-widgets-map-widget-mapwidget-init-self-view|map.features|help-inspect-view-src-gui-widgets-map-widget-mapwidget-init-self-view",
+        )
+        self._map_view_settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        self.view.set_footprints_visible(
+            bool(self._map_view_settings.value(_SHOW_FOOTPRINTS_KEY, True, type=bool))
         )
         self._feature_geometry_edit_pending = False
         self._feature_geometry_apply_available = True
@@ -1105,7 +1112,10 @@ class MapWidget(
         )
         self.btn_snap.setToolTip("Toggle snapping to nearby feature vertices and edges")
         self.btn_snap.setCheckable(True)
-        self.btn_snap.setChecked(True)
+        self.view.snapping_enabled = bool(
+            self._map_view_settings.value(_SNAP_ENABLED_KEY, True, type=bool)
+        )
+        self.btn_snap.setChecked(self.view.snapping_enabled)
         self.btn_snap.clicked.connect(self._on_snap_toggled)
         self.toolbar.addWidget(self.btn_snap)
         self.btn_legend_toggle = declare_inspection(
@@ -1552,6 +1562,7 @@ class MapWidget(
         show_footprints_action.setChecked(self.view.footprints_visible)
 
         def _on_show_footprints_toggled(checked: bool) -> None:
+            self._map_view_settings.setValue(_SHOW_FOOTPRINTS_KEY, checked)
             self.view.set_footprints_visible(checked)
             self._update_mode_indicator()
 
@@ -1610,7 +1621,9 @@ class MapWidget(
     @Slot()
     def _on_snap_toggled(self) -> None:
         """Toggles snapping on the map view."""
-        self.view.snapping_enabled = self.btn_snap.isChecked()
+        enabled = self.btn_snap.isChecked()
+        self._map_view_settings.setValue(_SNAP_ENABLED_KEY, enabled)
+        self.view.snapping_enabled = enabled
 
     @Slot()
     def active_map_session_mode(self) -> str | None:
