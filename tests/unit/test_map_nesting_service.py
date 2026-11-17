@@ -58,9 +58,7 @@ def test_validate_rejects_self_parent():
 def test_validate_rejects_unknown_parent():
     a = _make_map("A")
     with pytest.raises(NestingValidationError, match="not found"):
-        MapNestingService.validate_registration(
-            a.id, "nonexistent", _affine(), [a]
-        )
+        MapNestingService.validate_registration(a.id, "nonexistent", _affine(), [a])
 
 
 def test_validate_rejects_parent_without_role():
@@ -254,13 +252,9 @@ def test_resolve_to_root_three_levels_matches_manual_composition():
         "M1", map_role=MAP_ROLE_DETAIL, parent_map_id=root.id, registration=r1
     )
     r2 = _affine(cx=0.3, cy=0.7, scale=0.3, rotation=-20.0, aspect=2.0)
-    m2 = _make_map(
-        "M2", map_role=MAP_ROLE_DETAIL, parent_map_id=m1.id, registration=r2
-    )
+    m2 = _make_map("M2", map_role=MAP_ROLE_DETAIL, parent_map_id=m1.id, registration=r2)
     r3 = _affine(cx=0.5, cy=0.5, scale=0.5, rotation=0.0, aspect=1.0)
-    m3 = _make_map(
-        "M3", map_role=MAP_ROLE_DETAIL, parent_map_id=m2.id, registration=r3
-    )
+    m3 = _make_map("M3", map_role=MAP_ROLE_DETAIL, parent_map_id=m2.id, registration=r3)
 
     local = (0.25, 0.75)
     root_id, root_uv = MapNestingService.resolve_to_root(
@@ -375,9 +369,7 @@ def test_iter_ancestors_chain():
     leaf = _make_map(
         "Leaf", map_role=MAP_ROLE_DETAIL, parent_map_id=mid.id, registration=_affine()
     )
-    ancestors = list(
-        MapNestingService.iter_ancestors(leaf.id, [root, mid, leaf])
-    )
+    ancestors = list(MapNestingService.iter_ancestors(leaf.id, [root, mid, leaf]))
     assert ancestors == [mid, root]
 
 
@@ -391,5 +383,5 @@ def test_iter_ancestors_detects_cycle():
     # Manually forge a cycle: A.parent_map_id -> A (impossible via normal
     # registration but tests the guard).
     a.attributes["parent_map_id"] = a.id
-    with pytest.raises(NestingValidationError, match="Cycle"):
+    with pytest.raises(NestingValidationError, match="(?i)cycle"):
         list(MapNestingService.iter_ancestors(a.id, [a]))

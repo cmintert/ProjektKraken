@@ -7,7 +7,7 @@ Tests zoom-to-cursor, smart lane packing, EventItem reuse, and scrubber/playhead
 import pytest
 from PySide6.QtCore import QPoint, QPointF, Qt
 from PySide6.QtGui import QWheelEvent
-from PySide6.QtWidgets import QGraphicsItem
+from PySide6.QtWidgets import QGraphicsItem, QMessageBox
 
 from src.core.events import Event
 from src.gui.widgets.timeline import (
@@ -616,19 +616,43 @@ class TestCurrentTimeLine:
 
         assert blocker.args[0] == 42.0
 
-    def test_set_current_time_to_playhead_button(self, timeline_widget):
-        """Set Current Time button should exist and work."""
+    def test_set_current_time_to_playhead_button(self, timeline_widget, monkeypatch):
+        """Only explicit confirmation changes world time, never viewing time."""
         assert timeline_widget.btn_set_current_time is not None
 
+        timeline_widget.set_current_time(25.0)
         # Set playhead to a specific time
         timeline_widget.set_playhead_time(150.0)
+        changes = []
+        timeline_widget.current_time_changed.connect(changes.append)
 
-        # Click the button to set current time to playhead
+        def decline(*args):
+            assert args[0] is timeline_widget
+            assert args[4] == QMessageBox.StandardButton.No
+            return QMessageBox.StandardButton.No
+
+        monkeypatch.setattr(QMessageBox, "question", decline)
+        timeline_widget.btn_set_current_time.click()
+        assert timeline_widget.get_current_time() == 25.0
+        assert timeline_widget.get_playhead_time() == 150.0
+        assert changes == []
+
+        timeline_widget.toggle_playback()
+        assert timeline_widget.view.is_playing()
+
+        def accept(*args):
+            assert not timeline_widget.view.is_playing()
+            assert not timeline_widget.btn_play_pause.isChecked()
+            return QMessageBox.StandardButton.Yes
+
+        monkeypatch.setattr(QMessageBox, "question", accept)
         timeline_widget.btn_set_current_time.click()
 
         # Current time should now match playhead
         current_time = timeline_widget.get_current_time()
         assert abs(current_time - 150.0) < 0.1
+        assert timeline_widget.get_playhead_time() == 150.0
+        assert changes == [150.0]
 
     def test_return_to_current_time_button_restores_the_playhead(self, timeline_widget):
         """The navigation control clearly returns the playhead to world time."""

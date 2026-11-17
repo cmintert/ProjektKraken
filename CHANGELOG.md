@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-11-15
-**Commit:** 013d0f8e9235e20e1252a2f7847f1ad2f62f2a9d
+**Last Updated:** 2026-11-17
+**Commit:** 18ea29d9dc2b12adea300c16fd2c608f5fbd87f3
 ---
 
 # Changelog
@@ -12,6 +12,47 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-11-17)* **Connected map geometry (KRT-175)**: Added read-only projection
+  of dated paths and regions, preserving holes and all clipped components.
+  Display-only simplification retains topology and source identity. Moved
+  projection calculation to a dedicated thread with serialized captures, cached
+  source geometry and orderly shutdown. Added topology, responsiveness, rendering
+  and larger-data regressions; updated map Help and architecture evidence.
+
+- *(2026-11-17)* **Connected map points (KRT-174)**: Added opt-in, read-only
+  point projections across registered maps, with source navigation, authored
+  target precedence, conflict reporting, dated trajectories and conservative
+  scale/visibility rules. Added feature-owned worker delivery, generation guards,
+  map Help and focused regressions. Reconciled only the previously reviewed
+  search-test identity replacements in the test inventory for push validation.
+
+- *(2026-11-17)* **Map placement preservation (KRT-173)**: Added exact placement
+  preservation when changing parents within a registered hierarchy, with explicit
+  manual fallback for unsupported or unstable alignments. Added worker-side stale
+  ancestry checks, restart-safe Undo/Redo, geographic invariance and authoring
+  regressions, and six-theme narrow/enlarged-text checks. Updated map Help,
+  architecture and review evidence; reconciled the existing timeline confirmation
+  behavior with its Help explanation and review record.
+
+- *(2026-11-16)* **Flexible map hierarchy authoring (KRT-170)**: Added hierarchy
+  management, independent roots, attachment, reparenting and detachment. Parent
+  choice now opens a provisional image placement; Apply saves one undoable change
+  and Cancel preserves saved relationships. Added opacity, rotation reset, zoom
+  and comparison locking, protected draft transitions, viewport restoration and
+  parent-authoritative navigation. Aligned rotated preview images with their
+  registered outlines on non-square parents. Extracted feature orchestration from MapHandler;
+  updated map Help and added interaction, failure and themed-layout regressions.
+
+- *(2026-11-16)* **Map hierarchy foundation (KRT-168)**: Added a detached,
+  parent-authoritative hierarchy model and a serialized structural-change
+  command. Child deletion guards now include inconsistent legacy roles, and
+  registration validation measures the full moved subtree. Added ordered Undo
+  and Redo restoration across restarts, atomic command/history persistence and
+  asset compensation on failure. A recovery-protected upgrade starts fresh
+  history for older worlds while preserving authored data and registrations.
+  Added regression coverage and updated architecture, recovery and Help notes.
+  The new hierarchy authoring UI remains scheduled for A1.
 
 - *(2026-11-15)* **Maps (KRT-164)**: Added Draw neighboring region to subtract
   an existing border from a retained drawing, preview the result and create an
@@ -43,6 +84,45 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-17)* **Detail maps and rollback (PR #301)**: Applied authored
+  layer settings to projected features, guarded the active canvas, isolated
+  malformed trajectories, and corrected very small shared alignments. Reused
+  hierarchy data in the parent picker. Fixed file compensation and command
+  retry state after rollback, paused timeline playback for time confirmation,
+  and updated Help and regression coverage.
+
+- *(2026-11-17)* **Detail maps (PR #301)**: Corrected source layer zoom,
+  projected feature keyboard focus, overlays during timeline scrubbing, and
+  visibility after Zoom to Footprint. Made the history index portable to
+  older SQLite runtimes while preserving legacy undo and redo. Updated
+  migration guidance and added regression coverage.
+
+- *(2026-11-17)* **Projected path selection (KRT-175)**: Restricted open-path
+  selection to the shared stroke hit area, excluding implicitly filled empty
+  interiors. Retained region holes and added a direct Qt regression test.
+
+- *(2026-11-17)* **Background indexing (KRT-172)**: Moved embedding model loading
+  and inference off the database worker. Automatic indexing and manual rebuilds
+  now yield between bounded database batches, allowing Event/Entity details and
+  saves to continue. Reject stale vectors after edits, deletion, settings changes
+  and world cleanup; retain session-only queues and existing rebuild feedback.
+  Added queue, lifecycle and responsiveness regressions and documented thread ownership.
+
+- *(2026-11-17)* **Timeline**: Added confirmation before Set Current Time
+  changes the world's current time, with No selected by default. Added regression
+  coverage for declining and accepting while preserving the playhead position.
+
+- *(2026-11-16)* **History compatibility (KRT-171)**: Preserved saved Undo/Redo
+  entries containing unlimited layer zoom. A recovery-protected index upgrade
+  restores their lookup without resetting history; new layer-property snapshots
+  encode unlimited zoom losslessly as null. Corrected layer-tree Undo persistence
+  and added upgrade, rollback, reordering and restart regressions.
+
+- *(2026-11-16)* **Map foundation review (KRT-168)**: Accepted legacy null map
+  attributes, recovered safe assets even after rollback-hook failures while
+  preserving independent file replacements, and indexed active history lookups
+  to avoid scanning the archive on every edit. Added focused regressions.
 
 - *(2026-11-15)* **Packaging**: Moved the isolated region-geometry database
   probe to the offline CLI layer, restoring the application dependency contract

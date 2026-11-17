@@ -44,9 +44,7 @@ def test_on_map_scale_changed_emits_command(map_handler, mock_map_widget):
     assert cmd.update_data == {"attributes": {"width_meters": 500.0}}
 
 
-def test_on_map_settings_changed_emits_one_atomic_command(
-    map_handler, mock_map_widget
-):
+def test_on_map_settings_changed_emits_one_atomic_command(map_handler, mock_map_widget):
     """Map attribute changes persist through one map command."""
     mock_map_widget.map_selector.currentData.return_value = "map_1"
     spy = MagicMock()
@@ -65,15 +63,14 @@ def test_on_map_settings_changed_emits_one_atomic_command(
 def test_on_map_selected_loads_scale(map_handler, mock_map_widget):
     """Test that selecting a map loads its scale."""
     map_id = "map_1"
-    mock_map = MagicMock(spec=Map)
-    mock_map.id = map_id
-    mock_map.image_path = "/tmp/test.png"
-    mock_map.attributes = {"width_meters": 2500.0}
+    mock_map = Map(
+        id=map_id,
+        name="Calibrated",
+        image_path="/tmp/test.png",
+        attributes={"width_meters": 2500.0},
+    )
 
-    mock_map_default = MagicMock(spec=Map)
-    mock_map_default.id = "map_2"
-    mock_map_default.image_path = "/tmp/test2.png"
-    mock_map_default.attributes = {}
+    mock_map_default = Map(id="map_2", name="Uncalibrated", image_path="/tmp/test2.png")
 
     mock_map_widget.maps_data = [mock_map, mock_map_default]
     mock_map_widget.view = MagicMock()
@@ -107,9 +104,7 @@ def test_delete_map_exits_editing_before_emitting_command(map_handler, mock_map_
     assert order == ["exit", "emit"]
 
 
-def test_create_marker_persists_native_icon_relative_size(
-    map_handler, mock_map_widget
-):
+def test_create_marker_persists_native_icon_relative_size(map_handler, mock_map_widget):
     """New placement derives size from its icon's native diameter."""
     pixmap_item = MagicMock()
     pixmap_item.boundingRect.return_value.width.return_value = 1000.0

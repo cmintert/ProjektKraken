@@ -87,7 +87,7 @@ class TestIndexDebounce:
 
         assert len(emitted) == 1
         assert emitted[0][0] == "entity"
-        assert emitted[0][1] == "abc-123"
+        assert emitted[0][1] == ["abc-123"]
 
     @patch("src.app.worker_manager.QSettings")
     def test_rapid_saves_only_emit_once(self, mock_qsettings, manager):
@@ -109,10 +109,9 @@ class TestIndexDebounce:
         # Flush once.
         manager._flush_pending_index()
 
-        assert len(emitted) == 5
-        assert {(item[0], item[1]) for item in emitted} == {
-            ("entity", f"id-{i}") for i in range(5)
-        }
+        assert len(emitted) == 1
+        assert emitted[0][0] == "entity"
+        assert set(emitted[0][1]) == {f"id-{i}" for i in range(5)}
 
     @patch("src.app.worker_manager.QSettings")
     def test_disabled_auto_index_does_not_start_timer(self, mock_qsettings, manager):

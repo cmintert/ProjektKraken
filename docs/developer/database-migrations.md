@@ -38,7 +38,8 @@ opening the upgrade transaction when isolation is needed, restores it afterward,
 and validates foreign keys and database integrity. The Event rebuild copies
 columns by name and restores existing indexes and triggers. Referring records,
 IDs, timestamps, attributes, tags, and compatible command history are retained.
-New worlds start at schema 4; earlier applications reject that version.
+New worlds start at the current schema; earlier applications reject versions they
+do not support.
 
 The startup upgrade report identifies the verified recovery bundle. Failure
 rolls back the original schema and records the recovery location; preserve both
@@ -67,10 +68,21 @@ conversion with record IDs. The relation step keeps established endpoint cleanup
 duplicate removal, and derived-mention rebuilding. Ambiguous endpoint names and
 malformed manual relation attributes block the upgrade.
 
-Only an unnormalized relation schema resets old command history and edit sessions.
-Worlds already marked `wikilink_relations_schema_version = 2` preserve their history.
+Migration `006_ordered_command_history` resets legacy command history to establish
+an ordered undo/redo manifest, even when relation formats were already normalized.
+The pre-upgrade recovery bundle retains the original history and its artifacts.
+New commands use per-world version-2 stack metadata; reopening a current world
+does not reset it again. Migration `005_region_holes` remains a format gate that
+preserves existing geometry payloads.
 External command artifacts are never deleted by migrations. When existing history
 is reset, startup tells the user where it was archived.
+
+Version-six snapshots may contain Python's `Infinity` encoding for an unlimited
+layer zoom. Migration `008_portable_history_index` replaces the SQLite 3.45 JSON5
+index introduced by migration 007. Strict JSON uses the command identity index.
+A separate partial index finds legacy payloads for Python to decode. The upgrade
+preserves command rows, stack manifests and external artifacts verbatim.
+New layer-property snapshots encode unlimited zoom as JSON null.
 
 Read-only opens inspect without creating schema, stamping a ledger, changing
 journal mode, or producing backups. Reopening a current world validates it without

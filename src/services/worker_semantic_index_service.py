@@ -5,9 +5,8 @@ from __future__ import annotations
 import logging
 import subprocess
 import sys
-import traceback
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 from src.core.semantic_config import (
     SEMANTIC_COMPLETION_ENABLE_EMBEDDING,
@@ -18,6 +17,7 @@ from src.services.db_service import DatabaseService
 
 if TYPE_CHECKING:
     from src.services.search_service import SearchService
+    from src.services.semantic_index_task import SemanticIndexTask
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +32,7 @@ class SemanticIndexNotifications:
     rebuild_progress: Callable[[int, int, int], None]
     rebuild_finished: Callable[[int, int, int], None]
     suggestions_ready: Callable[[str, list[str]], None]
+    job_state: Callable[[dict[str, Any]], None] = lambda _snapshot: None
 
 
 class WorkerSemanticIndexService:
@@ -41,16 +42,17 @@ class WorkerSemanticIndexService:
         """Bind the worker's existing signal emitters without owning its QObject."""
         self._notifications = notifications
         self._search_service: SearchService | None = None
-        self._embedding_in_progress = False
-        self._pending_embeddings: set[tuple[str, str, tuple[str, ...] | None]] = set()
+        self._task: SemanticIndexTask | None = None
         self._semantic_probe_ran = False
         self._semantic_probe_ok = True
 
     def reset_database(self) -> None:
         """Discard state bound to the previous database connection."""
         self._search_service = None
-        self._embedding_in_progress = False
-        self._pending_embeddings.clear()
+        if self._task is not None:
+            self._task.close()
+            self._task.deleteLater()
+            self._task = None
 
     def _get_search_service(
         self, db_service: DatabaseService | None
@@ -69,76 +71,29 @@ class WorkerSemanticIndexService:
         self._search_service = create_search_service(conn)
         return self._search_service
 
+    def _index_task(self, database: DatabaseService) -> SemanticIndexTask:
+        """Create the scheduler lazily with the database worker's affinity."""
+        from src.services.semantic_index_task import SemanticIndexTask
+
+        if self._task is None:
+            self._task = SemanticIndexTask(database, self._notifications)
+        return self._task
+
     def index_object(
         self,
         db_service: DatabaseService | None,
         object_type: str,
-        object_id: str,
+        object_id: str | list[str],
         excluded_attributes: list[str] | None = None,
     ) -> None:
-        """Queue an embedding behind any active embedding operation."""
+        """Queue detached identities and return before model initialization."""
         if db_service is None:
             return
-        if self._embedding_in_progress:
-            self._pending_embeddings.add(
-                (
-                    object_type,
-                    object_id,
-                    tuple(excluded_attributes) if excluded_attributes else None,
-                )
-            )
-            logger.debug(
-                "[Worker] Embedding already in progress, queuing %s %s",
-                object_type,
-                object_id,
-            )
-            return
-        self._do_index_object(db_service, object_type, object_id, excluded_attributes)
-
-    def _do_index_object(
-        self,
-        db_service: DatabaseService,
-        object_type: str,
-        object_id: str,
-        excluded_attributes: list[str] | None,
-    ) -> None:
-        """Index one object, then drain pending requests sequentially."""
-        self._embedding_in_progress = True
-        try:
-            self._notifications.operation_started(
-                f"Indexing {object_type} {object_id}..."
-            )
-            search_service = self._get_search_service(db_service)
-            if search_service is None:
-                raise RuntimeError("Search service unavailable")
-            if object_type == "entity":
-                search_service.index_entity(object_id, excluded_attributes)
-            elif object_type == "event":
-                search_service.index_event(object_id, excluded_attributes)
-            else:
-                raise ValueError(f"Unknown object type: {object_type}")
-            self._notifications.operation_finished(
-                f"Indexed {object_type} {object_id}."
-            )
-        except Exception:
-            logger.error("Failed to index %s: %s", object_type, traceback.format_exc())
-            self._notifications.error_occurred(
-                f"Failed to index {object_type} {object_id}."
-            )
-        finally:
-            self._embedding_in_progress = False
-            self._process_pending_embeddings(db_service)
-
-    def _process_pending_embeddings(self, db_service: DatabaseService) -> None:
-        """Process the next pending embedding with its saved exclusions."""
-        if not self._pending_embeddings:
-            return
-        object_type, object_id, exclusions = self._pending_embeddings.pop()
-        excluded_attributes = list(exclusions) if exclusions else None
-        logger.debug(
-            "[Worker] Processing queued embedding for %s %s", object_type, object_id
+        identifiers = [object_id] if isinstance(object_id, str) else object_id
+        self._index_task(db_service).enqueue(
+            [(object_type, identifier) for identifier in identifiers],
+            excluded_attributes or [],
         )
-        self._do_index_object(db_service, object_type, object_id, excluded_attributes)
 
     def rebuild_search_index(
         self,
@@ -146,46 +101,11 @@ class WorkerSemanticIndexService:
         object_type: str,
         excluded_attributes: list[str] | None = None,
     ) -> None:
-        """Rebuild the index with the worker's existing signal contract."""
-        signals = self._notifications
+        """Queue a yielding rebuild with the existing completion signals."""
         if db_service is None:
-            signals.error_occurred("Database not ready for index rebuild.")
+            self._notifications.error_occurred("Database not ready for index rebuild.")
             return
-        try:
-            try:
-                search_service = self._get_search_service(db_service)
-            except ImportError as exc:
-                signals.error_occurred(str(exc).split("\n")[0])
-                signals.rebuild_finished(0, 0, 1)
-                return
-            if search_service is None:
-                signals.error_occurred("Search service unavailable for rebuild.")
-                signals.rebuild_finished(0, 0, 1)
-                return
-
-            types = ["entity", "event"] if object_type == "all" else [object_type]
-            signals.operation_started("Rebuilding search index...")
-
-            def report_progress(done: int, total: int) -> None:
-                percentage = 100 if total == 0 else int(done * 100 / total)
-                signals.rebuild_progress(done, total, percentage)
-
-            result = search_service.rebuild_index(
-                object_types=types,
-                excluded_attributes=excluded_attributes or [],
-                progress_callback=report_progress,
-            )
-            signals.rebuild_finished(result.indexed, result.unchanged, result.failed)
-            signals.operation_finished(
-                "Index rebuilt: "
-                f"{result.indexed} indexed, "
-                f"{result.unchanged} unchanged, "
-                f"{result.failed} failed."
-            )
-        except Exception:
-            logger.error("Index rebuild failed: %s", traceback.format_exc())
-            signals.error_occurred("Index rebuild failed.")
-            signals.rebuild_finished(0, 0, 1)
+        self._index_task(db_service).rebuild(object_type, excluded_attributes or [])
 
     def query_semantic_suggestions(
         self,

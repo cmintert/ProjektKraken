@@ -997,97 +997,6 @@
       "source": "text_dim_color = theme.get(\"text_dim\", \"#9E9E9E\")"
     },
     {
-      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem._draw_edit_handles|literal-color|baa9d4300a357f02",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem._draw_edit_handles; migrate this expression when its presentation path is next touched.",
-      "source": "handle_border = QColor(\"#ffffff\")"
-    },
-    {
-      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem._draw_edit_handles|local-color-derivation|092b2d4d37943aee",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem._draw_edit_handles; migrate this expression when its presentation path is next touched.",
-      "source": "handle_fill.setAlpha(220)"
-    },
-    {
-      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem._draw_edit_handles|local-color-derivation|802cea12bcf05074",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem._draw_edit_handles; migrate this expression when its presentation path is next touched.",
-      "source": "handle_border.setAlpha(200)"
-    },
-    {
-      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem._draw_label|literal-color|8247d3ddc88fab21",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem._draw_label; migrate this expression when its presentation path is next touched.",
-      "source": "bg = QColor(theme.get(\"app_bg\", \"#2B2B2B\"))"
-    },
-    {
-      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem._draw_label|literal-color|d139cb99d3390891",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem._draw_label; migrate this expression when its presentation path is next touched.",
-      "source": "text_col = QColor(theme.get(\"text_main\", \"#E0E0E0\"))"
-    },
-    {
-      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem._draw_label|literal-color|d65e1faca512a558",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem._draw_label; migrate this expression when its presentation path is next touched.",
-      "source": "border = QColor(theme.get(\"accent_secondary\", \"#4DA6FF\"))"
-    },
-    {
-      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem._draw_label|local-color-derivation|02bfbe6315fbbc6b",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem._draw_label; migrate this expression when its presentation path is next touched.",
-      "source": "bg.setAlpha(200)"
-    },
-    {
-      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem._draw_label|local-color-derivation|2ba595ef712bc9cd",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem._draw_label; migrate this expression when its presentation path is next touched.",
-      "source": "border.setAlpha(180)"
-    },
-    {
-      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem.paint|literal-color|5056cf128952d12a",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem.paint; migrate this expression when its presentation path is next touched.",
-      "source": "primary = theme.get(\"primary\", \"#FF9900\")"
-    },
-    {
-      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem.paint|literal-color|d65e1faca512a558",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem.paint; migrate this expression when its presentation path is next touched.",
-      "source": "accent = theme.get(\"accent_secondary\", \"#4DA6FF\")"
-    },
-    {
-      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem.paint|local-color-derivation|787d880929ae32b8",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem.paint; migrate this expression when its presentation path is next touched.",
-      "source": "outline_color.setAlpha(200)"
-    },
-    {
-      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem.paint|local-color-derivation|9c7e377fdd5de3cb",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem.paint; migrate this expression when its presentation path is next touched.",
-      "source": "fill_color.setAlpha(45)"
-    },
-    {
-      "key": "src/gui/widgets/map/detail_map_footprint_item.py|DetailMapFootprintItem.paint|local-color-derivation|b98b4b7409b3af60",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in DetailMapFootprintItem.paint; migrate this expression when its presentation path is next touched.",
-      "source": "tint.setAlpha(25)"
-    },
-    {
       "key": "src/gui/widgets/map/interaction_handler.py|_safe_color_css|literal-color|dad8252028023902",
       "count": 1,
       "category": "legacy",
@@ -1814,20 +1723,6 @@
       "category": "legacy",
       "reason": "KRT-54 legacy presentation in MapWidget._apply_mode_indicator_style; migrate this expression when its presentation path is next touched.",
       "source": "\"drawing\": theme.get(\"accent_secondary\", \"#3498db\"),"
-    },
-    {
-      "key": "src/gui/widgets/map_widget.py|MapWidget.set_breadcrumb|literal-color|d65e1faca512a558",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in MapWidget.set_breadcrumb; migrate this expression when its presentation path is next touched.",
-      "source": "link_color = theme.get(\"accent_secondary\", \"#4DA6FF\")"
-    },
-    {
-      "key": "src/gui/widgets/map_widget.py|MapWidget.set_breadcrumb|literal-color|fb08bc1e1cfab1fc",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in MapWidget.set_breadcrumb; migrate this expression when its presentation path is next touched.",
-      "source": "dim_color = theme.get(\"text_dim\", \"#9E9E9E\")"
     },
     {
       "key": "src/gui/widgets/relation_type_picker.py|RelationTypePicker._apply_theme|literal-color|1c9cff88918b9af8",

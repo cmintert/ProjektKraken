@@ -1807,6 +1807,17 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_mode_panel_style(object_name: str) -> str:
+        """Give an editing control panel neutral, theme-owned mode presentation."""
+        theme = ThemeManager().get_theme()
+        return (
+            f"QFrame#{object_name} {{ background-color: {theme['mode_bg']}; "
+            f"border: 1px solid {theme['mode_border']}; border-radius: 4px; }}"
+            f"QFrame#{object_name} QLabel, QFrame#{object_name} QCheckBox {{ "
+            f"color: {theme['mode_text']}; background-color: transparent; border: none; }}"
+        )
+
+    @staticmethod
     def get_legend_overlay_style() -> str:
         """Returns QSS for the floating raster legend overlay.
 

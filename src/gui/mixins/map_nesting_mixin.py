@@ -1,7 +1,6 @@
 """Map Nesting Mixin.
 
-Provides the dialog-and-signal workflow for marking a map as the
-world's master map and for registering other maps as detail children.
+Provides hierarchy intent dialogs and retains legacy master-map slots.
 The mixin is intentionally thin: business logic stays in services and
 commands; this layer only collects user intent and emits widget-level
 signals that ``MapHandler`` translates into commands.
@@ -10,13 +9,16 @@ signals that ``MapHandler`` translates into commands.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from typing import TYPE_CHECKING, cast
 
 from PySide6.QtCore import SignalInstance, Slot
 from PySide6.QtWidgets import QComboBox, QDialog, QInputDialog, QMessageBox, QWidget
 
-from src.gui.constants import MAP_ROLE_DETAIL, MAP_ROLE_MASTER
+from src.gui.constants import MAP_ROLE_MASTER
+from src.gui.dialogs.map_hierarchy_dialog import MapHierarchyDialog
 from src.gui.dialogs.register_detail_map_dialog import RegisterDetailMapDialog
+from src.services.map_reparenting import preservation_options
 
 if TYPE_CHECKING:
     from src.core.map import Map
@@ -38,14 +40,29 @@ class MapNestingMixin:
 
     if TYPE_CHECKING:
         map_selector: QComboBox
+
         @property
         def maps_data(self) -> list[Map]:
             """Return the maps cached by the host widget."""
             ...
+
         set_master_map_requested: SignalInstance
+        make_map_independent_requested: SignalInstance
+        placement_requested: SignalInstance
         register_detail_map_requested: SignalInstance
+        preserve_map_position_requested: SignalInstance
         edit_footprint_requested: SignalInstance
         _pending_footprint_edit_id: str | None
+
+        def request_edit_transition(
+            self, reason: str, continuation: Callable[[], None]
+        ) -> None:
+            """Resolve protected authoring state before running a continuation."""
+            ...
+
+        def select_map(self, map_id: str) -> None:
+            """Navigate with the host's protected transition."""
+            ...
 
         def get_selected_map_id(self) -> str | None:
             """Return the active map identifier."""
@@ -54,6 +71,10 @@ class MapNestingMixin:
         def _update_mode_indicator(self) -> None:
             """Refresh the host widget's mode indicator."""
             ...
+
+    def _show_hierarchy_error(self, title: str, message: str) -> None:
+        """Present application feedback without deciding the hierarchy operation."""
+        QMessageBox.warning(cast(QWidget, self), title, message)
 
     @Slot()
     def _on_set_master_map_clicked(self) -> None:
@@ -74,12 +95,15 @@ class MapNestingMixin:
     def _on_register_detail_map_clicked(self) -> None:
         """Open the parent-picker dialog and emit a registration signal.
 
-        Phase 1 generates a default centred footprint; Phase 3 will
-        replace the dialog-driven default with a canvas placement
-        tool.
+        Parent choice emits provisional intent. The footprint editor confirms
+        placement before the application dispatches a structural command.
 
         """
         detail_map_id = self.get_selected_map_id()
+        self._choose_parent_for(detail_map_id)
+
+    def _choose_parent_for(self, detail_map_id: str | None) -> None:
+        """Collect a destination and emit exact-move or manual-preview intent."""
         if not detail_map_id:
             return
         maps = list(self.maps_data or [])
@@ -93,7 +117,8 @@ class MapNestingMixin:
             QMessageBox.information(
                 cast(QWidget, self),
                 "No Parent Available",
-                "Designate a master map before registering a detail map.",
+                "Create another independent map, or choose a destination that can "
+                "accept this map and its descendants within five levels.",
             )
             return
 
@@ -103,16 +128,39 @@ class MapNestingMixin:
             candidate_parents=candidates,
             resolve_image_path=resolver,
             parent=cast(QWidget, self),
+            preservation_options=preservation_options(maps, detail_map_id, candidates),
         )
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
         parent_id = dialog.selected_parent_id()
+        if parent_id and dialog.preserves_position():
+            self.preserve_map_position_requested.emit(detail_map_id, parent_id)
+            return
         registration = dialog.registration()
         if not parent_id or registration is None:
             return
-        self.register_detail_map_requested.emit(
-            detail_map_id, parent_id, registration
+        self.register_detail_map_requested.emit(detail_map_id, parent_id, registration)
+
+    @Slot()
+    def _on_manage_hierarchy_clicked(self) -> None:
+        """Open the hierarchy intent picker through the protected edit guard."""
+        self.request_edit_transition("manage map hierarchy", self._show_hierarchy)
+
+    def _show_hierarchy(self) -> None:
+        dialog = MapHierarchyDialog(
+            list(self.maps_data), self.get_selected_map_id(), cast(QWidget, self)
         )
+        if dialog.exec() != QDialog.DialogCode.Accepted or dialog.intent is None:
+            return
+        action, map_id = dialog.intent
+        if action == "attach":
+            self._choose_parent_for(map_id)
+        elif action == "detach":
+            self.make_map_independent_requested.emit(map_id)
+        elif action == "navigate":
+            self.select_map(map_id)
+        else:
+            self.placement_requested.emit(map_id)
 
     @Slot()
     def _on_edit_footprint_clicked(self) -> None:
@@ -138,17 +186,14 @@ class MapNestingMixin:
             )
             return
 
-        footprint_items = view._footprint_items
+        footprint_items = view.footprint_names()
         if footprint_items:
             # Footprints are visible — pick one and enter edit mode directly.
             if len(footprint_items) == 1:
                 fid = next(iter(footprint_items))
             else:
                 id_list = list(footprint_items.keys())
-                display = [
-                    f"{footprint_items[k]._name} ({k[:8]})"
-                    for k in id_list
-                ]
+                display = [f"{footprint_items[k]} ({k[:8]})" for k in id_list]
                 chosen, ok = QInputDialog.getItem(
                     cast(QWidget, self),
                     "Edit Footprint",
@@ -168,20 +213,13 @@ class MapNestingMixin:
         map_id = self.get_selected_map_id()
         if not map_id:
             return
-        active_map = next(
-            (m for m in (self.maps_data or []) if m.id == map_id), None
-        )
+        active_map = next((m for m in (self.maps_data or []) if m.id == map_id), None)
         if active_map is None:
-            return
-        if (active_map.attributes or {}).get("map_role") != MAP_ROLE_DETAIL:
             return
         parent_id = (active_map.attributes or {}).get("parent_map_id")
         if not parent_id:
             return
-        self._pending_footprint_edit_id = map_id
-        index = self.map_selector.findData(parent_id)
-        if index >= 0:
-            self.map_selector.setCurrentIndex(index)
+        self.placement_requested.emit(map_id)
 
     def _try_activate_pending_footprint_edit(self) -> None:
         """Activate a deferred footprint edit once the parent map has loaded.
@@ -197,7 +235,7 @@ class MapNestingMixin:
         view = getattr(self, "view", None)
         if view is None:
             return
-        if fid not in view._footprint_items:
+        if fid not in view.footprint_names():
             return
         self._pending_footprint_edit_id = None
         view.start_footprint_edit(fid)

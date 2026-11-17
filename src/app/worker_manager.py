@@ -52,7 +52,7 @@ class WorkerManager(QObject):
 
     summary_requested = Signal(object)
     rebuild_index_requested = Signal(str, list)  # → worker.rebuild_search_index
-    _index_single_requested = Signal(str, str, list)  # → worker.index_object
+    _index_single_requested = Signal(str, object, list)  # → worker.index_object
     load_ai_preferences_requested = Signal()
     save_ai_preferences_requested = Signal(dict)
     initialize_history_requested = Signal(str)
@@ -60,10 +60,7 @@ class WorkerManager(QObject):
     save_world_theme_requested = Signal(str)
     load_embedding_stats_requested = Signal()
 
-    # Delay (ms) after the last save before firing the re-embed request.
-    # Prevents running ONNX/numpy-heavy embedding code on every keystroke-
-    # triggered autosave, which crashes when native threads collide with
-    # the Chromium WebEngine graph view running on the main thread.
+    # Coalesce rapid saves and mass-import notifications before submission.
     INDEX_DEBOUNCE_MS = 10_000
 
     def __init__(self, main_window: "MainWindow") -> None:
@@ -424,13 +421,8 @@ class WorkerManager(QObject):
     def _on_index_object_requested(self, object_type: str, object_id: str) -> None:
         """Queue a re-embed request with debounce.
 
-        Called when DataHandler emits ``index_object_requested`` after a
-        Create/Update command finishes.  Instead of firing immediately
-        (which would run ONNX-heavy code on the worker thread while the
-        Chromium graph view is still updating), we debounce: each new
-        request restarts a single-shot timer.  The actual embed fires
-        only after :pyattr:`INDEX_DEBOUNCE_MS` of silence, by which time
-        the UI has settled and the native-thread collision is avoided.
+        Retain saved identities until the debounce expires. Inference runs on
+        the feature executor after short database-worker snapshot stages.
 
         Args:
             object_type: 'entity' or 'event'.
@@ -472,13 +464,12 @@ class WorkerManager(QObject):
 
         excluded = list(getattr(self, "index_excluded_attributes", []))
 
-        for object_type, object_id in pending:
-            logger.debug(
-                "[WorkerManager] Flushing debounced re-embed: %s %s",
-                object_type,
-                object_id,
-            )
-            self._index_single_requested.emit(object_type, object_id, excluded)
+        for object_type in ("entity", "event"):
+            identifiers = [
+                identifier for kind, identifier in pending if kind == object_type
+            ]
+            if identifiers:
+                self._index_single_requested.emit(object_type, identifiers, excluded)
 
     @Slot(bool)
     def on_db_initialized(self, success: bool) -> None:

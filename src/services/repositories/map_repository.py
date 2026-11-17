@@ -8,7 +8,8 @@ import logging
 from typing import Iterator, List, Optional
 
 from src.core.map import Map
-from src.core.map_constants import MAP_ROLE_DETAIL, MAP_ROLE_MASTER
+from src.core.map_constants import MAP_ROLE_MASTER
+from src.core.map_hierarchy import MapHierarchy
 from src.core.marker import Marker
 from src.services.repositories.base_repository import BaseRepository
 
@@ -185,15 +186,7 @@ class MapRepository(BaseRepository):
             ``parent_id``.
 
         """
-        children: List[Map] = []
-        for m in maps:
-            attrs = m.attributes or {}
-            if (
-                attrs.get("map_role") == MAP_ROLE_DETAIL
-                and attrs.get("parent_map_id") == parent_id
-            ):
-                children.append(m)
-        return children
+        return MapHierarchy(maps).children(parent_id)
 
     @classmethod
     def iter_descendants(cls, parent_id: str, maps: List[Map]) -> Iterator[Map]:
@@ -211,16 +204,7 @@ class MapRepository(BaseRepository):
             broken via a visited-set guard.
 
         """
-        visited: set[str] = set()
-        stack = [parent_id]
-        while stack:
-            current = stack.pop()
-            for child in cls.get_children_of(current, maps):
-                if child.id in visited:
-                    continue
-                visited.add(child.id)
-                yield child
-                stack.append(child.id)
+        yield from MapHierarchy(maps).descendants(parent_id)
 
     # Marker operations
     def insert_marker(self, marker: Marker) -> str:

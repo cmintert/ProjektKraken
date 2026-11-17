@@ -24,8 +24,6 @@ from src.core.entities import Entity
 from src.core.events import Event
 from src.services.search_service import (
     EmbeddingProvider,
-    IndexRebuildCounts,
-    IndexRebuildResult,
     SearchService,
 )
 
@@ -146,8 +144,15 @@ def _insert_entities(conn, count):
         conn.execute(
             """INSERT INTO entities (id, type, name, description, attributes,
                created_at, modified_at) VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (entity.id, entity.type, entity.name, entity.description,
-             json.dumps(entity.attributes), entity.created_at, entity.modified_at),
+            (
+                entity.id,
+                entity.type,
+                entity.name,
+                entity.description,
+                json.dumps(entity.attributes),
+                entity.created_at,
+                entity.modified_at,
+            ),
         )
         ids.append(entity.id)
     conn.commit()
@@ -159,16 +164,26 @@ def _insert_events(conn, count):
     ids = []
     for i in range(count):
         event = Event(
-            name=f"Event_{i}", type="test", lore_date=float(i),
+            name=f"Event_{i}",
+            type="test",
+            lore_date=float(i),
             description=f"Event desc {i}",
         )
         conn.execute(
             """INSERT INTO events (id, type, name, lore_date, lore_duration,
                description, attributes, created_at, modified_at)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (event.id, event.type, event.name, event.lore_date,
-             event.lore_duration, event.description,
-             json.dumps(event.attributes), event.created_at, event.modified_at),
+            (
+                event.id,
+                event.type,
+                event.name,
+                event.lore_date,
+                event.lore_duration,
+                event.description,
+                json.dumps(event.attributes),
+                event.created_at,
+                event.modified_at,
+            ),
         )
         ids.append(event.id)
     conn.commit()
@@ -186,6 +201,7 @@ class TestBatchEmbedding:
     def test_rebuild_batch_size_constant_exists(self):
         """REBUILD_BATCH_SIZE should be defined in search_service module."""
         from src.services import search_service as mod
+
         assert hasattr(mod, "REBUILD_BATCH_SIZE")
         assert isinstance(mod.REBUILD_BATCH_SIZE, int)
         assert mod.REBUILD_BATCH_SIZE > 0
@@ -271,9 +287,7 @@ class TestBatchEmbedding:
         cursor = search_db.execute("SELECT COUNT(*) FROM embeddings")
         assert cursor.fetchone()[0] == count
 
-    def test_rebuild_index_reports_monotonic_progress(
-        self, search_db, mock_provider
-    ):
+    def test_rebuild_index_reports_monotonic_progress(self, search_db, mock_provider):
         """Progress starts at zero and reaches the total without regressing."""
         from src.services.search_service import REBUILD_BATCH_SIZE
 
@@ -352,90 +366,54 @@ class TestWorkerRebuildSignals:
     def test_worker_has_index_rebuild_progress_signal(self):
         """DatabaseWorker should have index_rebuild_progress signal."""
         from src.services.worker import DatabaseWorker
+
         worker = DatabaseWorker("test.db")
         assert hasattr(worker, "index_rebuild_progress")
 
     def test_worker_has_index_rebuild_finished_signal(self):
         """DatabaseWorker should have index_rebuild_finished signal."""
         from src.services.worker import DatabaseWorker
+
         worker = DatabaseWorker("test.db")
         assert hasattr(worker, "index_rebuild_finished")
 
     def test_worker_has_rebuild_search_index_slot(self):
         """DatabaseWorker should have rebuild_search_index method."""
         from src.services.worker import DatabaseWorker
+
         worker = DatabaseWorker("test.db")
         assert hasattr(worker, "rebuild_search_index")
         assert callable(worker.rebuild_search_index)
 
-    @patch("src.services.worker.DatabaseService")
-    def test_rebuild_search_index_emits_finished(self, mock_db_cls):
-        """rebuild_search_index should emit index_rebuild_finished."""
+    def test_rebuild_search_index_emits_finished_and_progress(
+        self, qapp, qtbot, db_service, monkeypatch
+    ):
+        """Queued batch work delivers terminal counts and progress."""
         from src.services.worker import DatabaseWorker
 
-        worker = DatabaseWorker("test.db")
-        worker.db_service = MagicMock()
-        mock_conn = MagicMock()
-        worker.db_service.get_connection.return_value = mock_conn
-
-        # Mock search service
-        with patch("src.services.search_service.create_search_service") as mock_create:
-            mock_svc = MagicMock()
-            mock_svc.rebuild_index.return_value = IndexRebuildResult(
-                per_type={
-                    "entity": IndexRebuildCounts(indexed=5),
-                    "event": IndexRebuildCounts(indexed=2, unchanged=1),
-                }
-            )
-            mock_create.return_value = mock_svc
-
-            finished_spy = MagicMock()
-            worker.index_rebuild_finished.connect(finished_spy)
-
+        provider = MagicMock()
+        provider.get_model_name.return_value = "test:progress"
+        provider.get_dimension.return_value = 3
+        provider.embed.side_effect = lambda texts: np.ones((len(texts), 3))
+        monkeypatch.setattr(
+            "src.services.semantic_index_task.create_provider",
+            lambda **kwargs: provider,
+        )
+        for i in range(8):
+            db_service.insert_entity(Entity(name=f"Subject {i}", type="Person"))
+        worker = DatabaseWorker(":memory:")
+        worker.db_service = db_service
+        finished, progress = [], []
+        worker.index_rebuild_finished.connect(lambda *counts: finished.append(counts))
+        worker.index_rebuild_progress.connect(lambda *values: progress.append(values))
+        try:
             worker.rebuild_search_index("all", [])
-
-            finished_spy.assert_called_once()
-            finished_spy.assert_called_once_with(7, 1, 0)
-
-    @patch("src.services.worker.DatabaseService")
-    def test_rebuild_search_index_emits_progress(self, mock_db_cls):
-        """rebuild_search_index should emit index_rebuild_progress during rebuild."""
-        from src.services.worker import DatabaseWorker
-
-        worker = DatabaseWorker("test.db")
-        worker.db_service = MagicMock()
-        mock_conn = MagicMock()
-        worker.db_service.get_connection.return_value = mock_conn
-
-        with patch("src.services.search_service.create_search_service") as mock_create:
-            mock_svc = MagicMock()
-            result = IndexRebuildResult(
-                per_type={
-                    "entity": IndexRebuildCounts(indexed=10),
-                    "event": IndexRebuildCounts(indexed=5),
-                }
-            )
-
-            def rebuild_with_progress(**kwargs):
-                callback = kwargs["progress_callback"]
-                callback(0, 15)
-                callback(10, 15)
-                callback(15, 15)
-                return result
-
-            mock_svc.rebuild_index.side_effect = rebuild_with_progress
-            mock_create.return_value = mock_svc
-
-            progress_spy = MagicMock()
-            worker.index_rebuild_progress.connect(progress_spy)
-
-            worker.rebuild_search_index("all", [])
-
-            assert [call.args for call in progress_spy.call_args_list] == [
-                (0, 15, 0),
-                (10, 15, 66),
-                (15, 15, 100),
-            ]
+            assert finished == []
+            qtbot.waitUntil(lambda: bool(finished), timeout=5000)
+            assert finished == [(8, 0, 0)]
+            assert progress[-1] == (8, 8, 100)
+        finally:
+            worker._semantic_index.reset_database()
 
 
 # =============================================================================
@@ -449,6 +427,7 @@ class TestAISettingsDialogProgress:
     @pytest.fixture
     def dialog(self, qapp):
         from src.gui.dialogs.ai_settings_dialog import AISettingsDialog
+
         dlg = AISettingsDialog()
         yield dlg
         dlg.close()
@@ -500,6 +479,7 @@ class TestAISettingsDialogProgress:
         from PySide6.QtCore import QSettings
 
         from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         val = settings.value("ai_auto_index_on_save", False, type=bool)
         assert val is True
@@ -519,7 +499,10 @@ class TestCommandResultIncludesId:
 
         mock_db = MagicMock()
         old_event = Event(
-            id="evt-42", name="Original", type="test", lore_date=1.0,
+            id="evt-42",
+            name="Original",
+            type="test",
+            lore_date=1.0,
         )
         mock_db.get_event.return_value = old_event
 
@@ -566,11 +549,10 @@ class TestAISearchManagerAsyncRebuild:
     @pytest.fixture
     def manager(self, mock_window):
         from src.app.ai_search_manager import AISearchManager
+
         return AISearchManager(mock_window)
 
-    def test_rebuild_does_not_use_gui_db_service_connection(
-        self, manager, mock_window
-    ):
+    def test_rebuild_does_not_use_gui_db_service_connection(self, manager, mock_window):
         """rebuild_search_index should NOT access gui_db_service._connection."""
         mock_window.worker = MagicMock()
         mock_window.gui_db_service = MagicMock()
@@ -594,25 +576,23 @@ class TestAISearchManagerAsyncRebuild:
         assert callable(manager.on_index_rebuild_finished)
 
     def test_on_index_rebuild_progress_updates_status(self, manager, mock_window):
-        """on_index_rebuild_progress should update the status bar."""
+        """Index progress updates Settings while foreground status stays visible."""
         manager.on_index_rebuild_progress(45, 120, 37)
-        mock_window.status_bar.showMessage.assert_called()
-        msg = mock_window.status_bar.showMessage.call_args[0][0]
-        assert "45" in msg or "37" in msg
+        mock_window.status_bar.showMessage.assert_not_called()
 
     def test_on_index_rebuild_finished_shows_result(self, manager, mock_window):
-        """on_index_rebuild_finished should show success in status bar."""
+        """on_index_rebuild_finished should show success in AI search panel."""
         manager.on_index_rebuild_finished(90, 10, 0)
-        mock_window.status_bar.showMessage.assert_called()
-        msg = mock_window.status_bar.showMessage.call_args[0][0]
+        mock_window.ai_search_panel.set_status.assert_called()
+        msg = mock_window.ai_search_panel.set_status.call_args[0][0]
         assert "90" in msg
         assert "10" in msg
 
     def test_on_index_rebuild_finished_shows_failures(self, manager, mock_window):
         """on_index_rebuild_finished should mention failures when present."""
         manager.on_index_rebuild_finished(90, 5, 5)
-        mock_window.status_bar.showMessage.assert_called()
-        msg = mock_window.status_bar.showMessage.call_args[0][0]
+        mock_window.ai_search_panel.set_status.assert_called()
+        msg = mock_window.ai_search_panel.set_status.call_args[0][0]
         assert "5" in msg  # failure count should be visible
 
 
@@ -627,6 +607,7 @@ class TestDataHandlerAutoIndex:
     @pytest.fixture
     def handler(self, qapp):
         from src.app.data_handler import DataHandler
+
         return DataHandler()
 
     def test_handler_has_index_object_requested_signal(self, handler):
@@ -750,6 +731,7 @@ class TestWorkerManagerAutoIndex:
     def test_worker_manager_has_index_helper(self):
         """WorkerManager should have _on_index_object_requested helper."""
         from src.app.worker_manager import WorkerManager
+
         wm = WorkerManager(MagicMock())
         assert hasattr(wm, "_on_index_object_requested")
         assert callable(wm._on_index_object_requested)

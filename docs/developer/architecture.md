@@ -1,5 +1,111 @@
 # Architecture and Threading
 
+## Map hierarchy integrity
+
+`MapHierarchy` in the core layer owns copied map snapshots and interprets parent
+references independently of legacy roles. Traversal is iterative; proposed moves
+validate ancestry and the complete subtree against the five-level limit.
+Repository traversal delegates to this model, including the map deletion guard.
+Diagnostics report legacy role inconsistencies without rewriting authored data.
+
+`ChangeMapParentCommand` owns structural mutation and deep before/after snapshots
+of only the hierarchy keys. It uses the worker-owned database through the normal
+command path and preserves unrelated attributes on undo. The command is registered
+for serialization and is used by the hierarchy authoring workflow. Legacy
+master/detail commands remain registered for compatibility with saved history.
+
+`MapHierarchyCoordinator` receives explicit `MapHierarchyPorts` callbacks and view
+access rather than the map widget or application window. It owns provisional
+placement intent, expected hierarchy
+snapshots, command acknowledgement and hierarchy presentation over cached map
+records. `MapHandler` delegates its existing hierarchy entry points to it, while
+`AppCoordinator` composes it with the existing protected-edit guard and queued
+worker acknowledgements. No new worker slot, SQL access in the GUI, or
+ConnectionManager responsibility is introduced.
+
+The temporary hierarchy dialog collects intent. The parent picker supplies a
+suggested image placement; the existing footprint editor owns direct manipulation
+and the shared Apply/Cancel lifecycle. Confirmation submits one structural command.
+Failure retains the preview; externally changed hierarchy retains the preview
+with Apply disabled until explicit cancellation. Ancestor breadcrumbs and direct
+children use canonical parent references. Viewport state stays within the GUI
+thread and is restored on return or cancellation.
+
+`map_reparenting` computes A2 placement proposals over detached snapshots. It
+composes source-to-root and inverse destination-to-root affine transforms within
+a registered hierarchy, rejecting missing, invalid or numerically unstable
+alignments. The result must be representable in the existing version-1
+`aspect_locked_affine` format; shear and reflection require explicit manual
+placement. No approximation or new registration format is introduced.
+`PreserveMapPlacementCommand` recomputes on the worker and guards hierarchy
+snapshots for the source and both ancestry chains before mutation or redo.
+Inherited before/after snapshots provide exact, restart-safe undo and redo while
+retaining unrelated attributes. Descendant registrations and local coordinates
+stay unchanged. The parent picker displays service-supplied availability; the
+coordinator resolves protected edits before dispatch without navigating the canvas.
+
+## Connected map display
+
+`MapCoordinates` validates saved registration chains and caches full affine
+map-to-map transforms within a shared root. Unlike reparenting, a derived display
+can represent shear without persisting a new registration format.
+`MapProjector` resolves trajectories at the playhead, source visibility/time,
+authored target precedence, ambiguity and conservative scale eligibility. Frames
+contain source identity and normalized display coordinates, never new markers.
+
+`MapProjectionReader` is a feature-owned QObject moved to the existing database
+thread. It reads through repositories without repairing invalid saved tracks;
+cached snapshots invalidate after commands, map/world/calendar changes. Requests
+and results contain serializable values. `MapProjectionCoordinator` coalesces
+changes with one request in flight and rejects obsolete generation replies.
+`connected_map_composition` wires narrow ports through AppCoordinator. No new
+DatabaseWorker, MapHandler or ConnectionManager feature responsibility is added.
+The opt-in overlay is separate from authored scene items and the Layers tree.
+Source-map navigation follows the existing protected-edit route.
+
+`ProjectedGeometry` is an ephemeral, serializable multipolygon/multiline display
+model. The shared projector resolves canonical dated geometry, compares complete
+unclipped representations (including point-versus-geometry conflicts), then uses
+Shapely affine transformation and unit-map clipping. Every surviving polygon,
+hole and line component is retained. Screen-dependent, topology-preserving
+simplification uses a half-pixel error budget and falls back to unsimplified
+geometry if component or hole counts change. Source topology is cached by marker
+and immutable state identity. Invalid source topology is reported without anchor
+fallback, repair or persistence. The overlay uses independent odd-even rings and
+one selectable source item across all fragments; authoring and Layers remain local.
+Capture serializes detached source inputs on the database thread; chronology,
+topology and projection run on a dedicated feature calculation thread. One
+coalesced pipeline owns both stages, cached geometry and orderly shutdown. No
+database connection or live QObject enters calculation. A blocked-calculation
+regression verifies that queued database reads still complete.
+
+## Persistent command history
+
+`HistoryStore` owns the version-2 per-world stack manifest in `system_meta`.
+The manifest, rather than timestamps or applied flags, defines the reachable
+undo/redo order. `HistoryService` serializes commands and fails closed if an
+active record cannot be reconstructed. Session-only authoring actions establish
+restart boundaries; pruning retains only contiguous reachable stack suffixes.
+An expression index resolves active command identities from the bounded manifest
+without decoding archived command rows on each edit.
+
+`execute_with_history` owns the outer command/history transaction behind the
+existing worker entry points. `command_transactions` defers command callbacks
+until that transaction completes and restores command retry state on rollback.
+Asset stores journal only touched files in temporary storage so failed history
+writes restore raster, attachment and command-artifact files as well as SQL.
+Rollback-hook failures still trigger file recovery. Content digests distinguish
+owned writes from independent replacements, which remain untouched; recovery
+continues for other safe files. A recovery failure retains its temporary directory
+and logs the failure instead of deleting the recovery material. No new worker slot,
+window responsibility or database-service feature API is introduced.
+
+Migration 006 resets legacy command rows after the existing recovery-bundle
+verification. Original history/artifacts remain in that bundle; old artifact
+files are conservatively retained in the world rather than deleted on upgrade.
+Startup delivers detached undo/redo stack dictionaries; the GUI reconstructs
+them without database access and ignores snapshots for another active world.
+
 ## Portable type color assignments
 
 `CategoryPaletteCoordinator` coalesces confirmed world-load and command signals.
@@ -631,3 +737,32 @@ preparation path runs context, RAG and spatial lookups off the GUI thread. An
 immutable prepared-generation record freezes final messages for explicit generation
 from preview, including date-policy inputs and disclosed blocks. No projection is
 persisted and these operations do not enter world command history.
+
+## Asynchronous desktop semantic indexing
+
+`WorkerSemanticIndexService` delegates desktop indexing to a lazily created
+`SemanticIndexTask` with database-worker affinity. Preparation reads at most 32
+records per queued step. `SearchIndexStorage` shares deterministic text building,
+hash checks and vector persistence with the synchronous `SearchService` APIs.
+A single inference executor owns its embedding provider and receives detached
+text batches. Provider construction and dimension discovery also run there.
+Queued replies return vectors to the database worker, which validates content
+and commits accepted results in a short transaction. Inference holds no database
+transaction or connection.
+
+Automatic saves retain the existing debounce and submit identities by type in
+one request. Pending identities are deduplicated. Rebuild scans use keyset pages;
+saved-object updates run before subsequent rebuild pages. Unchanged or deleted
+records are skipped, while changed records are retried with current text.
+Settings refresh, world initialization and database cleanup cancel the old task,
+including replies for a reopened database path. Cleanup invalidates callbacks
+and retires the executor without waiting on the GUI or database thread. Existing
+provider timeouts and Windows subprocess isolation remain in effect.
+
+Queues live only for the current session. Reopening a world requires an explicit
+rebuild to finish abandoned work. Existing progress counters update Settings;
+background progress does not replace foreground status-bar messages. Cancellation
+has a distinct session-scoped lifecycle signal and releases rebuild controls.
+Automated responsiveness tests hold inference blocked while real queued detail
+loads and serialized save commands finish. Native UI acceptance is recorded
+separately from these tests.

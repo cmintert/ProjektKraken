@@ -629,7 +629,7 @@ def test_worker_failure_emits_recovery_and_clears_database(qapp, tmp_path):
 
 
 @pytest.mark.parametrize("version", [1, 2, 3])
-def test_versioned_upgrade_preserves_already_normalized_history(tmp_path, version):
+def test_versioned_upgrade_archives_history_for_ordered_stacks(tmp_path, version):
     path = legacy_world(tmp_path)
     with closing(sqlite3.connect(path)) as conn:
         conn.execute(
@@ -648,17 +648,17 @@ def test_versioned_upgrade_preserves_already_normalized_history(tmp_path, versio
     service = DatabaseService(str(path))
     service.connect()
     assert service.migration_status["upgraded_from"] == version
-    assert service.migration_status["history_archived"] is False
+    assert service.migration_status["history_archived"] is True
     assert (
         service._connection.execute("SELECT COUNT(*) FROM command_history").fetchone()[
             0
         ]
-        == 1
+        == 0
     )
     service.close()
 
 
-def test_event_timing_upgrade_keeps_custom_objects_and_nullable_history(tmp_path):
+def test_event_timing_upgrade_keeps_custom_objects_and_archives_history(tmp_path):
     path = legacy_world(tmp_path)
     with closing(sqlite3.connect(path)) as conn:
         conn.row_factory = sqlite3.Row
@@ -687,9 +687,10 @@ def test_event_timing_upgrade_keeps_custom_objects_and_nullable_history(tmp_path
     assert service.migration_status["upgraded_from"] == 3
     assert dict(connection.execute("SELECT * FROM events").fetchone()) == before
     assert (
-        connection.execute("SELECT command_data FROM command_history").fetchone()[0]
-        == '{"legacy":true}'
+        connection.execute("SELECT command_data FROM command_history").fetchone()
+        is None
     )
+    assert service.migration_status["history_archived"] is True
     assert {
         row[0]
         for row in connection.execute(

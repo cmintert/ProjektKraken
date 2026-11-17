@@ -242,6 +242,22 @@ SCHEMA_SQL = """
         """
 
 
+HISTORY_COMMAND_ID_EXPRESSION = (
+    "CASE WHEN json_valid(command_data) "
+    "THEN json_extract(command_data, '$._command_base.command_id') END"
+)
+HISTORY_COMMAND_ID_INDEX_SQL = (
+    "CREATE INDEX IF NOT EXISTS idx_ch_world_identity ON command_history "
+    f"(world_id, {HISTORY_COMMAND_ID_EXPRESSION});\n"
+)
+LEGACY_HISTORY_PAYLOAD_FILTER = "NOT json_valid(command_data)"
+LEGACY_HISTORY_PAYLOAD_INDEX_SQL = (
+    "CREATE INDEX IF NOT EXISTS idx_ch_world_legacy_payload ON command_history "
+    f"(world_id) WHERE {LEGACY_HISTORY_PAYLOAD_FILTER};\n"
+)
+SCHEMA_SQL += HISTORY_COMMAND_ID_INDEX_SQL + LEGACY_HISTORY_PAYLOAD_INDEX_SQL
+
+
 LEDGER_SQL = """
 CREATE TABLE migration_history (
     version INTEGER PRIMARY KEY,

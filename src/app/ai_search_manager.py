@@ -54,8 +54,12 @@ class AISearchManager(QObject):
         self._task_templates = self._task_template_catalog.built_in_templates()
         self._search_thread: QThread | None = None
         self._search_worker: SemanticSearchWorker | None = None
+        self._index_jobs: set[tuple[str, str]] = set()
         worker = getattr(self.window, "worker", None)
         if worker is not None:
+            worker.index_job_state.connect(
+                self.on_index_job_state, Qt.ConnectionType.QueuedConnection
+            )
             worker.ai_generation_preferences_loaded.connect(
                 self.on_ai_preferences_loaded,
                 Qt.ConnectionType.QueuedConnection,
@@ -327,7 +331,7 @@ class AISearchManager(QObject):
                 logger.warning("Worker not ready for rebuild.")
                 return
 
-            self.window.status_bar.showMessage(f"Rebuilding {object_type} index...", 0)
+            self.window.ai_search_panel.set_status(f"Rebuilding {object_type} index...")
 
             # Disable the rebuild button in the dialog while running
             dlg = self._settings_form()
@@ -355,7 +359,6 @@ class AISearchManager(QObject):
             pct: Percentage complete.
 
         """
-        self.window.status_bar.showMessage(f"Indexing {done}/{total} ({pct}%)...", 0)
         dlg = self._settings_form()
         if dlg is not None:
             dlg.update_rebuild_progress(done, total, pct)
@@ -382,13 +385,28 @@ class AISearchManager(QObject):
             )
         else:
             msg = f"Index rebuilt: {indexed} indexed, {unchanged} unchanged"
-        self._set_status(msg)
+        self.window.ai_search_panel.set_status(msg)
 
         dlg = self._settings_form()
         if dlg is not None:
-            dlg.set_rebuild_in_progress(False)
+            dlg.set_rebuild_in_progress(bool(self._index_jobs))
 
         self.refresh_search_index_status()
+
+    @Slot(dict)
+    def on_index_job_state(self, snapshot: dict[str, object]) -> None:
+        """Track session-scoped jobs so old cancellation cannot clear a new job."""
+        session, identifier = snapshot.get("session"), snapshot.get("job_id")
+        if not isinstance(session, str) or not isinstance(identifier, str):
+            return
+        key = (session, identifier)
+        if snapshot.get("state") in {"queued", "running"}:
+            self._index_jobs.add(key)
+        else:
+            self._index_jobs.discard(key)
+        dlg = self._settings_form()
+        if dlg is not None:
+            dlg.set_rebuild_in_progress(bool(self._index_jobs))
 
     @Slot(str, str)
     def on_search_result_selected(self, object_type: str, object_id: str) -> None:

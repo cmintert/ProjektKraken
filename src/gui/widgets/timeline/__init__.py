@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLayout,
     QMenu,
+    QMessageBox,
     QSizePolicy,
     QToolButton,
     QVBoxLayout,
@@ -421,7 +422,19 @@ class TimelineWidget(QWidget):
 
         This is the typical workflow: move playhead, then set as current time.
         """
+        if self.view.is_playing():
+            self.toggle_playback()
         playhead_time = self.get_playhead_time()
+        reply = QMessageBox.question(
+            self,
+            "Set Current Time",
+            "Are you sure you want to set the world's current time "
+            "to the playhead position?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
         self.set_current_time(playhead_time)
 
     def return_to_present(self) -> None:

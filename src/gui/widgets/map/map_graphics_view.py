@@ -225,6 +225,7 @@ class MapGraphicsView(QGraphicsView):
     # -- Footprint overlay signals --
     detail_map_clicked = Signal(str)
     """Emitted when the user clicks a detail-map footprint in normal mode."""
+    footprint_edit_started = Signal(str)
     footprint_edit_confirmed = Signal(str, str, dict)
     """Emitted when the user confirms a footprint edit (detail_id, parent_id, reg)."""
     footprint_edit_cancelled = Signal()
@@ -405,6 +406,8 @@ class MapGraphicsView(QGraphicsView):
         # Footprint overlay items (detail_map_id → DetailMapFootprintItem)
         self._footprint_items: dict[str, DetailMapFootprintItem] = {}
         self._footprints_visible: bool = True
+        self._provisional_footprint_id: str | None = None
+        self.footprint_edit_conflicted = False
         self._editing_footprint_id: Optional[str] = None
 
         # Spatial query overlay item (Feature D)
@@ -1576,6 +1579,8 @@ class MapGraphicsView(QGraphicsView):
 
     def clear_footprints(self) -> None:
         """Remove all footprint overlay items from the scene."""
+        self._provisional_footprint_id = None
+        self.footprint_edit_conflicted = False
         for item in list(self._footprint_items.values()):
             self.graphics_scene.removeItem(item)
         self._footprint_items.clear()
@@ -1650,6 +1655,75 @@ class MapGraphicsView(QGraphicsView):
             item.set_label_layout(placed_rect, zoom_scale)
             occupied_label_rects.append(placed_rect)
 
+    def footprint_names(self) -> dict[str, str]:
+        """Return detached IDs and labels for public footprint inspection."""
+        return {key: item.display_name for key, item in self._footprint_items.items()}
+
+    def start_provisional_footprint(self, data: dict) -> bool:
+        """Preview one unsaved relationship after the app resolves edit guards."""
+        if self.pixmap_item is None:
+            return False
+        self.set_footprints_visible(True)
+        old = self._footprint_items.pop(data["id"], None)
+        if old is not None:
+            self.graphics_scene.removeItem(old)
+        bounds = self.pixmap_item.boundingRect()
+        item = DetailMapFootprintItem(
+            data["id"],
+            data["name"],
+            data["parent_map_id"],
+            data["registration"],
+            bounds.width(),
+            bounds.height(),
+            data.get("image_path", ""),
+        )
+        item.registration_changed.connect(self._on_footprint_registration_changed)
+        self.graphics_scene.addItem(item)
+        self._footprint_items[data["id"]] = item
+        self._provisional_footprint_id = data["id"]
+        self._accepted_start_footprint_edit(data["id"])
+        self.zoom_to_footprint()
+        return True
+
+    def _editing_footprint(self) -> DetailMapFootprintItem | None:
+        return self._footprint_items.get(self._editing_footprint_id or "")
+
+    def set_footprint_image_opacity(self, opacity: float) -> None:
+        """Set image transparency for the active comparison preview."""
+        if item := self._editing_footprint():
+            item.set_image_opacity(opacity)
+
+    def set_footprint_locked(self, locked: bool) -> None:
+        """Temporarily lock placement without committing metadata."""
+        if item := self._editing_footprint():
+            item.set_placement_locked(locked)
+
+    def reset_footprint_rotation(self) -> None:
+        """Reset the active unlocked preview rotation to zero."""
+        if (item := self._editing_footprint()) and not item.placement_locked:
+            registration = item.current_registration()
+            registration["rotation_deg"] = 0.0
+            item.update_registration(registration)
+            self._layout_footprint_labels()
+
+    def zoom_to_footprint(self) -> None:
+        """Fit the active placement bounds with a small comparison margin."""
+        if item := self._editing_footprint():
+            rect = item.footprint_bounds_rect()
+            self.fitInView(
+                rect.adjusted(-20, -20, 20, 20), Qt.AspectRatioMode.KeepAspectRatio
+            )
+            self._refresh_after_zoom()
+
+    def _refresh_footprint_controls(self, *, reset: bool = False) -> None:
+        widget = self._find_map_widget()
+        if widget is not None:
+            if reset:
+                widget.footprint_controls.reset_for_edit(
+                    self._provisional_footprint_id is not None
+                )
+            widget._update_mode_indicator()
+
     def start_footprint_edit(self, detail_map_id: str) -> None:
         """Enter interactive edit mode for a footprint.
 
@@ -1677,10 +1751,16 @@ class MapGraphicsView(QGraphicsView):
         if item is None:
             return
         self._editing_footprint_id = detail_map_id
+        self.footprint_edit_conflicted = False
         item.set_edit_mode(True)
+        self.footprint_edit_started.emit(detail_map_id)
+        self._refresh_footprint_controls(reset=True)
+        self.setFocus()
 
     def finish_footprint_edit(self) -> None:
         """Confirm the current footprint edit and emit the result signal."""
+        if self.footprint_edit_conflicted:
+            return
         fid = self._editing_footprint_id
         if fid is None:
             return
@@ -1689,9 +1769,11 @@ class MapGraphicsView(QGraphicsView):
         if item is None:
             return
         item.set_edit_mode(False)
-        self.footprint_edit_confirmed.emit(
-            fid, item.parent_map_id, item.current_registration()
-        )
+        registration = item.current_registration()
+        registration["confidence"] = "user_confirmed"
+        self._provisional_footprint_id = None
+        self.footprint_edit_confirmed.emit(fid, item.parent_map_id, registration)
+        self._refresh_footprint_controls()
 
     def cancel_footprint_edit(self) -> None:
         """Cancel the current footprint edit and revert to the saved registration."""
@@ -1703,7 +1785,12 @@ class MapGraphicsView(QGraphicsView):
         if item is None:
             return
         item.cancel_edit()
+        if self._provisional_footprint_id == fid:
+            self.graphics_scene.removeItem(item)
+            self._footprint_items.pop(fid, None)
+        self._provisional_footprint_id = None
         self.footprint_edit_cancelled.emit()
+        self._refresh_footprint_controls()
 
     # ------------------------------------------------------------------
     # Hierarchical Layer System integration
@@ -2262,30 +2349,10 @@ class MapGraphicsView(QGraphicsView):
             event.accept()
             return
         map_widget = self._find_map_widget()
-        if (
-            map_widget is not None
-            and getattr(map_widget, "_trajectory_edit_marker_id", None) is not None
-            and event.key()
-            in (
-                Qt.Key.Key_Escape,
-                Qt.Key.Key_Return,
-                Qt.Key.Key_Enter,
-                Qt.Key.Key_Delete,
-            )
+        if map_widget is not None and self._handle_map_widget_edit_key(
+            event, map_widget
         ):
-            map_widget.keyPressEvent(event)
             return
-
-        if map_widget is not None and map_widget.active_map_session_mode() is not None:
-            if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-                map_widget.confirm_active_session()
-                event.accept()
-                return
-            if event.key() == Qt.Key.Key_Escape:
-                if not map_widget.cancel_map_subtool():
-                    map_widget.cancel_active_session()
-                event.accept()
-                return
 
         if map_widget is None and self._handle_standalone_edit_key(event):
             return
@@ -2320,6 +2387,43 @@ class MapGraphicsView(QGraphicsView):
                 return
 
         super().keyPressEvent(event)
+
+    def _handle_map_widget_edit_key(
+        self, event: "QKeyEvent", map_widget: "MapWidget"
+    ) -> bool:
+        """Let a focused scene item handle Enter before applying a map draft."""
+        key = event.key()
+        is_enter = key in (Qt.Key.Key_Return, Qt.Key.Key_Enter)
+        mode = map_widget.active_map_session_mode()
+        if mode is not None and is_enter:
+            focused = self.graphics_scene.focusItem()
+            if focused is not None:
+                event.ignore()
+                self.graphics_scene.sendEvent(focused, event)
+                if event.isAccepted():
+                    return True
+
+        if getattr(
+            map_widget, "_trajectory_edit_marker_id", None
+        ) is not None and key in (
+            Qt.Key.Key_Escape,
+            Qt.Key.Key_Return,
+            Qt.Key.Key_Enter,
+            Qt.Key.Key_Delete,
+        ):
+            map_widget.keyPressEvent(event)
+            return True
+        if mode is None:
+            return False
+        if is_enter:
+            map_widget.confirm_active_session()
+        elif key == Qt.Key.Key_Escape:
+            if not map_widget.cancel_map_subtool():
+                map_widget.cancel_active_session()
+        else:
+            return False
+        event.accept()
+        return True
 
     def _handle_standalone_edit_key(self, event: "QKeyEvent") -> bool:
         """Provide Confirm/Cancel semantics when the view has no MapWidget."""
@@ -2414,6 +2518,11 @@ class MapGraphicsView(QGraphicsView):
             Qt.Key.Key_Up: (0.0, -step / ih),
             Qt.Key.Key_Down: (0.0, step / ih),
         }
+        if item.placement_locked:
+            return key in nudge_map or key in (
+                Qt.Key.Key_BracketLeft,
+                Qt.Key.Key_BracketRight,
+            )
         if key in nudge_map:
             item.nudge(*nudge_map[key])
             event.accept()
@@ -2467,6 +2576,10 @@ class MapGraphicsView(QGraphicsView):
         factor = MAP_ZOOM_IN_FACTOR if event.angleDelta().y() > 0 else zoom_out_factor
 
         self.scale(factor, factor)
+        self._refresh_after_zoom()
+
+    def _refresh_after_zoom(self) -> None:
+        """Update authored and connected presentation after a view-scale change."""
         self.zoom_factor_changed.emit(self.zoom_factor)
         self._trajectory.update_label_scales()
         self._apply_scale_dependent_visibility()

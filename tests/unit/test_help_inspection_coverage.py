@@ -42,6 +42,40 @@ pytestmark = pytest.mark.ci_fast
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def test_keep_map_placement_inspection_preserves_parent_intent(help_setup, qapp):
+    from src.core.map import Map
+    from src.gui.dialogs.register_detail_map_dialog import RegisterDetailMapDialog
+
+    coordinator, _, owner, _, _ = help_setup
+    dialog = RegisterDetailMapDialog(
+        Map("Child", "child.png", id="child"),
+        [Map("Parent", "parent.png", id="parent")],
+        parent=owner,
+        preservation_options={"parent": None},
+    )
+    bindings = HelpSurfaceBindings(coordinator)
+    for widget in [dialog, *dialog.findChildren(QWidget)]:
+        bindings.bind(widget)
+    dialog.show()
+    dialog.activateWindow()
+    target = dialog._keep_position
+    target.setFocus()
+    qapp.processEvents()
+    QTest.keyClick(
+        target,
+        Qt.Key.Key_F1,
+        Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier,
+    )
+    qapp.processEvents()
+    assert coordinator.inspection._topic_id == "map.features"
+    assert coordinator.inspection._excerpt_target == "help-map-parent-keep-placement"
+    assert dialog.preserves_position()
+    assert dialog.selected_parent_id() is None
+    assert dialog.isVisible()
+    coordinator.inspection.dismiss()
+    dialog.close()
+
+
 def test_map_event_endpoint_inspection_keeps_the_reference_draft(help_setup, qapp):
     from src.core.events import Event
     from src.core.map import MapLayerNode

@@ -1,4 +1,3 @@
-import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -41,54 +40,26 @@ def mock_db_service():
     return db
 
 
-def test_save_command_timestamps(mock_db_service):
-    """Verify that timestamps are correctly saved and loaded."""
-    service = HistoryService(mock_db_service, "test_world")
+def test_save_command_timestamps(db_service):
+    """Recorded command identity and timestamps survive ordered-stack restoration."""
+    service = HistoryService(db_service, "test_world")
     service.register_command_type("MockCommand", MockCommand)
-
-    # 1. Test Saving
     cmd = MockCommand("test")
-    # Manually set a specific timestamp to verify it persists
-    test_time = 1234567890.0
-    cmd.timestamp = test_time
-
-    # We can't easily verify the INSERT SQL param for timestamp because it's generated
-    # inside save_command using time.time(), overriding our manual set if we aren't careful.
-    # Wait, BaseCommand init sets it. save_command uses time.time() in the INSERT.
-    # Let's check the code:
-    # "INSERT ... VALUES (..., time.time(), ...)" -> It uses current time for the DB record!
-    # But does it use the Command's timestamp?
-    # No, line 144 of history_service.py: `time.time(),`
-
-    # Wait, if history_service saves `time.time()`, does it ignore the command's existing timestamp?
-    # Yes. And when loading, it puts that DB timestamp BACK into the command.
-    # So the test should verify that the loaded command gets the timestamp from the DB.
-
-    # 2. Test Loading
-    # Mock the DB cursor to return a row with a specific timestamp
-    mock_row = {
-        "command_type": "MockCommand",
-        "command_data": json.dumps({"data": "test"}),
-        "description": "Mock Command",
-        "timestamp": test_time,
-    }
-
-    mock_cursor = MagicMock()
-    mock_cursor.fetchall.return_value = [mock_row]
-    mock_db_service.require_connection.return_value.execute.return_value = mock_cursor
-
-    loaded_commands = service.load_recent_history()
-
-    assert len(loaded_commands) == 1
-    loaded_cmd = loaded_commands[0]
-    assert isinstance(loaded_cmd, MockCommand)
-    assert loaded_cmd.timestamp == test_time
+    cmd.timestamp = 1234567890.0
+    cmd.execute(db_service)
+    service.save_command(cmd)
+    (loaded,) = service.load_recent_history()
+    assert loaded.timestamp == cmd.timestamp
+    assert loaded.command_id == cmd.command_id
+    assert loaded.is_executed
 
 
 def test_session_records_current_application_version(mock_db_service):
     """New history sessions store the authoritative application version."""
     HistoryService(mock_db_service, "test_world")
 
-    execute_call = mock_db_service.transaction.return_value.__enter__.return_value.execute
+    execute_call = (
+        mock_db_service.transaction.return_value.__enter__.return_value.execute
+    )
     parameters = execute_call.call_args.args[1]
     assert parameters[-1] == VERSION

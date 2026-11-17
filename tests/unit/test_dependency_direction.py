@@ -18,6 +18,23 @@ pytestmark = pytest.mark.ci_fast
 @pytest.mark.parametrize(
     "relative",
     [
+        "core/map_hierarchy.py",
+        "services/history_store.py",
+        "services/command_execution.py",
+        "services/command_transactions.py",
+    ],
+)
+def test_hierarchy_and_history_have_no_ui_or_command_dependencies(relative):
+    modules = {module for _, module in _imported_modules(_SOURCE_ROOT / relative)}
+    forbidden = ["PySide6", "src.app", "src.gui", "src.commands"]
+    if relative.startswith("core/"):
+        forbidden.append("src.services")
+    assert not any(module.startswith(tuple(forbidden)) for module in modules)
+
+
+@pytest.mark.parametrize(
+    "relative",
+    [
         "core/calendar_index.py",
         "core/temporal_context.py",
         "core/temporal_shift.py",
@@ -87,6 +104,27 @@ def test_activity_workspaces_have_no_world_mutation_dependencies():
                 module.startswith(("PySide6", "src.gui", "src.services"))
                 for module in modules
             )
+
+
+def test_inference_runner_has_no_database_or_gui_dependency():
+    """Desktop inference may only consume detached provider inputs."""
+    path = _SOURCE_ROOT / "services/semantic_index_task.py"
+    assert all(
+        module.split(".")[1] in {"core", "services"}
+        for _, module in _imported_modules(path)
+        if module.startswith("src.")
+    )
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    runner = next(
+        node
+        for node in tree.body
+        if isinstance(node, ast.ClassDef) and node.name == "EmbeddingRunner"
+    )
+    forbidden = {"database", "db_service", "conn", "connection", "execute", "commit"}
+    assert not any(
+        isinstance(node, ast.Attribute) and node.attr in forbidden
+        for node in ast.walk(runner)
+    )
 
 
 def test_semantic_index_has_one_service_owner_and_thin_worker_slots():
@@ -591,3 +629,30 @@ def test_timeline_preview_calculation_has_no_ui_or_persistence_dependencies():
         )
         if not relative.endswith("preview_worker.py"):
             assert not any(module.startswith("PySide6") for module in modules)
+
+
+def test_map_hierarchy_authoring_does_not_acquire_worker_or_window_ownership():
+    modules = {
+        module
+        for _, module in _imported_modules(
+            _SOURCE_ROOT / "app/coordinators/map_hierarchy_coordinator.py"
+        )
+    }
+    assert not any(
+        module.startswith(
+            (
+                "src.app.main_window",
+                "src.app.connection_manager",
+                "src.services.worker",
+                "src.services.db_service",
+            )
+        )
+        for module in modules
+    )
+    modules = {
+        module
+        for _, module in _imported_modules(
+            _SOURCE_ROOT / "services/map_hierarchy_options.py"
+        )
+    }
+    assert all(module.startswith("src.core") for module in modules)

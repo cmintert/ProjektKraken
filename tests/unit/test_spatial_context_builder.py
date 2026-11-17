@@ -19,6 +19,7 @@ from src.app.constants import MAP_DEFAULT_WIDTH_METERS
 from src.core.feature_geometry_state import FeatureGeometryState
 from src.core.map import Map, MapLayerNode
 from src.core.marker import Marker
+from src.services.map_nesting_service import MapNestingService
 from src.services.spatial_context_builder import (
     SpatialContextBuilder,
     _compass_direction,
@@ -116,6 +117,34 @@ def _write_discrete_raster(tmp_path: Path, filename: str = "biome.png") -> Path:
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.ci_fast
+@pytest.mark.parametrize("role", [None, "detail", "master"])
+def test_child_advisory_uses_parent_reference_without_privileged_root(role):
+    parent = _make_map(attributes={"map_role": role})
+    child = _make_map(
+        map_id="child",
+        name="Local map",
+        attributes={
+            "parent_map_id": parent.id,
+            "registration": {
+                "mode": "aspect_locked_affine",
+                "version": 1,
+                "master_center_norm": {"x": 0.5, "y": 0.5},
+                "scale_norm": 0.3,
+                "rotation_deg": 0,
+                "aspect_ratio": 1,
+            },
+        },
+    )
+    repo = MagicMock()
+    repo.get_all_maps.return_value = [parent, child]
+    builder = SpatialContextBuilder(repo, nesting_service=MapNestingService())
+    assert (
+        builder._resolve_detail_advisory(parent, _make_marker())
+        == "Detail map available: Local map"
+    )
+
+
 def test_returns_none_when_active_map_id_missing() -> None:
     repo = MagicMock()
     builder = SpatialContextBuilder(repo)
@@ -128,9 +157,7 @@ def test_returns_none_when_entity_has_no_marker_on_active_map() -> None:
     repo.get_marker_by_composite.return_value = None
     builder = SpatialContextBuilder(repo)
     assert builder.build("entity-1", "entity", active_map_id="map-1") is None
-    repo.get_marker_by_composite.assert_called_once_with(
-        "map-1", "entity-1", "entity"
-    )
+    repo.get_marker_by_composite.assert_called_once_with("map-1", "entity-1", "entity")
 
 
 def test_returns_none_when_quality_gate_fails() -> None:
@@ -156,12 +183,15 @@ def test_temporally_invalid_target_returns_no_context() -> None:
     repo.get_map.return_value = map_obj
 
     builder = SpatialContextBuilder(repo)
-    assert builder.build(
-        marker.object_id,
-        marker.object_type,
-        "map-1",
-        lore_date=50.0,
-    ) is None
+    assert (
+        builder.build(
+            marker.object_id,
+            marker.object_type,
+            "map-1",
+            lore_date=50.0,
+        )
+        is None
+    )
 
 
 def test_temporally_invalid_nearby_marker_is_excluded() -> None:
@@ -415,9 +445,7 @@ def test_calibrated_map_emits_distance_units() -> None:
         (1.0, 1.0, "SE"),
     ],
 )
-def test_compass_assumes_north_up(
-    dx: float, dy: float, expected: str
-) -> None:
+def test_compass_assumes_north_up(dx: float, dy: float, expected: str) -> None:
     assert _compass_direction(dx, dy) == expected
 
 
@@ -545,9 +573,7 @@ def test_raster_vem_hit_appears_in_context(tmp_path: Path) -> None:
         "notes": "Biome classification (WWF scheme)",
     }
     # Register the raster layer's display name in the layer tree.
-    raster_layer_node = MapLayerNode(
-        name="Biome", layer_type="raster", id="raster-1"
-    )
+    raster_layer_node = MapLayerNode(name="Biome", layer_type="raster", id="raster-1")
     leaf = MapLayerNode(name="Target", layer_type="marker", id=marker.id)
     root = MapLayerNode(
         name="Layers",
@@ -563,9 +589,7 @@ def test_raster_vem_hit_appears_in_context(tmp_path: Path) -> None:
             raster_layer_node,
         ],
     )
-    map_obj = _make_map(
-        layers=root, attributes={"raster_layers": [raster_meta]}
-    )
+    map_obj = _make_map(layers=root, attributes={"raster_layers": [raster_meta]})
 
     repo = MagicMock()
     repo.get_marker_by_composite.return_value = marker
@@ -611,12 +635,8 @@ def test_raster_sampling_uses_dated_vector_anchor(tmp_path: Path) -> None:
         },
     }
     tree = _layer_tree_with_marker(marker.id)
-    tree.children.append(
-        MapLayerNode(name="Biome", layer_type="raster", id="raster-1")
-    )
-    map_obj = _make_map(
-        layers=tree, attributes={"raster_layers": [raster_meta]}
-    )
+    tree.children.append(MapLayerNode(name="Biome", layer_type="raster", id="raster-1"))
+    map_obj = _make_map(layers=tree, attributes={"raster_layers": [raster_meta]})
     repo = MagicMock()
     repo.get_marker_by_composite.return_value = marker
     repo.get_map.return_value = map_obj
@@ -670,9 +690,9 @@ def test_invalid_dated_geometry_omits_spatial_context() -> None:
     geometry_repo = MagicMock()
     geometry_repo.get_states.side_effect = ValueError("invalid geometry state")
 
-    result = SpatialContextBuilder(
-        repo, feature_geometry_repo=geometry_repo
-    ).build(marker.object_id, marker.object_type, map_obj.id, lore_date=10.0)
+    result = SpatialContextBuilder(repo, feature_geometry_repo=geometry_repo).build(
+        marker.object_id, marker.object_type, map_obj.id, lore_date=10.0
+    )
 
     assert result is None
 
@@ -682,12 +702,8 @@ def test_raster_sampling_uses_latest_snapshot_at_or_before_date(
 ) -> None:
     base_path = tmp_path / "base.png"
     snapshot_path = tmp_path / "snapshot.png"
-    PilImage.fromarray(np.full((4, 4), 1, dtype=np.uint8), mode="L").save(
-        base_path
-    )
-    PilImage.fromarray(np.full((4, 4), 3, dtype=np.uint8), mode="L").save(
-        snapshot_path
-    )
+    PilImage.fromarray(np.full((4, 4), 1, dtype=np.uint8), mode="L").save(base_path)
+    PilImage.fromarray(np.full((4, 4), 3, dtype=np.uint8), mode="L").save(snapshot_path)
     marker = _make_marker(marker_id="center")
     raster_meta = {
         "node_id": "raster-1",
@@ -703,12 +719,8 @@ def test_raster_sampling_uses_latest_snapshot_at_or_before_date(
         },
     }
     tree = _layer_tree_with_marker(marker.id)
-    tree.children.append(
-        MapLayerNode(name="Biome", layer_type="raster", id="raster-1")
-    )
-    map_obj = _make_map(
-        layers=tree, attributes={"raster_layers": [raster_meta]}
-    )
+    tree.children.append(MapLayerNode(name="Biome", layer_type="raster", id="raster-1"))
+    map_obj = _make_map(layers=tree, attributes={"raster_layers": [raster_meta]})
     repo = MagicMock()
     repo.get_marker_by_composite.return_value = marker
     repo.get_map.return_value = map_obj
@@ -740,12 +752,8 @@ def test_moving_marker_uses_interpolated_historical_position(
         },
     }
     tree = _layer_tree_with_marker(marker.id)
-    tree.children.append(
-        MapLayerNode(name="Biome", layer_type="raster", id="raster-1")
-    )
-    map_obj = _make_map(
-        layers=tree, attributes={"raster_layers": [raster_meta]}
-    )
+    tree.children.append(MapLayerNode(name="Biome", layer_type="raster", id="raster-1"))
+    map_obj = _make_map(layers=tree, attributes={"raster_layers": [raster_meta]})
     repo = MagicMock()
     repo.get_marker_by_composite.return_value = marker
     repo.get_map.return_value = map_obj
@@ -774,9 +782,7 @@ def test_moving_marker_uses_interpolated_historical_position(
 
 def test_malformed_trajectory_omits_spatial_anchor() -> None:
     marker = _make_marker(marker_id="moving")
-    map_obj = _make_map(
-        layers=_layer_tree_with_marker(marker.id, group_notes="Useful")
-    )
+    map_obj = _make_map(layers=_layer_tree_with_marker(marker.id, group_notes="Useful"))
     repo = MagicMock()
     repo.get_marker_by_composite.return_value = marker
     repo.get_map.return_value = map_obj
@@ -801,9 +807,7 @@ def test_raster_layer_with_empty_vem_is_skipped(tmp_path: Path) -> None:
         "value_entity_map": {"mode": "exact", "mappings": []},  # empty
     }
     tree = _layer_tree_with_marker(marker.id)
-    map_obj = _make_map(
-        layers=tree, attributes={"raster_layers": [raster_meta]}
-    )
+    map_obj = _make_map(layers=tree, attributes={"raster_layers": [raster_meta]})
 
     repo = MagicMock()
     repo.get_marker_by_composite.return_value = marker
@@ -868,9 +872,7 @@ def test_malformed_raster_entries_are_ignored(
     tree = _layer_tree_with_marker(
         marker.id, group_name="Group A", group_notes="some notes"
     )
-    map_obj = _make_map(
-        layers=tree, attributes={"raster_layers": [bad_raster]}
-    )
+    map_obj = _make_map(layers=tree, attributes={"raster_layers": [bad_raster]})
     repo = MagicMock()
     repo.get_marker_by_composite.return_value = marker
     repo.get_map.return_value = map_obj

@@ -12,6 +12,8 @@ from typing import Optional, Tuple
 
 from PIL import Image
 
+from src.services.command_transactions import preserve_files, record_file_changes
+
 logger = logging.getLogger(__name__)
 
 
@@ -116,9 +118,11 @@ class AssetStore:
         self.images_dir.mkdir(parents=True, exist_ok=True)
         safe_name = f"icon_{uuid.uuid4().hex}{ext}"
         target = self.images_dir / safe_name
+        preserve_files(target)
 
         try:
             shutil.copy2(str(source), str(target))
+            record_file_changes(target)
             rel_path = target.relative_to(self.project_root).as_posix()
             logger.info(f"Imported icon: {source_path} -> {rel_path}")
             return rel_path
@@ -174,6 +178,7 @@ class AssetStore:
         filename = f"{image_id}.webp"
         target_img_path = owner_img_dir / filename
         target_thumb_path = owner_thumb_dir / filename
+        preserve_files(target_img_path, target_thumb_path)
 
         try:
             with Image.open(source) as opened_image:
@@ -197,6 +202,7 @@ class AssetStore:
                 # Max dimension 256px
                 img.thumbnail((256, 256))
                 img.save(target_thumb_path, "WEBP", quality=80)
+                record_file_changes(target_img_path, target_thumb_path)
 
                 # Return relative paths
                 rel_img = target_img_path.relative_to(self.project_root).as_posix()
@@ -245,14 +251,18 @@ class AssetStore:
             if full_img_path.exists():
                 # Prefix with 'img_' to avoid collision with thumbnail (same UUID name)
                 trash_img = trash_subdir / f"img_{full_img_path.name}"
+                preserve_files(full_img_path, trash_img)
                 shutil.move(str(full_img_path), str(trash_img))
+                record_file_changes(full_img_path, trash_img)
                 img_trash_rel = trash_img.relative_to(self.project_root).as_posix()
 
             if full_thumb_path:
                 if full_thumb_path.exists():
                     # Prefix with 'thumb_' to avoid collision with image
                     trash_thumb = trash_subdir / f"thumb_{full_thumb_path.name}"
+                    preserve_files(full_thumb_path, trash_thumb)
                     shutil.move(str(full_thumb_path), str(trash_thumb))
+                    record_file_changes(full_thumb_path, trash_thumb)
                     thumb_trash_rel = trash_thumb.relative_to(
                         self.project_root
                     ).as_posix()
@@ -303,13 +313,17 @@ class AssetStore:
                 img_target_path.parent.mkdir(parents=True, exist_ok=True)
 
                 if img_trash_path.exists() and not img_target_path.exists():
+                    preserve_files(img_trash_path, img_target_path)
                     shutil.move(str(img_trash_path), str(img_target_path))
+                    record_file_changes(img_trash_path, img_target_path)
 
             if thumb_trash_path and thumb_target_path:
                 thumb_target_path.parent.mkdir(parents=True, exist_ok=True)
 
                 if thumb_trash_path.exists() and not thumb_target_path.exists():
+                    preserve_files(thumb_trash_path, thumb_target_path)
                     shutil.move(str(thumb_trash_path), str(thumb_target_path))
+                    record_file_changes(thumb_trash_path, thumb_target_path)
 
             logger.info(f"Restored images from trash to {img_target_rel}")
 

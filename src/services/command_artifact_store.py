@@ -7,6 +7,8 @@ import shutil
 from pathlib import Path
 from typing import Iterable
 
+from src.services.command_transactions import preserve_files, record_file_changes
+
 logger = logging.getLogger(__name__)
 
 
@@ -24,9 +26,7 @@ class CommandArtifactStore:
             raise ValueError(f"Path escapes world root: {relative_path}")
         return candidate
 
-    def stash(
-        self, command_id: str, relative_paths: Iterable[str]
-    ) -> dict[str, str]:
+    def stash(self, command_id: str, relative_paths: Iterable[str]) -> dict[str, str]:
         """Move existing files into this command's artifact directory."""
         artifact_root = (self.history_root / command_id).resolve()
         if not artifact_root.is_relative_to(self.history_root.resolve()):
@@ -41,8 +41,10 @@ class CommandArtifactStore:
                     continue
                 normalized_path = source.relative_to(self.world_root).as_posix()
                 artifact = artifact_root / normalized_path
+                preserve_files(source, artifact)
                 artifact.parent.mkdir(parents=True, exist_ok=True)
                 shutil.move(str(source), str(artifact))
+                record_file_changes(source, artifact)
                 artifact_rel = artifact.relative_to(self.world_root).as_posix()
                 manifest[normalized_path] = artifact_rel
                 moved.append((source, artifact))
@@ -52,6 +54,7 @@ class CommandArtifactStore:
                 if artifact.exists() and not source.exists():
                     source.parent.mkdir(parents=True, exist_ok=True)
                     shutil.move(str(artifact), str(source))
+                    record_file_changes(source, artifact)
             raise
 
     def restore(self, manifest: dict[str, str]) -> None:
@@ -61,18 +64,23 @@ class CommandArtifactStore:
             for target_rel, artifact_rel in manifest.items():
                 target = self._world_path(target_rel)
                 artifact = self._world_path(artifact_rel)
+                preserve_files(target, artifact)
                 if not artifact.exists():
                     continue
                 if target.exists():
-                    raise FileExistsError(f"Cannot restore over existing file: {target}")
+                    raise FileExistsError(
+                        f"Cannot restore over existing file: {target}"
+                    )
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.move(str(artifact), str(target))
+                record_file_changes(target, artifact)
                 restored.append((target, artifact))
         except Exception:
             for target, artifact in reversed(restored):
                 if target.exists() and not artifact.exists():
                     artifact.parent.mkdir(parents=True, exist_ok=True)
                     shutil.move(str(target), str(artifact))
+                    record_file_changes(target, artifact)
             raise
 
     def discard(self, command_id: str) -> None:
