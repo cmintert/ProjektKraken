@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-17
-**Commit:** 2b5556d26d1e65aff0290209e300edd2bcf63b38
+**Commit:** fd96e450bdbdd33e933e84399f866a5ae9ed1394
 ---
 
 # Changelog
@@ -84,6 +84,10 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-17)* **Projected path selection (KRT-175)**: Restricted open-path
+  selection to the shared stroke hit area, excluding implicitly filled empty
+  interiors. Retained region holes and added a direct Qt regression test.
 
 - *(2026-11-17)* **Background indexing (KRT-172)**: Moved embedding model loading
   and inference off the database worker. Automatic indexing and manual rebuilds

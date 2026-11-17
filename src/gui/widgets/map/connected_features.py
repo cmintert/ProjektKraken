@@ -4,8 +4,15 @@ from collections.abc import Callable
 from functools import partial
 from typing import Any
 
-from PySide6.QtCore import QObject, Qt, Signal
-from PySide6.QtGui import QAction, QColor, QKeyEvent, QPainterPath, QPen
+from PySide6.QtCore import QObject, QRectF, Qt, Signal
+from PySide6.QtGui import (
+    QAction,
+    QColor,
+    QKeyEvent,
+    QPainterPath,
+    QPainterPathStroker,
+    QPen,
+)
 from PySide6.QtWidgets import (
     QGraphicsPathItem,
     QGraphicsSceneMouseEvent,
@@ -16,6 +23,10 @@ from shiboken6 import isValid
 
 from src.core.projected_geometry import ProjectedGeometry
 from src.core.theme_manager import ThemeManager
+from src.gui.constants import (
+    MAP_FEATURE_HIT_AREA_MARGIN,
+    MAP_FEATURE_MIN_HIT_AREA_WIDTH,
+)
 from src.gui.utils.help_context import declare_inspection
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 
@@ -174,6 +185,7 @@ class ProjectedShape(ProjectedPoint):
     ) -> None:
         """Build independent closed rings using odd-even hole-aware hit geometry."""
         super().__init__(data, activate)
+        self._geometry_kind = data["feature_type"]
         self.setFlag(self.GraphicsItemFlag.ItemIgnoresTransformations, False)
         geometry = ProjectedGeometry.from_dict(data)
         path = QPainterPath()
@@ -187,6 +199,27 @@ class ProjectedShape(ProjectedPoint):
         pen = self.pen()
         pen.setCosmetic(True)
         self.setPen(pen)
+
+    def shape(self) -> QPainterPath:
+        """Hit paths along their stroke, retaining filled-region hole semantics."""
+        if self._geometry_kind == "region":
+            return self.path()
+        stroker = QPainterPathStroker()
+        stroker.setWidth(
+            max(
+                self.pen().widthF() + MAP_FEATURE_HIT_AREA_MARGIN,
+                MAP_FEATURE_MIN_HIT_AREA_WIDTH,
+            )
+        )
+        return stroker.createStroke(self.path())
+
+    def boundingRect(self) -> QRectF:  # noqa: N802
+        """Reserve the widened hit stroke so scene indexing cannot clip it."""
+        margin = max(
+            self.pen().widthF() + MAP_FEATURE_HIT_AREA_MARGIN,
+            MAP_FEATURE_MIN_HIT_AREA_WIDTH,
+        )
+        return self.path().boundingRect().adjusted(-margin, -margin, margin, margin)
 
     @staticmethod
     def _append_ring(

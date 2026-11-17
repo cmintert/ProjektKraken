@@ -80,3 +80,26 @@ def test_connected_menu_and_point_are_visible_and_keyboard_navigable(
             .save(str(output / f"{theme}-{font_size}-geometry.png"))
         )
     overlay.clear()
+
+
+def test_projected_open_path_hit_shape_excludes_implicit_fill(qapp):
+    from PySide6.QtCore import QPointF
+
+    from src.core.projected_geometry import ProjectedGeometry
+    from src.gui.widgets.map.connected_features import ProjectedShape
+
+    model = ProjectedGeometry(
+        "source", "old", "new", "path", lines=(((0.1, 0.1), (0.9, 0.1), (0.9, 0.9)),)
+    )
+    data = {
+        **model.to_dict(),
+        "object_type": "entity",
+        "label": "Road",
+        "source_name": "Source map",
+        "opacity": 1,
+    }
+    item = ProjectedShape(data, 400, 400, lambda: None)
+    assert item.path().contains(QPointF(300, 100))  # Qt implicitly fills open paths.
+    assert not item.shape().contains(QPointF(300, 100))
+    assert item.shape().contains(QPointF(360, 200))
+    assert item.shape().contains(QPointF(200, 40))

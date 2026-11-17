@@ -17812,14 +17812,26 @@
     {
       "source": "src/gui/widgets/map/connected_features.py",
       "symbol": "ProjectedShape.__init__",
-      "sha256": "36a87d6f52fa90daea7901db9f318a3dbf6726ea19b8b40a04fb3e187f2951b5",
-      "review_note": "KRT-175: reviewed read-only point/path/region display, complete clipped components and independent odd-even holes. Source tooltip shows Base Geometry or dated state; Enter/double-click navigates via the protected source route and Delete cannot author. Maps task now covers geometry, topology and display-only simplification; existing Help destinations retained."
+      "sha256": "43055c999c7f5a43cb7101b7bfcd4eb1fae5339bdb0f822c2653454683d882a1",
+      "review_note": "KRT-175 final selection review: open paths use only a widened stroke hit area with shared feature constants and containing scene bounds. Region hits retain independent odd-even holes; no empty path interior is selectable. Existing source-navigation and read-only Help explanations remain accurate."
     },
     {
       "source": "src/gui/widgets/map/connected_features.py",
       "symbol": "ConnectedFeatures.display",
       "sha256": "892072cfe5f51cd630c9f6694bd0ec6c528361b627451ffc938b3dd717572d71",
       "review_note": "KRT-175: reviewed read-only point/path/region display, complete clipped components and independent odd-even holes. Source tooltip shows Base Geometry or dated state; Enter/double-click navigates via the protected source route and Delete cannot author. Maps task now covers geometry, topology and display-only simplification; existing Help destinations retained."
+    },
+    {
+      "source": "src/gui/widgets/map/connected_features.py",
+      "symbol": "ProjectedShape.shape",
+      "sha256": "4eaecedbf50de9d0bba3e81f20c4586470bd0c511db23da40149a91b5a03ac21",
+      "review_note": "KRT-175 final selection review: open paths use only a widened stroke hit area with shared feature constants and containing scene bounds. Region hits retain independent odd-even holes; no empty path interior is selectable. Existing source-navigation and read-only Help explanations remain accurate."
+    },
+    {
+      "source": "src/gui/widgets/map/connected_features.py",
+      "symbol": "ProjectedShape.boundingRect",
+      "sha256": "092b4f32211ccea388e8d8e7c5eeee471b829af13576fec8b1402f8c23ef7d18",
+      "review_note": "KRT-175 final selection review: open paths use only a widened stroke hit area with shared feature constants and containing scene bounds. Region hits retain independent odd-even holes; no empty path interior is selectable. Existing source-navigation and read-only Help explanations remain accurate."
     }
   ],
   "review_status": {

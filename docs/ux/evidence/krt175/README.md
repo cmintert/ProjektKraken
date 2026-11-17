@@ -79,3 +79,11 @@ inventory pass before the C commit. These results precede the full push gate.
 Repository checks and final delivery evidence are recorded in KRT-175. Human
 prose, native full-app DPI/GPU, package acceptance and a fresh reader round remain
 Pending / Not tested. The required branch push gate is run after the C commit.
+
+Final review confirmed that Qt's default open-path hit shape also includes an
+implicitly filled interior. The unpublished push was stopped at its test gate;
+remote `detail-maps` remained at `c3008fc`. A focused follow-up uses the existing
+feature stroke hit-area constants and reserves those bounds for scene indexing.
+Its direct Qt regression excludes empty interior space while retaining line hits;
+region hit geometry retains holes. Nineteen interaction/presentation cases passed
+before the follow-up commit. The full normal gate is rerun on that commit.
