@@ -1,16 +1,19 @@
 """Label Manager for Dynamic GIS-style Label Layout.
 
-Provides a collision-aware label layout engine (Greedy PAL-Lite) that
-dynamically positions marker labels to minimize overlap.  Labels are
-placed at the best available position from an 8-candidate hierarchy,
-and lower-priority labels gracefully hide when no free space exists.
+Places point and region labels around their anchors and path labels alongside
+their lines. Lower-priority labels hide when no free position exists.
 """
 
 import logging
+from itertools import chain
 from typing import List, Optional, Protocol
 
 from PySide6.QtCore import QPointF, QRectF
+from PySide6.QtGui import QPainterPath, QPainterPathStroker, QPolygonF, QTransform
 from PySide6.QtWidgets import QGraphicsItem
+
+from src.gui.widgets.map.feature_items import PathItem
+from src.gui.widgets.map.path_label_layout import PathLabelAnchor, path_label_anchors
 
 
 class LabelLayoutItem(Protocol):
@@ -45,6 +48,7 @@ class LabelLayoutItem(Protocol):
         """Hide the label when no collision-free placement exists."""
         ...
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -78,6 +82,7 @@ class LabelManager:
         """Initializes the LabelManager with an empty spatial index."""
         self._occupied_rects: List[QRectF] = []
         self._placements: dict[int, tuple[float, float]] = {}
+        self._path_placements: dict[int, tuple[QPainterPath, PathLabelAnchor]] = {}
 
     # ------------------------------------------------------------------
     # Public API
@@ -88,6 +93,7 @@ class LabelManager:
         markers: List[LabelLayoutItem],
         view_scale: float,
         extra_obstacles: Optional[List[QRectF]] = None,
+        viewport: QRectF | None = None,
     ) -> None:
         """Runs a full label-layout pass over the given markers.
 
@@ -105,9 +111,11 @@ class LabelManager:
             extra_obstacles: Optional list of scene-coordinate rects
                 to pre-register as occupied (e.g. keyframe dots and
                 labels) before placing marker labels.
+            viewport: Visible scene bounds used to place path labels.
         """
         self._occupied_rects.clear()
         self._placements.clear()
+        previous_paths, self._path_placements = self._path_placements, {}
 
         # Step 0 – register extra obstacles (keyframe labels, etc.).
         if extra_obstacles:
@@ -125,6 +133,8 @@ class LabelManager:
 
         # Step 1 – register marker icons as obstacles.
         for marker in visible_items:
+            if isinstance(marker, PathItem):
+                continue
             self._occupied_rects.append(
                 self._marker_obstacle_rect(marker, inv_scale, view_scale)
             )
@@ -136,7 +146,12 @@ class LabelManager:
             reverse=True,
         )
         for marker in sorted_markers:
-            self._place_label(marker, inv_scale, view_scale)
+            if isinstance(marker, PathItem):
+                self._place_path_label(
+                    marker, inv_scale, viewport, previous_paths.get(id(marker))
+                )
+            else:
+                self._place_label(marker, inv_scale, view_scale)
 
     def refresh_cached_positions(
         self, markers: List[LabelLayoutItem], view_scale: float
@@ -148,19 +163,80 @@ class LabelManager:
         """
         inv_scale = 1.0 / view_scale if view_scale > 0 else 1.0
         for marker in markers:
+            if isinstance(marker, PathItem):
+                self._refresh_path_label(marker, inv_scale)
+                continue
             offset = self._placements.get(id(marker))
             if offset is None or not marker.isVisible():
                 continue
-            candidate = self._candidate_rect(
-                marker, inv_scale, view_scale, *offset
-            )
-            marker.apply_label_scene_position(
-                candidate.x(), candidate.y(), inv_scale
-            )
+            candidate = self._candidate_rect(marker, inv_scale, view_scale, *offset)
+            marker.apply_label_scene_position(candidate.x(), candidate.y(), inv_scale)
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    def _refresh_path_label(self, item: PathItem, inv_scale: float) -> None:
+        cached = self._path_placements.get(id(item))
+        if cached is None or cached[0] is not item.label_path or not item.isVisible():
+            return
+        anchor = cached[1]
+        transform = anchor.scene_transform(
+            item._label_item.boundingRect(), inv_scale, item.label_stroke_width_px()
+        )
+        self._apply_path_label(item, anchor, transform, inv_scale)
+
+    def _place_path_label(
+        self,
+        item: PathItem,
+        inv_scale: float,
+        viewport: QRectF | None,
+        previous: tuple[QPainterPath, PathLabelAnchor] | None,
+    ) -> None:
+        path = item.label_path
+        label_rect = item._label_item.boundingRect()
+        stroke_width = item.label_stroke_width_px()
+        anchors = path_label_anchors(
+            path, item.label_path_points, viewport, label_rect.width() * inv_scale
+        )
+        if previous is not None and previous[0] is path:
+            anchors = chain((previous[1],), anchors)
+
+        stroke = None
+        painted_rect = label_rect.adjusted(-0.5, -0.5, 0.5, 0.5)
+        for anchor in anchors:
+            transform = anchor.scene_transform(label_rect, inv_scale, stroke_width)
+            bounds = transform.mapRect(painted_rect)
+            if viewport is not None and not (
+                viewport.contains(bounds) and viewport.contains(anchor.point)
+            ):
+                continue
+            if not self._is_space_free(bounds):
+                continue
+            if stroke is None:
+                stroker = QPainterPathStroker()
+                stroker.setWidth(stroke_width * inv_scale)
+                stroke = stroker.createStroke(path)
+            outline = QPainterPath()
+            outline.addPolygon(transform.map(QPolygonF(painted_rect)))
+            if stroke.intersects(outline):
+                continue
+            self._apply_path_label(item, anchor, transform, inv_scale)
+            self._occupied_rects.append(bounds)
+            self._path_placements[id(item)] = (path, anchor)
+            return
+        item.hide_layout_label()
+
+    @staticmethod
+    def _apply_path_label(
+        item: PathItem,
+        anchor: PathLabelAnchor,
+        transform: QTransform,
+        inv_scale: float,
+    ) -> None:
+        origin = transform.map(QPointF())
+        item._label_item.setRotation(anchor.angle)
+        item.apply_label_scene_position(origin.x(), origin.y(), inv_scale)
 
     def _place_label(
         self, marker: LabelLayoutItem, inv_scale: float, view_scale: float

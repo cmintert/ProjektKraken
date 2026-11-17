@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-17
-**Commit:** b0cdfd8e6b3eb58f36483e4d8c8042d93c0bc063
+**Commit:** 2c722a3694c9ead886cf4c2b31a99a886cee4812
 ---
 
 # Changelog
@@ -88,6 +88,11 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-17)* **Map path labels (KRT-176)**: Aligned labels to readable
+  stretches of visible paths and used shared collision handling to keep labels
+  clear of the stroke and nearby map labels. Added coverage for reversed paths,
+  viewport panning and zoom-independent label size.
 
 - *(2026-11-17)* **Map startup**: Applied the restored timeline playhead to
   both map subscribers before the first map loads. Added a regression that

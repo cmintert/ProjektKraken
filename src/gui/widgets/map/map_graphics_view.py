@@ -389,6 +389,8 @@ class MapGraphicsView(QGraphicsView):
         self._layout_debounce_timer.setSingleShot(True)
         self._layout_debounce_timer.setInterval(50)
         self._layout_debounce_timer.timeout.connect(self._execute_label_layout)
+        self.horizontalScrollBar().valueChanged.connect(self._schedule_label_layout)
+        self.verticalScrollBar().valueChanged.connect(self._schedule_label_layout)
 
         self._footprint_label_debounce_timer = QTimer(self)
         self._footprint_label_debounce_timer.setSingleShot(True)
@@ -905,8 +907,9 @@ class MapGraphicsView(QGraphicsView):
         marker_list = self._label_layout_items()
         view_scale = self.transform().m11()
         extra = self._collect_keyframe_obstacles(view_scale)
+        viewport = self.mapToScene(self.viewport().rect()).boundingRect()
         self.label_manager.run_layout_pass(
-            marker_list, view_scale, extra_obstacles=extra
+            marker_list, view_scale, extra_obstacles=extra, viewport=viewport
         )
 
     def _label_layout_items(self) -> list[LabelLayoutItem]:
