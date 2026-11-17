@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-17
-**Commit:** c3008fcbaa037f8552135331b9422fae0f502053
+**Commit:** d5a5ed7a3be0a1b3aff06445277a3cd2104dde47
 ---
 
 # Changelog
@@ -69,6 +69,10 @@ All notable changes to this project will be documented in this file.
   saves to continue. Reject stale vectors after edits, deletion, settings changes
   and world cleanup; retain session-only queues and existing rebuild feedback.
   Added queue, lifecycle and responsiveness regressions and documented thread ownership.
+
+- *(2026-11-17)* **Timeline**: Added confirmation before Set Current Time
+  changes the world's current time, with No selected by default. Added regression
+  coverage for declining and accepting while preserving the playhead position.
 
 - *(2026-11-16)* **History compatibility (KRT-171)**: Preserved saved Undo/Redo
   entries containing unlimited layer zoom. A recovery-protected index upgrade
