@@ -9,8 +9,11 @@ from src.core.analysis import (
     SeverityLevel,
     TemporalAnalysisReport,
 )
+from src.core.calendar import CalendarConfig
+from src.core.date_parser import DateParser
 from src.core.entities import Entity
 from src.core.events import Event
+from src.core.temporal_expression import TemporalPrecision
 from src.services.temporal_analyzer import TemporalAnalyzer
 
 
@@ -30,6 +33,108 @@ def test_id(label: str) -> str:
 
 
 test_id.__test__ = False
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("birth_text", "death_text", "kind", "limits", "issue"),
+    [
+        ("c.1090", "8 January 1152", "estimate", (62, 62), None),
+        ("1090", "8 January 1152", "range", (61, 62), None),
+        ("8 January 1090", "8 January 1152", "value", (62, 62), None),
+        ("8 January 1152", "1090", "unavailable", None, "Death (1090) precedes birth"),
+    ],
+)
+def test_age_uses_authored_lifecycle_dates(birth_text, death_text, kind, limits, issue):
+    calendar = CalendarConfig.create_default()
+    parser = DateParser(calendar)
+    character = make_entity("lifespan-person", "A Character")
+    events = []
+    relations = []
+    for role, value in (("birth", birth_text), ("death", death_text)):
+        expression = parser.parse_expression(value)
+        event = Event(
+            id=test_id(role),
+            name=role,
+            lore_date=None,
+            attributes={
+                "_temporal_v2": {"schema": 1, "expression": expression.to_dict()}
+            },
+        )
+        events.append(event)
+        relations.append(
+            {
+                "id": test_id(f"link-{role}"),
+                "rel_type": role,
+                "source_id": event.id,
+                "target_id": character.id,
+            }
+        )
+    report = TemporalAnalyzer().analyze_data(
+        entities=[character],
+        events=events,
+        relations=relations,
+        calendar_config=calendar,
+    )
+    lifespan = report.character_lifespans[0]
+    assert lifespan.birth_source.caption == birth_text
+    assert lifespan.birth_source.event_id == events[0].id
+    assert lifespan.death_source.caption == death_text
+    assert lifespan.death_source.event_id == events[1].id
+    assert lifespan.death_source.precision == (
+        TemporalPrecision.YEAR if death_text == "1090" else TemporalPrecision.DAY
+    )
+    result = lifespan.age_at_death
+    assert result.kind == kind
+    assert [(part.lower, part.upper) for part in result.intervals] == (
+        [limits] if limits else []
+    )
+    if issue is None:
+        assert report.conflicts == []
+    else:
+        assert issue in report.conflicts[0].message
+        assert set(report.conflicts[0].related_ids) == {event.id for event in events}
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("claims", "kind", "reason"),
+    [
+        (("birth", "death"), "estimate", "Estimated from"),
+        (("birth",), "unavailable", "No death date"),
+        (("death",), "unavailable", "No birth date"),
+        (("birth", "death", "revival"), "unavailable", "A revival"),
+        (("birth", "birth", "death"), "unavailable", "Multiple birth"),
+    ],
+)
+def test_age_report_handles_legacy_dates_and_multiple_claims(claims, kind, reason):
+    character = make_entity("lifespan-person", "A Character")
+    revival = make_event("revival", "Revival", 430000.0)
+    dates = {"birth": "c.1090", "death": "8 January 1152"}
+    relations = [
+        {
+            "id": test_id(f"legacy-{i}"),
+            "rel_type": role,
+            "source_id": character.id,
+            "target_id": revival.id if role == "revival" else test_id("legacy-place"),
+            "attributes": {"date": dates[role]} if role in dates else {},
+        }
+        for i, role in enumerate(claims)
+    ]
+    calendar = CalendarConfig.create_default()
+    report = TemporalAnalyzer().analyze_data(
+        entities=[character],
+        events=[revival],
+        relations=relations,
+        calendar_config=calendar,
+    )
+    lifespan = report.character_lifespans[0]
+    assert lifespan.age_at_death.kind == kind
+    assert reason in lifespan.age_at_death.reason
+    if kind == "estimate":
+        assert lifespan.birth_source.caption == "c.1090"
+        assert lifespan.birth_source.event_id is None
+        assert lifespan.age_at_death.intervals[0].lower == 62
 
 
 def make_event(eid: str, name: str, lore_date: float) -> Event:
@@ -142,16 +247,20 @@ class TestDetectTemporalConflicts:
 
     def test_valid_relation_window_no_conflict(self, db_service, analyzer):
         db_service.insert_relation(
-            test_id("e1"), test_id("e2"), "allies",
-            {"valid_from": 100.0, "valid_to": 200.0}
+            test_id("e1"),
+            test_id("e2"),
+            "allies",
+            {"valid_from": 100.0, "valid_to": 200.0},
         )
         report = analyzer.analyze()
         assert report.conflicts == []
 
     def test_invalid_relation_window_flagged(self, db_service, analyzer):
         db_service.insert_relation(
-            test_id("e1"), test_id("e2"), "allies",
-            {"valid_from": 200.0, "valid_to": 100.0}
+            test_id("e1"),
+            test_id("e2"),
+            "allies",
+            {"valid_from": 200.0, "valid_to": 100.0},
         )
         report = analyzer.analyze()
         assert len(report.conflicts) == 1
@@ -159,24 +268,30 @@ class TestDetectTemporalConflicts:
 
     def test_equal_window_dates_flagged(self, db_service, analyzer):
         db_service.insert_relation(
-            test_id("e1"), test_id("e2"), "allies",
-            {"valid_from": 100.0, "valid_to": 100.0}
+            test_id("e1"),
+            test_id("e2"),
+            "allies",
+            {"valid_from": 100.0, "valid_to": 100.0},
         )
         report = analyzer.analyze()
         assert len(report.conflicts) == 1
 
     def test_conflict_severity_is_warning(self, db_service, analyzer):
         db_service.insert_relation(
-            test_id("e1"), test_id("e2"), "allies",
-            {"valid_from": 200.0, "valid_to": 100.0}
+            test_id("e1"),
+            test_id("e2"),
+            "allies",
+            {"valid_from": 200.0, "valid_to": 100.0},
         )
         report = analyzer.analyze()
         assert report.conflicts[0].severity == SeverityLevel.WARNING
 
     def test_conflict_references_relation_id(self, db_service, analyzer):
         db_service.insert_relation(
-            test_id("e1"), test_id("e2"), "allies",
-            {"valid_from": 200.0, "valid_to": 100.0}
+            test_id("e1"),
+            test_id("e2"),
+            "allies",
+            {"valid_from": 200.0, "valid_to": 100.0},
         )
         relations = db_service.get_all_relations()
         rel_id = relations[0]["id"]
@@ -186,12 +301,16 @@ class TestDetectTemporalConflicts:
     def test_multiple_invalid_windows_all_flagged(self, db_service, analyzer):
         db_service.insert_entity(make_entity("e3", "Carol"))
         db_service.insert_relation(
-            test_id("e1"), test_id("e2"), "allies",
-            {"valid_from": 200.0, "valid_to": 100.0}
+            test_id("e1"),
+            test_id("e2"),
+            "allies",
+            {"valid_from": 200.0, "valid_to": 100.0},
         )
         db_service.insert_relation(
-            test_id("e2"), test_id("e3"), "rivals",
-            {"valid_from": 500.0, "valid_to": 300.0}
+            test_id("e2"),
+            test_id("e3"),
+            "rivals",
+            {"valid_from": 500.0, "valid_to": 300.0},
         )
         report = analyzer.analyze()
         assert len(report.conflicts) == 2
@@ -209,11 +328,7 @@ class TestAnalyzeCharacterLifespans:
         db_service.insert_entity(make_entity("e1", "Alice"))
         report = analyzer.analyze()
         lifespan = next(
-            (
-                ls
-                for ls in report.character_lifespans
-                if ls.entity_id == test_id("e1")
-            ),
+            (ls for ls in report.character_lifespans if ls.entity_id == test_id("e1")),
             None,
         )
         assert lifespan is None
@@ -226,11 +341,7 @@ class TestAnalyzeCharacterLifespans:
         )
         report = analyzer.analyze()
         lifespan = next(
-            (
-                ls
-                for ls in report.character_lifespans
-                if ls.entity_id == test_id("e1")
-            ),
+            (ls for ls in report.character_lifespans if ls.entity_id == test_id("e1")),
             None,
         )
         assert lifespan is not None
@@ -244,11 +355,7 @@ class TestAnalyzeCharacterLifespans:
         )
         report = analyzer.analyze()
         lifespan = next(
-            (
-                ls
-                for ls in report.character_lifespans
-                if ls.entity_id == test_id("e1")
-            ),
+            (ls for ls in report.character_lifespans if ls.entity_id == test_id("e1")),
             None,
         )
         assert lifespan is not None
@@ -265,11 +372,7 @@ class TestAnalyzeCharacterLifespans:
         )
         report = analyzer.analyze()
         lifespan = next(
-            (
-                ls
-                for ls in report.character_lifespans
-                if ls.entity_id == test_id("e1")
-            ),
+            (ls for ls in report.character_lifespans if ls.entity_id == test_id("e1")),
             None,
         )
         assert lifespan is not None
@@ -285,11 +388,7 @@ class TestAnalyzeCharacterLifespans:
         )
         report = analyzer.analyze()
         lifespan = next(
-            (
-                ls
-                for ls in report.character_lifespans
-                if ls.entity_id == test_id("e1")
-            ),
+            (ls for ls in report.character_lifespans if ls.entity_id == test_id("e1")),
             None,
         )
         assert lifespan is not None
@@ -306,16 +405,10 @@ class TestAnalyzeCharacterLifespans:
         )
         ev = make_event("ev1", "Ghost Sighting", 300.0)
         db_service.insert_event(ev)
-        db_service.insert_relation(
-            test_id("ev1"), test_id("e1"), "features", {}
-        )
+        db_service.insert_relation(test_id("ev1"), test_id("e1"), "features", {})
         report = analyzer.analyze()
         lifespan = next(
-            (
-                ls
-                for ls in report.character_lifespans
-                if ls.entity_id == test_id("e1")
-            ),
+            (ls for ls in report.character_lifespans if ls.entity_id == test_id("e1")),
             None,
         )
         assert lifespan is not None
@@ -331,11 +424,7 @@ class TestAnalyzeCharacterLifespans:
         db_service.insert_event(ev)
         report = analyzer.analyze()
         lifespan = next(
-            (
-                ls
-                for ls in report.character_lifespans
-                if ls.entity_id == test_id("e1")
-            ),
+            (ls for ls in report.character_lifespans if ls.entity_id == test_id("e1")),
             None,
         )
         assert lifespan is not None
@@ -354,11 +443,7 @@ class TestAnalyzeCharacterLifespans:
         db_service.insert_event(ev)
         report = analyzer.analyze()
         lifespan = next(
-            (
-                ls
-                for ls in report.character_lifespans
-                if ls.entity_id == test_id("e1")
-            ),
+            (ls for ls in report.character_lifespans if ls.entity_id == test_id("e1")),
             None,
         )
         assert lifespan is not None
@@ -388,11 +473,7 @@ class TestAnalyzeCharacterLifespans:
         )
         report = analyzer.analyze()
         lifespan = next(
-            (
-                ls
-                for ls in report.character_lifespans
-                if ls.entity_id == test_id("e1")
-            ),
+            (ls for ls in report.character_lifespans if ls.entity_id == test_id("e1")),
             None,
         )
         assert lifespan is not None
@@ -416,7 +497,9 @@ class TestAnalyzeReport:
         after = time.time()
         assert before <= report.timestamp <= after
 
-    def test_calendar_name_includes_default_when_no_calendar(self, db_service, analyzer):
+    def test_calendar_name_includes_default_when_no_calendar(
+        self, db_service, analyzer
+    ):
         """When no active calendar exists the name notes the fallback."""
         report = analyzer.analyze()
         assert "default" in report.calendar_name.lower()

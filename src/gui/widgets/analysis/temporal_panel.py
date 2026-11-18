@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.core.analysis import TemporalAnalysisReport
+from src.core.analysis import CharacterLifespan, TemporalAnalysisReport
 from src.core.calendar import CalendarConverter
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 # Column headers for each table
 _GAP_HEADERS = ["Start Date", "End Date", "Duration (years)", "Message"]
 _CONFLICT_HEADERS = ["Type", "Entity", "Date", "Message", "Suggestion"]
-_LIFESPAN_HEADERS = ["Name", "Birth", "Death", "Lifespan (years)", "Valid"]
+_LIFESPAN_HEADERS = ["Name", "Birth", "Death", "Age at death"]
 
 
 class TemporalPanel(QWidget):
@@ -54,8 +54,7 @@ class TemporalPanel(QWidget):
     - A conflicts table listing every temporal conflict with type, entity,
       problem date, message, and suggestion.  Message and suggestion cells
       are selectable QLabel widgets.
-    - A lifespans table listing every entity's birth, death, computed
-      lifespan duration, and whether the lifespan is logically valid.
+    - A lifespans table with date evidence, age at death and source navigation.
 
     Call :meth:`display_report` to populate or refresh the panel.
     """
@@ -69,6 +68,7 @@ class TemporalPanel(QWidget):
             parent: Optional parent widget.
         """
         super().__init__(parent)
+        self._lifespans: list[CharacterLifespan] = []
         self._init_ui()
         self._apply_styles()
         self._connect_theme_changes()
@@ -104,18 +104,42 @@ class TemporalPanel(QWidget):
             lambda _item: self._open_conflict_source()
         )
         self.open_conflict_source_btn.clicked.connect(self._open_conflict_source)
+        self._init_lifespan_section(layout)
 
+    def _init_lifespan_section(self, layout: QVBoxLayout) -> None:
         self._lifespans_label = QLabel("Character Lifespans")
         layout.addWidget(self._lifespans_label)
         self._lifespans_hint = QLabel(
-            "Only entities with a \u201cbirth\u201d or \u201cdeath\u201d relation appear here. "
-            "To track a character, add a relation of that type from the entity to the "
-            "relevant event."
+            "Link birth and death Events from a Character's Timeline."
         )
         self._lifespans_hint.setWordWrap(True)
         layout.addWidget(self._lifespans_hint)
         self.lifespans_table = make_analysis_table(_LIFESPAN_HEADERS)
+        self.lifespans_table.setAccessibleName("Character Lifespans")
+        self.lifespans_table.setTabKeyNavigation(False)
         layout.addWidget(self.lifespans_table)
+        self._lifespan_details = QLabel()
+        self._lifespan_details.setTextFormat(Qt.TextFormat.PlainText)
+        self._lifespan_details.setWordWrap(True)
+        layout.addWidget(self._lifespan_details)
+        self.open_birth_source_btn = QPushButton("Open Birth Event")
+        self.open_death_source_btn = QPushButton("Open Death Event")
+        layout.addWidget(
+            self.open_birth_source_btn, alignment=Qt.AlignmentFlag.AlignLeft
+        )
+        layout.addWidget(
+            self.open_death_source_btn, alignment=Qt.AlignmentFlag.AlignLeft
+        )
+        self.setTabOrder(self.lifespans_table, self.open_birth_source_btn)
+        self.setTabOrder(self.open_birth_source_btn, self.open_death_source_btn)
+        self.open_birth_source_btn.clicked.connect(
+            lambda: self._open_lifespan_source(birth=True)
+        )
+        self.open_death_source_btn.clicked.connect(
+            lambda: self._open_lifespan_source(birth=False)
+        )
+        self.lifespans_table.itemSelectionChanged.connect(self._update_lifespan_details)
+        self._update_lifespan_details()
 
     def _apply_styles(self) -> None:
         """Apply theme-aware styles to all child widgets."""
@@ -125,6 +149,14 @@ class TemporalPanel(QWidget):
         self._conflicts_label.setStyleSheet(section_style)
         self._lifespans_label.setStyleSheet(section_style)
         self._lifespans_hint.setStyleSheet(StyleHelper.get_preview_label_style())
+        self._lifespan_details.setStyleSheet(StyleHelper.get_preview_label_style())
+        source_style = StyleHelper.get_action_role_style("secondary")
+        for button in (
+            self.open_conflict_source_btn,
+            self.open_birth_source_btn,
+            self.open_death_source_btn,
+        ):
+            button.setStyleSheet(source_style)
         table_style = get_analysis_table_style()
         for table in (self.gaps_table, self.conflicts_table, self.lifespans_table):
             table.setStyleSheet(table_style)
@@ -263,23 +295,79 @@ class TemporalPanel(QWidget):
             report: The report whose character lifespans are displayed.
             converter: Optional ``CalendarConverter`` for date formatting.
         """
-        self.lifespans_table.setRowCount(len(report.character_lifespans))
-        for row, lifespan in enumerate(report.character_lifespans):
-            span = (
-                f"{lifespan.life_span_years:.0f}"
-                if lifespan.life_span_years is not None
-                else "Unknown"
+        self.lifespans_table.clearSelection()
+        self._lifespans = report.character_lifespans
+        self.lifespans_table.setRowCount(len(self._lifespans))
+        for row, lifespan in enumerate(self._lifespans):
+            values = (
+                lifespan.entity_name,
+                lifespan.birth_source.caption
+                if lifespan.birth_source
+                else fmt_lore_date(lifespan.birth_date, converter),
+                lifespan.death_source.caption
+                if lifespan.death_source
+                else fmt_lore_date(lifespan.death_date, converter),
+                self._age_caption(lifespan),
             )
-            valid = "Indeterminate"
-            if lifespan.birth_date is not None and lifespan.death_date is not None:
-                valid = "Yes" if lifespan.is_valid() else "No"
+            for column, value in enumerate(values):
+                item = QTableWidgetItem(value)
+                item.setToolTip(value)
+                self.lifespans_table.setItem(row, column, item)
+        self._update_lifespan_details()
 
-            self.lifespans_table.setItem(row, 0, QTableWidgetItem(lifespan.entity_name))
-            self.lifespans_table.setItem(
-                row, 1, QTableWidgetItem(fmt_lore_date(lifespan.birth_date, converter))
-            )
-            self.lifespans_table.setItem(
-                row, 2, QTableWidgetItem(fmt_lore_date(lifespan.death_date, converter))
-            )
-            self.lifespans_table.setItem(row, 3, QTableWidgetItem(span))
-            self.lifespans_table.setItem(row, 4, QTableWidgetItem(valid))
+    @staticmethod
+    def _age_caption(lifespan: CharacterLifespan) -> str:
+        result = lifespan.age_at_death
+        if result is None:
+            if lifespan.life_span_years is not None and lifespan.is_valid():
+                return f"About {lifespan.life_span_years:.0f} years"
+            return "Age unavailable"
+        if not result.intervals:
+            return "Age unavailable"
+        values = " or ".join(
+            f"{int(interval.lower)}"
+            if interval.lower == interval.upper
+            else f"{int(interval.lower)}–{int(interval.upper)}"
+            for interval in result.intervals
+            if interval.lower is not None and interval.upper is not None
+        )
+        prefix = {"estimate": "About ", "outer_bound": "Within "}.get(result.kind, "")
+        unit = "year" if values == "1" else "years"
+        return f"{prefix}{values} {unit}"
+
+    def _selected_lifespan(self) -> CharacterLifespan | None:
+        rows = self.lifespans_table.selectionModel().selectedRows()
+        return self._lifespans[rows[0].row()] if rows else None
+
+    def _update_lifespan_details(self) -> None:
+        rows = self.lifespans_table.selectionModel().selectedRows()
+        details = "Select a character to review the dates used for their age."
+        if rows:
+            row = rows[0].row()
+            lifespan = self._lifespans[row]
+            result = lifespan.age_at_death
+            lines = []
+            for label, column in (("Birth", 1), ("Death", 2), ("Age at death", 3)):
+                if item := self.lifespans_table.item(row, column):
+                    lines.append(f"{label}: {item.text()}")
+            if result is not None and result.reason:
+                lines.append(result.reason)
+            details = "\n".join(lines)
+        self._lifespan_details.setText(details)
+        self.open_birth_source_btn.setEnabled(
+            self._lifespan_source_id(birth=True) is not None
+        )
+        self.open_death_source_btn.setEnabled(
+            self._lifespan_source_id(birth=False) is not None
+        )
+
+    def _lifespan_source_id(self, *, birth: bool) -> str | None:
+        lifespan = self._selected_lifespan()
+        if lifespan is None:
+            return None
+        source = lifespan.birth_source if birth else lifespan.death_source
+        return source.event_id if source else None
+
+    def _open_lifespan_source(self, *, birth: bool) -> None:
+        if source_id := self._lifespan_source_id(birth=birth):
+            self.open_source_requested.emit(source_id)

@@ -10,16 +10,20 @@ from __future__ import annotations
 import logging
 import time
 from collections import defaultdict
+from dataclasses import replace
 from typing import TYPE_CHECKING, Any
 
 from src.core.analysis import (
     CharacterLifespan,
+    LifespanSource,
     SeverityLevel,
     TemporalAnalysisReport,
     TemporalConflict,
     TimelineGap,
 )
 from src.core.entities import Entity
+from src.core.event_timing.presentation import endpoint_caption
+from src.core.event_timing.projection import endpoint_signature
 from src.core.events import Event
 from src.core.lifecycle import (
     LivingClaim,
@@ -27,7 +31,13 @@ from src.core.lifecycle import (
     competing_claims,
     definitely_outside_life,
 )
-from src.core.temporal_expression import ResolvedTemporalBounds
+from src.core.temporal_calculation import (
+    END_PRECEDES_START,
+    DateEvidence,
+    TemporalDifference,
+    completed_calendar_years,
+)
+from src.core.temporal_expression import ResolvedTemporalBounds, TemporalExpression
 from src.core.temporal_window import resolve_temporal_window
 from src.services.text_parser import WikiLinkParser
 
@@ -456,7 +466,7 @@ class TemporalAnalyzer:
                 continue
             claims = character_claims(entity.id, rows, anchors, self._date_parser)
             lifespan, issues = self._summarize_lifespan(
-                entity, claims, related_event_ids[entity.id], event_map, anchors
+                entity, claims, related_event_ids[entity.id], event_map, anchors, rows
             )
             if lifespan is not None:
                 lifespans.append(lifespan)
@@ -486,11 +496,19 @@ class TemporalAnalyzer:
         related_ids: set[str],
         events: dict[str, Event],
         anchors: dict[str, ResolvedTemporalBounds],
+        relations: list[dict[str, Any]],
     ) -> tuple[CharacterLifespan | None, list[TemporalConflict]]:
         """Keep lifespan scalars and diagnostics tied to the same evidence."""
         if not claims:
             return None, []
-        issues = self._lifespan_evidence_issues(entity, claims)
+        attributes = {str(row["id"]): row.get("attributes") or {} for row in relations}
+        evidence = {
+            claim.relation_id: self._claim_evidence(
+                claim, anchors, attributes[claim.relation_id].get("date")
+            )
+            for claim in claims
+        }
+        issues = self._lifespan_evidence_issues(entity, claims, evidence)
         violating = []
         evidence_ids = {claim.event_id for claim in claims}
         for event_id in sorted(related_ids - evidence_ids):
@@ -521,9 +539,131 @@ class TemporalAnalyzer:
             if birth is not None and death is not None and birth < death
             else None
         )
-        return CharacterLifespan(
+        summary = CharacterLifespan(
             entity.id, entity.name, birth, death, duration, violating
-        ), issues
+        )
+        self._add_age_result(summary, claims, evidence, issues)
+        return summary, issues
+
+    def _claim_evidence(
+        self,
+        claim: LivingClaim,
+        anchors: dict[str, ResolvedTemporalBounds],
+        legacy_date: Any,
+    ) -> tuple[DateEvidence, LifespanSource]:
+        assert self._date_parser is not None
+        converter = self._date_parser.converter
+        if claim.event_id is not None:
+            node = f"event:{claim.event_id}"
+            bounds = anchors[node]
+            assert bounds.joint is not None
+            model = bounds.joint.model
+            definition = model.definitions.get(node)
+            expression = (
+                TemporalExpression.from_dict(definition.expression)
+                if definition is not None and definition.expression is not None
+                else None
+            )
+            caption = endpoint_caption(
+                endpoint_signature(model.endpoints[node]), converter, include_time=True
+            )
+        else:
+            expression = None
+            bounds = ResolvedTemporalBounds(
+                hard_start=claim.lower, hard_end=claim.upper
+            )
+            if isinstance(legacy_date, str):
+                try:
+                    expression = self._date_parser.parse_expression(legacy_date)
+                    bounds = expression.resolve_bounds(converter)
+                except (ValueError, TypeError, OverflowError):
+                    pass
+            caption = (
+                converter.format_datetime(claim.lower, include_midnight=False)
+                if claim.lower is not None
+                else "Date unknown"
+            )
+        source = LifespanSource(
+            expression.display_text(converter) if expression is not None else caption,
+            claim.relation_id,
+            claim.event_id,
+            expression.precision if expression is not None else None,
+            expression.qualifier if expression is not None else None,
+        )
+        return DateEvidence(bounds, expression), source
+
+    def _add_age_result(
+        self,
+        summary: CharacterLifespan,
+        claims: list[LivingClaim],
+        evidence: dict[str, tuple[DateEvidence, LifespanSource]],
+        issues: list[TemporalConflict],
+    ) -> None:
+        births = [
+            evidence[claim.relation_id] for claim in claims if claim.kind == "birth"
+        ]
+        deaths = [
+            evidence[claim.relation_id] for claim in claims if claim.kind == "death"
+        ]
+        summary.birth_source = births[0][1] if len(births) == 1 else None
+        summary.death_source = deaths[0][1] if len(deaths) == 1 else None
+        reason = self._age_unavailable_reason(claims, len(births), len(deaths))
+        if reason:
+            summary.age_at_death = TemporalDifference(
+                "years", "unavailable", reason=reason
+            )
+            return
+        assert self._date_parser is not None
+        result = completed_calendar_years(
+            births[0][0],
+            deaths[0][0],
+            self._date_parser.converter,
+            allow_circa_estimate=True,
+        )
+        if result.reason == END_PRECEDES_START:
+            result = replace(result, reason="Death precedes birth.")
+            assert summary.birth_source is not None and summary.death_source is not None
+            sources = (summary.birth_source, summary.death_source)
+            issues.append(
+                TemporalConflict(
+                    conflict_type="lifespan_boundary_conflict",
+                    entity_id=sources[1].event_id or summary.entity_id,
+                    entity_name=summary.entity_name,
+                    problem_date=deaths[0][0].bounds.hard_start,
+                    message=f"Death ({sources[1].caption}) precedes birth ({sources[0].caption}).",
+                    suggestion="Review the birth and death dates.",
+                    object_type="event" if sources[1].event_id else "entity",
+                    related_ids=[
+                        source.event_id or source.relation_id for source in sources
+                    ],
+                    fingerprint=f"lifespan-order:{summary.entity_id}",
+                )
+            )
+        if result.kind == "estimate":
+            assert summary.birth_source is not None and summary.death_source is not None
+            result = replace(
+                result,
+                reason=(
+                    f"Estimated from {summary.birth_source.caption} and "
+                    f"{summary.death_source.caption}. These dates do not establish "
+                    "the full lifespan chronology."
+                ),
+            )
+        summary.age_at_death = result
+
+    @staticmethod
+    def _age_unavailable_reason(
+        claims: list[LivingClaim], births: int, deaths: int
+    ) -> str:
+        if any(claim.kind == "revival" for claim in claims):
+            return "A revival is recorded. There is no single lifespan to summarize."
+        if births > 1 or deaths > 1:
+            return "Multiple birth or death claims are recorded."
+        if not births:
+            return "No birth date is recorded."
+        if not deaths:
+            return "No death date is recorded."
+        return ""
 
     @staticmethod
     def _single_exact_boundary(claims: list[LivingClaim], kind: str) -> float | None:
@@ -534,11 +674,17 @@ class TemporalAnalyzer:
 
     @staticmethod
     def _lifespan_evidence_issues(
-        entity: Entity, claims: list[LivingClaim]
+        entity: Entity,
+        claims: list[LivingClaim],
+        evidence: dict[str, tuple[DateEvidence, LifespanSource]],
     ) -> list[TemporalConflict]:
         issues = []
         for claim in claims:
-            if claim.lower is not None and claim.upper is not None:
+            bounds = evidence[claim.relation_id][0].bounds
+            if not bounds.error and any(
+                value is not None
+                for value in (bounds.hard_start, bounds.hard_end, bounds.soft_start)
+            ):
                 continue
             issues.append(
                 TemporalConflict(
@@ -557,6 +703,8 @@ class TemporalAnalyzer:
                 )
             )
         for left, right, definite in competing_claims(claims):
+            if {left.kind, right.kind} == {"birth", "death"}:
+                continue
             issues.append(
                 TemporalConflict(
                     conflict_type="lifespan_boundary_conflict",

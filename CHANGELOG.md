@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-18
-**Commit:** f770ccd9ce02736f75ca5799db90b3b12ef37fc1
+**Commit:** 43c52aa6ece083ed51bc6b71b7371e5b4c5c62b1
 ---
 
 # Changelog
@@ -20,6 +20,11 @@ All notable changes to this project will be documented in this file.
   and covered narrow layouts, keyboard navigation, and timing drafts in tests.
 
 ### Added
+
+- *(2026-11-18)* **Character Lifespans (KRT-180)**: Preserved authored birth
+  and death dates, added completed ages, ranges and estimates, and linked
+  each date to its source Event. Added reusable temporal calculations and
+  regression coverage for calendar precision and keyboard navigation.
 
 - *(2026-11-17)* **Smooth Path (KRT-178)**: Added subdivision that rounds map path
   corners with editable points and keeps both endpoints fixed. Documented the

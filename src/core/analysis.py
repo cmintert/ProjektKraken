@@ -10,6 +10,9 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+from src.core.temporal_calculation import TemporalDifference
+from src.core.temporal_expression import TemporalPrecision, TemporalQualifier
+
 _FULL_DESCRIPTION_CREDIT_CHARS = 50
 
 
@@ -500,6 +503,17 @@ class TemporalConflict:
     fingerprint: str = ""
 
 
+@dataclass(frozen=True)
+class LifespanSource:
+    """The date shown for a lifecycle claim and its source."""
+
+    caption: str
+    relation_id: str
+    event_id: str | None
+    precision: TemporalPrecision | None = None
+    qualifier: TemporalQualifier | None = None
+
+
 @dataclass
 class CharacterLifespan:
     """Computed lifespan for a character entity.
@@ -511,6 +525,9 @@ class CharacterLifespan:
         death_date: Optional lore_date of death.
         life_span_years: Computed lifespan duration, or None if unknown.
         violating_events: Event IDs that occur outside this lifespan.
+        birth_source: Authored birth date and navigation evidence, when unique.
+        death_source: Authored death date and navigation evidence, when unique.
+        age_at_death: Evidence-aware completed years for current analysis reports.
     """
 
     entity_id: str
@@ -519,6 +536,9 @@ class CharacterLifespan:
     death_date: float | None
     life_span_years: float | None
     violating_events: list[str] = field(default_factory=list)
+    birth_source: LifespanSource | None = None
+    death_source: LifespanSource | None = None
+    age_at_death: TemporalDifference | None = None
 
     def is_valid(self) -> bool:
         """Return True if birth and death dates are logically consistent.

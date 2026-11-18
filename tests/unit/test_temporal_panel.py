@@ -127,11 +127,12 @@ class TestTemporalPanelColumnCounts:
         panel = TemporalPanel()
         assert panel.conflicts_table.columnCount() == 5
 
-    def test_lifespans_table_has_five_columns(self, qapp):
+    def test_lifespans_table_has_age_at_death_column(self, qapp):
         from src.gui.widgets.analysis.temporal_panel import TemporalPanel
 
         panel = TemporalPanel()
-        assert panel.lifespans_table.columnCount() == 5
+        assert panel.lifespans_table.columnCount() == 4
+        assert panel.lifespans_table.horizontalHeaderItem(3).text() == "Age at death"
 
 
 @pytest.mark.unit
@@ -261,21 +262,17 @@ class TestTemporalPanelDisplayReport:
         from src.gui.widgets.analysis.temporal_panel import TemporalPanel
 
         panel = TemporalPanel()
-        panel.display_report(
-            _make_report(lifespans=[_make_lifespan("e1", "Aragorn")])
-        )
+        panel.display_report(_make_report(lifespans=[_make_lifespan("e1", "Aragorn")]))
         assert "Aragorn" in panel.lifespans_table.item(0, 0).text()
 
-    def test_lifespan_valid_shown_as_yes(self, qapp):
+    def test_legacy_lifespan_is_displayed_as_an_estimate(self, qapp):
         from src.gui.widgets.analysis.temporal_panel import TemporalPanel
 
         panel = TemporalPanel()
-        panel.display_report(
-            _make_report(lifespans=[_make_lifespan("e1", "Alice")])
-        )
-        assert "Yes" in panel.lifespans_table.item(0, 4).text()
+        panel.display_report(_make_report(lifespans=[_make_lifespan("e1", "Alice")]))
+        assert panel.lifespans_table.item(0, 3).text() == "About 400 years"
 
-    def test_lifespan_invalid_shown_as_no(self, qapp):
+    def test_invalid_legacy_lifespan_is_unavailable(self, qapp):
         from src.gui.widgets.analysis.temporal_panel import TemporalPanel
 
         panel = TemporalPanel()
@@ -287,12 +284,76 @@ class TestTemporalPanelDisplayReport:
             life_span_years=-400.0,
         )
         panel.display_report(_make_report(lifespans=[bad_lifespan]))
-        assert "No" in panel.lifespans_table.item(0, 4).text()
+        assert panel.lifespans_table.item(0, 3).text() == "Age unavailable"
+
+    def test_lifespan_details_and_source_navigation_at_narrow_width(self, qtbot):
+        from fractions import Fraction
+
+        from PySide6.QtCore import Qt
+
+        from src.core.analysis import LifespanSource
+        from src.core.event_timing.constraints import Interval
+        from src.core.temporal_calculation import TemporalDifference
+        from src.core.theme_manager import ThemeManager
+        from src.gui.widgets.analysis.temporal_panel import TemporalPanel
+
+        panel = TemporalPanel()
+        qtbot.addWidget(panel)
+        lifespan = _make_lifespan("character", "Character")
+        lifespan.birth_source = LifespanSource("c.1090", "birth-link", "birth-event")
+        lifespan.death_source = LifespanSource(
+            "8 January 1152", "death-link", "death-event"
+        )
+        age = Fraction(62)
+        lifespan.age_at_death = TemporalDifference(
+            "years",
+            "estimate",
+            (Interval(age, age, True, True),),
+            "Estimated from the recorded calendar years.",
+        )
+        panel.display_report(_make_report(lifespans=[lifespan]))
+        panel.resize(320, 640)
+        panel.show()
+        panel.activateWindow()
+        qtbot.waitUntil(panel.isActiveWindow)
+        table = panel.lifespans_table
+        assert not panel.open_birth_source_btn.isEnabled()
+        assert not panel.open_death_source_btn.isEnabled()
+        assert table.item(0, 1).text() == "c.1090"
+        assert table.item(0, 2).text() == "8 January 1152"
+        assert table.item(0, 3).text() == "About 62 years"
+        table.setCurrentCell(0, 0)
+        assert "Estimated from the recorded" in panel._lifespan_details.text()
+
+        table.setFocus()
+        assert table.hasFocus()
+        qtbot.keyClick(table, Qt.Key.Key_Tab)
+        assert panel.open_birth_source_btn.hasFocus()
+        with qtbot.waitSignal(panel.open_source_requested, timeout=500) as signal:
+            qtbot.keyClick(panel.open_birth_source_btn, Qt.Key.Key_Space)
+        assert signal.args == ["birth-event"]
+        qtbot.keyClick(panel.open_birth_source_btn, Qt.Key.Key_Tab)
+        assert panel.open_death_source_btn.hasFocus()
+        with qtbot.waitSignal(panel.open_source_requested, timeout=500) as signal:
+            qtbot.keyClick(panel.open_death_source_btn, Qt.Key.Key_Space)
+        assert signal.args == ["death-event"]
+
+        manager = ThemeManager()
+        for theme in manager.get_available_themes():
+            manager.set_theme(theme, persist=False)
+            assert table.item(0, 3).text() == "About 62 years"
+            assert panel.open_death_source_btn.isVisibleTo(panel)
+            assert panel.open_death_source_btn.width() >= (
+                panel.open_death_source_btn.sizeHint().width()
+            )
+        assert panel.width() == 320
 
     def test_display_report_called_twice_replaces_data(self, qapp):
         from src.gui.widgets.analysis.temporal_panel import TemporalPanel
 
         panel = TemporalPanel()
-        panel.display_report(_make_report(gaps=[_make_gap(0, 200), _make_gap(500, 800)]))
+        panel.display_report(
+            _make_report(gaps=[_make_gap(0, 200), _make_gap(500, 800)])
+        )
         panel.display_report(_make_report(gaps=[_make_gap(0, 300)]))
         assert panel.gaps_table.rowCount() == 1

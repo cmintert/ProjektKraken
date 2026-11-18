@@ -320,7 +320,10 @@ class TemporalWorldResolution:
 
     def duration(self, event_id: str) -> tuple[Interval, ...]:
         """Project an interval difference in each joint branch."""
-        start, end = f"event:{event_id}", f"event:{event_id}:end"
+        return self.difference(f"event:{event_id}", f"event:{event_id}:end")
+
+    def difference(self, start: str, end: str) -> tuple[Interval, ...]:
+        """Project signed differences between two endpoints in the same component."""
         component = self.components.get(start)
         if component is None or end not in component:
             return ()
