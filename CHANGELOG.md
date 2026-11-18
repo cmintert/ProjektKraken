@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-11-17
-**Commit:** e5433c79499d86d7fc2e918326bf4a115b0532c5
+**Last Updated:** 2026-11-18
+**Commit:** 3ad4662efe9f2e6d4f038a873bf9be85706726d2
 ---
 
 # Changelog
@@ -10,6 +10,14 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Changed
+
+- *(2026-11-18)* **Event Overview (KRT-179)**: Put the date and description
+  first, with advanced timing and writing controls in inline disclosures.
+  Let the description expand into spare height. Moved Event type to Details and
+  saved-date navigation and Fast Inject to More actions. Updated contextual Help
+  and covered narrow layouts, keyboard navigation, and timing drafts in tests.
 
 ### Added
 

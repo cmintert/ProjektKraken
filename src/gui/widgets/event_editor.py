@@ -13,12 +13,12 @@ from copy import deepcopy
 from typing import Any, Dict
 
 from PySide6.QtCore import QSize, Qt, Signal, Slot
-from PySide6.QtGui import QDropEvent
+from PySide6.QtGui import QAction, QDropEvent
 from PySide6.QtWidgets import (
     QFormLayout,
     QFrame,
-    QHBoxLayout,
     QLabel,
+    QLayout,
     QLineEdit,
     QMenu,
     QMessageBox,
@@ -147,6 +147,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self._content_only_save = False
         self._timing_awaiting_save = False
         self._chronology_events: list[Event] = []
+        self._chronology_count = 0
+        self._evidence_indicator = ""
         self._loaded_temporal_state: tuple[Any, float | None, float | None] | None = (
             None
         )
@@ -174,7 +176,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self._initialize_editor_state()
         self._date_draft_active = False
         self.temporal_widget.draft_changed.connect(self._on_date_draft_changed)
-        self._presentation = EditorPresentation(self)
+        self._presentation = EditorPresentation(self, event_overview=True)
 
     def _on_date_draft_changed(self, pending: bool) -> None:
         """Protect unaccepted date text from autosave and reloads."""
@@ -318,6 +320,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.scroll_area.setStyleSheet(StyleHelper.get_scroll_area_style())
         self.details_container = QWidget()
         details_layout = QVBoxLayout(self.details_container)
+        details_layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
         StyleHelper.apply_compact_spacing(details_layout)
         self.scroll_area.setWidget(self.details_container)
         tab_layout.addWidget(self.scroll_area)
@@ -359,7 +362,6 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.form_layout.addRow(self.temporal_widget)
         self.recurrence_widget = RecurrenceWidget(self)
         self.recurrence_widget.set_calendar_converter(self._calendar_converter)
-        self.form_layout.addRow(self.recurrence_widget)
         self.recurrence_widget.draft_changed.connect(self._on_recurrence_changed)
         self.temporal_widget.start_changed.connect(self._refresh_recurrence_anchor)
         self.temporal_widget.duration_changed.connect(self._refresh_recurrence_anchor)
@@ -383,22 +385,20 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.temporal_evidence_button.setStyleSheet(StyleHelper.get_tool_button_style())
         self.temporal_evidence_button.clicked.connect(self._edit_temporal_evidence)
         temporal_actions.add_button(self.temporal_evidence_button)
-        from src.gui.widgets.wrapping_buttons import WrappingToolButton
-
-        self.btn_show_world_at_event = declare_inspection(
-            WrappingToolButton(),
+        self.show_world_at_event_action = declare_inspection(
+            QAction("Show world at this event", self),
             "src-gui-widgets-event-editor-eventeditorwidget-build-temporal-description-fields-self-btn-show-world-at-event|timeline.viewing|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-temporal-description-fields-self-btn-show-world-at-event",
         )
-        self.btn_show_world_at_event.setText("Show world at this event")
-        self.btn_show_world_at_event.setStyleSheet(StyleHelper.get_tool_button_style())
-        self.btn_show_world_at_event.setToolTip(
+        self.show_world_at_event_action.setToolTip(
             "Move the playhead to this event's saved date. "
             "World Time and unsaved event edits stay unchanged."
         )
-        self.btn_show_world_at_event.setEnabled(False)
-        self.btn_show_world_at_event.clicked.connect(self._show_world_at_event)
-        self.form_layout.addRow(self.btn_show_world_at_event)
-        self.form_layout.addRow(temporal_actions)
+        self.show_world_at_event_action.setEnabled(False)
+        self.show_world_at_event_action.triggered.connect(self._show_world_at_event)
+        self.inspector.add_inspector_actions(
+            self.show_world_at_event_action, self.inject_menu.menuAction()
+        )
+        self.temporal_widget.add_timing_tools(self.recurrence_widget, temporal_actions)
         self.date_edit = self.temporal_widget.date_start
         self.end_date_edit = self.temporal_widget.date_end
         self.duration_widget = self.temporal_widget.duration_widget
@@ -484,7 +484,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.desc_edit.textChanged.connect(self._on_field_changed)
 
     def _build_header(self, main_layout: QVBoxLayout) -> None:
-        """Build the persistent event name, type, and inject header."""
+        """Build the persistent name and create the secondary Event controls."""
         self.header_widget = QWidget()
         header_layout = QVBoxLayout(self.header_widget)
         header_layout.setContentsMargins(0, 0, 0, 0)
@@ -495,34 +495,20 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         )
         self.header_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         self.header_form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
-        from src.gui.widgets.standard_buttons import LabelSizedToolButton
-
-        self.btn_inject = declare_inspection(
-            LabelSizedToolButton(),
-            "src-gui-widgets-event-editor-eventeditorwidget-build-header-self-btn-inject|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-header-self-btn-inject",
-        )
-        self.btn_inject.setText("Fast Inject")
-        self.btn_inject.setToolTip("Quickly apply templates or snippets to this event")
-        self.btn_inject.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
-        self.btn_inject.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
-        self.btn_inject.setStyleSheet(
-            StyleHelper.get_tool_button_style()
-            + " QToolButton::menu-indicator { image: none; }"
-        )
         connect_theme(self, self._on_theme_changed)
         self.inject_menu = declare_inspection(
-            QMenu(self.btn_inject),
+            QMenu("Fast Inject", self),
             "src-gui-widgets-event-editor-eventeditorwidget-build-header-self-inject-menu|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-header-self-inject-menu",
         )
-        self.btn_inject.setMenu(self.inject_menu)
+        declare_inspection(
+            self.inject_menu.menuAction(),
+            "src-gui-widgets-event-editor-eventeditorwidget-build-header-self-btn-inject|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-header-self-btn-inject",
+        )
         self.inject_menu.aboutToShow.connect(self._populate_inject_menu)
         self.name_edit = declare_inspection(
             QLineEdit(),
             "src-gui-widgets-event-editor-eventeditorwidget-build-header-self-name-edit|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-header-self-name-edit",
         )
-        name_layout = QHBoxLayout()
-        name_layout.addWidget(self.name_edit)
-        name_layout.addWidget(self.btn_inject)
         self.type_edit = declare_inspection(
             ScrollSafeComboBox(),
             "src-gui-widgets-event-editor-eventeditorwidget-build-header-self-type-edit|authoring.details|help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-header-self-type-edit",
@@ -534,8 +520,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.type_edit.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
-        self.header_form.addRow("Name:", name_layout)
-        self.header_form.addRow("Type:", self.type_edit)
+        self.header_form.addRow("Name:", self.name_edit)
         header_layout.addLayout(self.header_form)
         main_layout.addWidget(self.header_widget)
 
@@ -885,6 +870,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             if self.temporal_widget._unsupported_timing
             else "Record source dates without changing timing unless you choose a preferred date."
         )
+        self._evidence_indicator = "Date evidence recorded" if count else ""
         if count > 1:
             from src.core.temporal_authoring import conflicting_claims
 
@@ -892,11 +878,10 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             conflicting = converter is not None and conflicting_claims(
                 self._temporal_metadata, converter
             )
-            self.temporal_widget.date_start.feedback.setText(
-                "Conflicting source dates: the sources place this event in different periods. Review Date evidence."
-                if conflicting
-                else "Multiple source dates are preserved separately. Open Date evidence to choose the event date."
+            self._evidence_indicator = (
+                "Conflicting source dates" if conflicting else "Multiple source dates"
             )
+        self._refresh_timing_indicators()
 
     def update_chronology_events(self, events: list[Event]) -> None:
         """Receive worker-confirmed event snapshots for chronology editing."""
@@ -925,6 +910,19 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.chronology_button.setText(
             f"Chronology… ({count} orderings)" if count else "Chronology…"
         )
+        self._chronology_count = count
+        self._refresh_timing_indicators()
+
+    def _refresh_timing_indicators(self) -> None:
+        """Keep recurrence, date evidence and chronology apparent when collapsed."""
+        indicators = []
+        if self.recurrence_widget.enabled.isChecked():
+            indicators.append("Repeats")
+        if self._evidence_indicator:
+            indicators.append(self._evidence_indicator)
+        if self._chronology_count:
+            indicators.append("Chronology recorded")
+        self.temporal_widget.set_timing_indicators(" · ".join(indicators))
 
     def has_unsaved_temporal_changes(self) -> bool:
         """Compare authored timing, ignoring a semantic date's layout coordinate."""
@@ -1107,6 +1105,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             if not self.relation_authoring.prepare_to_leave():
                 return
             self.relation_authoring.cancel()
+            self.temporal_widget.reset_options()
+            self._presentation.writing_disclosure.setChecked(False)
         focus = getattr(self, "_focus_controller", None)
         if (
             focus is not None
@@ -1120,7 +1120,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         # Handle missing event (e.g., item was deleted)
         if event is None:
             self._current_event_id = None
-            self.btn_show_world_at_event.setEnabled(False)
+            self.show_world_at_event_action.setEnabled(False)
             if focus is not None:
                 focus._update_action()
             self._current_created_at = 0.0
@@ -1137,7 +1137,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
         self._reset_pending_summary()
         self._current_event_id = event.id
-        self.btn_show_world_at_event.setEnabled(True)
+        self.show_world_at_event_action.setEnabled(True)
         if focus is not None:
             focus._update_action()
         self._current_created_at = event.created_at  # Preserve validation data
@@ -1440,15 +1440,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         """
         from src.gui.utils.style_helper import StyleHelper
 
-        # Update Inject Button
-        self.btn_inject.setStyleSheet(
-            StyleHelper.get_tool_button_style()
-            + " QToolButton::menu-indicator { image: none; }"
-        )
         action_style = StyleHelper.get_tool_button_style()
         self.chronology_button.setStyleSheet(action_style)
         self.temporal_evidence_button.setStyleSheet(action_style)
-        self.btn_show_world_at_event.setStyleSheet(action_style)
         self.save_status.setStyleSheet(StyleHelper.get_inspector_support_style())
 
         # Update Checkboxes
@@ -1545,6 +1539,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             self._on_date_draft_changed(True)
             return
         if not self.recurrence_widget.commit_drafts():
+            self.temporal_widget.reveal_options()
+            self.recurrence_widget.disclosure.setChecked(True)
             self.btn_save.setToolTip("Correct the recurrence bounds before saving.")
             return
 
@@ -1598,6 +1594,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             logger.debug("[EventEditor] Awaiting save acknowledgement")
 
         except ValueError as exc:
+            self.temporal_widget.reveal_options()
             self.temporal_widget.range_summary.setText(str(exc))
             self.temporal_widget.range_summary.show()
             self.btn_save.setToolTip(str(exc))
@@ -1640,6 +1637,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
     def _on_recurrence_changed(self, _changed: bool) -> None:
         """Mark valid schedule edits dirty without treating them as raw date text."""
+        self._refresh_timing_indicators()
         if not self._is_loading:
             self.set_dirty(
                 self._has_content_changes() or self.has_unsaved_temporal_changes()

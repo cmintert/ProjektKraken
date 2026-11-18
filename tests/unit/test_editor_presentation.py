@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from PySide6.QtCore import QPoint, Qt
+from PySide6.QtGui import QFont, QFontDatabase
 from PySide6.QtWidgets import QWidget
 
 from src.core.calendar import (
@@ -34,7 +35,13 @@ def test_fresh_event_disclosures_keep_common_case_primary(event_editor, qtbot):
     editor.show()
     qtbot.waitUntil(editor.isVisible)
     assert editor.date_edit.txt_date.isVisible()
+    assert not editor.temporal_widget.options_body.isVisible()
+    assert not editor.temporal_widget.inline_timing_summary.isVisible()
+    assert not editor.date_edit.feedback.isVisible()
+    assert not editor._presentation.writing_actions.isVisible()
     for button in (
+        editor.temporal_widget.options_button,
+        editor._presentation.writing_disclosure,
         editor.date_edit.date_fields_button,
         editor.temporal_widget.range_button,
         editor.summary_checkbox,
@@ -57,6 +64,11 @@ def test_disclosure_keyboard_preserves_advanced_event_values(event_editor, qtbot
     editor.parentWidget().show()
     editor.show()
     button = editor.temporal_widget.range_button
+    options = editor.temporal_widget.options_button
+    assert editor.temporal_widget.inline_timing_summary.text() == "Lasts 5 days"
+    options.setFocus()
+    qtbot.keyClick(options, Qt.Key.Key_Space)
+    assert editor.temporal_widget.options_body.isVisible()
     assert isinstance(button, DisclosureButton)
     assert editor.temporal_widget.has_duration.isChecked()
     assert "5" in editor.temporal_widget.range_summary.text()
@@ -84,6 +96,7 @@ def test_event_end_controls_precede_timing_evidence(event_editor, qtbot, width):
     editor.parentWidget().show()
     editor.show()
     timing = editor.temporal_widget
+    timing.options_button.setChecked(True)
     timing.has_duration.setChecked(True)
     timing.calculation_details.setChecked(True)
     qtbot.waitUntil(lambda: timing.range_content.isVisible())
@@ -99,6 +112,29 @@ def test_event_end_controls_precede_timing_evidence(event_editor, qtbot, width):
     timing.range_button.setChecked(False)
     assert timing.range_content.isHidden()
     assert timing.calculation_evidence.isVisible()
+
+
+def test_closing_event_options_preserves_invalid_end_draft(event_editor, qtbot):
+    """A hidden timing input returns with its draft and visible validation."""
+    editor = event_editor
+    editor.parentWidget().show()
+    editor.show()
+    timing = editor.temporal_widget
+    timing.options_button.setChecked(True)
+    timing.has_duration.setChecked(True)
+    timing.btn_lock_end.setChecked(True)
+    end = timing.date_end
+    end.txt_date.setFocus()
+    end.txt_date.setText("invalid end")
+    end.txt_date.textEdited.emit(end.txt_date.text())
+    timing.options_button.setChecked(False)
+    assert not timing.options_body.isVisible()
+    assert "End date needs validation" in timing.inline_timing_summary.text()
+    assert end.txt_date.text() == "invalid end"
+    assert not timing.commit_drafts()
+    assert timing.options_body.isVisible()
+    assert end.feedback.isVisible()
+    assert "not recognized" in end.feedback.text()
 
 
 @pytest.mark.ci_fast
@@ -301,7 +337,11 @@ def test_overflow_menu_reaches_every_section(event_editor):
     inspector = event_editor.inspector
     tabs = inspector.main_tabs
     tabs._populate_overflow()
-    actions = tabs.overflow_menu.actions()[:4]
+    actions = tabs.overflow_menu.actions()
+    assert actions[0] is event_editor.show_world_at_event_action
+    assert actions[1] is event_editor.inject_menu.menuAction()
+    assert actions[2].isSeparator()
+    actions = actions[3:7]
     assert [action.text() for action in actions] == [
         "Overview",
         "Connections",
@@ -311,6 +351,65 @@ def test_overflow_menu_reaches_every_section(event_editor):
     for index, action in enumerate(actions):
         action.trigger()
         assert tabs.currentIndex() == index
+    assert event_editor._presentation.composition.details.isAncestorOf(
+        event_editor.type_edit
+    )
+
+
+@pytest.mark.parametrize("width", [240, 360, 900])
+@pytest.mark.parametrize("height", [740, 1200])
+def test_event_date_and_description_keep_their_inline_route(
+    event_editor, qtbot, width, height
+):
+    editor = event_editor
+    font = Path("C:/Windows/Fonts/segoeui.ttf")
+    if font.exists():
+        QFontDatabase.addApplicationFont(str(font))
+        editor.setFont(QFont("Segoe UI", 10))
+    editor.setStyleSheet(
+        ThemeManager().format_stylesheet(
+            Path("src/resources/main.qss").read_text("utf-8")
+        )
+    )
+    editor.resize(width, height)
+    editor.parentWidget().show()
+    editor.show()
+    timing = editor.temporal_widget
+    date = timing.date_start.txt_date
+    toggle = timing.options_button
+    toggle_y = toggle.mapTo(editor, QPoint()).y()
+    date_y = date.mapTo(editor, QPoint()).y()
+    assert (toggle_y - date_y > date.height() // 2) == (width < 900)
+    assert (
+        timing.mapTo(editor, QPoint()).x()
+        == editor.description_field.mapTo(editor, QPoint()).x()
+    )
+    for expanded in (True, False):
+        toggle.setChecked(expanded)
+        editor.date_edit.date_fields_button.setChecked(expanded)
+        editor.recurrence_widget.disclosure.setChecked(expanded)
+        qtbot.waitUntil(lambda: timing.options_body.isVisible() == expanded)
+        if expanded:
+            qtbot.waitUntil(
+                lambda: timing.options_body.geometry().bottom() < timing.height()
+                and timing.options_body.height()
+                >= timing.options_body.layout().minimumSize().height()
+                and editor.description_field.y() > timing.geometry().bottom()
+            )
+        qtbot.waitUntil(lambda: editor.scroll_area.horizontalScrollBar().maximum() == 0)
+    assert editor.description_field.isVisible()
+    viewport = editor.scroll_area.viewport()
+    if height == 1200:
+        qtbot.waitUntil(lambda: editor.scroll_area.verticalScrollBar().maximum() == 0)
+        history = editor._presentation.history_disclosure
+        history_bottom = history.mapTo(viewport, QPoint(0, history.height())).y()
+        assert 0 <= viewport.height() - history_bottom <= 32
+        assert editor.desc_edit.editor.height() > 500
+    timing_top = timing.mapTo(viewport, QPoint()).y()
+    timing_bottom = timing.mapTo(viewport, QPoint(0, timing.height())).y()
+    description_top = editor.description_field.mapTo(viewport, QPoint()).y()
+    assert 0 <= timing_top <= 24
+    assert 0 < description_top - timing_bottom <= 48
 
 
 @pytest.mark.parametrize("kind", ["event", "entity"])
@@ -352,6 +451,8 @@ def test_editor_tabs_fit_compact_width(qtbot, kind, width, height, calendar):
     qtbot.wait(20)
     assert not editor.has_unsaved_changes()
     column = editor._presentation.writing_column
+    if kind == "event":
+        editor._presentation.writing_disclosure.setChecked(True)
     column_left = column.mapTo(editor.details_container, QPoint()).x()
     column_right = editor.details_container.width() - column_left - column.width()
     assert column.width() <= WRITING_COLUMN_MAX_WIDTH
@@ -384,6 +485,7 @@ def test_editor_tabs_fit_compact_width(qtbot, kind, width, height, calendar):
     ]
     editor.llm_checkbox.setChecked(True)
     if kind == "event":
+        editor.temporal_widget.options_button.setChecked(True)
         editor.temporal_widget.range_button.setChecked(True)
         editor.date_edit.date_fields_button.setChecked(True)
     qtbot.wait(20)

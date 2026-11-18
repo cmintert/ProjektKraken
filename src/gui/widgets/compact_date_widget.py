@@ -80,6 +80,7 @@ class CompactDateWidget(QWidget):
         """
         super().__init__(parent)
         self._text_first = text_first
+        self._compact_event_start = False
         self._draft_pending = False
         self._accepted_value = 0.0
         self._expression: TemporalExpression | None = None
@@ -171,7 +172,9 @@ class CompactDateWidget(QWidget):
         # force a horizontal scrollbar in a compact inspector.
         qualification_layout = QVBoxLayout(self._qualification_row)
         qualification_layout.setContentsMargins(0, 0, 0, 0)
-        qualification_layout.addWidget(QLabel("Date qualification"))
+        qualification_label = QLabel("Date qualification")
+        qualification_label.setWordWrap(True)
+        qualification_layout.addWidget(qualification_label)
         from src.gui.widgets.wrapping_combo_box import WrappingComboBox
 
         self.qualifier_combo = declare_inspection(
@@ -219,6 +222,35 @@ class CompactDateWidget(QWidget):
             field.installEventFilter(self)
             field.setToolTip("Choose a component, or press Delete to leave it unknown.")
         self._sync_entry_availability()
+
+    def take_event_start_options(self, parent: QWidget) -> QWidget:
+        """Mount the existing secondary start fields in the Event disclosure."""
+        self._compact_event_start = True
+        layout = self.layout()
+        assert isinstance(layout, QVBoxLayout)
+        options = QWidget(parent)
+        body = QVBoxLayout(options)
+        body.setContentsMargins(0, 0, 0, 0)
+        layout.removeItem(self._date_options_grid)
+        body.addLayout(self._date_options_grid)
+        for field in (
+            self._date_chip,
+            self._qualification_row,
+            self.limits_button,
+            self._time_container,
+        ):
+            hidden = field.isHidden()
+            layout.removeWidget(field)
+            body.addWidget(field)
+            field.setHidden(hidden)
+        self._sync_entry_availability()
+        self._refresh_layout_hint(False)
+        return options
+
+    @property
+    def needs_structured_entry(self) -> bool:
+        """Whether the text-first field has to offer its structured fallback."""
+        return self._parser is None
 
     def _refresh_layout_hint(self, _expanded: bool) -> None:
         """Recalculate the fixed-height card after disclosure changes."""
@@ -274,11 +306,17 @@ class CompactDateWidget(QWidget):
         available = self._parser is not None
         self.txt_date.setVisible(available)
         self.btn_calendar.setEnabled(available)
-        self.date_fields_button.setChecked(not available)
-        self._date_chip.setVisible(not available)
-        self.feedback.setText(
-            "" if available else "Use date fields until a calendar is available."
-        )
+        if not available or not self._compact_event_start:
+            self.date_fields_button.setChecked(not available)
+            self._date_chip.setVisible(not available)
+        elif not self.date_fields_button.isEnabled():
+            self.date_fields_button.setChecked(False)
+        if not self._draft_pending:
+            self.set_date_feedback(
+                "" if available else "Use date fields until a calendar is available."
+            )
+        if self._compact_event_start:
+            self.date_fields_button.setEnabled(available)
         if available and self._converter is not None:
             example = self._entry_text()
             self.txt_date.setPlaceholderText(example)
@@ -412,7 +450,7 @@ class CompactDateWidget(QWidget):
 
     def _on_draft_edited(self, _text: str) -> None:
         self._draft_pending = True
-        self.feedback.setText(
+        self.set_date_feedback(
             "Date not validated yet. Enter or leave the field to validate; "
             "Esc to restore. Validation does not save changes."
         )
@@ -432,7 +470,7 @@ class CompactDateWidget(QWidget):
             expression, range_end = self._parse_draft_expression()
             timestamp = expression.representative_time(self._parser.converter)
         except (ValueError, TypeError, OverflowError):
-            self.feedback.setText(
+            self.set_date_feedback(
                 "Date not recognized. Use this calendar's date format, "
                 "choose a date, or press Esc to restore."
             )
@@ -495,8 +533,17 @@ class CompactDateWidget(QWidget):
                 else self._converter.format_date(self.get_value())
             )
             self.txt_date.setText(self._entry_text())
-            self.feedback.setText(f"Date: {text}")
+            self.set_date_feedback("" if self._compact_event_start else f"Date: {text}")
             self.txt_date.setAccessibleDescription("")
+
+    def set_date_feedback(self, text: str) -> None:
+        """Show validation and recovery messages only when there is text."""
+        self.feedback.setText(text)
+        self.feedback.setVisible(bool(text))
+
+    def accepted_date_text(self) -> str:
+        """Describe the accepted value without echoing a pending text edit."""
+        return self._entry_text() if self._converter is not None else ""
 
     def _entry_text(self) -> str:
         """Use existing parser syntax for the editable date representation."""
@@ -772,7 +819,7 @@ class CompactDateWidget(QWidget):
         try:
             self._sync_entry_availability()
         except ValueError:
-            self.feedback.setText(
+            self.set_date_feedback(
                 "The saved date's calendar is unavailable. Edit the date to replace it."
             )
         if self._draft_pending or foreign:

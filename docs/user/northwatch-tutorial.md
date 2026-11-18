@@ -25,10 +25,9 @@ creating a replacement world or changing your own world.
 ## Watch the succession
 
 1. Select **01 - The march begins** in Project.
-2. Choose **Show world at this event** in the Event editor. If its controls
-   overflow, use **More actions**.
+2. In the Event editor, open **More actions** and choose **Show world at this event**.
 3. Look at the map. The army is at Ashford and the kingdom occupies the west.
-4. Select **02 - The Northwatch succession** and choose **Show world at this event**.
+4. Select **02 - The Northwatch succession** and use the same action.
 
 **Check:** Viewing time advances from 1 January to 10 January, year 1. The army
 reaches Northwatch Keep and the border reaches the eastern coast. You changed
@@ -53,7 +52,8 @@ of one kingdom, not duplicate kingdom entries.
 
 1. Select **03 - A disputed surrender report**.
 2. Read its date and the description of the damaged chronicle.
-3. Choose **Show world at this event** and inspect its Timeline marker.
+3. Open **More actions**, choose **Show world at this event**, and inspect its
+   Timeline marker.
 
 **Check:** The report is dated to January, year 1, uncertain, with no known day.
 Its displayed position does not establish the surrender's exact date. It is a

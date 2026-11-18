@@ -244,6 +244,7 @@ class EventAnchorControls(QWidget):
         )
         try:
             result = resolver.anchor(self.anchor())
+            self.resolution_error = result.error
             text = result.error or result.label or "Date unknown"
             if (
                 not result.error
@@ -269,4 +270,5 @@ class EventAnchorControls(QWidget):
                 text = f"{text} · {date}"
         except (ValueError, TypeError, KeyError) as exc:
             text = str(exc)
+            self.resolution_error = text
         self.summary.setText(f"Follows event changes. {text}")

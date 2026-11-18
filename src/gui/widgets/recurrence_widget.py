@@ -7,17 +7,24 @@ from dataclasses import replace
 from typing import Any
 
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QFormLayout, QGridLayout, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QFormLayout,
+    QLabel,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
 
 from src.core.calendar import CalendarConverter
 from src.core.events import Event
 from src.core.recurrence import RECURRENCE_ATTRIBUTE, RecurrenceRule
 from src.gui.utils.help_context import declare_inspection
-from src.gui.widgets.choice_inputs import ScrollSafeComboBox
+from src.gui.widgets.action_flow_layout import ActionFlowLayout
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.editor_presentation import DisclosureButton
 from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
-from src.gui.widgets.standard_buttons import StandardCheckbox
+from src.gui.widgets.wrapping_choices import WrappingCheckBox
+from src.gui.widgets.wrapping_combo_box import WrappingComboBox
 from src.services.recurrence_presentation_service import (
     occurrence_bound,
     preview_recurrence,
@@ -53,12 +60,12 @@ class RecurrenceWidget(QWidget):
         self.content = QWidget(self)
         content_layout = QVBoxLayout(self.content)
         content_layout.setContentsMargins(0, 4, 0, 4)
-        self.enabled = StandardCheckbox("Repeat this Event")
+        self.enabled = WrappingCheckBox("Repeat this Event")
         content_layout.addWidget(self.enabled)
         self.fields = QWidget(self.content)
         form = QFormLayout(self.fields)
         form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
-        self.frequency = ScrollSafeComboBox()
+        self.frequency = WrappingComboBox()
         for label, value in (
             ("Elapsed days", "days"),
             ("Calendar weeks", "weeks"),
@@ -73,14 +80,17 @@ class RecurrenceWidget(QWidget):
         self.interval.setDecimals(8)
         self.interval.setRange(0.00000001, 1e9)
         self.interval.setValue(1)
-        self.direction = ScrollSafeComboBox()
+        self.interval.setSizePolicy(
+            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed
+        )
+        self.direction = WrappingComboBox()
         for label, value in (
             ("Forward", "forward"),
             ("Backward", "backward"),
             ("Both directions", "both"),
         ):
             self.direction.addItem(label, value)
-        self.ordinal = ScrollSafeComboBox()
+        self.ordinal = WrappingComboBox()
         for label, ordinal_value in (
             ("Same day of the month", None),
             ("First weekday", 1),
@@ -96,16 +106,16 @@ class RecurrenceWidget(QWidget):
         form.addRow("Propagate", self.direction)
         form.addRow("Within each month", self.ordinal)
         self.weekday_container = QWidget()
-        self.weekday_layout = QGridLayout(self.weekday_container)
+        self.weekday_layout = ActionFlowLayout(self.weekday_container)
         self.weekday_layout.setContentsMargins(0, 0, 0, 0)
-        self.weekdays: list[StandardCheckbox] = []
+        self.weekdays: list[WrappingCheckBox] = []
         form.addRow("Weekdays", self.weekday_container)
-        self.bounds: dict[str, tuple[StandardCheckbox, CompactDateWidget]] = {}
+        self.bounds: dict[str, tuple[WrappingCheckBox, CompactDateWidget]] = {}
         for key, title in (
             ("earliest", "Earliest occurrence"),
             ("latest", "Latest occurrence"),
         ):
-            check = StandardCheckbox(title)
+            check = WrappingCheckBox(title)
             date = CompactDateWidget(text_first=True)
             date.setEnabled(False)
             check.toggled.connect(date.setEnabled)
@@ -115,6 +125,8 @@ class RecurrenceWidget(QWidget):
             check.toggled.connect(self._changed)
             date.value_changed.connect(self._changed)
             date.draft_changed.connect(self._changed)
+        for field_label in self.fields.findChildren(QLabel):
+            field_label.setWordWrap(True)
         content_layout.addWidget(self.fields)
         self.preview = QLabel()
         self.preview.setWordWrap(True)
@@ -136,16 +148,17 @@ class RecurrenceWidget(QWidget):
         selected = {i for i, button in enumerate(self.weekdays) if button.isChecked()}
         while self.weekday_layout.count():
             item = self.weekday_layout.takeAt(0)
+            assert item is not None
             widget = item.widget()
             if widget is not None:
                 widget.deleteLater()
         self.weekdays = []
         names = converter._config.week.day_names if converter else []
         for index, name in enumerate(names):
-            button = StandardCheckbox(name)
+            button = WrappingCheckBox(name)
             button.setChecked(index in selected)
             button.toggled.connect(self._changed)
-            self.weekday_layout.addWidget(button, index // 2, index % 2)
+            self.weekday_layout.addWidget(button)
             self.weekdays.append(button)
         for _check, date in self.bounds.values():
             date.set_calendar_converter(converter)

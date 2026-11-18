@@ -40,6 +40,7 @@ class InspectorContent:
     fields: QWidget
     sheet: QWidget
     media: QWidget
+    type_field: QWidget | None = None
 
 
 class EditorInspectorComposition:
@@ -69,6 +70,11 @@ class EditorInspectorComposition:
         body = QWidget()
         layout = QVBoxLayout(body)
         StyleHelper.apply_compact_spacing(layout)
+        if content.type_field is not None:
+            label = QLabel("Type")
+            label.setBuddy(content.type_field)
+            layout.addWidget(label)
+            layout.addWidget(content.type_field)
         layout.addWidget(QLabel("Tags"))
         content.tags.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
@@ -107,6 +113,9 @@ class EditorInspectorComposition:
         self.history_caption.setWordWrap(True)
         content.context_disclosure.setAccessibleDescription(self.history_caption.text())
         context_layout.addWidget(self.history_caption)
+        if content.type_field is not None:
+            self.history_caption.hide()
+            content.context_disclosure.toggled.connect(self.history_caption.setVisible)
         self.history_body = QWidget()
         history_layout = QVBoxLayout(self.history_body)
         StyleHelper.apply_no_margins(history_layout)

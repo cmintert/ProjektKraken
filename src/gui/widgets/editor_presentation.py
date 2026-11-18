@@ -10,10 +10,12 @@ from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QAbstractButton,
     QAbstractSpinBox,
+    QApplication,
     QComboBox,
     QFormLayout,
     QHBoxLayout,
     QLabel,
+    QLayout,
     QLineEdit,
     QMenu,
     QScrollArea,
@@ -22,6 +24,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QWidgetAction,
+    QWidgetItem,
 )
 
 from src.core.theme_manager import ThemeManager
@@ -125,10 +128,16 @@ class SupportingSectionHeader(DisclosureButton):
 class EditorPresentation(QObject):
     """Reflow an editor without recreating its fields or changing its data."""
 
-    def __init__(self, editor: Any) -> None:
+    def __init__(self, editor: Any, *, event_overview: bool = False) -> None:
         """Bind presentation to the existing editor field instances."""
         super().__init__(editor)
         self.editor = editor
+        self._event_overview = event_overview
+        self._header_controls = (
+            (editor.name_edit,)
+            if event_overview
+            else (editor.name_edit, editor.type_edit, editor.btn_inject)
+        )
         self._compact: bool | None = None
         self._reflow_timer = QTimer(self)
         self._reflow_timer.setSingleShot(True)
@@ -178,6 +187,7 @@ class EditorPresentation(QObject):
                 fields=editor.tab_attributes,
                 sheet=editor.tab_sheet,
                 media=editor.tab_gallery,
+                type_field=editor.type_edit if event_overview else None,
             ),
         )
         if hasattr(editor, "temporal_snapshot_label"):
@@ -200,6 +210,7 @@ class EditorPresentation(QObject):
                 if field.maximumHeight() >= EDITOR_CONTROL_HEIGHT:
                     field.setMinimumHeight(EDITOR_CONTROL_HEIGHT)
         editor.name_edit.setAccessibleName("Name")
+        editor.type_edit.setAccessibleName("Type")
         self._install_header_scroll()
         editor.installEventFilter(self)
         editor.details_container.installEventFilter(self)
@@ -293,22 +304,17 @@ class EditorPresentation(QObject):
         self._header_fit_timer.timeout.connect(self._fit_header)
         self.editor.header_widget.installEventFilter(self)
         self.editor.scroll_area.viewport().installEventFilter(self)
-        for control in (
-            self.editor.name_edit,
-            self.editor.type_edit,
-            self.editor.btn_inject,
-        ):
+        for control in self._header_controls:
             control.installEventFilter(self)
 
     def _fit_header(self) -> None:
         """Give the longest visible action enough height before capping fields."""
         editor = self.editor
-        header_controls = (editor.name_edit, editor.type_edit, editor.btn_inject)
         control_height = max(
             EDITOR_CONTROL_HEIGHT,
-            *(control.sizeHint().height() for control in header_controls),
+            *(control.sizeHint().height() for control in self._header_controls),
         )
-        for control in header_controls:
+        for control in self._header_controls:
             if control.minimumHeight() != control_height:
                 control.setMinimumHeight(control_height)
         layout = editor._content_widget.layout()
@@ -352,7 +358,7 @@ class EditorPresentation(QObject):
         natural = header.totalHeightForWidth(self.header_scroll.viewport().width())
         if natural < 0:
             natural = header.sizeHint().height()
-        height = min(natural, max(editor.btn_inject.sizeHint().height(), budget))
+        height = min(natural, max(control_height, budget))
         if (
             self.header_scroll.minimumHeight() != height
             or self.header_scroll.maximumHeight() != height
@@ -441,13 +447,21 @@ class EditorPresentation(QObject):
         column_layout.setContentsMargins(0, 0, 0, 0)
         column_layout.setSpacing(EDITOR_FORM_VERTICAL_SPACING)
 
+        if self._event_overview:
+            form.takeRow(editor.temporal_widget)
+            column_layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
+            timing = editor.temporal_widget
+            timing.setParent(self.writing_column)
+            # Nested disclosures change height at the same width.
+            column_layout.addItem(QWidgetItem(timing))
+
         description_row = form.takeRow(editor.description_field)
         assert description_row.labelItem is not None
         description_label = description_row.labelItem.widget()
         assert isinstance(description_label, QLabel)
         description_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         column_layout.addWidget(description_label)
-        column_layout.addWidget(editor.description_field)
+        column_layout.addWidget(editor.description_field, int(self._event_overview))
 
         if hasattr(editor, "description_source_label"):
             source_row = form.takeRow(editor.description_source_label)
@@ -466,13 +480,16 @@ class EditorPresentation(QObject):
             form.takeRow(editor.new_description_actions)
             column_layout.addWidget(editor.new_description_actions)
 
+        writing_layout = column_layout
+        if self._event_overview:
+            writing_layout = self._build_writing_disclosure(column_layout)
         for widget in (
             self.writing_actions,
             editor.summary_container,
             editor.llm_container,
         ):
             form.takeRow(widget)
-            column_layout.addWidget(widget)
+            writing_layout.addWidget(widget)
 
         # The bounded column replaces the splitter's empty width-absorbing pane.
         # Keep the splitter and its editor child for Focus writing's state restore.
@@ -481,20 +498,57 @@ class EditorPresentation(QObject):
         self.writing_column.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
         )
-        centered = QWidget(editor.details_container)
-        centered_layout = QHBoxLayout(centered)
+        centered_layout = QHBoxLayout()
         centered_layout.setContentsMargins(0, 0, 0, 0)
         centered_layout.setSpacing(0)
         # Give the column almost all compact width; equal side stretches take
         # the remaining space once it reaches its maximum readable width.
         centered_layout.addStretch(1)
-        centered_layout.addWidget(self.writing_column, 100)
+        if self._event_overview:
+            centered_layout.addItem(QWidgetItem(self.writing_column))
+            centered_layout.setStretch(1, 100)
+        else:
+            centered_layout.addWidget(self.writing_column, 100)
         centered_layout.addStretch(1)
-        form.insertRow(row, centered)
+        if self._event_overview:
+            overview_layout = editor.details_container.layout()
+            assert isinstance(overview_layout, QVBoxLayout)
+            overview_layout.insertLayout(0, centered_layout, 1)
+        else:
+            centered = QWidget(editor.details_container)
+            centered.setLayout(centered_layout)
+            form.insertRow(row, centered)
+
+    def _build_writing_disclosure(self, layout: QVBoxLayout) -> QVBoxLayout:
+        """Keep Event writing tools available directly below the description."""
+        self.writing_disclosure = declare_inspection(
+            SupportingSectionHeader("Writing tools"),
+            "event-writing-tools|authoring.details|help-inspect-event-writing-tools",
+        )
+        body = QWidget(self.writing_column)
+        body_layout = QVBoxLayout(body)
+        body_layout.setContentsMargins(0, 0, 0, 0)
+        body_layout.setSpacing(EDITOR_FORM_VERTICAL_SPACING)
+        layout.addWidget(self.writing_disclosure)
+        layout.addWidget(body)
+        body.hide()
+
+        def show_body(expanded: bool) -> None:
+            focus = QApplication.focusWidget()
+            if not expanded and focus is not None and body.isAncestorOf(focus):
+                self.writing_disclosure.setFocus()
+            body.setVisible(expanded)
+
+        self.writing_disclosure.toggled.connect(show_body)
+        return body_layout
 
     def _summary_presence_changed(self, present: bool) -> None:
         """Indicate available content without promising persistence."""
         self.summary_availability.setVisible(present)
+        if self._event_overview:
+            title = "Writing tools · summary available" if present else "Writing tools"
+            self.writing_disclosure.setText(title)
+            self.writing_disclosure.setAccessibleName(title)
         self._reflow_writing_actions()
         self._fit_header()
 
@@ -638,6 +692,9 @@ class EditorPresentation(QObject):
             form.setRowWrapPolicy(policy)
             form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
             form.setVerticalSpacing(12)
+        if self._event_overview:
+            self._fit_header()
+            return
         if compact:
             self._name_layout.removeWidget(self.editor.btn_inject)
             self._inject_layout.addWidget(self.editor.btn_inject)

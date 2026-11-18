@@ -181,7 +181,8 @@ not blocked.
 
 ## Manage item summaries
 
-Expand **Summary** in an event or entity editor to generate a compact overview.
+Expand **Summary** in an Entity editor to generate a compact overview. In an
+Event editor, open **Writing tools** first.
 For descriptions of 50 words or more, AI summaries target 22% of the source
 with a hard limit of 30% and at most 150 words. Shorter descriptions use one
 sentence of at most 20 words that must remain shorter than the source.

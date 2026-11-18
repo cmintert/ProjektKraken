@@ -118,9 +118,10 @@ def _make_editor(kind: str, parent: _EvidenceHost) -> Editor:
 def _prepare_state(editor: Editor, app: QApplication, state: str, width: int) -> None:
     """Select one explicit review scenario without altering authored values."""
     if state == "advanced" and isinstance(editor, EventEditorWidget):
+        editor.temporal_widget.options_button.setChecked(True)
         editor.date_edit.date_fields_button.setChecked(True)
-    if state == "short":
-        editor.resize(width, 480)
+    if state in ("short", "tall"):
+        editor.resize(width, 480 if state == "short" else 1200)
     if state in ("connections", "media", "details"):
         editor.resize(width, 720)
         editor.inspector.activate_section_id(state)
@@ -137,13 +138,8 @@ def _prepare_state(editor: Editor, app: QApplication, state: str, width: int) ->
     if state == "support":
         editor.inspector.return_auxiliary("world_context")
         editor._presentation.context_disclosure.setChecked(False)
-    if state in ("summary", "ai_draft", "writing_panels"):
-        editor.summary_checkbox.setChecked(state != "ai_draft")
-        editor.llm_checkbox.setChecked(state != "summary")
-        if state == "writing_panels":
-            editor.summary_checkbox.setFocus(Qt.FocusReason.OtherFocusReason)
-        _settle(app)
-        editor.scroll_area.ensureWidgetVisible(editor._presentation.writing_actions)
+    if state in ("summary", "ai_draft", "writing_panels", "empty_summary"):
+        _prepare_writing_state(editor, app, state)
     if state in ("information", "information_more"):
         editor.summary_checkbox.setChecked(False)
         editor.llm_checkbox.setChecked(False)
@@ -160,18 +156,30 @@ def _prepare_state(editor: Editor, app: QApplication, state: str, width: int) ->
         editor.llm_checkbox.setChecked(False)
         editor._presentation.history_disclosure.setChecked(False)
         editor.resize(width, 480)
-    if state == "empty_summary":
-        editor._presentation.history_disclosure.setChecked(False)
-        editor.summary_widget.clear_summary()
-        editor.summary_checkbox.setChecked(True)
-        _settle(app)
-        editor.scroll_area.ensureWidgetVisible(editor.summary_container)
     if state in ("context_embedded", "support", "refinement_short"):
         _settle(app)
         editor.scroll_area.verticalScrollBar().setValue(
             editor.scroll_area.verticalScrollBar().maximum()
         )
     _settle(app)
+
+
+def _prepare_writing_state(editor: Editor, app: QApplication, state: str) -> None:
+    if isinstance(editor, EventEditorWidget):
+        editor._presentation.writing_disclosure.setChecked(True)
+    if state == "empty_summary":
+        editor._presentation.history_disclosure.setChecked(False)
+        editor.summary_widget.clear_summary()
+        editor.summary_checkbox.setChecked(True)
+        target = editor.summary_container
+    else:
+        editor.summary_checkbox.setChecked(state != "ai_draft")
+        editor.llm_checkbox.setChecked(state != "summary")
+        if state == "writing_panels":
+            editor.summary_checkbox.setFocus(Qt.FocusReason.OtherFocusReason)
+        target = editor._presentation.writing_actions
+    _settle(app)
+    editor.scroll_area.ensureWidgetVisible(target)
 
 
 def capture(

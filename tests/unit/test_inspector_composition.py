@@ -86,11 +86,7 @@ def test_header_controls_align_after_theme_and_font_changes(editor, qtbot, font_
             def aligned():
                 heights = tuple(
                     (control.height(), control.minimumHeight())
-                    for control in (
-                        editor.name_edit,
-                        editor.type_edit,
-                        editor.btn_inject,
-                    )
+                    for control in editor._presentation._header_controls
                 )
                 assert len({height for height, _minimum in heights}) == 1, (
                     theme,
@@ -176,11 +172,9 @@ def test_wrapped_footer_reserves_readable_body_space(editor, qtbot):
 
 
 @pytest.mark.parametrize("editor", ["event"], indirect=True)
-def test_world_view_button_refreshes_its_theme_without_editing_draft(
+def test_event_overflow_commands_stay_available_across_themes(
     editor, qtbot, monkeypatch
 ):
-    from PySide6.QtGui import QColor, QPalette
-
     manager = ThemeManager()
     before = editor.desc_edit.get_wiki_text()
     for name in ("dark_mode", "fantasy_mode", "light_mode"):
@@ -188,13 +182,10 @@ def test_world_view_button_refreshes_its_theme_without_editing_draft(
         theme = manager.get_theme()
         manager.theme_changed.emit(theme)
         qtbot.wait(1)
-        button = editor.btn_show_world_at_event
-        assert button.palette().color(QPalette.ColorRole.ButtonText) == QColor(
-            theme["action_secondary_normal_text"]
-        )
-        assert button.grab().toImage().pixelColor(button.width() // 2, 5) == QColor(
-            theme["action_secondary_normal_bg"]
-        )
+        tabs = editor.inspector.main_tabs
+        tabs._populate_overflow()
+        assert editor.show_world_at_event_action in tabs.overflow_menu.actions()
+        assert editor.inject_menu.menuAction() in tabs.overflow_menu.actions()
         assert editor.desc_edit.get_wiki_text() == before
 
 
@@ -677,6 +668,8 @@ def test_entity_source_caption_shares_a_row_at_inspector_widths(editor, qtbot):
 
 
 def test_opening_supporting_tools_never_generates_or_mutates(editor, qtbot):
+    if isinstance(editor, EventEditorWidget):
+        editor._presentation.writing_disclosure.setChecked(True)
     summary_requests = []
     generated_text = []
     saves = []
@@ -701,6 +694,8 @@ def test_opening_supporting_tools_never_generates_or_mutates(editor, qtbot):
 
 
 def test_concurrent_summary_edit_and_generation_inputs_survive_toggle(editor):
+    if isinstance(editor, EventEditorWidget):
+        editor._presentation.writing_disclosure.setChecked(True)
     summary = editor.summary_widget
     summary.set_summary(
         SummaryData(text="Old summary", hash="source", timestamp=0, model="test")
@@ -902,6 +897,8 @@ def test_linked_events_fit_the_existing_document_without_nested_scroll(editor, q
 
 
 def test_writing_tool_toggles_preserve_prose_selection_scroll_and_undo(editor, qtbot):
+    if isinstance(editor, EventEditorWidget):
+        editor._presentation.writing_disclosure.setChecked(True)
     text = editor.desc_edit.editor
     text.setPlainText("\n".join(f"Paragraph {i}" for i in range(100)))
     text.moveCursor(QTextCursor.MoveOperation.End)
@@ -955,6 +952,8 @@ def test_quiet_support_styles_survive_theme_changes(editor, qapp, monkeypatch):
 
 def test_writing_disclosures_expose_state_and_keep_panels_independent(editor, qtbot):
     """Both quiet actions show direction and announce their expanded state."""
+    if isinstance(editor, EventEditorWidget):
+        editor._presentation.writing_disclosure.setChecked(True)
     summary = editor.summary_checkbox
     draft = editor.llm_checkbox
     assert summary.accessibleDescription().startswith("Collapsed. ")

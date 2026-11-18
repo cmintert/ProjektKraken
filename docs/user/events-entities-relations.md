@@ -54,7 +54,8 @@ Use an item’s inspector to describe it and organize its information. A descrip
 narrative text; attributes hold named values; tags help you group and find items.
 
 1. Select an Event or Entity in the Explorer.
-2. Edit its name, type or description.
+2. Edit its name or description. To change an Event's type, open **Details**
+   and choose **Type** above Tags.
 3. Add attributes for details you want to record separately, such as an occupation or population.
 4. Add tags, images and captions as needed.
 5. Open **Connections** to review or create relations.
@@ -127,22 +128,27 @@ An Event's start and end each have a date source. **Manual date** records your
 date evidence. **Follow Event** calculates a date from another Event's start or
 end and an offset. Date uncertainty does not, by itself, imply duration.
 
-Everything in the **Date** frame is saved together with **Save Changes**. You can
+The date and **Timing options** are saved together with **Save Changes**. You can
 adjust the date, time, uncertainty, sources, endpoints, offsets and duration without
 autosave opening a timing review partway through. Other fields continue to
 autosave separately; that does not save or replace your timing draft. The status
 **Timing not saved — choose Save Changes** identifies the remaining draft.
 
-1. Select the Event. Leave its start source as **Manual date** and enter a date
-   using the world's calendar. Press **Enter**, or leave the field, to validate it.
-2. Use **Date details & uncertainty…** for separate components or uncertain dates.
+1. Select the Event and enter a date in **Overview**, or use the calendar
+   picker. Press **Enter**, or leave the field, to validate it.
+2. For separate components or an uncertain date, open **Timing options** and
+   then **Date details & uncertainty…**.
 3. To record an interval, enable **Event has an end** and expand
    **End date / duration…**. Choose **Duration** for a fixed elapsed length, or
    **End Date** for an independently authored end.
 4. Choose **Save Changes**. Wait for timing validation to finish. If a cascade
    review appears, inspect the changed Events and affected uses, then choose
    **Apply changes** to save the whole change together.
-5. Check the save status and the calculated timing shown in the inspector.
+5. Check the save status. For a calculated date, open **Timing options** to
+   inspect the saved result.
+
+Closing **Timing options** keeps your draft. The date area still shows active
+timing such as an end, a followed Event, or a repeating schedule.
 
 **Duration** keeps the elapsed length when the start changes. **End Date** keeps
 the end's own source and recalculates the possible duration. An explicit
@@ -160,7 +166,8 @@ one operation.
 First save the source Event. For example, a fictional siege can end when a
 treaty begins; this example does not require changing the demo world.
 
-1. Select the siege, enable **Event has an end**, and choose **End Date**.
+1. Select the siege, open **Timing options**, enable **Event has an end**,
+   and choose **End Date**.
 2. Change the end's source from **Manual date** to **Follow Event**.
 3. Choose the treaty from the Event list. Expand the follow options and choose
    its **Start** or **End** endpoint.
@@ -625,7 +632,8 @@ suggested or used in the current authoring context.
 
 ## Insert structured content with Fast Inject
 
-Fast Inject applies a selected structured template to an entry. Review the source and
+Fast Inject applies a selected structured template to an entry. For an Event, open
+**More actions** and choose **Fast Inject**. Review the source and
 overwrite choice before applying: accepting can change fields, while cancelling leaves
 the entry unchanged. Saving a template source changes the reusable template rather than
 applying it to the entry.
@@ -633,6 +641,17 @@ applying it to the entry.
 ## Interface control reference
 
 These explanations describe the software operation. Inspecting a control does not run it or read your entered values.
+
+(help-inspect-event-timing-options)=
+
+**Timing options** — Expand the date source, date details, time, end, recurrence,
+evidence and chronology controls. Closing the section keeps its current values
+and drafts.
+
+(help-inspect-event-writing-tools)=
+
+**Writing tools** — Expand the Event's **Summary** and **Draft with AI** controls.
+Open either tool to review its content or start a separate action.
 
 (help-inspect-src-gui-dialogs-context-tag-dialogs-contexttageditordialog-init-self-btn-cancel)=
 
@@ -1062,7 +1081,7 @@ editing the raster data.
 
 (help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-header-self-btn-inject)=
 
-**Inject** — Quickly apply templates or snippets to this event.
+**Fast Inject** — Open the template and snippet actions from **More actions**.
 
 (help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-header-self-inject-menu)=
 
@@ -1076,7 +1095,7 @@ connections.
 
 (help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-header-self-type-edit)=
 
-**Event type** — Edit the Event's category. Its type is separate from tags and relation
+**Event type** — Edit the Event's category in **Details**. Its type is separate from tags and relation
 meanings.
 
 (help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-action-buttons-self-btn-save)=

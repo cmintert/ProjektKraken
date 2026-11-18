@@ -15,7 +15,7 @@ deliberately before it can anchor this first version of recurrence.
 
 1. Select the Event in Explorer and check its date. This date anchors the pattern;
    it need not be the first occurrence in the world's history.
-2. Open **Repeats** and select **Repeat this Event**.
+2. Open **Timing options**, expand **Repeats**, and select **Repeat this Event**.
 3. Choose **Repeat every** and a **Unit**: elapsed days, calendar weeks, months or
    years. Only elapsed days accept fractional intervals.
 4. For a weekly schedule, select its weekdays. For a monthly or annual weekday

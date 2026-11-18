@@ -458,6 +458,23 @@ def _context_surface() -> QWidget:
 def surface_states(widget: QWidget, *, quick: bool = False) -> Iterator[str]:
     """Visit default and all production tab destinations without authoring clicks."""
     yield "default"
+    from src.gui.widgets.event_editor import EventEditorWidget
+
+    if isinstance(widget, EventEditorWidget):
+        timing = widget.temporal_widget
+        timing.options_button.setChecked(True)
+        widget.date_edit.date_fields_button.setChecked(True)
+        widget.recurrence_widget.disclosure.setChecked(True)
+        QApplication.processEvents()
+        yield "timing-options"
+        widget.recurrence_widget.disclosure.setChecked(False)
+        widget.date_edit.date_fields_button.setChecked(False)
+        timing.options_button.setChecked(False)
+        writing = widget._presentation.writing_disclosure
+        writing.setChecked(True)
+        QApplication.processEvents()
+        yield "writing-tools"
+        writing.setChecked(False)
     if type(widget).__name__ == "AuthoringContextWidget":
         widget.more_button.setChecked(True)
         QApplication.processEvents()

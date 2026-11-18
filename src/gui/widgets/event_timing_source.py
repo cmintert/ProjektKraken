@@ -5,6 +5,7 @@ from __future__ import annotations
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
+from src.core.event_offsets import offset_steps
 from src.core.event_timing.definitions import EndpointDefinition
 from src.core.temporal_context import TemporalResolutionContext
 from src.gui.utils.help_context import declare_inspection
@@ -178,3 +179,28 @@ class EventTimingSource(QWidget):
             if expression
             else EndpointDefinition(instant=self.date.get_value())
         )
+
+    def follow_caption(self, label: str = "Follows") -> str:
+        """Show authored reference and offset without deriving a replacement date."""
+        if not self.events.currentData():
+            return f"{label} an Event · choose an Event"
+        endpoint = self.options.endpoint.currentText().lower()
+        caption = f"{label} {self.events.currentText()} ({endpoint})"
+        try:
+            offset = self.options.anchor().get("offset")
+            steps = offset_steps(offset) if offset else ()
+            parts = []
+            direction = ""
+            for step in steps:
+                value = float(step["value"])
+                if value:
+                    unit = step["unit"]
+                    unit = unit.removesuffix("s") if abs(value) == 1 else unit
+                    parts.append(f"{abs(value):g} {unit}")
+                    direction = "before" if value < 0 else "after"
+            if parts:
+                caption += f" · {' '.join(parts)} {direction}"
+        except (KeyError, TypeError, ValueError):
+            pass  # The existing resolution message explains the invalid offset.
+        error = self.options.resolution_error
+        return f"{caption} · {error}" if error else caption

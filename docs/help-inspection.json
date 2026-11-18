@@ -3697,9 +3697,9 @@
       "target": "help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-temporal-description-fields-self-btn-show-world-at-event",
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget._build_temporal_description_fields",
-      "binding": "self.btn_show_world_at_event",
+      "binding": "self.show_world_at_event_action",
       "label": "btn_show_world_at_event",
-      "kind": "WrappingToolButton"
+      "kind": "QAction"
     },
     {
       "id": "src-gui-widgets-event-editor-eventeditorwidget-build-summary-section-self-summary-checkbox",
@@ -3737,9 +3737,9 @@
       "target": "help-inspect-src-gui-widgets-event-editor-eventeditorwidget-build-header-self-btn-inject",
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget._build_header",
-      "binding": "self.btn_inject",
-      "label": "btn_inject",
-      "kind": "LabelSizedToolButton"
+      "binding": "self.inject_menu.menuAction()",
+      "label": "Fast Inject",
+      "kind": "QAction"
     },
     {
       "id": "src-gui-widgets-event-editor-eventeditorwidget-build-header-self-inject-menu",
@@ -3768,7 +3768,7 @@
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget._build_header",
       "binding": "self.type_edit",
-      "label": "Type:",
+      "label": "Type",
       "kind": "ScrollSafeComboBox"
     },
     {
@@ -9810,6 +9810,26 @@
       "binding": "issues",
       "label": "View projection issues",
       "kind": "QAction"
+    },
+    {
+      "id": "event-timing-options",
+      "topic_id": "event.timing",
+      "target": "help-inspect-event-timing-options",
+      "source": "src/gui/widgets/temporal_range_widget.py",
+      "symbol": "TemporalRangeWidget._setup_ui",
+      "binding": "self.options_button",
+      "label": "Timing options",
+      "kind": "DisclosureButton"
+    },
+    {
+      "id": "event-writing-tools",
+      "topic_id": "authoring.details",
+      "target": "help-inspect-event-writing-tools",
+      "source": "src/gui/widgets/editor_presentation.py",
+      "symbol": "EditorPresentation._build_writing_disclosure",
+      "binding": "self.writing_disclosure",
+      "label": "Writing tools",
+      "kind": "SupportingSectionHeader"
     }
   ],
   "factory_exemptions": [
@@ -12553,8 +12573,8 @@
     {
       "source": "src/gui/widgets/compact_date_widget.py",
       "symbol": "CompactDateWidget._on_draft_edited",
-      "sha256": "97df1c3826c72610e7e2a69b419f04348e9c8af7d4b7a40373084fc132006fb3",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "22a470fe6ea762e20581a0bbe8bd42d264afe80a1190aa73ff5152929d803239",
+      "review_note": "KRT-179: Pending validation feedback stays visible beside the primary date."
     },
     {
       "source": "src/gui/widgets/compact_date_widget.py",
@@ -12595,8 +12615,8 @@
     {
       "source": "src/gui/widgets/compact_date_widget.py",
       "symbol": "CompactDateWidget._setup_text_first",
-      "sha256": "008eff6a6585275ed19b95ddca125872e1b20c7a96f65b6d3b6a19ad30fbee20",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "6e42afebaa70a6eae5e13cd3799c2f68caf0325cb1d81cee2f156d93b27ee512",
+      "review_note": "KRT-179: Date qualification wraps at enlarged text sizes. Its values and Help remain unchanged."
     },
     {
       "source": "src/gui/widgets/compact_date_widget.py",
@@ -12607,14 +12627,14 @@
     {
       "source": "src/gui/widgets/compact_date_widget.py",
       "symbol": "CompactDateWidget._show_accepted_date",
-      "sha256": "9af3e3a102537446f275afba14e2685ae16755f91a0110729a92f61f44791075",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "4b84fe2c245685c2f98f984c25158ddf4480e9dea6799ccc0861c18c64f9dba5",
+      "review_note": "KRT-179: The Event start field displays the accepted date directly. Other date fields retain their confirmation text."
     },
     {
       "source": "src/gui/widgets/compact_date_widget.py",
       "symbol": "CompactDateWidget._sync_entry_availability",
-      "sha256": "b196772b3a0b1813294f7ab74786c5c63952ee3eda66018eaf94a3e5dc7feca9",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "7eb2c81ce686c29d66e5d1b13906a0ea165ce3a240c6132ab1321f73064b0c44",
+      "review_note": "KRT-179: The structured fallback stays available when there is no text parser."
     },
     {
       "source": "src/gui/widgets/compact_date_widget.py",
@@ -12631,8 +12651,8 @@
     {
       "source": "src/gui/widgets/compact_date_widget.py",
       "symbol": "CompactDateWidget.commit_draft",
-      "sha256": "95fc3270c15a2bd3d6628dea8a882cdee5050a479d1635decde66945e6336692",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "9d5194b6374303fe048a3158011e5497944c28410ae4cac40074346105fac778",
+      "review_note": "KRT-179: Invalid date feedback is revealed without accepting the draft."
     },
     {
       "source": "src/gui/widgets/compact_date_widget.py",
@@ -12949,8 +12969,8 @@
     {
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget._build_header",
-      "sha256": "b133fca663b0ba59c552447030d073a65187981eff70412992aee22594fd42e7",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
+      "sha256": "d305a94d1c3c86037e1dd8b832c841e20c35aa79afcb92b9a9229c67d9b1da13",
+      "review_note": "KRT-179: The Event name remains in the header. Type and Fast Inject use their new Details and More actions routes."
     },
     {
       "source": "src/gui/widgets/event_editor.py",
@@ -12973,8 +12993,8 @@
     {
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget._build_temporal_description_fields",
-      "sha256": "27587e16afa696efd15f733a217f3c80ea8797586d8ef2f5457ffeffd3800ac6",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-131: Adds the labeled Repeats disclosure to existing date controls; all existing actions and Help destinations remain. New recurrence explanations cover its fields and explicit Save Changes ownership."
+      "sha256": "ade96d070fe02e5ed8582cbca160147f2cac4f83ce974283f41a1234076ac4a4",
+      "review_note": "KRT-179: Separate chronology and evidence actions remain under Timing options. The saved-date navigation action stays available in More actions."
     },
     {
       "source": "src/gui/widgets/event_editor.py",
@@ -13033,8 +13053,8 @@
     {
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget._on_save",
-      "sha256": "d07d742a35649d8abcdfa10bd4d67db138f8d9c3e1dc8e83196715c42bebd37c",
-      "review_note": "KRT-113: Save Changes explicitly submits the completed Date-frame draft, validates raw text and retains cascade review. Independent content autosave excludes all Date-frame fields and preserves their authoritative worker-owned values. KRT-131: Save Changes collects recurrence and accepted bound text with date intent. Recurrence task distinguishes this explicit save from writing autosave and preserves existing timing review semantics."
+      "sha256": "bb1fb61a07db25ea64cd6bc063b945ad05e8d52b837074ad4c910147ff9ec560",
+      "review_note": "KRT-179: Saving still validates and submits the same timing and recurrence drafts. Hidden controls are revealed when their validation fails."
     },
     {
       "source": "src/gui/widgets/event_editor.py",
@@ -13063,8 +13083,8 @@
     {
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget._on_theme_changed",
-      "sha256": "ec3ec019f1407ce4bc537711db929054a6a1a0d3263838a7c634dc40d63f7e1c",
-      "review_note": "KRT-93: reviewed shared browser extraction, UUID-based guarded selection, and subordinate draft layout. Existing command, confirmation, direction and timing explanations remain applicable; browser explanations replace removed list controls."
+      "sha256": "5d643c69727515f0fdf33b166e48cdd4a57b42aaf3cdf87f326738631e989f91",
+      "review_note": "KRT-179: Event commands now use menu styling. Timing actions and persistence feedback retain their established roles."
     },
     {
       "source": "src/gui/widgets/event_editor.py",
@@ -13093,8 +13113,8 @@
     {
       "source": "src/gui/widgets/event_editor.py",
       "symbol": "EventEditorWidget._show_temporal_evidence_summary",
-      "sha256": "46eddfac27900ab74dbe127cd6943b3b674dc00d9e9599a6f1f1e9bce590b8f6",
-      "review_note": "KRT-113: The Date evidence route retains claim counts/conflict feedback and visibly disables unsupported timing editing with a repair explanation."
+      "sha256": "8b332a6c642b0be511c2c309a629431308ffc31ed17bb8a6ba3f732fa45076b4",
+      "review_note": "KRT-179: The inline summary reports recorded and conflicting date evidence. Individual source claims remain in the evidence dialog."
     },
     {
       "source": "src/gui/widgets/event_editor.py",
@@ -16285,8 +16305,8 @@
     {
       "source": "src/gui/widgets/splitter_tab_inspector.py",
       "symbol": "SplitterTabInspector.populate_sections",
-      "sha256": "d7cff554e18d960b59665ce5b2a983643d969a6d241de47b261e10f9ac5e075e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "7fbeafc6ef2eab303f4252ece950841c680ef49ca0f25da8cbffd6e2d25e37b3",
+      "review_note": "KRT-179: More actions includes editor-owned actions as well as the existing inspector sections and layout commands."
     },
     {
       "source": "src/gui/widgets/splitter_tab_inspector.py",
@@ -16417,8 +16437,8 @@
     {
       "source": "src/gui/widgets/temporal_range_widget.py",
       "symbol": "TemporalRangeWidget._apply_styles",
-      "sha256": "baa9dcb836b48b4ba8f9c5cf12f2e2e08aad874dc77cf5ed31903077ff766c3c",
-      "review_note": "KRT-113: Section captions alone use the temporal heading style. Calculation and evidence feedback use shared supporting-text roles; source controls retain shared focus/disabled semantics without changing their Help meanings."
+      "sha256": "24e44970247d47ce8278bc76a56690add0459453bb586548a1eda5c3f5269ba8",
+      "review_note": "KRT-179: The disclosed timing panel and inline summary use shared timing and supporting-text roles."
     },
     {
       "source": "src/gui/widgets/temporal_range_widget.py",
@@ -16429,14 +16449,14 @@
     {
       "source": "src/gui/widgets/temporal_range_widget.py",
       "symbol": "TemporalRangeWidget._on_draft_changed",
-      "sha256": "fd2cb0234f0f819586a9590de7bc28639298f44235875722a003a2bda2a8f72b",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "3ab6646d8f28d399819619df4d7ff1b407e0d59864a12ed36c6772d32f2c0f03",
+      "review_note": "KRT-179: An unfinished end-date draft stays apparent when Timing options is closed."
     },
     {
       "source": "src/gui/widgets/temporal_range_widget.py",
       "symbol": "TemporalRangeWidget._setup_ui",
-      "sha256": "d3efc7428b889490bafc1332639b5912f25439c0c04f231df76b4a1e98705fe2",
-      "review_note": "2026-10-30: End controls now immediately follow their disclosure, before the summary and evidence. Reviewed event.timing explanations: disclosure, Duration/End Date authority, evidence and explicit-save behavior remain accurate; no Help text or anchor changes required."
+      "sha256": "f2458019eafc18b90ceeac9474eb96dc0b91c8cce60585ee915d5584001fe694",
+      "review_note": "KRT-179: The primary date stays visible above Timing options. End and duration controls remain together before timing evidence."
     },
     {
       "source": "src/gui/widgets/temporal_range_widget.py",
@@ -17492,8 +17512,8 @@
     {
       "source": "src/gui/widgets/compact_date_widget.py",
       "symbol": "CompactDateWidget.set_calendar_converter",
-      "sha256": "9cc6e71212ecde7c533241c8f7a2e26386b272640f08a75003f406191772c234",
-      "review_note": "KRT-111: Replacing event/calendar evidence preserves unfinished manual text, caret and selection. A saved assertion from an unavailable calendar is explained and retained until the creator edits it; map/date Help already distinguishes unavailable dates from unbounded boundaries."
+      "sha256": "5d54faf2ccecca019e9e306a79b8d9ef6beb06a1d47aa95585b05415318a5461",
+      "review_note": "KRT-179: Calendar and draft recovery feedback remains visible when needed."
     },
     {
       "source": "src/gui/widgets/relation_form.py",
@@ -17522,8 +17542,8 @@
     {
       "source": "src/gui/widgets/temporal_range_widget.py",
       "symbol": "TemporalRangeWidget.load_timing",
-      "sha256": "35ff6e09d432bebc72921e7fda05a5961541da5fdd8ca7a6cc09a11715084013",
-      "review_note": "KRT-113 refresh correction: hydration records a separate control baseline and restores prior signal blocking. Authored precision stays separate from displayed controls; source/end semantics and saved-calculation Help remain unchanged."
+      "sha256": "7161b03b2ad5a12f184189b95e1d223bdf99ed67c049d406f0f90726cbde32bc",
+      "review_note": "KRT-179: Unsupported timing exposes a repair message. Authored sources and accepted dates retain their original semantics."
     },
     {
       "source": "src/gui/dialogs/event_timing_review_dialog.py",
@@ -17594,8 +17614,8 @@
     {
       "source": "src/gui/widgets/recurrence_widget.py",
       "symbol": "RecurrenceWidget.__init__",
-      "sha256": "dcad87fdc6d2e425432be5d72d1e258f7e584db18f84ef1cdf59956c9c8da435",
-      "review_note": "KRT-131: Reviewed collapsed Repeats disclosure, optional bounds and weekday fields, custom calendar labels, positive interval validation and manual-save boundary. Canonical explanations are in event-recurrence.md; human review pending."
+      "sha256": "d0403c574c1cb45147dbf87c4273d92913b45086c33cec2cd547b22d5356976f",
+      "review_note": "KRT-179: Recurrence mode, bounds and field labels wrap in a narrow inspector. Schedule meaning and save behavior remain the same."
     },
     {
       "source": "src/gui/widgets/timeline/recurrence_strip.py",
@@ -17630,8 +17650,8 @@
     {
       "source": "src/gui/widgets/editor_inspector_composition.py",
       "symbol": "EditorInspectorComposition.__init__",
-      "sha256": "461fc000ffc7d90b0b79fcdd516c0f2d9bdb72ecb0ba2820212e252251d1639d",
-      "review_note": "KRT-146: Linked events now includes authoring actions. Caption distinguishes managing event associations from read-only map/world information, including the detached-world-context suffix. Event-only inspectors retain read-only wording. Tab from the outer disclosure enters the component focus proxy, which tracks the active empty/populated action."
+      "sha256": "772450880b253354f3aa2849ef54d7dbafcb459d0c188d3d306b69a210c79d72",
+      "review_note": "KRT-179: Event Type is in Details above Tags. Context remains independently reachable from Overview."
     },
     {
       "source": "src/gui/dialogs/layer_properties_dialog.py",
@@ -17848,6 +17868,12 @@
       "symbol": "ProjectedShape.boundingRect",
       "sha256": "092b4f32211ccea388e8d8e7c5eeee471b829af13576fec8b1402f8c23ef7d18",
       "review_note": "KRT-175 final selection review: open paths use only a widened stroke hit area with shared feature constants and containing scene bounds. Region hits retain independent odd-even holes; no empty path interior is selectable. Existing source-navigation and read-only Help explanations remain accurate."
+    },
+    {
+      "source": "src/gui/widgets/editor_presentation.py",
+      "symbol": "EditorPresentation._build_writing_disclosure",
+      "sha256": "d492d46003105a35f047f7aa3410fa8485d65d7517bc6f4f9a4c6d27022092ca",
+      "review_note": "KRT-179: Writing tools opens existing Summary and Draft with AI controls and retains their draft state."
     }
   ],
   "review_status": {

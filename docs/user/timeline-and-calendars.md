@@ -16,7 +16,8 @@ Entity state and time-sensitive map content you see. **World current time** is t
 world’s current story time.
 
 1. Use **Go to date → Enter a date…** to inspect a particular date.
-2. With an Event selected, use **Go to selected event** or **Show world at this event** to view its saved date.
+2. With an Event selected, use **Go to selected event** on the Timeline or
+   **More actions → Show world at this event** in the Event editor.
 3. Choose **Return to Current Time** to return to the world’s current story time.
 
 These navigation actions change Viewing time without changing World current time. Choose
@@ -97,7 +98,7 @@ worlds, or receiving changed saved timing cancels the current preview.
   calendar. In narrow layouts, the same menu is under **More actions**. Add an
   hour and minute if needed; a date alone goes to the start of that day. The
   playhead moves there and the timeline centers on it, even without an event.
-- In the Event Editor, choose **Show world at this event** to move the playhead
+- In the Event editor, choose **More actions → Show world at this event** to move the playhead
   to the event's saved date and center the timeline. Maps, entity state, and the
   graph follow the playhead. The event stays selected, World Time stays unchanged,
   and unsaved event edits remain in the editor. Partial or uncertain dates use
@@ -242,7 +243,7 @@ calendar's week length. Quarter ticks appear in years with twelve months.
 Date evidence keeps each source’s date claim separately, so you can choose an event date
 without losing alternative accounts.
 
-1. Select an Event and open **Date evidence…**.
+1. Select an Event, open **Timing options**, then choose **Date evidence…**.
 2. Choose **Add source date**.
 3. Enter the citation under **Source / citation** and its date under **Date given by source**.
 4. Repeat for other sources.
@@ -276,7 +277,7 @@ Chronology records how events are ordered when their calendar dates alone do not
 what you know.
 
 1. Select an Event and save any edited date or duration.
-2. Open **Chronology…** and choose **Add ordering**.
+2. Under **Timing options**, open **Chronology…** and choose **Add ordering**.
 3. Choose **Before**, **After**, or **Same transition as**, then select the other Event.
 4. For Before or After, use **Gap…** if you know a minimum separation between their starts.
 5. Confirm with **OK**.

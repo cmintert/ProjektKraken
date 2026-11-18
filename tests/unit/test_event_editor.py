@@ -25,21 +25,20 @@ def test_editor_init(editor):
 
 
 def test_show_world_action_tracks_open_event(editor, qtbot):
-    assert not editor.btn_show_world_at_event.isEnabled()
+    action = editor.show_world_at_event_action
+    assert not action.isEnabled()
     for event_id in ("first", "second"):
         editor.load_event(Event(id=event_id, name=event_id, lore_date=42.25))
-        assert editor.btn_show_world_at_event.isEnabled()
+        assert action.isEnabled()
         with qtbot.waitSignal(editor.show_world_at_event_requested) as request:
-            editor.btn_show_world_at_event.click()
+            action.trigger()
         assert request.args == [event_id]
     editor.load_event(None)
-    assert not editor.btn_show_world_at_event.isEnabled()
+    assert not action.isEnabled()
 
 
 def test_show_world_uses_saved_date_and_preserves_event_draft(editor, qtbot):
     from unittest.mock import MagicMock
-
-    from PySide6.QtCore import Qt
 
     from src.app.coordinators.time_coordinator import TimeCoordinator
     from src.gui.widgets.timeline import TimelineWidget
@@ -71,7 +70,7 @@ def test_show_world_uses_saved_date_and_preserves_event_draft(editor, qtbot):
     assert editor.temporal_widget.has_pending_draft()
     revision = editor.edit_revision
 
-    qtbot.mouseClick(editor.btn_show_world_at_event, Qt.MouseButton.LeftButton)
+    editor.show_world_at_event_action.trigger()
 
     assert timeline.get_playhead_time() == event.lore_date
     assert timeline.get_current_time() == 100.0

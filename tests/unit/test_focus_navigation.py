@@ -341,6 +341,40 @@ def test_production_navigation_keeps_workspace_and_draft(production, qtbot):
     editor.set_dirty(False)
 
 
+def test_event_inspector_tab_reaches_overflow_and_inline_timing(production, qtbot):
+    from src.core.calendar import CalendarConfig, CalendarConverter
+    from src.core.events import Event
+
+    editor = production.event_editor
+    editor.set_calendar_converter(CalendarConverter(CalendarConfig.create_default()))
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(editor.gallery, "set_owner", Mock())
+        editor.load_event(Event(name="Charter", lore_date=0))
+    production.show()
+    production.activateWindow()
+    production.workspace.show_panel("event")
+    qtbot.wait(10)
+
+    tabs = editor.inspector.main_tabs
+    tabs.tabBar().setFocus()
+    qtbot.keyClick(tabs.tabBar(), Qt.Key.Key_Tab)
+    assert QApplication.focusWidget() is tabs.overflow_button
+
+    timing = editor.temporal_widget
+    timing.date_start.txt_date.setFocus()
+    for target in (timing.date_start.btn_calendar, timing.options_button):
+        qtbot.keyClick(QApplication.focusWidget(), Qt.Key.Key_Tab)
+        assert QApplication.focusWidget() is target
+    qtbot.keyClick(timing.options_button, Qt.Key.Key_Space)
+    qtbot.keyClick(timing.options_button, Qt.Key.Key_Tab)
+    assert QApplication.focusWidget() is timing.source_start.mode
+    timing.options_button.setChecked(False)
+    assert QApplication.focusWidget() is timing.options_button
+    qtbot.keyClick(timing.options_button, Qt.Key.Key_Tab)
+    assert editor.desc_edit.isAncestorOf(QApplication.focusWidget())
+    assert not editor.has_unsaved_changes()
+
+
 def test_focus_writing_owns_tab_and_f6_exits(writing_setup, qtbot):
     window, editor, focus = writing_setup
     navigation = FocusNavigationController(

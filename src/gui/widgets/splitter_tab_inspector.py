@@ -10,7 +10,14 @@ from typing import Optional
 
 import shiboken6
 from PySide6.QtCore import QEvent, QMimeData, QPoint, QSize, Qt, QTimer, Signal
-from PySide6.QtGui import QDrag, QDragEnterEvent, QDropEvent, QMouseEvent, QResizeEvent
+from PySide6.QtGui import (
+    QAction,
+    QDrag,
+    QDragEnterEvent,
+    QDropEvent,
+    QMouseEvent,
+    QResizeEvent,
+)
 from PySide6.QtWidgets import (
     QMenu,
     QSplitter,
@@ -546,6 +553,7 @@ class SplitterTabInspector(QWidget):
         self._sections: list[tuple[QWidget, str]] = []
         self._section_ids: dict[str, QWidget] = {}
         self._auxiliary: dict[str, _AuxiliarySection] = {}
+        self._inspector_actions: list[QAction] = []
         self._active_section: QWidget | None = None
         self.splitter = QSplitter(Qt.Orientation.Vertical)
 
@@ -589,8 +597,15 @@ class SplitterTabInspector(QWidget):
         if tooltip:
             self.main_tabs.setTabToolTip(index, tooltip)
 
+    def add_inspector_actions(self, *actions: QAction) -> None:
+        """Offer editor-owned commands from every split pane's More actions menu."""
+        self._inspector_actions.extend(actions)
+
     def populate_sections(self, menu: QMenu) -> None:
         """Find each section in its current pane, including dragged sections."""
+        if self._inspector_actions:
+            menu.addActions(self._inspector_actions)
+            menu.addSeparator()
         for widget, title in self._sections:
             action = declare_inspection(
                 menu.addAction(title),

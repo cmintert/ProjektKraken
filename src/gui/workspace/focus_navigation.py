@@ -134,7 +134,10 @@ class FocusNavigationController(QObject):
         if isinstance(widget, QTabWidget):
             bar = widget.tabBar()
             close = bar.tabButton(bar.currentIndex(), QTabBar.ButtonPosition.RightSide)
-            return [item for item in (bar, close, widget.currentWidget()) if item]
+            corner = widget.cornerWidget(Qt.Corner.TopRightCorner)
+            return [
+                item for item in (bar, close, corner, widget.currentWidget()) if item
+            ]
         if isinstance(widget, QTabBar):
             return []
         if isinstance(widget, QScrollArea):
