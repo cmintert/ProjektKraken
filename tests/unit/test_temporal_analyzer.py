@@ -97,6 +97,61 @@ def test_age_uses_authored_lifecycle_dates(birth_text, death_text, kind, limits,
 
 
 @pytest.mark.unit
+@pytest.mark.parametrize("unsupported_role", ["birth", "death"])
+def test_age_report_preserves_unresolved_event_date(unsupported_role):
+    calendar = CalendarConfig.create_default()
+    parser = DateParser(calendar)
+    character = make_entity("lifespan-person", "A Character")
+    events = []
+    relations = []
+    for role, date in (("birth", "8 January 1090"), ("death", "8 January 1152")):
+        expression = parser.parse_expression(date).to_dict()
+        if role == unsupported_role:
+            expression["schema_version"] += 1
+        event = Event(
+            id=test_id(role),
+            name=role,
+            lore_date=None,
+            attributes={"_temporal_v2": {"schema": 1, "expression": expression}},
+        )
+        events.append(event)
+        relations.append(
+            {
+                "id": test_id(f"link-{role}"),
+                "rel_type": role,
+                "source_id": event.id,
+                "target_id": character.id,
+            }
+        )
+
+    report = TemporalAnalyzer().analyze_data(
+        entities=[character],
+        events=events,
+        relations=relations,
+        calendar_config=calendar,
+    )
+
+    lifespan = report.character_lifespans[0]
+    source = (
+        lifespan.birth_source if unsupported_role == "birth" else lifespan.death_source
+    )
+    assert source is not None
+    assert source.event_id == test_id(unsupported_role)
+    assert source.precision is None
+    assert lifespan.age_at_death.kind == "unavailable"
+    unresolved = [
+        issue
+        for issue in report.conflicts
+        if issue.conflict_type == "unresolved_lifespan"
+    ]
+    assert len(unresolved) == 1
+    assert unresolved[0].related_ids == [
+        test_id(f"link-{unsupported_role}"),
+        source.event_id,
+    ]
+
+
+@pytest.mark.unit
 @pytest.mark.parametrize(
     ("claims", "kind", "reason"),
     [

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-18
-**Commit:** 43c52aa6ece083ed51bc6b71b7371e5b4c5c62b1
+**Commit:** af99c6f39576706ad188ba351b774cd23c77c9b9
 ---
 
 # Changelog
@@ -105,6 +105,10 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-18)* **Character Lifespans (KRT-180)**: Kept temporal analysis
+  running when a birth or death Event used an unsupported date schema. Added
+  regression coverage for unresolved dates and preserved links to source Events.
 
 - *(2026-11-18)* **Graph edge labels**: Made relation labels larger and
   horizontal, with theme-aware text and a background that masks the line

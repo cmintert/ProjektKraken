@@ -553,22 +553,23 @@ class TemporalAnalyzer:
     ) -> tuple[DateEvidence, LifespanSource]:
         assert self._date_parser is not None
         converter = self._date_parser.converter
+        expression = None
         if claim.event_id is not None:
             node = f"event:{claim.event_id}"
             bounds = anchors[node]
             assert bounds.joint is not None
             model = bounds.joint.model
             definition = model.definitions.get(node)
-            expression = (
-                TemporalExpression.from_dict(definition.expression)
-                if definition is not None and definition.expression is not None
-                else None
-            )
+            if definition is not None and definition.expression is not None:
+                try:
+                    expression = TemporalExpression.from_dict(definition.expression)
+                except (ValueError, TypeError, KeyError):
+                    # The timing resolver already captured the parse error in bounds.
+                    pass
             caption = endpoint_caption(
                 endpoint_signature(model.endpoints[node]), converter, include_time=True
             )
         else:
-            expression = None
             bounds = ResolvedTemporalBounds(
                 hard_start=claim.lower, hard_end=claim.upper
             )
