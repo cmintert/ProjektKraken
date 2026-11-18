@@ -829,20 +829,6 @@
       "source": "color = QColor(ThemeManager().get_theme()[\"app_bg\"]).darker(150)"
     },
     {
-      "key": "src/gui/widgets/graph_view/graph_builder.py|GraphBuilder._build_network|literal-color|4f6666232a525634",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in GraphBuilder._build_network; migrate this expression when its presentation path is next touched.",
-      "source": "bgcolor=theme.get(\"background_color\", \"#1e1e1e\"),"
-    },
-    {
-      "key": "src/gui/widgets/graph_view/graph_builder.py|GraphBuilder._build_network|literal-color|673ad5d8a95855d4",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in GraphBuilder._build_network; migrate this expression when its presentation path is next touched.",
-      "source": "edge_color = theme.get(\"edge_color\", \"#888888\")"
-    },
-    {
       "key": "src/gui/widgets/graph_view/graph_builder.py|GraphBuilder._inject_theme_css|literal-color|4f6666232a525634",
       "count": 1,
       "category": "legacy",

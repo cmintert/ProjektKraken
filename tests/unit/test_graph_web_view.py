@@ -8,7 +8,9 @@ from src.gui.widgets.graph_view.graph_web_view import GraphWebView
 pytestmark = pytest.mark.ci_fast
 
 
-def test_update_graph_data_maps_properties_correctly(qapp: object, qtbot: QtBot) -> None:
+def test_update_graph_data_maps_properties_correctly(
+    qapp: object, qtbot: QtBot
+) -> None:
     """Test that update_graph_data correctly maps Python-side properties to Vis.js ones.
 
     Specifically verifies:
@@ -34,7 +36,8 @@ def test_update_graph_data_maps_properties_correctly(qapp: object, qtbot: QtBot)
     ]
 
     # Call method
-    web_view.update_graph_data(nodes, edges)
+    theme = {"text_color": "#F0F0F0", "background_color": "#282828"}
+    web_view.update_graph_data(nodes, edges, theme_config=theme)
 
     # Verify runJavaScript was called
     mock_page.runJavaScript.assert_called_once()
@@ -51,3 +54,4 @@ def test_update_graph_data_maps_properties_correctly(qapp: object, qtbot: QtBot)
     # Check for Edge Label/Title mapping from rel_type
     assert '"label": "linked_to"' in script
     assert '"title": "linked_to"' in script
+    assert '"font": {"color": "#F0F0F0", "background": "#282828"}' in script

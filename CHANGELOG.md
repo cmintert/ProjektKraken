@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-18
-**Commit:** 3ad4662efe9f2e6d4f038a873bf9be85706726d2
+**Commit:** f770ccd9ce02736f75ca5799db90b3b12ef37fc1
 ---
 
 # Changelog
@@ -100,6 +100,11 @@ All notable changes to this project will be documented in this file.
   updated local-access documentation; reduced streaming complexity from 17 to 13.
 
 ### Fixed
+
+- *(2026-11-18)* **Graph edge labels**: Made relation labels larger and
+  horizontal, with theme-aware text and a background that masks the line
+  behind each label. Added regression coverage for theme switches and
+  incremental graph updates.
 
 - *(2026-11-17)* **Map display preferences (KRT-177)**: Restored Show
   Footprints and Snap across restarts. Kept new footprint previews usable

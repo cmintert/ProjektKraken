@@ -3,6 +3,8 @@
 import json
 from typing import Any
 
+from src.gui.widgets.graph_view.graph_builder import GraphBuilder
+
 
 def theme_update_script(
     theme: dict[str, str],
@@ -17,7 +19,14 @@ def theme_update_script(
     Recolor the existing renderer objects instead, using their setOptions API.
     Subsequent ordinary data updates are prepared from the current theme as usual.
     """
-    payload = json.dumps({"theme": theme, "nodes": nodes, "edges": edges})
+    payload = json.dumps(
+        {
+            "theme": theme,
+            "nodes": nodes,
+            "edges": edges,
+            "edgeLabelColors": GraphBuilder.edge_label_colors(theme),
+        }
+    )
     script = """(() => {
         if (window.__krakenGraphGeneration !== %GENERATION%) return false;
         if (document.readyState !== 'complete') return false;
@@ -46,7 +55,7 @@ def theme_update_script(
             payload.edges.forEach(edge => {
                 const rendered = network.body.edges[edge.id];
                 if (rendered) rendered.setOptions({color: edge.color,
-                    font: {color: payload.theme.text_color}});
+                    font: payload.edgeLabelColors});
             });
             network.redraw();
         }

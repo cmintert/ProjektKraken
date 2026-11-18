@@ -1,5 +1,6 @@
 """Latest-theme delivery and renderer state preservation, including real JS."""
 
+import json
 import os
 import subprocess
 import sys
@@ -122,6 +123,14 @@ def _check_real_graph_theme(qapp, qtbot):
     qtbot.waitUntil(
         lambda: _javascript(page, qtbot, "Boolean(window.updateGraph)"), timeout=15000
     )
+    edge_font = """(() => {
+        const {size, align, strokeWidth, color, background} =
+            network.body.edges.edge.options.font;
+        return JSON.stringify([size, align, strokeWidth, color, background]);
+    })()"""
+    theme = ThemeManager().get_theme()
+    actual = json.loads(_javascript(page, qtbot, edge_font))
+    assert actual == [14, "horizontal", 0, theme["text_main"], theme["app_bg"]], actual
     _javascript(
         page,
         qtbot,
@@ -139,7 +148,10 @@ def _check_real_graph_theme(qapp, qtbot):
     before = _javascript(page, qtbot, snapshot)
     for name in ("light_mode", "dark_mode", "light_mode"):
         ThemeManager().set_theme(name, persist=False)
-    qtbot.waitUntil(lambda: view._pending_theme is None, timeout=15000)
+        qtbot.waitUntil(lambda: view._pending_theme is None, timeout=15000)
+        theme = ThemeManager().get_theme()
+        actual = json.loads(_javascript(page, qtbot, edge_font))
+        assert actual == [14, "horizontal", 0, theme["text_main"], theme["app_bg"]]
     assert _javascript(page, qtbot, snapshot) == before
     assert _javascript(page, qtbot, "window.themeRestarts") == 0
     assert (

@@ -353,8 +353,11 @@ class GraphWebView(QWidget):
             for e in edges
         ]
         if "text_color" in theme:
-            for item in js_nodes + js_edges:
+            for item in js_nodes:
                 item["font"] = {"color": theme["text_color"]}
+        label_colors = GraphBuilder.edge_label_colors(theme)
+        for edge in js_edges:
+            edge["font"] = label_colors
 
         nodes_json = json.dumps(js_nodes)
         edges_json = json.dumps(js_edges)

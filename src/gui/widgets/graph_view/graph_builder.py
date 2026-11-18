@@ -55,6 +55,15 @@ class GraphBuilder:
     _vis_utils_content: str | None = None
 
     @staticmethod
+    def edge_label_colors(theme: dict[str, str]) -> dict[str, str]:
+        """Use the graph canvas color to mask the line behind each label."""
+        default = GraphBuilder.DEFAULT_THEME
+        return {
+            "color": theme.get("text_color", default["text_color"]),
+            "background": theme.get("background_color", default["background_color"]),
+        }
+
+    @staticmethod
     def prepare_node(
         node: dict[str, Any],
         entity_color: str,
@@ -204,14 +213,10 @@ class GraphBuilder:
                 result["label"] = f"{rel_type} (?)"
                 result["width"] = 1
 
-        has_projection_metadata = (
-            "parallel_count" in edge or "parallel_index" in edge
-        )
+        has_projection_metadata = "parallel_count" in edge or "parallel_index" in edge
         parallel_count = edge.get("parallel_count", 1)
         parallel_index = edge.get("parallel_index", 0)
-        if has_projection_metadata and (
-            parallel_count <= 1 or parallel_index == 0
-        ):
+        if has_projection_metadata and (parallel_count <= 1 or parallel_index == 0):
             # Explicitly clear any curve retained by vis DataSet.update() when
             # an incremental refresh changes a formerly parallel edge's lane.
             result["smooth"] = {"enabled": False}
@@ -442,8 +447,10 @@ class GraphBuilder:
         net = Network(
             height=height,
             width=width,
-            bgcolor=theme.get("background_color", "#1e1e1e"),
-            font_color=theme.get("text_color", "white"),
+            bgcolor=theme.get(
+                "background_color", self.DEFAULT_THEME["background_color"]
+            ),
+            font_color=theme.get("text_color", self.DEFAULT_THEME["text_color"]),
             directed=True,
         )
 
@@ -481,8 +488,10 @@ class GraphBuilder:
                     }
                 },
                 "font": {
-                    "size": 10,
-                    "align": "middle"
+                    "size": 14,
+                    "face": "Segoe UI",
+                    "align": "horizontal",
+                    "strokeWidth": 0
                 },
                 "smooth": {
                     "enabled": false
@@ -495,11 +504,12 @@ class GraphBuilder:
         }
         """
         )
+        net.options["edges"]["font"].update(self.edge_label_colors(theme))
 
         # Add nodes
         entity_color = theme.get("node_entity_color", self.ENTITY_COLOR)
         event_color = theme.get("node_event_color", self.EVENT_COLOR)
-        edge_color = theme.get("edge_color", "#888888")
+        edge_color = theme.get("edge_color", self.DEFAULT_THEME["edge_color"])
 
         node_lexicon = (lexicon_config or {}).get("nodes")
         edge_lexicon = (lexicon_config or {}).get("edges")
