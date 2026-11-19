@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock
 
 import pytest
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget
 
 from src.app.coordinators.event_timing_coordinator import EventTimingCoordinator
@@ -22,6 +23,7 @@ def test_compound_controls_preserve_loaded_draft_and_require_explicit_save(qtbot
     editor, converter = editor_for(qtbot, event, [root])
     editor.resize(360, 900)
     editor.show()
+    qtbot.mouseClick(editor.temporal_widget.options_button, Qt.MouseButton.LeftButton)
     source = editor.temporal_widget.source_start
     source.mode.setCurrentIndex(source.mode.findData("event"))
     source.events.setCurrentIndex(source.events.findData("event:root"))
@@ -50,9 +52,8 @@ def test_compound_controls_preserve_loaded_draft_and_require_explicit_save(qtbot
     assert source.definition() == definition
     controls = source.options
     assert controls.disclosure.isChecked()
+    assert controls.compound.isVisibleTo(editor)
     # Tab/Enter/Escape remain owned by the local numeric field.
-    from PySide6.QtCore import Qt
-
     field = controls.compound.days
     field.setFocus()
     field.lineEdit().selectAll()

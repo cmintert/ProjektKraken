@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-19
-**Commit:** b938a1ab1650c554a227518200dbd46c82fda3c9
+**Commit:** 697542900627d3704c5b663a3262d1054e385f20
 ---
 
 # Changelog
@@ -12,6 +12,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-11-19)* **Testing**: Exercised compound offset keyboard behavior
+  through the Event editor's Timing options disclosure.
 
 - *(2026-11-19)* **Character Lifespans (KRT-180)**: Added contextual Help for
   opening the birth and death Events from a selected lifespan.
