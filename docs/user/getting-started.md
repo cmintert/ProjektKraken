@@ -17,8 +17,8 @@ database-only backup, see [portability and recovery](portability-and-recovery.md
 1. Open [ProjektKraken Releases](https://github.com/cmintert/ProjektKraken/releases)
    and download both files with the
    same version:
-   - `ProjektKraken-0.21.0-beta1-windows-x64.zip`
-   - `ProjektKraken-0.21.0-beta1-windows-x64.zip.sha256`
+   - `ProjektKraken-0.22.0-beta1-windows-x64.zip`
+   - `ProjektKraken-0.22.0-beta1-windows-x64.zip.sha256`
 2. Put these two files in a folder of their own. Open PowerShell in that
    folder and run:
 
@@ -38,13 +38,11 @@ No Python installation, command prompt, or `start-kraken.cmd` is required.
 Keep the `_internal` folder beside `ProjektKraken.exe`; it contains the files
 the application needs.
 
-The filenames above illustrate the 0.21.0 beta 1 candidate. The Releases page
-lists published packages; use the exact filename of the release you download
-and read its release notes before updating an existing installation. Version
-0.21.0 upgrades worlds to schema 4, which older versions cannot open. Back up
-the complete world folder and retain the upgrade recovery bundle before
-continuing work in the upgraded world. For a source checkout, follow the
-[developer setup](https://github.com/cmintert/ProjektKraken/blob/main/docs/developer/development.md).
+Use the exact filenames of the release you download and read its release notes
+before updating. Version 0.22.0 upgrades world databases to schema 8. Back up
+the complete world folder and retain the upgrade recovery bundle. To return to
+0.21.0 or earlier, use a compatible pre-upgrade copy. For a source checkout,
+follow the [developer setup](https://github.com/cmintert/ProjektKraken/blob/main/docs/developer/development.md).
 
 (help-world-manage)=
 

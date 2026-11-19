@@ -97,11 +97,10 @@ To create the sample world from a source checkout, follow the
 
 ## Download
 
-**Projekt Kraken v0.21.0 Beta 1 — Windows x64**
+**Projekt Kraken v0.22.0 Beta 1 — Windows x64**
 
-This checkout prepares `0.21.0-beta1`. The Releases page lists currently
-published packages; preparation of this version does not mean its download is
-available yet.
+This checkout corresponds to `0.22.0-beta1`. See the Releases page for published
+packages.
 
 Download the [latest release](https://github.com/cmintert/ProjektKraken/releases),
 extract the complete ZIP archive, and launch `ProjektKraken.exe`. Keep `_internal`
@@ -112,11 +111,12 @@ locally in portable world folders. [Optional AI features](docs/user/search-ai-an
 can be configured separately.
 
 Kraken is under active development. Back up complete world folders before
-upgrading. Version 0.21.0 upgrades worlds to schema 4; older versions cannot open
-an upgraded world. Retain the upgrade recovery bundle and your original backup.
+upgrading. Version 0.22.0 upgrades world databases to schema 8. To return to
+0.21.0 or earlier, use a compatible pre-upgrade copy. Retain the upgrade recovery
+bundle and your original backup.
 
 [Installation instructions](docs/user/getting-started.md#install-and-launch) ·
-[Release notes](docs/releases/0.21.0-beta1.md) ·
+[Release notes](docs/releases/0.22.0-beta1.md) ·
 [Report an issue](https://github.com/cmintert/ProjektKraken/issues)
 
 ---
