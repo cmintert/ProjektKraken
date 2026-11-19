@@ -64,8 +64,8 @@ native platform, DPI and label geometry. Twelve PNGs cover all six themes at
 Return to work. Control widths meet their natural size hints. Native images were
 visually inspected for readable content, complete labels, wrapping and link roles.
 
-Examples: [dark narrow](dark_mode-360.png), [light normal](light_mode-640.png),
-[muted light narrow](muted_light_mode-360.png).
+Examples: dark narrow (`dark_mode-360.png`), light normal (`light_mode-640.png`),
+muted light narrow (`muted_light_mode-360.png`).
 
 Reproduce with:
 

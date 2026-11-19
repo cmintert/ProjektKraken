@@ -1,5 +1,8 @@
 # Authoring UX contracts and evidence
 
+Evidence pages record local screenshots by filename. The published pages retain
+the observations and any tracked reports.
+
 ```{toctree}
 :maxdepth: 1
 :caption: Contracts, benchmark and plans

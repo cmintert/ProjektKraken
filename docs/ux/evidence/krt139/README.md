@@ -35,9 +35,9 @@ preparing/ready/unavailable, 360/640/960 widths and unavailable/off controls; na
 light retry focus and dark ready controls were inspected. This is rendered and
 automated evidence; independent human/native-DPI review remains pending.
 
-![Automatic semantic recovery at narrow width](automatic-semantic-retry.png)
+Automatic semantic recovery at narrow width (`automatic-semantic-retry.png`)
 
-![Ready semantic sharing without a redundant preparation action](automatic-semantic-ready.png)
+Ready semantic sharing without a redundant preparation action (`automatic-semantic-ready.png`)
 
 The user guide retains existing Help anchors and now describes enable → automatic
 preparation → ready, automatic refresh, and local retry recovery. The documentation
@@ -153,9 +153,9 @@ oversized evidence is explicit rather than asserted absent.
   and `output/playwright/krt139/`. These are rendered observations, not native
   keyboard/DPI or independent human acceptance.
 
-![Offscreen narrow light-theme sharing controls](settings-light-narrow.png)
+Offscreen narrow light-theme sharing controls (`settings-light-narrow.png`)
 
-![Offscreen active dark-theme sharing controls](settings-dark-active.png)
+Offscreen active dark-theme sharing controls (`settings-dark-active.png`)
 
 ## Documentation review record
 

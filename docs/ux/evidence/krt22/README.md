@@ -82,7 +82,7 @@ directory. It captures actual inspector widgets with seeded names and dates.
 
 | Inspector | Capture | Refine | Timing | Advanced |
 | --- | --- | --- | --- | --- |
-| Entity, 360 | [Image](entity-360-capture.png) | [Image](entity-360-refine.png) | [Image](entity-360-timing.png) | [Image](entity-360-advanced.png) |
-| Entity, 640 | [Image](entity-640-capture.png) | [Image](entity-640-refine.png) | [Image](entity-640-timing.png) | [Image](entity-640-advanced.png) |
-| Event, 360 | [Image](event-360-capture.png) | [Image](event-360-refine.png) | [Image](event-360-timing.png) | [Image](event-360-advanced.png) |
-| Event, 640 | [Image](event-640-capture.png) | [Image](event-640-refine.png) | [Image](event-640-timing.png) | [Image](event-640-advanced.png) |
+| Entity, 360 | Image (`entity-360-capture.png`) | Image (`entity-360-refine.png`) | Image (`entity-360-timing.png`) | Image (`entity-360-advanced.png`) |
+| Entity, 640 | Image (`entity-640-capture.png`) | Image (`entity-640-refine.png`) | Image (`entity-640-timing.png`) | Image (`entity-640-advanced.png`) |
+| Event, 360 | Image (`event-360-capture.png`) | Image (`event-360-refine.png`) | Image (`event-360-timing.png`) | Image (`event-360-advanced.png`) |
+| Event, 640 | Image (`event-640-capture.png`) | Image (`event-640-refine.png`) | Image (`event-640-timing.png`) | Image (`event-640-advanced.png`) |

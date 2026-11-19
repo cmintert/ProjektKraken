@@ -95,8 +95,8 @@ This is an automated offscreen render inspection, not a reader-performance test.
 
 Settings captures cover six themes and 360/640/960-pixel widths, including Off,
 Active, semantic preparation, readiness and unavailability. Inspected examples:
-[light narrow disclosure](sharing-light-narrow.png) and
-[dark active disclosure](sharing-dark-active.png). The narrow panel scrolls to
+light narrow disclosure (`sharing-light-narrow.png`) and
+dark active disclosure (`sharing-dark-active.png`). The narrow panel scrolls to
 its existing controls; the updated disclosure stays readable without overlapping
 the surrounding Settings actions. Captures do not establish native-DPI or human
 acceptance.

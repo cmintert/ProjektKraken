@@ -28,10 +28,10 @@ $env:QT_QPA_PLATFORM = "offscreen"
 
 | State | Dark | Light |
 | --- | --- | --- |
-| Entity, 360 px, closed | [Closed](entity-dark_mode-360-support.png) | [Closed](entity-light_mode-360-support.png) |
-| Entity, 360 px, open | [Both open, focus](entity-dark_mode-360-writing_panels.png) | [Summary open](entity-light_mode-360-summary.png) |
-| Event, 360 px, AI open | [AI open](event-dark_mode-360-ai_draft.png) | [AI open](event-light_mode-360-ai_draft.png) |
-| Event, 871 px, both open | [Both open, focus](event-dark_mode-871-writing_panels.png) | [Both open, focus](event-light_mode-871-writing_panels.png) |
+| Entity, 360 px, closed | Closed (`entity-dark_mode-360-support.png`) | Closed (`entity-light_mode-360-support.png`) |
+| Entity, 360 px, open | Both open, focus (`entity-dark_mode-360-writing_panels.png`) | Summary open (`entity-light_mode-360-summary.png`) |
+| Event, 360 px, AI open | AI open (`event-dark_mode-360-ai_draft.png`) | AI open (`event-light_mode-360-ai_draft.png`) |
+| Event, 871 px, both open | Both open, focus (`event-dark_mode-871-writing_panels.png`) | Both open, focus (`event-light_mode-871-writing_panels.png`) |
 
 The retained 360 px captures report zero horizontal scroll. Existing tests cover
 independent simultaneous panels, in-progress Summary/AI input, description

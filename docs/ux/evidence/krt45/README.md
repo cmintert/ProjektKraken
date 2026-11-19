@@ -195,17 +195,17 @@ Representative review images:
 
 | Check | Dark | Light |
 | --- | --- | --- |
-| 331 px identity/source and writing | [Entity Overview](after/entity-dark_mode-331-overview.png) | [Entity Overview](after/entity-light_mode-331-overview.png) |
-| 331 px structured date qualification | [Event advanced](after/event-dark_mode-331-advanced.png) | [Event advanced](after/event-light_mode-331-advanced.png) |
-| 560 px timing + writing | [Event Overview](after/event-dark_mode-560-overview.png) | [Event Overview](after/event-light_mode-560-overview.png) |
-| 871 px tags + typed fields | [Entity Details](after/entity-dark_mode-871-details.png) | [Entity Details](after/entity-light_mode-871-details.png) |
-| 331 px Sheet actions and contrast | [Entity Sheet](after/entity-dark_mode-331-sheet.png) | [Entity Sheet](after/entity-light_mode-331-sheet.png) |
-| 331 px relationship groups | [Event Connections](after/event-dark_mode-331-connections.png) | [Event Connections](after/event-light_mode-331-connections.png) |
-| 560 px context without nested vertical scrolling | [Event context](after/event-dark_mode-560-context_embedded.png) | [Event context](after/event-light_mode-560-context_embedded.png) |
-| 871 px independent Sheet pane and home | [Entity split](after/entity-dark_mode-871-sheet_split.png) | [Entity split](after/entity-light_mode-871-sheet_split.png) |
-| 331 px independent World context pane | [Entity split](after/entity-dark_mode-331-context_split.png) | [Entity split](after/entity-light_mode-331-context_split.png) |
-| 331 × 480 px footer/action accessibility | [Event short](after/event-dark_mode-331-short.png) | [Event short](after/event-light_mode-331-short.png) |
-| Named destinations and layout routes | [More menu](after/event-dark_mode-331-more-menu.png) | [More menu](after/event-light_mode-331-more-menu.png) |
+| 331 px identity/source and writing | Entity Overview (`after/entity-dark_mode-331-overview.png`) | Entity Overview (`after/entity-light_mode-331-overview.png`) |
+| 331 px structured date qualification | Event advanced (`after/event-dark_mode-331-advanced.png`) | Event advanced (`after/event-light_mode-331-advanced.png`) |
+| 560 px timing + writing | Event Overview (`after/event-dark_mode-560-overview.png`) | Event Overview (`after/event-light_mode-560-overview.png`) |
+| 871 px tags + typed fields | Entity Details (`after/entity-dark_mode-871-details.png`) | Entity Details (`after/entity-light_mode-871-details.png`) |
+| 331 px Sheet actions and contrast | Entity Sheet (`after/entity-dark_mode-331-sheet.png`) | Entity Sheet (`after/entity-light_mode-331-sheet.png`) |
+| 331 px relationship groups | Event Connections (`after/event-dark_mode-331-connections.png`) | Event Connections (`after/event-light_mode-331-connections.png`) |
+| 560 px context without nested vertical scrolling | Event context (`after/event-dark_mode-560-context_embedded.png`) | Event context (`after/event-light_mode-560-context_embedded.png`) |
+| 871 px independent Sheet pane and home | Entity split (`after/entity-dark_mode-871-sheet_split.png`) | Entity split (`after/entity-light_mode-871-sheet_split.png`) |
+| 331 px independent World context pane | Entity split (`after/entity-dark_mode-331-context_split.png`) | Entity split (`after/entity-light_mode-331-context_split.png`) |
+| 331 × 480 px footer/action accessibility | Event short (`after/event-dark_mode-331-short.png`) | Event short (`after/event-light_mode-331-short.png`) |
+| Named destinations and layout routes | More menu (`after/event-dark_mode-331-more-menu.png`) | More menu (`after/event-light_mode-331-more-menu.png`) |
 
 Reproduce using the capture script and source from commit `7f723d08`:
 `.venv\Scripts\python.exe -m scripts.capture_inspector_evidence --output tmp/krt45/review`

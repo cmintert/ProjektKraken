@@ -1,6 +1,6 @@
 name: Build and Deploy Sphinx Docs
 
-# Local Sphinx validation happens before push; publish only on request or beta tag.
+# Validate each beta tag. Publish by dispatch from the Pages deployment branch.
 on:
   push:
     tags:
@@ -39,7 +39,7 @@ jobs:
           path: docs/_build/html
 
   deploy:
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     permissions:

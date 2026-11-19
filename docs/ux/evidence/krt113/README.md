@@ -241,22 +241,22 @@ the first fontless captures were replaced after inspection revealed missing glyp
 
 - Timing cards: all six themes at **360 × 1000** and **680 × 1000**; manual start,
   independent followed end, fractional offset, expanded endpoint options and focus.
-  See [dark narrow](timing-dark_mode-360.png),
-  [light wide](timing-light_mode-680.png), and
-  [unsupported timing](timing-unsupported-360.png).
+  See dark narrow (`timing-dark_mode-360.png`),
+  light wide (`timing-light_mode-680.png`), and
+  unsupported timing (`timing-unsupported-360.png`).
 - Offline Help: the actual HelpViewer using the generated Event timing page,
   dark/light at **360 × 900** and **680 × 900**. Search for “follow event” was
-  checked to reach Event timing. See [narrow Help](help-dark_mode-360.png) and
-  [wide Help](help-light_mode-680.png).
+  checked to reach Event timing. See narrow Help (`help-dark_mode-360.png`) and
+  wide Help (`help-light_mode-680.png`).
 - Cascade review: all six themes at **360 × 560** and **680 × 560**, showing
   completed Before/After snapshots and shared actions. See
-  [narrow light review](review-light_mode-360.png) and
-  [wide fantasy review](review-fantasy_mode-680.png).
+  narrow light review (`review-light_mode-360.png`) and
+  wide fantasy review (`review-fantasy_mode-680.png`).
 - Timing draft after an autosave tick: actual Event inspectors in all six themes
   at **360 × 900** and **680 × 900**, using disposable data and no database worker.
   The status and Save Changes remain visible with no timing-review popup. See
-  [narrow fantasy draft](autosave-fantasy_mode-360.png) and
-  [wide light draft](autosave-light_mode-680.png). These establish offscreen
+  narrow fantasy draft (`autosave-fantasy_mode-360.png`) and
+  wide light draft (`autosave-light_mode-680.png`). These establish offscreen
   rendering, not native DPI or human acceptance.
 - Inspection corrected broad uppercase styling on calculation feedback, removed
   an empty Span heading in independent-end mode, and hid invented numeric fields

@@ -18,7 +18,7 @@ exact occurrence bound. Longform contains all eleven authored items.
   reviewed complexity hotspot was modified.
 - The production map widget was rendered offscreen using software rendering,
   the production stylesheet and an explicitly loaded Segoe UI font.
-  [Before](before.png) and [after](after.png) show the expanding border and
+  Before (`before.png`) and after (`after.png`) show the expanding border and
   moving sword marker. Persisted geometry was resolved through the production
   resolver and applied through the map widget; these captures do not establish
   a full asynchronous application navigation test or newcomer discoverability.
@@ -73,7 +73,7 @@ checked for preservation; a SQLite recovery snapshot is retained at
 
 The five focused tests passed again, including custom catalog discovery and
 asset existence; Ruff passed. Actual map-widget captures are
-[before](army-before.png) and [after](army-after.png).
+before (`army-before.png`) and after (`army-after.png`).
 The updated portable archive is `artifacts/krt18/Northwatch Demo (Army Icon).zip`;
 it was read back, extracted, and validated independently by the package check.
 The earlier ZIP remains available as the previous version.

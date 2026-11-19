@@ -19,10 +19,10 @@ visible editor and writing actions share the column's left edge. The prose stays
 left-aligned. The expanded Summary/AI controls wrap within the same width.
 Event timing and History & context retain their separate Overview layout.
 
-Visual examples: [wide Entity, light](entity-light_mode-1200-overview.png),
-[normal Event, light](event-light_mode-800-overview.png),
-[narrow Entity, dark](entity-dark_mode-360-overview.png), and
-[narrow Event with panels open, dark](event-dark_mode-360-writing_panels.png).
+Visual examples: wide Entity, light (`entity-light_mode-1200-overview.png`),
+normal Event, light (`event-light_mode-800-overview.png`),
+narrow Entity, dark (`entity-dark_mode-360-overview.png`), and
+narrow Event with panels open, dark (`event-dark_mode-360-writing_panels.png`).
 
 The implementation reuses the live wiki editor, its splitter object, and shared
 supporting-action styles. The empty splitter pane is hidden in the bounded

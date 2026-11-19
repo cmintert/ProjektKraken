@@ -74,16 +74,16 @@ software viewport. A synthetic gray map is a test fixture.
 
 Representative captures:
 
-- [Light normal](screenshots/light_mode-1400.png),
-  [light menu](screenshots/light_mode-1400-menu.png),
-  [light focus](screenshots/light_mode-1400-focus.png).
-- [Dark narrow](screenshots/dark_mode-520.png),
-  [dark hover](screenshots/dark_mode-1400-hover.png),
-  [light narrow disabled](screenshots/light_mode-520-disabled.png).
-- [Fantasy](screenshots/fantasy_mode-1400.png),
-  [Imperial](screenshots/imperial_mode-520.png),
-  [Cyberpunk](screenshots/cyberpunk_mode-1400.png),
-  [Muted light](screenshots/muted_light_mode-520.png).
+- Light normal (`screenshots/light_mode-1400.png`),
+  light menu (`screenshots/light_mode-1400-menu.png`),
+  light focus (`screenshots/light_mode-1400-focus.png`).
+- Dark narrow (`screenshots/dark_mode-520.png`),
+  dark hover (`screenshots/dark_mode-1400-hover.png`),
+  light narrow disabled (`screenshots/light_mode-520-disabled.png`).
+- Fantasy (`screenshots/fantasy_mode-1400.png`),
+  Imperial (`screenshots/imperial_mode-520.png`),
+  Cyberpunk (`screenshots/cyberpunk_mode-1400.png`),
+  Muted light (`screenshots/muted_light_mode-520.png`).
 
 Reproduce from the project environment with `QT_QPA_PLATFORM=offscreen` and
 `KRT48_EVIDENCE_DIR=docs/ux/evidence/krt48/screenshots`, running

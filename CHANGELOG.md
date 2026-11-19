@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-19
-**Commit:** 079d5699
+**Commit:** 29903e89
 ---
 
 # Changelog
@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-11-19)* **Release documentation (KRT-181)**: Listed local UX captures
+  by filename so the public manual builds from a clean checkout. Beta tags
+  validate the manual and a dispatch from `main` publishes it to GitHub Pages.
 
 - *(2026-11-19)* **Beta verification (KRT-181)**: Updated PySide6 and repaired
   Graph teardown, map picker sizing, and Timeline loading for the release

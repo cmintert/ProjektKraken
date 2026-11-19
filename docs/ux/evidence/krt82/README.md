@@ -128,10 +128,10 @@ Retained reports: [100%](matrix-scale-1.0.json.gz),
 
 | Surface | Before | After |
 | --- | --- | --- |
-| Graph filter, 360 px | [Clipped type selector](before-scale1.0-GraphFilterBar-360-default-dark_mode-text1.0-long0.png) | [Reflowed controls](after-scale1.0-GraphFilterBar-360-default-dark_mode-text1.0-long0.png) |
-| Generation controls, 200% text | [Checkbox/prompt collision](before-scale1.0-LLMGenerationWidget-360-default-dark_mode-text2.0-long0.png) | [Scrollable complete longer labels](after-scale1.0-LLMGenerationWidget-360-default-dark_mode-text2.0-long1.png) |
-| Analysis dark theme | Native light-background fallback was reproduced during diagnosis | [Theme-owned background](after-scale1.0-MainAnalysisPanel-360-default-dark_mode-text1.0-long0.png) |
-| Minimum workspace, 200% Qt/text | Earlier clipped Save wording was reproduced during diagnosis | [1280 × 720 logical client](after-scale2.0-WorkspaceShell-1280-default-dark_mode-text2.0-long1.png) |
+| Graph filter, 360 px | Clipped type selector (`before-scale1.0-GraphFilterBar-360-default-dark_mode-text1.0-long0.png`) | Reflowed controls (`after-scale1.0-GraphFilterBar-360-default-dark_mode-text1.0-long0.png`) |
+| Generation controls, 200% text | Checkbox/prompt collision (`before-scale1.0-LLMGenerationWidget-360-default-dark_mode-text2.0-long0.png`) | Scrollable complete longer labels (`after-scale1.0-LLMGenerationWidget-360-default-dark_mode-text2.0-long1.png`) |
+| Analysis dark theme | Native light-background fallback was reproduced during diagnosis | Theme-owned background (`after-scale1.0-MainAnalysisPanel-360-default-dark_mode-text1.0-long0.png`) |
+| Minimum workspace, 200% Qt/text | Earlier clipped Save wording was reproduced during diagnosis | 1280 × 720 logical client (`after-scale2.0-WorkspaceShell-1280-default-dark_mode-text2.0-long1.png`) |
 
 [Format equivalence](format-equivalence.json) records the required final commit
 formatting: all 26 affected Python syntax trees remain identical. The matrix
@@ -166,9 +166,9 @@ checks. Offscreen allocation captures:
 
 | Surface | Before | After |
 | --- | --- | --- |
-| Event inspector | [Wasted header/footer height](compact-followup/before-EventEditorWidget.png) | [Content-sized rows](compact-followup/after-EventEditorWidget.png) |
-| Entity inspector | [Wasted header/footer height](compact-followup/before-EntityEditorWidget.png) | [Content-sized rows](compact-followup/after-EntityEditorWidget.png) |
-| Populated Explorer | [Tall filter group](compact-followup/before-UnifiedListWidget.png) | [Compact filters and larger list](compact-followup/after-UnifiedListWidget.png) |
+| Event inspector | Wasted header/footer height (`compact-followup/before-EventEditorWidget.png`) | Content-sized rows (`compact-followup/after-EventEditorWidget.png`) |
+| Entity inspector | Wasted header/footer height (`compact-followup/before-EntityEditorWidget.png`) | Content-sized rows (`compact-followup/after-EntityEditorWidget.png`) |
+| Populated Explorer | Tall filter group (`compact-followup/before-UnifiedListWidget.png`) | Compact filters and larger list (`compact-followup/after-UnifiedListWidget.png`) |
 
 ## Shared secondary styling — 2026-10-12
 
@@ -191,12 +191,12 @@ files), visual/complexity/test policy and the strict incremental docs build pass
 The exhaustive matrix and broad regression suite were not run for this batch.
 
 Small rendered samples (ordinary/helper/toolbar/overflow, primary, destructive,
-quiet): [dark](secondary-themes/dark_mode.png),
-[light](secondary-themes/light_mode.png),
-[fantasy](secondary-themes/fantasy_mode.png),
-[imperial](secondary-themes/imperial_mode.png),
-[cyberpunk](secondary-themes/cyberpunk_mode.png),
-[muted light](secondary-themes/muted_light_mode.png).
+quiet): dark (`secondary-themes/dark_mode.png`),
+light (`secondary-themes/light_mode.png`),
+fantasy (`secondary-themes/fantasy_mode.png`),
+imperial (`secondary-themes/imperial_mode.png`),
+cyberpunk (`secondary-themes/cyberpunk_mode.png`),
+muted light (`secondary-themes/muted_light_mode.png`).
 These offscreen samples do not constitute native Windows approval.
 
 Entity/Event Discard and Save footers now align to the right with one shared
