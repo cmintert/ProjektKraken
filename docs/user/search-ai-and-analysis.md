@@ -250,6 +250,13 @@ generated prose. Reports can be exported as Markdown or JSON.
 Analysis is advisory and navigation-only. It never changes world data or opens
 a prefilled edit operation.
 
+### Review character lifespans
+
+In **Temporal**, select a row in **Character Lifespans** to see the recorded
+dates and how **Age at death** was determined. Use **Open Birth Event** or
+**Open Death Event** to inspect the corresponding source. A button is
+available when the selected row has that source Event.
+
 ### Instant temporal relations
 
 **Only valid at Event** is an instant, not an invalid zero-length interval. It
@@ -706,6 +713,16 @@ advice.
 
 **Open Source** — Open the selected item or resource from Temporal. Review any
 unfinished-edit prompt before leaving the current work.
+
+(help-inspect-analysis-lifespan-open-birth)=
+
+**Open Birth Event** opens the Event linked as the selected character's birth
+source. Select a lifespan row with a birth source to enable the button.
+
+(help-inspect-analysis-lifespan-open-death)=
+
+**Open Death Event** opens the Event linked as the selected character's death
+source. Select a lifespan row with a death source to enable the button.
 
 (help-inspect-src-gui-widgets-graph-view-graph-filter-bar-graphfilterbar-setup-ui-self-search-input)=
 

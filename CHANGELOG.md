@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-19
-**Commit:** 6043559ac38b9ad15ae44fe801dbfead7a741fef
+**Commit:** b938a1ab1650c554a227518200dbd46c82fda3c9
 ---
 
 # Changelog
@@ -12,6 +12,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-11-19)* **Character Lifespans (KRT-180)**: Added contextual Help for
+  opening the birth and death Events from a selected lifespan.
 
 - *(2026-11-19)* **Testing**: Updated the reviewed inventory for the Event
   overflow and lifespan presentation tests, preserving their suite membership.

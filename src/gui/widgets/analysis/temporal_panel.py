@@ -122,8 +122,14 @@ class TemporalPanel(QWidget):
         self._lifespan_details.setTextFormat(Qt.TextFormat.PlainText)
         self._lifespan_details.setWordWrap(True)
         layout.addWidget(self._lifespan_details)
-        self.open_birth_source_btn = QPushButton("Open Birth Event")
-        self.open_death_source_btn = QPushButton("Open Death Event")
+        self.open_birth_source_btn = declare_inspection(
+            QPushButton("Open Birth Event"),
+            "analysis-lifespan-open-birth|analysis.review|help-inspect-analysis-lifespan-open-birth",
+        )
+        self.open_death_source_btn = declare_inspection(
+            QPushButton("Open Death Event"),
+            "analysis-lifespan-open-death|analysis.review|help-inspect-analysis-lifespan-open-death",
+        )
         layout.addWidget(
             self.open_birth_source_btn, alignment=Qt.AlignmentFlag.AlignLeft
         )

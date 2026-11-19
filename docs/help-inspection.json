@@ -2892,6 +2892,26 @@
       "kind": "QPushButton"
     },
     {
+      "id": "analysis-lifespan-open-birth",
+      "topic_id": "analysis.review",
+      "target": "help-inspect-analysis-lifespan-open-birth",
+      "source": "src/gui/widgets/analysis/temporal_panel.py",
+      "symbol": "TemporalPanel._init_lifespan_section",
+      "binding": "self.open_birth_source_btn",
+      "label": "Open Birth Event",
+      "kind": "QPushButton"
+    },
+    {
+      "id": "analysis-lifespan-open-death",
+      "topic_id": "analysis.review",
+      "target": "help-inspect-analysis-lifespan-open-death",
+      "source": "src/gui/widgets/analysis/temporal_panel.py",
+      "symbol": "TemporalPanel._init_lifespan_section",
+      "binding": "self.open_death_source_btn",
+      "label": "Open Death Event",
+      "kind": "QPushButton"
+    },
+    {
       "id": "src-gui-widgets-analysis-intelligence-panel-intelligencepanel-init-ui-self-category-filter",
       "topic_id": "analysis.review",
       "target": "help-inspect-src-gui-widgets-analysis-intelligence-panel-intelligencepanel-init-ui-self-category-filter",
@@ -12417,8 +12437,26 @@
     {
       "source": "src/gui/widgets/analysis/temporal_panel.py",
       "symbol": "TemporalPanel._init_ui",
-      "sha256": "7b1e08f50ff6b000caa825cfbb1c033a0c0c1c83bb91991540d5f8be31afdb24",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "ded427564edebb98e0a8c23a54db3381db4ab117015d01e714d7d806d0c7029c",
+      "review_note": "KRT-180 builds Character Lifespans in a separate section. The existing Open Source action still navigates from the selected temporal conflict."
+    },
+    {
+      "source": "src/gui/widgets/analysis/temporal_panel.py",
+      "symbol": "TemporalPanel._init_lifespan_section",
+      "sha256": "93fcd12e4ce4aa355fbde73c4352d5e61af30423b0fd2d79883b79714a0612ca",
+      "review_note": "KRT-180 documents the two source actions. Selecting a lifespan row enables each action when its corresponding Event is available. Each action opens that Event through the existing Analysis navigation route."
+    },
+    {
+      "source": "src/gui/widgets/analysis/temporal_panel.py",
+      "symbol": "TemporalPanel._update_lifespan_details",
+      "sha256": "286739459fccd6500bbf01a607e6540ec156e8b8b29dbde3bd0a0b40890ea570",
+      "review_note": "The selected row supplies the displayed dates and age explanation. Each button requires its own source Event ID."
+    },
+    {
+      "source": "src/gui/widgets/analysis/temporal_panel.py",
+      "symbol": "TemporalPanel._open_lifespan_source",
+      "sha256": "f84a1bf20a8794c13bac45993b4f0330ffa8c23edaedc7df7d0eee534b87dcfe",
+      "review_note": "Each action emits the selected birth or death Event ID for navigation when that source exists."
     },
     {
       "source": "src/gui/widgets/analysis/temporal_panel.py",
