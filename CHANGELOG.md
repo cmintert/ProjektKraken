@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-11-18
-**Commit:** af99c6f39576706ad188ba351b774cd23c77c9b9
+**Last Updated:** 2026-11-19
+**Commit:** 6043559ac38b9ad15ae44fe801dbfead7a741fef
 ---
 
 # Changelog
@@ -12,6 +12,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-11-19)* **Testing**: Updated the reviewed inventory for the Event
+  overflow and lifespan presentation tests, preserving their suite membership.
 
 - *(2026-11-18)* **Event Overview (KRT-179)**: Put the date and description
   first, with advanced timing and writing controls in inline disclosures.

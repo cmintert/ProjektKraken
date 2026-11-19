@@ -6120,7 +6120,7 @@
     "tests/unit/test_inspector_composition.py::test_tags_and_sheet_edits_remain_dirty_through_view_changes[event]": [
       "ci_fast"
     ],
-    "tests/unit/test_inspector_composition.py::test_world_view_button_refreshes_its_theme_without_editing_draft[event]": [
+    "tests/unit/test_inspector_composition.py::test_event_overflow_commands_stay_available_across_themes[event]": [
       "ci_fast"
     ],
     "tests/unit/test_inspector_composition.py::test_wrapped_footer_reserves_readable_body_space[entity]": [
@@ -10522,7 +10522,7 @@
     "tests/unit/test_temporal_manager.py::test_relation_delete_invalidates_target": [],
     "tests/unit/test_temporal_panel.py::TestTemporalPanelColumnCounts::test_conflicts_table_has_five_columns": [],
     "tests/unit/test_temporal_panel.py::TestTemporalPanelColumnCounts::test_gaps_table_has_four_columns": [],
-    "tests/unit/test_temporal_panel.py::TestTemporalPanelColumnCounts::test_lifespans_table_has_five_columns": [],
+    "tests/unit/test_temporal_panel.py::TestTemporalPanelColumnCounts::test_lifespans_table_has_age_at_death_column": [],
     "tests/unit/test_temporal_panel.py::TestTemporalPanelCreation::test_panel_creates_without_error": [],
     "tests/unit/test_temporal_panel.py::TestTemporalPanelCreation::test_panel_has_conflicts_table": [],
     "tests/unit/test_temporal_panel.py::TestTemporalPanelCreation::test_panel_has_gaps_table": [],
@@ -10541,9 +10541,9 @@
     "tests/unit/test_temporal_panel.py::TestTemporalPanelDisplayReport::test_header_label_contains_calendar_name": [],
     "tests/unit/test_temporal_panel.py::TestTemporalPanelDisplayReport::test_header_label_contains_conflict_count": [],
     "tests/unit/test_temporal_panel.py::TestTemporalPanelDisplayReport::test_header_label_contains_gap_count": [],
-    "tests/unit/test_temporal_panel.py::TestTemporalPanelDisplayReport::test_lifespan_invalid_shown_as_no": [],
+    "tests/unit/test_temporal_panel.py::TestTemporalPanelDisplayReport::test_invalid_legacy_lifespan_is_unavailable": [],
     "tests/unit/test_temporal_panel.py::TestTemporalPanelDisplayReport::test_lifespan_name_in_table": [],
-    "tests/unit/test_temporal_panel.py::TestTemporalPanelDisplayReport::test_lifespan_valid_shown_as_yes": [],
+    "tests/unit/test_temporal_panel.py::TestTemporalPanelDisplayReport::test_legacy_lifespan_is_displayed_as_an_estimate": [],
     "tests/unit/test_temporal_panel.py::TestTemporalPanelDisplayReport::test_lifespans_table_row_count_matches_entities": [],
     "tests/unit/test_temporal_precision_roundtrip.py::test_drag_preserves_year_and_undo": [
       "ci_fast"
