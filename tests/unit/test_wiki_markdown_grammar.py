@@ -14,7 +14,6 @@ from src.services.obsidian_exporter import ObsidianExporter
         "- first\n- second",
         "1. first\n2. second",
         "> a quotation",
-        "| A | B |\n| --- | --- |\n| 1 | 2 |",
         "`inline code`",
         "```python\nprint(1)\n```",
         "[site](https://example.org)",
@@ -50,6 +49,7 @@ def test_richer_markdown_stays_exact_source(qtbot, source):
         "# Heading\n\nA paragraph",
         "**bold** and *italic*",
         "See [[id:entity-1|Alpha]]",
+        "| A | B |\n| --- | --- |\n| 1 | 2 |",
     ],
 )
 def test_supported_vocabulary_opens_in_rich_mode(qtbot, source):

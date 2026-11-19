@@ -35,6 +35,7 @@ from PySide6.QtGui import (
     QDragLeaveEvent,
     QDragMoveEvent,
     QDropEvent,
+    QGuiApplication,
     QKeyEvent,
     QMouseEvent,
     QPainter,
@@ -295,7 +296,7 @@ class MapGraphicsView(QGraphicsView):
             "yes",
         )
 
-        if not force_software:
+        if not force_software and QGuiApplication.platformName() != "offscreen":
             try:
                 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 
@@ -311,9 +312,7 @@ class MapGraphicsView(QGraphicsView):
                     "Falling back to software rendering."
                 )
         else:
-            logger.info(
-                "OpenGL disabled via KRAKEN_NO_OPENGL. Using software rendering."
-            )
+            logger.info("Using software rendering for the map viewport.")
 
         self._graphics_scene = QGraphicsScene(self)
         self.setScene(self._graphics_scene)

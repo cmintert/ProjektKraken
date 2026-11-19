@@ -166,6 +166,7 @@ class RelationAuthoring(QFrame):
             self.form.deleteLater()
         while self.body_layout.count():
             item = self.body_layout.takeAt(0)
+            assert item is not None
             widget = item.widget()
             if widget is not None:
                 widget.hide()
@@ -179,6 +180,7 @@ class RelationAuthoring(QFrame):
         self._assertion_caption = ""
         while self.footer_layout.count():
             item = self.footer_layout.takeAt(0)
+            assert item is not None
             widget = item.widget()
             if widget is not None:
                 widget.hide()
@@ -251,7 +253,8 @@ class RelationAuthoring(QFrame):
         self.target.initial_id = target_id
         self.target.setText(target_id)
         self.target.hide()
-        capture_label = self.body_layout.itemAt(0).widget()
+        capture_item = self.body_layout.itemAt(0)
+        capture_label = capture_item.widget() if capture_item is not None else None
         if capture_label is not None:
             capture_label.hide()
         self._drop_capture = {**resolved, "target_id": target_id}

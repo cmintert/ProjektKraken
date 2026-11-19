@@ -98,8 +98,9 @@ def open_toolbar_menu(widget, qtbot):
         opened.append(widget.feature_actions_menu.isVisible())
         widget.feature_actions_menu.close()
 
-    QTimer.singleShot(20, dismiss)
+    QTimer.singleShot(20, widget.feature_actions_menu, dismiss)
     QTest.mouseClick(widget.btn_feature_actions, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: bool(opened))
     assert opened == [True]
     widget.feature_actions_menu.popup(widget.btn_feature_actions.mapToGlobal(QPoint()))
     qtbot.waitUntil(widget.feature_actions_menu.isVisible)

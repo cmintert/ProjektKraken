@@ -9,6 +9,7 @@ import time
 import traceback
 from contextlib import suppress
 from copy import deepcopy
+from functools import partial
 from typing import Any, Dict, Optional
 
 from PySide6.QtCore import QSize, Qt, Signal, Slot
@@ -279,15 +280,15 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         name = self.name_edit.text().strip()
         options = lifecycle_options(self._baseline_type)
         extra = additional_lifecycle_options(self._baseline_type)
+
+        def request_event(kind: str, title: str, _checked: bool = False) -> None:
+            self.lifecycle_event_requested.emit(entity_id, kind, title)
+
         for key, label in options:
             suggested = f"{key.title()} of {name}"
             menu.addAction(
                 f"{label}…",
-                lambda _checked=False,
-                key=key,
-                suggested=suggested: self.lifecycle_event_requested.emit(
-                    entity_id, key, suggested
-                ),
+                partial(request_event, key, suggested),
             )
         other = menu.addMenu("Other event") if options else menu
         other.addAction(
@@ -297,11 +298,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         for key, label in extra:
             other.addAction(
                 f"{label}…",
-                lambda _checked=False,
-                key=key,
-                label=label: self.lifecycle_event_requested.emit(
-                    entity_id, key, f"{label} of {name}"
-                ),
+                partial(request_event, key, f"{label} of {name}"),
             )
         menu.addAction(
             "Link existing event…",

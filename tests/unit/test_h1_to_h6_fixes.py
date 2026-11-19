@@ -15,6 +15,7 @@ import copy
 from unittest.mock import MagicMock, patch
 
 import pytest
+from PySide6.QtCore import QObject
 
 # ---------------------------------------------------------------------------
 # H1 — ThemeManager hot-path caching
@@ -29,7 +30,7 @@ class TestH1RasterEditToolThemeCache:
         from src.gui.widgets.map.raster_edit_tool import RasterEditTool
 
         # Build a minimal view mock
-        view = MagicMock()
+        view = QObject()
         view._raster_items = {}
         view.pixmap_item = MagicMock()
         view.graphics_scene = MagicMock()
@@ -64,7 +65,7 @@ class TestH1RasterEditToolThemeCache:
         """_refresh_theme_colors() should update cached color attributes."""
         from src.gui.widgets.map.raster_edit_tool import RasterEditTool
 
-        view = MagicMock()
+        view = QObject()
         tool = RasterEditTool(view)
 
         # After construction, tool must have cached color attributes
@@ -117,7 +118,9 @@ class TestH2MarkerManagerShibokenGuards:
         view = MagicMock()
         view.graphics_scene = MagicMock()
         # Make removeItem raise RuntimeError as Qt does for deleted C++ objects
-        view.graphics_scene.removeItem.side_effect = RuntimeError("Internal C++ object deleted")
+        view.graphics_scene.removeItem.side_effect = RuntimeError(
+            "Internal C++ object deleted"
+        )
 
         manager = MarkerManager(view)
 
@@ -424,9 +427,7 @@ class TestH5MoveLayerCloneBeforePersist:
         from src.core.map import Map
 
         map_obj, _ = self._make_map()
-        malformed_clone = Map(
-            id="map-1", name="M", image_path="p", layers=None
-        )
+        malformed_clone = Map(id="map-1", name="M", image_path="p", layers=None)
         db = MagicMock()
         db.map_repo.get_map.return_value = map_obj
 
@@ -434,9 +435,7 @@ class TestH5MoveLayerCloneBeforePersist:
             "src.commands.layer_commands.copy.deepcopy",
             return_value=malformed_clone,
         ):
-            result = MoveLayerCommand(
-                "map-1", "child-1", "group-b", 0
-            ).execute(db)
+            result = MoveLayerCommand("map-1", "child-1", "group-b", 0).execute(db)
 
         assert result.success is False
         assert result.message == "Layer tree missing from cloned map."
@@ -505,7 +504,9 @@ class TestH6SetRasterBlendModeFetchesOldMode:
         # The last insert_map call should have "Multiply" as the blend mode
         last_call = db.map_repo.insert_map.call_args[0][0]
         raster_layers = last_call.attributes.get("raster_layers", [])
-        modes = [r.get("blend_mode") for r in raster_layers if r.get("node_id") == "raster-1"]
+        modes = [
+            r.get("blend_mode") for r in raster_layers if r.get("node_id") == "raster-1"
+        ]
         assert modes == ["Multiply"], (
             f"undo() did not restore DB-fetched blend mode; modes={modes}"
         )

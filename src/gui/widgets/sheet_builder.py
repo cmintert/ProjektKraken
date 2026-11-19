@@ -768,8 +768,10 @@ class _ResizeHandle(QWidget):
                 self._initial_left_stretch = self._hlayout.stretch(self._left_idx)
                 self._initial_right_stretch = self._hlayout.stretch(self._right_idx)
 
-                left_widget = self._hlayout.itemAt(self._left_idx).widget()
-                right_widget = self._hlayout.itemAt(self._right_idx).widget()
+                left_item = self._hlayout.itemAt(self._left_idx)
+                right_item = self._hlayout.itemAt(self._right_idx)
+                left_widget = left_item.widget() if left_item is not None else None
+                right_widget = right_item.widget() if right_item is not None else None
 
                 # Fallback to 100px for headless unit tests where width() == 0
                 self._initial_left_width = (
@@ -1413,9 +1415,11 @@ class SheetBuilderWidget(QWidget):
         text_block_idx = 0
         for row_idx in range(self._grid_layout.count()):
             row_item = self._grid_layout.itemAt(row_idx)
-            if row_item is None or row_item.layout() is None:
+            if row_item is None:
                 continue
             hlayout = row_item.layout()
+            if hlayout is None:
+                continue
             for col_idx in range(hlayout.count()):
                 item = hlayout.itemAt(col_idx)
                 if item is None:
@@ -1458,9 +1462,11 @@ class SheetBuilderWidget(QWidget):
             text_block_idx = 0
             for row_idx in range(self._grid_layout.count()):
                 row_item = self._grid_layout.itemAt(row_idx)
-                if row_item is None or row_item.layout() is None:
+                if row_item is None:
                     continue
                 hlayout = row_item.layout()
+                if hlayout is None:
+                    continue
                 for col_idx in range(hlayout.count()):
                     item = hlayout.itemAt(col_idx)
                     if item is None:
@@ -1488,16 +1494,18 @@ class SheetBuilderWidget(QWidget):
 
         while self._grid_layout.count():
             item = self._grid_layout.takeAt(0)
-            if item.layout():
-                while item.layout().count():
-                    child = item.layout().takeAt(0)
+            assert item is not None
+            h_layout = item.layout()
+            if h_layout is not None:
+                while h_layout.count():
+                    child = h_layout.takeAt(0)
+                    assert child is not None
                     w = child.widget()
                     if w is not None:
                         w.setParent(None)
                         w.deleteLater()
 
                 # Delete the QHBoxLayout to prevent memory leaks
-                h_layout = item.layout()
                 h_layout.setParent(None)
                 h_layout.deleteLater()
 
@@ -1644,9 +1652,11 @@ class SheetBuilderWidget(QWidget):
         """
         for row_idx in range(self._grid_layout.count()):
             row_item = self._grid_layout.itemAt(row_idx)
-            if row_item is None or row_item.layout() is None:
+            if row_item is None:
                 continue
             hlayout = row_item.layout()
+            if hlayout is None:
+                continue
             for col_idx in range(hlayout.count()):
                 item = hlayout.itemAt(col_idx)
                 if item is not None and item.widget() is widget:
@@ -1672,10 +1682,11 @@ class SheetBuilderWidget(QWidget):
         """
         for row_idx in range(self._grid_layout.count()):
             row_item = self._grid_layout.itemAt(row_idx)
-            if row_item is None or row_item.layout() is None:
+            if row_item is None:
                 continue
-            if row_item.layout().geometry().contains(pos):
-                return row_idx, row_item.layout()
+            hlayout = row_item.layout()
+            if isinstance(hlayout, QHBoxLayout) and hlayout.geometry().contains(pos):
+                return row_idx, hlayout
         return None
 
     def _row_accepts_columns(self, hlayout: QHBoxLayout) -> bool:
@@ -1798,8 +1809,9 @@ class SheetBuilderWidget(QWidget):
         if insert_as_new_row:
             if drop_row < self._grid_layout.count():
                 row_item = self._grid_layout.itemAt(drop_row)
-                if row_item and row_item.layout():
-                    geom = row_item.layout().geometry()
+                row_layout = row_item.layout() if row_item is not None else None
+                if row_layout is not None:
+                    geom = row_layout.geometry()
                     self._insertion_line.setGeometry(
                         geom.x(), geom.y() - 2, geom.width(), 3
                     )
@@ -1814,8 +1826,8 @@ class SheetBuilderWidget(QWidget):
             self._insertion_line.raise_()
         else:
             row_item = self._grid_layout.itemAt(drop_row)
-            if row_item and row_item.layout():
-                hlayout = row_item.layout()
+            hlayout = row_item.layout() if row_item is not None else None
+            if hlayout is not None:
                 row_geom = hlayout.geometry()
                 x = row_geom.x()
                 if insert_col < hlayout.count():
@@ -1890,9 +1902,11 @@ class SheetBuilderWidget(QWidget):
 
         for row_idx in range(self._grid_layout.count()):
             row_item = self._grid_layout.itemAt(row_idx)
-            if row_item is None or row_item.layout() is None:
+            if row_item is None:
                 continue
             hlayout = row_item.layout()
+            if hlayout is None:
+                continue
             for col_idx in range(hlayout.count()):
                 item = hlayout.itemAt(col_idx)
                 if item is None:
@@ -2399,6 +2413,7 @@ class SheetBuilderWidget(QWidget):
         widget_indices: List[int] = [
             i
             for i in range(hlayout.count())
-            if not isinstance(hlayout.itemAt(i).widget(), _ResizeHandle)
+            if (item := hlayout.itemAt(i)) is not None
+            and not isinstance(item.widget(), _ResizeHandle)
         ]
         self._insert_resize_handles(hlayout, widget_indices)

@@ -85,6 +85,7 @@ def _build_probe() -> tuple[str, str]:
 
 <script>globalThis.__bodyXss = true</script>
 <img src="https://attacker.invalid/pixel" onerror="globalThis.__imgXss=true">
+
 **Safe formatting** and [[id:target-id|working wiki link]].
 """
     sections = [

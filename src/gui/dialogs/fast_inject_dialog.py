@@ -318,6 +318,7 @@ class FastInjectDialog(QDialog):
         self.lbl_desc.setText("")
         while self.form_layout.count():
             item = self.form_layout.takeAt(0)
+            assert item is not None
             widget = item.widget()
             if widget:
                 widget.deleteLater()

@@ -29,6 +29,7 @@ from src.app.qt_invocation import invoke_queued
 from src.core.command import LoreMutationEffect, parse_lore_mutation_effects
 from src.core.entities import Entity
 from src.core.events import Event
+from src.core.summary_data import SummaryData
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
@@ -718,7 +719,9 @@ class DataCoordinator(BaseCoordinator):
             context_tags.reconcile(self._cached_events, self._cached_entities)
 
     @Slot(str, object)
-    def on_summary_generated_result(self, item_id: str, summary_data: object) -> None:
+    def on_summary_generated_result(
+        self, item_id: str, summary_data: SummaryData
+    ) -> None:
         """Handles asynchronous summary generation result.
 
         Routes the generated summary to the correct editor.

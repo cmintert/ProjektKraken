@@ -1,125 +1,86 @@
-"""Integration tests for Markdown import refresh behaviour.
+"""Refresh and lazy-panel boundaries for imports through Transfer."""
 
-Verifies that after a Markdown import finishes the full data-refresh
-pipeline is triggered so that the Unified List, open editors, and
-timeline all receive updated data without a manual reload.
-"""
-
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock
 
 import pytest
-from PySide6.QtCore import QObject, Signal
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QWidget
 
-
-class FakeMainWindow(QObject):
-    """Minimal fake MainWindow for testing import refresh."""
-
-    command_requested = Signal(object)
-
-    def __init__(self):
-        super().__init__()
-        self.worker = MagicMock()
-        self.status_bar = MagicMock()
-        self.data_coordinator = MagicMock()
-        self._import_progress_dialog = None
+from src.app.coordinators.data_coordinator import DataCoordinator
+from src.app.coordinators.transfer_coordinator import TransferCoordinator
+from src.core.command import CommandResult
+from src.services.worker import DatabaseWorker
 
 
 @pytest.fixture
-def qapp():
-    """Provide a QApplication instance."""
-    app = QApplication.instance()
-    if app is None:
-        app = QApplication([])
-    yield app
-
-
-@pytest.fixture
-def fake_window(qapp):
-    """Create a FakeMainWindow for testing."""
-    return FakeMainWindow()
-
-
-@pytest.fixture
-def coordinator(fake_window):
-    """Create an ImportCoordinator with a fake MainWindow."""
-    from src.app.coordinators.import_coordinator import ImportCoordinator
-
-    return ImportCoordinator(fake_window)
+def import_completion(qtbot, tmp_path):
+    parent = QWidget()
+    qtbot.addWidget(parent)
+    worker = DatabaseWorker(str(tmp_path / "world.kraken"), {})
+    refresh = Mock()
+    coordinator = TransferCoordinator(
+        parent, worker, dict, Mock(), lambda: True, refresh, list, {}
+    )
+    coordinator.dialog = MagicMock()
+    coordinator._command_id = "reviewed-import"
+    coordinator._preview = {"delta": []}
+    return worker, coordinator, refresh
 
 
 class TestMarkdownImportRefresh:
-    """Verify that the full GUI refresh is triggered after import."""
+    def test_successful_import_calls_load_data(self, import_completion, qtbot):
+        worker, coordinator, refresh = import_completion
+        result = CommandResult(True, data={"transfer_id": "reviewed-import"})
 
-    def test_successful_import_calls_load_data(self, coordinator, fake_window):
-        """DataCoordinator.load_data() must be called on success."""
-        result = MagicMock()
-        result.success = True
-        result.created_entities = ["e1"]
-        result.created_events = []
-        result.created_relations = []
-        result.ambiguous_items = []
-        result.unparsed_date_count = 0
-        result.warnings = []
+        worker.command_finished.emit(result)
+        qtbot.waitUntil(lambda: refresh.call_count == 1)
 
-        coordinator._import_progress_dialog = MagicMock()
+        coordinator.dialog.show_result.assert_called_once()
 
-        with patch("src.app.coordinators.import_coordinator.QMessageBox"):
-            coordinator.on_import_finished(result)
+    def test_failed_import_does_not_refresh(self, import_completion, qtbot):
+        worker, coordinator, refresh = import_completion
+        result = CommandResult(
+            False, "Import rejected", data={"transfer_id": "reviewed-import"}
+        )
 
-        fake_window.data_coordinator.load_data.assert_called_once()
+        worker.command_finished.emit(result)
+        qtbot.waitUntil(lambda: coordinator.dialog.status.setText.called)
 
-    def test_failed_import_does_not_refresh(self, coordinator, fake_window):
-        """DataCoordinator.load_data() must NOT be called on failure."""
-        result = MagicMock()
-        result.success = False
-        result.errors = ["some error"]
-
-        coordinator._import_progress_dialog = MagicMock()
-
-        with patch("src.app.coordinators.import_coordinator.QMessageBox"):
-            coordinator.on_import_finished(result)
-
-        fake_window.data_coordinator.load_data.assert_not_called()
+        coordinator.dialog.status.setText.assert_called_once_with("Import rejected")
+        refresh.assert_not_called()
 
 
-class TestWorkerRefreshDepth:
-    """Verify that the worker refreshes the correct data after import."""
+@pytest.fixture
+def data_refresh(qtbot, monkeypatch):
+    window = QWidget()
+    qtbot.addWidget(window)
+    window.worker = Mock()
+    window.event_editor = Mock(
+        _current_event_id="open-event", current_event_id="open-event"
+    )
+    window.entity_editor = Mock(
+        _current_entity_id="open-entity", current_entity_id="open-entity"
+    )
+    coordinator = DataCoordinator(window)
+    queue = Mock()
+    monkeypatch.setattr("src.app.coordinators.data_coordinator.invoke_queued", queue)
+    return coordinator, queue
 
-    def test_refresh_after_import_calls_core_loaders(self):
-        """_refresh_after_import must call events, entities, calendar."""
-        from src.services.worker import DatabaseWorker
 
-        worker = DatabaseWorker.__new__(DatabaseWorker)
-        worker.db_service = MagicMock()
+class TestImportRefreshDepth:
+    def test_refresh_after_import_calls_core_loaders(self, data_refresh):
+        coordinator, queue = data_refresh
 
-        worker.load_events = MagicMock()
-        worker.load_entities = MagicMock()
-        worker.load_calendar_config = MagicMock()
+        coordinator.load_data()
 
-        worker._refresh_after_import()
+        requested = [call.args[1] for call in queue.call_args_list]
+        assert requested[:2] == ["load_events", "load_entities"]
+        assert "load_event_details" in requested
+        assert "load_entity_details" in requested
 
-        worker.load_events.assert_called_once()
-        worker.load_entities.assert_called_once()
-        worker.load_calendar_config.assert_called_once()
+    def test_refresh_after_import_does_not_call_longform(self, data_refresh):
+        coordinator, queue = data_refresh
 
-    def test_refresh_after_import_does_not_call_longform(self):
-        """_refresh_after_import must NOT call load_longform_sequence.
+        coordinator.load_data()
 
-        load_longform_sequence requires a doc_id that the worker does
-        not have. Longform refresh is handled by DataCoordinator.load_data()
-        on the UI thread via LongformManager.
-        """
-        from src.services.worker import DatabaseWorker
-
-        worker = DatabaseWorker.__new__(DatabaseWorker)
-        worker.db_service = MagicMock()
-
-        worker.load_events = MagicMock()
-        worker.load_entities = MagicMock()
-        worker.load_calendar_config = MagicMock()
-        worker.load_longform_sequence = MagicMock()
-
-        worker._refresh_after_import()
-
-        worker.load_longform_sequence.assert_not_called()
+        requested = [call.args[1] for call in queue.call_args_list]
+        assert "load_longform_sequence" not in requested

@@ -126,11 +126,13 @@ class ContextTagBar(QFrame):
     def _rebuild_chips(self, tags: list[str]) -> None:
         while self._chip_layout.count():
             item = self._chip_layout.takeAt(0)
+            assert item is not None
             widget = item.widget()
             if widget is not None:
                 widget.deleteLater()
 
         theme = ThemeManager().get_theme()
+        chip_surface = theme.get("surface_alt", theme["surface"])
         for tag in tags[: self.MAX_VISIBLE_CHIPS]:
             color = tag_color_for_theme(tag, theme)
             chip = QLabel(tag)
@@ -138,8 +140,7 @@ class ContextTagBar(QFrame):
             chip.setStyleSheet(
                 "QLabel {"
                 f"color: {theme['text_main']};"
-                f"background-color: rgba({color.red()}, {color.green()}, "
-                f"{color.blue()}, 72);"
+                f"background-color: {chip_surface};"
                 f"border: 1px solid {color.name()};"
                 "border-radius: 9px; padding: 1px 6px;"
                 "}"

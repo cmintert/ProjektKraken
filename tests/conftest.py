@@ -349,6 +349,9 @@ def _mock_web_engine_view():
         def setPage(self, page):
             self._page = page
 
+        def stop(self):
+            pass
+
     patcher = patch(
         "src.gui.widgets.graph_view.graph_web_view.QWebEngineView",
         _StubWebEngineView,

@@ -100,9 +100,11 @@ def test_scoped_graph_stays_covered_until_its_current_browser_frame(
     view.shutdown()
 
 
-def _check_real_graph_theme(qapp, qtbot):
+def _check_real_graph_theme(runtime, qtbot):
     widget = GraphWidget()
     qtbot.addWidget(widget)
+    runtime.register(widget)
+    widget.installEventFilter(runtime)
     widget.resize(800, 600)
     widget.show()
     widget._all_nodes = [
@@ -221,6 +223,10 @@ if __name__ == "__main__":
     with _settings_directory:
         app = QApplication([])
         runtime = install_theme_presentation(app)
+        # Exercise scoped theme delivery on the Graph root. In this isolated
+        # browser fixture, an application filter also sees native WebEngine
+        # internals before they have stable Python wrappers.
+        app.removeEventFilter(runtime)
         ThemeManager().apply_theme(
             app, Path("src/resources/main.qss").read_text("utf-8")
         )
@@ -232,5 +238,5 @@ if __name__ == "__main__":
             def waitUntil(self, predicate, timeout=15000):
                 _wait(app, predicate, timeout / 1000)
 
-        _check_real_graph_theme(app, _Loop())
+        _check_real_graph_theme(runtime, _Loop())
         runtime.close()

@@ -801,13 +801,6 @@
       "source": "color = theme.get(\"accent_secondary\", theme.get(\"text_main\", \"#e0e0e0\"))"
     },
     {
-      "key": "src/gui/widgets/context_tag_bar.py|ContextTagBar._rebuild_chips|literal-color|383efc24a4078905",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in ContextTagBar._rebuild_chips; migrate this expression when its presentation path is next touched.",
-      "source": "f\"color: {theme['text_main']};\""
-    },
-    {
       "key": "src/gui/widgets/drag_pill.py|DragPill._apply_theme|literal-color|7a5575158710e4a9",
       "count": 1,
       "category": "legacy",

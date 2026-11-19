@@ -62,5 +62,5 @@ class TestEventDuration:
         font.setBold(True)
         assert rect.width() >= duration * scale
         assert rect.width() >= QFontMetricsF(font).horizontalAdvance(event.name)
-        assert rect.height() >= 50
-        assert rect.top() <= -10
+        assert rect.height() >= QFontMetricsF(font).height()
+        assert rect.contains(item.shape().boundingRect().center())

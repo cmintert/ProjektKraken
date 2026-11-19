@@ -323,6 +323,7 @@ type: note
 
 <script>globalThis.__bodyXss = true</script>
 <img src="https://attacker.invalid/markdown" onerror="alert(1)">
+
 **Markdown formatting** and [[json-hostile|JSON entry]].
 """,
             "hostile",
@@ -337,7 +338,7 @@ type: note
                     "type": "note",
                     "description": (
                         "<svg><script>alert(1)</script></svg><a "
-                        'href="java&#115;cript:alert(2)" data-any="x">bad</a> '
+                        'href="java&#115;cript:alert(2)" data-any="x">bad</a>\n\n'
                         "[Safe](https://example.com)"
                     ),
                 }

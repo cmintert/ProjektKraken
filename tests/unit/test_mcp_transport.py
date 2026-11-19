@@ -2,6 +2,8 @@
 
 import asyncio
 import json
+import os
+import stat
 import sys
 import threading
 
@@ -57,10 +59,17 @@ def server(tmp_path):
 
 def test_discovery_encryption_ownership_and_revocation(server):
     transport, discovery, session, port = server
-    assert discovery.read()["port"] == port
-    assert (
-        session.token.encode() not in (discovery.directory / "session.bin").read_bytes()
-    )
+    descriptor = discovery.directory / "session.bin"
+    coordinates = discovery.read()
+    assert coordinates["port"] == port
+    assert coordinates["token"] == session.token
+    if sys.platform == "win32":
+        assert session.token.encode() not in descriptor.read_bytes()
+    else:
+        for path, mode in ((discovery.directory, 0o700), (descriptor, 0o600)):
+            info = path.stat()
+            assert info.st_uid == os.getuid()
+            assert stat.S_IMODE(info.st_mode) == mode
     other = SessionDiscovery(discovery.directory)
     with pytest.raises(Exception):
         other.acquire()

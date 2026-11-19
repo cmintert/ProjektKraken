@@ -28,13 +28,17 @@ class TimelineEventPreparationService:
         """Return fields that affect measured geometry or group membership."""
         if event is None:
             return None
+        timing = event.attributes.get("_temporal_v2")
+        if isinstance(timing, dict) and timing.keys() == {"projection"}:
+            # A detached legacy Event may carry a calculated display snapshot.
+            timing = None
         return (
             event.lore_date,
             event.lore_duration,
             event.name,
             event.type,
             tuple(event.tags),
-            repr(event.attributes.get("_temporal_v2")),
+            repr(timing),
             repr(event.attributes.get("_recurrence")),
         )
 

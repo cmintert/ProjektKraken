@@ -38,9 +38,10 @@ def test_narrow_visible_menu_keyboard_invokes_original_action(qtbot):
         menu.setActiveAction(menu.actions()[1])
         qtbot.keyClick(menu, Qt.Key.Key_Return)
 
-    # The actual button opens a modal popup; choose through real key delivery.
-    QTimer.singleShot(0, choose_action)
+    menu = toolbar.overflow_menu
+    menu.aboutToShow.connect(lambda: QTimer.singleShot(0, menu, choose_action))
     qtbot.mouseClick(toolbar.overflow_button, Qt.MouseButton.LeftButton)
+    qtbot.waitUntil(lambda: bool(calls))
     assert calls == ["refine"]
     assert primary.isVisible()
 

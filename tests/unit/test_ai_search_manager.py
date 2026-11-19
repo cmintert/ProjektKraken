@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from src.app.ai_search_manager import AISearchManager
+from src.core.ai_generation import AI_GENERATION_PREFERENCES_VERSION
 
 
 @pytest.fixture
@@ -80,7 +81,9 @@ def test_rebuild_search_index_dispatches_to_worker(manager, mock_window):
     )
 
 
-def test_loading_v1_preferences_persists_v2_template_migration(manager, mock_window):
+def test_loading_v1_preferences_persists_current_template_migration(
+    manager, mock_window
+):
     """The app manager upgrades legacy selections through the worker path."""
     manager.on_ai_preferences_loaded(
         {
@@ -93,7 +96,7 @@ def test_loading_v1_preferences_persists_v2_template_migration(manager, mock_win
     saved = mock_window.worker_manager.save_ai_preferences_requested.emit.call_args[0][
         0
     ]
-    assert saved["version"] == 2
+    assert saved["version"] == AI_GENERATION_PREFERENCES_VERSION
     assert saved["selected_entity_template_id"] == "create_complete_description"
     assert saved["entity_prompt_draft"] == "Keep this draft"
 

@@ -7,6 +7,7 @@ entity, with payload attributes shown inline.
 import re
 import textwrap
 from bisect import bisect_right
+from functools import partial
 from html import escape
 from typing import Any, Optional
 
@@ -420,21 +421,23 @@ class TimelineDisplayWidget(QWidget):
         menu = self._text_display.createStandardContextMenu(position)
         if anchor in self._event_id_map:
             menu.addAction("Open event", lambda: self._activate_anchor(anchor))
+
+        def request_association(
+            operation: str, relation: dict[str, Any], _checked: bool = False
+        ) -> None:
+            self.association_requested.emit(operation, relation)
+
         for relation in self._association_map.get(anchor, []):
             if not self._is_authored_association(relation):
                 continue
             actions = menu.addMenu(str(relation.get("rel_type", "Association")))
             actions.addAction(
                 "Change associated event…",
-                lambda _checked=False, row=relation: self.association_requested.emit(
-                    "replace", row
-                ),
+                partial(request_association, "replace", relation),
             )
             actions.addAction(
                 "Remove association",
-                lambda _checked=False, row=relation: self.association_requested.emit(
-                    "unlink", row
-                ),
+                partial(request_association, "unlink", relation),
             )
         menu.exec(self._text_display.viewport().mapToGlobal(position))
         menu.deleteLater()

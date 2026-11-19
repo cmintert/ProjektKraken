@@ -1,13 +1,9 @@
-"""RED tests for M3: map drawing tool and interaction_handler must use theme colors.
-
-These tests fail before the fix because drawing_tool.py uses hardcoded
-hex strings rather than ThemeManager color tokens.
-"""
+"""Theme roles for map drawing overlays and interaction styles."""
 
 from unittest.mock import MagicMock
 
 import pytest
-from PySide6.QtCore import QPointF
+from PySide6.QtCore import QPointF, Qt
 from PySide6.QtWidgets import QGraphicsEllipseItem, QGraphicsPathItem, QGraphicsScene
 
 from src.core.theme_manager import ThemeManager
@@ -33,14 +29,14 @@ def drawing_tool(qapp):
 
 
 # ---------------------------------------------------------------------------
-# M3a – drawing_tool.py vertex dot fill uses theme["error"]
+# Drawing vertex
 # ---------------------------------------------------------------------------
 
 
-def test_drawing_vertex_dot_fill_uses_theme_error(drawing_tool):
-    """Vertex dot brush must equal theme["error"], not the hardcoded red."""
+def test_drawing_vertex_dot_fill_uses_theme_selection(drawing_tool):
+    """A vertex uses the same selection role as its geometry preview."""
     theme = ThemeManager().get_theme()
-    expected = theme.get("error", "#e74c3c")
+    expected = theme["selection_bg"]
 
     drawing_tool._drawing_mode = "path"
     drawing_tool._add_drawing_vertex(QPointF(10.0, 10.0))
@@ -52,7 +48,7 @@ def test_drawing_vertex_dot_fill_uses_theme_error(drawing_tool):
     ]
     assert dots, "Expected at least one ellipse item (vertex dot) in scene"
     assert dots[0].brush().color().name() == expected.lower(), (
-        f"Dot fill is {dots[0].brush().color().name()!r}, expected theme error "
+        f"Dot fill is {dots[0].brush().color().name()!r}, expected selection "
         f"color {expected.lower()!r}"
     )
 
@@ -78,14 +74,14 @@ def test_drawing_vertex_dot_outline_uses_theme_surface(drawing_tool):
 
 
 # ---------------------------------------------------------------------------
-# M3b – drawing_tool.py preview path pen uses theme["error"]
+# Drawing preview
 # ---------------------------------------------------------------------------
 
 
-def test_drawing_preview_pen_uses_theme_error(drawing_tool):
-    """Drawing-preview path pen color must equal theme["error"]."""
+def test_drawing_preview_pen_uses_theme_selection(drawing_tool):
+    """A preview path uses the selection color with a dashed stroke."""
     theme = ThemeManager().get_theme()
-    expected = theme.get("error", "#e74c3c")
+    expected = theme["selection_bg"]
 
     drawing_tool._drawing_mode = "path"
     drawing_tool._add_drawing_vertex(QPointF(0.0, 0.0))
@@ -100,14 +96,15 @@ def test_drawing_preview_pen_uses_theme_error(drawing_tool):
     assert paths, "Expected a QGraphicsPathItem preview in scene"
     pen_color = paths[0].pen().color().name()
     assert pen_color == expected.lower(), (
-        f"Preview pen color is {pen_color!r}, expected theme error color {expected.lower()!r}"
+        f"Preview pen color is {pen_color!r}, expected selection color {expected.lower()!r}"
     )
+    assert paths[0].pen().style() == Qt.PenStyle.DashLine
 
 
-def test_drawing_region_fill_uses_theme_error_with_alpha(drawing_tool):
-    """Region preview brush alpha channel must be 40, color base = theme["error"]."""
+def test_drawing_region_fill_uses_patterned_theme_selection(drawing_tool):
+    """The selection-colored pattern leaves the underlying map visible."""
     theme = ThemeManager().get_theme()
-    expected_base = theme.get("error", "#e74c3c")
+    expected_base = theme["selection_bg"]
 
     drawing_tool._drawing_mode = "region"
     drawing_tool._add_drawing_vertex(QPointF(0.0, 0.0))
@@ -120,14 +117,9 @@ def test_drawing_region_fill_uses_theme_error_with_alpha(drawing_tool):
         if isinstance(it, QGraphicsPathItem)
     ]
     assert paths, "Expected a QGraphicsPathItem region preview in scene"
-    fill = paths[0].brush().color()
-    # Alpha should be 40
-    assert fill.alpha() == 40, f"Region fill alpha is {fill.alpha()}, expected 40"
-    # RGB base color should match theme error (ignoring alpha)
-    fill.setAlpha(255)
-    assert fill.name() == expected_base.lower(), (
-        f"Region fill base color is {fill.name()!r}, expected {expected_base.lower()!r}"
-    )
+    brush = paths[0].brush()
+    assert brush.style() == Qt.BrushStyle.Dense6Pattern
+    assert brush.color().name() == expected_base.lower()
 
 
 # ---------------------------------------------------------------------------
@@ -142,9 +134,7 @@ def test_safe_color_css_returns_valid_color_unchanged():
 
 def test_safe_color_css_preserves_alpha_when_requested():
     """Region style editing must not turn a translucent fill opaque."""
-    assert (
-        _safe_color_css("#403498db", preserve_alpha=True) == "#403498db"
-    )
+    assert _safe_color_css("#403498db", preserve_alpha=True) == "#403498db"
 
 
 def test_safe_color_css_invalid_uses_theme_text_dim():

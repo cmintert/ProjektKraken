@@ -761,7 +761,11 @@ class SplitterTabInspector(QWidget):
         """Split the focused pane's current section using a discoverable action."""
         from PySide6.QtWidgets import QApplication
 
-        panes = [self.splitter.widget(i) for i in range(self.splitter.count())]
+        panes = [
+            pane
+            for i in range(self.splitter.count())
+            if (pane := self.splitter.widget(i)) is not None
+        ]
         focus = QApplication.focusWidget()
         tabs = next(
             (p for p in panes if focus is not None and p.isAncestorOf(focus)),

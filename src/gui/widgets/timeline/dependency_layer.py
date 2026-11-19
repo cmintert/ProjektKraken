@@ -1,6 +1,7 @@
 """Cached timing snapshots and noninteractive device-space strand rendering."""
 
 from collections import defaultdict
+from collections.abc import Collection
 from dataclasses import dataclass, field, replace
 
 from PySide6.QtCore import QPointF, QRectF, Qt
@@ -241,15 +242,22 @@ class TimelineDependencyLayer:
             edge for edge in self.dependencies if edge.strand_id in strands
         )
 
-    def set_display_events(
+    def set_display_items(self, items: Collection[EventItem]) -> None:
+        """Resolve presentation at hydration, never during background painting."""
+        self._settled_pairs = []
+        self._display = {
+            item.event.id: _DisplaySnapshot(item.timing_presentation, {})
+            for item in items
+        }
+
+    def set_display_calendar(
         self, events: list[Event], converter: CalendarConverter | None
     ) -> None:
-        """Resolve presentation at hydration, never during background painting."""
+        """Refresh calendar-aware labels when the display calendar changes."""
         self._settled_pairs = []
         self._display = {
             event.id: _DisplaySnapshot(present_event(event, converter), {})
             for event in events
-            if event.lore_date is not None
         }
 
     def update_preview(self, event: Event, converter: CalendarConverter | None) -> None:

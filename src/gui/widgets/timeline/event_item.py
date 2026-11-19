@@ -26,7 +26,11 @@ from PySide6.QtWidgets import (
 from shiboken6 import isValid
 
 from src.core.calendar import CalendarConverter
-from src.core.event_timing.presentation import TemporalDisplay, present_event
+from src.core.event_timing.presentation import (
+    TemporalDisplay,
+    TemporalPresentation,
+    present_event,
+)
 from src.core.events import Event
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
@@ -166,6 +170,11 @@ class EventItem(QGraphicsItem):
         self.is_future = False
         self.is_past = False
         self._update_temporal_tooltip()
+
+    @property
+    def timing_presentation(self) -> TemporalPresentation:
+        """Share the item's immutable timing snapshot with wire and lane layout."""
+        return self._presentation
 
     def refresh_theme(self, theme: dict[str, str]) -> None:
         """Refresh cached rendering colors after a theme change.

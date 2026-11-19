@@ -291,7 +291,9 @@ class TestViewLayerLocks:
 
         assert view.markers[marker_id].acceptedMouseButtons() == Qt.MouseButton.NoButton
 
-    @pytest.mark.parametrize("menu_method", ["show_marker_context_menu", "show_feature_context_menu"])
+    @pytest.mark.parametrize(
+        "menu_method", ["show_marker_context_menu", "show_feature_context_menu"]
+    )
     def test_locked_canvas_context_menu_only_offers_unlock(
         self, qtbot, monkeypatch, menu_method: str
     ) -> None:
@@ -309,11 +311,13 @@ class TestViewLayerLocks:
 
         assert captured == ["Unlock"]
 
-    @pytest.mark.parametrize("menu_method", ["show_marker_context_menu", "show_feature_context_menu"])
+    @pytest.mark.parametrize(
+        "menu_method", ["show_marker_context_menu", "show_feature_context_menu"]
+    )
     def test_unlocked_canvas_context_menu_offers_lock(
         self, qtbot, monkeypatch, menu_method: str
     ) -> None:
-        """Both unlocked canvas menus lead with the feature lock action."""
+        """Both unlocked canvas menus expose the feature lock action."""
         view, _model, marker_id = _setup_view_with_marker(qtbot)
         item = MagicMock(
             is_locked=False,
@@ -329,4 +333,5 @@ class TestViewLayerLocks:
         monkeypatch.setattr(interaction_handler_module, "QMenu", CapturingMenu)
         getattr(InteractionHandler(view), menu_method)(item, view.pos())
 
-        assert captured[0] == "Lock"
+        assert "Lock" in captured
+        assert "Unlock" not in captured

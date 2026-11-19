@@ -8,7 +8,7 @@ Requires QT_QPA_PLATFORM=offscreen.
 
 from unittest.mock import MagicMock
 
-from PySide6.QtCore import QPointF, QRectF, Qt
+from PySide6.QtCore import QObject, QPointF, QRectF, Qt
 from PySide6.QtGui import QImage, QPixmap, QWheelEvent
 from PySide6.QtWidgets import QGraphicsPixmapItem
 from pytestqt.qtbot import QtBot
@@ -2228,7 +2228,7 @@ class TestGradientSubMode:
             RasterEditTool,
         )
 
-        class _FakeView:
+        class _FakeView(QObject):
             _raster_items: dict = {}
             pixmap_item = None
             coord_system = None
@@ -2243,7 +2243,7 @@ class TestGradientSubMode:
             RasterEditTool,
         )
 
-        class _FakeView:
+        class _FakeView(QObject):
             _raster_items: dict = {}
             pixmap_item = None
             coord_system = None

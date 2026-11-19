@@ -126,7 +126,7 @@ def test_restore_last_selection_event(main_window):
     # Verify actions
     main_window.data_coordinator.load_event_details.assert_called_with(test_id)
     main_window.workspace.show_panel.assert_called_once_with("event")
-    main_window.unified_list.select_item.assert_called_with(test_type, test_id)
+    main_window.unified_list.set_active_item.assert_called_with(test_type, test_id)
     main_window.data_coordinator.load_entity_details.assert_not_called()
 
 
@@ -149,7 +149,7 @@ def test_restore_last_selection_entity(main_window):
     # Verify actions
     main_window.data_coordinator.load_entity_details.assert_called_with(test_id)
     main_window.workspace.show_panel.assert_called_once_with("entity")
-    main_window.unified_list.select_item.assert_called_with(test_type, test_id)
+    main_window.unified_list.set_active_item.assert_called_with(test_type, test_id)
     main_window.data_coordinator.load_event_details.assert_not_called()
 
 

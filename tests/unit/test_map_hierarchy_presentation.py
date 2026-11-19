@@ -105,7 +105,7 @@ def test_hierarchy_and_comparison_controls(
     picker.resize(width, 700)
     picker.show()
     picker._parent_combo.setCurrentIndex(picker._parent_combo.findData("parent"))
-    qtbot.wait(0)
+    qtbot.waitUntil(lambda: action_label_geometry(picker._apply_button).fits)
     assert picker.width() == width
     assert picker._keep_position.isVisible()
     assert picker._keep_position.label_geometry().fits
@@ -123,6 +123,7 @@ def test_hierarchy_and_comparison_controls(
     QTest.keyClick(picker._keep_position, Qt.Key.Key_Space)
     picker._apply_button.setFocus()
     assert picker._apply_button.hasFocus()
+    qtbot.waitUntil(lambda: action_label_geometry(picker._apply_button).fits)
     for button in picker.findChild(QDialogButtonBox).buttons():
         assert action_label_geometry(button).fits
         assert picker.rect().contains(

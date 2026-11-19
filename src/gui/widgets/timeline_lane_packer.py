@@ -3,6 +3,8 @@
 Measures timeline bounds and delegates detached, stable lane packing.
 """
 
+from collections.abc import Mapping
+
 from PySide6.QtGui import QFont, QFontMetrics
 
 from src.core.event_timing.presentation import TemporalDisplay, present_event
@@ -69,18 +71,23 @@ class TimelineLanePacker:
         """
         return pack_stable_timeline_intervals(self.measure_events(events), previous)
 
-    def measure_events(self, events: list[Event]) -> tuple[TimelineLayoutInput, ...]:
+    def measure_events(
+        self, events: list[Event], items: Mapping[str, EventItem] | None = None
+    ) -> tuple[TimelineLayoutInput, ...]:
         """Capture detached numeric bounds on the GUI thread before dispatch."""
         self._ensure_font_metrics()
         measured = []
         for event in events:
             if event.lore_date is None:
                 continue
-            layout = timeline_item_layout(
-                present_event(event, EventItem._calendar_converter),
-                event.name,
-                self.scale_factor,
+            item = items.get(event.id) if items is not None else None
+            presentation = (
+                item.timing_presentation
+                if item is not None
+                else present_event(event, EventItem._calendar_converter)
             )
+            layout = timeline_item_layout(presentation, event.name, self.scale_factor)
+            minimum_height = timeline_item_layout(presentation, event.name, 1).height
             start = event.require_date() + layout.bounds.left() / self.scale_factor
             visual_duration = layout.bounds.width() / self.scale_factor
             gap_duration = self.GAP_PIXELS / self.scale_factor
@@ -89,7 +96,7 @@ class TimelineLanePacker:
                     event.id,
                     start,
                     start + visual_duration + gap_duration,
-                    max(layout.height, EventItem.get_event_height(event)),
+                    max(layout.height, minimum_height),
                     event.lore_date,
                 )
             )

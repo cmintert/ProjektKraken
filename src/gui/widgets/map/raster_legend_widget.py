@@ -176,6 +176,7 @@ class RasterLegendWidget(QWidget):
     def _clear_content(self) -> None:
         while self._content_layout.count() > 1:  # keep trailing stretch
             item = self._content_layout.takeAt(0)
+            assert item is not None
             widget = item.widget()
             if widget is not None:
                 widget.deleteLater()

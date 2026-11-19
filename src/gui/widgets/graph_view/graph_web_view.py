@@ -292,6 +292,8 @@ class GraphWebView(QWidget):
         Must be called before the widget is destroyed to ensure the
         QWebEnginePage is released before the profile is deleted.
         """
+        if self._closed:
+            return
         self._closed = True
         self._page_generation += 1
         self._pending_theme = None
@@ -299,22 +301,13 @@ class GraphWebView(QWidget):
         if self._theme_connected:
             disconnect_theme(self, self._apply_theme)
             self._theme_connected = False
-        try:
-            page = self._web_view.page()
-            if page:
-                # Qt accepts None to detach the channel; the stub omits this overload.
-                page.setWebChannel(None)  # type: ignore[arg-type]
-                # Load blank to stop any pending loads
-                self._web_view.setHtml("")
-            # Remove from layout so Qt doesn't try to manage it
-            layout = self.layout()
-            if layout:
-                layout.removeWidget(self._web_view)
-            self._web_view.setParent(None)
-            self._web_view.close()
-            self._web_view.deleteLater()
-        except RuntimeError:
-            pass
+        if not shiboken6.isValid(self._web_view):
+            return
+        self._web_view.stop()
+        # Qt accepts None to detach the channel; the stub omits this overload.
+        self._web_view.page().setWebChannel(None)  # type: ignore[arg-type]
+        self._web_view.hide()
+        self._web_view.deleteLater()
 
     def update_graph_data(
         self,

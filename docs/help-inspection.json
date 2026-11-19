@@ -11371,8 +11371,8 @@
     {
       "source": "src/gui/dialogs/fast_inject_dialog.py",
       "symbol": "FastInjectDialog._clear_configure_ui",
-      "sha256": "f9df1b7112da9b735229cb4a8c5a9258495e4b71c8cf3aeac0e59b0b5150bcdf",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "7d0e4d0e71cd3d836d0e516567485fdd21ba60c83ec677793b749e6e1bc55145",
+      "review_note": "Assures a layout item exists before disposal. Template switching and its form controls work as documented."
     },
     {
       "source": "src/gui/dialogs/fast_inject_dialog.py",
@@ -11657,8 +11657,8 @@
     {
       "source": "src/gui/dialogs/icon_picker_dialog.py",
       "symbol": "IconPickerDialog._rebuild_project_icons_tab",
-      "sha256": "e33462ba53aedbd81f4ee15f3074ef924f6894cb399fde24915eb139a0dae689",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "8128e66e99f374d8abb30bbd596fa99eb1da7cd856eb1fed0b4fd057c8b86961",
+      "review_note": "Checks the layout item before disposal. The Project Icons tab and import route work as documented."
     },
     {
       "source": "src/gui/dialogs/icon_picker_dialog.py",
@@ -11957,8 +11957,8 @@
     {
       "source": "src/gui/dialogs/register_detail_map_dialog.py",
       "symbol": "RegisterDetailMapDialog.__init__",
-      "sha256": "736c176bfba533e04d11660ced5ba55304cb59b8444b0253113d71f3d296d41a",
-      "review_note": "KRT-173: parent picker offers Keep geographic placement using service-supplied availability. Change parent saves one reversible exact move; Place on parent map retains the unsaved manual preview. Updated task and both existing control explanations, retained destinations, and added the checkbox explanation."
+      "sha256": "b058baf08a7aa9de84f4d706e1c7ed5708fd6518cf3c13ce72a2bfacc5bba67d",
+      "review_note": "KRT-173: parent picker offers Keep geographic placement using service-supplied availability. Change parent saves one reversible exact move; Place on parent map retains the unsaved manual preview. KRT-181 bounds the parent selector's closed width. The same parent choices, keyboard route, and Help destinations remain available."
     },
     {
       "source": "src/gui/dialogs/register_detail_map_dialog.py",
@@ -12743,8 +12743,8 @@
     {
       "source": "src/gui/widgets/context_tag_bar.py",
       "symbol": "ContextTagBar._rebuild_chips",
-      "sha256": "fd0261024620bf3188db984b46e6552b3518df543cbc2c8e3d2fbd502284d9cd",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "a8390195bc2bc32d12037498b4b18c0cef0d33a31f7962b39781bd66794f1072",
+      "review_note": "Uses an existing theme surface and preserves tag labels and colored borders. Context tag controls and overflow work as documented."
     },
     {
       "source": "src/gui/widgets/context_tag_bar.py",
@@ -15005,8 +15005,8 @@
     {
       "source": "src/gui/widgets/map/raster_palette_editor.py",
       "symbol": "RasterPaletteEditor._on_preset_selected",
-      "sha256": "f1842429a2f8f2b32e13d0ce545a78d95978336b3804a697c1dd38e64e8747ef",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "2fe102a5384eef0d02a1705fd4de19e5ee20bd25132a0a779b37d021703ee4e1",
+      "review_note": "Checks the layout item before disposal. Selecting a gradient preset still replaces the stops."
     },
     {
       "source": "src/gui/widgets/map/raster_palette_editor.py",
@@ -15683,8 +15683,8 @@
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._clear_body",
-      "sha256": "bb0b336a857651733060883261e6b3a4d77bac2bb72bfeb78ec8a2ac1c1501d8",
-      "review_note": "KRT-93 Stage 1 review: shared UUID browser and guarded actions replace list-specific controls. Draft guidance is subordinate; errors stay visible, and collapsed drafts retain values. Header shows the canonical assertion. Existing direction/timing/command explanations remain accurate; new browser explanations cover search, filters, selection and read-only References."
+      "sha256": "acc8196dc8e949984383066f611d9e4483773062adf03839c9d28a1576e76baf",
+      "review_note": "Checks layout items before disposal. Capture and cancellation work as documented."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
@@ -15779,8 +15779,8 @@
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring.stage_drop",
-      "sha256": "67231275227b55fce75168bc2c717adb4046647a462ef71f9c3556c262cc6a9c",
-      "review_note": "KRT-98: Reviewed relations.create and its Meaning, Connection type, Reverse direction and Apply excerpts against the pure-helper extraction. Captions, exact stored keys, suggestion ordering, source-event preview wording and both reversal checks remain unchanged. Existing explanations remain accurate; no new UI or prose. Pure dependencies have their own scoped source reviews."
+      "sha256": "5a4fc0d7fc0f70fcf1e753ac5d17361293b14c195f0f6ab15f5a7d5f140fa754",
+      "review_note": "Handles the optional layout item before hiding its label. The dropped relation preview and confirmation work as documented."
     },
     {
       "source": "src/gui/widgets/relation_form.py",
@@ -16043,8 +16043,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._clear",
-      "sha256": "d7d75d3925835a98bfe276185422ffd7a7e8531224cd6ae07cb2829b6481510e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "0c25f483066c296def21e108b64f1a3824b27c51db72219823e6781c9888fd8b",
+      "review_note": "Checks layout items before disposal. Clearing the sheet still releases its widgets and nested row layouts."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16097,8 +16097,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._find_focused_row_and_col",
-      "sha256": "a10c40b634cc6557433074247d7f601b3ce8d439ed92cd3e8e2e2610adccc0c6",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "613f2cab850571760ee54b8c1f160dbf836349ddbb79639926075494297eecb2",
+      "review_note": "Narrows the existing row layout before checking focus. Navigation and selection work as documented."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16193,14 +16193,14 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._rebuild_resize_handles",
-      "sha256": "5d827459b14d0f8ee68de568d3a9ce813540d1f77874b752630f8150ba851abb",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "4ca8fd1080ee5dc660c5da18d468c9b9c759bd65819261c239651c458ce2b912",
+      "review_note": "Skips unavailable layout items during enumeration. Resize handles still follow eligible columns."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._restore_focus_state",
-      "sha256": "4dbea39942f74e2baa88e0fe464ec5d8ab328169dcdc55cdc0d0de80c942a3ca",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "c35548764ec16cf0d045b7c3435f74cba7adf53d4dbdb4a16c66139dc0dd617f",
+      "review_note": "Narrows the existing row layout before restoring focus. Cursor and focus restoration work as documented."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16211,8 +16211,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._save_focus_state",
-      "sha256": "2f9d3198b5ea015c0c25322b3f331c3c0306b81e99783d38af9622b29c1e7dfa",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "66aa7660d3ea7bd766bbc7a32d9ad46690daea838f8bb12b73015732bbbc5587",
+      "review_note": "Narrows the existing row layout before capturing focus. Cursor and focus preservation work as documented."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16361,8 +16361,8 @@
     {
       "source": "src/gui/widgets/splitter_tab_inspector.py",
       "symbol": "SplitterTabInspector.split_active_section",
-      "sha256": "961d4eaf7f243937a23e0e96fa362cf8c0979f8a8e7bc57743be850da31110df",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "4a046c7ae6de28fb847afecca075218e9bbe6b9deaab677ed1be7ed4d07c7025",
+      "review_note": "Narrows splitter children before finding the focus owner. Splitting the active section works as documented."
     },
     {
       "source": "src/gui/widgets/summary_widget.py",

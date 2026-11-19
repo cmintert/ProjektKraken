@@ -400,10 +400,14 @@ def test_event_date_and_description_keep_their_inline_route(
     assert editor.description_field.isVisible()
     viewport = editor.scroll_area.viewport()
     if height == 1200:
-        qtbot.waitUntil(lambda: editor.scroll_area.verticalScrollBar().maximum() == 0)
         history = editor._presentation.history_disclosure
-        history_bottom = history.mapTo(viewport, QPoint(0, history.height())).y()
-        assert 0 <= viewport.height() - history_bottom <= 32
+
+        def overview_fits():
+            bottom = history.mapTo(viewport, QPoint(0, history.height())).y()
+            assert editor.scroll_area.verticalScrollBar().maximum() == 0
+            assert 0 <= viewport.height() - bottom <= 32
+
+        qtbot.waitUntil(overview_fits)
         assert editor.desc_edit.editor.height() > 500
     timing_top = timing.mapTo(viewport, QPoint()).y()
     timing_bottom = timing.mapTo(viewport, QPoint(0, timing.height())).y()

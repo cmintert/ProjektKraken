@@ -227,6 +227,7 @@ class IconPickerDialog(QDialog):
     def _rebuild_project_icons_tab(self) -> None:
         while self._project_tab_layout.count():
             item = self._project_tab_layout.takeAt(0)
+            assert item is not None
             widget = item.widget()
             if widget is not None:
                 widget.hide()

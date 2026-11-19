@@ -37,6 +37,8 @@ from PySide6.QtWidgets import QGraphicsLineItem, QGraphicsView, QSizePolicy, QWi
 from src.core.command import LoreMutationEffect
 from src.core.event_timing.presentation import event_navigation_context
 from src.core.events import Event
+from src.core.temporal_context import TemporalResolutionContext
+from src.core.temporal_expression import ResolvedTemporalBounds
 from src.core.theme_manager import ThemeManager
 from src.core.timeline_visibility import DependencyVisibility
 from src.gui.utils.theme_connections import connect_theme
@@ -176,6 +178,7 @@ class TimelineView(QGraphicsView):
         self.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
 
         self.events: list[Event] = []
+        self._standalone_anchors: dict[str, ResolvedTemporalBounds] | None = None
         self._event_items: dict[str, EventItem] = {}
         self._dependencies = TimelineDependencyLayer()
         self._dependency_route_timer = QTimer(self)
@@ -703,9 +706,10 @@ class TimelineView(QGraphicsView):
 
         """
         self.movement.cancel()
+        self._standalone_anchors = None
         self._ruler.set_calendar_converter(converter)
         self.recurrence_strip.schedule()
-        self._dependencies.set_display_events(self.events, converter)
+        self._dependencies.set_display_calendar(self.events, converter)
         self._layout_generation += 1
         self.viewport().update()
 
@@ -718,16 +722,28 @@ class TimelineView(QGraphicsView):
         )
         self._incremental_layout_timer.stop()
         self._clear_duplicates()
+        self._standalone_anchors = None
         existing = {
             item.event.id: item
             for item in self.graphics_scene.items()
             if isinstance(item, EventItem)
         }
+        display_context = context
+        if display_context is None and all(
+            "_temporal_v2" not in event.attributes for event in events
+        ):
+            # Detached legacy Events have no timing dependencies. Resolve the
+            # batch before item creation instead of solving once per label.
+            display_context = TemporalResolutionContext.build(
+                events, EventItem._calendar_converter
+            )
         prepared = TimelineEventPreparationService.replace(
             events,
             set(existing) | set(self._drop_lines),
-            getattr(self, "_temporal_context", None),
+            display_context,
         )
+        if context is None and display_context is not None:
+            self._standalone_anchors = display_context.resolution.anchors()
         self._event_items = existing
         self._reconcile_event_items(prepared)
         self._layout_generation += 1
@@ -743,9 +759,6 @@ class TimelineView(QGraphicsView):
         self._unplaced_events = list(prepared.unplaced)
         self._recurring_events = list(prepared.recurring)
         self.recurrence_strip.set_events(prepared.recurring)
-        self._dependencies.set_display_events(
-            self.events, EventItem._calendar_converter
-        )
         if prepared.unplaced:
             self._empty_state.set_message("No resolved Event starts")
             self._empty_state.set_description(
@@ -779,6 +792,7 @@ class TimelineView(QGraphicsView):
             self._drop_lines[event.id].setLine(
                 item.x(), -self.RULER_HEIGHT, item.x(), item.y()
             )
+        self._dependencies.set_display_items(self._event_items.values())
         # Grouped copies also receive non-geometric refreshes without a repack.
         updates = {event.id: event for event in prepared.upserts}
         for duplicate in self._duplicate_event_items:
@@ -812,6 +826,7 @@ class TimelineView(QGraphicsView):
     def apply_event_effects(self, effects: list[LoreMutationEffect]) -> None:
         """Patch surviving items and coalesce geometric changes into one repack."""
         self.movement.cancel()
+        self._standalone_anchors = None
         self._dependencies.apply_effects(effects)
         prepared = TimelineEventPreparationService.apply_effects(
             [
@@ -939,7 +954,7 @@ class TimelineView(QGraphicsView):
         from src.gui.workers.layout_worker import LayoutWorker
 
         self._lane_packer.update_scale_factor(effective_scale)
-        intervals = self._lane_packer.measure_events(self.events)
+        intervals = self._lane_packer.measure_events(self.events, self._event_items)
         self._layout_request_token += 1
         self._active_layout_token = self._layout_request_token
         worker = LayoutWorker(
@@ -1959,11 +1974,14 @@ class TimelineView(QGraphicsView):
         from src.core.temporal_anchors import resolve_event_anchors
 
         context = getattr(self, "_temporal_context", None)
-        anchors = (
-            context.anchors()
-            if context is not None
-            else resolve_event_anchors(self.events, EventItem._calendar_converter)
-        )
+        if context is not None:
+            anchors = context.anchors()
+        else:
+            anchors = self._standalone_anchors
+            if anchors is None:
+                anchors = resolve_event_anchors(
+                    self.events, EventItem._calendar_converter
+                )
 
         # Iterate through all EventItems in the scene
         for item in self.graphics_scene.items():

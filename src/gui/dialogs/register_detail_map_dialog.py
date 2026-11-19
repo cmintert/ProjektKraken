@@ -88,6 +88,10 @@ class RegisterDetailMapDialog(QDialog):
             QComboBox(self),
             "src-gui-dialogs-register-detail-map-dialog-registerdetailmapdialog-init-self-parent-combo|map.features|help-inspect-src-gui-dialogs-register-detail-map-dialog-registerdetailmapdialog-init-self-parent-combo",
         )
+        self._parent_combo.setSizeAdjustPolicy(
+            QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+        )
+        self._parent_combo.setMinimumContentsLength(12)
         for m in candidate_parents:
             role = (
                 "Detail map"

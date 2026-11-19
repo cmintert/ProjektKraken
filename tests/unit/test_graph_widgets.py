@@ -4,19 +4,6 @@ Tests for Graph View Widgets.
 Tests the widget layer components for graph visualization.
 """
 
-import pytest
-from PySide6.QtWidgets import QApplication
-
-
-# Ensure QApplication exists for widget tests
-@pytest.fixture(scope="module")
-def qapp():
-    """Provides a QApplication for widget tests."""
-    app = QApplication.instance()
-    if app is None:
-        app = QApplication([])
-    yield app
-
 
 class TestGraphBuilder:
     """Tests for GraphBuilder class."""
@@ -114,12 +101,13 @@ class TestGraphFilterBar:
 class TestGraphWebView:
     """Tests for GraphWebView class."""
 
-    def test_theme_change_after_shutdown_ignores_deleted_web_view(self, qapp):
+    def test_theme_change_after_shutdown_ignores_deleted_web_view(self, qapp, qtbot):
         """A late theme signal must not touch the torn-down WebEngine widget."""
         from src.core.theme_manager import ThemeManager
         from src.gui.widgets.graph_view.graph_web_view import GraphWebView
 
         widget = GraphWebView()
+        qtbot.addWidget(widget)
         widget.shutdown()
         qapp.processEvents()
 

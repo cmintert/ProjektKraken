@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 import pytest
 
 # LLMGenerationWidget imported inside fixture to ensure clean state
@@ -88,81 +90,39 @@ def test_custom_prompt_structure(qtbot, widget, monkeypatch):
     )
 
 
-def test_preview_fetches_rag(qtbot, widget, monkeypatch):  # noqa: C901
-    """Test that preview fetches real RAG context."""
+def test_preview_fetches_rag(qtbot, widget, monkeypatch):
+    """An Event preview displays context retrieved for its task and subject."""
+    from PySide6.QtWidgets import QDialog
 
-    # Mock context
-    def mock_context():
-        return {"name": "Test Item", "object_type": "event"}
+    context = {"name": "Test Item", "object_type": "event", "object_id": "event-id"}
+    monkeypatch.setattr(widget, "_get_generation_context", lambda: context)
+    monkeypatch.setattr(widget, "_resolve_db_path", lambda: "test.db")
+    rag = Mock()
+    rag.return_value.get_context.return_value = "Retrieved lore for the preview"
+    rag.return_value.source_references = ()
+    monkeypatch.setattr("src.services.generation_worker.RAGService", rag)
 
-    monkeypatch.setattr(widget, "_get_generation_context", mock_context)
-
-    # Use QMainWindow parent for db_path
-    from PySide6.QtWidgets import QMainWindow
-
-    class MockWindow(QMainWindow):
-        def __init__(self):
-            super().__init__()
-            self.db_path = "test.db"
-
-    win = MockWindow()
-    # Explicitly mock parent() for checking db_path, as setParent might depend on hierarchy
-    monkeypatch.setattr(widget, "parent", lambda: win)
-
-    # Also set actual parent for Qt correctness if needed, but mock covers logic
-    widget.setParent(win)
-
-    # Mock RAGService
-    mock_rag_return = "### World Knowledge (RAG Data):\n**Test** (Item):\nContent..."
-    rag_called = []
-
-    class MockRAGService:
-        def __init__(self, db_path):
-            rag_called.append((db_path, "init"))
-
-        def get_context(self, query, top_k=3, exclude_names=None):
-            rag_called.append((query, "get_context"))
-            return mock_rag_return
-
-    monkeypatch.setattr(
-        "src.gui.widgets.llm_generation_widget.RAGService", MockRAGService
-    )
-
-    # Keep real Qt controls so Help bindings and preview rendering are exercised.
-    from PySide6.QtWidgets import QDialog, QPlainTextEdit
-
-    previews = []
-
-    def capture_preview(dialog):
-        previews.append(dialog.findChild(QPlainTextEdit).toPlainText())
-        return QDialog.DialogCode.Accepted
-
-    monkeypatch.setattr(QDialog, "exec", capture_preview)
     widget.world_context_cb.setChecked(False)
     widget.spatial_cb.setChecked(False)
-
+    widget.undated_cb.setChecked(True)
     widget.rag_cb.setChecked(True)
+    widget.rag_limit_input.setText("2")
     widget.custom_prompt_edit.setPlainText("Test Prompt")
+
+    def capture_preview(dialog):
+        qtbot.waitUntil(lambda: widget._prepared_request is not None)
+        assert "Retrieved lore for the preview" in dialog.text.toPlainText()
+        return QDialog.DialogCode.Rejected
+
+    monkeypatch.setattr(QDialog, "exec", capture_preview)
     widget._on_preview_clicked()
 
-    assert len(previews) == 1
-    assert mock_rag_return in previews[0]
-
-    # Check that we had an init call and a get_context call or similar
-    # We expect init with db_path, then get_context with query
-
-    # Filter for get_context call
-    context_calls = [c for c in rag_called if c[1] == "get_context"]
-    assert len(context_calls) == 1
-
-    # Check db_path from init call
-    init_calls = [c for c in rag_called if c[1] == "init"]
-    assert len(init_calls) == 1
-    assert init_calls[0][0] == "test.db"
-
-    # Retrieval receives the task and subject, not the assembled prompt.
-    assert context_calls[0][0] == "Test Prompt\nSubject: event Test Item"
-    assert "[Event]" not in context_calls[0][0]
+    rag.assert_called_once_with("test.db")
+    rag.return_value.get_context.assert_called_once_with(
+        "Test Prompt\nSubject: event Test Item",
+        top_k=2,
+        exclude_object=("event", "event-id"),
+    )
 
 
 def test_default_system_prompt_fallback(qtbot, widget, monkeypatch):

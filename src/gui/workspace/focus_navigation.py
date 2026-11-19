@@ -141,11 +141,16 @@ class FocusNavigationController(QObject):
         if isinstance(widget, QTabBar):
             return []
         if isinstance(widget, QScrollArea):
-            return [widget.widget()] if widget.widget() else []
+            content = widget.widget()
+            return [content] if content is not None else []
         if isinstance(widget, (QAbstractScrollArea, QComboBox)):
             return []
         if isinstance(widget, QSplitter):
-            return [widget.widget(i) for i in range(widget.count())]
+            return [
+                pane
+                for i in range(widget.count())
+                if (pane := widget.widget(i)) is not None
+            ]
         if isinstance(widget, QToolBar):
             children = [
                 child for a in widget.actions() if (child := widget.widgetForAction(a))

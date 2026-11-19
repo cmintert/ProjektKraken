@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-19
-**Commit:** fc0cf8b6
+**Commit:** 079d5699
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-11-19)* **Beta verification (KRT-181)**: Updated PySide6 and repaired
+  Graph teardown, map picker sizing, and Timeline loading for the release
+  candidate. Adapted Qt layout and signal handling to the new bindings, updated
+  the Windows dependency lock and Help reviews, and reconciled regression tests
+  with current import, editor, map, credential, and Markdown behavior.
 
 - *(2026-11-19)* **Release (KRT-181)**: Bumped project and application metadata
   to version 0.22.0 for beta 1. Updated the README, installation guide, and

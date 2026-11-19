@@ -834,6 +834,7 @@ class RasterPaletteEditor(QDialog):
         # Clear existing rows
         while self._stops_layout.count():
             item = self._stops_layout.takeAt(0)
+            assert item is not None
             widget = item.widget()
             if widget is not None:
                 widget.deleteLater()
