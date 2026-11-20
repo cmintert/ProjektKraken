@@ -64,8 +64,8 @@ The twelve palette images are durable evidence; the disabled/narrow captures
 also show the visible prerequisite. Images were visually reviewed across every
 palette. No stylesheet baseline was regenerated.
 
-[Assisted replay diagnostics](replay.json), journey draft (`journey-kept.png`) and
-geometry draft (`geometry-kept.png`) use production MapWidget/coordinators and
+[Assisted replay diagnostics](replay.json), [journey draft](journey-kept.png) and
+[geometry draft](geometry-kept.png) use production MapWidget/coordinators and
 synthetic snapshots. The synthetic background goes through the production map
 load path; the viewport uses software rendering. The journey point and geometry
 vertex are modified through production edit callbacks, then Keep editing,
@@ -89,8 +89,8 @@ human benchmark remains separate.
   visual policy, complexity policy and git diff whitespace checks passed.
   Reviewed C901 hotspots were untouched; no allowance or ceiling increased.
 - Both evidence scripts pass. Failed geometry Apply is also replayed with real
-  vertex handles; failure capture (`geometry-after-failed-apply.png`) and
-  narrow conflict recovery (`geometry-conflict-narrow.png`) show the retained draft.
+  vertex handles; [failure capture](geometry-after-failed-apply.png) and
+  [narrow conflict recovery](geometry-conflict-narrow.png) show the retained draft.
 - Strict Sphinx HTML checking reports **22 warnings** in existing UX navigation
   and a local skill cross-reference, including the contemporaneous untracked
   Northwatch document. No warnings name the KRT-26 evidence or investigation;

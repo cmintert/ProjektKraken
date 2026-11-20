@@ -77,17 +77,17 @@ reporting a nonzero horizontal-scroll range.
 
 | Review | Before (`7f723d08`) | Refined |
 | --- | --- | --- |
-| Collapsed Entity, dark 331 px | Five supporting rows (`after/entity-dark_mode-331-support.png`) | Quiet tools and one heading (`refinement/entity-dark_mode-331-support.png`) |
-| Collapsed Entity, light 871 px | Supporting rows (`after/entity-light_mode-871-support.png`) | Writing-field alignment (`refinement/entity-light_mode-871-support.png`) |
-| Short Event, light 331 px | Initial short layout (`after/event-light_mode-331-short.png`) | Quiet support and persistent footer (`refinement/event-light_mode-331-refinement_short.png`) |
-| Summary purpose | Existing panel retained | Open Summary, light 871 px (`refinement/entity-light_mode-871-summary.png`) |
-| AI purpose | Existing reviewed-generation path retained | Open AI drafting, light 331 px (`refinement/entity-light_mode-331-ai_draft.png`) |
-| Concurrent panels | Existing independent disclosures retained as actions | Both open, dark 331 px (`refinement/entity-dark_mode-331-writing_panels.png`) |
-| Empty summary | Existing explicit Generate action retained | Empty Summary, dark 560 px (`refinement/entity-dark_mode-560-empty_summary.png`) |
-| Entity information | Separate timeline/map/context bars | Grouped information, dark 331 px (`refinement/entity-dark_mode-331-information.png`) |
-| Event information | No Entity timeline to fabricate | Event information, light 331 px (`refinement/event-light_mode-331-information.png`) |
-| Bounded additional context | Existing More remains | Additional context, dark 560 px (`refinement/entity-dark_mode-560-information_more.png`) |
-| Independent supporting view | Existing World context split | Split home and return, light 331 px (`refinement/entity-light_mode-331-context_split.png`) |
+| Collapsed Entity, dark 331 px | [Five supporting rows](after/entity-dark_mode-331-support.png) | [Quiet tools and one heading](refinement/entity-dark_mode-331-support.png) |
+| Collapsed Entity, light 871 px | [Supporting rows](after/entity-light_mode-871-support.png) | [Writing-field alignment](refinement/entity-light_mode-871-support.png) |
+| Short Event, light 331 px | [Initial short layout](after/event-light_mode-331-short.png) | [Quiet support and persistent footer](refinement/event-light_mode-331-refinement_short.png) |
+| Summary purpose | Existing panel retained | [Open Summary, light 871 px](refinement/entity-light_mode-871-summary.png) |
+| AI purpose | Existing reviewed-generation path retained | [Open AI drafting, light 331 px](refinement/entity-light_mode-331-ai_draft.png) |
+| Concurrent panels | Existing independent disclosures retained as actions | [Both open, dark 331 px](refinement/entity-dark_mode-331-writing_panels.png) |
+| Empty summary | Existing explicit Generate action retained | [Empty Summary, dark 560 px](refinement/entity-dark_mode-560-empty_summary.png) |
+| Entity information | Separate timeline/map/context bars | [Grouped information, dark 331 px](refinement/entity-dark_mode-331-information.png) |
+| Event information | No Entity timeline to fabricate | [Event information, light 331 px](refinement/event-light_mode-331-information.png) |
+| Bounded additional context | Existing More remains | [Additional context, dark 560 px](refinement/entity-dark_mode-560-information_more.png) |
+| Independent supporting view | Existing World context split | [Split home and return, light 331 px](refinement/entity-light_mode-331-context_split.png) |
 
 Reproduce with offscreen Qt:
 

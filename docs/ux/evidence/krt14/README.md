@@ -51,5 +51,5 @@ This checks Qt rendering, not native interactive first-use learnability.
 
 | Width | Required choice | Complete capture |
 | --- | --- | --- |
-| 360 px | Empty type (`creation-unclassified-360.png`) | Character (`creation-character-360.png`) |
-| 480 px | Empty type (`creation-unclassified-480.png`) | Character (`creation-character-480.png`) |
+| 360 px | ![Empty type](creation-unclassified-360.png) | ![Character](creation-character-360.png) |
+| 480 px | ![Empty type](creation-unclassified-480.png) | ![Character](creation-character-480.png) |

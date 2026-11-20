@@ -61,7 +61,7 @@ Existing primary creation and secondary supporting actions continue to use share
 StyleHelper presentation. No action availability, control geometry or stylesheet
 is changed. Existing disabled Open/Peek controls still explain the caret
 prerequisite; modifier cues do not take focus, select text or change undo history.
-The 352 px six-theme Rich/Source render (`peek-cursor-themes.png`) shows actual
+The 352 px [six-theme Rich/Source render](peek-cursor-themes.png) shows actual
 editor widgets with their actual QCursor bitmap overlaid at its hotspot, because
 QWidget.grab does not capture an OS pointer. It is a labeled render, not a native
 desktop screenshot. The eye remains visible on all six editor surfaces. Toolbar

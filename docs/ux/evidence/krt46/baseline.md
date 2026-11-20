@@ -79,14 +79,14 @@ later videos should execute all catalog success checks, especially KA-04/08/14/
 
 | Capture | Conclusion supported |
 | --- | --- |
-| Workspace (`workspace.png`) | Explorer creation/search, temporal controls and overall production layout; initial calendar fallback visible. |
-| Entity normal (`entity-normal.png`), compact (`entity-narrow.png`) | Ordinary text/type/context controls; compact tab overflow, wrapping/truncation and writing density belong to KRT-45. |
-| Event normal (`event-normal.png`), compact (`event-narrow.png`) | Existing date disclosure, qualification and duration opt-in; compact structured-date labels are cramped (KRT-45). Fresh collapsed defaults are verified separately by widget-event tests. |
-| Relation (`relation.png`) | Always-present expert options and modal configuration burden (KRT-22). |
-| Map (`map.png`), draw mode (`map-draw.png`), journey mode (`map-journey.png`) | Visible controls and local mode strips; some journey labels clip at this layout (KRT-25). Blank native canvas is an offscreen limitation. |
-| Map software viewport (`map-software.png`) | Production map controls with fixture background using a software viewport, 1100 × 720. |
-| Graph (`graph.png`) | Labeled temporal modes/filtering; not interactive canvas validation. |
-| Longform (`longform.png`) | Seeded outline and complete toolbar; missing labeled structural actions and icon-only Find (KRT-47). |
+| [Workspace](workspace.png) | Explorer creation/search, temporal controls and overall production layout; initial calendar fallback visible. |
+| [Entity normal](entity-normal.png), [compact](entity-narrow.png) | Ordinary text/type/context controls; compact tab overflow, wrapping/truncation and writing density belong to KRT-45. |
+| [Event normal](event-normal.png), [compact](event-narrow.png) | Existing date disclosure, qualification and duration opt-in; compact structured-date labels are cramped (KRT-45). Fresh collapsed defaults are verified separately by widget-event tests. |
+| [Relation](relation.png) | Always-present expert options and modal configuration burden (KRT-22). |
+| [Map](map.png), [draw mode](map-draw.png), [journey mode](map-journey.png) | Visible controls and local mode strips; some journey labels clip at this layout (KRT-25). Blank native canvas is an offscreen limitation. |
+| [Map software viewport](map-software.png) | Production map controls with fixture background using a software viewport, 1100 × 720. |
+| [Graph](graph.png) | Labeled temporal modes/filtering; not interactive canvas validation. |
+| [Longform](longform.png) | Seeded outline and complete toolbar; missing labeled structural actions and icon-only Find (KRT-47). |
 
 ## Safeguards and findings
 

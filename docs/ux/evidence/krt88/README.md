@@ -76,9 +76,9 @@ Search uses shared input/selection/focus roles; explanatory content and links us
 ordinary neutral foreground and link roles. Native explanation palettes use the
 same surface/text roles. The search region uses its natural wrapped height.
 
-Examples: dark search (`dark_mode-360-search.png`),
-dark explanation (`dark_mode-360-explanation.png`),
-muted-light no results (`muted_light_mode-360-no-results.png`).
+Examples: [dark search](dark_mode-360-search.png),
+[dark explanation](dark_mode-360-explanation.png),
+[muted-light no results](muted_light_mode-360-no-results.png).
 
 ```powershell
 python -m scripts.build_help

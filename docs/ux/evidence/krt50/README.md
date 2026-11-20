@@ -22,14 +22,14 @@ implementation
 
 ## Screenshot review
 
-Inspect year visible (`year-visible.png`) and tighter year view (`year-tight.png`)
+Inspect [year visible](year-visible.png) and [tighter year view](year-tight.png)
 first. Both show all seven required comparison cases, complete labels/captions,
 the native calendar ruler, and neighboring year-boundary events. Rows are held
 constant so the same event can be compared directly across images.
 
-Current timeline, year visible (`year-visible.png`)
+![Current timeline, year visible](year-visible.png)
 
-Current timeline, tighter zoom (`year-tight.png`)
+![Current timeline, tighter zoom](year-tight.png)
 
 **Confirmed rendering defect:** row 5, a three-day event whose start is only
 known to the year, has a hatched bar extending across the entire year plus three
@@ -77,10 +77,10 @@ Additional unannotated captures:
 
 | File | Pixels/day | Purpose |
 | --- | --- | --- |
-| duration below 6px (`duration-below-6px.png`) | 0.015 | Row 5's 368-day envelope becomes the minimum 6-pixel mark |
-| duration above 6px (`duration-above-6px.png`) | 0.017 | Row 5's envelope becomes a scaled 6.256-pixel bar |
-| occurrence below 24px (`occurrence-below-24px.png`) | 0.064 | Row 3 simplifies to a fixed 16-pixel occurrence window |
-| occurrence above 24px (`occurrence-above-24px.png`) | 0.067 | Row 3 resumes its true 24.455-pixel year window |
+| [duration below 6px](duration-below-6px.png) | 0.015 | Row 5's 368-day envelope becomes the minimum 6-pixel mark |
+| [duration above 6px](duration-above-6px.png) | 0.017 | Row 5's envelope becomes a scaled 6.256-pixel bar |
+| [occurrence below 24px](occurrence-below-24px.png) | 0.064 | Row 3 simplifies to a fixed 16-pixel occurrence window |
+| [occurrence above 24px](occurrence-above-24px.png) | 0.067 | Row 3 resumes its true 24.455-pixel year window |
 
 At 2.4 pixels/day, row 5 is 883.2 pixels wide while its authored duration is
 7.2 pixels. Row 7 is about 576 pixels wide. Row 6 remains 16 pixels at every zoom.

@@ -38,7 +38,7 @@ identity until a stored colour is available. No interaction contract is revised.
 
 ## Rendered review
 
-Theme and width contact sheet (`grouping-refresh-themes.png`) uses production QSS,
+[Theme and width contact sheet](grouping-refresh-themes.png) uses production QSS,
 Segoe UI, detached tags and non-persistent theme changes. Reviewed all six themes
 at 420 and 800 pixels: labels/counts fit, the disabled Up action remains visible,
 and selected/check states and grouping modes remain. Geometry assertions verify

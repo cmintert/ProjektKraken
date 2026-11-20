@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-11-19
-**Commit:** 29903e89
+**Last Updated:** 2026-11-20
+**Commit:** 9f82204a
 ---
 
 # Changelog
@@ -12,6 +12,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-11-20)* **UX evidence**: Restored the screenshots referenced by the
+  evidence pages, including inline captures and before-and-after links.
 
 - *(2026-11-19)* **Release documentation (KRT-181)**: Listed local UX captures
   by filename so the public manual builds from a clean checkout. Beta tags

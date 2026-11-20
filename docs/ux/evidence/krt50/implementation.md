@@ -15,15 +15,15 @@ longer become error boxes. Independently asserted endpoints show Starts/Ends/
 Possible span without inventing a fixed duration. Existing possible/certain
 presence bounds remain unchanged.
 
-The year comparison (`after/krt50/year-visible.png`) and
-tighter comparison (`after/krt50/year-tight.png`) show three-day measures separately
+The [year comparison](after/krt50/year-visible.png) and
+[tighter comparison](after/krt50/year-tight.png) show three-day measures separately
 from the year-wide occurrence/presence envelopes and a genuine 240-day event.
-The endpoint comparison (`after/indicators/endpoints-errors.png`) preserves certain
+The [endpoint comparison](after/indicators/endpoints-errors.png) preserves certain
 presence cores and distinguishes valid open assertions from actual errors.
 
 Collapsed groups use the same occurrence marks with device-space strokes:
-production expanded group (`after/indicators/grouped-production-expanded.png`),
-production collapsed group (`after/indicators/grouped-production-collapsed.png`).
+[production expanded group](after/indicators/grouped-production-expanded.png),
+[production collapsed group](after/indicators/grouped-production-collapsed.png).
 Their tooltips retain names and authored timing. Production grouping screenshots
 also exposed and led to fixes for stale zoom on duplicate items and insufficient
 header/title spacing. Originals and duplicates now share the current geometry.
@@ -31,11 +31,11 @@ header/title spacing. Originals and duplicates now share the current geometry.
 Viewed time and world current time are pinned in a wrapping status strip. Their
 solid/handled versus dashed/unhandled marks have separate identity rows below
 calendar ticks; coincident marks identify both roles. Examples:
-separate times (`after/indicators/state-during.png`),
-coincident times (`after/indicators/navigation-coincident.png`),
-narrow dock (`after/indicators/navigation-narrow.png`).
+[separate times](after/indicators/state-during.png),
+[coincident times](after/indicators/navigation-coincident.png),
+[narrow dock](after/indicators/navigation-narrow.png).
 
-Uncertain snapped navigation (`after/indicators/navigation-snapped-uncertain.png`)
+[Uncertain snapped navigation](after/indicators/navigation-snapped-uncertain.png)
 discloses the representative position after acceptance. Accepted context survives
 pan, zoom, selection and presentation refresh. Deleted/rescheduled targets or
 independent time navigation clear stale disclosure. Deferred save, cancellation
@@ -44,9 +44,9 @@ The modal event loop is covered using the real timeline widget and TimeCoordinat
 
 Future events show Not yet while names and dates remain fully opaque. Captions
 use supporting_caption. Toolbar actions share normal/checked/disabled/focus
-presentation. Focus (`after/indicators/theme-dark_mode.png`),
-unfocused (`after/indicators/toolbar-unfocused.png`), and
-disabled (`after/indicators/toolbar-disabled.png`) captures make the state reviewable.
+presentation. [Focus](after/indicators/theme-dark_mode.png),
+[unfocused](after/indicators/toolbar-unfocused.png), and
+[disabled](after/indicators/toolbar-disabled.png) captures make the state reviewable.
 
 ## Interfaces and boundaries
 
@@ -143,7 +143,7 @@ full-source mypy, visual policy and complexity policy also pass after the repair
 ## Remaining human acceptance
 
 **Fresh unprompted interpretation is pending.** The
-neutral-name review image (`after/indicators/human-interpretation.png`) is prepared.
+[neutral-name review image](after/indicators/human-interpretation.png) is prepared.
 Ask a participant who has not been told the intended meanings to describe when
 Councils A/B/C occurred, how long they lasted, what each mark communicates, and
 which date is viewed versus the world's current time. Record their first wording,

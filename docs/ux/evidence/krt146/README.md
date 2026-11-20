@@ -61,11 +61,11 @@ $env:QT_QPA_PLATFORM = "offscreen"
 .\.venv\Scripts\python.exe -m docs.ux.evidence.krt146.capture_visible_history
 ```
 
-Empty Linked events with the first-event action in a narrow dark inspector (`renders/dark_mode-360-empty.png`)
+![Empty Linked events with the first-event action in a narrow dark inspector](renders/dark_mode-360-empty.png)
 
-Populated Linked events with Add event in a wide light inspector (`renders/light_mode-1100-cards.png`)
+![Populated Linked events with Add event in a wide light inspector](renders/light_mode-1100-cards.png)
 
-Generated offline Help describing the visible history route (`renders/offline-help.png`)
+![Generated offline Help describing the visible history route](renders/offline-help.png)
 
 ## Documentation review and acceptance boundary
 

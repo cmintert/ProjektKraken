@@ -16,8 +16,8 @@ Settlements on Kahlfels has independent year-precision endpoints 0 and 15;
 Gotland Exploration has independent year-precision endpoints 15 and 30.
 Landfall supplies the legacy point-event comparison.
 
-- Before (`before.png`)
-- After (`after.png`)
+- [Before](before.png)
+- [After](after.png)
 
 Both captures use the production TimelineView and EventItem, Segoe UI 10 pt,
 1336 × 480 pixels, fantasy theme, and 0.036 pixels per day. Comparison rows

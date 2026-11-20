@@ -65,12 +65,12 @@ and 2× zoom, narrow views 400 px and 0.8× zoom. No native DPI claim is implied
 
 | Palette | Normal modes | Narrow modes | Focus/menu/disabled |
 | --- | --- | --- | --- |
-| Dark | 1200 px (`dark_mode-1200-modes.png`) | 400 px (`dark_mode-400-modes.png`) | Controls (`dark_mode-control-states.png`) |
-| Light | 1200 px (`light_mode-1200-modes.png`) | 400 px (`light_mode-400-modes.png`) | Controls (`light_mode-control-states.png`) |
-| Fantasy | 1200 px (`fantasy_mode-1200-modes.png`) | 400 px (`fantasy_mode-400-modes.png`) | Controls (`fantasy_mode-control-states.png`) |
-| Imperial | 1200 px (`imperial_mode-1200-modes.png`) | 400 px (`imperial_mode-400-modes.png`) | Controls (`imperial_mode-control-states.png`) |
-| Cyberpunk | 1200 px (`cyberpunk_mode-1200-modes.png`) | 400 px (`cyberpunk_mode-400-modes.png`) | Controls (`cyberpunk_mode-control-states.png`) |
-| Muted light | 1200 px (`muted_light_mode-1200-modes.png`) | 400 px (`muted_light_mode-400-modes.png`) | Controls (`muted_light_mode-control-states.png`) |
+| Dark | [1200 px](dark_mode-1200-modes.png) | [400 px](dark_mode-400-modes.png) | [Controls](dark_mode-control-states.png) |
+| Light | [1200 px](light_mode-1200-modes.png) | [400 px](light_mode-400-modes.png) | [Controls](light_mode-control-states.png) |
+| Fantasy | [1200 px](fantasy_mode-1200-modes.png) | [400 px](fantasy_mode-400-modes.png) | [Controls](fantasy_mode-control-states.png) |
+| Imperial | [1200 px](imperial_mode-1200-modes.png) | [400 px](imperial_mode-400-modes.png) | [Controls](imperial_mode-control-states.png) |
+| Cyberpunk | [1200 px](cyberpunk_mode-1200-modes.png) | [400 px](cyberpunk_mode-400-modes.png) | [Controls](cyberpunk_mode-control-states.png) |
+| Muted light | [1200 px](muted_light_mode-1200-modes.png) | [400 px](muted_light_mode-400-modes.png) | [Controls](muted_light_mode-control-states.png) |
 
 Agent visual review checked readable mode/action labels, checked menu state,
 disabled controls, narrow More actions access and the four visibility states.
@@ -97,8 +97,8 @@ control reference, with a short how-to route. Canonical page:
 The actual contextual excerpt includes all four definitions in its first
 paragraph; the manual table and procedure provide further detail. Search for
 Show dependency trail reaches the Timeline topic. Generated Help rendering is
-captured at 400 px dark (`help-dark_mode-400.png`) and
-680 px light (`help-light_mode-680.png`). Source inspection, generated HTML checks,
+captured at [400 px dark](help-dark_mode-400.png) and
+[680 px light](help-light_mode-680.png). Source inspection, generated HTML checks,
 offscreen companion rendering and automation are separate from human acceptance.
 
 The authoritative Linear vocabulary and repository counterpart were updated

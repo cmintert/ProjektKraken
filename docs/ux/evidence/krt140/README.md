@@ -62,11 +62,11 @@ passed. No reviewed complexity hotspots or baseline exceptions changed.
 | Rendered review | Offscreen production QSS, narrow properties and group scope; repaired multiline notes styling |
 | Human/live Help/reader approval | Pending; no participant or native-DPI claims |
 
-Narrow feature settings (`renders/dark_mode-420-properties.png`)
+![Narrow feature settings](renders/dark_mode-420-properties.png)
 
-One-feature group scope (`renders/light_mode-420-group.png`)
+![One-feature group scope](renders/light_mode-420-group.png)
 
-Generated map settings Help (`help-renders/dark_mode-640.png`)
+![Generated map settings Help](help-renders/dark_mode-640.png)
 
 Reproduce the render matrix with the shared pytest fixtures:
 
@@ -126,9 +126,9 @@ The [menu capture metadata](settings-menu-renders/captures.json) records 24
 menu/toolbar images; [offline Help presentation](settings-help-renders/presentation.json)
 records the focused Map settings topic in six themes at normal/narrow widths.
 
-Map settings with visible section headings (`settings-menu-renders/dark_mode-1400-menu.png`)
+![Map settings with visible section headings](settings-menu-renders/dark_mode-1400-menu.png)
 
-Narrow settings menu (`settings-menu-renders/light_mode-520-menu.png`)
+![Narrow settings menu](settings-menu-renders/light_mode-520-menu.png)
 
 Reproduce menu captures with the existing shared map test fixture:
 

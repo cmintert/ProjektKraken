@@ -58,23 +58,23 @@ Viewing/World current time and undo remain governed by their existing paths.
 
 | Theme | Sparse / normal | Sparse / narrow | Crowded / normal | Crowded / narrow |
 | --- | --- | --- | --- | --- |
-| Dark | Image (`dark_mode-sparse-1200.png`) | Image (`dark_mode-sparse-400.png`) | Image (`dark_mode-crowded-1200.png`) | Image (`dark_mode-crowded-400.png`) |
-| Light | Image (`light_mode-sparse-1200.png`) | Image (`light_mode-sparse-400.png`) | Image (`light_mode-crowded-1200.png`) | Image (`light_mode-crowded-400.png`) |
-| Fantasy | Image (`fantasy_mode-sparse-1200.png`) | Image (`fantasy_mode-sparse-400.png`) | Image (`fantasy_mode-crowded-1200.png`) | Image (`fantasy_mode-crowded-400.png`) |
-| Imperial | Image (`imperial_mode-sparse-1200.png`) | Image (`imperial_mode-sparse-400.png`) | Image (`imperial_mode-crowded-1200.png`) | Image (`imperial_mode-crowded-400.png`) |
-| Cyberpunk | Image (`cyberpunk_mode-sparse-1200.png`) | Image (`cyberpunk_mode-sparse-400.png`) | Image (`cyberpunk_mode-crowded-1200.png`) | Image (`cyberpunk_mode-crowded-400.png`) |
-| Muted light | Image (`muted_light_mode-sparse-1200.png`) | Image (`muted_light_mode-sparse-400.png`) | Image (`muted_light_mode-crowded-1200.png`) | Image (`muted_light_mode-crowded-400.png`) |
+| Dark | [Image](dark_mode-sparse-1200.png) | [Image](dark_mode-sparse-400.png) | [Image](dark_mode-crowded-1200.png) | [Image](dark_mode-crowded-400.png) |
+| Light | [Image](light_mode-sparse-1200.png) | [Image](light_mode-sparse-400.png) | [Image](light_mode-crowded-1200.png) | [Image](light_mode-crowded-400.png) |
+| Fantasy | [Image](fantasy_mode-sparse-1200.png) | [Image](fantasy_mode-sparse-400.png) | [Image](fantasy_mode-crowded-1200.png) | [Image](fantasy_mode-crowded-400.png) |
+| Imperial | [Image](imperial_mode-sparse-1200.png) | [Image](imperial_mode-sparse-400.png) | [Image](imperial_mode-crowded-1200.png) | [Image](imperial_mode-crowded-400.png) |
+| Cyberpunk | [Image](cyberpunk_mode-sparse-1200.png) | [Image](cyberpunk_mode-sparse-400.png) | [Image](cyberpunk_mode-crowded-1200.png) | [Image](cyberpunk_mode-crowded-400.png) |
+| Muted light | [Image](muted_light_mode-sparse-1200.png) | [Image](muted_light_mode-sparse-400.png) | [Image](muted_light_mode-crowded-1200.png) | [Image](muted_light_mode-crowded-400.png) |
 
 The captures establish offscreen rendering, not human readability or usability
 acceptance. Dense fixed-position timelines can require horizontal/vertical
 scrolling. Native DPI, keyboard/focus and checked-overflow presentation require
 owner review in the actual workspace.
 
-Additional presentation checks: keyboard focus (`toggle-focus.png`),
-disabled control (`toggle-disabled.png`), checked overflow action (`overflow-checked.png`),
-narrow offline Help (`help-dark_mode-400.png`),
-normal offline Help (`help-light_mode-680.png`), and
-generated HTML manual (`manual-html.png`). The HTML capture used software graphics
+Additional presentation checks: [keyboard focus](toggle-focus.png),
+[disabled control](toggle-disabled.png), [checked overflow action](overflow-checked.png),
+[narrow offline Help](help-dark_mode-400.png),
+[normal offline Help](help-light_mode-680.png), and
+[generated HTML manual](manual-html.png). The HTML capture used software graphics
 after the offscreen Chromium GPU context failed; no application rendering setting
 was changed. The excerpt and search verification reached `timeline.viewing` at
 `help-inspect-timeline-show-dependencies`.

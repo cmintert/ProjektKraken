@@ -79,11 +79,11 @@ fonts. Initial offscreen fallback glyphs were unreadable and were replaced.
 font, device pixel ratio and physical capture sizes. Both dialog captures are
 360 × 540 logical pixels at DPR 1.
 
-Dark theme Batch Edit with focused Preview and complete labels (`dark_mode-narrow.png`)
+![Dark theme Batch Edit with focused Preview and complete labels](dark_mode-narrow.png)
 
-Light theme Batch Edit with focused Preview and complete labels (`light_mode-narrow.png`)
+![Light theme Batch Edit with focused Preview and complete labels](light_mode-narrow.png)
 
-Built offline Help displayed in QTextBrowser at 720 by 540 (`offline-help.png`)
+![Built offline Help displayed in QTextBrowser at 720 by 540](offline-help.png)
 
 ## Documentation review and remaining acceptance
 

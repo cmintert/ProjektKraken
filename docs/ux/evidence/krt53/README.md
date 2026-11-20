@@ -75,10 +75,10 @@ captures using production themes, not full application screenshots.
 
 | Theme / width | Selection | Existing-entry picker | Linked / return controls | Formatting hidden |
 | --- | --- | --- | --- | --- |
-| Dark 360 | Selection (`dark_mode-360-selection.png`) | Picker (`dark_mode-360-picker.png`) | Linked (`dark_mode-360-linked.png`) | Writing tools (`dark_mode-360-writing-tools.png`) |
-| Dark 650 | Selection (`dark_mode-650-selection.png`) | Picker (`dark_mode-650-picker.png`) | Linked (`dark_mode-650-linked.png`) | Writing tools (`dark_mode-650-writing-tools.png`) |
-| Light 360 | Selection (`light_mode-360-selection.png`) | Picker (`light_mode-360-picker.png`) | Linked (`light_mode-360-linked.png`) | Writing tools (`light_mode-360-writing-tools.png`) |
-| Light 650 | Selection (`light_mode-650-selection.png`) | Picker (`light_mode-650-picker.png`) | Linked (`light_mode-650-linked.png`) | Writing tools (`light_mode-650-writing-tools.png`) |
+| Dark 360 | [Selection](dark_mode-360-selection.png) | [Picker](dark_mode-360-picker.png) | [Linked](dark_mode-360-linked.png) | [Writing tools](dark_mode-360-writing-tools.png) |
+| Dark 650 | [Selection](dark_mode-650-selection.png) | [Picker](dark_mode-650-picker.png) | [Linked](dark_mode-650-linked.png) | [Writing tools](dark_mode-650-writing-tools.png) |
+| Light 360 | [Selection](light_mode-360-selection.png) | [Picker](light_mode-360-picker.png) | [Linked](light_mode-360-linked.png) | [Writing tools](light_mode-360-writing-tools.png) |
+| Light 650 | [Selection](light_mode-650-selection.png) | [Picker](light_mode-650-picker.png) | [Linked](light_mode-650-linked.png) | [Writing tools](light_mode-650-writing-tools.png) |
 
 Return availability in these isolated renders represents the state while a
 bookmark exists; the separate integration tests drive real navigation. At 360px,

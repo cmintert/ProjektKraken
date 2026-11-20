@@ -66,13 +66,13 @@ synthetic probe. These are diagnostic observations, not a paired native FPS stud
 
 ## Visual and interaction evidence
 
-Visible pending outline during offset dragging (`preview-100-2.png`)
+![Visible pending outline during offset dragging](preview-100-2.png)
 
-Grouped copies during chain dragging (`preview-500-100.png`)
+![Grouped copies during chain dragging](preview-500-100.png)
 
-Largest grouped fixture (`preview-2000-500.png`)
+![Largest grouped fixture](preview-2000-500.png)
 
-Rendered offline movement instructions (`offline-help.png`)
+![Rendered offline movement instructions](offline-help.png)
 
 Contracts **2/3/5/6/7/8/9** remain applicable. Toolbar modes and keyboard access
 are unchanged. The provisional outline uses `focus_ring`; its status uses neutral

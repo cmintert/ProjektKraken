@@ -35,11 +35,11 @@ The mode button uses shared **secondary** tool-button and menu-caret styling.
 Existing focus, disabled, selection and dependency-identity roles remain in use;
 no new colors or baseline exceptions were introduced.
 
-- Native preview (`native-preview.png`): calculated follower position and rerouted wire.
-- Dark, normal width (`dark_mode-1100.png`) and dark, narrow (`dark_mode-360.png`).
-- Light, narrow (`light_mode-360.png`) and disabled control (`disabled-wide.png`).
-- More actions submenu (`overflow-menu.png`).
-- Rendered offline movement instructions (`offline-help.png`).
+- [Native preview](native-preview.png): calculated follower position and rerouted wire.
+- [Dark, normal width](dark_mode-1100.png) and [dark, narrow](dark_mode-360.png).
+- [Light, narrow](light_mode-360.png) and [disabled control](disabled-wide.png).
+- [More actions submenu](overflow-menu.png).
+- [Rendered offline movement instructions](offline-help.png).
 
 The native probe renders all six built-in themes at 1100 and 360 pixels. Selected
 normal, narrow, focus, disabled and Help captures were visually inspected by the

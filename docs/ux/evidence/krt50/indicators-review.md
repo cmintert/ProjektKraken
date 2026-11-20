@@ -9,7 +9,7 @@ method. Production code and world data are unchanged.
 ### Collapsed groups discard occurrence uncertainty
 
 Compare the two event rows and collapsed band in
-expanded/collapsed group comparison (`indicators/groups-expanded-collapsed.png`).
+[expanded/collapsed group comparison](indicators/groups-expanded-collapsed.png).
 The full event rows show a year window and an uncapped approximate halo. The
 collapsed band only receives their representative dates, so both become single
 ticks without those cues. At this zoom the ticks are barely visible.
@@ -28,7 +28,7 @@ inputs as the manager. It is not a claim of complete grouping UI-flow validation
 
 ### Snapping does not disclose the uncertain layout anchor
 
-Snapped year-only occurrence (`indicators/navigation-snapped-uncertain.png`)
+[Snapped year-only occurrence](indicators/navigation-snapped-uncertain.png)
 shows the playhead through the hollow midpoint of the year window.
 `TimelineView._manual_playhead_time` snaps against `event.lore_date`. A concrete
 probe at `444687.5` (five days after the anchor) returns `444682.5`, the year
@@ -42,9 +42,9 @@ review a clear navigation cue that preserves the event's uncertainty.
 
 ### Viewed time and world time depend heavily on color
 
-Separate lines (`indicators/state-during.png`),
-coincident lines (`indicators/navigation-coincident.png`), and
-380-pixel view (`indicators/navigation-narrow.png`) show the issue.
+[Separate lines](indicators/state-during.png),
+[coincident lines](indicators/navigation-coincident.png), and
+[380-pixel view](indicators/navigation-narrow.png) show the issue.
 The playhead has a red handle/line, and world current time has a blue line without
 a header label or handle. At the captured year zoom, the blue line appears solid,
 despite `CurrentTimeLineItem` defining a dashed cosmetic pen. This observation
@@ -60,7 +60,7 @@ review events are in 1218. The label is mechanically correct but should not be
 used as proof that the currently viewed time is explicit.
 
 Hover and drag states only lighten the playhead handle:
-hover (`indicators/navigation-hover.png`), drag (`indicators/navigation-drag.png`).
+[hover](indicators/navigation-hover.png), [drag](indicators/navigation-drag.png).
 Their geometry stays constant. These captures set presentation flags; they do not
 demonstrate a completed mouse drag or its persistence.
 
@@ -69,8 +69,8 @@ These navigation/grouping findings are tracked in
 
 ### Future fading makes captions too faint
 
-Compare before (`indicators/state-before.png`),
-during (`indicators/state-during.png`), and after (`indicators/state-after.png`).
+Compare [before](indicators/state-before.png),
+[during](indicators/state-during.png), and [after](indicators/state-after.png).
 Definitely future items fade, including their date captions. An uncertain year
 inside its possible range and an approximate date without hard bounds stay at
 normal opacity. This correctly avoids declaring them definitely future or past
@@ -104,8 +104,8 @@ past/ongoing indicator must explicitly decide which question it answers.
 
 ### Toolbar focus has no visible distinction
 
-Compare focused dark theme (`indicators/theme-dark_mode.png`) and
-same scene, toolbar unfocused (`indicators/toolbar-unfocused.png`).
+Compare [focused dark theme](indicators/theme-dark_mode.png) and
+[same scene, toolbar unfocused](indicators/toolbar-unfocused.png).
 Go to date owns keyboard focus in the former (`hasFocus=True` in diagnostics),
 but no visible focus treatment distinguishes it. All six theme captures confirm
 the same focus ownership. This is a rendered focus-feedback defect; it should
@@ -143,7 +143,7 @@ intervals. Approximate, uncertain and estimated point assertions also share a
 soft mark: these screenshots do not establish that every qualifier needs a unique
 shape. Seek fresh interpretation before adding more visual categories.
 
-Within KRT-50, endpoint/error comparison (`indicators/endpoints-errors.png`) confirms
+Within KRT-50, [endpoint/error comparison](indicators/endpoints-errors.png) confirms
 that valid **one-sided start plus duration** and **approximate independent
 endpoints** also collapse into unresolved duration boxes. That extends the known
 approximate-start defect. Preserve their valid one-sided/soft occurrence grammar
@@ -159,16 +159,16 @@ future items, and actual toolbar keyboard focus.
 
 | Comparison | Images |
 | --- | --- |
-| All point/occurrence categories | Visible (`indicators/occurrences-visible.png`), compact (`indicators/occurrences-compact.png`) |
-| Day-window transition at 24 pixels | 23px (`indicators/day-below-24px.png`), 25px (`indicators/day-above-24px.png`) |
-| Precision windows at 1000 pixels/day | Close view (`indicators/precision-close.png`) |
-| Endpoints and actual errors | Comparison (`indicators/endpoints-errors.png`) |
-| Temporal state | Before (`indicators/state-before.png`), during (`indicators/state-during.png`), after (`indicators/state-after.png`) |
-| Six palettes, selection and keyboard focus | Dark (`indicators/theme-dark_mode.png`), light (`indicators/theme-light_mode.png`), fantasy (`indicators/theme-fantasy_mode.png`), imperial (`indicators/theme-imperial_mode.png`), cyberpunk (`indicators/theme-cyberpunk_mode.png`), muted light (`indicators/theme-muted_light_mode.png`) |
-| Focus comparison | Toolbar unfocused (`indicators/toolbar-unfocused.png`) versus focused dark above |
-| Handle states | Hover (`indicators/navigation-hover.png`), drag (`indicators/navigation-drag.png`) |
-| Time identity | Coincident (`indicators/navigation-coincident.png`), narrow (`indicators/navigation-narrow.png`), snapped uncertain (`indicators/navigation-snapped-uncertain.png`) |
-| Group simplification | Full event reference (`indicators/groups-reference.png`), production bands (`indicators/groups-expanded-collapsed.png`) |
+| All point/occurrence categories | [Visible](indicators/occurrences-visible.png), [compact](indicators/occurrences-compact.png) |
+| Day-window transition at 24 pixels | [23px](indicators/day-below-24px.png), [25px](indicators/day-above-24px.png) |
+| Precision windows at 1000 pixels/day | [Close view](indicators/precision-close.png) |
+| Endpoints and actual errors | [Comparison](indicators/endpoints-errors.png) |
+| Temporal state | [Before](indicators/state-before.png), [during](indicators/state-during.png), [after](indicators/state-after.png) |
+| Six palettes, selection and keyboard focus | [Dark](indicators/theme-dark_mode.png), [light](indicators/theme-light_mode.png), [fantasy](indicators/theme-fantasy_mode.png), [imperial](indicators/theme-imperial_mode.png), [cyberpunk](indicators/theme-cyberpunk_mode.png), [muted light](indicators/theme-muted_light_mode.png) |
+| Focus comparison | [Toolbar unfocused](indicators/toolbar-unfocused.png) versus focused dark above |
+| Handle states | [Hover](indicators/navigation-hover.png), [drag](indicators/navigation-drag.png) |
+| Time identity | [Coincident](indicators/navigation-coincident.png), [narrow](indicators/navigation-narrow.png), [snapped uncertain](indicators/navigation-snapped-uncertain.png) |
+| Group simplification | [Full event reference](indicators/groups-reference.png), [production bands](indicators/groups-expanded-collapsed.png) |
 
 ## Validation, limits and next steps
 

@@ -173,8 +173,8 @@ do not establish acceptance of the expanded inspection experience.
 The [recovery presentation metadata](presentation.json) and
 [guide metadata](guide/presentation.json) identify the native environment and
 source. The guide captures scroll to its validated anchor after layout at each
-width. Examples: dark recovery (`dark_mode-360.png`),
-light recovery (`light_mode-360.png`), dark guide (`guide/dark_mode-360.png`).
+width. Examples: [dark recovery](dark_mode-360.png),
+[light recovery](light_mode-360.png), [dark guide](guide/dark_mode-360.png).
 The six narrow recovery palettes and representative normal/guide captures were
 visually inspected; this is assisted native rendering evidence.
 
@@ -299,11 +299,11 @@ The capture CLI isolates settings in a temporary INI store. The
 [source identity](expansion/source-identity.json) records canonical input and
 implementation hashes, declaration/review counts and the unchanged inputs behind
 the separate architecture failures.
-Examples: ordinary explanation (`expansion/dark_mode-360-explanation.png`),
-search/focus (`expansion/cyberpunk_mode-360-search.png`),
-no results (`expansion/muted_light_mode-360-no-results.png`),
-disabled control (`expansion/light_mode-360-disabled-explorer.png`),
-normal reader (`expansion/light_mode-640.png`).
+Examples: [ordinary explanation](expansion/dark_mode-360-explanation.png),
+[search/focus](expansion/cyberpunk_mode-360-search.png),
+[no results](expansion/muted_light_mode-360-no-results.png),
+[disabled control](expansion/light_mode-360-disabled-explorer.png),
+[normal reader](expansion/light_mode-640.png).
 
 These are assisted native renders and automated checks. They do not establish
 independent human readability, all menu combinations, actual data-provider

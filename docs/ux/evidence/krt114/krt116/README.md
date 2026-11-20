@@ -58,11 +58,11 @@ coordinates and stroke widths.
 
 | Case | Before | After |
 | --- | --- | --- |
-| Single blocker | Original (`before/dark_mode-single-blocker-0.8-1200.png`) | Smooth bypass (`after/dark_mode-single-blocker-0.8-1200.png`) |
-| Staggered blockers | Original (`before/dark_mode-staggered-cluster-0.8-1200.png`) | Cluster bypasses (`after/dark_mode-staggered-cluster-0.8-1200.png`) |
-| Multiple wires, branches/merges | Original (`before/dark_mode-branches-and-merges-2.0-1200.png`) | Separated wires (`after/dark_mode-branches-and-merges-2.0-1200.png`) |
-| 100-wire corridor | Repeated tracks (`before/dark_mode-100-0.8-1200.png`) | Compact tracks (`after/dark_mode-100-0.8-1200.png`) |
-| Actual nine-Event Timeline | Original router (`before/widget-dark_mode-2.0-1200.png`) | Current router (`after/widget-dark_mode-2.0-1200.png`) |
+| Single blocker | [Original](before/dark_mode-single-blocker-0.8-1200.png) | [Smooth bypass](after/dark_mode-single-blocker-0.8-1200.png) |
+| Staggered blockers | [Original](before/dark_mode-staggered-cluster-0.8-1200.png) | [Cluster bypasses](after/dark_mode-staggered-cluster-0.8-1200.png) |
+| Multiple wires, branches/merges | [Original](before/dark_mode-branches-and-merges-2.0-1200.png) | [Separated wires](after/dark_mode-branches-and-merges-2.0-1200.png) |
+| 100-wire corridor | [Repeated tracks](before/dark_mode-100-0.8-1200.png) | [Compact tracks](after/dark_mode-100-0.8-1200.png) |
+| Actual nine-Event Timeline | [Original router](before/widget-dark_mode-2.0-1200.png) | [Current router](after/widget-dark_mode-2.0-1200.png) |
 
 The actual Timeline includes several Follow Event connections, three intervening
 Events and a duration Event, preserving real captions, marks and ordinary lane

@@ -39,13 +39,13 @@ in `scripts/capture_workspace_evidence.py`; it is not production navigation.
 | Collapsed activity rail | Default state: smaller, muted icons, borderless quiet controls, names in tooltips and the Workspaces menu. Width includes toolbar chrome around the 44 px target. | Owner requested and accepted the icon-only convention on 2026-10-24; native scaling review remains pending. |
 | Selector above Project | Reclaims the rail width, but pointer selection ordinarily requires opening a list and choosing an entry. The selector disappears with the Project zone. | Not shipped; assessment is an interaction-cost inference, not measured participant superiority. |
 
-Expanded workspace navigation beside a fixture Event inspector (`expanded.png`)
+![Expanded workspace navigation beside a fixture Event inspector](expanded.png)
 
-Collapsed workspace navigation beside the same fixture panels (`collapsed.png`)
+![Collapsed workspace navigation beside the same fixture panels](collapsed.png)
 
-Comparison-only workspace selector above Project (`selector.png`)
+![Comparison-only workspace selector above Project](selector.png)
 
-Reconstructed previous panel-launcher rail (`previous.png`)
+![Reconstructed previous panel-launcher rail](previous.png)
 
 The captures use inert presenters and an isolated fixture Event, not a personal
 world. Each variant starts from the same reset Chronology layout. The full capture
