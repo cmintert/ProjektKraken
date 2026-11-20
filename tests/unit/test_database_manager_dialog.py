@@ -28,7 +28,10 @@ def test_world_manager_actions_have_explanatory_tooltips(qtbot, tmp_path):
         dialog = DatabaseManagerDialog()
         qtbot.addWidget(dialog)
 
-    assert dialog.btn_create.toolTip() == "Create a new world in the default worlds folder."
+    assert (
+        dialog.btn_create.toolTip()
+        == "Create a new world in the default worlds folder."
+    )
     assert dialog.btn_add_folder.toolTip() == (
         "Register an existing complete world folder without moving it."
     )
@@ -51,8 +54,9 @@ def test_world_manager_actions_have_explanatory_tooltips(qtbot, tmp_path):
 
 
 def test_add_complete_world_folder_from_registered_location(qtbot, tmp_path):
-    """A complete world folder can be registered without moving its contents."""
+    """A registered world displays its location even when another shares its name."""
     default_root = tmp_path / "default"
+    default_world = World.create(default_root, "Shared World")
     shared_world = World.create(tmp_path / "shared", "Shared World")
 
     with (
@@ -72,7 +76,15 @@ def test_add_complete_world_folder_from_registered_location(qtbot, tmp_path):
     assert (
         shared_world.path.resolve() in dialog.storage_settings.registered_world_paths()
     )
-    assert dialog.db_list.count() == 1
+    assert dialog.db_list.count() == 2
+    for world in (default_world, shared_world):
+        _select_world(dialog, world.path)
+        item = dialog.db_list.currentItem()
+        assert item.text() == "Shared World"
+        assert item.data(Qt.ItemDataRole.AccessibleDescriptionRole) == str(
+            world.path.resolve()
+        )
+        assert str(world.db_path.resolve()) in item.toolTip()
 
 
 def test_select_external_world_requires_and_remembers_approval(qtbot, tmp_path):
@@ -145,6 +157,11 @@ def test_link_and_revoke_external_database(qtbot, tmp_path):
         assert dialog.storage_settings.is_external_path_approved(linked)
 
         _select_world(dialog, world.path)
+        item = dialog.db_list.currentItem()
+        assert item.data(Qt.ItemDataRole.AccessibleDescriptionRole).splitlines() == [
+            str(world.path.resolve()),
+            f"Database: {external_database.resolve()}",
+        ]
         with patch.object(QMessageBox, "information"):
             dialog._revoke_external_database()
 
@@ -157,8 +174,10 @@ def test_select_world_does_not_change_settings_until_transition_accepts(
     from src.services.world_storage_settings import WorldStorageSettings
 
     world = World.create(tmp_path, "Protected destination")
-    with patch("src.gui.dialogs.database_manager_dialog.ensure_worlds_directory",
-               return_value=tmp_path):
+    with patch(
+        "src.gui.dialogs.database_manager_dialog.ensure_worlds_directory",
+        return_value=tmp_path,
+    ):
         dialog = DatabaseManagerDialog()
         qtbot.addWidget(dialog)
     _select_world(dialog, world.path)
@@ -166,10 +185,15 @@ def test_select_world_does_not_change_settings_until_transition_accepts(
     dialog.edit_transition_handler = lambda reason, action: requests.append(action)
     monkeypatch.setattr(WorldStorageSettings, "active_world_path", lambda _: None)
     activated = []
-    monkeypatch.setattr(WorldStorageSettings, "set_active_world_path",
-                        lambda _self, path: activated.append(path))
-    monkeypatch.setattr("src.gui.dialogs.database_manager_dialog.QMessageBox.information",
-                        lambda *_: QMessageBox.StandardButton.Ok)
+    monkeypatch.setattr(
+        WorldStorageSettings,
+        "set_active_world_path",
+        lambda _self, path: activated.append(path),
+    )
+    monkeypatch.setattr(
+        "src.gui.dialogs.database_manager_dialog.QMessageBox.information",
+        lambda *_: QMessageBox.StandardButton.Ok,
+    )
     dialog._select_world()
     assert len(requests) == 1 and activated == []
     requests[0]()

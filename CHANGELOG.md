@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-20
-**Commit:** b5b6a725
+**Commit:** 6b4d2756
 ---
 
 # Changelog
@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-11-20)* **World Manager**: Emphasized world names and displayed actual
+  folder paths and linked database paths so same-name worlds can be distinguished.
+
+- *(2026-11-20)* **Windows packaging**: Rejected world data and runtime logs
+  in staged and release packages. Isolated world selection during smoke tests
+  and verified that a clean launch creates and reopens its own Default World.
 
 - *(2026-11-20)* **Windows packaging (KRT-181)**: Corrected the PyInstaller
   build hook for pycparser 3, which no longer uses PLY parser tables.

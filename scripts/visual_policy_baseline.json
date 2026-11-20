@@ -101,13 +101,6 @@
       "source": "MAP_VERTEX_HANDLE_COLOR = \"#e74c3c\""
     },
     {
-      "key": "src/gui/dialogs/database_manager_dialog.py|DatabaseManagerDialog._refresh_list|literal-color|468fb5b27ae376c8",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in DatabaseManagerDialog._refresh_list; migrate this expression when its presentation path is next touched.",
-      "source": "item.setForeground(Qt.GlobalColor.green)"
-    },
-    {
       "key": "src/gui/dialogs/grouping_config_dialog.py|ColorSwatch.__init__|literal-color|008fea238b891932",
       "count": 1,
       "category": "legacy",

@@ -74,7 +74,6 @@ function Invoke-PackagedSmoke {
 }
 
 Invoke-PackagedSmoke -Phase "first-run" -Arguments @(
-    "--reset-settings",
     "--package-smoke-phase", "first-run",
     "--package-smoke-report", $firstReportPath
 )
@@ -84,6 +83,10 @@ if (-not (Test-Path -LiteralPath $firstReportPath -PathType Leaf)) {
 $first = Get-Content -Raw -LiteralPath $firstReportPath | ConvertFrom-Json
 if (-not $first.success -or [string]::IsNullOrWhiteSpace($first.world_id)) {
     throw "First-run smoke failed: $($first.errors -join '; ')"
+}
+$expectedWorldPath = Join-Path $packagePath "worlds\Default World"
+if ($first.world_name -ne "Default World" -or $first.world_path -ne $expectedWorldPath) {
+    throw "First launch did not create Default World in the package's worlds folder."
 }
 
 Invoke-PackagedSmoke -Phase "restart" -Arguments @(
@@ -100,6 +103,9 @@ if (-not $restart.success) {
 }
 if ($restart.world_id -ne $first.world_id) {
     throw "Restart opened world $($restart.world_id), expected $($first.world_id)."
+}
+if ($restart.world_path -ne $expectedWorldPath) {
+    throw "Restart did not reopen the Default World created by first launch."
 }
 
 $summary = [ordered]@{

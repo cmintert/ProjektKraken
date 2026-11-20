@@ -167,6 +167,11 @@ VSVersionInfo(
         throw "SkipBuild requested, but staged package does not exist: $packageRoot"
     }
 
+    & $pythonPath -m scripts.check_package_world_data $packageRoot
+    if ($LASTEXITCODE -ne 0) {
+        throw "Staged package failed the world-data check."
+    }
+
     if ($SkipBuild) {
         & $pythonPath -m scripts.build_help --check-package $packageRoot
         if ($LASTEXITCODE -ne 0) {
@@ -265,15 +270,11 @@ VSVersionInfo(
         & (Join-Path $PSScriptRoot "test_packaged_windows.ps1") `
             -PackageRoot $packageRoot `
             -OutputDirectory $reportsRoot
-        if ($LASTEXITCODE -ne 0) {
-            throw "Packaged two-launch smoke failed."
-        }
-    }
-
-    foreach ($runtimeDirectory in @("worlds", "logs")) {
-        $runtimePath = Join-Path $packageRoot $runtimeDirectory
-        if (Test-Path -LiteralPath $runtimePath) {
-            Remove-SafeDirectory $runtimePath
+        foreach ($runtimeDirectory in @("worlds", "logs")) {
+            $runtimePath = Join-Path $packageRoot $runtimeDirectory
+            if (Test-Path -LiteralPath $runtimePath) {
+                Remove-SafeDirectory $runtimePath
+            }
         }
     }
 
@@ -287,13 +288,19 @@ VSVersionInfo(
         throw "Archive entries exceed the $maximumArchiveEntryLength-character limit:`n$($examples -join "`n")"
     }
 
-    if (Test-Path -LiteralPath $zipPath) {
-        Remove-Item -LiteralPath $zipPath -Force
+    $candidateZip = Join-Path $artifactRoot ("candidate-{0}.zip" -f [guid]::NewGuid())
+    try {
+        Compress-Archive -LiteralPath $packageRoot -DestinationPath $candidateZip -CompressionLevel Optimal
+        & $pythonPath -m scripts.check_package_world_data $candidateZip
+        if ($LASTEXITCODE -ne 0) {
+            throw "Generated archive failed the world-data check."
+        }
+        Move-Item -LiteralPath $candidateZip -Destination $zipPath -Force
+    } finally {
+        if (Test-Path -LiteralPath $candidateZip) {
+            Remove-Item -LiteralPath $candidateZip -Force
+        }
     }
-    if (Test-Path -LiteralPath $checksumPath) {
-        Remove-Item -LiteralPath $checksumPath -Force
-    }
-    Compress-Archive -LiteralPath $packageRoot -DestinationPath $zipPath -CompressionLevel Optimal
     $hash = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
     [System.IO.File]::WriteAllText(
         $checksumPath,
