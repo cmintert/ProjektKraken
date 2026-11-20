@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-20
-**Commit:** 9f82204a
+**Commit:** 52c8cf62
 ---
 
 # Changelog
@@ -12,6 +12,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-11-20)* **CI**: Installed the semantic-search requirements for the
+  manual GitHub type check so mypy can resolve `sentence_transformers`.
 
 - *(2026-11-20)* **UX evidence**: Restored the screenshots referenced by the
   evidence pages, including inline captures and before-and-after links.
