@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-20
-**Commit:** c1d5d26f
+**Commit:** b5b6a725
 ---
 
 # Changelog
@@ -12,6 +12,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-11-20)* **Windows packaging (KRT-181)**: Corrected the PyInstaller
+  build hook for pycparser 3, which no longer uses PLY parser tables.
 
 - *(2026-11-20)* **Release verification (KRT-181)**: Reused exact numeric
   Event timing for Timeline layout and playhead updates. Updated the wiki

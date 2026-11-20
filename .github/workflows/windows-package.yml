@@ -102,6 +102,40 @@ jobs:
           "PK_BETA_LABEL=$betaLabel" >> $env:GITHUB_ENV
           "PK_RELEASE_TAG=$releaseTag" >> $env:GITHUB_ENV
 
+      - name: Correct the legacy pycparser build hook
+        shell: pwsh
+        run: |
+          @'
+          from importlib.metadata import distribution, version
+          from importlib.util import find_spec
+
+          legacy_modules = ["pycparser.lextab", "pycparser.yacctab"]
+          hook = distribution("pyinstaller-hooks-contrib").locate_file(
+              "_pyinstaller_hooks_contrib/stdhooks/hook-pycparser.py"
+          )
+          if (
+              version("pycparser").split(".", 1)[0] == "3"
+              and hook.is_file()
+              and all(find_spec(name) is None for name in legacy_modules)
+          ):
+              source = hook.read_text(encoding="utf-8")
+              legacy_imports = f"hiddenimports = {legacy_modules!r}"
+              if legacy_imports in source.splitlines():
+                  from cffi import FFI
+                  from pycparser import CParser
+
+                  # pycparser 3 no longer uses generated PLY parser tables.
+                  declaration = "int kraken_parser_probe(void);"
+                  CParser().parse(declaration)
+                  FFI().cdef(declaration)
+                  hook.write_text(
+                      source.replace(legacy_imports, "hiddenimports = []"),
+                      encoding="utf-8",
+                  )
+                  print("Removed obsolete PLY table imports from the build hook.")
+          '@ | python -
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Build, audit, smoke, and archive package
         shell: pwsh
         run: |
