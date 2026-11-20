@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-20
-**Commit:** 52c8cf62
+**Commit:** c1d5d26f
 ---
 
 # Changelog
@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+
+- *(2026-11-20)* **Release verification (KRT-181)**: Reused exact numeric
+  Event timing for Timeline layout and playhead updates. Updated the wiki
+  autocomplete regression to check duplicate entry identity across Qt payload formats.
 
 - *(2026-11-20)* **CI**: Installed the semantic-search requirements for the
   manual GitHub type check so mypy can resolve `sentence_transformers`.

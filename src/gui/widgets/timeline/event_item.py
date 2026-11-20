@@ -79,17 +79,20 @@ class EventItem(QGraphicsItem):
         cls._font_revision += 1
 
     @classmethod
-    def get_event_height(cls, event: Event) -> int:
+    def get_event_height(
+        cls, event: Event, *, presentation: TemporalPresentation | None = None
+    ) -> int:
         """Returns the visual height for an event based on its type.
 
         Args:
             event (Event): The Event object.
+            presentation: Already prepared timing for the supplied snapshot.
 
         Returns:
             int: Height in pixels.
 
         """
-        presentation = present_event(event, cls._calendar_converter)
+        presentation = presentation or present_event(event, cls._calendar_converter)
         return timeline_item_layout(presentation, event.name, 1).height
 
     @classmethod
@@ -104,13 +107,20 @@ class EventItem(QGraphicsItem):
                 item._update_temporal_tooltip()
                 item.update()
 
-    def __init__(self, event: Event, scale_factor: float = 10.0) -> None:
+    def __init__(
+        self,
+        event: Event,
+        scale_factor: float = 10.0,
+        *,
+        presentation: TemporalPresentation | None = None,
+    ) -> None:
         """Initializes an EventBlock.
 
         Args:
             event (Event): The event to represent.
             scale_factor (float, optional): Scale factor for positioning.
                 Defaults to 10.0.
+            presentation: Already prepared timing for the supplied snapshot.
 
         """
         super().__init__()
@@ -121,7 +131,9 @@ class EventItem(QGraphicsItem):
             EventItem._font_app = weakref.ref(app)
             app.fontChanged.connect(EventItem._font_changed)
         self.event = event
-        self._presentation = present_event(event, self._calendar_converter)
+        self._presentation = presentation or present_event(
+            event, self._calendar_converter
+        )
         self._instances.add(self)
         self.scale_factor = scale_factor
         self._layout_key: tuple[object, ...] | None = None
@@ -230,16 +242,21 @@ class EventItem(QGraphicsItem):
             self._zoom_level = zoom
             self.update()
 
-    def update_event(self, event: Event) -> None:
+    def update_event(
+        self, event: Event, *, presentation: TemporalPresentation | None = None
+    ) -> None:
         """Updates the event data for this item and refreshes the display.
 
         Args:
             event (Event): The updated event object.
+            presentation: Already prepared timing for the supplied snapshot.
 
         """
         self.prepareGeometryChange()
         self.event = event
-        self._presentation = present_event(event, self._calendar_converter)
+        self._presentation = presentation or present_event(
+            event, self._calendar_converter
+        )
         self.refresh_theme(ThemeManager().get_theme())
         self.setPos(event.require_date() * self.scale_factor, self.y())
         self._update_temporal_tooltip()

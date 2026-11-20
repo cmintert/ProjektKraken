@@ -12,12 +12,17 @@ from src.core.calendar import CalendarConfig, CalendarConverter
 from src.core.date_parser import DateParser
 from src.core.event_timing.constraints import Interval
 from src.core.event_timing.definitions import EndpointDefinition, EventTimingDefinition
-from src.core.event_timing.presentation import event_navigation_context, present_event
+from src.core.event_timing.presentation import (
+    event_navigation_context,
+    present_event,
+    present_exact_legacy_event,
+)
 from src.core.event_timing.projection import project_event
 from src.core.event_timing.resolution import TemporalWorldResolution
 from src.core.event_timing.solver import resolve_world
 from src.core.events import Event
 from src.core.temporal_context import TemporalResolutionContext
+from src.core.temporal_expression import MAX_LORE_DAY
 from src.gui.widgets.timeline.event_item import EventItem
 from src.gui.widgets.timeline.temporal_geometry import project_temporal_geometry
 from src.services.recurrence_presentation_service import project_recurrence
@@ -31,6 +36,42 @@ pytestmark = pytest.mark.ci_fast
 @pytest.fixture
 def converter():
     return CalendarConverter(CalendarConfig.create_default())
+
+
+@pytest.mark.parametrize("calendar", [False, True])
+@pytest.mark.parametrize(
+    ("date", "duration"), [(0.0, None), (0.1, 0.0), (-0.125, 0.375), (0.1, 0.2)]
+)
+def test_exact_legacy_presentation_matches_solver(converter, calendar, date, duration):
+    calendar_converter = converter if calendar else None
+    event = Event(name="Exact Event", lore_date=date, lore_duration=duration)
+    resolution = resolve_world([event], calendar_converter)
+    projected = project_event(event, resolution)
+
+    assert present_exact_legacy_event(event, calendar_converter) == present_event(
+        projected, calendar_converter
+    )
+
+
+@pytest.mark.parametrize(
+    ("date", "duration", "attributes"),
+    [
+        (None, 0.0, {}),
+        (float("nan"), 0.0, {}),
+        (0.0, float("inf"), {}),
+        (0.0, -1.0, {}),
+        (MAX_LORE_DAY, 1.0, {}),
+        (0.0, 0.0, {"_recurrence": {}}),
+        (0.0, 0.0, {"_temporal_v2": {}}),
+    ],
+)
+def test_exact_legacy_presentation_leaves_other_timing_to_the_solver(
+    date, duration, attributes
+):
+    event = Event(
+        name="Event", lore_date=date, lore_duration=duration, attributes=attributes
+    )
+    assert present_exact_legacy_event(event, None) is None
 
 
 def authored(converter, text, schema):

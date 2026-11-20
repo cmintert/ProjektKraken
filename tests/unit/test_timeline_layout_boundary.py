@@ -7,6 +7,7 @@ import pytest
 from PySide6.QtCore import QThread
 
 from src.core.events import Event
+from src.core.temporal_anchors import event_position_at, resolve_event_anchors
 from src.core.timeline_grouping import build_group_metadata, events_for_group
 from src.core.timeline_layout import TimelineLayoutInput, pack_timeline_intervals
 from src.gui.widgets.timeline import EventItem, TimelineView
@@ -46,6 +47,38 @@ def test_pure_packing_stable_ties_and_variable_heights():
         [20, 30, 40],
     )
     assert pack_timeline_intervals(()) == ({}, [])
+
+
+def test_standalone_exact_batch_reuses_presentation_and_start_bounds(
+    qtbot, monkeypatch
+):
+    from src.core.event_timing import solver
+
+    view = TimelineView()
+    qtbot.addWidget(view)
+    events = [
+        Event(name="Point", lore_date=-0.125),
+        Event(name="Interval", lore_date=0.375, lore_duration=0.25),
+    ]
+    converter = EventItem._calendar_converter
+    expected_anchors = resolve_event_anchors(events, converter)
+    resolve = Mock(wraps=solver.resolve_world)
+    monkeypatch.setattr(solver, "resolve_world", resolve)
+
+    view.set_events(events)
+    for time in (-0.25, -0.125, 0.0, 0.375, 0.5):
+        view.set_playhead_time(time)
+        for event in events:
+            item = view._event_items[event.id]
+            assert item.event is not event
+            assert (item.is_future, item.is_past) == event_position_at(
+                event, time, converter, expected_anchors
+            )
+    resolve.assert_not_called()
+
+    view.set_events([*events, Event(name="Unknown", lore_date=None)])
+    assert [event.name for event in view._unplaced_events] == ["Unknown"]
+    resolve.assert_called_once()
 
 
 def test_measured_inputs_are_detached(qapp, monkeypatch):

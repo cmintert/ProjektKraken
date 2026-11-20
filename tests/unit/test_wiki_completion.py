@@ -75,9 +75,13 @@ def test_incremental_completion_preserves_model_and_duplicate_identity(qapp):
         "Alpha — Event · event-1",
         "Beta",
     ]
-    assert [model.item(row).data(Qt.ItemDataRole.UserRole) for row in range(2)] == [
-        ["entity-1", "Alpha", "entity"],
-        ["event-1", "Alpha", "event"],
+    records = [model.item(row).data(Qt.ItemDataRole.UserRole) for row in range(2)]
+    assert all(
+        isinstance(record, (list, tuple)) and len(record) == 3 for record in records
+    )
+    assert [tuple(record) for record in records] == [
+        ("entity-1", "Alpha", "entity"),
+        ("event-1", "Alpha", "event"),
     ]
     assert "Alpha" not in editor.editor._completion_map
     assert editor.editor.link_presentation("Zulu").role == "link_unresolved"

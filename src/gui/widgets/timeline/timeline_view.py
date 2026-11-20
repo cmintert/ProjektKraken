@@ -5,6 +5,8 @@ Provides the TimelineView class for rendering and interacting with the timeline.
 
 import logging
 import time
+from copy import deepcopy
+from dataclasses import replace
 from typing import TYPE_CHECKING, Any, cast
 
 from PySide6.QtCore import (
@@ -35,7 +37,11 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import QGraphicsLineItem, QGraphicsView, QSizePolicy, QWidget
 
 from src.core.command import LoreMutationEffect
-from src.core.event_timing.presentation import event_navigation_context
+from src.core.event_timing.presentation import (
+    TemporalPresentation,
+    event_navigation_context,
+    present_exact_legacy_event,
+)
 from src.core.events import Event
 from src.core.temporal_context import TemporalResolutionContext
 from src.core.temporal_expression import ResolvedTemporalBounds
@@ -729,7 +735,27 @@ class TimelineView(QGraphicsView):
             if isinstance(item, EventItem)
         }
         display_context = context
-        if display_context is None and all(
+        presentations = (
+            self._standalone_presentations(events) if context is None else None
+        )
+        if presentations is not None:
+            self._standalone_anchors = {
+                f"event:{event_id}": ResolvedTemporalBounds(
+                    timing.start.possible_start,
+                    timing.start.possible_end,
+                    upper_inclusive=True,
+                )
+                for event_id, timing in presentations.items()
+            }
+            events = [
+                replace(
+                    event,
+                    lore_duration=event.lore_duration or 0.0,
+                    attributes=deepcopy(event.attributes),
+                )
+                for event in events
+            ]
+        elif display_context is None and all(
             "_temporal_v2" not in event.attributes for event in events
         ):
             # Detached legacy Events have no timing dependencies. Resolve the
@@ -745,7 +771,7 @@ class TimelineView(QGraphicsView):
         if context is None and display_context is not None:
             self._standalone_anchors = display_context.resolution.anchors()
         self._event_items = existing
-        self._reconcile_event_items(prepared)
+        self._reconcile_event_items(prepared, presentations)
         self._layout_generation += 1
         self._empty_state.setVisible(not self.events and not self._recurring_events)
         if not self.events and not self._recurring_events:
@@ -753,8 +779,28 @@ class TimelineView(QGraphicsView):
         self.repack_events()
         self._finish_event_replacement()
 
-    def _reconcile_event_items(self, prepared: PreparedTimelineEvents) -> None:
+    @staticmethod
+    def _standalone_presentations(
+        events: list[Event],
+    ) -> dict[str, TemporalPresentation] | None:
+        """Prepare exact timing only when the entire detached batch is eligible."""
+        presentations: dict[str, TemporalPresentation] = {}
+        for event in events:
+            if event.id in presentations:
+                return None
+            timing = present_exact_legacy_event(event, EventItem._calendar_converter)
+            if timing is None:
+                return None
+            presentations[event.id] = timing
+        return presentations
+
+    def _reconcile_event_items(
+        self,
+        prepared: PreparedTimelineEvents,
+        presentations: dict[str, TemporalPresentation] | None = None,
+    ) -> None:
         """Apply a data-only plan without transferring scene ownership."""
+        presentations = presentations or {}
         self.events = list(prepared.events)
         self._unplaced_events = list(prepared.unplaced)
         self._recurring_events = list(prepared.recurring)
@@ -776,15 +822,16 @@ class TimelineView(QGraphicsView):
                 self.graphics_scene.removeItem(line)
         for event in prepared.upserts:
             item = self._event_items.get(event.id)
+            presentation = presentations.get(event.id)
             if item is None:
-                item = EventItem(event, self.scale_factor)
+                item = EventItem(event, self.scale_factor, presentation=presentation)
                 item.on_drag_complete = self._on_event_drag_complete
                 item.on_drag_start = self.movement.begin
                 item.on_drag_preview = self.movement.preview
                 self.graphics_scene.addItem(item)
                 self._event_items[event.id] = item
             else:
-                item.update_event(event)
+                item.update_event(event, presentation=presentation)
             if event.id not in self._drop_lines:
                 self._drop_lines[event.id] = self._create_drop_line(
                     item.x(), -self.RULER_HEIGHT, 80
@@ -797,7 +844,10 @@ class TimelineView(QGraphicsView):
         updates = {event.id: event for event in prepared.upserts}
         for duplicate in self._duplicate_event_items:
             if duplicate.event.id in updates:
-                duplicate.update_event(updates[duplicate.event.id])
+                duplicate.update_event(
+                    updates[duplicate.event.id],
+                    presentation=presentations.get(duplicate.event.id),
+                )
 
     def _finish_event_replacement(self) -> None:
         """Retain scene extent, initial fitting and initial playhead behavior."""
@@ -932,7 +982,7 @@ class TimelineView(QGraphicsView):
 
         # Perform packing
         event_lane_assignments, lane_heights = self._lane_packer.pack_events(
-            self.events, self._lane_history.snapshot()
+            self.events, self._lane_history.snapshot(), items=self._event_items
         )
 
         # Apply layout
@@ -1077,7 +1127,9 @@ class TimelineView(QGraphicsView):
                     item._initial_y = y  # Update constraint
 
                     # Track max Y for scene rect
-                    event_height = EventItem.get_event_height(event)
+                    event_height = EventItem.get_event_height(
+                        event, presentation=item.timing_presentation
+                    )
                     max_y = max(max_y, y + event_height)
 
                     # Update drop line
@@ -1274,7 +1326,11 @@ class TimelineView(QGraphicsView):
 
                     # Choose item: Original or Duplicate
                     if event.id in placed_event_ids:
-                        item = EventItem(event, self.scale_factor)
+                        item = EventItem(
+                            event,
+                            self.scale_factor,
+                            presentation=event_items[event.id].timing_presentation,
+                        )
                         item.on_drag_complete = self._on_event_drag_complete
                         item.on_drag_start = self.movement.begin
                         item.on_drag_preview = self.movement.preview
@@ -1373,7 +1429,11 @@ class TimelineView(QGraphicsView):
                 target_y = current_y + y_offset
 
                 if event.id in grouped_event_ids:
-                    duplicate_item = EventItem(event, self.scale_factor)
+                    duplicate_item = EventItem(
+                        event,
+                        self.scale_factor,
+                        presentation=event_items[event.id].timing_presentation,
+                    )
                     duplicate_item.on_drag_complete = self._on_event_drag_complete
                     duplicate_item.on_drag_start = self.movement.begin
                     duplicate_item.on_drag_preview = self.movement.preview
@@ -1405,7 +1465,7 @@ class TimelineView(QGraphicsView):
     ) -> tuple[dict[str, int], list[int]]:
         """Stage occurrence-local history until the entire grouped pass succeeds."""
         lanes, heights = self._lane_packer.pack_events(
-            events, self._lane_history.snapshot(scope)
+            events, self._lane_history.snapshot(scope), items=self._event_items
         )
         self._lane_history.stage(scope, lanes, heights)
         return lanes, heights

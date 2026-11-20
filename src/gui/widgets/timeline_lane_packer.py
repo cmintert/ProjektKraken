@@ -55,6 +55,8 @@ class TimelineLanePacker:
         self,
         events: list[Event],
         previous: TimelineLayoutSnapshot = TimelineLayoutSnapshot(),
+        *,
+        items: Mapping[str, EventItem] | None = None,
     ) -> tuple[dict[str, int], list[int]]:
         """Pack measured events, retaining valid accepted lane placements.
 
@@ -62,6 +64,7 @@ class TimelineLanePacker:
             events: List of Event objects to pack (should be sorted by
                 lore_date).
             previous: Frozen accepted occurrence layout, or empty for compaction.
+            items: Current scene items with prepared timing for matching events.
 
         Returns:
             Tuple of:
@@ -69,7 +72,9 @@ class TimelineLanePacker:
                 - List of lane heights (max height of events in each lane)
 
         """
-        return pack_stable_timeline_intervals(self.measure_events(events), previous)
+        return pack_stable_timeline_intervals(
+            self.measure_events(events, items), previous
+        )
 
     def measure_events(
         self, events: list[Event], items: Mapping[str, EventItem] | None = None
@@ -83,11 +88,13 @@ class TimelineLanePacker:
             item = items.get(event.id) if items is not None else None
             presentation = (
                 item.timing_presentation
-                if item is not None
+                if item is not None and item.event is event
                 else present_event(event, EventItem._calendar_converter)
             )
             layout = timeline_item_layout(presentation, event.name, self.scale_factor)
-            minimum_height = timeline_item_layout(presentation, event.name, 1).height
+            minimum_height = EventItem.get_event_height(
+                event, presentation=presentation
+            )
             start = event.require_date() + layout.bounds.left() / self.scale_factor
             visual_duration = layout.bounds.width() / self.scale_factor
             gap_duration = self.GAP_PIXELS / self.scale_factor

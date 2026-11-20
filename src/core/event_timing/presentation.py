@@ -8,7 +8,9 @@ from fractions import Fraction
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Literal
 
+from src.core.event_timing.constraints import rational
 from src.core.temporal_expression import (
+    MAX_LORE_DAY,
     TemporalExpression,
     TemporalPrecision,
     TemporalQualifier,
@@ -320,6 +322,52 @@ def _presence(
         occurrence="unresolved" if start.error or end.error else start.occurrence,
         ranges=(),
     )
+
+
+def present_exact_legacy_event(
+    event: Event, converter: CalendarConverter | None
+) -> TemporalPresentation | None:
+    """Present independent numeric timing without building a constraint network."""
+    if "_temporal_v2" in event.attributes or event.is_recurring:
+        return None
+    start = event.lore_date
+    duration = event.lore_duration
+    if (
+        start is None
+        or isinstance(start, bool)
+        or not -MAX_LORE_DAY <= start <= MAX_LORE_DAY
+        or (
+            duration is not None
+            and (isinstance(duration, bool) or not 0 <= duration <= 2 * MAX_LORE_DAY)
+        )
+    ):
+        return None
+    start_day = rational(start)
+    end_day = start_day + rational(duration) if duration else None
+    if end_day is not None and abs(end_day) > MAX_LORE_DAY:
+        return None
+
+    def display(day: Fraction) -> TemporalDisplay:
+        exact = str(day)
+        return _endpoint_display(
+            {
+                "coordinate": float(day),
+                "ranges": [(exact, exact, True, True)],
+                "verified": True,
+            },
+            converter,
+        )
+
+    try:
+        start_display = display(start_day)
+        presence = (
+            _presence(start_display, display(end_day), duration, True)
+            if end_day is not None
+            else start_display
+        )
+    except (ValueError, OverflowError):
+        return None
+    return TemporalPresentation(start_display, None, duration or None, presence)
 
 
 def present_event(
