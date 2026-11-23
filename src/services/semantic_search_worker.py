@@ -4,6 +4,7 @@ import logging
 
 from PySide6.QtCore import QObject, Signal, Slot
 
+from src.core.authoring_scope import AuthoringScope
 from src.services.rag_service import RAGService
 
 logger = logging.getLogger(__name__)
@@ -21,6 +22,7 @@ class SemanticSearchWorker(QObject):
         query: str,
         object_type: str | None,
         top_k: int,
+        scope: AuthoringScope | None = None,
     ) -> None:
         """Store the immutable inputs for one background search.
 
@@ -36,15 +38,18 @@ class SemanticSearchWorker(QObject):
         self._query = query
         self._object_type = object_type
         self._top_k = top_k
+        self._scope = scope
 
     @Slot()
     def run(self) -> None:
         """Execute the search and emit a serializable result or error."""
         try:
+            criteria = {"scope": self._scope} if self._scope is not None else {}
             results = RAGService(self._db_path).search(
                 query=self._query,
                 top_k=self._top_k,
                 object_type=self._object_type,
+                **criteria,
             )
             self.completed.emit(results)
         except Exception as exc:

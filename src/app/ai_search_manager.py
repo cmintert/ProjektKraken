@@ -16,6 +16,7 @@ from src.app.constants import (
 )
 from src.app.qt_invocation import invoke_queued
 from src.core.ai_generation import AIGenerationPreferences, TaskTemplate
+from src.core.authoring_scope import AuthoringScope
 from src.core.logging_config import get_logger
 from src.services.prompt_builder import DEFAULT_SYSTEM_PROMPT
 from src.services.semantic_search_worker import SemanticSearchWorker
@@ -54,6 +55,12 @@ class AISearchManager(QObject):
         self._task_templates = self._task_template_catalog.built_in_templates()
         self._search_thread: QThread | None = None
         self._search_worker: SemanticSearchWorker | None = None
+        self._scope = AuthoringScope()
+        self._search_scope = self._scope
+        self._search_db_path = ""
+        self._search_obsolete = False
+        self._last_search: tuple[str, str, int] | None = None
+        self._repeat_search = False
         self._index_jobs: set[tuple[str, str]] = set()
         worker = getattr(self.window, "worker", None)
         if worker is not None:
@@ -265,13 +272,19 @@ class AISearchManager(QObject):
             )
             return
 
+        self._last_search = (query, object_type_filter, top_k)
+        self._search_scope = self._scope
+        self._search_db_path = db_path
+        self._search_obsolete = False
         self.window.ai_search_panel.set_searching(True)
         thread = QThread(self)
+        criteria = {"scope": self._scope} if self._scope.tags else {}
         worker = SemanticSearchWorker(
             db_path,
             query,
             object_type_filter or None,
             top_k,
+            **criteria,
         )
         worker.moveToThread(thread)
         thread.started.connect(worker.run)
@@ -290,12 +303,16 @@ class AISearchManager(QObject):
     @Slot(list)
     def _on_search_completed(self, results: list[dict[str, object]]) -> None:
         """Display results returned by the background semantic worker."""
+        if not self._search_is_current():
+            return
         self.window.ai_search_panel.set_results(results)
         self.window.ai_search_panel.set_searching(False)
 
     @Slot(str)
     def _on_search_failed(self, message: str) -> None:
         """Restore search controls and display a background-worker error."""
+        if not self._search_is_current():
+            return
         self.window.ai_search_panel.set_status(f"Search failed: {message}")
         self.window.ai_search_panel.set_searching(False)
 
@@ -304,9 +321,34 @@ class AISearchManager(QObject):
         """Release references after a semantic-search thread exits."""
         self._search_worker = None
         self._search_thread = None
+        if self._repeat_search and self._last_search is not None:
+            self._repeat_search = False
+            self.perform_semantic_search(*self._last_search)
+
+    def _search_is_current(self) -> bool:
+        return (
+            not self._search_obsolete
+            and self._search_scope == self._scope
+            and self._search_db_path == getattr(self.window, "db_path", "")
+        )
+
+    def set_authoring_scope(self, scope: AuthoringScope) -> None:
+        """Invalidate previous results and rerun the user's last search."""
+        if scope == self._scope:
+            return
+        self._scope = scope
+        if self._last_search is None:
+            return
+        self.window.ai_search_panel.set_results([])
+        if self._search_thread is not None:
+            self._search_obsolete = True
+            self._repeat_search = True
+            return
+        self.perform_semantic_search(*self._last_search)
 
     def shutdown(self) -> None:
         """Stop an active semantic-search thread during application shutdown."""
+        self._repeat_search = False
         thread = self._search_thread
         if thread is None or not thread.isRunning():
             return

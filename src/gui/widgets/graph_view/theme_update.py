@@ -43,6 +43,14 @@ def theme_update_script(
             element.style.color = payload.theme.text_color;
         });
         if (graph) {
+            Object.entries({
+                "--graph-action-bg": payload.theme.action_bg,
+                "--graph-action-border": payload.theme.action_border,
+                "--graph-action-text": payload.theme.action_text,
+                "--graph-focus": payload.theme.focus_ring
+            }).forEach(([key, value]) => {
+                if (value) graph.style.setProperty(key, value);
+            });
             payload.nodes.forEach(node => {
                 const rendered = network.body.nodes[node.id];
                 if (rendered) {

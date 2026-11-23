@@ -10,8 +10,9 @@ import logging
 import re
 import sqlite3
 from contextlib import closing
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TypedDict
 
+from src.core.authoring_scope import AuthoringScope
 from src.services.search_service import (
     EmbeddingProvider,
     SearchService,
@@ -24,6 +25,10 @@ _MAX_CLEAN_QUERY_CHARS = 300
 _MAX_ATTRIBUTE_LINE_CHARS = 100
 _MAX_DESCRIPTION_CHARS = 300
 _ELLIPSIS_CHARS = 3
+
+
+class _SearchOptions(TypedDict, total=False):
+    allowed_ids: set[tuple[str, str]]
 
 
 def retrieval_exclusion_kwargs(
@@ -65,7 +70,12 @@ class RAGService:
         self.min_score = min_score if min_score is not None else self.DEFAULT_MIN_SCORE
 
     def search(
-        self, query: str, top_k: int = 3, object_type: Optional[str] = None
+        self,
+        query: str,
+        top_k: int = 3,
+        object_type: Optional[str] = None,
+        *,
+        scope: "AuthoringScope | None" = None,
     ) -> List[Dict[str, Any]]:
         """Perform hybrid search and return structured results.
 
@@ -93,6 +103,18 @@ class RAGService:
                     else create_search_service(conn)
                 )
                 cleaned_query = self._clean_query(query)
+                criteria: _SearchOptions = {}
+                if scope is not None and scope.tags:
+                    from src.services.repositories.tag_repository import TagRepository
+
+                    criteria["allowed_ids"] = set(
+                        TagRepository(conn).filter_ids_by_tags(
+                            object_type=object_type,
+                            include=list(scope.tags),
+                            include_mode=scope.mode,
+                            case_sensitive=True,
+                        )
+                    )
                 logger.debug(
                     "RAG search query_chars=%d cleaned_chars=%d object_type=%s",
                     len(query),
@@ -100,7 +122,9 @@ class RAGService:
                     object_type or "all",
                 )
                 lexical_results = (
-                    search_service.search_by_name(query, object_type=object_type)
+                    search_service.search_by_name(
+                        query, object_type=object_type, **criteria
+                    )
                     if hasattr(search_service, "search_by_name")
                     else []
                 )
@@ -110,6 +134,7 @@ class RAGService:
                     cleaned_query,
                     top_k=max(0, top_k) + len(lexical_results),
                     object_type=object_type,
+                    **criteria,
                 )
                 merged = self._merge_results(
                     lexical_results,

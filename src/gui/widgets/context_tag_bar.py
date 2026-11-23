@@ -112,7 +112,16 @@ class ContextTagBar(QFrame):
         }
         active = bool(self._state["active"])
 
-        self.lbl_state.setText("Context Tags Active" if active else "Context Tags: Off")
+        caption = "Context Tags Active" if active else "Context Tags: Off"
+        if state.get("policy") == "follow":
+            caption = (
+                "Context Tags: Missing scope tags"
+                if state.get("missing_scope_defaults")
+                else "Context Tags: Follow Scope"
+            )
+        elif state.get("policy") == "custom":
+            caption = "Custom Context Tags" if active else "Custom Context Tags: Off"
+        self.lbl_state.setText(caption)
         self.lbl_count.setText(f"{affected} item{'s' if affected != 1 else ''}")
         self.lbl_count.setVisible(affected > 0)
         self.btn_review.setText(f"Review ({affected})" if affected else "History")

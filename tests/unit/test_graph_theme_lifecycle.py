@@ -191,6 +191,93 @@ def _check_real_graph_theme(runtime, qtbot):
     view.shutdown()
 
 
+def _check_graph_authoring_renderer(qtbot):
+    """Exercise actual Vis datasets, bridge payloads, and scope restoration."""
+    from src.core.authoring_scope import AuthoringScope
+
+    widget = GraphWidget()
+    qtbot.addWidget(widget)
+    widget.resize(700, 500)
+    widget.show()
+    nodes = [
+        {
+            "id": "first",
+            "name": "Scout",
+            "object_type": "entity",
+            "tags": ["Adventure"],
+        },
+        {"id": "second", "name": "Faction", "object_type": "entity", "tags": ["Other"]},
+    ]
+    widget.display_graph(nodes, [])
+    view = widget._web_view
+    page = view._web_view.page()
+    qtbot.waitUntil(lambda: view._renderer_generation == view._page_generation)
+    qtbot.waitUntil(lambda: bool(widget._session_positions))
+    before = dict(widget._session_positions)
+    gestures = []
+    widget.connection_requested.connect(gestures.append)
+    _javascript(
+        page,
+        qtbot,
+        """(() => {
+            const graph = document.getElementById('mynetwork');
+            const handle = document.querySelector('.graph-connect-handle');
+            network.selectNodes(['first']);
+            network.redraw();
+            handle.setPointerCapture = () => {};
+            handle.hasPointerCapture = () => true;
+            const viewport = graph.getBoundingClientRect();
+            const start = handle.getBoundingClientRect();
+            const target = network.canvasToDOM(network.getPosition('second'));
+            handle.dispatchEvent(new PointerEvent('pointerdown', {
+                button: 0, clientX: start.left + 10, clientY: start.top + 10
+            }));
+            handle.dispatchEvent(new PointerEvent('pointerup', {
+                button: 0, clientX: viewport.left + target.x,
+                clientY: viewport.top + target.y
+            }));
+            return true;
+        })()""",
+    )
+    qtbot.waitUntil(lambda: bool(gestures))
+    assert gestures[0]["source"] == "first" and gestures[0]["target"] == "second"
+
+    widget.seed_node("third", {"x": 108.0, "y": 54.0})
+    nodes.append(
+        {
+            "id": "third",
+            "name": "Council",
+            "object_type": "event",
+            "tags": ["Adventure"],
+        }
+    )
+    widget.display_graph(nodes, [])
+    qtbot.waitUntil(lambda: "third" in widget._session_positions)
+    assert {
+        identity: widget._session_positions[identity] for identity in before
+    } == before
+    assert widget._session_positions["third"] == {"x": 108, "y": 54}
+    widget.set_authoring_scope(AuthoringScope(("Adventure",)))
+    qtbot.waitUntil(
+        lambda: _javascript(
+            page, qtbot, "network.body.data.nodes.get('second') === null"
+        )
+    )
+    widget.set_authoring_scope(AuthoringScope())
+    qtbot.waitUntil(
+        lambda: _javascript(
+            page, qtbot, "Boolean(network.body.data.nodes.get('second'))"
+        )
+    )
+    assert (
+        json.loads(
+            _javascript(page, qtbot, "JSON.stringify(network.getPosition('second'))")
+        )
+        == before["second"]
+    )
+    view.shutdown()
+
+
 def test_real_graph_theme_in_isolated_process():
     # Native WebEngine must not run inside pytest-qt's shared teardown lifecycle.
     environment = dict(
@@ -239,4 +326,5 @@ if __name__ == "__main__":
                 _wait(app, predicate, timeout / 1000)
 
         _check_real_graph_theme(runtime, _Loop())
+        _check_graph_authoring_renderer(_Loop())
         runtime.close()

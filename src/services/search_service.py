@@ -1092,6 +1092,8 @@ class SearchService(SearchIndexStorage):
         object_type: Optional[str] = None,
         top_k: int = 10,
         model: Optional[str] = None,
+        *,
+        allowed_ids: set[tuple[str, str]] | None = None,
     ) -> List[Dict[str, Any]]:
         """Query the index using semantic search.
 
@@ -1142,6 +1144,12 @@ class SearchService(SearchIndexStorage):
             """
             for row in rows:
                 row_dict = dict(row)
+                if (
+                    allowed_ids is not None
+                    and (row_dict["object_type"], row_dict["object_id"])
+                    not in allowed_ids
+                ):
+                    continue
                 vector_blob = row_dict["vector"]
                 vector_dim = row_dict["vector_dim"]
 
@@ -1176,7 +1184,11 @@ class SearchService(SearchIndexStorage):
         return results
 
     def search_by_name(
-        self, text: str, object_type: Optional[str] = None
+        self,
+        text: str,
+        object_type: Optional[str] = None,
+        *,
+        allowed_ids: set[tuple[str, str]] | None = None,
     ) -> List[Dict[str, Any]]:
         """Return entities or events whose complete names occur in text."""
         # We need to find names.
@@ -1212,6 +1224,8 @@ class SearchService(SearchIndexStorage):
 
             for row in rows:
                 obj_id, name, obj_type, attrs, description = row
+                if allowed_ids is not None and (type_label, obj_id) not in allowed_ids:
+                    continue
                 # Simple case-insensitive inclusion
                 # Use word boundary to avoid "Jon" matching "Jonathan" if strict?
                 # Let's try simple inclusion first, maybe improved later.

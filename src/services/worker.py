@@ -76,6 +76,7 @@ class DatabaseWorker(QObject):
         list, object
     )  # tags_data, GroupingConfig | None (use object for union types)
     graph_data_loaded = Signal(list, list)  # nodes, edges
+    graph_snapshot_ready = Signal(dict)
     graph_metadata_loaded = Signal(list, list)  # tags, rel_types
     graph_lexicon_loaded = Signal(dict, dict)  # raw_lexicon, resolved_lexicon
     timeline_grouping_loaded = Signal(object)
@@ -1179,10 +1180,19 @@ class DatabaseWorker(QObject):
             rel_types: List of relation types to include.
 
         """
-        if not self.db_service:
+        context = temporal_context or {}
+        request = context.get("request")
+        if not self.db_service or (
+            isinstance(request, dict) and request.get("database") != str(self.db_path)
+        ):
+            if isinstance(request, dict):
+                self.graph_snapshot_ready.emit(
+                    {"request": request, "error": "The graph database is unavailable."}
+                )
             return
 
         try:
+            from src.core.authoring_scope import AuthoringScope
             from src.services.graph_data_service import GraphDataService
             from src.services.graph_lexicon_resolver import resolve_lexicon_images
 
@@ -1193,20 +1203,24 @@ class DatabaseWorker(QObject):
             if temporal_context is not None:
                 self._graph_temporal_context = dict(temporal_context)
             context = getattr(self, "_graph_temporal_context", {})
+            scope = context.get("scope") if isinstance(request, dict) else None
+            snapshot_options = (
+                {"authoring_scope": AuthoringScope.from_dict(scope)}
+                if isinstance(scope, dict)
+                else {}
+            )
             nodes, edges = graph_service.get_graph_data(
                 self.db_service,
                 tags,
                 rel_types,
                 lore_time=context.get("lore_time"),
                 temporal_mode=GraphTemporalMode(context.get("mode", "all_relations")),
+                **snapshot_options,
             )
 
             # Fetch metadata
             all_tags = graph_service.get_all_tags(self.db_service)
             all_rel_types = graph_service.get_all_relation_types(self.db_service)
-
-            self.graph_data_loaded.emit(nodes, edges)
-            self.graph_metadata_loaded.emit(all_tags, all_rel_types)
 
             # Load and resolve lexicon
             raw_lexicon = self.db_service.get_graph_lexicon() or {
@@ -1215,14 +1229,34 @@ class DatabaseWorker(QObject):
             }
             project_root = self.world_root
             resolved = resolve_lexicon_images(raw_lexicon, project_root)
-            self.graph_lexicon_loaded.emit(raw_lexicon, resolved)
+            if isinstance(request, dict):
+                self.graph_snapshot_ready.emit(
+                    {
+                        "request": request,
+                        "nodes": nodes,
+                        "edges": edges,
+                        "tags": all_tags,
+                        "relation_types": all_rel_types,
+                        "lexicon": raw_lexicon,
+                        "resolved_lexicon": resolved,
+                    }
+                )
+            else:
+                self.graph_data_loaded.emit(nodes, edges)
+                self.graph_metadata_loaded.emit(all_tags, all_rel_types)
+                self.graph_lexicon_loaded.emit(raw_lexicon, resolved)
 
             self.operation_finished.emit(
                 f"Graph Data Loaded ({len(nodes)} nodes, {len(edges)} edges)."
             )
         except Exception:
             logger.error(f"Failed to load graph data: {traceback.format_exc()}")
-            self.error_occurred.emit("Failed to load graph data.")
+            if isinstance(request, dict):
+                self.graph_snapshot_ready.emit(
+                    {"request": request, "error": "Failed to load graph data."}
+                )
+            else:
+                self.error_occurred.emit("Failed to load graph data.")
 
     @Slot(str, int, float)
     def query_semantic_suggestions(

@@ -21,6 +21,7 @@ from src.commands.base_command import BaseCommand, CommandResult
 from src.commands.composite_command import CompositeCommand
 from src.commands.entity_commands import CreateEntityCommand, UpdateEntityCommand
 from src.commands.event_commands import CreateEventCommand, UpdateEventCommand
+from src.core.command import graph_connection_state
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
@@ -93,8 +94,11 @@ class ContextTagCoordinator(BaseCoordinator):
         self._settings_prefix = SETTINGS_CONTEXT_TAGS_PREFIX.format(world_id=world_id)
         self._remembered_tags: list[str] = []
         self._active = False
+        self._policy = ""
+        self._scope_defaults: tuple[str, ...] = ()
         self._pending: dict[str, ContextTagApplication] = {}
         self._applications: dict[str, ContextTagApplication] = {}
+        self._review_cleared_at = 0.0
         self._available_tags: list[str] = []
         self._items: dict[tuple[ItemType, str], Entity | Event] = {}
         self._load_settings()
@@ -107,11 +111,34 @@ class ContextTagCoordinator(BaseCoordinator):
     @property
     def is_active(self) -> bool:
         """Return whether new interactive items receive context tags."""
-        return self._active
+        return bool(self._effective_tags())
+
+    def _effective_tags(self) -> list[str]:
+        if self._policy == "follow":
+            if all(tag in self._available_tags for tag in self._scope_defaults):
+                return list(self._scope_defaults)
+            return []
+        return self._remembered_tags if self._active else []
+
+    def set_scope_defaults(self, tags: tuple[str, ...]) -> None:
+        """Update Follow Scope inputs independently of custom tags."""
+        if not self._policy and not self._remembered_tags:
+            self._policy = "follow"
+        self._scope_defaults = tags
+        self._emit_state()
+
+    @Slot()
+    def follow_scope(self) -> None:
+        """Resume choosing creation tags from the visibility scope."""
+        self._policy = "follow"
+        self._persist()
+        self._emit_state()
 
     def set_available_tags(self, tags: list[str]) -> None:
         """Update autocomplete values used by the editor dialog."""
         self._available_tags = list(dict.fromkeys(tags))
+        if self._policy == "follow":
+            self._emit_state()
 
     def save_tags(self, tags: list[str], *, activate: bool | None = None) -> None:
         """Remember a normalized set and optionally change activation."""
@@ -128,12 +155,18 @@ class ContextTagCoordinator(BaseCoordinator):
     def enable(self) -> None:
         """Enable the remembered set when it is non-empty."""
         self._active = bool(self._remembered_tags)
+        if self._policy:
+            self._policy = "custom"
+            self._persist()
         self._emit_state()
 
     @Slot()
     def disable(self) -> None:
         """Stop applying tags without changing content or remembered tags."""
         self._active = False
+        if self._policy:
+            self._policy = "custom"
+            self._persist()
         self._emit_state()
 
     def create_entity_command(self, data: dict[str, Any]) -> CreateEntityCommand:
@@ -142,7 +175,10 @@ class ContextTagCoordinator(BaseCoordinator):
         command = CreateEntityCommand(decorated)
         if added_tags:
             self._track_pending(
-                "entity", command._entity.id, command, added_tags  # noqa: SLF001
+                "entity",
+                command._entity.id,
+                command,
+                added_tags,  # noqa: SLF001
             )
         return command
 
@@ -158,15 +194,54 @@ class ContextTagCoordinator(BaseCoordinator):
         decorated = dict(data)
         attributes = dict(decorated.get("attributes") or {})
         existing = list(attributes.get("_tags") or [])
-        added = [
-            tag
-            for tag in self._remembered_tags
-            if self._active and tag not in existing
-        ]
+        added = [tag for tag in self._effective_tags() if tag not in existing]
         if added:
             attributes["_tags"] = [*existing, *added]
             decorated["attributes"] = attributes
         return decorated, added
+
+    def graph_creation(
+        self, kind: ItemType, data: dict[str, Any]
+    ) -> tuple[CreateEntityCommand | CreateEventCommand, list[str]]:
+        """Decorate a new endpoint; its outer graph command owns recovery."""
+        decorated, added = self._decorate_data(data)
+        command = (
+            CreateEntityCommand(decorated, select_after_create=False)
+            if kind == "entity"
+            else CreateEventCommand(decorated, select_after_create=False)
+        )
+        return command, added
+
+    def apply_graph_recovery(self, data: object) -> None:
+        """Record only an acknowledged and recoverable graph creation."""
+        record = ContextTagApplication.from_dict(data)
+        if record is not None and record.created_at > self._review_cleared_at:
+            self._applications[record.command_id] = record
+            self._persist()
+            self._emit_state()
+
+    @Slot(dict)
+    def restore_graph_recovery(self, history: dict) -> None:
+        """Backfill a missed reply from committed history for this world."""
+        world = getattr(self.main_window, "current_world", None)
+        if history.get("world_id") != getattr(world, "id", None):
+            return
+        for stack in ("undo", "redo"):
+            for item in history.get(stack, ()):
+                state = graph_connection_state(item)
+                if state is None:
+                    continue
+                record = state.get("graph_context_tags")
+                if (
+                    isinstance(record, dict)
+                    and record.get("command_id") not in self._applications
+                ):
+                    self.apply_graph_recovery(
+                        {
+                            **record,
+                            "status": "present" if stack == "undo" else "unavailable",
+                        }
+                    )
 
     def _track_pending(
         self,
@@ -275,7 +350,9 @@ class ContextTagCoordinator(BaseCoordinator):
             attributes = dict(item.attributes)
             attributes["_tags"] = new_tags
             if application.item_type == "entity":
-                commands.append(UpdateEntityCommand(item.id, {"attributes": attributes}))
+                commands.append(
+                    UpdateEntityCommand(item.id, {"attributes": attributes})
+                )
             else:
                 commands.append(UpdateEventCommand(item.id, {"attributes": attributes}))
         if not commands:
@@ -327,6 +404,7 @@ class ContextTagCoordinator(BaseCoordinator):
         )
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
+        self._policy = "custom"
         self.save_tags(dialog.tags(), activate=dialog.action == "apply")
 
     @Slot()
@@ -379,14 +457,22 @@ class ContextTagCoordinator(BaseCoordinator):
     def clear_review_history(self) -> None:
         """Forget recovery metadata without changing world content."""
         self._applications.clear()
+        self._review_cleared_at = time.time()
         self._persist()
         self._emit_state()
 
     def snapshot(self) -> dict[str, object]:
         """Return serializable state for all context-tag UI consumers."""
         return {
-            "tags": list(self._remembered_tags),
-            "active": self._active,
+            "tags": (
+                self._effective_tags()
+                if self._policy == "follow"
+                else list(self._remembered_tags)
+            ),
+            "active": self.is_active,
+            "policy": self._policy,
+            "missing_scope_defaults": self._policy == "follow"
+            and bool(set(self._scope_defaults).difference(self._available_tags)),
             "affected_count": len(self.review_records()),
             "history_count": len(self._applications),
         }
@@ -395,6 +481,18 @@ class ContextTagCoordinator(BaseCoordinator):
         self.state_changed.emit(self.snapshot())
 
     def _load_settings(self) -> None:
+        raw_cleared_at = self._settings.value(
+            f"{self._settings_prefix}/review_cleared_at", 0.0, type=float
+        )
+        if isinstance(raw_cleared_at, (int, float)):
+            self._review_cleared_at = float(raw_cleared_at)
+        policy = str(self._settings.value(f"{self._settings_prefix}/policy", ""))
+        self._policy = policy if policy in {"follow", "custom"} else ""
+        self._active = self._policy == "custom" and bool(
+            self._settings.value(
+                f"{self._settings_prefix}/custom_active", False, type=bool
+            )
+        )
         raw_tags = self._settings.value(f"{self._settings_prefix}/last_tags", "[]")
         raw_ledger = self._settings.value(
             f"{self._settings_prefix}/recovery_ledger", "[]"
@@ -418,6 +516,11 @@ class ContextTagCoordinator(BaseCoordinator):
             logger.warning("Ignoring malformed context-tag recovery ledger")
 
     def _persist(self) -> None:
+        if self._policy:
+            self._settings.setValue(f"{self._settings_prefix}/policy", self._policy)
+            self._settings.setValue(
+                f"{self._settings_prefix}/custom_active", self._active
+            )
         self._settings.setValue(
             f"{self._settings_prefix}/last_tags",
             json.dumps(self._remembered_tags),
@@ -426,3 +529,7 @@ class ContextTagCoordinator(BaseCoordinator):
             f"{self._settings_prefix}/recovery_ledger",
             json.dumps([asdict(entry) for entry in self._applications.values()]),
         )
+        if self._review_cleared_at:
+            self._settings.setValue(
+                f"{self._settings_prefix}/review_cleared_at", self._review_cleared_at
+            )

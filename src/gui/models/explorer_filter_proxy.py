@@ -14,6 +14,7 @@ from PySide6.QtCore import (
 )
 from PySide6.QtWidgets import QWidget
 
+from src.core.authoring_scope import AuthoringScope
 from src.core.entities import Entity
 from src.core.events import Event
 from src.core.search_utils import SearchUtils
@@ -41,6 +42,7 @@ class ExplorerFilterProxyModel(QSortFilterProxyModel):
         self._search_term = ""
         self._filter_mode = "All Items"  # "All Items", "Events Only", "Entities Only"
         self._advanced_filter_config: dict = {}
+        self._scope = AuthoringScope()
         self._active_item: tuple[str, str] | None = None
         self._pinned_source_row: int | None = None
 
@@ -97,8 +99,24 @@ class ExplorerFilterProxyModel(QSortFilterProxyModel):
             Qt.ItemDataRole.ToolTipRole,
         }:
             title = super().data(index, Qt.ItemDataRole.DisplayRole)
-            return f"{title}\nActive item · Hidden by filters"
+            source = self.sourceModel()
+            item = (
+                source.get_item(self.mapToSource(index))
+                if isinstance(source, ExplorerModel)
+                else None
+            )
+            reason = (
+                "Outside scope"
+                if item and not self._scope.matches(item[1].tags)
+                else "Hidden by filters"
+            )
+            return f"{title}\nActive item · {reason}"
         return value
+
+    def set_authoring_scope(self, scope: AuthoringScope) -> None:
+        """Intersect the world scope with the existing local filters."""
+        self._scope = scope
+        self.invalidate()
 
     def set_search_term(self, term: str) -> None:
         """Set the search term for filtering.
@@ -157,6 +175,9 @@ class ExplorerFilterProxyModel(QSortFilterProxyModel):
 
     def _matches_filters(self, item_type: str, obj: Entity | Event) -> bool:
         """Test ordinary results independently of the active-object exception."""
+
+        if not self._scope.matches(obj.tags):
+            return False
 
         # Apply type filter
         if self._filter_mode == "Events Only" and item_type != "event":

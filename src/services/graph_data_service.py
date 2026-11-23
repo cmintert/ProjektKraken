@@ -7,12 +7,28 @@ concerns from the widget layer.
 import logging
 from typing import TYPE_CHECKING, Any, Dict
 
+from src.core.authoring_scope import AuthoringScope
 from src.core.calendar import CalendarConfig, CalendarConverter
 from src.core.graph_temporal import GraphTemporalMode, evaluate_graph_relation
 from src.core.temporal_anchors import resolve_event_anchors
 
 if TYPE_CHECKING:
     from src.services.db_service import DatabaseService
+
+
+def _scoped_graph(
+    nodes: list[dict[str, Any]],
+    edges: list[dict[str, Any]],
+    scope: AuthoringScope | None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    if scope is None or not scope.tags:
+        return nodes, edges
+    visible = [node for node in nodes if scope.matches(node.get("tags", []))]
+    ids = {node["id"] for node in visible}
+    return visible, [
+        edge for edge in edges if edge["source_id"] in ids and edge["target_id"] in ids
+    ]
+
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +48,8 @@ class GraphDataService:
         include_rel_types: list[str] | None = None,
         lore_time: float | None = None,
         temporal_mode: GraphTemporalMode = GraphTemporalMode.ALL_RELATIONS,
+        *,
+        authoring_scope: AuthoringScope | None = None,
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """Fetches nodes (entities/events) and edges (relations) for graph display.
 
@@ -129,7 +147,7 @@ class GraphDataService:
                 if e["source_id"] in node_ids and e["target_id"] in node_ids
             ]
 
-        return nodes, edges
+        return _scoped_graph(nodes, edges, authoring_scope)
 
     def get_all_tags(self, db_service: "DatabaseService") -> list[str]:
         """Returns all unique tags across entities and events.

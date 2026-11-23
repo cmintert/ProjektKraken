@@ -313,6 +313,17 @@ assigning either an invented month or day.
 
 ## Interface control reference
 
+(help-inspect-timeline-hidden-history)=
+
+**Show hidden history** temporarily reveals outside-scope Events linked to the
+active entry or its authored timing. Select **Hide revealed history** to dismiss
+them. The Timeline keeps the viewing date.
+
+(help-inspect-timeline-unplaced-history)=
+
+**Open Unplaced History** opens an Event from the current reveal that has no
+resolved position on the Timeline.
+
 These explanations describe the software operation. Inspecting a control does not run it or read your entered values.
 
 (help-inspect-src-gui-dialogs-calendar-config-dialog-calendarconfigdialog-setup-ui-self-name-edit)=

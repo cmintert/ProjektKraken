@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-11-20
-**Commit:** 6b4d2756
+**Last Updated:** 2026-11-23
+**Commit:** 3cd53c3b
 ---
 
 # Changelog
@@ -11,7 +11,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- *(2026-11-23)* **Authoring (KRT-184)**: Added per-world tag scopes across
+  Explorer, Timeline, Relations, and Search, with independent creation tags and
+  a way to reveal relevant hidden history.
+- *(2026-11-23)* **Relations (KRT-184)**: Added drag and keyboard routes to
+  create relationships and connected entries. New entries and their links
+  share one undo step, and the graph retains node positions during authoring.
+
 ### Changed
+
+- *(2026-11-23)* **Help and verification (KRT-184)**: Documented scoped
+  authoring and graph creation, added contextual Help and regression coverage,
+  and retired six legacy graph color exceptions.
 
 - *(2026-11-20)* **World Manager**: Emphasized world names and displayed actual
   folder paths and linked database paths so same-name worlds can be distinguished.

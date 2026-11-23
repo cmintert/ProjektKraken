@@ -68,6 +68,32 @@ class CommandResult:
     command_name: str = ""
 
 
+def graph_connection_state(payload: object) -> dict[str, Any] | None:
+    """Read the graph intent from history, including a reviewed Event timing wrapper."""
+    if not isinstance(payload, dict) or not isinstance(
+        data := payload.get("data"), dict
+    ):
+        return None
+    if payload.get("type") == "GraphConnectionCommand":
+        return data
+    if (
+        payload.get("type") == "ApplyEventTimingPlanCommand"
+        and data.get("command_type") == "GraphConnectionCommand"
+        and isinstance(command := data.get("command"), dict)
+    ):
+        return command
+    return None
+
+
+def is_graph_connection_result(result: CommandResult) -> bool:
+    """Identify graph workflow results across execute, undo, and redo."""
+    name = result.command_name.removeprefix("Undo_").removeprefix("Redo_")
+    return name == "GraphConnectionCommand" or (
+        name == "ApplyEventTimingPlanCommand"
+        and graph_connection_state(result.data.get("command_state")) is not None
+    )
+
+
 class CommandProtocol(Protocol):
     """Structural command interface required by persistence and workers."""
 
