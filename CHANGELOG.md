@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-23
-**Commit:** 4c1c3537
+**Commit:** 1acd579a
 ---
 
 # Changelog
@@ -32,6 +32,9 @@ All notable changes to this project will be documented in this file.
   conflicting editor saves.
 
 ### Changed
+
+- *(2026-11-23)* **World Manager Help**: Documented the displayed world folder
+  and linked database paths and recorded the two affected Help reviews.
 
 - *(2026-11-23)* **Relations and Help (KRT-184)**: Renamed the membership
   action to Add to Tag Scope, documented retry, and added regression coverage

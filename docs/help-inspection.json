@@ -11325,8 +11325,8 @@
     {
       "source": "src/gui/dialogs/database_manager_dialog.py",
       "symbol": "DatabaseManagerDialog.__init__",
-      "sha256": "c14ebe8e5517b8a1d91a5a11d1ffd28438d408be29c6b46788d2374bbae24bc2",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "c9b6d5961caa871336523c7217f04ebb54c8cce371c1932f63a034bf2d034534",
+      "review_note": "The Worlds list uses a delegate to show the world name and locations. The Help excerpt explains how paths distinguish same-name worlds."
     },
     {
       "source": "src/gui/dialogs/database_manager_dialog.py",
@@ -11391,8 +11391,8 @@
     {
       "source": "src/gui/dialogs/database_manager_dialog.py",
       "symbol": "DatabaseManagerDialog._refresh_list",
-      "sha256": "b6b7bc0299bde7c603ded2e4d5aebb54786c896e6851b2a308085b5caab4825f",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "c7dc2277ae298e2a8d92aa9fde06494b23cb90031e9ff79f1c46d347204b6062",
+      "review_note": "Each world row supplies its folder and any linked database path. The Help excerpt describes the row content and retains the switching action."
     },
     {
       "source": "src/gui/dialogs/database_manager_dialog.py",
