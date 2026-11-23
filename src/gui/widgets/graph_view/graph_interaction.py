@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const handle = document.createElement("button");
         handle.className = "graph-connect-handle";
         handle.textContent = "+";
-        handle.title = "Drag to connect";
+        handle.title = "Click or drag to connect";
         handle.setAttribute("aria-label", "Start a connection");
         handle.tabIndex = -1;
         handle.hidden = true;
@@ -43,15 +43,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
         function placeHandle() {
             const id = gesture?.source ?? hovered ?? network.getSelectedNodes()[0];
-            handle.hidden = id == null || !nodeData().get(id);
-            if (handle.hidden) return;
+            const node = id == null ? null : nodeData().get(id);
+            handle.hidden = !node;
+            if (!node) return;
             handle.dataset.source = String(id);
-            const box = network.getBoundingBox(id);
-            const point = network.canvasToDOM({
-                x: box.right, y: (box.top + box.bottom) / 2
-            });
-            handle.style.left = point.x + "px";
-            handle.style.top = point.y + "px";
+            const center = network.canvasToDOM(network.getPosition(id));
+            // The Vis bounding box includes labels. Anchor to the node's
+            // configured size and keep the gap in screen pixels at any zoom.
+            const offset = node.size * network.getScale() + 4;
+            const width = handle.offsetWidth;
+            const right = center.x + offset;
+            const left = right + width <= graph.clientWidth
+                ? right : center.x - offset - width;
+            handle.style.left = left + "px";
+            handle.style.top = center.y + "px";
         }
 
         function pointer(event) {
@@ -68,12 +73,15 @@ document.addEventListener("DOMContentLoaded", () => {
             handle.focus({preventScroll: true});
             handle.setPointerCapture(event.pointerId);
             gesture = {source, sourceKind: node.object_type,
-                       start: pointer(event), end: pointer(event)};
+                       start: pointer(event), end: pointer(event), dragged: false};
         }
         function updatePointerGesture(event) {
             if (!gesture) return;
             event.stopPropagation();
             gesture.end = pointer(event);
+            gesture.dragged ||= Math.hypot(
+                gesture.end.x - gesture.start.x, gesture.end.y - gesture.start.y
+            ) >= 4;
             network.redraw();
         }
         function cancelPointerGesture() {
@@ -84,9 +92,16 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!gesture || !handle.hasPointerCapture(event.pointerId)) return;
             event.stopPropagation();
             const drop = pointer(event);
-            const {source, sourceKind, start} = gesture;
+            const {source, sourceKind, start, dragged} = gesture;
             cancelPointerGesture();
-            if (Math.hypot(drop.x - start.x, drop.y - start.y) < 4) return;
+            if (Math.hypot(drop.x - start.x, drop.y - start.y) < 4) {
+                if (!dragged) {
+                    bridge.connectionRequested({
+                        generation, source, source_kind: sourceKind
+                    });
+                }
+                return;
+            }
             const target = network.getNodeAt(drop);
             if (String(target) === source) return;
             bridge.connectionRequested({
@@ -99,7 +114,18 @@ document.addEventListener("DOMContentLoaded", () => {
         handle.addEventListener("pointermove", updatePointerGesture);
         handle.addEventListener("pointerup", finishPointerGesture);
         handle.addEventListener("lostpointercapture", cancelPointerGesture);
-        handle.addEventListener("click", event => event.stopPropagation());
+        handle.addEventListener("click", event => {
+            event.stopPropagation();
+            // Pointer activation is handled on release to distinguish a drag.
+            if (event.detail !== 0) return;
+            const source = handle.dataset.source;
+            const node = handle.hidden ? null : nodeData().get(source);
+            if (node) {
+                bridge.connectionRequested({
+                    generation, source, source_kind: node.object_type
+                });
+            }
+        });
         graph.addEventListener("keydown", event => {
             if (event.key === "Escape" && gesture) {
                 event.stopPropagation();

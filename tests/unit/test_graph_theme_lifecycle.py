@@ -216,31 +216,74 @@ def _check_graph_authoring_renderer(qtbot):
     before = dict(widget._session_positions)
     gestures = []
     widget.connection_requested.connect(gestures.append)
-    _javascript(
+    assert _javascript(
         page,
         qtbot,
         """(() => {
             const graph = document.getElementById('mynetwork');
             const handle = document.querySelector('.graph-connect-handle');
-            network.selectNodes(['first']);
+            network.unselectAll();
             network.redraw();
             handle.setPointerCapture = () => {};
             handle.hasPointerCapture = () => true;
             const viewport = graph.getBoundingClientRect();
+            const center = network.canvasToDOM(network.getPosition('first'));
+            const x = viewport.left + center.x;
+            const y = viewport.top + center.y;
+            const move = (clientX, clientY) => {
+                const element = document.elementFromPoint(clientX, clientY);
+                element?.dispatchEvent(new PointerEvent('pointermove', {
+                    bubbles: true, clientX, clientY
+                }));
+            };
+            move(x, y);
+            if (handle.hidden || handle.dataset.source !== 'first') return false;
+            const initial = handle.getBoundingClientRect();
+            network.body.data.nodes.update({
+                id: 'first', label: 'Province of Harendun and its neighboring towns'
+            });
+            network.redraw();
             const start = handle.getBoundingClientRect();
+            if (start.left !== initial.left || start.top !== initial.top) return false;
+            const handleX = start.left + start.width / 2;
+            for (let step = 1; step <= 20; step++) {
+                move(x + (handleX - x) * step / 20, y);
+                if (handle.hidden || handle.dataset.source !== 'first') return false;
+            }
+            if (document.elementFromPoint(handleX, y) !== handle) return false;
             const target = network.canvasToDOM(network.getPosition('second'));
             handle.dispatchEvent(new PointerEvent('pointerdown', {
-                button: 0, clientX: start.left + 10, clientY: start.top + 10
+                button: 0, clientX: handleX, clientY: y
+            }));
+            handle.dispatchEvent(new PointerEvent('pointerup', {
+                button: 0, clientX: handleX, clientY: y
+            }));
+            handle.dispatchEvent(new MouseEvent('click', {detail: 1}));
+            handle.click();
+            handle.dispatchEvent(new PointerEvent('pointerdown', {
+                button: 0, clientX: handleX, clientY: y
+            }));
+            handle.dispatchEvent(new PointerEvent('pointermove', {
+                clientX: handleX, clientY: y + 25
+            }));
+            handle.dispatchEvent(new PointerEvent('pointerup', {
+                button: 0, clientX: handleX, clientY: y
+            }));
+            handle.dispatchEvent(new PointerEvent('pointerdown', {
+                button: 0, clientX: handleX, clientY: y
             }));
             handle.dispatchEvent(new PointerEvent('pointerup', {
                 button: 0, clientX: viewport.left + target.x,
                 clientY: viewport.top + target.y
             }));
-            return true;
+            return network.getSelectedNodes().length === 0;
         })()""",
     )
-    qtbot.waitUntil(lambda: bool(gestures))
-    assert gestures[0]["source"] == "first" and gestures[0]["target"] == "second"
+    qtbot.waitUntil(lambda: len(gestures) >= 3)
+    assert len(gestures) == 3
+    assert gestures[0]["source"] == "first" and not gestures[0].get("target")
+    assert gestures[1]["source"] == "first" and not gestures[1].get("target")
+    assert gestures[2]["source"] == "first" and gestures[2]["target"] == "second"
 
     widget.seed_node("third", {"x": 108.0, "y": 54.0})
     nodes.append(

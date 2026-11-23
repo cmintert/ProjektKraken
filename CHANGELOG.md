@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-23
-**Commit:** cffde74d
+**Commit:** 4c1c3537
 ---
 
 # Changelog
@@ -21,6 +21,10 @@ All notable changes to this project will be documented in this file.
   share one undo step, and the graph retains node positions during authoring.
 
 ### Fixed
+
+- *(2026-11-23)* **Relations (KRT-184)**: Kept the connection handle beside the
+  node regardless of label width. Clicking opens a draft and dragging connects
+  to a target. Updated Graph Help and WebEngine regression coverage.
 
 - *(2026-11-23)* **Scoped authoring (KRT-184)**: Loaded creation-tag settings
   for the active world and ignored relationship replies from canceled drafts.

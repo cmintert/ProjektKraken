@@ -284,7 +284,8 @@ modes. A hidden edge has not been deleted.
 
 ### Create a relationship in the Graph
 
-1. Drag the connection handle from one node onto another. You can also select
+1. Hover over the starting node and click **+** to open a draft, or drag **+**
+   onto another node to start with both entries filled in. You can also select
    **Connect…** and use the entry picker from the keyboard.
 2. Review the existing relationships, then select a type and direction. **Both
    directions** records two relationships of the selected type.
