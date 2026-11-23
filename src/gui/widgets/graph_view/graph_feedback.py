@@ -29,7 +29,7 @@ class GraphFeedback(QWidget):
         self.inspect = StandardButton("Inspect")
         self.timing = StandardButton("Inspect Timing")
         self.membership = declare_inspection(
-            StandardButton("Add to Adventure"),
+            StandardButton("Add to Tag Scope"),
             "graph-add-to-adventure|graph.exploring|help-inspect-graph-add-to-adventure",
         )
         self.dismiss = StandardButton("Dismiss")

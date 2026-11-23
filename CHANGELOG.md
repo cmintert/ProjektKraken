@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-23
-**Commit:** 3cd53c3b
+**Commit:** cffde74d
 ---
 
 # Changelog
@@ -20,7 +20,18 @@ All notable changes to this project will be documented in this file.
   create relationships and connected entries. New entries and their links
   share one undo step, and the graph retains node positions during authoring.
 
+### Fixed
+
+- *(2026-11-23)* **Scoped authoring (KRT-184)**: Loaded creation-tag settings
+  for the active world and ignored relationship replies from canceled drafts.
+  Added in-place lookup retry and protected scope membership edits from
+  conflicting editor saves.
+
 ### Changed
+
+- *(2026-11-23)* **Relations and Help (KRT-184)**: Renamed the membership
+  action to Add to Tag Scope, documented retry, and added regression coverage
+  for world settings, stale replies, lookup failures, and editor save guards.
 
 - *(2026-11-23)* **Help and verification (KRT-184)**: Documented scoped
   authoring and graph creation, added contextual Help and regression coverage,

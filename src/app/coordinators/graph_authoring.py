@@ -16,7 +16,7 @@ from src.app.coordinators.graph_pair_reader import GraphPairReader
 from src.commands.batch_metadata_command import BatchMetadataCommand
 from src.commands.graph_connection_command import GraphConnectionCommand
 from src.commands.relation_commands import AddRelationCommand, UpdateRelationCommand
-from src.core.batch_metadata import MetadataOperation
+from src.core.batch_metadata import MetadataOperation, Target
 from src.core.entities import Entity
 from src.core.events import Event
 from src.core.temporal_context import TemporalResolutionContext
@@ -108,6 +108,7 @@ class GraphAuthoring(QObject):
         world_id: Callable[[], str],
         playhead: Callable[[], float],
         calendar: Callable[[], CalendarConverter | None],
+        membership_draft_warning: Callable[[list[Target]], str],
     ) -> None:
         """Connect queued reads and world-validated command acknowledgements."""
         super().__init__(view)
@@ -120,13 +121,14 @@ class GraphAuthoring(QObject):
         self._world_id = world_id
         self._playhead = playhead
         self._calendar = calendar
+        self._membership_draft_warning = membership_draft_warning
         self._draft: GraphDraft | None = None
         self._dialog: GraphConnectionDialog | None = None
         self._auxiliary: QWidget | None = None
         self._pending: GraphSubmission | None = None
         self._awaiting_snapshot: SavedGraphConnection | None = None
         self._feedback: SavedGraphConnection | None = None
-        self._pair_request: dict | None = None
+        self._pair_requests: dict[str, dict] = {}
         self._interaction_revision = 0
         self._refreshing_after_failure = False
 
@@ -144,7 +146,7 @@ class GraphAuthoring(QObject):
         view.snapshot_presented.connect(self._present_committed)
         view.feedback.inspect_requested.connect(self.inspect_saved)
         view.feedback.timing_requested.connect(self.inspect_timing)
-        view.feedback.membership_requested.connect(self.add_to_adventure)
+        view.feedback.membership_requested.connect(self.add_to_tag_scope)
         scope.changed.connect(self._cancel_scope_draft)
         navigation.navigation_result.connect(self._on_navigation)
         worker.history_loaded.connect(
@@ -167,13 +169,14 @@ class GraphAuthoring(QObject):
         self._interaction_revision += 1
         self._feedback = None
         self._awaiting_snapshot = None
+        self._pair_requests.pop("inspect", None)
 
     def _on_navigation(self, _kind: str, _identity: str, status: str) -> None:
         if status == "selected":
             self._view.authoring_context_changed()
 
     def _cancel_scope_draft(self, _scope: object) -> None:
-        self._pair_request = None
+        self._pair_requests.clear()
         self._refreshing_after_failure = False
         if self._auxiliary is not None and shiboken6.isValid(self._auxiliary):
             self._auxiliary.close()
@@ -227,6 +230,7 @@ class GraphAuthoring(QObject):
         dialog.target_requested.connect(self._choose_target)
         dialog.save_requested.connect(self._save)
         dialog.edit_requested.connect(self._edit_existing)
+        dialog.retry_pair_requested.connect(self._retry_draft_pair)
         dialog.start_at_playhead.toggled.connect(self._capture_start)
         dialog.finished.connect(self._close_draft)
         if target:
@@ -243,6 +247,7 @@ class GraphAuthoring(QObject):
         return None
 
     def _close_draft(self, _outcome: int) -> None:
+        self._pair_requests.pop("draft", None)
         self._draft = None
         self._dialog = None
         self._refreshing_after_failure = False
@@ -339,6 +344,13 @@ class GraphAuthoring(QObject):
             self._dialog.set_target(title, awaiting_relations=True)
             self._request_pair(draft.source, identity, "draft")
 
+    def _retry_draft_pair(self) -> None:
+        draft, dialog = self._draft, self._dialog
+        if draft is None or dialog is None or not self._draft_current(draft):
+            return
+        dialog.pair_loading()
+        self._request_pair(draft.source, draft.target, "draft")
+
     def _request_pair(self, source: str, target: str, purpose: str) -> None:
         request = {
             "id": str(uuid4()),
@@ -349,30 +361,37 @@ class GraphAuthoring(QObject):
             "playhead": self._playhead(),
             "purpose": purpose,
         }
-        self._pair_request = request
+        self._pair_requests[purpose] = request
         self.pair_requested.emit(request)
 
     @Slot(dict)
     def _on_pair(self, reply: dict) -> None:
         request = reply["request"]
+        purpose = request["purpose"]
         if (
-            request != self._pair_request
+            request != self._pair_requests.get(purpose)
             or request["world"] != self._world_id()
             or request["scope"] != self._scope.revision
         ):
             return
-        self._pair_request = None
-        if request["purpose"] == "inspect":
+        self._pair_requests.pop(purpose)
+        if purpose == "inspect":
             self._present_timing(reply)
-        elif self._dialog is not None and self._draft is not None:
-            if "error" in reply:
-                self._dialog.set_pending(False, reply["error"])
-            else:
-                entries = self._entries()
-                rows = [
-                    (self._relation_label(row, entries), row) for row in reply["rows"]
-                ]
-                self._dialog.pair_ready(rows)
+            return
+        draft, dialog = self._draft, self._dialog
+        if (
+            draft is None
+            or dialog is None
+            or not self._draft_current(draft)
+            or (draft.source, draft.target) != (request["source"], request["target"])
+        ):
+            return
+        if "error" in reply:
+            dialog.pair_failed(reply["error"])
+            return
+        entries = self._entries()
+        rows = [(self._relation_label(row, entries), row) for row in reply["rows"]]
+        dialog.pair_ready(rows)
 
     @staticmethod
     def _relation_label(row: dict, entries: dict[str, GraphEntry]) -> str:
@@ -628,7 +647,7 @@ class GraphAuthoring(QObject):
             caption or result.get("error", "The relationship is no longer available."),
         )
 
-    def add_to_adventure(self) -> None:
+    def add_to_tag_scope(self) -> None:
         """Preview and apply a separate undoable membership edit."""
         saved = self._feedback
         if saved is None or saved.outside is None:
@@ -636,14 +655,19 @@ class GraphAuthoring(QObject):
         entry = self._entries().get(saved.outside)
         if entry is None or not (tags := self._membership_tags(entry)):
             return
+        targets: list[Target] = [(entry.kind, entry.item.id)]
+        if self._membership_blocked(targets):
+            return
         response = QMessageBox.question(
             self._view,
-            "Add to Adventure",
+            "Add to Tag Scope",
             f"Add the following tags to {entry.item.name}?\n\n" + "\n".join(tags),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
             QMessageBox.StandardButton.Cancel,
         )
         if response != QMessageBox.StandardButton.Yes or self._feedback is not saved:
+            return
+        if self._membership_blocked(targets):
             return
         operation = MetadataOperation("add_tags", tags=tags)
         before, after, overwritten = operation.patch(entry.item.attributes)
@@ -654,8 +678,14 @@ class GraphAuthoring(QObject):
             "after": after,
             "overwritten": overwritten,
         }
-        command = BatchMetadataCommand(
-            [(entry.kind, entry.item.id)], operation.to_dict(), [row]
-        )
+        command = BatchMetadataCommand(targets, operation.to_dict(), [row])
         self._commands.execute_command(command)
         self._view.authoring_context_changed()
+
+    def _membership_blocked(self, targets: list[Target]) -> bool:
+        if warning := self._membership_draft_warning(targets):
+            self._view.feedback.present(
+                warning, inspect=True, timing=True, membership=True
+            )
+            return True
+        return False

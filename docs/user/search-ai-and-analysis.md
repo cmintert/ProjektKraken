@@ -294,7 +294,12 @@ modes. A hidden edge has not been deleted.
 Drop the handle on empty space to create a new Entity or Event or to pick an
 existing entry. A new entry and its relationship save together and share an Undo
 step. An outside-scope entry can be inspected from the saved confirmation.
-Choose **Add to Adventure** to preview and apply the scope's membership tags.
+Choose **Add to Tag Scope** to preview and apply the scope's membership tags.
+If the entry has unsaved edits or a save in progress, finish in its editor and
+then try again.
+
+If checking existing relationships fails, choose **Retry Relationship Lookup**
+in the open draft. The selected entry and draft fields are retained.
 
 ## Interface control reference
 
@@ -320,9 +325,14 @@ fixed start. The recorded date stays fixed if the playhead moves.
 **Create Relationship** saves the directed relationship and any new endpoint as
 one undoable operation.
 
+(help-inspect-graph-retry-pair)=
+
+**Retry Relationship Lookup** checks the selected pair again. You can create the
+relationship once the check succeeds.
+
 (help-inspect-graph-add-to-adventure)=
 
-**Add to Adventure** previews the tags needed to bring a saved relationship's
+**Add to Tag Scope** previews the tags needed to bring a saved relationship's
 endpoint into scope. Applying those tags creates a separate Undo step.
 
 (help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-init-self-sidebar-list)=

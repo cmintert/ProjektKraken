@@ -221,7 +221,8 @@ class AppCoordinator(QObject):
         from src.app.coordinators.scoped_history import ScopedHistory
 
         window = self.main_window
-        world_id = str(getattr(window.current_world, "id", "default"))
+        world_id = str(getattr(window.current_world, "id", "") or "")
+        self.context_tags.bind_world(world_id)
         self.scope = AuthoringScopeCoordinator(
             world_id, lambda: self.data.cached_tags, window
         )
@@ -282,6 +283,7 @@ class AppCoordinator(QObject):
             lambda: str(getattr(window.current_world, "id", "")),
             window.timeline.get_playhead_time,
             lambda: window.calendar_converter,
+            self._batch_draft_warning,
         )
         self.event_timing.failed.connect(
             window.command_coordinator.on_graph_preflight_failure
@@ -376,7 +378,7 @@ class AppCoordinator(QObject):
             ):
                 return (
                     f"Save or discard changes in the {kind.title()} Editor first "
-                    "and wait for any pending save. Your draft and checks are retained."
+                    "and wait for any pending save."
                 )
         return ""
 

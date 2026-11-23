@@ -1,13 +1,20 @@
 """Scope persistence and presentation without canonical history changes."""
 
 from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 import pytest
-from PySide6.QtCore import QObject, QSettings
-from PySide6.QtWidgets import QWidget
+from PySide6.QtCore import QObject, QSettings, Qt, Signal
+from PySide6.QtWidgets import QMessageBox, QWidget
 
+from src.app.coordinators.app_coordinator import AppCoordinator
 from src.app.coordinators.authoring_scope_coordinator import AuthoringScopeCoordinator
 from src.app.coordinators.context_tag_coordinator import ContextTagCoordinator
+from src.app.coordinators.graph_authoring import (
+    GraphAuthoring,
+    GraphSubmission,
+    SavedGraphConnection,
+)
 from src.app.coordinators.scoped_history import ScopedHistory
 from src.core.authoring_scope import AuthoringScope
 from src.core.entities import Entity
@@ -85,6 +92,36 @@ def test_follow_scope_and_explicit_custom_survive_reopen(tmp_path):
     assert restored.is_active
 
 
+def test_context_tags_bind_after_world_selection(tmp_path):
+    owner = QObject()
+    owner.current_world = None
+    settings = QSettings(str(tmp_path / "context.ini"), QSettings.Format.IniFormat)
+    settings.setValue("worlds/default/context_tags/v1/policy", "custom")
+    settings.setValue("worlds/default/context_tags/v1/custom_active", True)
+    settings.setValue("worlds/default/context_tags/v1/last_tags", '["Wrong world"]')
+
+    tags = ContextTagCoordinator(owner, settings)
+    assert not tags.is_active
+    tags.bind_world("one")
+    tags.set_scope_defaults(("Scope One",))
+    tags.set_available_tags(["Scope One"])
+    assert tags.snapshot()["tags"] == ["Scope One"]
+    tags.save_tags(["Custom One"])
+    tags.enable()
+
+    tags.bind_world("two")
+    tags.set_scope_defaults(("Scope Two",))
+    tags.set_available_tags(["Scope Two"])
+    assert tags.snapshot()["policy"] == "follow"
+    assert tags.snapshot()["tags"] == ["Scope Two"]
+
+    restored = ContextTagCoordinator(owner, settings)
+    restored.bind_world("one")
+    assert restored.snapshot()["policy"] == "custom"
+    assert restored.snapshot()["tags"] == ["Custom One"]
+    assert restored.is_active
+
+
 def test_explorer_intersects_local_search_and_preserves_active_pin(qtbot):
     explorer = UnifiedListWidget()
     qtbot.addWidget(explorer)
@@ -142,6 +179,136 @@ def test_connection_dialog_preserves_pending_input_and_protects_mentions(qtbot):
     dialog.set_pending(False, "Rejected")
     assert dialog.save.isEnabled()
     assert dialog.type_field.currentText() == "related"
+
+
+class _GraphSignals(QObject):
+    changed = Signal(object)
+    graph_command_finished = Signal(object)
+    navigation_result = Signal(str, str, str)
+    history_loaded = Signal(dict)
+
+
+@pytest.fixture
+def graph_authoring(qtbot):
+    graph = GraphWidget()
+    qtbot.addWidget(graph)
+    signals = _GraphSignals(graph)
+    source = Entity("Scout", "Character", attributes={"_tags": ["Scope"]})
+    target = Event("Outside", 1.0)
+    graph.display_graph([{"id": source.id, "name": source.name}], [])
+    data = SimpleNamespace(
+        cached_entities=[source], cached_events=[target], cached_tags=["Scope"]
+    )
+    scope = SimpleNamespace(
+        scope=AuthoringScope(("Scope",)), revision=1, changed=signals.changed
+    )
+    event_editor = SimpleNamespace(
+        current_event_id=target.id,
+        has_unsaved_changes=MagicMock(return_value=False),
+        save_pending=False,
+    )
+    entity_editor = SimpleNamespace(current_entity_id=None)
+    window = SimpleNamespace(event_editor=event_editor, entity_editor=entity_editor)
+    app = SimpleNamespace(main_window=window)
+    commands = SimpleNamespace(
+        graph_command_finished=signals.graph_command_finished,
+        execute_command=MagicMock(),
+    )
+    coordinator = GraphAuthoring(
+        graph,
+        data,
+        scope,
+        SimpleNamespace(restore_graph_recovery=MagicMock()),
+        commands,
+        signals,
+        signals,
+        lambda: "world",
+        lambda: 0.0,
+        lambda: None,
+        lambda targets: AppCoordinator._batch_draft_warning(app, targets),
+    )
+    coordinator.pair_requested.disconnect()
+    return coordinator, source, target, commands, event_editor
+
+
+def test_cancelled_pair_reply_cannot_populate_new_draft(graph_authoring):
+    coordinator, source, target, *_ = graph_authoring
+    coordinator.begin({"source": source.id, "target": target.id})
+    obsolete = coordinator._pair_requests["draft"]
+    coordinator._dialog.reject()
+    coordinator.begin({"source": source.id})
+    current = coordinator._dialog
+    current.set_target("New entry")
+
+    coordinator._on_pair({"request": obsolete, "rows": [{}]})
+
+    assert current.existing.count() == 1
+    assert not current.edit_button.isEnabled()
+    assert not coordinator._pair_requests
+
+
+def test_failed_pair_lookup_retries_in_place(graph_authoring, qtbot, theme_delivery):
+    coordinator, source, target, *_ = graph_authoring
+    coordinator.begin({"source": source.id, "target": target.id})
+    dialog = coordinator._dialog
+    dialog.resize(380, dialog.height())
+    dialog.type_field.setCurrentText("related")
+    dialog.direction.setCurrentIndex(1)
+    request = coordinator._pair_requests["draft"]
+    coordinator._on_pair({"request": request, "error": "Could not load."})
+    assert dialog.retry.isVisible()
+    assert dialog.focusWidget() is dialog.retry
+    assert not dialog.save.isEnabled()
+    assert not dialog.edit_button.isEnabled()
+
+    with qtbot.waitSignal(coordinator.pair_requested) as emitted:
+        qtbot.keyClick(dialog.focusWidget(), Qt.Key.Key_Return)
+    (retry,) = emitted.args
+    assert retry["id"] != request["id"]
+    assert (retry["source"], retry["target"]) == (source.id, target.id)
+    assert not dialog.retry.isVisible()
+    assert not dialog.save.isEnabled()
+    coordinator._on_pair({"request": request, "error": "Obsolete failure."})
+    assert not dialog.retry.isVisible()
+    coordinator._on_pair({"request": retry, "rows": []})
+    assert dialog.save.isEnabled()
+    assert dialog.type_field.currentText() == "related"
+    assert dialog.direction.currentData() == "reverse"
+    assert dialog.error.text() == ""
+
+
+def test_tag_scope_membership_checks_editor_before_and_after_confirmation(
+    graph_authoring, monkeypatch
+):
+    coordinator, source, target, commands, editor = graph_authoring
+    submission = GraphSubmission(
+        "connection", coordinator._context(), source.id, target.id, None, None
+    )
+    coordinator._feedback = SavedGraphConnection(submission, frozenset(), target.id)
+    confirm = MagicMock()
+    monkeypatch.setattr(QMessageBox, "question", confirm)
+    editor.has_unsaved_changes.return_value = True
+    coordinator.add_to_tag_scope()
+    confirm.assert_not_called()
+    commands.execute_command.assert_not_called()
+    assert "Event Editor" in coordinator._view.feedback.caption.text()
+
+    def start_save(*_args):
+        editor.save_pending = True
+        return QMessageBox.StandardButton.Yes
+
+    editor.has_unsaved_changes.return_value = False
+    confirm.side_effect = start_save
+    coordinator.add_to_tag_scope()
+    confirm.assert_called_once()
+    commands.execute_command.assert_not_called()
+    assert coordinator._feedback.outside == target.id
+
+    editor.save_pending = False
+    confirm.side_effect = None
+    confirm.return_value = QMessageBox.StandardButton.Yes
+    coordinator.add_to_tag_scope()
+    commands.execute_command.assert_called_once()
 
 
 def test_graph_reveal_respects_world_scope_and_temporal_presentation(qtbot):

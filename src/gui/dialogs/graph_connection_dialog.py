@@ -27,6 +27,7 @@ class GraphConnectionDialog(QDialog):
     target_requested = Signal(str)
     save_requested = Signal(str, str, bool)
     edit_requested = Signal(dict)
+    retry_pair_requested = Signal()
 
     def __init__(self, source: str, types: list[str], parent: QWidget) -> None:
         """Expose direct manipulation and keyboard workflows through one draft."""
@@ -101,6 +102,12 @@ class GraphConnectionDialog(QDialog):
         self.error.setAccessibleName("Graph draft status")
         layout.addWidget(self.error)
         actions = ActionFlowLayout()
+        self.retry = declare_inspection(
+            StandardButton("Retry Relationship Lookup"),
+            "graph-retry-pair|graph.exploring|help-inspect-graph-retry-pair",
+        )
+        self.retry.clicked.connect(self.retry_pair_requested)
+        self.retry.hide()
         self.cancel_button = StandardButton("Cancel")
         self.cancel_button.clicked.connect(self.reject)
         self.save = declare_inspection(
@@ -108,6 +115,7 @@ class GraphConnectionDialog(QDialog):
             "graph-save-relationship|graph.exploring|help-inspect-graph-save-relationship",
         )
         self.save.clicked.connect(self._submit)
+        actions.addWidget(self.retry)
         actions.addWidget(self.cancel_button)
         actions.addWidget(self.save)
         layout.addLayout(actions)
@@ -150,8 +158,23 @@ class GraphConnectionDialog(QDialog):
     def pair_ready(self, rows: list[tuple[str, dict]]) -> None:
         """Allow saving after canonical relationship inspection has completed."""
         self._awaiting_relations = False
+        self.error.clear()
         self.set_relations(rows)
         self.type_field.setFocus()
+
+    def pair_loading(self) -> None:
+        """Retry the same pair while keeping the user's relationship fields."""
+        self.retry.hide()
+        self.error.clear()
+        self.set_relations([])
+        self.type_field.setFocus()
+
+    def pair_failed(self, message: str) -> None:
+        """Offer a local retry while relationship creation remains blocked."""
+        self.existing.setItemText(0, "Lookup failed")
+        self.error.setText(message)
+        self.retry.show()
+        self.retry.setFocus()
 
     def set_pending(self, pending: bool, message: str = "") -> None:
         """Lock submitted controls while retaining recoverable input."""

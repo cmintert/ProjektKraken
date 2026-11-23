@@ -9922,13 +9922,23 @@
       "kind": "PrimaryButton"
     },
     {
+      "id": "graph-retry-pair",
+      "topic_id": "graph.exploring",
+      "target": "help-inspect-graph-retry-pair",
+      "source": "src/gui/dialogs/graph_connection_dialog.py",
+      "symbol": "GraphConnectionDialog.__init__",
+      "binding": "self.retry",
+      "label": "Retry Relationship Lookup",
+      "kind": "StandardButton"
+    },
+    {
       "id": "graph-add-to-adventure",
       "topic_id": "graph.exploring",
       "target": "help-inspect-graph-add-to-adventure",
       "source": "src/gui/widgets/graph_view/graph_feedback.py",
       "symbol": "GraphFeedback.__init__",
       "binding": "self.membership",
-      "label": "Add to Adventure",
+      "label": "Add to Tag Scope",
       "kind": "StandardButton"
     },
     {
@@ -18028,14 +18038,14 @@
     {
       "source": "src/gui/dialogs/graph_connection_dialog.py",
       "symbol": "GraphConnectionDialog.__init__",
-      "sha256": "334f53519c3119f6762e0d4a034ecaba97e2e1145cc682b64874daddb6fd6d64",
-      "review_note": "KRT-184. An optional fixed start captures the viewing date. Create Relationship saves the draft and new endpoint together."
+      "sha256": "404c8f5ae27eb4f9439eeffb6aeb9c76f76d5da6f0a4e436a92d3e81617b12b0",
+      "review_note": "KRT-184. Fixed start captures the viewing date. Create Relationship saves the draft and new endpoint together. A failed pair lookup offers a retry in the same draft."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_feedback.py",
       "symbol": "GraphFeedback.__init__",
-      "sha256": "37811bb0c98237b79e2b9e5c06b9f5bb10d6a48a94e54ab4e4f531520a418daa",
-      "review_note": "KRT-184. Add to Adventure previews a separate tag edit for an outside-scope endpoint."
+      "sha256": "d70d7466d52dacc6cc7df1af1fb3b984620da005101a60848e1df2ab98b0a1f8",
+      "review_note": "KRT-184. Add to Tag Scope previews a separate tag edit for an outside-scope endpoint."
     }
   ],
   "review_status": {

@@ -90,8 +90,7 @@ class ContextTagCoordinator(BaseCoordinator):
         super().__init__(main_window)
         self._settings = settings or QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         world = getattr(main_window, "current_world", None)
-        world_id = str(getattr(world, "id", "default") or "default")
-        self._settings_prefix = SETTINGS_CONTEXT_TAGS_PREFIX.format(world_id=world_id)
+        self._settings_prefix = ""
         self._remembered_tags: list[str] = []
         self._active = False
         self._policy = ""
@@ -101,6 +100,24 @@ class ContextTagCoordinator(BaseCoordinator):
         self._review_cleared_at = 0.0
         self._available_tags: list[str] = []
         self._items: dict[tuple[ItemType, str], Entity | Event] = {}
+        if world is not None:
+            self.bind_world(str(world.id))
+
+    def bind_world(self, world_id: str) -> None:
+        """Load creation settings after the active world has been resolved."""
+        if not world_id:
+            return
+        prefix = SETTINGS_CONTEXT_TAGS_PREFIX.format(world_id=world_id)
+        if prefix == self._settings_prefix:
+            return
+        self._settings_prefix = prefix
+        self._remembered_tags = []
+        self._scope_defaults = ()
+        self._pending.clear()
+        self._applications.clear()
+        self._review_cleared_at = 0.0
+        self._available_tags = []
+        self._items.clear()
         self._load_settings()
 
     @property
@@ -516,6 +533,8 @@ class ContextTagCoordinator(BaseCoordinator):
             logger.warning("Ignoring malformed context-tag recovery ledger")
 
     def _persist(self) -> None:
+        if not self._settings_prefix:
+            return
         if self._policy:
             self._settings.setValue(f"{self._settings_prefix}/policy", self._policy)
             self._settings.setValue(
