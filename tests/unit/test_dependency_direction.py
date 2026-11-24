@@ -273,8 +273,15 @@ def test_temporal_entity_edit_planning_is_independent_of_ui_and_persistence():
 def test_relation_preparation_has_only_pure_standard_library_dependencies(filename):
     """Keep wording and assessment reusable below GUI and persistence owners."""
     path = _SOURCE_ROOT / "core" / filename
+    # Endpoint safety shares the domain validator for temporal metadata.
+    core_dependencies = (
+        {"src.core.temporal_editing", "src.core.temporal_editing.supported_boundary"}
+        if filename == "relation_policy.py"
+        else set()
+    )
     assert all(
         module.split(".")[0] in {"collections", "dataclasses", "typing"}
+        or module in core_dependencies
         for _, module in _imported_modules(path)
     ), "Relation preparation must not acquire Qt, SQL, filesystem or lifecycle APIs"
     assert not any(
