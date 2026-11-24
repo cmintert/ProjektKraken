@@ -8,7 +8,7 @@ from copy import deepcopy
 from math import isfinite
 from typing import Any, Dict, Optional
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QAbstractButton,
     QButtonGroup,
@@ -28,7 +28,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.relation_presentation import form_type_choices
-from src.core.relation_vocabulary import Vocabulary, resolve_wording
+from src.core.relation_vocabulary import Vocabulary
 from src.core.temporal_context import TemporalResolutionContext
 from src.core.temporal_editing import edit_error, supported_boundary, updated_spec
 from src.core.temporal_window import resolve_temporal_window
@@ -39,6 +39,7 @@ from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.event_anchor_controls import EventAnchorControls
 from src.gui.widgets.event_offset_input import EventOffsetInput
 from src.gui.widgets.numeric_inputs import ScrollSafeDoubleSpinBox
+from src.gui.widgets.relation_guidance import RelationGuide, RelationTypeField
 from src.gui.widgets.relation_target import RelationTargetEdit
 from src.gui.widgets.standard_buttons import DestructiveButton, StandardButton
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
@@ -89,6 +90,7 @@ class RelationForm(QWidget):
         source_event_id: str | None = None,
         relation_vocabulary: Vocabulary | None = None,
         incoming: bool = False,
+        source_kind: str = "",
     ) -> None:
         """Initializes the dialog.
 
@@ -129,6 +131,10 @@ class RelationForm(QWidget):
         self._source_name = source_name or "Source"
         self._relation_vocabulary = relation_vocabulary or {}
         self._incoming = incoming
+        self._source_kind = source_kind or (
+            "event" if source_event_date is not None else ""
+        )
+        self._known_relation_types = self._relation_type_choices(known_types)
         self._initial_target_id = target_id
         self._initial_target_kind = target_kind.casefold() if target_kind else None
 
@@ -149,19 +155,16 @@ class RelationForm(QWidget):
 
         # 2. Relation Type
         self.type_edit = declare_inspection(
-            ScrollSafeComboBox(),
+            RelationTypeField(),
             "src-gui-widgets-relation-form-relationform-init-self-type-edit|relations.timing|help-inspect-src-gui-widgets-relation-form-relationform-init-self-type-edit",
         )
-        self.type_edit.addItems(self._relation_type_choices(known_types))
-        self.type_edit.setEditable(True)
         self.type_edit.setCurrentText(rel_type)
         self.form_layout.addRow("Type:", self.type_edit)
 
         # Live direction preview
-        self.preview_label = QLabel()
-        self.preview_label.setWordWrap(True)
-        self.preview_label.setStyleSheet(StyleHelper.get_preview_label_style())
-        self.form_layout.addRow("Preview:", self.preview_label)
+        self.relation_guide = RelationGuide()
+        self.preview_label = self.relation_guide.preview
+        self.form_layout.addRow("Preview:", self.relation_guide)
         self._update_preview()
 
         self.target_edit.textChanged.connect(self._update_preview)
@@ -813,21 +816,33 @@ class RelationForm(QWidget):
 
     def _update_preview(self) -> None:
         """Refresh the live direction preview label."""
-        target_text = self.target_edit.text().strip() or "Target"
-        rel = self.type_edit.currentText().strip() or "relation"
-        wording = resolve_wording(
+        target_text = self.target_edit.text().strip()
+        target_id = self.target_edit.resolve() or ""
+        target_kind = self._target_kind(target_id) or ""
+        self.type_edit.set_suggestions(
+            self._known_relation_types,
+            self._relation_vocabulary,
+            self._source_kind,
+            target_kind,
+        )
+        self.relation_guide.set_draft(
             {
-                "rel_type": rel,
+                "rel_type": self.type_edit.currentText().strip(),
                 "source_id": self._source_event_id or "",
-                "target_id": self._initial_target_id,
+                "target_id": target_id,
                 "source_name": self._source_name,
-                "target_name": target_text,
+                "target_name": target_text if target_id else "",
             },
             self._relation_vocabulary,
+            self._source_kind,
+            target_kind,
             incoming=self._incoming,
         )
-        self.preview_label.setTextFormat(Qt.TextFormat.PlainText)
-        self.preview_label.setText(wording.sentence or wording.assertion)
+
+    def set_relation_vocabulary(self, vocabulary: Vocabulary) -> None:
+        """Refresh guidance without staging authored changes."""
+        self._relation_vocabulary = vocabulary
+        self._update_preview()
 
     def _setup_boundary_choices(
         self,

@@ -2,6 +2,16 @@
   "schema_version": 1,
   "bindings": [
     {
+      "id": "relation-preview-other-entry",
+      "topic_id": "relations.create",
+      "target": "help-inspect-relation-preview-other-entry",
+      "source": "src/gui/widgets/relation_guidance.py",
+      "symbol": "RelationGuide.__init__",
+      "binding": "self.other",
+      "label": "View from other entry",
+      "kind": "StandardButton"
+    },
+    {
       "id": "map-smooth-path",
       "topic_id": "map.historical-geometry",
       "target": "help-inspect-map-smooth-path",
@@ -6519,7 +6529,7 @@
       "symbol": "RelationAuthoring._progressive_form",
       "binding": "self.meaning",
       "label": "Meaning",
-      "kind": "ScrollSafeComboBox"
+      "kind": "RelationTypeField"
     },
     {
       "id": "src-gui-widgets-relation-authoring-relationauthoring-progressive-form-self-reverse-button",
@@ -6609,7 +6619,7 @@
       "symbol": "RelationForm.__init__",
       "binding": "self.type_edit",
       "label": "Type:",
-      "kind": "ScrollSafeComboBox"
+      "kind": "RelationTypeField"
     },
     {
       "id": "src-gui-widgets-relation-form-relationform-init-self-weight-spin",
@@ -9979,6 +9989,12 @@
     "help-inspect-dialog-help"
   ],
   "source_reviews": [
+    {
+      "source": "src/gui/widgets/relation_guidance.py",
+      "symbol": "RelationGuide.__init__",
+      "sha256": "b96c07506974b7f4d221708428bca4a0b3c3b4151a502600d27e0a39b3120b1b",
+      "review_note": "KRT-72: The perspective action changes only the draft preview and exposes its opposite endpoint to keyboard users."
+    },
     {
       "source": "src/gui/widgets/analysis/_analysis_utils.py",
       "symbol": "make_analysis_table",
@@ -15807,14 +15823,14 @@
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._preview",
-      "sha256": "b0c4653ff2b4c6144bc20c0669a7d135e60a37957638be6e2c3fbc842e1ec559",
-      "review_note": "KRT-71: The preview resolves the endpoint perspective for the draft assertion."
+      "sha256": "2a4d4f81ddf3f541f28de927f06a85ff3a5160f85b09497351c110f4563fb58e",
+      "review_note": "KRT-72: The live draft resolves both perspectives and updates the endpoint guidance without saving."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._progressive_form",
-      "sha256": "b8365b96be103029a75339eeb5d47c76220f088dda1436f3db20d0b344595cd1",
-      "review_note": "KRT-71: The Meaning field shows stored keys for predictable editing."
+      "sha256": "3ee17cdbaa013456680a428476cd434ed43c9ab492aacb47a707647eb8fef52a",
+      "review_note": "KRT-72: The key field provides readable suggestions, and the preview can switch perspectives."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
@@ -15885,8 +15901,8 @@
     {
       "source": "src/gui/widgets/relation_form.py",
       "symbol": "RelationForm.__init__",
-      "sha256": "913d213ee3f0301e3b5f7036adc2e0a12d330be1cf456d5d45be3a89e78293a0",
-      "review_note": "KRT-71: The form accepts a detached vocabulary and the view perspective."
+      "sha256": "94d0f40caba51454cee492e86e657f609403025e1fe370e7b014d7d9f1a38edb",
+      "review_note": "KRT-72: The full editor uses the shared suggestion field and perspective preview."
     },
     {
       "source": "src/gui/widgets/relation_form.py",
@@ -15999,8 +16015,8 @@
     {
       "source": "src/gui/widgets/relation_form.py",
       "symbol": "RelationForm._update_preview",
-      "sha256": "b18c7b0a264d08070e66b81ecdc7d01474718fa9aa7f3d04084c5fea547ddf46",
-      "review_note": "KRT-71: The form preview resolves wording without editing the type field."
+      "sha256": "777b033b04071d748f6f3a3278356d1436a5fa38226457f6a1582089910e4767",
+      "review_note": "KRT-72: The preview uses the resolved draft endpoints and keeps the entered key."
     },
     {
       "source": "src/gui/widgets/relation_form.py",
@@ -18028,8 +18044,8 @@
     {
       "source": "src/gui/dialogs/graph_connection_dialog.py",
       "symbol": "GraphConnectionDialog.__init__",
-      "sha256": "fc123a8ddf5bf9deccf1d6d0201c6e84a555899b72dd515e0d8166caeb97a6f3",
-      "review_note": "KRT-70: The direction picker selects one canonical direction."
+      "sha256": "cf7224a50d7b0d812035fd59185482bee5e73b150b4c57bee71061a78b10f214",
+      "review_note": "KRT-72: The graph draft offers suggestions and a view from either proposed endpoint."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_feedback.py",

@@ -62,6 +62,10 @@ def _definitions(entries: list[Any]) -> dict[str, dict[str, str]]:
                 for field in (*required[1:], "forward_template", "reverse_template")
                 if isinstance(entry.get(field), str)
             }
+            for field in ("preferred_source_kind", "preferred_target_kind"):
+                kind = entry.get(field)
+                if kind in ("entity", "event"):
+                    result[key][field] = kind
     return result
 
 

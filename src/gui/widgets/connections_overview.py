@@ -77,6 +77,7 @@ class ConnectionsOverview(QWidget):
     navigate_requested = Signal(str)
     connect_requested = Signal(str)
     selection_changed = Signal(str)
+    relation_vocabulary_changed = Signal(dict)
 
     def __init__(self, kind: str, parent: QWidget | None = None) -> None:
         """Create one browser, with a guard supplied by its draft owner."""
@@ -281,6 +282,7 @@ class ConnectionsOverview(QWidget):
         """Refresh wording while preserving the selected assertion and draft."""
         if vocabulary != self.relation_vocabulary:
             self.relation_vocabulary = vocabulary
+            self.relation_vocabulary_changed.emit(dict(vocabulary))
             self._project()
 
     def _project(self) -> None:

@@ -1751,6 +1751,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
         dlg = RelationEditDialog(
             parent=self,
+            relation_vocabulary=self.connections.relation_vocabulary,
+            source_kind="event",
             playhead_time=getattr(self, "_relation_playhead_time", None),
             rel_type=rel_type,
             suggestion_items=getattr(self, "_suggestion_items", []),
@@ -1762,6 +1764,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             known_types=getattr(self, "_suggestion_types", []),
         )
 
+        dlg.bind_vocabulary(self.connections.relation_vocabulary_changed)
         if dlg.exec():
             target_id, rel_type, attributes = dlg.get_data()
             if target_id:
@@ -1811,6 +1814,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             parent=self,
             playhead_time=getattr(self, "_relation_playhead_time", None),
             relation_vocabulary=self.connections.relation_vocabulary,
+            source_kind=rel_data.get("source_kind")
+            or ("event" if rel_data.get("source_id") == self._current_event_id else ""),
             incoming=rel_data.get("source_id") != self._current_event_id,
             source_name=rel_data.get("source_name") or self.name_edit.text(),
             target_id=rel_data["target_id"],
@@ -1828,6 +1833,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             target_kind=rel_data.get("target_kind"),
         )
 
+        dlg.bind_vocabulary(self.connections.relation_vocabulary_changed)
         if dlg.exec():
             target_id, rel_type, attributes = dlg.get_data()
             if target_id:

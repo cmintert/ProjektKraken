@@ -224,9 +224,15 @@ class GraphAuthoring(QObject):
         draft = GraphDraft(self._world_id(), self._scope.revision, source, position)
         self._draft = draft
         dialog = GraphConnectionDialog(
-            entries[source].item.name, self._view.relation_types(), self._view
+            entries[source].item.name,
+            self._view.relation_types(),
+            self._view,
+            source_kind=entries[source].kind,
+            source_id=source,
         )
         self._dialog = dialog
+        dialog.set_relation_vocabulary(self._view.relation_vocabulary)
+        self._view.relation_vocabulary_changed.connect(dialog.set_relation_vocabulary)
         dialog.target_requested.connect(self._choose_target)
         dialog.save_requested.connect(self._save)
         dialog.edit_requested.connect(self._edit_existing)
@@ -329,7 +335,7 @@ class GraphAuthoring(QObject):
             values = {**values, "id": str(uuid4())}
             draft.target = values["id"]
             draft.creation_kind, draft.creation_data = kind, values
-            self._dialog.set_target(values["name"])
+            self._dialog.set_target(values["name"], kind=kind, identity=draft.target)
             self._dialog.type_field.setFocus()
 
     def _connect_existing(self, draft: GraphDraft, identity: str) -> None:
@@ -341,7 +347,13 @@ class GraphAuthoring(QObject):
             title = entry.item.name
             if not self._scope.scope.matches(entry.item.tags):
                 title += " (outside scope)"
-            self._dialog.set_target(title, awaiting_relations=True)
+            self._dialog.set_target(
+                title,
+                awaiting_relations=True,
+                kind=entry.kind,
+                identity=identity,
+                name=entry.item.name,
+            )
             self._request_pair(draft.source, identity, "draft")
 
     def _retry_draft_pair(self) -> None:
@@ -477,6 +489,7 @@ class GraphAuthoring(QObject):
             target_kind=target.kind,
             rel_type=row["rel_type"],
             relation_vocabulary=self._view.relation_vocabulary,
+            source_kind=source.kind,
             attributes=row.get("attributes"),
             known_types=self._view.relation_types(),
             suggestion_items=[(target.item.id, target.item.name, target.kind)],
@@ -486,6 +499,7 @@ class GraphAuthoring(QObject):
                 self._data.cached_events, calendar
             ),
         )
+        form.bind_vocabulary(self._view.relation_vocabulary_changed)
         form.target_edit.setReadOnly(True)
         self._auxiliary = form
         accepted = form.exec() == QDialog.DialogCode.Accepted

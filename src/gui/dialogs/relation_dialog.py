@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from PySide6.QtCore import SignalInstance
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
     QMessageBox as QMessageBox,
@@ -55,6 +56,12 @@ class RelationEditDialog(HelpAwareDialog):
         if form is not None:
             return getattr(form, name)
         raise AttributeError(name)
+
+    def bind_vocabulary(self, changed: SignalInstance) -> None:
+        """Refresh the live dialog only while its draft is open."""
+        update = self.form.set_relation_vocabulary
+        changed.connect(update)
+        self.finished.connect(lambda _result: changed.disconnect(update))
 
     def accept(self) -> None:
         """Commit only after validating the shared form."""

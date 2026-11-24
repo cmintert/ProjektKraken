@@ -329,6 +329,9 @@ start another connection and choose the type and direction for that fact.
 
 The graph uses the world's forward wording for a defined relation type. Type
 filters show that wording and add the saved type when two choices share a label.
+In the creation draft, search and select a type or enter your own. Use
+**View from [entry]** to inspect the wording before saving. Use
+**Direction** when you want to change which entry is the source.
 
 (help-inspect-graph-retry-pair)=
 

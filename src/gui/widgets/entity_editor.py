@@ -1355,12 +1355,15 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         dlg = RelationEditDialog(
             parent=self,
+            relation_vocabulary=self.connections.relation_vocabulary,
+            source_kind="entity",
             calendar_converter=getattr(self, "_relation_calendar", None),
             playhead_time=getattr(self, "_relation_playhead_time", None),
             suggestion_items=getattr(self, "_suggestion_items", []),
             known_types=getattr(self, "_suggestion_types", []),
         )
 
+        dlg.bind_vocabulary(self.connections.relation_vocabulary_changed)
         if dlg.exec():
             target_id, rel_type, attributes = dlg.get_data()
             if target_id:
@@ -1422,6 +1425,10 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             calendar_converter=getattr(self, "_relation_calendar", None),
             playhead_time=getattr(self, "_relation_playhead_time", None),
             relation_vocabulary=self.connections.relation_vocabulary,
+            source_kind=rel_data.get("source_kind")
+            or (
+                "entity" if rel_data.get("source_id") == self._current_entity_id else ""
+            ),
             incoming=rel_data.get("source_id") != self._current_entity_id,
             source_name=rel_data.get("source_name") or self.name_edit.text(),
             target_id=rel_data["target_id"],
@@ -1432,6 +1439,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             known_types=getattr(self, "_suggestion_types", []),
         )
 
+        dlg.bind_vocabulary(self.connections.relation_vocabulary_changed)
         if dlg.exec():
             target_id, rel_type, attributes = dlg.get_data()
             if target_id:

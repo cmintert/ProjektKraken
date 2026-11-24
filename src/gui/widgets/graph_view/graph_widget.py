@@ -67,6 +67,7 @@ class GraphWidget(QWidget):
     connection_requested = Signal(dict)
     interaction_changed = Signal()
     snapshot_presented = Signal()
+    relation_vocabulary_changed = Signal(dict)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the GraphWidget.
@@ -774,6 +775,7 @@ class GraphWidget(QWidget):
         if vocabulary == self._relation_vocabulary:
             return
         self._relation_vocabulary = vocabulary
+        self.relation_vocabulary_changed.emit(dict(vocabulary))
         self.set_available_relation_types(self._available_rel_types)
         if self._all_nodes:
             self._refresh_display_locally(self._last_focus_node_id)

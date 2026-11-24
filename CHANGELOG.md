@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-24
-**Commit:** 4b02cb00
+**Commit:** eff4a2df
 ---
 
 # Changelog
@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-11-24)* **Relation authoring (KRT-72)**: Added searchable type
+  suggestions, a preview from either entry, and inline endpoint and lifecycle
+  guidance. Preserved free-text types and one-step loose capture. Updated Help
+  and added mouse, keyboard, and narrow-layout regression coverage.
 
 - *(2026-11-24)* **Relation wording (KRT-71)**: Added directional wording from
   saved world definitions to Connections, relation previews, GraphView,

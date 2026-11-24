@@ -440,6 +440,41 @@ def test_editable_display_caption_does_not_rewrite_stable_type_on_notes_edit(ins
     assert requests[0]["rel_type"] == "member_of"
 
 
+def test_narrow_perspective_switch_and_popup_escape_keep_inline_draft(inspector, qtbot):
+    inspector.resize(360, 720)
+    inspector.connections.set_relation_vocabulary(
+        {
+            "member_of": {
+                "forward_label": "Member of",
+                "reverse_label": "Members",
+                "forward_template": "{source} is a member of {target}.",
+                "reverse_template": "{target} has {source} as a member.",
+            }
+        }
+    )
+    refresh(inspector, [saved(0, "member_of")])
+    inspector.connections.select_relation("relation-0")
+    inspector.connections.edit_selected()
+    panel = inspector.relation_authoring
+    guide = panel.form.relation_guide
+    assert guide.preview.text() == "Tasgillia is a member of House 0."
+    button = guide.other
+    button.setFocus()
+    qtbot.keyClick(button, Qt.Key.Key_Space)
+    assert guide.preview.text() == "House 0 has Tasgillia as a member."
+    assert not panel.reversed and not panel.is_dirty()
+
+    line = panel.meaning.lineEdit()
+    line.setFocus()
+    line.selectAll()
+    qtbot.keyClicks(line, "Member of")
+    popup = panel.meaning.completer().popup()
+    qtbot.waitUntil(popup.isVisible)
+    qtbot.keyClick(line, Qt.Key.Key_Escape)
+    assert not popup.isVisible()
+    assert panel.form.type_edit.currentText() == "Member of"
+
+
 def test_editor_heading_is_plain_and_empty_meaning_stays_local(inspector):
     refresh(inspector, [saved(0)])
     inspector.connections.select_relation("relation-0")

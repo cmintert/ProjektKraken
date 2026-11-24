@@ -410,6 +410,17 @@ show the same relation and timing. Without a definition, Connections displays
 the saved type in the original direction. The relation editor shows the saved
 type in **Meaning** and the resolved wording in its preview.
 
+When you refine a connection, search **Meaning** by its saved type or its
+label. Choose a suggestion to fill in the saved type, or type your own phrase.
+If a type usually connects different kinds of entries, the preview explains
+the preference. You can still apply a valid relation.
+
+(help-inspect-relation-preview-other-entry)=
+
+**View from [entry]** shows how the same draft reads from the named entry.
+Use the same button to switch back. The direction and timing of the draft
+stay the same when you switch views.
+
 Relations record named, directional connections between Events and Entities. Use them
 when you want to express something beyond a value or a reference in prose.
 
