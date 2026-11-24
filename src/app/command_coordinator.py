@@ -47,6 +47,7 @@ class CommandCoordinator(QObject):
     clear_persistent_history_requested = Signal()
     history_changed = Signal(list, list)  # (undo_snapshots, redo_snapshots)
     command_preparing = Signal(object)  # Main-thread intent enrichment only
+    graph_command_finished = Signal(object)
 
     def __init__(self, main_window: "MainWindowProtocol") -> None:
         """Initialize the command coordinator.
@@ -321,6 +322,9 @@ class CommandCoordinator(QObject):
         """
         if not self._accept_result_trace(result):
             return
+        from src.core.command import is_graph_connection_result
+
+        graph_result = is_graph_connection_result(result)
         is_undo_redo = result.command_name.startswith(
             (
                 "Undo_",
@@ -328,25 +332,7 @@ class CommandCoordinator(QObject):
             )
         )
         if is_undo_redo:
-            self._undo_redo_in_progress = False
-            pending = self._pending_history_action
-            self._pending_history_action = None
-            if result.success and pending is not None:
-                action, pending_command = pending
-                canonical = self._restore_command(
-                    result.data.get("command_state"),
-                    pending_command,
-                )
-                if canonical is None:
-                    canonical = pending_command
-                if action == "undo" and self.undo_stack[-1:] == [pending_command]:
-                    self.undo_stack.pop()
-                    self.redo_stack.append(canonical)
-                elif action == "redo" and self.redo_stack[-1:] == [pending_command]:
-                    self.redo_stack.pop()
-                    self.undo_stack.append(canonical)
-                self._emit_history_changed()
-                self.log_stack_state()
+            self._apply_history_transition(result)
 
         command_id = str(result.data.get("command_id", ""))
         tracked_command = (
@@ -388,9 +374,16 @@ class CommandCoordinator(QObject):
                 self._emit_history_changed()
                 self.log_stack_state()
 
-            present_deletion_feedback(result, self.window)
+            if graph_result:
+                self.graph_command_finished.emit(result)
+            else:
+                present_deletion_feedback(result, self.window)
 
         else:
+            if graph_result:
+                self.graph_command_finished.emit(result)
+                if not is_undo_redo:
+                    return
             if not is_undo_redo and "temporal_dependencies" in result.data:
                 from PySide6.QtWidgets import QWidget
 
@@ -407,6 +400,34 @@ class CommandCoordinator(QObject):
                 return
             logger.debug("Command result failed: %s", result.command_name)
             self._show_error(result.message)
+
+    @Slot(object)
+    def on_graph_preflight_failure(self, result: "CommandResult") -> None:
+        """Return a timing preparation failure to its still-open graph draft."""
+        from src.core.command import is_graph_connection_result
+
+        if is_graph_connection_result(result):
+            self.graph_command_finished.emit(result)
+
+    def _apply_history_transition(self, result: "CommandResult") -> None:
+        self._undo_redo_in_progress = False
+        pending = self._pending_history_action
+        self._pending_history_action = None
+        if not result.success or pending is None:
+            return
+        action, pending_command = pending
+        canonical = (
+            self._restore_command(result.data.get("command_state"), pending_command)
+            or pending_command
+        )
+        if action == "undo" and self.undo_stack[-1:] == [pending_command]:
+            self.undo_stack.pop()
+            self.redo_stack.append(canonical)
+        elif action == "redo" and self.redo_stack[-1:] == [pending_command]:
+            self.redo_stack.pop()
+            self.undo_stack.append(canonical)
+        self._emit_history_changed()
+        self.log_stack_state()
 
     def log_stack_state(self) -> None:
         """Log a compact summary of the undo/redo stacks."""

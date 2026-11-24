@@ -683,6 +683,7 @@ class MainWindow(QMainWindow):
         self.navigation_coordinator.bind_peek_panel(self.wiki_peek_panel)
         self.app_coordinator.bind_wiki_links()
         self.app_coordinator.bind_date_navigation()
+        self.app_coordinator.bind_authoring_scope()
 
         self.ui_manager = UIManager(self)
 
@@ -786,6 +787,7 @@ class MainWindow(QMainWindow):
         )
         self.app_coordinator.bind_icon_library()
         self.app_coordinator.bind_event_timing()
+        self.app_coordinator.bind_graph_authoring()
         self.app_coordinator.bind_batch_metadata()
         self.app_coordinator.bind_settings()
         self.worker.command_finished.connect(
@@ -1176,7 +1178,7 @@ class MainWindow(QMainWindow):
 
         """
         return build_group_metadata(
-            self.data_coordinator.cached_events,
+            self.timeline.view.scoped_events(self.data_coordinator.cached_events),
             tag_order,
             self.grouping_manager.tag_colors,
             date_range,
@@ -1198,7 +1200,7 @@ class MainWindow(QMainWindow):
 
         """
         return events_for_group(
-            self.data_coordinator.cached_events,
+            self.timeline.view.scoped_events(self.data_coordinator.cached_events),
             tag_name,
             date_range,
         )

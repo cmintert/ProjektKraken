@@ -10,6 +10,8 @@ from pathlib import Path
 
 import pytest
 
+from scripts.check_package_world_data import runtime_entries
+
 pytestmark = pytest.mark.ci_fast
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -17,6 +19,22 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class WindowsPackageContractTests(unittest.TestCase):
     """Validate packaging inputs before the expensive PyInstaller build."""
+
+    def test_world_data_is_rejected_at_any_depth(self) -> None:
+        """Catch runtime folders, portable manifests, and exported worlds."""
+        private_paths = [
+            "ProjektKraken/worlds/",
+            "ProjektKraken/Logs/kraken.100.log",
+            "ProjektKraken\\_internal\\nested\\WORLDS\\asset.png",
+            "ProjektKraken/_internal/World.JSON",
+            "ProjektKraken/_internal/campaign.KRAKEN-wal",
+            "ProjektKraken/campaign.krakenworld",
+            "ProjektKraken/_internal/campaign.sqlite3",
+        ]
+        self.assertEqual(
+            runtime_entries(["ProjektKraken/ProjektKraken.exe", *private_paths]),
+            private_paths,
+        )
 
     def test_versions_match(self) -> None:
         """Require project and runtime versions to agree."""

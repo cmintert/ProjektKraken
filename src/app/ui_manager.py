@@ -140,6 +140,16 @@ class UIManager:
             menu_bar.addMenu("View"),
             "src-app-ui-manager-uimanager-create-view-menu-view-menu|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-view-menu-view-menu",
         )
+        scope = self.main_window.app_coordinator.scope
+        view_menu.addAction("Authoring Scope…", scope.edit)
+        view_menu.addAction(
+            "Context Tags Follow Scope",
+            self.main_window.app_coordinator.context_tags.follow_scope,
+        )
+        view_menu.addAction(
+            "Set Custom Context Tags…",
+            self.main_window.app_coordinator.context_tags.show_editor,
+        )
         panels_menu = declare_inspection(
             view_menu.addMenu("Panels"),
             "src-app-ui-manager-uimanager-create-view-menu-panels-menu|workspace.navigation|help-inspect-src-app-ui-manager-uimanager-create-view-menu-panels-menu",

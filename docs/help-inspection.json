@@ -9850,6 +9850,116 @@
       "binding": "self.writing_disclosure",
       "label": "Writing tools",
       "kind": "SupportingSectionHeader"
+    },
+    {
+      "id": "authoring-scope",
+      "topic_id": "explorer.browsing",
+      "target": "help-inspect-authoring-scope",
+      "source": "src/app/coordinators/authoring_scope_coordinator.py",
+      "symbol": "AuthoringScopeCoordinator.__init__",
+      "binding": "self.button",
+      "label": "Authoring Scope",
+      "kind": "StandardButton"
+    },
+    {
+      "id": "scope-visible-tags",
+      "topic_id": "explorer.browsing",
+      "target": "help-inspect-scope-visible-tags",
+      "source": "src/gui/dialogs/authoring_scope_dialog.py",
+      "symbol": "AuthoringScopeDialog.__init__",
+      "binding": "self.visible_tags",
+      "label": "Visible tags",
+      "kind": "QListWidget"
+    },
+    {
+      "id": "scope-creation-tags",
+      "topic_id": "explorer.browsing",
+      "target": "help-inspect-scope-creation-tags",
+      "source": "src/gui/dialogs/authoring_scope_dialog.py",
+      "symbol": "AuthoringScopeDialog.__init__",
+      "binding": "self.creation_tags",
+      "label": "Creation tags",
+      "kind": "QListWidget"
+    },
+    {
+      "id": "graph-connect",
+      "topic_id": "graph.exploring",
+      "target": "help-inspect-graph-connect",
+      "source": "src/gui/widgets/graph_view/graph_widget.py",
+      "symbol": "GraphWidget._setup_ui",
+      "binding": "self.connect_button",
+      "label": "Connect…",
+      "kind": "StandardButton"
+    },
+    {
+      "id": "graph-relayout",
+      "topic_id": "graph.exploring",
+      "target": "help-inspect-graph-relayout",
+      "source": "src/gui/widgets/graph_view/graph_widget.py",
+      "symbol": "GraphWidget._setup_ui",
+      "binding": "self.relayout_button",
+      "label": "Relayout",
+      "kind": "StandardButton"
+    },
+    {
+      "id": "graph-start-at-playhead",
+      "topic_id": "graph.exploring",
+      "target": "help-inspect-graph-start-at-playhead",
+      "source": "src/gui/dialogs/graph_connection_dialog.py",
+      "symbol": "GraphConnectionDialog.__init__",
+      "binding": "self.start_at_playhead",
+      "label": "Start at Playhead",
+      "kind": "QCheckBox"
+    },
+    {
+      "id": "graph-save-relationship",
+      "topic_id": "graph.exploring",
+      "target": "help-inspect-graph-save-relationship",
+      "source": "src/gui/dialogs/graph_connection_dialog.py",
+      "symbol": "GraphConnectionDialog.__init__",
+      "binding": "self.save",
+      "label": "Create Relationship",
+      "kind": "PrimaryButton"
+    },
+    {
+      "id": "graph-retry-pair",
+      "topic_id": "graph.exploring",
+      "target": "help-inspect-graph-retry-pair",
+      "source": "src/gui/dialogs/graph_connection_dialog.py",
+      "symbol": "GraphConnectionDialog.__init__",
+      "binding": "self.retry",
+      "label": "Retry Relationship Lookup",
+      "kind": "StandardButton"
+    },
+    {
+      "id": "graph-add-to-adventure",
+      "topic_id": "graph.exploring",
+      "target": "help-inspect-graph-add-to-adventure",
+      "source": "src/gui/widgets/graph_view/graph_feedback.py",
+      "symbol": "GraphFeedback.__init__",
+      "binding": "self.membership",
+      "label": "Add to Tag Scope",
+      "kind": "StandardButton"
+    },
+    {
+      "id": "timeline-hidden-history",
+      "topic_id": "timeline.viewing",
+      "target": "help-inspect-timeline-hidden-history",
+      "source": "src/gui/widgets/timeline/__init__.py",
+      "symbol": "TimelineWidget.__init__",
+      "binding": "self.history_reveal_button",
+      "label": "Show hidden history",
+      "kind": "QPushButton"
+    },
+    {
+      "id": "timeline-unplaced-history",
+      "topic_id": "timeline.viewing",
+      "target": "help-inspect-timeline-unplaced-history",
+      "source": "src/gui/widgets/timeline/__init__.py",
+      "symbol": "TimelineWidget.__init__",
+      "binding": "self.unplaced_history_button",
+      "label": "Open Unplaced History",
+      "kind": "QPushButton"
     }
   ],
   "factory_exemptions": [
@@ -9990,8 +10100,8 @@
     {
       "source": "src/app/ui_manager.py",
       "symbol": "UIManager.create_view_menu",
-      "sha256": "ab477a46ba4628fa70739d019442f8899539c979a81406aae1cb8c241379fb70",
-      "review_note": "KRT-94: View now exposes Next/Previous panel region; workspace keyboard prose documents focus-only movement and local Tab ownership. Existing panel/zone visibility meanings are unchanged."
+      "sha256": "fd0050724e9d4e8d4d28622847c9f6c1250008f443a117f0cf8fa78103efb8c9",
+      "review_note": "KRT-184. Adds visible routes for Authoring Scope and the independent Context Tag policy. Existing panel and zone controls retain their behavior."
     },
     {
       "source": "src/app/ui_manager.py",
@@ -10650,8 +10760,8 @@
     {
       "source": "src/commands/relation_commands.py",
       "symbol": "AddRelationCommand.execute",
-      "sha256": "1731be3de47cb4c3ed9b8e16170d7927a3c432ffcf1ef7332db5cc9fbee4a30f",
-      "review_note": "KRT-111: Fresh context rejects impossible authored intervals before persistence; existing direction and occurrence flags remain supported."
+      "sha256": "224f8eae36992d65aa46969a350d734ee160fb663b40dd1904024e555d589df6",
+      "review_note": "KRT-184. Reciprocal connections create two directed assertions and evaluate timing against each source. Existing relation meaning and type controls retain their wording."
     },
     {
       "source": "src/commands/relation_commands.py",
@@ -11215,8 +11325,8 @@
     {
       "source": "src/gui/dialogs/database_manager_dialog.py",
       "symbol": "DatabaseManagerDialog.__init__",
-      "sha256": "c14ebe8e5517b8a1d91a5a11d1ffd28438d408be29c6b46788d2374bbae24bc2",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "c9b6d5961caa871336523c7217f04ebb54c8cce371c1932f63a034bf2d034534",
+      "review_note": "The Worlds list uses a delegate to show the world name and locations. The Help excerpt explains how paths distinguish same-name worlds."
     },
     {
       "source": "src/gui/dialogs/database_manager_dialog.py",
@@ -11281,8 +11391,8 @@
     {
       "source": "src/gui/dialogs/database_manager_dialog.py",
       "symbol": "DatabaseManagerDialog._refresh_list",
-      "sha256": "b6b7bc0299bde7c603ded2e4d5aebb54786c896e6851b2a308085b5caab4825f",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "c7dc2277ae298e2a8d92aa9fde06494b23cb90031e9ff79f1c46d347204b6062",
+      "review_note": "Each world row supplies its folder and any linked database path. The Help excerpt describes the row content and retains the switching action."
     },
     {
       "source": "src/gui/dialogs/database_manager_dialog.py",
@@ -12749,8 +12859,8 @@
     {
       "source": "src/gui/widgets/context_tag_bar.py",
       "symbol": "ContextTagBar.set_state",
-      "sha256": "03298feef82be302ed9cb1c421c94defa2cad3f36903b415f6f31ee0fb215c1d",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "a5e7fd8551cd188b93d37080620d35b05692f684ce25877a6cf1eec5e6cc27a1",
+      "review_note": "KRT-184. The bar identifies Follow Scope, Custom Context Tags, and missing defaults. Review and cleanup still refer to recorded applied tags."
     },
     {
       "source": "src/gui/widgets/editor_presentation.py",
@@ -13373,26 +13483,26 @@
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
       "symbol": "GraphWidget.__init__",
-      "sha256": "734fab0d5fb64a3235973f8b6e94b07c08badfc6d8a479e968d027813be04b70",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate. Renderer recoloring retains filters, selection, camera and physics; the existing Refresh action still owns content refresh."
+      "sha256": "7c9ea8060629bb721f3876a754cb386c66526af10bed3645c413c472f10f58ed",
+      "review_note": "KRT-184. Retains the Graph view and adds session layout memory, visible actions, and saved relationship feedback."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
       "symbol": "GraphWidget._connect_internal_signals",
-      "sha256": "8f2a85591ca47160f66b6029762afd2821592a30bf1f4ece4e0b8c3e27f1219f",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "fe75fbcbdda59683ee7243fa9ad79a0660057f60e5309ff2547d8bfbdc427747",
+      "review_note": "KRT-184. Canvas authoring and empty-canvas clicks have their own routes. Node selection and filter actions retain their meanings."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
       "symbol": "GraphWidget._get_current_theme_config",
-      "sha256": "197af113b0db698afc2b8c29436ef1fdaefdc22c410ebd6ffdeff42c10b81dbb",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "cf12087d665e87c6604260703b86457e775f1d77614faaccd1441d721d4355d4",
+      "review_note": "KRT-184. Uses theme roles for the connection handle and existing Graph colors."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
       "symbol": "GraphWidget._on_graph_node_clicked",
-      "sha256": "422948f79022e2fb178eedaa4acc4fb4eac028b28d354b5ccb9403d161ac0e25",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "ffbb2150b8f76a4f878ac7764700ac5fba7abb50de20036a6623659f69b17aa2",
+      "review_note": "KRT-184. Selecting a visible node reveals adjacent uncertain edges and selects the corresponding entry. A new selection ends temporary saved-result feedback."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
@@ -13403,8 +13513,8 @@
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
       "symbol": "GraphWidget._on_search_text_changed",
-      "sha256": "f2864cdcf4fe9a1652cd32de22ca537922eb3ecf966babdbe524339359a654e9",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "26fb6f13fe19b6b3562a07eb3d09815545d64246616f26f77e09d59b5f805217",
+      "review_note": "KRT-184. Search continues to filter names in the Graph and ends a previous temporary result reveal."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
@@ -13415,14 +13525,14 @@
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
       "symbol": "GraphWidget._on_toolbar_filter_changed",
-      "sha256": "92d0e5c9707b3a23aaf47cd84ec68239979045817174ce1113b9060076201a25",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "0c59ef6dbf146d4ed09e992c240acd7acbb9abdeacafa3577ccc3f3b659409c0",
+      "review_note": "KRT-184. Toolbar filters retain their local selection and intersect with Authoring Scope."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
       "symbol": "GraphWidget._on_view_state_changed",
-      "sha256": "c8f5767a0d00a491e0ec286949216662ae7fd59e0d876162ab0bc48024338637",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "7659d63d367c91e26e03c9aeff2dc964a54cb307b86179161ea2dbfbeb2f063f",
+      "review_note": "KRT-184. The current session retains node positions, zoom and pan. These positions are restored as nodes return to the view."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
@@ -13439,14 +13549,14 @@
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
       "symbol": "GraphWidget._refresh_display_locally",
-      "sha256": "ae378cc7719e86d3ca20c4157787d4161b57e27121c36dadc11c4bc571adc06e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate. Renderer recoloring retains filters, selection, camera and physics; the existing Refresh action still owns content refresh."
+      "sha256": "f5135e81fb3bc5ba2420533537cb3e5dfa3febff10b108ca85b5a142b69b1f6a",
+      "review_note": "KRT-184. The displayed Graph intersects scope and local filters, with a temporary exception for an eligible saved edge. Relation timing remains authoritative."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
       "symbol": "GraphWidget._setup_ui",
-      "sha256": "8c6df29ff3e0b7694fe78ae3e45e28e616d2405c1a83bee3d109a1881be8f76b",
-      "review_note": "Reviewed panel inset/margin changes only in GraphWidget._setup_ui: existing control identities, labels, eligibility, keyboard actions, task destinations and authoring state are unchanged. Canonical control explanations remain accurate; no new interaction or exception is introduced."
+      "sha256": "5722d13536d64cfc0120024e39bc105bc0c8fe220fd65ef2604d3d08e695a7f0",
+      "review_note": "KRT-184. Connect opens the same draft as the canvas handle. Relayout explicitly recalculates positions."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
@@ -13463,8 +13573,8 @@
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
       "symbol": "GraphWidget.show_filter_dialog",
-      "sha256": "3ad39554f7018a07785598ba4c9c0e371efb6d4c640d18a83553a00d1a5d83ba",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "b1633b4e1f1550f0f1e4c98fd2cb1d8a4b2f80815f71fa244d2bf946ca4b9e8f",
+      "review_note": "KRT-184. Applying Graph filters preserves the world scope and dismisses any previous temporary result reveal."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
@@ -15947,8 +16057,8 @@
     {
       "source": "src/gui/widgets/relation_type_picker.py",
       "symbol": "RelationTypePicker._setup_ui",
-      "sha256": "2656a35c63896c6004d3fa56e536704000631ecb808a70d96c3e67fa53e8b21e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "626378b0748c335442e2dade11ebdd61f5d05decae8d628452b8d286374cce2f",
+      "review_note": "KRT-184. The existing editable relation-type choice shares search behavior with the Graph draft. OK and Cancel keep their original meanings."
     },
     {
       "source": "src/gui/widgets/relation_type_picker.py",
@@ -16511,8 +16621,8 @@
     {
       "source": "src/gui/widgets/timeline/__init__.py",
       "symbol": "TimelineWidget.__init__",
-      "sha256": "6d062ea2e828996c454ca3869775c316c84245763d3891f1792b678c013fffb3",
-      "review_note": "KRT-128: reviewed visible Adjust offset / Move chain menu, keyboard and overflow access, startup default and cancellation. Timeline Help explains retained units, precision and uncertainty, whole-calendar snapping, reviewed application and rejected unsupported moves. Existing navigation and dependency controls retain their meanings."
+      "sha256": "592bb5ff0c289a7885327c535dcc1f7b5e653c1fe991e716536edc95b40e91ff",
+      "review_note": "KRT-184. Adds context-dependent actions to reveal related history and open unplaced Events. The unplaced menu is available from narrow-toolbar overflow. Existing viewing and movement controls retain their meaning."
     },
     {
       "source": "src/gui/widgets/timeline/__init__.py",
@@ -17912,6 +18022,30 @@
       "symbol": "EditorPresentation._build_writing_disclosure",
       "sha256": "d492d46003105a35f047f7aa3410fa8485d65d7517bc6f4f9a4c6d27022092ca",
       "review_note": "KRT-179: Writing tools opens existing Summary and Draft with AI controls and retains their draft state."
+    },
+    {
+      "source": "src/app/coordinators/authoring_scope_coordinator.py",
+      "symbol": "AuthoringScopeCoordinator.__init__",
+      "sha256": "f819cfc3c23e11b4399a869088183ed660ea392770cd0af265f5da801a929a53",
+      "review_note": "KRT-184. Opens a world-specific scope editor from the status bar."
+    },
+    {
+      "source": "src/gui/dialogs/authoring_scope_dialog.py",
+      "symbol": "AuthoringScopeDialog.__init__",
+      "sha256": "9489fae5ca9d0b97351cc0e06fd86e8d0fcf9001b7249cc9e24a5b0e961bcd1f",
+      "review_note": "KRT-184. The visibility list sets ANY or ALL membership. Multi-tag ANY exposes an explicit creation-tag subset."
+    },
+    {
+      "source": "src/gui/dialogs/graph_connection_dialog.py",
+      "symbol": "GraphConnectionDialog.__init__",
+      "sha256": "404c8f5ae27eb4f9439eeffb6aeb9c76f76d5da6f0a4e436a92d3e81617b12b0",
+      "review_note": "KRT-184. Fixed start captures the viewing date. Create Relationship saves the draft and new endpoint together. A failed pair lookup offers a retry in the same draft."
+    },
+    {
+      "source": "src/gui/widgets/graph_view/graph_feedback.py",
+      "symbol": "GraphFeedback.__init__",
+      "sha256": "d70d7466d52dacc6cc7df1af1fb3b984620da005101a60848e1df2ab98b0a1f8",
+      "review_note": "KRT-184. Add to Tag Scope previews a separate tag edit for an outside-scope endpoint."
     }
   ],
   "review_status": {

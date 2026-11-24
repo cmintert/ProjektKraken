@@ -13,6 +13,7 @@ from PySide6.QtWidgets import QMessageBox, QProgressDialog, QWidget
 from src.commands.base_command import BaseCommand, CommandResult
 from src.commands.event_timing_commands import ApplyEventTimingPlanCommand
 from src.commands.event_timing_intents import request_for_command, timing_intent
+from src.commands.graph_connection_command import GraphConnectionCommand
 from src.gui.dialogs.event_timing_review_dialog import EventTimingReviewDialog
 from src.services.event_timing.planning import TimingChangePlan
 from src.services.event_timing.worker import (
@@ -190,7 +191,7 @@ class EventTimingCoordinator(QObject):
         self._reset()
         if command is not None:
             self._fail_command(command, message, cancelled=not show)
-        if show:
+        if show and not isinstance(command, GraphConnectionCommand):
             QMessageBox.warning(self._parent, "Timing changes not applied", message)
 
     def _reset(self) -> None:

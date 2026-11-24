@@ -36,6 +36,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QGraphicsLineItem, QGraphicsView, QSizePolicy, QWidget
 
+from src.core.authoring_scope import AuthoringScope
 from src.core.command import LoreMutationEffect
 from src.core.event_timing.presentation import (
     TemporalPresentation,
@@ -187,6 +188,9 @@ class TimelineView(QGraphicsView):
         self._standalone_anchors: dict[str, ResolvedTemporalBounds] | None = None
         self._event_items: dict[str, EventItem] = {}
         self._dependencies = TimelineDependencyLayer()
+        self._authoring_scope = AuthoringScope()
+        self._history_reveal: frozenset[str] = frozenset()
+        self._scope_source_events: list[Event] = []
         self._dependency_route_timer = QTimer(self)
         self._dependency_route_timer.setSingleShot(True)
         self._dependency_route_timer.timeout.connect(self._prepare_dependency_routes)
@@ -719,13 +723,17 @@ class TimelineView(QGraphicsView):
         self._layout_generation += 1
         self.viewport().update()
 
-    def set_events(self, events: list[Event]) -> None:
+    def set_events(
+        self, events: list[Event], *, preserve_playhead: bool = False
+    ) -> None:
         """Reconcile event items on the GUI thread, then request their layout."""
+        self._scope_source_events = list(events)
         self.movement.cancel()
         context = getattr(self, "_temporal_context", None)
         self._dependencies.set_world_events(
             context.events() if context is not None else events
         )
+        events = self.scoped_events(events)
         self._incremental_layout_timer.stop()
         self._clear_duplicates()
         self._standalone_anchors = None
@@ -777,7 +785,9 @@ class TimelineView(QGraphicsView):
         if not self.events and not self._recurring_events:
             self._empty_state.raise_()
         self.repack_events()
-        self._finish_event_replacement()
+        self._finish_event_replacement(
+            preserve_playhead=preserve_playhead or bool(self._authoring_scope.tags)
+        )
 
     @staticmethod
     def _standalone_presentations(
@@ -849,7 +859,7 @@ class TimelineView(QGraphicsView):
                     presentation=presentations.get(duplicate.event.id),
                 )
 
-    def _finish_event_replacement(self) -> None:
+    def _finish_event_replacement(self, *, preserve_playhead: bool = False) -> None:
         """Retain scene extent, initial fitting and initial playhead behavior."""
         sources = self._placed_event_sources()
         if not sources:
@@ -860,7 +870,7 @@ class TimelineView(QGraphicsView):
             item = self._event_items[event_id]
             line.setLine(item.x(), -self.RULER_HEIGHT, item.x(), item.y())
         self._update_scene_rect_from_events(sources)
-        if self._playhead._time == 0:
+        if self._playhead._time == 0 and not preserve_playhead:
             self.set_playhead_time(
                 (sources[0].require_date() + sources[-1].require_date()) / 2
             )
@@ -875,6 +885,17 @@ class TimelineView(QGraphicsView):
 
     def apply_event_effects(self, effects: list[LoreMutationEffect]) -> None:
         """Patch surviving items and coalesce geometric changes into one repack."""
+        updated = {event.id: event for event in self._scope_source_events}
+        for effect in effects:
+            event_id = effect["object_id"]
+            if effect["operation"] == "delete":
+                updated.pop(event_id, None)
+            elif (snapshot := effect["snapshot"]) is not None:
+                updated[event_id] = Event.from_dict(snapshot)
+        self._scope_source_events = list(updated.values())
+        if self._authoring_scope.tags:
+            self.set_events(self._scope_source_events)
+            return
         self.movement.cancel()
         self._standalone_anchors = None
         self._dependencies.apply_effects(effects)
@@ -933,6 +954,9 @@ class TimelineView(QGraphicsView):
             "tag:" + tag for tag in self._grouping_tag_order
         }
         self._lane_history.prepare({event.id for event in self.events}, scopes)
+        grouping_active = self._grouping_tag_order
+        if grouping_active and self._band_manager:
+            self._band_manager.refresh_occurrences(EventItem._calendar_converter)
         if not self.events:
             return
 
@@ -945,10 +969,7 @@ class TimelineView(QGraphicsView):
         effective_scale = self.scale_factor * self._current_zoom
 
         # Dispatch to swimlane layout if grouping is active
-        grouping_active = getattr(self, "_grouping_tag_order", None)
-
         if grouping_active and self._band_manager:
-            self._band_manager.refresh_occurrences(EventItem._calendar_converter)
             # Validate that bands actually exist - if not, clear stale state
             bands_exist = any(
                 self._band_manager.get_band(tag) for tag in grouping_active
@@ -2061,6 +2082,35 @@ class TimelineView(QGraphicsView):
         self._temporal_context = context
         self.set_events(context.view_events())
         self.update_events_temporal_state()
+
+    def scoped_events(self, events: list[Event]) -> list[Event]:
+        """Return the events to show using the complete chronology as input."""
+        return [
+            event
+            for event in events
+            if event.id in self._history_reveal
+            or self._authoring_scope.matches(event.tags)
+        ]
+
+    def set_authoring_scope(self, scope: AuthoringScope) -> None:
+        """Apply a presentation scope while retaining the canonical event set."""
+        if scope == self._authoring_scope:
+            return
+        self._authoring_scope = scope
+        self._history_reveal = frozenset()
+        self.set_events(self._scope_source_events, preserve_playhead=True)
+        self.update_band_metadata()
+
+    def reveal_history(self, event_ids: frozenset[str]) -> None:
+        """Temporarily show selected canonical events in the current scope."""
+        if event_ids != self._history_reveal:
+            self._history_reveal = event_ids
+            self.set_events(self._scope_source_events, preserve_playhead=True)
+            self.update_band_metadata()
+
+    def unplaced_event_ids(self) -> frozenset[str]:
+        """Return displayed Events with no resolved Timeline position."""
+        return frozenset(event.id for event in getattr(self, "_unplaced_events", ()))
 
     # -------------------------------------------------------------------------
     # Timeline Grouping Methods (Milestone 3)

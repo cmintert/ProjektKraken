@@ -249,7 +249,7 @@ class WorkerManager(QObject):
             self.window.data_handler.on_entity_details_loaded, connection_type
         )
         self.window.worker.command_finished.connect(
-            self.window.data_handler.on_command_finished, connection_type
+            self.window.data_coordinator.forward_command_result, connection_type
         )
         self.window.worker.operation_started.connect(
             self.update_status_message, connection_type

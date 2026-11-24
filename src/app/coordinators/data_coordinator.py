@@ -14,6 +14,7 @@ Handles:
 
 import logging
 from typing import TYPE_CHECKING, Optional, cast
+from uuid import uuid4
 
 from PySide6.QtCore import Q_ARG, Qt, QTimer, Signal, Slot
 from PySide6.QtWidgets import QMessageBox
@@ -26,13 +27,20 @@ from src.app.constants import (
 )
 from src.app.coordinators.base_coordinator import BaseCoordinator
 from src.app.qt_invocation import invoke_queued
-from src.core.command import LoreMutationEffect, parse_lore_mutation_effects
+from src.core.authoring_scope import AuthoringScope
+from src.core.command import (
+    CommandResult,
+    LoreMutationEffect,
+    is_graph_connection_result,
+    parse_lore_mutation_effects,
+)
 from src.core.entities import Entity
 from src.core.events import Event
 from src.core.summary_data import SummaryData
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
+    from src.services.worker import DatabaseWorker
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +57,9 @@ class DataCoordinator(BaseCoordinator):
     editor_hydrated = Signal(str, str)
     editor_hydration_failed = Signal(str, str)
     graph_temporal_requested = Signal(object, object, object)
+    scope_catalog_changed = Signal()
+    scope_relations_ready = Signal(str, str, list)
+    scope_items_changed = Signal()
 
     def __init__(self, main_window: "MainWindow") -> None:
         """Initialize the data coordinator.
@@ -70,7 +81,12 @@ class DataCoordinator(BaseCoordinator):
         self._graph_snapshot: tuple[list, list] | None = None
         self._graph_load_in_flight = False
         self._graph_dirty = True
-        self._graph_worker: object | None = None
+        self._graph_worker: DatabaseWorker | None = None
+        self._graph_session = str(uuid4())
+        self._scoped_graph = False
+        self._graph_scope = AuthoringScope()
+        self._scope_revision = 0
+        self._graph_request: dict[str, object] | None = None
         self._render_graph_when_hidden_once = False
         self._startup_datasets_pending = {"events", "entities"}
         self._startup_completion_emitted = False
@@ -236,6 +252,7 @@ class DataCoordinator(BaseCoordinator):
 
         """
         self._cached_events = events
+        self.scope_items_changed.emit()
         self.events_cache_changed.emit()
         self.main_window.event_editor.update_chronology_events(events)
         self.main_window.entity_editor.set_dated_events(
@@ -263,6 +280,7 @@ class DataCoordinator(BaseCoordinator):
 
         """
         self._cached_entities = entities
+        self.scope_items_changed.emit()
         self.main_window.unified_list.set_data(
             self._cached_events, self._cached_entities
         )
@@ -284,6 +302,8 @@ class DataCoordinator(BaseCoordinator):
 
         for effect in effects:
             self._patch_lore_cache(effect)
+        self._merge_committed_tags(effects)
+        self.scope_items_changed.emit()
         if any(effect["object_type"] == "event" for effect in effects):
             self.main_window.event_editor.update_chronology_events(self._cached_events)
             self.events_cache_changed.emit()
@@ -329,6 +349,20 @@ class DataCoordinator(BaseCoordinator):
             assert snapshot is not None
             self._cached_entities.append(Entity.from_dict(snapshot))
             self._cached_entities.sort(key=lambda entity: entity.name)
+
+    def _merge_committed_tags(self, effects: list[LoreMutationEffect]) -> None:
+        tags = set(self._cached_tags)
+        for effect in effects:
+            snapshot = effect["snapshot"]
+            if snapshot is not None:
+                raw = (snapshot.get("attributes") or {}).get("_tags")
+                if isinstance(raw, list):
+                    tags.update(tag for tag in raw if isinstance(tag, str))
+        additions = tags.difference(self._cached_tags)
+        if additions:
+            self._cached_tags.extend(sorted(additions, key=str.casefold))
+            self.scope_catalog_changed.emit()
+            self.load_completer_data()
 
     @Slot(str)
     def on_dataset_load_failed(self, dataset: str) -> None:
@@ -405,6 +439,8 @@ class DataCoordinator(BaseCoordinator):
         ):
             return
         self._event_relation_ids = self._relation_endpoint_ids(relations, incoming)
+        if isinstance(event, Event):
+            self.scope_relations_ready.emit("event", event.id, [*relations, *incoming])
         if preserve_document and editor.current_event_id == self._event_detail_id:
             editor._load_event_relations(relations, incoming)
             return
@@ -451,6 +487,10 @@ class DataCoordinator(BaseCoordinator):
         ):
             return
         self._entity_relation_ids = self._relation_endpoint_ids(relations, incoming)
+        if isinstance(entity, Entity):
+            self.scope_relations_ready.emit(
+                "entity", entity.id, [*relations, *incoming]
+            )
         map_widget = getattr(self.main_window, "map_widget", None)
         maps_data = map_widget.maps_data if map_widget is not None else []
         editor = self.main_window.entity_editor
@@ -498,6 +538,70 @@ class DataCoordinator(BaseCoordinator):
             self._render_cached_graph(allow_hidden=force_hidden_render)
             return
         self._schedule_graph_refresh()
+
+    def bind_scoped_graph(self) -> None:
+        """Route graph requests through the same revisioned worker pipeline."""
+        self._scoped_graph = True
+
+    @Slot(object)
+    def forward_command_result(self, result: CommandResult) -> None:
+        """Graph actions reach refresh handlers after command world validation."""
+        if not is_graph_connection_result(result):
+            self.main_window.data_handler.on_command_finished(result)
+
+    def apply_graph_command(self, result: CommandResult) -> None:
+        """Refresh after an accepted graph command in the current world."""
+        self.main_window.data_handler.on_command_finished(result)
+        if "lore_effects" not in result.data:
+            self._graph_revision += 1
+            self._graph_dirty = True
+            self._schedule_graph_refresh()
+
+    def on_graph_scope_changed(self, scope: AuthoringScope, revision: int) -> None:
+        """Invalidate Graph data without changing its local filters."""
+        self._graph_scope = scope
+        self._scope_revision = revision
+        self._graph_revision += 1
+        self._graph_dirty = True
+        self.main_window.graph_widget.set_authoring_scope(scope)
+        self._schedule_graph_refresh()
+
+    def _graph_request_identity(self) -> dict[str, object]:
+        return {
+            "world": str(getattr(self.main_window.current_world, "id", "")),
+            "database": str(self.main_window.db_path),
+            "session": self._graph_session,
+            "scope_revision": self._scope_revision,
+            "revision": self._graph_revision,
+            "request_id": str(uuid4()),
+        }
+
+    @Slot(dict)
+    def on_graph_snapshot_ready(self, snapshot: dict) -> None:
+        """Accept only the matching worker reply and release its request."""
+        request = snapshot.get("request")
+        if request is None or request != self._graph_request:
+            return
+        self._graph_request = None
+        if request["revision"] != self._graph_revision:
+            self._graph_load_in_flight = False
+            self._graph_request_revision = None
+            self._schedule_graph_refresh()
+            return
+        if request["world"] != str(
+            getattr(self.main_window.current_world, "id", "")
+        ) or request["database"] != str(self.main_window.db_path):
+            self._graph_load_in_flight = False
+            self._graph_request_revision = None
+            return
+        if "error" in snapshot:
+            self._graph_load_in_flight = False
+            self._graph_request_revision = None
+            self.main_window.status_bar.showMessage(snapshot["error"])
+            return
+        self.on_graph_metadata_ready(snapshot["tags"], snapshot["relation_types"])
+        self.on_graph_lexicon_ready(snapshot["lexicon"], snapshot["resolved_lexicon"])
+        self.on_graph_data_ready(snapshot["nodes"], snapshot["edges"])
 
     @Slot(list, list)
     def on_graph_metadata_ready(self, tags: list, rel_types: list) -> None:
@@ -695,6 +799,7 @@ class DataCoordinator(BaseCoordinator):
 
         """
         self._cached_tags = list(tags)
+        self.scope_catalog_changed.emit()
         self._cached_entity_types = list(entity_types)
         self.main_window.entity_editor.update_tag_suggestions(tags)
         self.main_window.entity_editor.update_attribute_suggestions(attr_keys)
@@ -839,7 +944,8 @@ class DataCoordinator(BaseCoordinator):
 
     def _request_graph_data(self, filter_config: Optional[dict] = None) -> None:
         """Submit the latest Graph revision unless another request is running."""
-        if self._graph_load_in_flight:
+        worker = self.main_window.worker
+        if self._graph_load_in_flight and self._graph_worker is worker:
             return
         if filter_config is None and self.main_window.graph_widget:
             filter_config = self.main_window.graph_widget.get_filter_config()
@@ -852,20 +958,35 @@ class DataCoordinator(BaseCoordinator):
             "lore_time": float(self.main_window.timeline.get_playhead_time()),
             "mode": graph.temporal_mode.currentData() if graph else "at_playhead",
         }
-        worker = self.main_window.worker
         if self._graph_worker is not worker:
             if self._graph_worker is not None:
                 self.graph_temporal_requested.disconnect()
+                if self._scoped_graph:
+                    self._graph_worker.graph_snapshot_ready.disconnect(
+                        self.on_graph_snapshot_ready
+                    )
             self.graph_temporal_requested.connect(
                 worker.load_graph_data, Qt.ConnectionType.QueuedConnection
             )
+            if self._scoped_graph:
+                worker.graph_snapshot_ready.connect(
+                    self.on_graph_snapshot_ready, Qt.ConnectionType.QueuedConnection
+                )
             self._graph_worker = worker
+        if self._scoped_graph:
+            self._graph_request = self._graph_request_identity()
+            context.update(
+                request=self._graph_request, scope=self._graph_scope.to_dict()
+            )
+            tags = rel_types = None
         self.graph_temporal_requested.emit(tags, rel_types, context)
 
     def on_graph_playhead_changed(self) -> None:
         """Invalidate the temporal graph snapshot and debounce worker evaluation."""
         self._graph_revision += 1
         self._graph_dirty = True
+        if self._scoped_graph:
+            self.main_window.graph_widget.authoring_context_changed()
         self._schedule_graph_refresh()
 
     def _render_cached_graph(self, *, allow_hidden: bool = False) -> None:

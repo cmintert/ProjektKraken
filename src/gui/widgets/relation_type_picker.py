@@ -24,6 +24,16 @@ from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
 logger = logging.getLogger(__name__)
 
 
+def relation_type_combo() -> ScrollSafeComboBox:
+    """Return the searchable type field shared by graph and drag authoring."""
+    combo = ScrollSafeComboBox()
+    combo.setEditable(True)
+    if (completer := combo.completer()) is not None:
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        completer.setFilterMode(Qt.MatchFlag.MatchContains)
+    return combo
+
+
 class RelationTypePicker(QWidget):
     """Popup widget for selecting relation types during drag operations.
 
@@ -119,10 +129,9 @@ class RelationTypePicker(QWidget):
 
         # Create combo box
         self.combo_box = declare_inspection(
-            ScrollSafeComboBox(),
+            relation_type_combo(),
             "src-gui-widgets-relation-type-picker-relationtypepicker-setup-ui-self-combo-box|relations.create|help-inspect-src-gui-widgets-relation-type-picker-relationtypepicker-setup-ui-self-combo-box",
         )
-        self.combo_box.setEditable(True)
         self.combo_box.addItems(self.relation_types)
 
         # Set default selection

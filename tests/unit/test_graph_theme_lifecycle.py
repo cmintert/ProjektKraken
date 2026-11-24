@@ -191,6 +191,150 @@ def _check_real_graph_theme(runtime, qtbot):
     view.shutdown()
 
 
+def _check_graph_authoring_renderer(qtbot):
+    """Exercise actual Vis datasets, bridge payloads, and scope restoration."""
+    from src.core.authoring_scope import AuthoringScope
+
+    widget = GraphWidget()
+    qtbot.addWidget(widget)
+    widget.resize(700, 500)
+    widget.show()
+    nodes = [
+        {
+            "id": "first",
+            "name": "Scout",
+            "object_type": "entity",
+            "tags": ["Adventure"],
+        },
+        {"id": "second", "name": "Faction", "object_type": "entity", "tags": ["Other"]},
+    ]
+    widget.display_graph(nodes, [])
+    view = widget._web_view
+    page = view._web_view.page()
+    qtbot.waitUntil(lambda: view._renderer_generation == view._page_generation)
+    qtbot.waitUntil(lambda: bool(widget._session_positions))
+    before = dict(widget._session_positions)
+    gestures = []
+    widget.connection_requested.connect(gestures.append)
+    assert _javascript(
+        page,
+        qtbot,
+        """(() => {
+            const graph = document.getElementById('mynetwork');
+            const handle = document.querySelector('.graph-connect-handle');
+            network.unselectAll();
+            network.redraw();
+            handle.setPointerCapture = () => {};
+            handle.hasPointerCapture = () => true;
+            const viewport = graph.getBoundingClientRect();
+            const center = network.canvasToDOM(network.getPosition('first'));
+            const x = viewport.left + center.x;
+            const y = viewport.top + center.y;
+            const move = (clientX, clientY) => {
+                const element = document.elementFromPoint(clientX, clientY);
+                element?.dispatchEvent(new PointerEvent('pointermove', {
+                    bubbles: true, clientX, clientY
+                }));
+            };
+            move(x, y);
+            if (handle.hidden || handle.dataset.source !== 'first') return false;
+            const initial = handle.getBoundingClientRect();
+            network.body.data.nodes.update({
+                id: 'first', label: 'Province of Harendun and its neighboring towns'
+            });
+            network.redraw();
+            const start = handle.getBoundingClientRect();
+            if (start.left !== initial.left || start.top !== initial.top) return false;
+            const handleX = start.left + start.width / 2;
+            for (let step = 1; step <= 20; step++) {
+                move(x + (handleX - x) * step / 20, y);
+                if (handle.hidden || handle.dataset.source !== 'first') return false;
+            }
+            if (document.elementFromPoint(handleX, y) !== handle) return false;
+            const target = network.canvasToDOM(network.getPosition('second'));
+            handle.dispatchEvent(new PointerEvent('pointerdown', {
+                button: 0, clientX: handleX, clientY: y
+            }));
+            handle.dispatchEvent(new PointerEvent('pointerup', {
+                button: 0, clientX: handleX, clientY: y
+            }));
+            handle.dispatchEvent(new MouseEvent('click', {detail: 1}));
+            handle.click();
+            handle.dispatchEvent(new PointerEvent('pointerdown', {
+                button: 0, clientX: handleX, clientY: y
+            }));
+            handle.dispatchEvent(new PointerEvent('pointermove', {
+                clientX: handleX, clientY: y + 25
+            }));
+            handle.dispatchEvent(new PointerEvent('pointerup', {
+                button: 0, clientX: handleX, clientY: y
+            }));
+            handle.dispatchEvent(new PointerEvent('pointerdown', {
+                button: 0, clientX: handleX, clientY: y
+            }));
+            handle.dispatchEvent(new PointerEvent('pointerup', {
+                button: 0, clientX: viewport.left + target.x,
+                clientY: viewport.top + target.y
+            }));
+            return network.getSelectedNodes().length === 0;
+        })()""",
+    )
+    qtbot.waitUntil(lambda: len(gestures) >= 3)
+    assert len(gestures) == 3
+    assert gestures[0]["source"] == "first" and not gestures[0].get("target")
+    assert gestures[1]["source"] == "first" and not gestures[1].get("target")
+    assert gestures[2]["source"] == "first" and gestures[2]["target"] == "second"
+
+    widget.seed_node("third", {"x": 108.0, "y": 54.0})
+    nodes.append(
+        {
+            "id": "third",
+            "name": "Council",
+            "object_type": "event",
+            "tags": ["Adventure"],
+        }
+    )
+    widget.display_graph(nodes, [])
+    qtbot.waitUntil(lambda: "third" in widget._session_positions)
+    assert {
+        identity: widget._session_positions[identity] for identity in before
+    } == before
+    assert widget._session_positions["third"] == {"x": 108, "y": 54}
+    widget.set_authoring_scope(AuthoringScope(("Adventure",)))
+    qtbot.waitUntil(
+        lambda: _javascript(
+            page, qtbot, "network.body.data.nodes.get('second') === null"
+        )
+    )
+    widget.set_authoring_scope(AuthoringScope())
+    qtbot.waitUntil(
+        lambda: _javascript(
+            page, qtbot, "Boolean(network.body.data.nodes.get('second'))"
+        )
+    )
+    assert (
+        json.loads(
+            _javascript(page, qtbot, "JSON.stringify(network.getPosition('second'))")
+        )
+        == before["second"]
+    )
+
+    _javascript(
+        page,
+        qtbot,
+        "network.selectNodes(['first']); network.emit('click', {nodes: ['first']})",
+    )
+    qtbot.waitUntil(lambda: widget._selected_graph_node == ("entity", "first"))
+    widget.display_graph(nodes, [], focus_node_id="third")
+    qtbot.waitUntil(
+        lambda: _javascript(page, qtbot, "network.getSelectedNodes()[0] === 'third'")
+    )
+    widget.connect_button.click()
+    assert gestures[-1] == {"source": "third", "source_kind": "event"}
+
+    view.shutdown()
+
+
 def test_real_graph_theme_in_isolated_process():
     # Native WebEngine must not run inside pytest-qt's shared teardown lifecycle.
     environment = dict(
@@ -239,4 +383,5 @@ if __name__ == "__main__":
                 _wait(app, predicate, timeout / 1000)
 
         _check_real_graph_theme(runtime, _Loop())
+        _check_graph_authoring_renderer(_Loop())
         runtime.close()

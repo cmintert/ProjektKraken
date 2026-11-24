@@ -228,6 +228,11 @@ jobs:
           name: ${{ needs.build-and-smoke.outputs.package_name }}
           path: release-assets
 
+      - name: Check candidate for world data
+        env:
+          PK_PACKAGE_NAME: ${{ needs.build-and-smoke.outputs.package_name }}
+        run: python -m scripts.check_package_world_data "release-assets/${PK_PACKAGE_NAME}.zip"
+
       - name: Create or update prerelease idempotently
         env:
           GH_TOKEN: ${{ github.token }}

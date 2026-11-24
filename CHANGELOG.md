@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-11-20
-**Commit:** b5b6a725
+**Last Updated:** 2026-11-24
+**Commit:** 0d548f8f
 ---
 
 # Changelog
@@ -11,7 +11,53 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- *(2026-11-23)* **Authoring (KRT-184)**: Added per-world tag scopes across
+  Explorer, Timeline, Relations, and Search, with independent creation tags and
+  a way to reveal relevant hidden history.
+- *(2026-11-23)* **Relations (KRT-184)**: Added drag and keyboard routes to
+  create relationships and connected entries. New entries and their links
+  share one undo step, and the graph retains node positions during authoring.
+
+### Fixed
+
+- *(2026-11-24)* **Scoped authoring (KRT-184)**: Used the focused graph node
+  as the Connect source, refreshed Timeline group counts and occurrence marks
+  after filtering, and persisted enabled creation tags from older settings.
+  Extended regression coverage for all three paths.
+
+- *(2026-11-23)* **Relations (KRT-184)**: Kept the connection handle beside the
+  node regardless of label width. Clicking opens a draft and dragging connects
+  to a target. Updated Graph Help and WebEngine regression coverage.
+
+- *(2026-11-23)* **Scoped authoring (KRT-184)**: Loaded creation-tag settings
+  for the active world and ignored relationship replies from canceled drafts.
+  Added in-place lookup retry and protected scope membership edits from
+  conflicting editor saves.
+
 ### Changed
+
+- *(2026-11-24)* **Windows packaging**: Logged the successful package
+  world-data check.
+
+- *(2026-11-23)* **World Manager Help**: Documented the displayed world folder
+  and linked database paths and recorded the two affected Help reviews.
+
+- *(2026-11-23)* **Relations and Help (KRT-184)**: Renamed the membership
+  action to Add to Tag Scope, documented retry, and added regression coverage
+  for world settings, stale replies, lookup failures, and editor save guards.
+
+- *(2026-11-23)* **Help and verification (KRT-184)**: Documented scoped
+  authoring and graph creation, added contextual Help and regression coverage,
+  and retired six legacy graph color exceptions.
+
+- *(2026-11-20)* **World Manager**: Emphasized world names and displayed actual
+  folder paths and linked database paths so same-name worlds can be distinguished.
+
+- *(2026-11-20)* **Windows packaging**: Rejected world data and runtime logs
+  in staged and release packages. Isolated world selection during smoke tests
+  and verified that a clean launch creates and reopens its own Default World.
 
 - *(2026-11-20)* **Windows packaging (KRT-181)**: Corrected the PyInstaller
   build hook for pycparser 3, which no longer uses PLY parser tables.

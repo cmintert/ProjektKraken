@@ -204,6 +204,22 @@ class TimelineWidget(QWidget):
         )
         self.dependency_control.set_mode(read_dependency_visibility(settings))
         self.action_toolbar.add_button(self.dependency_control, priority=20)
+        self.history_reveal_button = declare_inspection(
+            QPushButton("Show hidden history"),
+            "timeline-hidden-history|timeline.viewing|help-inspect-timeline-hidden-history",
+        )
+        self.action_toolbar.add_button(
+            self.history_reveal_button, priority=40, available=False
+        )
+        self.unplaced_history_button = declare_inspection(
+            QPushButton("Open Unplaced History"),
+            "timeline-unplaced-history|timeline.viewing|help-inspect-timeline-unplaced-history",
+        )
+        self.unplaced_history_menu = QMenu(self.unplaced_history_button)
+        self.unplaced_history_button.setMenu(self.unplaced_history_menu)
+        self.action_toolbar.add_button(
+            self.unplaced_history_button, priority=35, available=False
+        )
         self.drag_mode_control = declare_inspection(
             DragModeButton(self),
             "timeline.drag-mode|timeline.viewing|help-inspect-timeline-drag-mode",

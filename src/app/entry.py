@@ -74,6 +74,7 @@ def main() -> None:
     from src.app.main_window import MainWindow
     from src.app.package_smoke import (
         PackageSmokeController,
+        configure_package_smoke,
         parse_package_smoke_options,
     )
     from src.performance.probe import (
@@ -130,7 +131,9 @@ def main() -> None:
             app.setQuitOnLastWindowClosed(False)
         app.setOrganizationName(WINDOW_SETTINGS_KEY)
         app.setApplicationName(WINDOW_SETTINGS_APP)
-        if performance_probe_options is not None:
+        if package_smoke_options is not None:
+            configure_package_smoke(package_smoke_options)
+        elif performance_probe_options is not None:
             configure_performance_probe(performance_probe_options)
 
         # 1.5 Custom Tooltip Timing

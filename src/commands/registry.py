@@ -58,6 +58,7 @@ def _init_registry() -> None:
         ReplaceFeatureGeometryStatesCommand,
         UpdateFeatureBaseGeometryCommand,
     )
+    from src.commands.graph_connection_command import GraphConnectionCommand
     from src.commands.icon_library_commands import IconLibraryCommand
     from src.commands.image_commands import (
         AddImagesCommand,
@@ -139,6 +140,7 @@ def _init_registry() -> None:
             "ApplyChronologyCommand": ApplyChronologyCommand,
             "ApplyEventTimingPlanCommand": ApplyEventTimingPlanCommand,
             "CreateLifecycleEventCommand": CreateLifecycleEventCommand,
+            "GraphConnectionCommand": GraphConnectionCommand,
             "ChangeLifecycleAssociationCommand": ChangeLifecycleAssociationCommand,
             "CreateEventCommand": CreateEventCommand,
             "CreateNeighborRegionCommand": CreateNeighborRegionCommand,

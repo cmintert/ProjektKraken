@@ -31,6 +31,9 @@ class GraphBridge(QObject):
     node_clicked = Signal(str, str)  # (object_type, object_id)
     # Signal emitted when JS updates view state (scale, position)
     view_state_changed = Signal(dict)
+    connection_requested = Signal(dict)
+    background_clicked = Signal(int)
+    renderer_ready = Signal(int)
 
     @Slot(str, str)
     def nodeClicked(self, object_type: str, object_id: str) -> None:
@@ -41,6 +44,21 @@ class GraphBridge(QObject):
     def viewStateChanged(self, state: dict) -> None:
         """Called from JavaScript when view state changes."""
         self.view_state_changed.emit(state)
+
+    @Slot(dict)
+    def connectionRequested(self, intent: dict) -> None:
+        """Forward a detached canvas gesture for Qt-side validation."""
+        self.connection_requested.emit(intent)
+
+    @Slot(int)
+    def backgroundClicked(self, generation: int) -> None:
+        """Forward an empty-canvas click, separate from canvas movement."""
+        self.background_clicked.emit(generation)
+
+    @Slot(int)
+    def rendererReady(self, generation: int) -> None:
+        """Report that incremental updates can now reach this renderer."""
+        self.renderer_ready.emit(generation)
 
 
 class GraphWebView(QWidget):
@@ -57,6 +75,8 @@ class GraphWebView(QWidget):
     node_clicked = Signal(str, str)  # (object_type, object_id)
     view_state_changed = Signal(dict)
     theme_applied = Signal(int)
+    connection_requested = Signal(dict)
+    background_clicked = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the GraphWebView.
@@ -67,6 +87,9 @@ class GraphWebView(QWidget):
         """
         super().__init__(parent)
         self._page_generation = 0
+        self._renderer_generation: int | None = 0
+        self._pending_graph_update = ""
+        self._highlighted_relation_ids: list[str] = []
         self._theme_revision = 0
         self._pending_theme: dict[str, str] | None = None
         self._theme_nodes: list[dict[str, Any]] = []
@@ -84,11 +107,53 @@ class GraphWebView(QWidget):
         self._theme_timer.timeout.connect(self._try_theme)
         self._bridge = GraphBridge()
         self._bridge.node_clicked.connect(self.node_clicked.emit)
-        self._bridge.view_state_changed.connect(self.view_state_changed.emit)
+        self._bridge.view_state_changed.connect(self._accept_view_state)
+        self._bridge.connection_requested.connect(self._accept_connection)
+        self._bridge.background_clicked.connect(self._accept_background)
+        self._bridge.renderer_ready.connect(self._accept_renderer)
         self._setup_ui()
         self._theme_cover = QWidget(self)
         self._theme_cover.setAutoFillBackground(True)
         self._theme_cover.hide()
+
+    def _accept_view_state(self, state: dict) -> None:
+        if state.get("generation", self._page_generation) == self._page_generation:
+            self.view_state_changed.emit(state)
+
+    def _accept_connection(self, intent: dict) -> None:
+        if intent.get("generation") == self._page_generation:
+            self.connection_requested.emit(intent)
+
+    def _accept_background(self, generation: int) -> None:
+        if generation == self._page_generation:
+            self.background_clicked.emit()
+
+    def _accept_renderer(self, generation: int) -> None:
+        if generation == self._page_generation:
+            self._renderer_generation = generation
+            if self._pending_graph_update:
+                self._run_graph_script(self._pending_graph_update)
+                self._pending_graph_update = ""
+            self.highlight_relations(self._highlighted_relation_ids)
+
+    def relayout(self) -> None:
+        """Ask the current renderer to explicitly recompute its layout."""
+        self._run_graph_script("window.relayoutGraph?.()")
+
+    def highlight_relations(self, identities: list[str]) -> None:
+        """Highlight saved edges without changing inspector selection."""
+        self._highlighted_relation_ids = identities
+        if self._renderer_generation == self._page_generation:
+            self._run_graph_script(
+                f"window.highlightGraphRelations?.({json.dumps(identities)})"
+            )
+
+    def _run_graph_script(self, script: str) -> None:
+        if not self._closed:
+            self._web_view.page().runJavaScript(
+                f"if (window.__krakenGraphGeneration === {self._page_generation}) "
+                f"{{ {script}; }}"
+            )
 
     def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
         """Keep the theme cover above the complete browser viewport."""
@@ -140,6 +205,8 @@ class GraphWebView(QWidget):
 
         """
         self._page_generation += 1
+        self._renderer_generation = None
+        self._pending_graph_update = ""
         self._page_loaded = False
         self._theme_inflight = False
         self._theme_attempts = 0
@@ -361,8 +428,7 @@ class GraphWebView(QWidget):
             f"updateGraph({nodes_json}, {edges_json}, {focus_json}); "
             f"}}"
         )
-        self._web_view.page().runJavaScript(script)
-        logger.debug(
-            f"Triggered incremental graph update: Nodes={len(js_nodes)}, "
-            f"Edges={len(js_edges)}"
-        )
+        if self._renderer_generation == self._page_generation:
+            self._run_graph_script(script)
+        else:
+            self._pending_graph_update = script

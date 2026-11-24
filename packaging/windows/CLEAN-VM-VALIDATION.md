@@ -14,7 +14,11 @@ record and the automated packaged smoke are both green.
 - SmartScreen result or prompt:
 - ZIP extracted completely into an ordinary user folder without path errors:
 - Extracted archive has one `ProjektKraken` root folder:
+- Archive passes `python -m scripts.check_package_world_data <candidate.zip>`
+  on the build machine:
 - `ProjektKraken.exe` opened by double-click:
+- First launch on the clean account created an empty `Default World` under
+  `worlds/` beside the executable:
 - About dialog reports `<version>`:
 - Named world created through World Manager:
 - World ID/path recorded:

@@ -101,13 +101,6 @@
       "source": "MAP_VERTEX_HANDLE_COLOR = \"#e74c3c\""
     },
     {
-      "key": "src/gui/dialogs/database_manager_dialog.py|DatabaseManagerDialog._refresh_list|literal-color|468fb5b27ae376c8",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in DatabaseManagerDialog._refresh_list; migrate this expression when its presentation path is next touched.",
-      "source": "item.setForeground(Qt.GlobalColor.green)"
-    },
-    {
       "key": "src/gui/dialogs/grouping_config_dialog.py|ColorSwatch.__init__|literal-color|008fea238b891932",
       "count": 1,
       "category": "legacy",
@@ -822,13 +815,6 @@
       "source": "color = QColor(ThemeManager().get_theme()[\"app_bg\"]).darker(150)"
     },
     {
-      "key": "src/gui/widgets/graph_view/graph_builder.py|GraphBuilder._inject_theme_css|literal-color|4f6666232a525634",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in GraphBuilder._inject_theme_css; migrate this expression when its presentation path is next touched.",
-      "source": "bg_color = theme.get(\"background_color\", \"#1e1e1e\")"
-    },
-    {
       "key": "src/gui/widgets/graph_view/graph_builder.py|GraphBuilder.build_empty_html|literal-color|4f6666232a525634",
       "count": 1,
       "category": "legacy",
@@ -890,41 +876,6 @@
       "category": "legacy",
       "reason": "KRT-54 legacy presentation in GraphBuilder; migrate this expression when its presentation path is next touched.",
       "source": "\"edge_color\": \"#666666\","
-    },
-    {
-      "key": "src/gui/widgets/graph_view/graph_widget.py|GraphWidget._get_current_theme_config|literal-color|412a334b405a8a9b",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in GraphWidget._get_current_theme_config; migrate this expression when its presentation path is next touched.",
-      "source": "\"event_main\", theme.get(\"primary\", \"#E67E22\")"
-    },
-    {
-      "key": "src/gui/widgets/graph_view/graph_widget.py|GraphWidget._get_current_theme_config|literal-color|4f6666232a525634",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in GraphWidget._get_current_theme_config; migrate this expression when its presentation path is next touched.",
-      "source": "\"background_color\": theme.get(\"app_bg\", \"#1e1e1e\"),"
-    },
-    {
-      "key": "src/gui/widgets/graph_view/graph_widget.py|GraphWidget._get_current_theme_config|literal-color|673ad5d8a95855d4",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in GraphWidget._get_current_theme_config; migrate this expression when its presentation path is next touched.",
-      "source": "\"edge_color\": theme.get(\"text_dim\", \"#888888\"),"
-    },
-    {
-      "key": "src/gui/widgets/graph_view/graph_widget.py|GraphWidget._get_current_theme_config|literal-color|84f59c038b7f5792",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in GraphWidget._get_current_theme_config; migrate this expression when its presentation path is next touched.",
-      "source": "\"entity_main\", theme.get(\"accent_secondary\", \"#4A90D9\")"
-    },
-    {
-      "key": "src/gui/widgets/graph_view/graph_widget.py|GraphWidget._get_current_theme_config|literal-color|baa9d4300a357f02",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in GraphWidget._get_current_theme_config; migrate this expression when its presentation path is next touched.",
-      "source": "\"text_color\": theme.get(\"text_main\", \"#ffffff\"),"
     },
     {
       "key": "src/gui/widgets/longform/content.py|LongformContentWidget._get_theme_css|literal-color|5056cf128952d12a",

@@ -9,7 +9,7 @@ from typing import Any, Optional
 
 import shiboken6
 from PySide6.QtCore import QEvent, QSize, QTimer, Signal
-from PySide6.QtGui import QCloseEvent
+from PySide6.QtGui import QCloseEvent, QHideEvent
 from PySide6.QtWidgets import (
     QLabel,
     QSizePolicy,
@@ -17,14 +17,18 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.authoring_scope import AuthoringScope
 from src.core.logging_config import get_logger
+from src.core.search_utils import SearchUtils
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.utils.theme_connections import connect_theme, disconnect_theme
 from src.gui.widgets.graph_view.graph_builder import GraphBuilder
+from src.gui.widgets.graph_view.graph_feedback import GraphFeedback
 from src.gui.widgets.graph_view.graph_filter_bar import GraphFilterBar
 from src.gui.widgets.graph_view.graph_projection import GraphProjection
 from src.gui.widgets.graph_view.graph_web_view import GraphWebView
+from src.gui.widgets.standard_buttons import StandardButton
 
 MIN_GRAPH_WIDTH = 100
 MIN_GRAPH_HEIGHT = 100
@@ -59,6 +63,9 @@ class GraphWidget(QWidget):
     lexicon_save_requested = Signal(dict)  # raw lexicon config to persist
     icon_picker_created = Signal(object)
     lexicon_editor_created = Signal(object)
+    connection_requested = Signal(dict)
+    interaction_changed = Signal()
+    snapshot_presented = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the GraphWidget.
@@ -86,6 +93,11 @@ class GraphWidget(QWidget):
         # Data Cache
         self._all_nodes: list[dict[str, Any]] = []
         self._all_edges: list[dict[str, Any]] = []
+        self._scope = AuthoringScope()
+        self._selected_graph_node: tuple[str, str] | None = None
+        self._session_positions: dict[str, dict[str, float]] = {}
+        self._reveal_edges: frozenset[str] = frozenset()
+        self._display_node_ids: frozenset[str] = frozenset()
         # View State Cache (scale, position)
         self._last_view_state: Optional[dict[str, Any]] = None
         self._last_focus_node_id: Optional[str] = None
@@ -153,6 +165,7 @@ class GraphWidget(QWidget):
         self.temporal_mode.currentIndexChanged.connect(
             lambda _index: self.refresh_requested.emit()
         )
+        self.temporal_mode.currentIndexChanged.connect(self._invalidate_interaction)
         self.show_possible = declare_inspection(
             WrappingCheckBox("Show possible relations"),
             "src-gui-widgets-graph-view-graph-widget-graphwidget-setup-ui-self-show-possible|relations.timing|help-inspect-src-gui-widgets-graph-view-graph-widget-graphwidget-setup-ui-self-show-possible",
@@ -160,12 +173,32 @@ class GraphWidget(QWidget):
         self.show_possible.toggled.connect(
             lambda: self._refresh_display_locally(self._last_focus_node_id)
         )
+        self.show_possible.toggled.connect(self._invalidate_interaction)
         self.temporal_count = QLabel()
         self.temporal_count.setAccessibleName("Relations with uncertain timing")
         temporal_row.addWidget(self.temporal_mode)
         temporal_row.addWidget(self.show_possible)
         temporal_row.addWidget(self.temporal_count)
         layout.addLayout(temporal_row)
+        actions = ActionFlowLayout()
+        self.connect_button = declare_inspection(
+            StandardButton("Connect…"),
+            "graph-connect|graph.exploring|help-inspect-graph-connect",
+        )
+        self.connect_button.setEnabled(False)
+        self.connect_button.clicked.connect(self._connect_selected)
+        self.relayout_button = declare_inspection(
+            StandardButton("Relayout"),
+            "graph-relayout|graph.exploring|help-inspect-graph-relayout",
+        )
+        self.relayout_button.setEnabled(False)
+        self.relayout_button.clicked.connect(self._relayout)
+        actions.addWidget(self.connect_button)
+        actions.addWidget(self.relayout_button)
+        layout.addLayout(actions)
+        self.feedback = GraphFeedback(self)
+        layout.addWidget(self.feedback)
+        self.feedback.dismissed.connect(self._invalidate_interaction)
 
         # Web view fills remaining space
         layout.addWidget(self._web_view, 1)
@@ -206,6 +239,8 @@ class GraphWidget(QWidget):
         """
         # Forward web view node clicks
         self._web_view.node_clicked.connect(self._on_graph_node_clicked)
+        self._web_view.connection_requested.connect(self._bridge_connection)
+        self._web_view.background_clicked.connect(self._background_clicked)
         # Handle view state updates
         self._web_view.view_state_changed.connect(self._on_view_state_changed)
 
@@ -244,17 +279,19 @@ class GraphWidget(QWidget):
 
         # Map BaseThemeManager keys to GraphBuilder keys
         return {
-            "background_color": theme.get("app_bg", "#1e1e1e"),
-            "text_color": theme.get("text_main", "#ffffff"),
-            # Entity -> entity_main with fallback to accent_secondary
+            "background_color": theme["app_bg"],
+            "text_color": theme["text_main"],
             "node_entity_color": theme.get(
-                "entity_main", theme.get("accent_secondary", "#4A90D9")
+                "entity_main", theme.get("accent_secondary", theme["text_main"])
             ),
-            # Event -> event_main with fallback to primary
             "node_event_color": theme.get(
-                "event_main", theme.get("primary", "#E67E22")
+                "event_main", theme.get("primary", theme["text_main"])
             ),
-            "edge_color": theme.get("text_dim", "#888888"),
+            "edge_color": theme["text_dim"],
+            "action_bg": theme.get("mode_bg", theme["app_bg"]),
+            "action_border": theme.get("mode_border", theme["text_dim"]),
+            "action_text": theme.get("mode_text", theme["text_main"]),
+            "focus_ring": theme.get("focus_ring", theme["text_main"]),
         }
 
     # --- Internal Logic ---
@@ -275,6 +312,7 @@ class GraphWidget(QWidget):
         self._advanced_filter_config["rel_types"]["include"] = rel_types
 
         # Emit public signal to trigger data reload (Main Window -> GraphDataService)
+        self._invalidate_interaction()
         self.filter_changed.emit()
 
     def _on_search_text_changed(self, text: str) -> None:
@@ -285,7 +323,8 @@ class GraphWidget(QWidget):
 
         """
         self._search_term = text.strip()
-        self._refresh_display_locally()
+        self._invalidate_interaction()
+        self._refresh_display_locally(self._last_focus_node_id)
 
     def _on_view_state_changed(self, state: dict) -> None:
         """Handles view state updates from the web view.
@@ -294,6 +333,9 @@ class GraphWidget(QWidget):
             state: Dictionary containing 'scale' and 'position' keys.
         """
         self._last_view_state = state
+        positions = state.get("positions")
+        if isinstance(positions, dict):
+            self._session_positions.update(positions)
 
     def show_filter_dialog(self) -> None:
         """Shows the advanced filter dialog.
@@ -320,6 +362,7 @@ class GraphWidget(QWidget):
 
             # Since advanced filter might change what we need from DB (includes),
             # we request a refresh.
+            self._invalidate_interaction()
             self.filter_changed.emit()
 
     def show_lexicon_editor(self) -> None:
@@ -363,152 +406,256 @@ class GraphWidget(QWidget):
         self._refresh_display_locally()
 
     def _on_graph_node_clicked(self, object_type: str, node_id: str) -> None:
-        """Reveal possible edges adjacent to the selected node."""
+        """Synchronize a canvas selection with the ordinary navigation route."""
+        if node_id not in self._display_node_ids:
+            return
+        self._invalidate_interaction()
+        self._selected_graph_node = object_type, node_id
         self._refresh_display_locally(node_id)
         self.node_clicked.emit(object_type, node_id)
 
-    def _refresh_display_locally(self, focus_node_id: str | None = None) -> None:
-        """Refreshes the graph display using cached data and local filters.
+    def _background_clicked(self) -> None:
+        self._selected_graph_node = None
+        self._invalidate_interaction()
 
-        Args:
-            focus_node_id: Optional ID of a node to focus on after refresh.
+    def _connect_selected(self) -> None:
+        self._invalidate_interaction()
+        kind, identity = self._selected_graph_node or ("", "")
+        self.connection_requested.emit({"source": identity, "source_kind": kind})
 
-        """
-        if not self._all_nodes and not self._all_edges:
-            self._web_view.set_theme_data([], [], {})
-            self._web_view.load_html(
-                self._builder.build_empty_html(self._current_theme_config)
-            )
+    def _bridge_connection(self, intent: dict) -> None:
+        source = intent.get("source")
+        target = intent.get("target")
+        if source not in self._display_node_ids or (
+            target and target not in self._display_node_ids
+        ):
             return
+        self._invalidate_interaction()
+        self.connection_requested.emit(intent)
 
-        filtered_nodes = []
-        filtered_ids = set()
+    def _relayout(self) -> None:
+        self._invalidate_interaction()
+        self._web_view.relayout()
 
-        from src.core.search_utils import SearchUtils
+    def _invalidate_interaction(self, *_args: object) -> None:
+        self.clear_saved_feedback()
+        self.interaction_changed.emit()
 
-        # Retrieve filter configs
+    def authoring_context_changed(self) -> None:
+        """End feedback when the temporal viewing context changes."""
+        self._invalidate_interaction()
+
+    def new_node_position(self, source_id: str) -> dict[str, float] | None:
+        """Return a placement near a source for keyboard-driven creation."""
+        source = self._session_positions.get(source_id)
+        if source is None:
+            return None
+        return {"x": source["x"] + 85.0, "y": source["y"] + 48.0}
+
+    def relation_types(self) -> list[str]:
+        """Return the world relation vocabulary for authoring controls."""
+        return list(self._available_rel_types)
+
+    def hideEvent(self, event: QHideEvent) -> None:  # noqa: N802
+        """End temporary feedback when the user leaves the graph."""
+        self._invalidate_interaction()
+        super().hideEvent(event)
+
+    def clear_saved_feedback(self) -> None:
+        """Dismiss transient graph feedback and restore the usual filters."""
+        self.feedback.hide()
+        self._web_view.highlight_relations([])
+        if self._reveal_edges:
+            self._reveal_edges = frozenset()
+            self._refresh_display_locally(self._last_focus_node_id)
+
+    def set_authoring_scope(self, scope: AuthoringScope) -> None:
+        """Clear context-dependent feedback and filter the current snapshot."""
+        self._scope = scope
+        self._invalidate_interaction()
+        self._refresh_display_locally(self._last_focus_node_id)
+
+    @property
+    def visible_node_ids(self) -> frozenset[str]:
+        """Return the identities on the current graph projection."""
+        return self._display_node_ids
+
+    def seed_node(self, node_id: str, position: dict[str, float]) -> None:
+        """Use the draft's canvas location the first time this node appears."""
+        self._session_positions.setdefault(node_id, position)
+
+    def show_saved_relations(
+        self, relation_ids: frozenset[str]
+    ) -> tuple[tuple[str, ...], int]:
+        """Reveal only locally filtered edges and return timing exclusions."""
+        _, normal, available = self._project_visible(self._last_focus_node_id)
+        normal_ids = {edge["id"] for edge in normal}
+        eligible_ids = set(available) & relation_ids
+        self._reveal_edges = frozenset(eligible_ids - normal_ids)
+        reasons = self._filter_reasons(available, self._reveal_edges)
+        if self._reveal_edges:
+            self._refresh_display_locally(self._last_focus_node_id)
+        self._web_view.highlight_relations(sorted(eligible_ids))
+        return reasons, len(relation_ids) - len(eligible_ids)
+
+    def _filter_reasons(
+        self, eligible: dict[str, dict], revealed: frozenset[str]
+    ) -> tuple[str, ...]:
+        by_id = {node["id"]: node for node in self._all_nodes}
+        edges = [eligible[edge_id] for edge_id in revealed]
+        nodes = [
+            by_id[edge[key]] for edge in edges for key in ("source_id", "target_id")
+        ]
+        tags = self._advanced_filter_config.get("tags", {})
+        types = self._advanced_filter_config.get("rel_types", {})
+        reasons = []
+        if any(
+            not SearchUtils.matches_search(node, self._search_term) for node in nodes
+        ):
+            reasons.append("search")
+        if any(not self._passes_tag_filter(node, tags) for node in nodes):
+            reasons.append("tags")
+        if any(not self._passes_rel_type_filter(edge, types) for edge in edges):
+            reasons.append("relation type")
+        return tuple(reasons)
+
+    def _project_visible(
+        self, focus_id: str | None
+    ) -> tuple[list[dict], list[dict], dict[str, dict]]:
         tag_config = self._advanced_filter_config.get("tags", {})
         rel_config = self._advanced_filter_config.get("rel_types", {})
-
-        # -- Step 1: Filter Nodes (Search & Tags) --
-        for node in self._all_nodes:
-            # 1. Search Filter
-            if not SearchUtils.matches_search(node, self._search_term):
-                continue
-
-            # 2. Tag Filter (Advanced)
-            if not self._passes_tag_filter(node, tag_config):
-                continue
-
-            filtered_nodes.append(node)
-            filtered_ids.add(node["id"])
-
-        # -- Step 2: Filter Edges (Rel Types & node existence) --
-        filtered_edges = []
-        uncertain_count = 0
-        hidden_count = 0
-
+        scoped = {
+            node["id"]: node
+            for node in self._all_nodes
+            if self._scope.matches(node.get("tags", []))
+        }
+        types = set(rel_config.get("include", []))
+        connected = (
+            {
+                edge[key]
+                for edge in self._all_edges
+                if not types or self._passes_rel_type_filter(edge, rel_config)
+                for key in ("source_id", "target_id")
+            }
+            if types
+            else scoped.keys()
+        )
+        visible = {
+            node_id: node
+            for node_id, node in scoped.items()
+            if node_id in connected
+            and SearchUtils.matches_search(node, self._search_term)
+            and self._passes_tag_filter(node, tag_config)
+        }
+        edges = []
+        eligible = {}
+        uncertain_count = hidden_count = 0
         for edge in self._all_edges:
-            # Check if source and target are in filtered nodes
-            if (
-                edge["source_id"] not in filtered_ids
-                or edge["target_id"] not in filtered_ids
-            ):
+            source, target = edge["source_id"], edge["target_id"]
+            if source not in scoped or target not in scoped:
                 continue
-
-            # Check Relation Type Filter
-            if not self._passes_rel_type_filter(edge, rel_config):
-                continue
-
+            passes_local = (
+                source in visible
+                and target in visible
+                and self._passes_rel_type_filter(edge, rel_config)
+            )
             if edge.get("validity_status") in {"possible", "indeterminate"}:
-                uncertain_count += 1
-                if not self.show_possible.isChecked() and focus_node_id not in {
-                    edge["source_id"],
-                    edge["target_id"],
-                }:
-                    hidden_count += 1
+                uncertain_count += int(passes_local)
+                if not self.show_possible.isChecked() and focus_id not in (
+                    source,
+                    target,
+                ):
+                    hidden_count += int(passes_local)
                     continue
-
-            filtered_edges.append(edge)
-
+            eligible[edge["id"]] = edge
+            if passes_local:
+                edges.append(edge)
         self.temporal_count.setText(
             f"{uncertain_count} uncertain ({hidden_count} hidden)"
             if uncertain_count
             else ""
         )
+        return list(visible.values()), edges, eligible
 
-        # -- Step 3: Project edges for GraphView presentation --
-        projected_edges = GraphProjection.project_edges(
-            filtered_edges,
-            suppress_redundant_mentions=(
-                self._should_suppress_redundant_mentions(rel_config)
+    def _refresh_display_locally(self, focus_node_id: str | None = None) -> None:
+        """Render the current scoped snapshot and any narrow result exception."""
+        nodes, edges, eligible = self._project_visible(focus_node_id)
+        visible_ids = {node["id"] for node in nodes}
+        extra = [
+            eligible[identity]
+            for identity in sorted(self._reveal_edges & eligible.keys())
+        ]
+        if extra:
+            edge_ids = {edge["id"] for edge in edges}
+            edges.extend(edge for edge in extra if edge["id"] not in edge_ids)
+            wanted = {edge[key] for edge in extra for key in ("source_id", "target_id")}
+            nodes.extend(
+                node for node in self._all_nodes if node["id"] in wanted - visible_ids
+            )
+        projected = GraphProjection.project_edges(
+            edges,
+            suppress_redundant_mentions=self._should_suppress_redundant_mentions(
+                self._advanced_filter_config.get("rel_types", {})
             ),
         )
+        self._display_node_ids = frozenset(node["id"] for node in nodes)
+        if (
+            self._selected_graph_node
+            and self._selected_graph_node[1] not in self._display_node_ids
+        ):
+            self._selected_graph_node = None
+        self.connect_button.setEnabled(bool(nodes))
+        self.relayout_button.setEnabled(bool(nodes))
+        positioned = [
+            dict(node, position=position)
+            if (position := self._session_positions.get(node["id"]))
+            else node
+            for node in nodes
+        ]
+        self._render_projection(positioned, projected, focus_node_id)
 
-        self._web_view.set_theme_data(
-            filtered_nodes, projected_edges, self._resolved_lexicon
-        )
-        # -- Step 4: Render --
-        if not filtered_nodes:
-            self._web_view.load_html(
-                self._builder.build_empty_html(self._current_theme_config)
+    def _render_projection(
+        self, nodes: list[dict], edges: list[dict], focus_id: str | None
+    ) -> None:
+        self._web_view.set_theme_data(nodes, edges, self._resolved_lexicon)
+        if not nodes and not self._is_renderer_ready:
+            return
+        if not self._is_renderer_ready or focus_id != self._last_focus_node_id:
+            # Match the renderer's focus selection without emitting navigation.
+            focused = next((node for node in nodes if node["id"] == focus_id), None)
+            if focused is not None:
+                self._selected_graph_node = (
+                    focused.get("object_type", "entity"),
+                    focused["id"],
+                )
+            elif not self._is_renderer_ready:
+                self._selected_graph_node = None
+        lexicon = self._resolved_lexicon
+        if self._is_renderer_ready:
+            self._web_view.update_graph_data(
+                nodes,
+                edges,
+                focus_id=focus_id,
+                theme_config=self._current_theme_config,
+                lexicon_config=lexicon,
             )
-            self._is_renderer_ready = False
         else:
-            # Smart View Preservation Logic:
-            # 1. Same node = Preserve view.
-            # 2. Different node (or None) = Reset view.
-            should_preserve_view = (
-                focus_node_id is not None
-                and focus_node_id == self._last_focus_node_id
-                and self._last_view_state is not None
-            )
-
-            view_state = self._last_view_state if should_preserve_view else None
-
-            if should_preserve_view:
-                self._logger.debug(
-                    f"Preserving graph view for node {focus_node_id} (Data Refresh)"
-                )
-            elif focus_node_id:
-                self._logger.debug(
-                    f"Resetting graph view for node {focus_node_id} (Navigation)"
-                )
-
-            # Incremental vs Full Update
-            lexicon = (
-                self._resolved_lexicon
-                if self._resolved_lexicon.get("nodes")
-                or self._resolved_lexicon.get("edges")
-                else None
-            )
-            if self._is_renderer_ready:
-                self._web_view.update_graph_data(
-                    filtered_nodes,
-                    projected_edges,
-                    focus_id=focus_node_id,
+            self._web_view.load_html(
+                self._builder.build_html(
+                    nodes,
+                    edges,
                     theme_config=self._current_theme_config,
+                    focus_node_id=focus_id,
+                    view_state=(
+                        self._last_view_state
+                        if focus_id == self._last_focus_node_id
+                        else None
+                    ),
                     lexicon_config=lexicon,
                 )
-            else:
-                html = self._builder.build_html(
-                    filtered_nodes,
-                    projected_edges,
-                    theme_config=self._current_theme_config,
-                    focus_node_id=focus_node_id,
-                    view_state=view_state,
-                    lexicon_config=lexicon,
-                )
-                self._web_view.load_html(html)
-                self._is_renderer_ready = True
-
-            # Update tracking
-            self._last_focus_node_id = focus_node_id
-            self._logger.debug(
-                f"Refreshed graph: {len(filtered_nodes)} nodes, "
-                f"{len(projected_edges)} edges, focus_id={focus_node_id}, "
-                f"incremental={self._is_renderer_ready}"
             )
+            self._is_renderer_ready = True
+        self._last_focus_node_id = focus_id
 
     def _should_suppress_redundant_mentions(self, rel_config: dict) -> bool:
         """Return whether generated mention suppression applies to this view.
@@ -629,6 +776,8 @@ class GraphWidget(QWidget):
         if editor is not None and shiboken6.isValid(editor) and editor.isVisible():
             self._on_lexicon_preview_requested(editor.get_lexicon_config())
             return
+        if self._raw_lexicon == raw and self._resolved_lexicon == resolved:
+            return
         self._raw_lexicon = raw
         self._resolved_lexicon = resolved
         # Force full rebuild to apply new styles
@@ -708,6 +857,7 @@ class GraphWidget(QWidget):
         # We need to update SearchUtils to handle dicts before this works.
         # I will do that in the next step.
         self._refresh_display_locally(focus_node_id)
+        self.snapshot_presented.emit()
 
     def _show_empty_state(self) -> None:
         """Displays the empty state message in the web view."""
@@ -719,6 +869,13 @@ class GraphWidget(QWidget):
         self._web_view.clear()
         self._all_nodes = []
         self._all_edges = []
+        self._session_positions.clear()
+        self._last_view_state = None
+        self._last_focus_node_id = None
+        self._selected_graph_node = None
+        self._is_renderer_ready = False
+        self._invalidate_interaction()
+        self._refresh_display_locally()
 
     def showEvent(self, event: QEvent) -> None:
         """Handle widget show event by refreshing the graph view.

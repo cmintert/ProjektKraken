@@ -624,9 +624,12 @@ travel with the world.
 
 ## Organize entries with tags
 
-Tags group entries for filtering and discovery. Add or remove a tag deliberately;
-changing a tag does not create a relation. Context-tag controls manage which tags are
-suggested or used in the current authoring context.
+Tags group entries for filtering and discovery. Context Tags apply to new
+interactive Entities and Events. Choose **Context Tags Follow Scope** in the
+View menu to use the creation tags set in your
+{ref}`Authoring Scope <help-configure-authoring-scope>`. Choose **Set Custom
+Context Tags** to set an independent list. Kraken restores the selected policy
+for each world.
 
 (help-authoring-templates)=
 

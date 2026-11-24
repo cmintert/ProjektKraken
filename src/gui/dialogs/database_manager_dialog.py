@@ -7,12 +7,24 @@ external database links.
 import logging
 import os
 from collections.abc import Callable
+from html import escape
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional, cast
 
-from PySide6.QtCore import QSettings, Qt, Signal, Slot
+from PySide6.QtCore import (
+    QModelIndex,
+    QPersistentModelIndex,
+    QRect,
+    QSettings,
+    QSize,
+    Qt,
+    Signal,
+    Slot,
+)
+from PySide6.QtGui import QColor, QFont, QPainter, QPalette
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QApplication,
     QDialog,
     QFileDialog,
     QInputDialog,
@@ -20,21 +32,122 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QMessageBox,
+    QSizePolicy,
+    QStyle,
+    QStyledItemDelegate,
+    QStyleOptionViewItem,
     QVBoxLayout,
     QWidget,
 )
 
 from src.core.paths import ensure_worlds_directory
+from src.core.theme_manager import ThemeManager
 from src.core.world import EXTERNAL_DATABASE_STORAGE, World, WorldManager
 from src.gui.constants import SETTINGS_ACTIVE_DB_KEY
 from src.gui.dialogs.external_database_warning import external_database_warning
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.utils.theme_connections import connect_theme
 from src.gui.widgets.action_flow_layout import ActionFlowLayout
 from src.gui.widgets.standard_buttons import StandardButton as QPushButton
 from src.services.world_storage_settings import WorldStorageSettings
 
 logger = logging.getLogger(__name__)
+
+
+class _WorldLocationDelegate(QStyledItemDelegate):
+    """Show a world's locations with native selection and focus painting."""
+
+    _MIN_CAPTION_POINTS = 9
+    _MIN_CAPTION_PIXELS = 12
+
+    def sizeHint(
+        self,
+        option: QStyleOptionViewItem,
+        index: QModelIndex | QPersistentModelIndex,
+    ) -> QSize:
+        """Reserve a full line for each location without widening the view."""
+        size = super().sizeHint(option, index)
+        locations = index.data(Qt.ItemDataRole.AccessibleDescriptionRole)
+        metrics = cast(Any, option).fontMetrics
+        size.setHeight(
+            size.height() + len(locations.split("\n")) * metrics.lineSpacing()
+        )
+        return size
+
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        index: QModelIndex | QPersistentModelIndex,
+    ) -> None:
+        """Paint the native row and keep the distinguishing ends of long paths."""
+        prepared = QStyleOptionViewItem(option)
+        self.initStyleOption(prepared, index)
+        row = cast(Any, prepared)
+        widget = row.widget
+        style = widget.style() if widget is not None else QApplication.style()
+        title = row.text
+        row.text = ""
+        style.drawControl(
+            QStyle.ControlElement.CE_ItemViewItem, prepared, painter, widget
+        )
+        text_rect = style.subElementRect(
+            QStyle.SubElement.SE_ItemViewItemText, prepared, widget
+        )
+        if widget is not None:
+            text_rect.setRight(min(text_rect.right(), widget.viewport().rect().right()))
+
+        selected = bool(row.state & QStyle.StateFlag.State_Selected)
+        enabled = bool(row.state & QStyle.StateFlag.State_Enabled)
+        group = QPalette.ColorGroup.Active if enabled else QPalette.ColorGroup.Disabled
+        role = (
+            QPalette.ColorRole.HighlightedText if selected else QPalette.ColorRole.Text
+        )
+        title_color = row.palette.color(group, role)
+        caption_color = (
+            QColor(ThemeManager().get_theme()["supporting_caption"])
+            if enabled and not selected
+            else title_color
+        )
+        locations = index.data(Qt.ItemDataRole.AccessibleDescriptionRole)
+        painter.save()
+        painter.setClipRect(text_rect)
+        line = QRect(text_rect)
+        line.setHeight(row.fontMetrics.lineSpacing())
+        title_font = QFont(row.font)
+        title_font.setBold(True)
+        painter.setFont(title_font)
+        painter.setPen(title_color)
+        painter.drawText(
+            line,
+            Qt.AlignmentFlag.AlignVCenter,
+            painter.fontMetrics().elidedText(
+                title, Qt.TextElideMode.ElideRight, line.width()
+            ),
+        )
+        caption_font = QFont(row.font)
+        points = caption_font.pointSizeF()
+        pixels = caption_font.pixelSize()
+        if points > self._MIN_CAPTION_POINTS:
+            caption_font.setPointSizeF(max(self._MIN_CAPTION_POINTS, points - 1))
+        elif pixels > self._MIN_CAPTION_PIXELS:
+            caption_font.setPixelSize(pixels - 1)
+        painter.setFont(caption_font)
+        painter.setPen(caption_color)
+        caption_metrics = painter.fontMetrics()
+        for path in locations.split("\n"):
+            line.translate(0, line.height())
+            painter.drawText(
+                line,
+                Qt.AlignmentFlag.AlignVCenter,
+                caption_metrics.elidedText(
+                    path, Qt.TextElideMode.ElideMiddle, line.width()
+                ),
+            )
+        painter.restore()
+        if enabled and row.state & QStyle.StateFlag.State_HasFocus:
+            StyleHelper.draw_item_focus_frame(painter, row.rect)
 
 
 class DatabaseManagerDialog(QDialog):
@@ -89,15 +202,22 @@ class DatabaseManagerDialog(QDialog):
         main_layout.addWidget(header)
 
         # Info
-        info_text = (
-            f"Worlds Location:\n{self.worlds_dir}"
-            if self.worlds_dir
-            else "Error: Cannot access worlds directory"
-        )
-        info = QLabel(info_text)
+        info = QLabel()
+        info.setTextFormat(Qt.TextFormat.PlainText)
         info.setWordWrap(True)
-        info.setObjectName("InspectorSupportCaption")
-        info.setStyleSheet(StyleHelper.get_inspector_support_style())
+        info.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        if self.worlds_dir is not None:
+            path = str(self.worlds_dir)
+            wrapped_path = path.replace("\\", "\\\u200b").replace("/", "/\u200b")
+            info.setText(f"Default worlds folder:\n{wrapped_path}")
+            info.setToolTip(f"<qt>{escape(path)}</qt>")
+        else:
+            info.setText("Error: Cannot access worlds directory")
+        info.setStyleSheet(StyleHelper.get_supporting_caption_style())
+        connect_theme(
+            info,
+            lambda _: info.setStyleSheet(StyleHelper.get_supporting_caption_style()),
+        )
         main_layout.addWidget(info)
 
         # List
@@ -106,6 +226,8 @@ class DatabaseManagerDialog(QDialog):
             "src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-db-list|world.manage|help-inspect-src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-db-list",
         )
         self.db_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.db_list.setItemDelegate(_WorldLocationDelegate(self.db_list))
+        self.db_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         main_layout.addWidget(self.db_list)
 
         # Buttons
@@ -222,7 +344,7 @@ class DatabaseManagerDialog(QDialog):
         return World.inspect(Path(raw_path))
 
     def _refresh_list(self) -> None:
-        """Refresh the list of worlds from the worlds directory."""
+        """Refresh discovered and registered worlds with their actual locations."""
         self.db_list.clear()
 
         if not self.world_manager:
@@ -247,17 +369,18 @@ class DatabaseManagerDialog(QDialog):
             is_active = (
                 active_world_path is not None and world.path == active_world_path
             ) or (active_world_path is None and world.name == active_world_name)
-            item = QListWidgetItem(label)
-            item.setData(Qt.ItemDataRole.UserRole, str(world.path))
-            if is_active:
-                item.setText(f"{label} (Active)")
-                font = item.font()
-                font.setBold(True)
-                item.setFont(font)
-                item.setForeground(Qt.GlobalColor.green)
-                # Pre-select active
-                self.db_list.setCurrentItem(item)
+            item = QListWidgetItem(f"{label} (Active)" if is_active else label)
+            folder = str(world.path)
+            database = f"Database: {world.db_path}"
+            locations = (
+                f"{folder}\n{database}" if world.is_external_database else folder
+            )
+            item.setData(Qt.ItemDataRole.UserRole, folder)
+            item.setData(Qt.ItemDataRole.AccessibleDescriptionRole, locations)
+            item.setToolTip(f"<qt>{escape(folder)}<br>{escape(database)}</qt>")
             self.db_list.addItem(item)
+            if is_active:
+                self.db_list.setCurrentItem(item)
 
     @Slot()
     def _open_folder(self) -> None:

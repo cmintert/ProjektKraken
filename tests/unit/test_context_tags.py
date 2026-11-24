@@ -117,6 +117,21 @@ def test_recovery_and_remembered_set_persist_but_activation_does_not(
     assert restored.remembered_tags == ["City"]
     assert not restored.is_active
     assert restored.snapshot()["affected_count"] == 1
+    assert not context_settings.contains("worlds/world-a/context_tags/v1/policy")
+
+    restored.set_scope_defaults(("Adventure",))
+    restored.enable()
+    context_settings.sync()
+    reopened_settings = QSettings(
+        context_settings.fileName(), QSettings.Format.IniFormat
+    )
+    reopened = ContextTagCoordinator(FakeWindow(), reopened_settings)
+    reopened.set_scope_defaults(("Adventure",))
+
+    assert reopened.snapshot()["policy"] == "custom"
+    assert reopened.is_active
+    command = reopened.create_event_command({"name": "Arrival", "lore_date": 0.0})
+    assert command.event.tags == ["City"]
 
 
 def test_settings_are_isolated_by_world(context_settings):

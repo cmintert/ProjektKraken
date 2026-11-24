@@ -96,8 +96,9 @@ These explanations describe the software operation. Inspecting a control does no
 
 (help-inspect-src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-db-list)=
 
-**Worlds** — Choose the managed world for the adjacent world-management actions. Select
-and Restart deliberately switches to it.
+**Worlds** — Choose the world to manage. Each row shows the world folder and,
+for a linked external database, its database path. Use the paths to distinguish
+worlds with the same name. **Select & Restart** switches to the chosen world.
 
 (help-inspect-src-gui-dialogs-database-manager-dialog-databasemanagerdialog-init-self-btn-create)=
 

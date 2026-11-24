@@ -282,9 +282,59 @@ Read direction and uncertainty labels before interpreting an edge. See
 {ref}`relation timing in the Graph <help-relations-timing>` for the temporal
 modes. A hidden edge has not been deleted.
 
+### Create a relationship in the Graph
+
+1. Hover over the starting node and click **+** to open a draft, or drag **+**
+   onto another node to start with both entries filled in. You can also select
+   **Connect…** and use the entry picker from the keyboard.
+2. Review the existing relationships, then select a type and direction. **Both
+   directions** records two relationships of the selected type.
+3. Leave timing **Undated** or select **Start at Playhead** to capture a fixed
+   start date. Choose **Create Relationship**.
+
+Drop the handle on empty space to create a new Entity or Event or to pick an
+existing entry. A new entry and its relationship save together and share an Undo
+step. An outside-scope entry can be inspected from the saved confirmation.
+Choose **Add to Tag Scope** to preview and apply the scope's membership tags.
+If the entry has unsaved edits or a save in progress, finish in its editor and
+then try again.
+
+If checking existing relationships fails, choose **Retry Relationship Lookup**
+in the open draft. The selected entry and draft fields are retained.
+
 ## Interface control reference
 
 These explanations describe the software operation. Inspecting a control does not run it or read your entered values.
+
+(help-inspect-graph-connect)=
+
+**Connect…** opens the relationship draft for the selected node. When no node is
+selected, it opens a picker for the starting node.
+
+(help-inspect-graph-relayout)=
+
+**Relayout** recalculates the arrangement of the displayed nodes. The layout is
+kept for the current session.
+
+(help-inspect-graph-start-at-playhead)=
+
+**Start at Playhead** captures the current viewing date as the relationship's
+fixed start. The recorded date stays fixed if the playhead moves.
+
+(help-inspect-graph-save-relationship)=
+
+**Create Relationship** saves the directed relationship and any new endpoint as
+one undoable operation.
+
+(help-inspect-graph-retry-pair)=
+
+**Retry Relationship Lookup** checks the selected pair again. You can create the
+relationship once the check succeeds.
+
+(help-inspect-graph-add-to-adventure)=
+
+**Add to Tag Scope** previews the tags needed to bring a saved relationship's
+endpoint into scope. Applying those tags creates a separate Undo step.
 
 (help-inspect-src-gui-dialogs-ai-settings-dialog-aisettingsdialog-init-self-sidebar-list)=
 

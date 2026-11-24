@@ -339,7 +339,39 @@ available operations. Clearing history removes these recovery steps without undo
 their effects. World restore and interface layout changes are not ordinary undoable
 content edits.
 
+(help-configure-authoring-scope)=
+
+## Focus on an adventure
+
+1. Add an adventure tag to the Entities and Events you want to work with.
+2. Open **View → Authoring Scope** and select the tags that define the scope.
+   Choose **ANY** to show entries with at least one selected tag, or **ALL**
+   to require every selected tag.
+3. For an ANY scope with several tags, choose which of those tags new entries
+   receive when Context Tags follow the scope. Select **Apply Scope**.
+4. Check Explorer, Timeline, Graph, or Search. Their existing filters still apply.
+   An active entry can stay open with an outside-scope notice.
+
+Use **View → Context Tags Follow Scope** to use the scope's creation defaults.
+**Set Custom Context Tags** gives you an independent set of creation tags.
+Choose **Show All Content** in Authoring Scope to return to the whole world.
+
 ## Interface control reference
+
+(help-inspect-authoring-scope)=
+
+**Authoring Scope** narrows Explorer, Timeline, Graph, and Search to a tag
+expression saved for this world. Historical calculations use the full chronology.
+
+(help-inspect-scope-visible-tags)=
+
+**Visible tags** selects the tags that an entry must match to appear in the
+scoped views. The Match setting determines whether any or all are required.
+
+(help-inspect-scope-creation-tags)=
+
+**Creation tags** chooses which selected tags Follow Scope adds to new entries
+under a multi-tag ANY scope.
 
 These explanations describe the software operation. Inspecting a control does not run it or read your entered values.
 

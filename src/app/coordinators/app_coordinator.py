@@ -16,6 +16,7 @@ from src.app.qt_invocation import invoke_queued
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
+    from src.core.authoring_scope import AuthoringScope
 
 logger = logging.getLogger(__name__)
 
@@ -212,6 +213,82 @@ class AppCoordinator(QObject):
             self.map_temporal.set_calendar, Qt.ConnectionType.QueuedConnection
         )
 
+    def bind_authoring_scope(self) -> None:
+        """Compose the view scope and the temporary history presentation."""
+        from src.app.coordinators.authoring_scope_coordinator import (
+            AuthoringScopeCoordinator,
+        )
+        from src.app.coordinators.scoped_history import ScopedHistory
+
+        window = self.main_window
+        world_id = str(getattr(window.current_world, "id", "") or "")
+        self.context_tags.bind_world(world_id)
+        self.scope = AuthoringScopeCoordinator(
+            world_id, lambda: self.data.cached_tags, window
+        )
+        self.scoped_history = ScopedHistory(
+            window.timeline, lambda: self.data.cached_events
+        )
+        self.data.bind_scoped_graph()
+        window.status_bar.addPermanentWidget(self.scope.button)
+        window.status_bar.addPermanentWidget(self.scope.outside_scope)
+        self.data.scope_catalog_changed.connect(self._refresh_scope_catalog)
+        self.data.events_cache_changed.connect(self.scoped_history.refresh)
+        self.data.scope_items_changed.connect(self._refresh_scope_notice)
+        self.data.scope_relations_ready.connect(self.scoped_history.relations)
+        self.navigation.navigation_result.connect(self.scoped_history.selected)
+        self.navigation.navigation_result.connect(self._refresh_scope_notice)
+        window.data_handler.entity_state_resolved.connect(self.scoped_history.state)
+        self.scope.changed.connect(self._apply_authoring_scope)
+        self._apply_authoring_scope(self.scope.scope)
+
+    def _refresh_scope_catalog(self) -> None:
+        self.scope.tags_changed()
+        self.context_tags.set_available_tags(self.data.cached_tags)
+
+    def _apply_authoring_scope(self, scope: "AuthoringScope") -> None:
+        window = self.main_window
+        window.unified_list.set_authoring_scope(scope)
+        self.scoped_history.scope_changed(scope)
+        window.ai_search_manager.set_authoring_scope(scope)
+        self.context_tags.set_scope_defaults(scope.creation_tags)
+        self.data.on_graph_scope_changed(scope, self.scope.revision)
+        self._refresh_scope_notice()
+
+    def _refresh_scope_notice(self) -> None:
+        identity = self.navigation.selected_id
+        items = (
+            self.data.cached_events
+            if self.navigation.selected_type == "event"
+            else self.data.cached_entities
+        )
+        item = next((item for item in items if item.id == identity), None)
+        self.scope.show_outside_scope(
+            item is not None and not self.scope.scope.matches(item.tags)
+        )
+
+    def bind_graph_authoring(self) -> None:
+        """Compose direct graph authoring with the established command route."""
+        from src.app.coordinators.graph_authoring import GraphAuthoring
+
+        window = self.main_window
+        self.graph_authoring = GraphAuthoring(
+            window.graph_widget,
+            self.data,
+            self.scope,
+            self.context_tags,
+            window.command_coordinator,
+            self.navigation,
+            window.worker,
+            lambda: str(getattr(window.current_world, "id", "")),
+            window.timeline.get_playhead_time,
+            lambda: window.calendar_converter,
+            self._batch_draft_warning,
+        )
+        self.event_timing.failed.connect(
+            window.command_coordinator.on_graph_preflight_failure
+        )
+
     def bind_event_timing(self) -> None:
         """Compose timing preparation after the command coordinator exists."""
         from PySide6.QtCore import Qt
@@ -301,7 +378,7 @@ class AppCoordinator(QObject):
             ):
                 return (
                     f"Save or discard changes in the {kind.title()} Editor first "
-                    "and wait for any pending save. Your draft and checks are retained."
+                    "and wait for any pending save."
                 )
         return ""
 

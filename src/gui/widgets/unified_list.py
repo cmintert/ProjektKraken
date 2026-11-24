@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.authoring_scope import AuthoringScope
 from src.core.calendar import CalendarConverter
 from src.core.command import LoreMutationEffect
 from src.core.entities import Entity
@@ -637,6 +638,11 @@ class UnifiedListWidget(QWidget):
         index = self.list_widget.currentIndex()
         if index.isValid():
             self.list_widget.scrollTo(index)
+
+    def set_authoring_scope(self, scope: AuthoringScope) -> None:
+        """Refresh visible rows while keeping the active object pinned."""
+        with self._presentation_update():
+            self._proxy_model.set_authoring_scope(scope)
 
     def _sync_active_selection(self) -> None:
         """Restore only the accepted target, never an incidental current row."""

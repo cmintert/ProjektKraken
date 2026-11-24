@@ -18,6 +18,7 @@ from pyvis.network import Network  # type: ignore[import-untyped]
 from src.core import style_constants as SC
 from src.core.paths import get_resource_path
 from src.core.style_constants import V_BORDER, V_BORDER_WIDTH, V_FILL, V_SIZE_SCALE
+from src.gui.widgets.graph_view.graph_interaction import GRAPH_INTERACTION
 from src.services.visual_resolver import VisualResolver
 
 logger = logging.getLogger(__name__)
@@ -149,6 +150,9 @@ class GraphBuilder:
                 )
                 result["image"] = styled_image
 
+        position = node.get("position")
+        if isinstance(position, dict):
+            result.update(x=position["x"], y=position["y"])
         return result
 
     @staticmethod
@@ -507,6 +511,8 @@ class GraphBuilder:
         net.options["edges"]["font"].update(self.edge_label_colors(theme))
 
         # Add nodes
+        if any(node.get("position") for node in nodes):
+            net.options["physics"]["enabled"] = False
         entity_color = theme.get("node_entity_color", self.ENTITY_COLOR)
         event_color = theme.get("node_event_color", self.EVENT_COLOR)
         edge_color = theme.get("edge_color", self.DEFAULT_THEME["edge_color"])
@@ -647,7 +653,8 @@ class GraphBuilder:
             HTML string with theme CSS injected.
 
         """
-        bg_color = theme.get("background_color", "#1e1e1e")
+        bg_color = theme.get("background_color", self.DEFAULT_THEME["background_color"])
+        text_color = theme.get("text_color", self.DEFAULT_THEME["text_color"])
 
         background_fix_css = f"""
         <style>
@@ -679,6 +686,41 @@ class GraphBuilder:
                 background-color: {bg_color};
                 border: none !important;
                 margin: 0 !important;
+                position: relative;
+            }}
+            .graph-connect-handle {{
+                position: absolute;
+                transform: translateY(-50%);
+                width: 26px;
+                height: 26px;
+                border-radius: 50%;
+                border: 1px solid var(--graph-action-border, currentColor);
+                background: var(--graph-action-bg, Canvas);
+                color: var(--graph-action-text, CanvasText);
+                font: 600 18px/1 sans-serif;
+                cursor: crosshair;
+                touch-action: none;
+                z-index: 2;
+            }}
+            .graph-connect-handle:hover, .graph-connect-handle:focus-visible {{
+                outline: 2px solid var(--graph-focus, currentColor);
+            }}
+            #mynetwork {{
+                --graph-action-bg: {theme.get("action_bg", bg_color)};
+                --graph-action-border: {theme.get("action_border", "currentColor")};
+                --graph-action-text: {theme.get("action_text", "CanvasText")};
+                --graph-focus: {theme.get("focus_ring", "Highlight")};
+                color: {text_color};
+            }}
+            #mynetwork .message {{
+                position: absolute;
+                inset: 0;
+                place-items: center;
+                text-align: center;
+                pointer-events: none;
+            }}
+            #mynetwork .message:not([hidden]) {{
+                display: grid;
             }}
             /* Hide unused header elements */
             h1, center {{
@@ -694,187 +736,21 @@ class GraphBuilder:
         focus_node_id: str | None = None,
         view_state: dict[str, Any] | None = None,
     ) -> str:
-        """Injects QWebChannel setup and interaction JavaScript.
-
-        Adds click handling, focus/view-state restoration, incremental graph
-        updates, and view-state change reporting via the Qt bridge.
-
-        Args:
-            html_content: HTML string to modify.
-            focus_node_id: Optional node ID to focus on after render.
-            view_state: Optional view state to restore (position/scale).
-
-        Returns:
-            HTML string with interaction JS injected.
-
-        """
-        qwebchannel_script = (
-            '<script src="qrc:///qtwebchannel/qwebchannel.js"></script>'
+        """Connect the current Vis page to the Qt-owned authoring controls."""
+        camera = (
+            {"position": view_state["position"], "scale": view_state["scale"]}
+            if view_state
+            else None
         )
-
-        interaction_script = """
-        <script type="text/javascript">
-            // Setup QWebChannel
-            document.addEventListener("DOMContentLoaded", function() {
-                new QWebChannel(qt.webChannelTransport, function(channel) {
-                    window.bridge = channel.objects.bridge;
-                });
-            });
-
-            var checkNetwork = setInterval(function() {
-                if (typeof network !== 'undefined') {
-                    clearInterval(checkNetwork);
-
-                    // Interaction: Click
-                    network.on("click", function (params) {
-                        if (params.nodes.length > 0) {
-                            var nodeId = params.nodes[0];
-                            var nodeData = nodes.get(nodeId);
-
-                            if (nodeData && window.bridge) {
-                                var objType = nodeData.object_type || "entity";
-                                window.bridge.nodeClicked(objType, String(nodeId));
-                            }
-                        }
-                    });
-
-                    // Interaction: Restore Focus
-                    var focusId = %FOCUS_ID%;
-                    var viewState = %VIEW_STATE%;
-
-                    function restoreFocus() {
-                        if (viewState) {
-                            network.moveTo({
-                                position: viewState.position,
-                                scale: viewState.scale,
-                                animation: false
-                            });
-                        } else if (focusId !== null) {
-                            var nodeData = nodes.get(focusId);
-                            if (nodeData) {
-                                network.selectNodes([focusId]);
-                                network.focus(focusId, {
-                                    scale: 1.0,
-                                    animation: {
-                                        duration: 500,
-                                        easingFunction: "easeInOutQuad"
-                                    }
-                                });
-                            }
-                        }
-                    }
-
-                    if (viewState) {
-                        restoreFocus();
-                    }
-
-                    // Incremental Data Update
-                    window.updateGraph = function(newNodes, newEdges, newFocusId) {
-                        try {
-                            var nodes = network.body.data.nodes;
-                            var edges = network.body.data.edges;
-
-                            var beforeIds = nodes.getIds();
-                            var sameNodes = beforeIds.length === newNodes.length &&
-                                newNodes.every(function(n) {
-                                    return beforeIds.indexOf(n.id) !== -1;
-                                });
-                            var selection = network.getSelection();
-                            if (sameNodes) {
-                                // A playhead-only edge update must not restart layout.
-                                network.stopSimulation();
-                                network.setOptions({physics: {enabled: false}});
-                                var positions = network.getPositions(beforeIds);
-                                newNodes = newNodes.map(function(n) {
-                                    return Object.assign({}, n, positions[n.id]);
-                                });
-                            } else {
-                                network.setOptions({physics: {enabled: true}});
-                            }
-
-                            nodes.update(newNodes);
-                            var newNodeIds = newNodes.map(function(n) {
-                                return n.id;
-                            });
-                            var currentIds = nodes.getIds();
-                            var idsToRemove = currentIds.filter(function(id) {
-                                return newNodeIds.indexOf(id) === -1;
-                            });
-                            nodes.remove(idsToRemove);
-
-                            edges.update(newEdges);
-                            var newEdgeIds = newEdges.map(function(e) {
-                                return e.id;
-                            });
-                            var currentEdgeIds = edges.getIds();
-                            var edgesToRemove = currentEdgeIds.filter(function(id) {
-                                return newEdgeIds.indexOf(id) === -1;
-                            });
-                            edges.remove(edgesToRemove);
-
-                            if (sameNodes && (!newFocusId || newFocusId === focusId)) {
-                                network.selectNodes(selection.nodes.filter(function(id) {
-                                    return newNodeIds.indexOf(id) !== -1;
-                                }));
-                            } else if (newFocusId) {
-                                focusId = newFocusId;
-                                network.selectNodes([newFocusId]);
-                            }
-                        } catch (err) {
-                            console.error("Graph: Update failed", err);
-                        }
-                    };
-
-                    // Report View State Changes (debounced)
-                    var viewStateTimeout;
-                    function reportViewState() {
-                        clearTimeout(viewStateTimeout);
-                        viewStateTimeout = setTimeout(function() {
-                            if (window.bridge) {
-                                var scale = network.getScale();
-                                var position = network.getViewPosition();
-                                window.bridge.viewStateChanged({
-                                    scale: scale,
-                                    position: position
-                                });
-                            }
-                        }, 200);
-                    }
-
-                    network.on("zoom", reportViewState);
-                    network.on("dragEnd", reportViewState);
-                    network.on("animationFinished", reportViewState);
-
-                    if (!viewState) {
-                        var focusRestored = false;
-                        network.once("stabilized", function() {
-                            if (!focusRestored) {
-                                focusRestored = true;
-                                restoreFocus();
-                            }
-                        });
-
-                        // Fallback: if stabilized doesn't fire within 2s, force focus
-                        setTimeout(function() {
-                            if (!focusRestored) {
-                                focusRestored = true;
-                                restoreFocus();
-                            }
-                        }, 2000);
-                    }
-                }
-            }, 50);
-        </script>
-        """
-
-        focus_json = json.dumps(focus_node_id) if focus_node_id else "null"
-        view_state_json = json.dumps(view_state) if view_state else "null"
-
-        interaction_script = interaction_script.replace("%FOCUS_ID%", focus_json)
-        interaction_script = interaction_script.replace("%VIEW_STATE%", view_state_json)
-
+        script = (
+            GRAPH_INTERACTION.replace("%POSITIONS%", "{}")
+            .replace("%VIEW_STATE%", json.dumps(camera))
+            .replace("%FOCUS_ID%", json.dumps(focus_node_id).replace("<", "\\u003c"))
+        )
         return html_content.replace(
-            "</body>", f"{qwebchannel_script}\n{interaction_script}\n</body>"
+            "</body>",
+            '<script src="qrc:///qtwebchannel/qwebchannel.js"></script>'
+            f"<script>{script}</script></body>",
         )
 
     def build_empty_html(self, theme_config: dict[str, str] | None = None) -> str:

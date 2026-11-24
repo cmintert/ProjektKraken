@@ -85,6 +85,7 @@ class AddRelationCommand(BaseCommand):
             endpoints = [(self.source_id, self.target_id)]
             if self.bidirectional:
                 endpoints.append((self.target_id, self.source_id))
+                validate_temporal_edit(db_service, self.attributes, self.target_id)
             for rel_id, (source, target) in zip(self._created_rel_ids, endpoints):
                 service.create(
                     source,
@@ -100,7 +101,10 @@ class AddRelationCommand(BaseCommand):
                 success=True,
                 message=f"Added relation {self.source_id}->{self.target_id}",
                 command_name="AddRelationCommand",
-                data={"relation_id": self._created_rel_ids[0]},
+                data={
+                    "relation_id": self._created_rel_ids[0],
+                    "relation_ids": list(self._created_rel_ids),
+                },
             )
         except Exception as e:
             logger.error(f"Failed to add relation: {e}")

@@ -8,6 +8,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from PySide6.QtCore import QSettings
 from PySide6.QtWidgets import QApplication, QLabel
 
 from src.app.help_package_probe import probe_help
@@ -76,6 +77,24 @@ def parse_package_smoke_options(argv: list[str]) -> PackageSmokeOptions | None:
         report_path=options.package_smoke_report.resolve(),
         expected_world_id=options.package_smoke_expected_world_id,
     )
+
+
+def configure_package_smoke(options: PackageSmokeOptions) -> None:
+    """Isolate the world selection shared by the two smoke launches."""
+    settings_root = options.report_path.parent / "package-smoke-settings"
+    QSettings.setDefaultFormat(QSettings.Format.IniFormat)
+    QSettings.setPath(
+        QSettings.Format.IniFormat, QSettings.Scope.UserScope, str(settings_root)
+    )
+    QSettings.setPath(
+        QSettings.Format.IniFormat,
+        QSettings.Scope.SystemScope,
+        str(settings_root / "system"),
+    )
+    if options.phase == "first-run":
+        settings = QSettings()
+        settings.clear()
+        settings.sync()
 
 
 class PackageSmokeController:

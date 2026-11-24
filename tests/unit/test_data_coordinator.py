@@ -4,6 +4,7 @@ Tests data loading, signal handler dispatch, graph refresh, and
 summary result routing extracted from MainWindow into a focused coordinator.
 """
 
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -423,6 +424,41 @@ class TestGraphData:
         edges = [{"source": "n1", "target": "n2"}]
         coordinator.on_graph_data_ready(nodes, edges)
         fake_window.graph_widget.display_graph.assert_called_once()
+
+    @pytest.mark.ci_fast
+    def test_scoped_reply_checks_world_revision_and_releases_failure(
+        self, coordinator, fake_window
+    ):
+        from src.core.authoring_scope import AuthoringScope
+
+        fake_window.current_world = SimpleNamespace(id="world-a")
+        fake_window.db_path = "world-a.kraken"
+        fake_window.workspace.active_panel.return_value = "graph"
+        coordinator.bind_scoped_graph()
+        coordinator.load_graph_data()
+        first = coordinator._graph_request
+        coordinator.on_graph_scope_changed(AuthoringScope(("Adventure",)), 1)
+        coordinator.on_graph_snapshot_ready({"request": first, "error": "old"})
+        assert not coordinator._graph_load_in_flight
+        fake_window.status_bar.showMessage.assert_not_called()
+
+        coordinator.load_graph_data()
+        second = coordinator._graph_request
+        assert second["scope_revision"] == 1
+        coordinator.on_graph_snapshot_ready({"request": first, "error": "duplicate"})
+        assert coordinator._graph_load_in_flight
+        fake_window.current_world = SimpleNamespace(id="world-b")
+        fake_window.db_path = "world-b.kraken"
+        coordinator.on_graph_snapshot_ready({"request": second, "error": "wrong world"})
+        assert not coordinator._graph_load_in_flight
+        fake_window.status_bar.showMessage.assert_not_called()
+
+        coordinator.load_graph_data()
+        current = coordinator._graph_request
+        coordinator.on_graph_snapshot_ready({"request": current, "error": "current"})
+        assert not coordinator._graph_load_in_flight
+        fake_window.status_bar.showMessage.assert_called_once_with("current")
+        fake_window.graph_widget.display_graph.assert_not_called()
 
     def test_hidden_graph_changes_do_not_request_or_render(
         self, coordinator, fake_window, qapp
