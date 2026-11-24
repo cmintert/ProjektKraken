@@ -43,7 +43,7 @@ def test_now_is_exact_and_preserves_other_boundary(qtbot, converter, time, side)
     assert converter.format_datetime(time) in dialog.now_label.text()
     button = dialog.starts_now_button if side == "start" else dialog.ends_now_button
     button.click()
-    result = dialog.get_data()[3]
+    result = dialog.get_data()[2]
     assert result["temporal"][side] == {"exact": time}
     assert result["temporal"][other] == attributes["temporal"][other]
     assert result["custom"] == "retained"
@@ -52,7 +52,7 @@ def test_now_is_exact_and_preserves_other_boundary(qtbot, converter, time, side)
     )
     qtbot.addWidget(reopened)
     assert reopened.rb_absolute.isChecked()
-    assert reopened.get_data()[3]["temporal"] == result["temporal"]
+    assert reopened.get_data()[2]["temporal"] == result["temporal"]
 
 
 def test_end_now_preserves_dynamic_start_on_reopen(qtbot, converter):
@@ -61,14 +61,14 @@ def test_end_now_preserves_dynamic_start_on_reopen(qtbot, converter):
     )
     qtbot.addWidget(dialog)
     dialog.ends_now_button.click()
-    result = dialog.get_data()[3]
+    result = dialog.get_data()[2]
     assert result["temporal"]["start"] == {"binding": "source_event"}
     assert result["temporal"]["end"] == {"exact": 125.5}
     reopened = RelationEditDialog(
         attributes=result, source_event_date=110.0, calendar_converter=converter
     )
     qtbot.addWidget(reopened)
-    assert reopened.get_data()[3]["temporal"] == result["temporal"]
+    assert reopened.get_data()[2]["temporal"] == result["temporal"]
 
 
 def test_missing_context_disables_now(qtbot):
@@ -89,7 +89,7 @@ def test_playhead_attributes_survive_command_undo_redo(qtbot, converter, db_serv
     dialog = RelationEditDialog(calendar_converter=converter, playhead_time=125.512345)
     qtbot.addWidget(dialog)
     dialog.starts_now_button.click()
-    attrs = dialog.get_data()[3]
+    attrs = dialog.get_data()[2]
     add = AddRelationCommand(source.id, target.id, "owns", attrs)
     assert add.execute(db_service).success
     add.undo(db_service)
@@ -99,13 +99,13 @@ def test_playhead_attributes_survive_command_undo_redo(qtbot, converter, db_serv
     assert relation["attributes"]["temporal"]["start"] == {"exact": 125.512345}
     dialog.ends_now_button.click()
     update = UpdateRelationCommand(
-        relation["id"], target.id, "owns", dialog.get_data()[3]
+        relation["id"], target.id, "owns", dialog.get_data()[2]
     )
     assert not update.execute(db_service).success
     dialog.form._playhead_time = 126.512345
     dialog.ends_now_button.click()
     update = UpdateRelationCommand(
-        relation["id"], target.id, "owns", dialog.get_data()[3]
+        relation["id"], target.id, "owns", dialog.get_data()[2]
     )
     assert update.execute(db_service).success
     update.undo(db_service)
@@ -122,4 +122,4 @@ def test_manual_edit_replaces_captured_now(qtbot, converter):
     dialog.starts_now_button.click()
     dialog.valid_from.set_value(130.0)
     dialog.valid_from.value_changed.emit(130.0)
-    assert dialog.get_data()[3]["temporal"]["start"] == {"exact": 130.0}
+    assert dialog.get_data()[2]["temporal"]["start"] == {"exact": 130.0}

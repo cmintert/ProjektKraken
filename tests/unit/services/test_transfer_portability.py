@@ -309,6 +309,12 @@ def test_portable_world_preserves_all_tables_and_full_world_controls(
     )
     db_service.insert_entity(owner)
     db_service.assign_tag_to_entity(owner.id, "control")
+    other = Entity(name="Other owner", type="person")
+    db_service.insert_entity(other)
+    for source, target in ((owner, other), (other, owner)):
+        db_service.insert_relation(
+            source.id, target.id, "knows", {"notes": source.name}
+        )
     root = tmp_path / "source"
     (root / "assets").mkdir(parents=True)
     Image.new("L", (2, 2), color=64).save(root / "assets" / "raster.png")

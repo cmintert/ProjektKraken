@@ -37,7 +37,6 @@ def test_relation_wheel_preserves_draft_and_scrolls(qtbot, width, pixel, child):
     dialog = RelationEditDialog(
         target_id="entity-1",
         rel_type="member_of",
-        is_bidirectional=True,
         suggestion_items=[("entity-1", "Target", "entity")],
         source_event_date=100.0,
         attributes={
@@ -130,7 +129,9 @@ def test_numeric_visible_arrows_still_step(qtbot, spin_type):
     assert spin.value() == 51
 
 
-def test_relation_note_save_after_scrolling_preserves_metadata_and_undo(qtbot, db_service):
+def test_relation_note_save_after_scrolling_preserves_metadata_and_undo(
+    qtbot, db_service
+):
     source = Event(name="Council", lore_date=100.0)
     target = Entity(name="Member", type="Character")
     db_service.insert_event(source)
@@ -159,7 +160,7 @@ def test_relation_note_save_after_scrolling_preserves_metadata_and_undo(qtbot, d
     qtbot.waitUntil(dialog.notes_edit.hasFocus)
     send_wheel(dialog.confidence_spin)
     dialog.notes_edit.setPlainText("Revised note")
-    target_id, relation_type, _, saved_attributes = dialog.get_data()
+    target_id, relation_type, saved_attributes = dialog.get_data()
     command = UpdateRelationCommand(
         relation_id, target_id, relation_type, attributes=saved_attributes
     )

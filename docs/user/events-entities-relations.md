@@ -487,7 +487,11 @@ draft guard and confirmation. It does not delete either endpoint. System-managed
 References cannot be removed here; change their originating prose instead.
 
 A relation does not automatically change a similarly named attribute or wiki link.
-Creating a reverse connection is a separate deliberate choice.
+Save a connection once and find it in **Connections** from either entry. In
+GraphView, choose **From → To** or **To → From** to set the saved direction.
+If a second fact is true in the opposite direction, create a separate connection
+with its own direction, type and timing. To do so from the inspector, start
+from the other entry.
 
 **Example:** Record Ada’s membership in a dynasty as a relation. Read the source, target
 and meaning together to ensure the connection expresses the intended direction.
@@ -1307,8 +1311,8 @@ determines when it stops applying.
 
 (help-inspect-src-gui-widgets-relation-form-relationform-init-self-bi-check)=
 
-**Bidirectional (Create reverse link)** — Also create a reverse connection when
-accepting this new relation. This is a deliberate choice, not automatic synchronization.
+**Creating a reciprocal fact** — Save the first connection. Start a separate
+connection in the opposite direction and choose the type that describes it.
 
 (help-inspect-src-gui-widgets-relation-form-relationform-group-boundaries-disclosure)=
 

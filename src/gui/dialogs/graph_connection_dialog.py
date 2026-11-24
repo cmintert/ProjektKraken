@@ -84,7 +84,6 @@ class GraphConnectionDialog(QDialog):
         for label, value in (
             ("From → To", "forward"),
             ("To → From", "reverse"),
-            ("Both directions", "reciprocal"),
         ):
             self.direction.addItem(label, value)
         fields.addRow("Direction", self.direction)

@@ -92,8 +92,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         save_requested(dict): Emitted when user clicks Save; payload is entity data.
         discard_requested(str): Emitted when user discards changes; payload is item_id.
         inject_requested(dict): Request to run inject command with given data.
-        add_relation_requested(str, str, str, dict, bool): Request to create a relation
-            (source_id, target_id, rel_type, attributes, bidirectional).
+        add_relation_requested(str, str, str, dict): Request to create a relation
+            (source_id, target_id, rel_type, attributes).
         remove_relation_requested(str): Request to delete a relation by rel_id.
         update_relation_requested(str, str, str, dict): Request to update a relation
             (rel_id, target_id, rel_type, attributes).
@@ -114,7 +114,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
     btn_edit_rel: StandardButton
     btn_remove_rel: DestructiveButton
 
-    add_relation_requested = Signal(str, str, str, dict, bool)
+    add_relation_requested = Signal(str, str, str, dict)
     remove_relation_requested = Signal(str)
     update_relation_requested = Signal(str, str, str, dict)
     relation_authoring_requested = Signal(dict)
@@ -1343,7 +1343,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         Launches :class:`~src.gui.dialogs.relation_dialog.RelationEditDialog`
         pre-populated with known entity/event items and relation types for
         autocompletion.  On acceptance, emits :attr:`add_relation_requested`
-        with the chosen target, type, bidirectional flag, and extra attributes.
+        with the chosen target, type, and extra attributes.
 
         Returns early if no entity is currently loaded.
 
@@ -1362,14 +1362,13 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         )
 
         if dlg.exec():
-            target_id, rel_type, is_bidirectional, attributes = dlg.get_data()
+            target_id, rel_type, attributes = dlg.get_data()
             if target_id:
                 self.add_relation_requested.emit(
                     self._current_entity_id,
                     target_id,
                     rel_type,
                     attributes,
-                    is_bidirectional,
                 )
 
     def _on_remove_relation_item(self, item: dict[str, Any]) -> None:
@@ -1425,19 +1424,14 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             source_name=rel_data.get("source_name") or self.name_edit.text(),
             target_id=rel_data["target_id"],
             rel_type=rel_data["rel_type"],
-            is_bidirectional=False,
             attributes=rel_data.get("attributes"),
             # Editing existing relation implies directional update typically
             suggestion_items=getattr(self, "_suggestion_items", []),
             known_types=getattr(self, "_suggestion_types", []),
         )
 
-        # Hide bidirectional check for editing as logic might be complex
-        # handling existing reverse links
-        dlg.bi_check.setVisible(False)
-
         if dlg.exec():
-            target_id, rel_type, _, attributes = dlg.get_data()
+            target_id, rel_type, attributes = dlg.get_data()
             if target_id:
                 self.update_relation_requested.emit(
                     rel_data["id"], target_id, rel_type, attributes

@@ -203,6 +203,16 @@ def test_connection_dialog_preserves_pending_input_and_protects_mentions(qtbot):
     dialog.existing.setCurrentIndex(1)
     assert not dialog.edit_button.isEnabled()
     assert dialog.save.isEnabled()
+    assert [
+        dialog.direction.itemData(index) for index in range(dialog.direction.count())
+    ] == ["forward", "reverse"]
+    dialog.resize(380, 420)
+    dialog.show()
+    dialog.direction.setCurrentIndex(1)
+    dialog.save.setFocus()
+    with qtbot.waitSignal(dialog.save_requested) as submitted:
+        qtbot.keyClick(dialog.save, Qt.Key.Key_Space)
+    assert submitted.args == ["related", "reverse", False]
     dialog.set_pending(True)
     dialog.set_pending(False, "Rejected")
     assert dialog.save.isEnabled()

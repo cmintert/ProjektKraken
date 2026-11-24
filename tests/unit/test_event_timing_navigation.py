@@ -153,7 +153,7 @@ def test_fixed_relation_uses_saved_january_playhead(timing_editor, qtbot, db_ser
     dialog = RelationEditDialog(calendar_converter=converter, playhead_time=playhead)
     qtbot.addWidget(dialog)
     dialog.starts_now_button.click()
-    attrs = dialog.get_data()[3]
+    attrs = dialog.get_data()[2]
     assert attrs["temporal"]["start"] == {"exact": 433177.5}
     assert (
         AddRelationCommand(source.id, target.id, "member_of", attrs)

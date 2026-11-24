@@ -223,9 +223,9 @@ def test_commands_reject_bad_replacement_endpoints_without_writes(
     rel_id = db_service.insert_relation(source.id, target.id, "before")
     before = db_service.get_all_relations()
     if operation == "add-source":
-        command = AddRelationCommand(bad_id, target.id, "after", bidirectional=True)
+        command = AddRelationCommand(bad_id, target.id, "after")
     elif operation == "add-target":
-        command = AddRelationCommand(source.id, bad_id, "after", bidirectional=True)
+        command = AddRelationCommand(source.id, bad_id, "after")
     elif operation == "update":
         command = UpdateRelationCommand(rel_id, bad_id, "after")
     elif operation == "reverse-source":

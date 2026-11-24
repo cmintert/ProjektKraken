@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.core.relation_policy import has_direction_sensitive_attributes
+from src.core.relation_policy import endpoint_change_error
 from src.core.relation_presentation import (
     authoring_caption,
     authoring_choices,
@@ -373,8 +373,6 @@ class RelationAuthoring(QFrame):
         form.target_edit.hide()
         self._take_widget(fields, form.type_edit)
         self._take_widget(fields, form.preview_label)
-        self._take_widget(fields, form.bi_check)
-        form.bi_check.hide()
         attributes = form.attributes_group.layout()
         assert isinstance(attributes, QFormLayout)
         self._take_widget(attributes, form.notes_edit)
@@ -530,13 +528,14 @@ class RelationAuthoring(QFrame):
 
     def _reverse(self) -> None:
         assert self.form is not None and self.relation is not None
-        attrs = self.form.get_data()[3]
-        if has_direction_sensitive_attributes(attrs):
-            self._status(
-                "This relation uses its source event for timing or state changes. "
-                "Refine those details before reversing its direction."
+        if not self.reversed:
+            target, _, attributes = self.form.get_data()
+            error = endpoint_change_error(
+                self.relation, target, self.source_id, attributes
             )
-            return
+            if error:
+                self._status(error)
+                return
         self.reversed = not self.reversed
         self.reverse_button.setText(
             "Restore direction" if self.reversed else "Reverse direction"
@@ -643,11 +642,13 @@ class RelationAuthoring(QFrame):
                 return
             if not self.form.validate():
                 return
-            target, kind, _, attrs = self.form.get_data()
-            if self.reversed and has_direction_sensitive_attributes(attrs):
-                self._status(
-                    "Keep the source direction for source-event timing or state changes."
-                )
+            target, kind, attrs = self.form.get_data()
+            source_id, target_id = (
+                (target, self.source_id) if self.reversed else (self.source_id, target)
+            )
+            error = endpoint_change_error(self.relation, source_id, target_id, attrs)
+            if error:
+                self._status(error)
                 return
             if not kind:
                 self._status("Choose a meaning or enter a custom type.")
@@ -655,13 +656,13 @@ class RelationAuthoring(QFrame):
             request.update(
                 operation="refine",
                 id=self.relation["id"],
-                target_id=target,
+                target_id=target_id,
                 rel_type=kind,
                 attributes=attrs,
                 expected=deepcopy(self.relation),
             )
             if self.reversed:
-                request["source_id"], request["target_id"] = target, self.source_id
+                request["source_id"] = source_id
         else:
             return
         self.pending_id = str(uuid4())

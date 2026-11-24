@@ -441,9 +441,7 @@ class GraphAuthoring(QObject):
                     "end": {"status": "open"},
                 },
             }
-        relation = AddRelationCommand(
-            source, target, kind, attributes, bidirectional=direction == "reciprocal"
-        )
+        relation = AddRelationCommand(source, target, kind, attributes)
         children: list[BaseCommand] = (
             [creation, relation] if creation is not None else [relation]
         )
@@ -487,13 +485,10 @@ class GraphAuthoring(QObject):
                 self._data.cached_events, calendar
             ),
         )
-        form.bi_check.hide()
         form.target_edit.setReadOnly(True)
         self._auxiliary = form
         accepted = form.exec() == QDialog.DialogCode.Accepted
-        target_id, kind, _, attributes = (
-            form.get_data() if accepted else ("", "", False, {})
-        )
+        target_id, kind, attributes = form.get_data() if accepted else ("", "", {})
         if shiboken6.isValid(form):
             form.deleteLater()
         self._auxiliary = None

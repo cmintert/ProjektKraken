@@ -2,6 +2,7 @@
 
 from copy import deepcopy
 from unittest.mock import MagicMock
+from uuid import uuid4
 
 import pytest
 from PySide6.QtCore import Qt
@@ -302,19 +303,18 @@ def test_both_inline_reversal_gates_reject_direction_sensitive_data(
     panel.refine(row)
     # A form snapshot can change after Reverse but before Apply. Exercise that
     # boundary without depending on temporal field editing/normalization here.
-    monkeypatch.setattr(
-        panel.form, "get_data", lambda: ("target", "related", False, attrs)
-    )
+    monkeypatch.setattr(panel.form, "get_data", lambda: ("target", "related", attrs))
+    explanation = "Keep the endpoints" if "payload" in attrs else "Keep the source"
     requests = []
     editor.relation_authoring_requested.connect(requests.append)
     panel._reverse()
     assert not panel.reversed
-    assert "Refine those details before reversing" in panel.status.text()
+    assert explanation in panel.status.text()
     panel.reversed = True
     panel.apply()
     assert not requests
     assert not panel.pending_id
-    assert "Keep the source direction" in panel.status.text()
+    assert explanation in panel.status.text()
     assert attrs == before
     assert panel.relation == row
 
@@ -475,14 +475,14 @@ def test_inline_timing_keeps_fixed_start_and_dynamic_end(editor):
     assert not panel.is_dirty()
     panel.form.starts_now_button.click()
     assert "Timing changed" in panel.timing_caption.text()
-    attributes = panel.form.get_data()[3]
+    attributes = panel.form.get_data()[2]
     assert attributes["temporal"]["start"] == {"exact": 125.512345}
     assert attributes["temporal"]["end"] == {"binding": "source_event"}
     panel.cancel()
     changed = relation(attributes)
     changed["source_event_date"] = 200.0
     panel.refine(changed)
-    assert panel.form.get_data()[3] == attributes
+    assert panel.form.get_data()[2] == attributes
 
 
 def test_coordinator_capture_feedback_and_relation_refresh_preserve_prose(
@@ -602,9 +602,10 @@ def test_bidirectional_replay_collision_rolls_back_first_insert(db_service):
     for item in (source, target):
         db_service.insert_event(item)
     capture = AddRelationCommand(source.id, target.id, "related", bidirectional=True)
-    assert capture.execute(db_service).success
-    ids = capture.to_dict()["created_rel_ids"]
-    capture.undo(db_service)
+    ids = [str(uuid4()), str(uuid4())]
+    capture = AddRelationCommand.from_dict(
+        {**capture.to_dict(), "created_rel_ids": ids}
+    )
     from src.services.repositories.relation_repository import RelationRepository
 
     repo = RelationRepository()

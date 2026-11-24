@@ -160,7 +160,7 @@ def test_add_relation_flow(editor, qtbot, monkeypatch):
 
     mock_dialog = MagicMock()
     mock_dialog.exec.return_value = True
-    mock_dialog.get_data.return_value = ("target_id", "caused", True, {})
+    mock_dialog.get_data.return_value = ("target_id", "caused", {})
 
     # Patch the class where it is defined
     monkeypatch.setattr(
@@ -172,8 +172,8 @@ def test_add_relation_flow(editor, qtbot, monkeypatch):
     with qtbot.waitSignal(editor.add_relation_requested) as blocker:
         editor._on_add_detailed_relation()
 
-    # Signal: source, target, type, attributes, bidirectional
-    assert blocker.args == ["1", "target_id", "caused", {}, True]
+    # Signal: source, target, type, attributes
+    assert blocker.args == ["1", "target_id", "caused", {}]
 
 
 def test_remove_relation(editor, qtbot, monkeypatch):
@@ -244,8 +244,7 @@ def test_context_menu_actions(editor, qtbot, monkeypatch):
 
     mock_dialog = MagicMock()
     mock_dialog.exec.return_value = True
-    mock_dialog.get_data.return_value = ("new_target", "related_to", True, {})
-    mock_dialog.bi_check = MagicMock()  # For setVisible(False)
+    mock_dialog.get_data.return_value = ("new_target", "related_to", {})
 
     # Patch the class where it is defined
     dialog_kwargs = {}

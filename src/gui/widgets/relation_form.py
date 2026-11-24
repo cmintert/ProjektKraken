@@ -73,7 +73,6 @@ class RelationForm(QWidget):
         parent: Optional[QWidget] = None,
         target_id: str = "",
         rel_type: str = "involved",
-        is_bidirectional: bool = False,
         attributes: Optional[Dict[str, Any]] = None,
         suggestion_items: Optional[
             list[tuple[str, str, str]]
@@ -94,7 +93,6 @@ class RelationForm(QWidget):
             parent: Parent widget.
             target_id: Initial target ID (for editing).
             rel_type: Initial relation type.
-            is_bidirectional: Initial bidirectional state.
             attributes: Initial relation attributes.
             suggestion_items: List of (id, name, type) for autocompletion.
             source_event_date: Optional lore_date of the source event.
@@ -344,14 +342,6 @@ class RelationForm(QWidget):
 
         if self.source_event_date is not None:
             self._setup_state_changes()
-
-        # 5. Bidirectional
-        self.bi_check = declare_inspection(
-            QCheckBox("Bidirectional (Create reverse link)"),
-            "src-gui-widgets-relation-form-relationform-init-self-bi-check|relations.create|help-inspect-src-gui-widgets-relation-form-relationform-init-self-bi-check",
-        )
-        self.bi_check.setChecked(is_bidirectional)
-        self.form_layout.addRow("", self.bi_check)
 
         self._group_boundaries()
 
@@ -1209,20 +1199,19 @@ class RelationForm(QWidget):
             controls.set_context(context)
         self._refresh_boundary_previews()
 
-    def get_data(self) -> tuple[str, str, bool, Dict[str, Any]]:
+    def get_data(self) -> tuple[str, str, Dict[str, Any]]:
         """Returns the dialog data.
 
         Returns:
-            tuple: (target_id, rel_type, is_bidirectional, attributes)
+            tuple: (target_id, rel_type, attributes)
 
         """
         target_id = self._resolve_target_id(self.target_edit.text())
 
         rel_type = self.type_edit.currentText().strip()
-        is_bidirectional = self.bi_check.isChecked()
         attributes = self._get_attributes()
 
-        return target_id or "", rel_type, is_bidirectional, attributes
+        return target_id or "", rel_type, attributes
 
     def _resolve_target_id(self, text: str) -> Optional[str]:
         """Resolve the target using the same picker as inline capture."""
@@ -1235,7 +1224,7 @@ class RelationForm(QWidget):
         if not self.valid_from.commit_draft() or not self.valid_to.commit_draft():
             return False
 
-        target_id, rel_type, _, attributes = self.get_data()
+        target_id, rel_type, attributes = self.get_data()
         window = resolve_temporal_window(
             attributes,
             self.source_event_date,

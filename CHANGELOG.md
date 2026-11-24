@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-24
-**Commit:** 0d548f8f
+**Commit:** 06109cc3
 ---
 
 # Changelog
@@ -22,6 +22,11 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-11-24)* **Relation safety (KRT-70)**: Protected source-bound timing and
+  state-change recipients during endpoint edits, while preserving legacy
+  reciprocal rows and history. Added regression coverage for undo, redo,
+  transfer, and narrow keyboard authoring.
+
 - *(2026-11-24)* **Scoped authoring (KRT-184)**: Used the focused graph node
   as the Connect source, refreshed Timeline group counts and occurrence marks
   after filtering, and persisted enabled creation tags from older settings.
@@ -37,6 +42,13 @@ All notable changes to this project will be documented in this file.
   conflicting editor saves.
 
 ### Changed
+
+- *(2026-11-24)* **Relations and Help (KRT-70)**: Made each creation action save
+  one directed relation visible from either endpoint. Retired the CLI
+  `--bidirectional` flag with guidance for entering each fact separately.
+- *(2026-11-24)* **Architecture (KRT-69)**: Drafted the world relation
+  vocabulary schema, consumer audit, and compatibility matrix. Defined how
+  world-wide display labels preserve stored keys and lifecycle behavior.
 
 - *(2026-11-24)* **Windows packaging**: Logged the successful package
   world-data check.

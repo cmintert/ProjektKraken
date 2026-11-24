@@ -65,7 +65,6 @@ class HelpSurfaceBindings(QObject):
                 ("temporal_behavior", "relations.timing"),
                 ("logic_group", "relations.timing"),
                 ("type_edit", "relations.create"),
-                ("bi_check", "relations.create"),
             ):
                 control = getattr(widget, attribute, None)
                 if isinstance(control, QWidget):

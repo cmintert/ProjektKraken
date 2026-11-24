@@ -23,7 +23,6 @@ def test_dialog_init(relation_dialog):
         relation_dialog.target_edit.placeholderText() == "Search for entity or event..."
     )
     assert relation_dialog.type_edit.currentText() == "involved"
-    assert not relation_dialog.bi_check.isChecked()
 
 
 def test_autocompletion_resolution(relation_dialog, qtbot):
@@ -32,18 +31,17 @@ def test_autocompletion_resolution(relation_dialog, qtbot):
     relation_dialog.target_edit.setText("Gandalf")
 
     # Get data
-    target_id, rel_type, is_bi, _ = relation_dialog.get_data()
+    target_id, rel_type, _ = relation_dialog.get_data()
 
     assert target_id == "id-1"
     assert rel_type == "involved"
-    assert not is_bi
 
 
 def test_unknown_manual_entry_is_not_returned_as_an_id(relation_dialog):
     """Arbitrary text must never cross the dialog boundary as a target ID."""
     relation_dialog.target_edit.setText("Manual-ID-123")
 
-    target_id, _, _, _ = relation_dialog.get_data()
+    target_id, _, _ = relation_dialog.get_data()
 
     assert target_id == ""
 
@@ -61,9 +59,7 @@ def test_duplicate_names_require_disambiguated_selection(qtbot):
     assert dialog.get_data()[0] == ""
 
     display = next(
-        text
-        for text, item_id in dialog._display_to_id.items()
-        if item_id == "id-2"
+        text for text, item_id in dialog._display_to_id.items() if item_id == "id-2"
     )
     dialog.target_edit.setText(display)
     assert dialog.get_data()[0] == "id-2"
@@ -75,7 +71,6 @@ def test_prefill_editing(qtbot):
     dialog = RelationEditDialog(
         target_id="id-1",
         rel_type="located_at",
-        is_bidirectional=True,
         suggestion_items=items,
     )
     qtbot.addWidget(dialog)
@@ -83,10 +78,9 @@ def test_prefill_editing(qtbot):
     # Assert display name is shown, not ID
     assert dialog.target_edit.text() == "Gandalf"
     assert dialog.type_edit.currentText() == "located_at"
-    assert dialog.bi_check.isChecked()
 
     # Verify data retrieval converts back to ID
-    target_id, _, _, _ = dialog.get_data()  # Expect 4 values now
+    target_id, _, _ = dialog.get_data()
     assert target_id == "id-1"
 
 
@@ -106,7 +100,7 @@ def test_attribute_collection(qtbot):
     )  # Assuming using QTextEdit or QPlainTextEdit
 
     # Get data
-    _, _, _, attributes = dialog.get_data()
+    _, _, attributes = dialog.get_data()
 
     assert attributes["weight"] == 0.8
     assert attributes["confidence"] == 0.5
@@ -121,21 +115,19 @@ def test_default_attributes_omitted(qtbot):
 
     # Leave defaults (Weight 1.0, Confidence 1.0)
 
-    _, _, _, attributes = dialog.get_data()
+    _, _, attributes = dialog.get_data()
 
     assert "weight" not in attributes
     assert "confidence" not in attributes
 
 
 def test_entity_to_entity_has_no_state_changes_ui(qtbot):
-    dialog = RelationEditDialog(
-        suggestion_items=[("entity-1", "Target", "entity")]
-    )
+    dialog = RelationEditDialog(suggestion_items=[("entity-1", "Target", "entity")])
     qtbot.addWidget(dialog)
     dialog.target_edit.setText("Target")
 
     assert not hasattr(dialog, "state_changes_group")
-    assert "payload" not in dialog.get_data()[3]
+    assert "payload" not in dialog.get_data()[2]
 
 
 def test_event_to_entity_round_trips_payload_v2(qtbot):
@@ -164,7 +156,7 @@ def test_event_to_entity_round_trips_payload_v2(qtbot):
     assert dialog.state_changes_group.title() == "State Changes to Target Entity"
     assert not dialog.state_changes_group.isHidden()
     assert dialog.state_changes_unavailable_label.isHidden()
-    _, _, _, attributes = dialog.get_data()
+    _, _, attributes = dialog.get_data()
     assert attributes["payload"] == {
         "attributes": {"status": "Ruined", "ruler": None},
         "unset_attributes": ["garrison"],
@@ -182,7 +174,7 @@ def test_event_to_entity_preserves_payload_without_suggestion_item(qtbot):
     )
     qtbot.addWidget(dialog)
 
-    target_id, _, _, attributes = dialog.get_data()
+    target_id, _, attributes = dialog.get_data()
 
     assert target_id == "entity-1"
     assert not dialog.state_changes_group.isHidden()
@@ -199,7 +191,7 @@ def test_authoritative_event_target_omits_payload_without_suggestion_item(qtbot)
     )
     qtbot.addWidget(dialog)
 
-    target_id, _, _, attributes = dialog.get_data()
+    target_id, _, attributes = dialog.get_data()
 
     assert target_id == "event-2"
     assert dialog.state_changes_group.isHidden()
@@ -217,7 +209,7 @@ def test_event_relation_defaults_to_starting_at_the_event(qtbot):
     qtbot.addWidget(dialog)
     dialog.state_attribute_editor.load_attributes({"status": "Ruined"})
 
-    _, _, _, attributes = dialog.get_data()
+    _, _, attributes = dialog.get_data()
 
     assert dialog.rb_starts.isChecked()
     assert attributes["valid_from_event"] is True
@@ -242,12 +234,12 @@ def test_event_to_event_hides_and_omits_mutation_controls(qtbot):
     assert "unavailable for an Event target" in (
         dialog.state_changes_unavailable_label.text()
     )
-    assert "payload" not in dialog.get_data()[3]
+    assert "payload" not in dialog.get_data()[2]
 
     dialog.target_edit.setText("Grey Ford")
     assert not dialog.state_changes_group.isHidden()
     assert dialog.state_changes_unavailable_label.isHidden()
-    assert dialog.get_data()[3]["payload"]["attributes"]["status"] == "Ruined"
+    assert dialog.get_data()[2]["payload"]["attributes"]["status"] == "Ruined"
 
 
 def test_empty_event_to_entity_mutation_omits_payload(qtbot):
@@ -258,7 +250,7 @@ def test_empty_event_to_entity_mutation_omits_payload(qtbot):
     )
     qtbot.addWidget(dialog)
 
-    assert "payload" not in dialog.get_data()[3]
+    assert "payload" not in dialog.get_data()[2]
 
 
 def test_change_description_checkbox_reveals_editor(qtbot):
@@ -297,11 +289,11 @@ def test_tall_event_relation_keeps_approval_buttons_below_scrollable_form(qtbot)
     qtbot.addWidget(dialog)
     dialog.show()
 
-    qtbot.waitUntil(
-        lambda: dialog.form_scroll_area.verticalScrollBar().maximum() > 0
-    )
+    qtbot.waitUntil(lambda: dialog.form_scroll_area.verticalScrollBar().maximum() > 0)
 
-    assert dialog.form_scroll_area.geometry().bottom() < dialog.button_box.geometry().top()
+    assert (
+        dialog.form_scroll_area.geometry().bottom() < dialog.button_box.geometry().top()
+    )
 
 
 def test_relation_dialog_themes_scroll_area_and_fits_attribute_rows(qtbot):
@@ -336,9 +328,7 @@ def test_relation_dialog_themes_scroll_area_and_fits_attribute_rows(qtbot):
 
 
 @pytest.mark.parametrize("invalid_key", ["status", "_tags", "name"])
-def test_invalid_state_changes_keep_dialog_open(
-    qtbot, monkeypatch, invalid_key
-):
+def test_invalid_state_changes_keep_dialog_open(qtbot, monkeypatch, invalid_key):
     dialog = RelationEditDialog(
         target_id="entity-1",
         source_event_date=100.0,

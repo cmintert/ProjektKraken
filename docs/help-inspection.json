@@ -6702,16 +6702,6 @@
       "kind": "QCheckBox"
     },
     {
-      "id": "src-gui-widgets-relation-form-relationform-init-self-bi-check",
-      "topic_id": "relations.create",
-      "target": "help-inspect-src-gui-widgets-relation-form-relationform-init-self-bi-check",
-      "source": "src/gui/widgets/relation_form.py",
-      "symbol": "RelationForm.__init__",
-      "binding": "self.bi_check",
-      "label": "Bidirectional (Create reverse link)",
-      "kind": "QCheckBox"
-    },
-    {
       "id": "src-gui-widgets-relation-form-relationform-group-boundaries-disclosure",
       "topic_id": "relations.timing",
       "target": "help-inspect-src-gui-widgets-relation-form-relationform-group-boundaries-disclosure",
@@ -10760,14 +10750,14 @@
     {
       "source": "src/commands/relation_commands.py",
       "symbol": "AddRelationCommand.execute",
-      "sha256": "224f8eae36992d65aa46969a350d734ee160fb663b40dd1904024e555d589df6",
-      "review_note": "KRT-184. Reciprocal connections create two directed assertions and evaluate timing against each source. Existing relation meaning and type controls retain their wording."
+      "sha256": "bf6cb696e704d73cada3e9cc21faa69e7c4c95d6056c9caec677020047fa797e",
+      "review_note": "KRT-70: New creation saves one assertion. Legacy reciprocal history replays its two recorded IDs."
     },
     {
       "source": "src/commands/relation_commands.py",
       "symbol": "AddRelationCommand.undo",
-      "sha256": "a7b464218835562433907d7bc1b89897b8a98d54b53f4f3f802d4979758d10f4",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "7ef2605ec086763fda2b36f22c4db7cd44baa43e06976c5ec49ecfbaf1fa9a30",
+      "review_note": "KRT-70: Undo removes this command's recorded rows within the transaction."
     },
     {
       "source": "src/commands/relation_commands.py",
@@ -10784,8 +10774,8 @@
     {
       "source": "src/commands/relation_commands.py",
       "symbol": "UpdateRelationCommand.execute",
-      "sha256": "c4a6b24c077105d76609f4a0e8816e76ef2f90df520604f52ad62ff98d6c579c",
-      "review_note": "KRT-111: Apply validates temporal edits against worker-owned events; relation Help now distinguishes empty states from deliberate occurrences."
+      "sha256": "434bbf899de933564f35fab7b42fc166feb954baae3e91efbc46b85a550435c0",
+      "review_note": "KRT-70: Endpoint changes protect saved and proposed timing bindings and state effects."
     },
     {
       "source": "src/commands/relation_commands.py",
@@ -15823,14 +15813,14 @@
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._progressive_form",
-      "sha256": "3ca0e973235bb421015e9107bba33128eaa92519455125520a6cf2be8ca41a31",
-      "review_note": "KRT-98: Reviewed relations.create and its Meaning, Connection type, Reverse direction and Apply excerpts against the pure-helper extraction. Captions, exact stored keys, suggestion ordering, source-event preview wording and both reversal checks remain unchanged. Existing explanations remain accurate; no new UI or prose. Pure dependencies have their own scoped source reviews."
+      "sha256": "d72446b5f60eac595a7ea8c5f6bc1af308d18e892881dc0c2286284c82e2cf48",
+      "review_note": "KRT-70: The inline form contains no reciprocal creation control."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._reverse",
-      "sha256": "8f3130b434bd5e1747c1074fea6cba48010f0cc3f1bdbc8216f8d39b957d0095",
-      "review_note": "KRT-98: Reviewed relations.create and its Meaning, Connection type, Reverse direction and Apply excerpts against the pure-helper extraction. Captions, exact stored keys, suggestion ordering, source-event preview wording and both reversal checks remain unchanged. Existing explanations remain accurate; no new UI or prose. Pure dependencies have their own scoped source reviews."
+      "sha256": "a8a31e66e9c109ca7714a0ecae5fc07f413d5dc08ab1782817a4aa183408bc65",
+      "review_note": "KRT-70: Reverse previews the change only when the endpoint policy allows it."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
@@ -15853,8 +15843,8 @@
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring.apply",
-      "sha256": "7385f25eb1623a605ea7f3951a18dcd9514c687ac6a9a90895dd9e86cf830e64",
-      "review_note": "KRT-98: Reviewed relations.create and its Meaning, Connection type, Reverse direction and Apply excerpts against the pure-helper extraction. Captions, exact stored keys, suggestion ordering, source-event preview wording and both reversal checks remain unchanged. Existing explanations remain accurate; no new UI or prose. Pure dependencies have their own scoped source reviews."
+      "sha256": "ad6afb8db04fabc463c94ecdefb8ee42a0747f24c117755ba2fb3d9c28c10f9e",
+      "review_note": "KRT-70: Apply checks saved and proposed endpoint-sensitive metadata before dispatch."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
@@ -15895,8 +15885,8 @@
     {
       "source": "src/gui/widgets/relation_form.py",
       "symbol": "RelationForm.__init__",
-      "sha256": "d2d4f57d15aae354f16f7686263e96e9e423236e4a7f0da543c8e49032ce0921",
-      "review_note": "KRT-111: Shared form receives immutable context for complete event precision and endpoint previews; unrelated form controls retain their meanings."
+      "sha256": "bc68de6ae518ba1bdf890497b560d9710267d55816d80800c3dc6c4100bad9eb",
+      "review_note": "KRT-70: The full form creates a single directed connection."
     },
     {
       "source": "src/gui/widgets/relation_form.py",
@@ -17340,9 +17330,9 @@
     },
     {
       "source": "src/core/relation_policy.py",
-      "symbol": "has_direction_sensitive_attributes",
-      "sha256": "06d17923285ece29cfd5396f136e330e664eba361b3a988d7a64bfdd78c34757",
-      "review_note": "KRT-98: Extracted compatibility calculation for existing relation controls. Preserve separate captions, raw key fallback and choices, original-endpoint previews and the existing truthy/string reversal assessment. Existing relations.create explanations remain accurate; schema, inverse wording and command enforcement are deferred."
+      "symbol": "endpoint_change_error",
+      "sha256": "9cf3ba72a833a172db13ec6979a95d12d278ead8a31bff3f8fc3e0c83987a21e",
+      "review_note": "KRT-70: The endpoint policy preserves source timing and payload recipients."
     },
     {
       "source": "src/commands/temporal_entity_edit_command.py",
@@ -17533,8 +17523,8 @@
     {
       "source": "src/app/help_composition.py",
       "symbol": "HelpSurfaceBindings.bind",
-      "sha256": "17ee8f5dc16cf5854612bae06d9bdd0e23bdc45f661c40df9c6f12901d45ffe4",
-      "review_note": "KRT-119: register the MCP settings composite for integrations.mcp; existing surface meanings stay intact. New enable, stop and activity excerpts explain immediate session effects, provider disclosure and revocation limits."
+      "sha256": "4b84a3482a032004bdfe468837d1eb3f7ef51419222a2fbedff8d780b935ef93",
+      "review_note": "KRT-70: The retired reciprocal creation checkbox has no live Help binding."
     },
     {
       "source": "src/gui/workspace/focus_navigation.py",
@@ -18038,8 +18028,8 @@
     {
       "source": "src/gui/dialogs/graph_connection_dialog.py",
       "symbol": "GraphConnectionDialog.__init__",
-      "sha256": "404c8f5ae27eb4f9439eeffb6aeb9c76f76d5da6f0a4e436a92d3e81617b12b0",
-      "review_note": "KRT-184. Fixed start captures the viewing date. Create Relationship saves the draft and new endpoint together. A failed pair lookup offers a retry in the same draft."
+      "sha256": "fc123a8ddf5bf9deccf1d6d0201c6e84a555899b72dd515e0d8166caeb97a6f3",
+      "review_note": "KRT-70: The direction picker selects one canonical direction."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_feedback.py",

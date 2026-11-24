@@ -336,12 +336,12 @@ def test_relation_shared_controls_preserve_unedited_reference(qtbot):
     )
     form = RelationForm(attributes=attributes(reference()), temporal_context=context)
     qtbot.addWidget(form)
-    assert form.get_data()[3]["temporal"]["start"] == reference()
+    assert form.get_data()[2]["temporal"]["start"] == reference()
     controls = form._anchor_controls["start"]
     controls.endpoint.setCurrentIndex(1)
     controls.unit.setCurrentIndex(2)
     controls.offset.setValue(1)
-    data = form.get_data()[3]["temporal"]
+    data = form.get_data()[2]["temporal"]
     assert data["schema"] == 2
     assert data["start"]["anchor"]["endpoint"] == "end"
     assert data["start"]["anchor"]["offset"]["unit"] == "years"
@@ -584,7 +584,7 @@ def test_relation_future_expression_stays_lossless_when_meaning_changes(qtbot):
     qtbot.addWidget(form)
     assert form._boundary_choices["start"].currentData() == "preserved"
     form.temporal_behavior.setCurrentIndex(1)
-    assert form.get_data()[3]["temporal"]["start"] == data["temporal"]["start"]
+    assert form.get_data()[2]["temporal"]["start"] == data["temporal"]["start"]
 
 
 def test_future_window_schema_requires_both_modes_to_be_replaced(qtbot):

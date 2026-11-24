@@ -359,7 +359,7 @@ def test_add_relation_flow(editor, qtbot, monkeypatch):
 
     mock_dialog = MagicMock()
     mock_dialog.exec.return_value = True
-    mock_dialog.get_data.return_value = ("target_id", "caused", True, {})
+    mock_dialog.get_data.return_value = ("target_id", "caused", {})
 
     # Patch the class where it is defined
     monkeypatch.setattr(
@@ -373,8 +373,8 @@ def test_add_relation_flow(editor, qtbot, monkeypatch):
     with qtbot.waitSignal(editor.add_relation_requested) as blocker:
         action.trigger()
 
-    # Signal: source, target, type, attributes, bidirectional
-    assert blocker.args == ["1", "target_id", "caused", {}, True]
+    # Signal: source, target, type, attributes
+    assert blocker.args == ["1", "target_id", "caused", {}]
     mock_dialog.exec.assert_called_once_with()
     mock_dialog.get_data.assert_called_once_with()
 
@@ -440,10 +440,7 @@ def test_edit_relation_flow(editor, qtbot, monkeypatch):
 
     mock_dialog = MagicMock()
     mock_dialog.exec.return_value = True
-    mock_dialog.get_data.return_value = ("new_target", "related_to", True, {})
-
-    # Mock bi_check for setVisible call
-    mock_dialog.bi_check = MagicMock()
+    mock_dialog.get_data.return_value = ("new_target", "related_to", {})
 
     # Patch the class
     monkeypatch.setattr(
@@ -461,7 +458,6 @@ def test_edit_relation_flow(editor, qtbot, monkeypatch):
     assert blocker.args == ["r1", "new_target", "related_to", {}]
     mock_dialog.exec.assert_called_once_with()
     mock_dialog.get_data.assert_called_once_with()
-    mock_dialog.bi_check.setVisible.assert_called_once_with(False)
 
 
 def test_wikilink_insertion_has_no_immediate_relation_writer(editor):

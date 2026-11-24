@@ -11,6 +11,7 @@ logging-diagnostics
 worker-failure-contracts
 architecture
 relation-handling
+relation-vocabulary
 commands-and-history
 database-and-storage
 database-migrations

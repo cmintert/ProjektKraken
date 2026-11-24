@@ -83,8 +83,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
     Signals:
         save_requested(dict): Emitted when user clicks Save; payload is the event data.
         discard_requested(str): Emitted when user discards changes; payload is item_id.
-        add_relation_requested(str, str, str, dict, bool): Request to create a relation
-            (source_id, target_id, rel_type, attributes, bidirectional).
+        add_relation_requested(str, str, str, dict): Request to create a relation
+            (source_id, target_id, rel_type, attributes).
         remove_relation_requested(str): Request to delete a relation by rel_id.
         update_relation_requested(str, str, str, dict): Request to update a relation
             (rel_id, target_id, rel_type, attributes).
@@ -106,7 +106,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
     btn_edit_rel: StandardButton
     btn_remove_rel: DestructiveButton
 
-    add_relation_requested = Signal(str, str, str, dict, bool)
+    add_relation_requested = Signal(str, str, str, dict)
     remove_relation_requested = Signal(str)
     update_relation_requested = Signal(str, str, str, dict)
     relation_authoring_requested = Signal(dict)
@@ -1763,14 +1763,13 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         )
 
         if dlg.exec():
-            target_id, rel_type, is_bidirectional, attributes = dlg.get_data()
+            target_id, rel_type, attributes = dlg.get_data()
             if target_id:
                 self.add_relation_requested.emit(
                     self._current_event_id,
                     target_id,
                     rel_type,
                     attributes,
-                    is_bidirectional,
                 )
 
     def _on_remove_relation_item(self, item: dict[str, Any]) -> None:
@@ -1814,7 +1813,6 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             source_name=rel_data.get("source_name") or self.name_edit.text(),
             target_id=rel_data["target_id"],
             rel_type=rel_data["rel_type"],
-            is_bidirectional=False,  # Editing existing
             attributes=rel_data.get("attributes"),  # Pass existing attributes
             suggestion_items=getattr(self, "_suggestion_items", []),
             calendar_converter=self._calendar_converter,
@@ -1828,11 +1826,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             target_kind=rel_data.get("target_kind"),
         )
 
-        # Hide bidirectional check for editing
-        dlg.bi_check.setVisible(False)
-
         if dlg.exec():
-            target_id, rel_type, _, attributes = dlg.get_data()
+            target_id, rel_type, attributes = dlg.get_data()
             if target_id:
                 self.update_relation_requested.emit(
                     rel_data["id"], target_id, rel_type, attributes

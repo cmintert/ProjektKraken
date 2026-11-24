@@ -120,7 +120,6 @@ class HelpControlBindings:
         self.fields(
             widget,
             (
-                ("bi_check", "relation.direction"),
                 ("temporal_behavior", "relation.meaning"),
                 ("rb_starts", "relation.shared-event"),
                 ("rb_ends", "relation.shared-event"),
