@@ -6,17 +6,17 @@ This guide records current relation behavior and the boundaries for
 
 ## Ownership after preparation
 
-`src/core/relation_presentation.py` owns the current overview captions, authoring
-captions, full-form suggestion defaults and inline preview calculation. Its
-helpers use exact stored keys and preserve unknown keys verbatim. Choice helpers
-return fresh values, exclude generated `mentions`, and preserve each surface's
-existing ordering. The frozen `RelationPreview` contains display text and an
-assertion heading, not mutation intent or a persisted definition.
+`src/core/relation_presentation.py` provides the existing authoring and full-form
+type suggestions. Suggestions preserve exact stored keys and ordering and exclude
+generated `mentions`.
 
-Different surfaces deliberately retain different output. For example, `involved`
-is **Participation** in the overview and **Participant in** in authoring. The full
-form still previews raw `source --key--> target`. An inline source event with a
-date of `0.0` remains an event; reversing its preview does not infer a new fact.
+`src/core/relation_vocabulary.py` resolves configured wording for Connections,
+relation previews, GraphView, and World Context. For example, an unconfigured
+`involved` displays as `involved`. A world can define separate forward and
+reverse wording for `married` while both views retain the original relation
+identity. The graph uses forward wording and filters retain exact stored keys.
+The worker reads vocabulary metadata through the settings repository. The
+editor displays the saved key and resolves the preview separately.
 
 `src/core/relation_policy.py` owns the endpoint change assessment used in the
 inline editor and on the worker. A state-change payload protects both endpoints.
@@ -61,7 +61,7 @@ and temporal evidence.
 | GraphView (`graph_data_service`, `graph_view/graph_builder`, `graph_projection`) | Exact key filters, UUID and original direction; raw edge labels/tooltips, temporal status, lexical style keyed by predicate | Display forward wording along the stored edge; retain key-based filters/styles and time modes. Never manufacture an inverse edge. |
 | World Context (`authoring_context_builder`, `core/authoring_context`) | Key, endpoints, UUID, traversal hop, temporal window/status; raw formatted assertions; explicit participant/location roles | Add presentation beside machine identity. Preserve current historical Entity context, qualification and traversal. |
 | RAG (`rag_service`) | Structured stored relation endpoints and raw keys formatted as arrows | Adopt wording separately from indexing, retrieval ranking and semantic comparisons. |
-| Temporal analysis (`temporal_analyzer`, temporal conflict/dependency services) | Stored keys, direction, temporal attributes and event anchors | Preserve analytical rules independently of captions. Lifespan analysis currently recognizes case-insensitive `birth`/`death` **substrings**, not vocabulary labels. |
+| Temporal analysis (`temporal_analyzer`, temporal conflict/dependency services) | Stored keys, direction, temporal attributes and event anchors | Preserve analytical rules independently of captions. Lifespan analysis recognizes the trimmed, case-folded keys `birth`, `death`, and `revival`. |
 | Intelligence analysis (`intelligence_analyzer`) | Detached relation snapshots, endpoint evidence and analysis context; proposed relations are distinct from stored assertions | A label does not establish an inferred assertion. Keep analysis inputs and review/mutation routes separate from wording. |
 | WikiLink mentions (`wiki_commands`, `relation_repository`) | Generated `mentions`, source/target UUIDs and occurrence metadata; reconciliation and exact snapshots for replay | Keep generated references outside authored vocabulary mutation and reciprocal assertion creation. |
 | CLI (`cli/relation`) | Raw keys, direction and metadata | Run `relation add` once for each intended direction. The retired `--bidirectional` flag fails before opening the database. |
@@ -75,14 +75,14 @@ Participants and leave `member_of` in Other connections. World Context's
 `PARTICIPANT_REL_TYPES` still includes `member_of`. These are separate current
 consumer contracts, not a rule unified by this extraction. Characterize both
 before deliberately changing either. Target object kind alone does not establish
-relation meaning. Likewise, display renaming must not change lifespan substring
-analysis, graph filters or generated-mentions policy.
+relation meaning. Display renaming preserves lifespan analysis, graph filter
+values, and generated-mentions policy.
 
-## Future resolver contract
+## Resolver contract
 
-Resolution will receive the canonical stored assertion, an explicit viewing
-perspective and detached effective vocabulary definitions. This is an integration
-boundary, not a new wire format or approved definition-storage schema.
+Resolution receives the canonical stored assertion, an explicit viewing
+perspective, and detached world vocabulary definitions. World Context can include
+the resulting display text alongside its structured relation data.
 
 Preserve relation UUID, stable predicate key, original source/target and instance
 metadata alongside any presentation. Temporal validity, event bindings, confidence,
@@ -93,8 +93,9 @@ that it is available to a new resolver or AI consumer.
 Compact captions, optional full-sentence previews, inspector categories and
 analytical classification are distinct outputs/consumers. Incoming wording is
 another perspective on one assertion, not a second stored fact. Unknown predicates
-must remain legible without fabricated inverse grammar. Identifier migration,
-schema/precedence, templates and world-local storage remain KRT-69/70/71/76 work.
+must remain legible without fabricated inverse grammar. The reader consumes
+the KRT-69 v1 schema. KRT-72 and KRT-73 own adoption and editing. KRT-76 owns
+identifier migration.
 
 ## Verification scope
 
@@ -113,3 +114,8 @@ human acceptance of KRT-93 or future vocabulary UX.
 
 See [KRT-98 verification evidence](../ux/evidence/krt98/README.md) for the focused
 checks, before/after complexity and reproducible baseline/current captures.
+
+KRT-71's configured-world tests cover both perspectives, read-only loading,
+stale world replies, filter caption collisions and canonical timing evidence.
+Offscreen captures exercise the Entity and Event inspectors at 360 px across
+all six themes. Native UI and human acceptance are pending.

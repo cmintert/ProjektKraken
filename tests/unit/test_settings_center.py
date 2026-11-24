@@ -336,6 +336,24 @@ def test_stale_world_snapshot_cannot_replace_active_draft(settings_coordinator):
     assert coordinator.world_values == previous
 
 
+def test_world_transition_clears_vocabulary_and_rejects_old_response(
+    settings_coordinator,
+):
+    coordinator, _ = settings_coordinator
+    old = deepcopy(coordinator.world_data)
+    old["relation_vocabulary"] = {"married": {"forward_label": "Spouse"}}
+    snapshots = []
+    coordinator.relation_vocabulary_changed.connect(snapshots.append)
+    coordinator.on_snapshot(old)
+    assert snapshots[-1] == old["relation_vocabulary"]
+
+    coordinator._context = lambda: {"database": "different.kraken", "name": "Other"}
+    coordinator.refresh_world()
+    assert snapshots[-1] == {}
+    coordinator.on_snapshot(old)
+    assert snapshots[-1] == {}
+
+
 def test_world_scope_apply_preserves_kraken_draft(settings_coordinator, db_service):
     coordinator, submitted = settings_coordinator
     coordinator.view.controls["longform_auto_refresh"].setChecked(False)

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-24
-**Commit:** 06109cc3
+**Commit:** 7bbd8d61
 ---
 
 # Changelog
@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-11-24)* **Relation wording (KRT-71)**: Added directional wording from
+  saved world definitions to Connections, relation previews, GraphView,
+  filters, and World Context. Preserved stored types, direction, and timing.
+  Updated Help and added regression coverage for both perspectives, caption
+  collisions, and world switching.
 
 - *(2026-11-23)* **Authoring (KRT-184)**: Added per-world tag scopes across
   Explorer, Timeline, Relations, and Search, with independent creation tags and

@@ -178,7 +178,9 @@ class GraphFilterBar(QWidget):
 
         self._tag_combo.blockSignals(False)
 
-    def set_available_relation_types(self, rel_types: list[str]) -> None:
+    def set_available_relation_types(
+        self, rel_types: list[str], labels: dict[str, str] | None = None
+    ) -> None:
         """Populates the relation type filter with available options.
 
         Args:
@@ -189,8 +191,9 @@ class GraphFilterBar(QWidget):
         self._rel_type_combo.blockSignals(True)
         self._rel_type_combo.clear()
         self._rel_type_combo.addItem("All Types", None)
-        for rel_type in sorted(rel_types):
-            self._rel_type_combo.addItem(rel_type, rel_type)
+        labels = labels or {}
+        for rel_type in sorted(set(rel_types)):
+            self._rel_type_combo.addItem(labels.get(rel_type, rel_type), rel_type)
 
         # Restore selection if still valid
         if current:

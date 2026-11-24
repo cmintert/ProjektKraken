@@ -5,7 +5,7 @@ from typing import Any
 
 from src.core.calendar import CalendarConverter
 from src.core.graph_temporal import GraphTemporalMode, evaluate_graph_relation
-from src.core.relation_presentation import overview_caption
+from src.core.relation_vocabulary import Vocabulary, resolve_wording
 from src.gui.widgets.relation_snapshots import distinct_relation_directions
 
 ENTITY_GROUPS = (
@@ -95,6 +95,7 @@ def project_connections(
     time: float | None = None,
     calendar: CalendarConverter | None = None,
     categories: dict[str, str] | None = None,
+    vocabulary: Vocabulary | None = None,
 ) -> list[ConnectionRow]:
     """Classify only explicit meanings; target object kinds do not imply meaning.
 
@@ -122,7 +123,18 @@ def project_connections(
             group = category if category in groups else "Other connections"
             if predicate == "mentions":
                 group = "References"
-            meaning = overview_caption(predicate)
+            wording = resolve_wording(
+                {
+                    **snapshot,
+                    "rel_type": predicate,
+                    "source_id": snapshot.get("source_id") or source,
+                    "target_id": snapshot.get("target_id") or target,
+                    "source_name": source,
+                    "target_name": target,
+                },
+                vocabulary or {},
+                incoming=direction == "incoming",
+            )
             rows.append(
                 ConnectionRow(
                     snapshot,
@@ -130,8 +142,8 @@ def project_connections(
                     direction,
                     other_id,
                     str(target if direction == "outgoing" else source),
-                    meaning,
-                    f"{source} → {meaning} → {target}",
+                    wording.label,
+                    wording.sentence or wording.assertion,
                     connection_timing(snapshot, time, calendar),
                 )
             )

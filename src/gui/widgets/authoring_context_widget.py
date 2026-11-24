@@ -721,6 +721,8 @@ class AuthoringContextWidget(QWidget):
             f"{self._item_link(relation.source)} → "
             f"<b>{escape(relation.rel_type)}</b> → {self._item_link(relation.target)}"
         )
+        if relation.display_text:
+            result = escape(relation.display_text) + "<br>" + result
         if (
             relation.source.object_type == "event"
             or relation.target.object_type == "event"

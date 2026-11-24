@@ -8,7 +8,7 @@ from copy import deepcopy
 from math import isfinite
 from typing import Any, Dict, Optional
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QAbstractButton,
     QButtonGroup,
@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.relation_presentation import form_type_choices
+from src.core.relation_vocabulary import Vocabulary, resolve_wording
 from src.core.temporal_context import TemporalResolutionContext
 from src.core.temporal_editing import edit_error, supported_boundary, updated_spec
 from src.core.temporal_window import resolve_temporal_window
@@ -86,6 +87,8 @@ class RelationForm(QWidget):
         playhead_time: float | None = None,
         temporal_context: TemporalResolutionContext | None = None,
         source_event_id: str | None = None,
+        relation_vocabulary: Vocabulary | None = None,
+        incoming: bool = False,
     ) -> None:
         """Initializes the dialog.
 
@@ -124,6 +127,8 @@ class RelationForm(QWidget):
         self.source_event_date = source_event_date
         self.source_event_name = source_event_name
         self._source_name = source_name or "Source"
+        self._relation_vocabulary = relation_vocabulary or {}
+        self._incoming = incoming
         self._initial_target_id = target_id
         self._initial_target_kind = target_kind.casefold() if target_kind else None
 
@@ -810,7 +815,19 @@ class RelationForm(QWidget):
         """Refresh the live direction preview label."""
         target_text = self.target_edit.text().strip() or "Target"
         rel = self.type_edit.currentText().strip() or "relation"
-        self.preview_label.setText(f"{self._source_name} --{rel}--> {target_text}")
+        wording = resolve_wording(
+            {
+                "rel_type": rel,
+                "source_id": self._source_event_id or "",
+                "target_id": self._initial_target_id,
+                "source_name": self._source_name,
+                "target_name": target_text,
+            },
+            self._relation_vocabulary,
+            incoming=self._incoming,
+        )
+        self.preview_label.setTextFormat(Qt.TextFormat.PlainText)
+        self.preview_label.setText(wording.sentence or wording.assertion)
 
     def _setup_boundary_choices(
         self,

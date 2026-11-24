@@ -77,6 +77,14 @@ def compose_settings(window: MainWindow) -> SettingsCoordinator:
 
     coordinator.preferences_changed.connect(local_changed)
     coordinator.world_changed.connect(world_changed)
+
+    def relation_vocabulary_changed(vocabulary: dict[str, Any]) -> None:
+        for editor in (window.entity_editor, window.event_editor):
+            editor.connections.set_relation_vocabulary(vocabulary)
+            editor.relation_authoring.refresh_wording()
+        window.graph_widget.set_relation_vocabulary(vocabulary)
+
+    coordinator.relation_vocabulary_changed.connect(relation_vocabulary_changed)
     coordinator.world_form_created.connect(
         window.app_coordinator.icon_library.attach_draft
     )

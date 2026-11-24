@@ -26,6 +26,7 @@ class SettingsCoordinator(QObject):
     snapshot_requested = Signal(dict)
     preferences_changed = Signal(dict)
     world_changed = Signal(dict)
+    relation_vocabulary_changed = Signal(dict)
     operation_requested = Signal(str)
     connection_requested = Signal(dict)
     world_form_created = Signal(object)
@@ -102,9 +103,11 @@ class SettingsCoordinator(QObject):
         context = self._context()
         database = context.get("database", "")
         if not database:
+            self.relation_vocabulary_changed.emit({})
             self._set_world_enabled(False, "No world is loaded.")
             return
         if database != self._database:
+            self.relation_vocabulary_changed.emit({})
             self._database = database
             self._token = str(uuid.uuid4())
         seed = (
@@ -126,12 +129,14 @@ class SettingsCoordinator(QObject):
         if (
             payload.get("token") != self._token
             or payload.get("database") != self._database
+            or self._context().get("database") != self._database
         ):
             return
         if payload.get("error"):
             self.world_data["writable"] = False
             self._set_world_enabled(False, payload["error"])
             return
+        self.relation_vocabulary_changed.emit(payload.get("relation_vocabulary", {}))
         previous = self.world_values
         self.world_data = deepcopy(payload)
         values = payload["values"]

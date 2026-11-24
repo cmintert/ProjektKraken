@@ -1810,6 +1810,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         dlg = RelationEditDialog(
             parent=self,
             playhead_time=getattr(self, "_relation_playhead_time", None),
+            relation_vocabulary=self.connections.relation_vocabulary,
+            incoming=rel_data.get("source_id") != self._current_event_id,
             source_name=rel_data.get("source_name") or self.name_edit.text(),
             target_id=rel_data["target_id"],
             rel_type=rel_data["rel_type"],

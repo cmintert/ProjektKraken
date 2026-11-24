@@ -403,6 +403,13 @@ to the inspector when you want to work on her attributes or connections.
 
 ## Create relations
 
+Connections can show different wording at each end of a saved relation when
+the world has a vocabulary definition for its type. A marriage may read “Ada
+is married to Ben” from Ada and “Ben is married to Ada” from Ben. Both views
+show the same relation and timing. Without a definition, Connections displays
+the saved type in the original direction. The relation editor shows the saved
+type in **Meaning** and the resolved wording in its preview.
+
 Relations record named, directional connections between Events and Entities. Use them
 when you want to express something beyond a value or a reference in prose.
 

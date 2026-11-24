@@ -344,9 +344,7 @@ def test_inline_preview_treats_zero_source_event_date_as_available(editor):
         editor.temporal_widget.set_values(0.0, 0.0)
     panel.refine(row)
     assert panel.form.source_event_date == 0.0
-    assert (
-        panel.form.preview_label.text() == "House Bjornaer participates in Tasgillia."
-    )
+    assert panel.form.preview_label.text() == "Tasgillia → involved → House Bjornaer"
 
 
 def test_capture_requires_only_existing_target_and_no_semantics(editor):

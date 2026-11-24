@@ -11,6 +11,7 @@ from PySide6.QtCore import QObject, Signal, Slot
 
 from src.core.ai_generation import AIGenerationPreferences
 from src.services.db_service import DatabaseService
+from src.services.relation_vocabulary_reader import read_vocabulary
 from src.services.repositories.settings_repository import (
     META_KEYS,
     POLICY_KEY,
@@ -77,6 +78,7 @@ class SettingsSnapshotWorker(QObject):
                         )
             result.update(
                 values=world_snapshot(db),
+                relation_vocabulary=read_vocabulary(db.require_connection()),
                 writable=not db.read_only,
                 tags=[
                     {

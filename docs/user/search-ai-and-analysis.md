@@ -327,6 +327,9 @@ fixed start. The recorded date stays fixed if the playhead moves.
 one undoable operation. To record a separate fact in the opposite direction,
 start another connection and choose the type and direction for that fact.
 
+The graph uses the world's forward wording for a defined relation type. Type
+filters show that wording and add the saved type when two choices share a label.
+
 (help-inspect-graph-retry-pair)=
 
 **Retry Relationship Lookup** checks the selected pair again. You can create the

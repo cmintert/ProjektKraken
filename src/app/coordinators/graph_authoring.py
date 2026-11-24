@@ -476,6 +476,7 @@ class GraphAuthoring(QObject):
             target_id=target.item.id,
             target_kind=target.kind,
             rel_type=row["rel_type"],
+            relation_vocabulary=self._view.relation_vocabulary,
             attributes=row.get("attributes"),
             known_types=self._view.relation_types(),
             suggestion_items=[(target.item.id, target.item.name, target.kind)],

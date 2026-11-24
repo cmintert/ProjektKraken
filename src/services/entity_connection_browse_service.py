@@ -17,6 +17,7 @@ from src.services.entity_context_projection import (
     EntityContextProjectionService,
     public_value,
 )
+from src.services.relation_vocabulary_reader import read_vocabulary, with_display_text
 from src.services.repositories.entity_connection_browse_repository import (
     EntityConnectionBrowseRepository,
 )
@@ -92,6 +93,7 @@ class EntityConnectionBrowseService:
                 query["entity_id"], after, CANDIDATE_BATCH_SIZE
             )
             context = self._context(rows, query)
+            vocabulary = read_vocabulary(self.connection)
             for row in rows:
                 checkpoint(self._cancel)
                 relation = self._relation(row, context)
@@ -107,7 +109,13 @@ class EntityConnectionBrowseService:
                 elif isinstance(relation, str):
                     unreadable += 1
                 else:
-                    result.append(public_value(relation.to_dict()))
+                    result.append(
+                        public_value(
+                            with_display_text(
+                                relation, query["entity_id"], vocabulary
+                            ).to_dict()
+                        )
+                    )
                 if len(result) >= min(PAGE_SIZE, request.get("remaining", PAGE_SIZE)):
                     break
         if self.revision() != revision:

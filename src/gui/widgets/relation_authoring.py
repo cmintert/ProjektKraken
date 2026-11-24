@@ -22,10 +22,9 @@ from PySide6.QtWidgets import (
 
 from src.core.relation_policy import endpoint_change_error
 from src.core.relation_presentation import (
-    authoring_caption,
     authoring_choices,
-    inline_relation_preview,
 )
+from src.core.relation_vocabulary import filter_labels, relation_label, resolve_wording
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.utils.theme_connections import connect_theme
@@ -74,6 +73,7 @@ class RelationAuthoring(QFrame):
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
         self.heading = QLabel("Edit relationship")
+        self.heading.setTextFormat(Qt.TextFormat.PlainText)
         self.heading.setWordWrap(True)
         self.heading.setStyleSheet(StyleHelper.get_section_header_style())
         self._layout.addWidget(self.heading)
@@ -262,14 +262,19 @@ class RelationAuthoring(QFrame):
             f"{self.source_name} → {self.editor.name_edit.text()}: "
             "connection — kind not specified"
         )
+        preview.setTextFormat(Qt.TextFormat.PlainText)
         preview.setWordWrap(True)
         self.body_layout.insertWidget(0, preview)
         meaning = declare_inspection(
             ScrollSafeComboBox(),
             "src-gui-widgets-relation-authoring-relationauthoring-stage-drop-meaning|relations.create|help-inspect-src-gui-widgets-relation-authoring-relationauthoring-stage-drop-meaning",
         )
-        for value, title in authoring_choices():
-            meaning.addItem(title, value)
+        labels = filter_labels(
+            (value for value, _ in authoring_choices()),
+            self.editor.connections.relation_vocabulary,
+        )
+        for value, label in labels.items():
+            meaning.addItem(label, value)
         self.body_layout.insertWidget(1, meaning)
         meaning.currentIndexChanged.connect(
             lambda: self._set_drop_meaning(str(meaning.currentData()), preview)
@@ -283,7 +288,7 @@ class RelationAuthoring(QFrame):
         self.capture_type = kind
         preview.setText(
             f"{self.source_name} → {self.editor.name_edit.text()}: "
-            f"{authoring_caption(kind)}"
+            f"{relation_label(kind, self.editor.connections.relation_vocabulary)}"
         )
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
@@ -410,10 +415,10 @@ class RelationAuthoring(QFrame):
         self.meaning.setEditable(True)
         self.meaning.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
         self.meaning.setToolTip("Choose an existing meaning or type a new phrase.")
-        for value, title in authoring_choices(
+        for value, _ in authoring_choices(
             getattr(self.editor, "_suggestion_types", []), self.relation["rel_type"]
         ):
-            self.meaning.addItem(title, value)
+            self.meaning.addItem(value, value)
         self.meaning.setCurrentIndex(self.meaning.findData(self.relation["rel_type"]))
         self.meaning.currentTextChanged.connect(self._meaning_changed)
         self.meaning.currentIndexChanged.connect(self._meaning_changed)
@@ -500,30 +505,39 @@ class RelationAuthoring(QFrame):
 
     def _meaning_changed(self, *_args: Any) -> None:
         assert self.form is not None
-        index = self.meaning.currentIndex()
-        text = self.meaning.currentText()
-        # Display captions never become stable keys merely by opening/refocusing.
-        value = (
-            self.meaning.itemData(index)
-            if index >= 0 and text == self.meaning.itemText(index)
-            else text.strip()
-        )
-        self.form.type_edit.setCurrentText(str(value))
+        self.form.type_edit.setCurrentText(self.meaning.currentText().strip())
+        self._preview()
+
+    def refresh_wording(self) -> None:
+        """Refresh the active draft's read-only wording."""
         self._preview()
 
     def _preview(self, *args: Any) -> None:
         if self.form is None or self.relation is None:
             return
         target_name = self.relation.get("target_name") or self.form.target_edit.text()
-        preview = inline_relation_preview(
-            self.source_name,
-            target_name,
-            self.form.type_edit.currentText(),
-            source_is_event=self.form.source_event_date is not None,
-            reversed_direction=self.reversed,
+        source_id, target_id = self.source_id, self.relation["target_id"]
+        source_name = self.source_name
+        if self.reversed:
+            source_id, target_id = target_id, source_id
+            source_name, target_name = target_name, source_name
+        wording = resolve_wording(
+            {
+                "id": self.relation["id"],
+                "rel_type": self.form.type_edit.currentText(),
+                "source_id": source_id,
+                "target_id": target_id,
+                "source_name": source_name,
+                "target_name": target_name,
+            },
+            self.editor.connections.relation_vocabulary,
+            incoming=target_id == self._current_id() and source_id != target_id,
         )
-        self.form.preview_label.setText(preview.text)
-        self._assertion_caption = preview.assertion
+        self.form.preview_label.setTextFormat(Qt.TextFormat.PlainText)
+        self.form.preview_label.setText(wording.sentence or wording.assertion)
+        self._assertion_caption = wording.assertion
+        if wording.label != wording.key:
+            self._assertion_caption += f" · {wording.key}"
         self._draft_caption()
 
     def _reverse(self) -> None:

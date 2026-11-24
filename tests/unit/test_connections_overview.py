@@ -71,7 +71,7 @@ def test_both_overview_perspectives_preserve_canonical_assertion(predicate):
     before = deepcopy(snapshot)
     outgoing = project_connections([snapshot], [], "entity", "source", "Tasgillia")[0]
     incoming = project_connections([], [snapshot], "entity", "target-0", "House 0")[0]
-    caption = "Member of" if predicate == "member_of" else predicate
+    caption = predicate
     assert outgoing.meaning == incoming.meaning == caption
     assert (
         outgoing.assertion == incoming.assertion == f"Tasgillia → {caption} → House 0"
@@ -326,16 +326,27 @@ def test_group_keyboard_never_removes_a_previously_selected_relation(inspector, 
 
 
 def test_minimum_height_uses_wrapped_content_without_overlap(
-    inspector, qtbot, qapp, monkeypatch
+    inspector, qtbot, qapp, monkeypatch, tmp_path
 ):
     QFontDatabase.addApplicationFont("C:/Windows/Fonts/segoeui.ttf")
     inspector.setFont(QFont("Segoe UI", 10))
     inspector.resize(360, 720)
     long_row = saved(
-        0, target_name="House Bjornaer of the Northern Forest and Forgotten Marshes"
+        0,
+        "member_of",
+        target_name="House Bjornaer of the Northern Forest and Forgotten Marshes",
     )
     refresh(inspector, [long_row])
     view = inspector.connections
+    view.set_relation_vocabulary(
+        {
+            "member_of": {
+                "forward_label": "Associated with",
+                "reverse_label": "Associations",
+                "forward_template": "{source} is associated with {target}.",
+            }
+        }
+    )
     view.select_relation("relation-0")
     view.edit_selected()
     panel = inspector.relation_authoring
@@ -361,6 +372,8 @@ def test_minimum_height_uses_wrapped_content_without_overlap(
             assert (
                 panel.body_scroll.geometry().bottom() < panel.footer.geometry().top()
             ), theme
+            assert "is associated with" in panel.form.preview_label.text(), theme
+            assert inspector.grab().save(str(tmp_path / f"{theme}.png")), theme
     finally:
         qapp.setStyleSheet(previous_style)
 
@@ -397,7 +410,7 @@ def test_meaning_is_editable_and_reuses_known_keys_without_custom_mode(inspector
     inspector.connections.edit_selected()
     panel = inspector.relation_authoring
     assert panel.meaning.isEditable()
-    assert panel.meaning.currentText() == "Member of"
+    assert panel.meaning.currentText() == "member_of"
     assert panel.form.type_edit.currentText() == "member_of"
     assert panel.form.type_edit.isHidden()
     assert panel.meaning.findText("Custom type…") == -1

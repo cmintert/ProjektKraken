@@ -11643,8 +11643,8 @@
     {
       "source": "src/gui/dialogs/graph_filter_dialog.py",
       "symbol": "GraphFilterDialog.__init__",
-      "sha256": "d98b9b806b77359d0154713e17c92a0c9faa20f972c3c70c50bc113501630f69",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "6cf6b931efe85782136149abfa0e9434076734f613ed24f276bfeaddddcdcbad",
+      "review_note": "KRT-71: Relation filters show vocabulary captions and retain exact filter values."
     },
     {
       "source": "src/gui/dialogs/grouping_config_dialog.py",
@@ -13299,8 +13299,8 @@
     {
       "source": "src/gui/widgets/filter_widget.py",
       "symbol": "FilterWidget._populate_list",
-      "sha256": "1a8dc8bb109ae721cde7d6ea0573faa9d3a77883e70f6a86a66e029fcce888bc",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "7673054d6a3fb1f2a4679c7d66f6816dd59527a1d18c79defdd37b6523288c80",
+      "review_note": "KRT-71: Display captions are separate from checked item keys."
     },
     {
       "source": "src/gui/widgets/filter_widget.py",
@@ -13473,8 +13473,8 @@
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
       "symbol": "GraphWidget.__init__",
-      "sha256": "7c9ea8060629bb721f3876a754cb386c66526af10bed3645c413c472f10f58ed",
-      "review_note": "KRT-184. Retains the Graph view and adds session layout memory, visible actions, and saved relationship feedback."
+      "sha256": "5f039686f13891c890f831732762acb567d499a9dddd300f0b60d6ce2cbe14ad",
+      "review_note": "KRT-71: An empty vocabulary is used until the active world snapshot arrives."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
@@ -13563,8 +13563,8 @@
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
       "symbol": "GraphWidget.show_filter_dialog",
-      "sha256": "b1633b4e1f1550f0f1e4c98fd2cb1d8a4b2f80815f71fa244d2bf946ca4b9e8f",
-      "review_note": "KRT-184. Applying Graph filters preserves the world scope and dismisses any previous temporary result reveal."
+      "sha256": "0466ac05de57d69070608e625e333cb6e6a0d100f4c293575de5d97872e00a49",
+      "review_note": "KRT-71: The dialog renders qualified labels without replacing filter keys."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
@@ -15753,8 +15753,8 @@
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring.__init__",
-      "sha256": "0d6db967a2261eaddd157d16905009de10ab9f1cd12469104250beec8dac4006",
-      "review_note": "KRT-93 owner refinements: Meaning is one editable dropdown with stable-key suggestion data and deliberate free phrases; no Custom field. The editor heading is plain text within a neutral frame. Scrollbars refresh with the theme. Edit shares the selection row; guarded navigation/removal remain under More actions. Updated task/control explanations describe these behaviors. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
+      "sha256": "d4b26d5ffc532cf0662ca4e07de71cfa15a7f5ef86f411f150ea34d263dd2dd5",
+      "review_note": "KRT-71: The heading renders resolved wording as plain text."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
@@ -15801,20 +15801,20 @@
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._meaning_changed",
-      "sha256": "4794bf3be36eaa6339f429b8bbefe6c0f636173116965d004787b22776149428",
-      "review_note": "KRT-93 owner refinements: Meaning is one editable dropdown with stable-key suggestion data and deliberate free phrases; no Custom field. The editor heading is plain text within a neutral frame. Scrollbars refresh with the theme. Edit shares the selection row; guarded navigation/removal remain under More actions. Updated task/control explanations describe these behaviors."
+      "sha256": "dccb0509eaa01737e0b158bd39f983d8a09c8465a0539769cea8fe5f499b236c",
+      "review_note": "KRT-71: The editable field contains the saved key and updates the separate preview."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._preview",
-      "sha256": "7067d2f43484d88d80c0fbd0432dad3ec451ddac712ff03743c2ce25e622cc4c",
-      "review_note": "KRT-98: Reviewed relations.create and its Meaning, Connection type, Reverse direction and Apply excerpts against the pure-helper extraction. Captions, exact stored keys, suggestion ordering, source-event preview wording and both reversal checks remain unchanged. Existing explanations remain accurate; no new UI or prose. Pure dependencies have their own scoped source reviews."
+      "sha256": "b0c4653ff2b4c6144bc20c0669a7d135e60a37957638be6e2c3fbc842e1ec559",
+      "review_note": "KRT-71: The preview resolves the endpoint perspective for the draft assertion."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._progressive_form",
-      "sha256": "d72446b5f60eac595a7ea8c5f6bc1af308d18e892881dc0c2286284c82e2cf48",
-      "review_note": "KRT-70: The inline form contains no reciprocal creation control."
+      "sha256": "b8365b96be103029a75339eeb5d47c76220f088dda1436f3db20d0b344595cd1",
+      "review_note": "KRT-71: The Meaning field shows stored keys for predictable editing."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
@@ -15825,8 +15825,8 @@
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._set_drop_meaning",
-      "sha256": "5c1617bbebe074671b64567f163fc7227bf4f592da9461482c3e234770c3d78e",
-      "review_note": "KRT-98: Reviewed relations.create and its Meaning, Connection type, Reverse direction and Apply excerpts against the pure-helper extraction. Captions, exact stored keys, suggestion ordering, source-event preview wording and both reversal checks remain unchanged. Existing explanations remain accurate; no new UI or prose. Pure dependencies have their own scoped source reviews."
+      "sha256": "4dd5021aaf0227ce2236351219e3aee57965922f3889a16163712189ba99a05a",
+      "review_note": "KRT-71: The drop preview uses the world's compact forward label."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
@@ -15879,14 +15879,14 @@
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring.stage_drop",
-      "sha256": "5a4fc0d7fc0f70fcf1e753ac5d17361293b14c195f0f6ab15f5a7d5f140fa754",
-      "review_note": "Handles the optional layout item before hiding its label. The dropped relation preview and confirmation work as documented."
+      "sha256": "58371bc3b6f088fca749c9dd025336294edeaefbb7600189046f46ba65ecd71b",
+      "review_note": "KRT-71: The directed draft offers qualified wording backed by the saved keys."
     },
     {
       "source": "src/gui/widgets/relation_form.py",
       "symbol": "RelationForm.__init__",
-      "sha256": "bc68de6ae518ba1bdf890497b560d9710267d55816d80800c3dc6c4100bad9eb",
-      "review_note": "KRT-70: The full form creates a single directed connection."
+      "sha256": "913d213ee3f0301e3b5f7036adc2e0a12d330be1cf456d5d45be3a89e78293a0",
+      "review_note": "KRT-71: The form accepts a detached vocabulary and the view perspective."
     },
     {
       "source": "src/gui/widgets/relation_form.py",
@@ -15999,8 +15999,8 @@
     {
       "source": "src/gui/widgets/relation_form.py",
       "symbol": "RelationForm._update_preview",
-      "sha256": "2d5238d028a2374476fa1ce38aa2f7d810352eba949d47076158c27fe13b7341",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "b18c7b0a264d08070e66b81ecdc7d01474718fa9aa7f3d04084c5fea547ddf46",
+      "review_note": "KRT-71: The form preview resolves wording without editing the type field."
     },
     {
       "source": "src/gui/widgets/relation_form.py",
@@ -17253,8 +17253,8 @@
     {
       "source": "src/gui/widgets/connections_overview.py",
       "symbol": "ConnectionsOverview.__init__",
-      "sha256": "64c0aa04f530d7afb3c6b4827680644178c002a20cad2370d999af53771eeefd",
-      "review_note": "Reviewed single-line connection rows with right elision and full assertion/timing tooltips. Updated the overview explanation. Selection, Edit/Enter/double-click, filtering, direction, navigation and guarded removal retain their existing meanings. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
+      "sha256": "95b489bb187b890eed1199ba2bae87ca023bbebb587e35494ab3ac7abaaee01b",
+      "review_note": "KRT-71: The view starts with the raw type fallback until its vocabulary arrives."
     },
     {
       "source": "src/gui/widgets/entity_editor.py",

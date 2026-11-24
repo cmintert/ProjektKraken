@@ -1421,6 +1421,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             parent=self,
             calendar_converter=getattr(self, "_relation_calendar", None),
             playhead_time=getattr(self, "_relation_playhead_time", None),
+            relation_vocabulary=self.connections.relation_vocabulary,
+            incoming=rel_data.get("source_id") != self._current_entity_id,
             source_name=rel_data.get("source_name") or self.name_edit.text(),
             target_id=rel_data["target_id"],
             rel_type=rel_data["rel_type"],
