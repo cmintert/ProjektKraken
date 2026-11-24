@@ -20,6 +20,7 @@ from src.core.authoring_scope import AuthoringScope
 from src.core.entities import Entity
 from src.core.events import Event
 from src.core.temporal_context import TemporalResolutionContext
+from src.core.timeline_grouping import build_group_metadata, events_for_group
 from src.gui.dialogs.graph_connection_dialog import GraphConnectionDialog
 from src.gui.widgets.graph_view.graph_widget import GraphWidget
 from src.gui.widgets.timeline import TimelineWidget
@@ -141,11 +142,28 @@ def test_timeline_reveals_only_relevant_events_with_full_context(qtbot):
     timeline = TimelineWidget()
     qtbot.addWidget(timeline)
     visible = Event("Council", 50.0, attributes={"_tags": ["Adventure"]})
-    related = Event("Foundation", 12.0)
-    unrelated = Event("Other", 1.0)
+    related = Event("Foundation", 12.0, attributes={"_tags": ["City"]})
+    unrelated = Event("Other", 1.0, attributes={"_tags": ["City"]})
+    visible.tags = ["Adventure", "City"]
     events = [unrelated, related, visible]
-    timeline.view.set_temporal_context(TemporalResolutionContext.build(events, None))
-    timeline.view.set_playhead_time(41.0)
+    view = timeline.view
+    view.set_temporal_context(TemporalResolutionContext.build(events, None))
+    view.set_playhead_time(41.0)
+    view.set_data_provider(
+        SimpleNamespace(
+            get_group_metadata=lambda tag_order, date_range: build_group_metadata(
+                view.scoped_events(events), tag_order, {}, (0.0, 100.0)
+            ),
+            get_events_for_group=lambda tag_name, date_range=None: events_for_group(
+                view.scoped_events(events), tag_name, date_range
+            ),
+        )
+    )
+    view.set_grouping_config(["City"])
+    band = view._band_manager.get_band("City")
+    band.collapse_requested.emit("City")
+    assert band.count == 3
+    assert band.is_collapsed
     history = ScopedHistory(timeline, lambda: events)
     history.scope_changed(AuthoringScope(("Adventure",)))
     history.selected("entity", "scout", "selected")
@@ -155,12 +173,22 @@ def test_timeline_reveals_only_relevant_events_with_full_context(qtbot):
         [{"source_id": related.id, "target_id": "scout", "rel_type": "related"}],
     )
     assert [event.id for event in timeline.view.events] == [visible.id]
+    assert band.count == 1
+    assert band.earliest_date == band.latest_date == 50.0
+    assert len(band.presentations) == 1
     history.toggle()
     assert [event.id for event in timeline.view.events] == [related.id, visible.id]
+    assert band.count == 2
     assert timeline.get_playhead_time() == 41.0
     assert len(timeline.view._temporal_context.events()) == 3
     history.selected("event", visible.id, "selected")
     assert [event.id for event in timeline.view.events] == [visible.id]
+    assert band.count == 1
+    history.scope_changed(AuthoringScope(("No matches",)))
+    assert band.count == 0
+    assert not band.presentations
+    assert band.is_collapsed
+    assert view._band_manager.get_band("City") is band
 
 
 def test_connection_dialog_preserves_pending_input_and_protects_mentions(qtbot):

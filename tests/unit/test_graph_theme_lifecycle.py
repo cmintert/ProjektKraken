@@ -318,6 +318,20 @@ def _check_graph_authoring_renderer(qtbot):
         )
         == before["second"]
     )
+
+    _javascript(
+        page,
+        qtbot,
+        "network.selectNodes(['first']); network.emit('click', {nodes: ['first']})",
+    )
+    qtbot.waitUntil(lambda: widget._selected_graph_node == ("entity", "first"))
+    widget.display_graph(nodes, [], focus_node_id="third")
+    qtbot.waitUntil(
+        lambda: _javascript(page, qtbot, "network.getSelectedNodes()[0] === 'third'")
+    )
+    widget.connect_button.click()
+    assert gestures[-1] == {"source": "third", "source_kind": "event"}
+
     view.shutdown()
 
 

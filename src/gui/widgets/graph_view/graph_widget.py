@@ -620,6 +620,16 @@ class GraphWidget(QWidget):
         self._web_view.set_theme_data(nodes, edges, self._resolved_lexicon)
         if not nodes and not self._is_renderer_ready:
             return
+        if not self._is_renderer_ready or focus_id != self._last_focus_node_id:
+            # Match the renderer's focus selection without emitting navigation.
+            focused = next((node for node in nodes if node["id"] == focus_id), None)
+            if focused is not None:
+                self._selected_graph_node = (
+                    focused.get("object_type", "entity"),
+                    focused["id"],
+                )
+            elif not self._is_renderer_ready:
+                self._selected_graph_node = None
         lexicon = self._resolved_lexicon
         if self._is_renderer_ready:
             self._web_view.update_graph_data(

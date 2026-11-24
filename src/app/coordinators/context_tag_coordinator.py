@@ -172,9 +172,8 @@ class ContextTagCoordinator(BaseCoordinator):
     def enable(self) -> None:
         """Enable the remembered set when it is non-empty."""
         self._active = bool(self._remembered_tags)
-        if self._policy:
-            self._policy = "custom"
-            self._persist()
+        self._policy = "custom"
+        self._persist()
         self._emit_state()
 
     @Slot()

@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-11-23
-**Commit:** 1acd579a
+**Last Updated:** 2026-11-24
+**Commit:** 0d548f8f
 ---
 
 # Changelog
@@ -22,6 +22,11 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-11-24)* **Scoped authoring (KRT-184)**: Used the focused graph node
+  as the Connect source, refreshed Timeline group counts and occurrence marks
+  after filtering, and persisted enabled creation tags from older settings.
+  Extended regression coverage for all three paths.
+
 - *(2026-11-23)* **Relations (KRT-184)**: Kept the connection handle beside the
   node regardless of label width. Clicking opens a draft and dragging connects
   to a target. Updated Graph Help and WebEngine regression coverage.
@@ -32,6 +37,9 @@ All notable changes to this project will be documented in this file.
   conflicting editor saves.
 
 ### Changed
+
+- *(2026-11-24)* **Windows packaging**: Logged the successful package
+  world-data check.
 
 - *(2026-11-23)* **World Manager Help**: Documented the displayed world folder
   and linked database paths and recorded the two affected Help reviews.

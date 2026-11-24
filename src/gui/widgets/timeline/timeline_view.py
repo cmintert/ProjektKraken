@@ -954,6 +954,9 @@ class TimelineView(QGraphicsView):
             "tag:" + tag for tag in self._grouping_tag_order
         }
         self._lane_history.prepare({event.id for event in self.events}, scopes)
+        grouping_active = self._grouping_tag_order
+        if grouping_active and self._band_manager:
+            self._band_manager.refresh_occurrences(EventItem._calendar_converter)
         if not self.events:
             return
 
@@ -966,10 +969,7 @@ class TimelineView(QGraphicsView):
         effective_scale = self.scale_factor * self._current_zoom
 
         # Dispatch to swimlane layout if grouping is active
-        grouping_active = getattr(self, "_grouping_tag_order", None)
-
         if grouping_active and self._band_manager:
-            self._band_manager.refresh_occurrences(EventItem._calendar_converter)
             # Validate that bands actually exist - if not, clear stale state
             bands_exist = any(
                 self._band_manager.get_band(tag) for tag in grouping_active
@@ -2099,12 +2099,14 @@ class TimelineView(QGraphicsView):
         self._authoring_scope = scope
         self._history_reveal = frozenset()
         self.set_events(self._scope_source_events, preserve_playhead=True)
+        self.update_band_metadata()
 
     def reveal_history(self, event_ids: frozenset[str]) -> None:
         """Temporarily show selected canonical events in the current scope."""
         if event_ids != self._history_reveal:
             self._history_reveal = event_ids
             self.set_events(self._scope_source_events, preserve_playhead=True)
+            self.update_band_metadata()
 
     def unplaced_event_ids(self) -> frozenset[str]:
         """Return displayed Events with no resolved Timeline position."""

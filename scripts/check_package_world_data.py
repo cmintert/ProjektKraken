@@ -1,10 +1,13 @@
 """Reject world data and runtime logs in Windows distribution payloads."""
 
 import argparse
+import logging
 import re
 from collections.abc import Iterable
 from pathlib import Path, PurePosixPath
 from zipfile import ZipFile
+
+logger = logging.getLogger(__name__)
 
 _RUNTIME_DIRECTORIES = {"worlds", "logs"}
 _WORLD_FILE = re.compile(
@@ -41,8 +44,9 @@ def main() -> None:
             f"Package contains {len(matches)} runtime entries. "
             "Rebuild from a clean stage and let first launch create the default world."
         )
-    print("Package contains no world data or runtime logs.")
+    logger.info("Package contains no world data or runtime logs.")
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     main()
