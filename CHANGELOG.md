@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-24
-**Commit:** a087eef3
+**Commit:** 4b02cb00
 ---
 
 # Changelog
@@ -27,6 +27,9 @@ All notable changes to this project will be documented in this file.
   share one undo step, and the graph retains node positions during authoring.
 
 ### Fixed
+
+- *(2026-11-24)* **Help (KRT-71)**: Made the relation direction explanation
+  reachable from the wording preview.
 
 - *(2026-11-24)* **Testing (KRT-70)**: Aligned the relation dependency check
   with the shared core temporal validator used by endpoint safety.
