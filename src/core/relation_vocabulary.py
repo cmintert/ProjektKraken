@@ -13,6 +13,10 @@ _FIXED_LABELS = {
     "mentions": "Reference (read-only)",
     "related": "Connected — kind not specified",
 }
+REQUIRED_TEXT = ("forward_label", "reverse_label", "description")
+OPTIONAL_TEXT = ("category", "forward_template", "reverse_template")
+ENDPOINTS = ("preferred_source_kind", "preferred_target_kind")
+FLAGS = ("enabled", "symmetric")
 
 
 @dataclass(frozen=True)
@@ -31,42 +35,85 @@ class RelationWording:
 def parse_vocabulary(raw: str | None) -> dict[str, dict[str, str]]:
     """Decode supported world metadata into a detached wording snapshot."""
     try:
-        document = json.loads(raw) if raw is not None else None
-    except (ValueError, RecursionError):
+        entries = load_document(raw)["definitions"]
+    except ValueError:
         return {}
-    if not isinstance(document, dict) or type(document.get("version")) is not int:
-        return {}
-    if document["version"] != 1 or not isinstance(document.get("definitions"), list):
-        return {}
-    return _definitions(document["definitions"])
+    return _definitions(entries)
+
+
+def load_document(raw: str | None) -> dict[str, Any]:
+    """Read editable metadata while protecting unreadable or newer documents."""
+    if raw is None:
+        return {"version": 1, "definitions": []}
+    try:
+        document = json.loads(raw)
+    except (ValueError, RecursionError) as exc:
+        raise ValueError("This world's relation dictionary could not be read.") from exc
+    if (
+        not isinstance(document, dict)
+        or type(document.get("version")) is not int
+        or document["version"] != 1
+        or not isinstance(document.get("definitions"), list)
+    ):
+        raise ValueError("This world's relation dictionary has an unsupported format.")
+    seen: set[str] = set()
+    for definition in document["definitions"]:
+        validate_structure(definition)
+        if definition["key"] in seen:
+            raise ValueError(
+                "This world's relation dictionary contains duplicate keys."
+            )
+        seen.add(definition["key"])
+    return document
+
+
+def validate_structure(definition: Any, *, editing: bool = False) -> None:
+    """Validate version 1 fields while allowing recovery of invalid templates."""
+    if not isinstance(definition, dict) or any(
+        not isinstance(definition.get(field), str) or not definition[field].strip()
+        for field in ("key", *REQUIRED_TEXT)
+    ):
+        raise ValueError("Each definition needs a key, both labels, and a description.")
+    for field in FLAGS if editing else ("enabled",):
+        if field in definition and type(definition[field]) is not bool:
+            raise ValueError(f"Invalid definition field {field}.")
+    if not editing:
+        # Older readers ignored unrecognized optional hints and metadata.
+        return
+    for field in ENDPOINTS:
+        if field in definition and definition[field] not in ("entity", "event"):
+            raise ValueError(f"Invalid definition field {field}.")
+    if "category" in definition and (
+        not isinstance(definition["category"], str)
+        or not definition["category"].strip()
+    ):
+        raise ValueError("Category must contain text when provided.")
 
 
 def _definitions(entries: list[Any]) -> dict[str, dict[str, str]]:
     result = {}
-    seen = set()
     for entry in entries:
-        required = ("key", "forward_label", "reverse_label", "description")
-        if not isinstance(entry, dict) or any(
-            not isinstance(entry.get(field), str) or not entry[field].strip()
-            for field in required
-        ):
-            return {}
         key = entry["key"]
-        enabled = entry.get("enabled", True)
-        if key in seen or not isinstance(enabled, bool):
-            return {}
-        seen.add(key)
-        if enabled and key not in _FIXED_LABELS:
+        if entry.get("enabled", True) and key not in _FIXED_LABELS:
             result[key] = {
                 field: entry[field]
-                for field in (*required[1:], "forward_template", "reverse_template")
+                for field in (
+                    *REQUIRED_TEXT,
+                    "forward_template",
+                    "reverse_template",
+                )
                 if isinstance(entry.get(field), str)
             }
-            for field in ("preferred_source_kind", "preferred_target_kind"):
-                kind = entry.get(field)
-                if kind in ("entity", "event"):
-                    result[key][field] = kind
+            for field in ENDPOINTS:
+                if entry.get(field) in ("entity", "event"):
+                    result[key][field] = entry[field]
     return result
+
+
+def valid_template(template: str) -> bool:
+    """Accept plain text with only the two literal endpoint placeholders."""
+    literal = _PLACEHOLDER.sub("", template)
+    return bool(template.strip()) and "{" not in literal and "}" not in literal
 
 
 Vocabulary = Mapping[str, Mapping[str, str]]
@@ -116,10 +163,7 @@ def resolve_wording(
 
 
 def _render_sentence(template: str | None, source: str, target: str) -> str | None:
-    if not template or not template.strip():
-        return None
-    literal = _PLACEHOLDER.sub("", template)
-    if "{" in literal or "}" in literal:
+    if not template or not valid_template(template):
         return None
     names = {"source": source, "target": target}
     return _PLACEHOLDER.sub(lambda match: names[match[1]], template)

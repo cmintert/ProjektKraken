@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-11-24
-**Commit:** eff4a2df
+**Last Updated:** 2026-11-25
+**Commit:** e0a317b8
 ---
 
 # Changelog
@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-11-25)* **Relation Dictionary (KRT-73)**: Added a world-local editor
+  in Settings → This World. Each undoable edit previews the affected count and
+  wording from both ends. Added contextual Help and regression coverage for
+  world packages, backups, and narrow layouts across all six themes.
 
 - *(2026-11-24)* **Relation authoring (KRT-72)**: Added searchable type
   suggestions, a preview from either entry, and inline endpoint and lifecycle

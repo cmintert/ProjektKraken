@@ -121,6 +121,7 @@ def _init_registry() -> None:
         RemoveRelationCommand,
         UpdateRelationCommand,
     )
+    from src.commands.relation_dictionary_command import EditRelationDefinitionCommand
     from src.commands.settings_commands import ApplyWorldSettingsCommand
     from src.commands.temporal_entity_edit_command import TemporalEntityEditCommand
     from src.commands.timeline_grouping_commands import (
@@ -164,6 +165,7 @@ def _init_registry() -> None:
             "PreserveMapPlacementCommand": PreserveMapPlacementCommand,
             "UpdateCalendarConfigCommand": UpdateCalendarConfigCommand,
             "ApplyWorldSettingsCommand": ApplyWorldSettingsCommand,
+            "EditRelationDefinitionCommand": EditRelationDefinitionCommand,
             "TimelineMoveCommand": TimelineMoveCommand,
             "CreateCalendarConfigCommand": CreateCalendarConfigCommand,
             "SetActiveCalendarCommand": SetActiveCalendarCommand,

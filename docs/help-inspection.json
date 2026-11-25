@@ -9042,6 +9042,76 @@
       "kind": "QAction"
     },
     {
+      "id": "settings.dictionary.open",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-dictionary-open",
+      "source": "src/gui/widgets/settings_center.py",
+      "symbol": "SettingsCenter._build_dictionary_page",
+      "binding": "self.relation_dictionary_button",
+      "label": "Open Relation Dictionary",
+      "kind": "WrappingPushButton"
+    },
+    {
+      "id": "settings.dictionary.list",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-dictionary-list",
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_list",
+      "binding": "self.entries",
+      "label": "Relation definitions",
+      "kind": "QListWidget"
+    },
+    {
+      "id": "settings.dictionary.wording",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-dictionary-wording",
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._add_field",
+      "binding": "field",
+      "label": "Definition fields",
+      "kind": "QLineEdit"
+    },
+    {
+      "id": "settings.dictionary.endpoints",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-dictionary-endpoints",
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_editor",
+      "binding": "field",
+      "label": "Preferred source and target",
+      "kind": "QComboBox"
+    },
+    {
+      "id": "settings.dictionary.flags",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-dictionary-flags",
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_editor",
+      "binding": "checkbox",
+      "label": "Definition enabled and symmetric meaning",
+      "kind": "QCheckBox"
+    },
+    {
+      "id": "settings.dictionary.review",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-dictionary-review",
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_editor",
+      "binding": "self.review",
+      "label": "Review impact",
+      "kind": "PrimaryButton"
+    },
+    {
+      "id": "settings.dictionary.save",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-dictionary-save",
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_review",
+      "binding": "self.save",
+      "label": "Save definition",
+      "kind": "PrimaryButton"
+    },
+    {
       "id": "workspace.activity",
       "topic_id": "workspace.navigation",
       "target": "help-inspect-workspace-activity",
@@ -17455,8 +17525,38 @@
     {
       "source": "src/gui/widgets/settings_center.py",
       "symbol": "SettingsCenter.build_world_pages",
-      "sha256": "553dab7f09523e6ab01d2233270f21f0b7872d8dd9509859c697533977091cd8",
-      "review_note": "KRT-55: reviewed actual embedded calendar/grouping/graph/AI forms and world index exclusions. Qt.Widget embedding prevents independent dialogs; page navigation retains drafts and external writes require Apply."
+      "sha256": "683a8dcfee9971d39f17e5014c46ad2e2dc5ebf01b85b89c33d046c29709db65",
+      "review_note": "KRT-73: added the Relation Dictionary launcher with an independent review and save. The embedded world index exclusions retain their existing Apply and explicit rebuild workflow."
+    },
+    {
+      "source": "src/gui/widgets/settings_center.py",
+      "symbol": "SettingsCenter._build_dictionary_page",
+      "sha256": "7152230272027d17187e3409972e1b3f214bec5760e01b8862490c4423a0f188",
+      "review_note": "KRT-73: Opens a world-scoped editor with an independent review and save."
+    },
+    {
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_list",
+      "sha256": "1850aefadcf0c6ff079009c81423e3b194f50fabf4f9b32b0787a374f5b88a48",
+      "review_note": "KRT-73: Selects existing world entries or a copied catalog suggestion."
+    },
+    {
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._add_field",
+      "sha256": "2ec50816bb982bd280c1bfc53ba77833d1ac1b11927f9f2d303b799757b1ed87",
+      "review_note": "KRT-73: Edits labels, optional sentences and a new key. Saved keys are read-only."
+    },
+    {
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_editor",
+      "sha256": "7ca7b3a59cf590efd50a954052d9921b4b450ae4ab660fbf603579a88d53b9ec",
+      "review_note": "KRT-73: Shows advisory endpoint kinds, enabled state and symmetry without changing relation rows."
+    },
+    {
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_review",
+      "sha256": "82cc5c3655717f51e27a3cf88ee183a430c8196164067e530b0b45c578eaf1d6",
+      "review_note": "KRT-73: Commits one reviewed definition. The worker checks evidence and preserves the key."
     },
     {
       "source": "src/gui/workspace/activity_bar.py",

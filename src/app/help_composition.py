@@ -22,6 +22,7 @@ class HelpSurfaceBindings(QObject):
     DIALOG_TOPICS = {
         "BatchMetadataDialog": "explorer.batch-edit",
         "SettingsCenter": "settings.center",
+        "RelationDictionaryDialog": "settings.relation-dictionary",
         "GoToDateDialog": "timeline.viewing",
         "RelationEditDialog": "relations.create",
         "TemporalValidityDialog": "map.visibility",

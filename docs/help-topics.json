@@ -484,7 +484,18 @@
       "related_ids": [
         "workspace.navigation",
         "settings.ai",
-        "writing.spelling"
+        "writing.spelling",
+        "settings.relation-dictionary"
+      ]
+    },
+    {
+      "id": "settings.relation-dictionary",
+      "source": "workspace.md",
+      "target": "help-inspect-relation-dictionary-open",
+      "level": "task",
+      "related_ids": [
+        "settings.center",
+        "relations.create"
       ]
     },
     {

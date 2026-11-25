@@ -2,17 +2,24 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
+from src.app.coordinators.relation_dictionary_coordinator import (
+    RelationDictionaryCoordinator,
+)
 from src.app.coordinators.settings_coordinator import SettingsCoordinator
+from src.commands.relation_dictionary_command import EditRelationDefinitionCommand
 from src.core.calendar import CalendarConfig
 from src.core.theme_manager import ThemeManager
 from src.core.timeline_visibility import DEPENDENCY_VISIBILITY_KEY
 from src.gui.utils.settings_navigation import settings_navigation
+from src.gui.widgets.settings_center import SettingsCenter
 from src.gui.widgets.spell_check_controller import SpellCheckController
+from src.services.relation_dictionary import RelationDictionaryReader
 from src.services.settings_snapshot import SettingsSnapshotWorker
 
 if TYPE_CHECKING:
@@ -34,6 +41,7 @@ def compose_settings(window: MainWindow) -> SettingsCoordinator:
     coordinator = SettingsCoordinator(
         context, window.command_coordinator.execute_command, window
     )
+    _attach_relation_dictionary(window, coordinator, context)
     database_worker = window.worker
     endpoint = SettingsSnapshotWorker(lambda: database_worker.db_service)
     endpoint.moveToThread(window.worker_thread)
@@ -110,6 +118,40 @@ def compose_settings(window: MainWindow) -> SettingsCoordinator:
     if window.worker_manager.database_initialized is True:
         coordinator.refresh_world()
     return coordinator
+
+
+def _attach_relation_dictionary(
+    window: MainWindow,
+    coordinator: SettingsCoordinator,
+    context: Callable[[], dict[str, Any]],
+) -> None:
+    commands = window.command_coordinator
+
+    def execute(command: EditRelationDefinitionCommand) -> bool:
+        if commands.mutations_suspended:
+            return False
+        commands.execute_command(command)
+        return True
+
+    worker = window.worker
+    endpoint = RelationDictionaryReader(lambda: worker.db_service)
+    controller = RelationDictionaryCoordinator(context, execute, endpoint, coordinator)
+    endpoint.moveToThread(window.worker_thread)
+    window.worker_thread.finished.connect(endpoint.deleteLater)
+    controller.requested.connect(endpoint.load, Qt.ConnectionType.QueuedConnection)
+    endpoint.finished.connect(
+        controller.on_snapshot, Qt.ConnectionType.QueuedConnection
+    )
+    worker.command_finished.connect(
+        controller.on_command_finished, Qt.ConnectionType.QueuedConnection
+    )
+
+    def bind(view: SettingsCenter) -> None:
+        view.relation_dictionary_requested.connect(lambda: controller.open(view))
+
+    coordinator.view_created.connect(bind)
+    coordinator.dictionary_transition = controller.allow_transition
+    coordinator.dictionary_has_pending = controller.has_pending_changes
 
 
 def _apply_effective_theme(coordinator: SettingsCoordinator) -> None:
