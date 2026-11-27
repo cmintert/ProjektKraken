@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-27
-**Commit:** fce7804d
+**Commit:** 5fd3d5e3
 ---
 
 # Changelog
@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-11-27)* **World Relations preset pack**. Added 63 genre-neutral
+  relation definitions as a complete preset and eight category presets,
+  with an import guide.
 
 - *(2026-11-27)* **Relation Dictionary maintenance (KRT-185, KRT-76)**:
   Added undoable definition removal with a wording preview and custom key

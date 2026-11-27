@@ -1,0 +1,82 @@
+{
+  "format": "kraken-relation-preset",
+  "version": 1,
+  "definitions": [
+    {
+      "key": "witnessed",
+      "forward_label": "Witnessed",
+      "reverse_label": "Witnessed by",
+      "description": "The source witnessed the target.",
+      "category": "Knowledge & evidence",
+      "preferred_source_kind": "entity",
+      "preferred_target_kind": "event",
+      "forward_template": "{source} witnessed {target}.",
+      "reverse_template": "{target} was witnessed by {source}."
+    },
+    {
+      "key": "informed",
+      "forward_label": "Informed",
+      "reverse_label": "Informed by",
+      "description": "The source informed the target.",
+      "category": "Knowledge & evidence",
+      "forward_template": "{source} informed {target}.",
+      "reverse_template": "{target} was informed by {source}."
+    },
+    {
+      "key": "recorded_in",
+      "forward_label": "Recorded in",
+      "reverse_label": "Records",
+      "description": "The source is recorded in the target.",
+      "category": "Knowledge & evidence",
+      "preferred_target_kind": "entity",
+      "forward_template": "{source} is recorded in {target}.",
+      "reverse_template": "{target} contains a record of {source}."
+    },
+    {
+      "key": "knows_about",
+      "forward_label": "Knows about",
+      "reverse_label": "Known to",
+      "description": "The source knows about the target.",
+      "category": "Knowledge & evidence",
+      "forward_template": "{source} knows about {target}.",
+      "reverse_template": "{target} is known to {source}."
+    },
+    {
+      "key": "suspects",
+      "forward_label": "Suspects",
+      "reverse_label": "Suspected by",
+      "description": "The source suspects the target.",
+      "category": "Knowledge & evidence",
+      "forward_template": "{source} suspects {target}.",
+      "reverse_template": "{target} is suspected by {source}."
+    },
+    {
+      "key": "corroborates",
+      "forward_label": "Corroborates",
+      "reverse_label": "Corroborated by",
+      "description": "The source corroborates the target.",
+      "category": "Knowledge & evidence",
+      "forward_template": "{source} corroborates {target}.",
+      "reverse_template": "{target} is corroborated by {source}."
+    },
+    {
+      "key": "contradicts",
+      "forward_label": "Contradicts",
+      "reverse_label": "Contradicts",
+      "description": "The source contradicts the target.",
+      "category": "Knowledge & evidence",
+      "symmetric": true,
+      "forward_template": "{source} contradicts {target}.",
+      "reverse_template": "{target} contradicts {source}."
+    },
+    {
+      "key": "concealed_from",
+      "forward_label": "Concealed from",
+      "reverse_label": "Kept unaware of",
+      "description": "The source was concealed from the target.",
+      "category": "Knowledge & evidence",
+      "forward_template": "{source} was concealed from {target}.",
+      "reverse_template": "{target} was kept unaware of {source}."
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "format": "kraken-relation-preset",
+  "version": 1,
+  "definitions": [
+    {
+      "key": "organized",
+      "forward_label": "Organized",
+      "reverse_label": "Organized by",
+      "description": "The source organized the target.",
+      "category": "Events & responsibility",
+      "preferred_source_kind": "entity",
+      "preferred_target_kind": "event",
+      "forward_template": "{source} organized {target}.",
+      "reverse_template": "{target} was organized by {source}."
+    },
+    {
+      "key": "commissioned",
+      "forward_label": "Commissioned",
+      "reverse_label": "Commissioned by",
+      "description": "The source commissioned the target.",
+      "category": "Events & responsibility",
+      "forward_template": "{source} commissioned {target}.",
+      "reverse_template": "{target} was commissioned by {source}."
+    },
+    {
+      "key": "carried_out",
+      "forward_label": "Carried out",
+      "reverse_label": "Carried out by",
+      "description": "The source carried out the target.",
+      "category": "Events & responsibility",
+      "preferred_source_kind": "entity",
+      "preferred_target_kind": "event",
+      "forward_template": "{source} carried out {target}.",
+      "reverse_template": "{target} was carried out by {source}."
+    },
+    {
+      "key": "prevented",
+      "forward_label": "Prevented",
+      "reverse_label": "Prevented by",
+      "description": "The source prevented the target.",
+      "category": "Events & responsibility",
+      "forward_template": "{source} prevented {target}.",
+      "reverse_template": "{target} was prevented by {source}."
+    },
+    {
+      "key": "caused",
+      "forward_label": "Caused",
+      "reverse_label": "Caused by",
+      "description": "The source caused the target.",
+      "category": "Events & responsibility",
+      "forward_template": "{source} caused {target}.",
+      "reverse_template": "{target} was caused by {source}."
+    },
+    {
+      "key": "investigated",
+      "forward_label": "Investigated",
+      "reverse_label": "Investigated by",
+      "description": "The source investigated the target.",
+      "category": "Events & responsibility",
+      "preferred_source_kind": "entity",
+      "preferred_target_kind": "event",
+      "forward_template": "{source} investigated {target}.",
+      "reverse_template": "{target} was investigated by {source}."
+    },
+    {
+      "key": "rescued",
+      "forward_label": "Rescued",
+      "reverse_label": "Rescued by",
+      "description": "The source rescued the target.",
+      "category": "Events & responsibility",
+      "forward_template": "{source} rescued {target}.",
+      "reverse_template": "{target} was rescued by {source}."
+    },
+    {
+      "key": "harmed_by",
+      "forward_label": "Harmed by",
+      "reverse_label": "Harmed",
+      "description": "The source was harmed by the target.",
+      "category": "Events & responsibility",
+      "forward_template": "{source} was harmed by {target}.",
+      "reverse_template": "{target} harmed {source}."
+    }
+  ]
+}

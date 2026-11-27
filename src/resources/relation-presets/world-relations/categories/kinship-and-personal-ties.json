@@ -1,0 +1,81 @@
+{
+  "format": "kraken-relation-preset",
+  "version": 1,
+  "definitions": [
+    {
+      "key": "parent_of",
+      "forward_label": "Parent of",
+      "reverse_label": "Child of",
+      "description": "The source is a parent of the target.",
+      "category": "Kinship & personal ties",
+      "forward_template": "{source} is a parent of {target}.",
+      "reverse_template": "{target} is a child of {source}."
+    },
+    {
+      "key": "sibling_of",
+      "forward_label": "Sibling of",
+      "reverse_label": "Sibling of",
+      "description": "The source is a sibling of the target.",
+      "category": "Kinship & personal ties",
+      "symmetric": true,
+      "forward_template": "{source} is a sibling of {target}.",
+      "reverse_template": "{target} is a sibling of {source}."
+    },
+    {
+      "key": "partnered_with",
+      "forward_label": "Partnered with",
+      "reverse_label": "Partnered with",
+      "description": "The source is partnered with the target.",
+      "category": "Kinship & personal ties",
+      "symmetric": true,
+      "forward_template": "{source} is partnered with {target}.",
+      "reverse_template": "{target} is partnered with {source}."
+    },
+    {
+      "key": "guardian_of",
+      "forward_label": "Guardian of",
+      "reverse_label": "Ward of",
+      "description": "The source is a guardian of the target.",
+      "category": "Kinship & personal ties",
+      "forward_template": "{source} is a guardian of {target}.",
+      "reverse_template": "{target} is a ward of {source}."
+    },
+    {
+      "key": "mentors",
+      "forward_label": "Mentors",
+      "reverse_label": "Mentored by",
+      "description": "The source mentors the target.",
+      "category": "Kinship & personal ties",
+      "forward_template": "{source} mentors {target}.",
+      "reverse_template": "{target} is mentored by {source}."
+    },
+    {
+      "key": "estranged_from",
+      "forward_label": "Estranged from",
+      "reverse_label": "Estranged from",
+      "description": "The source is estranged from the target.",
+      "category": "Kinship & personal ties",
+      "symmetric": true,
+      "forward_template": "{source} is estranged from {target}.",
+      "reverse_template": "{target} is estranged from {source}."
+    },
+    {
+      "key": "trusts",
+      "forward_label": "Trusts",
+      "reverse_label": "Trusted by",
+      "description": "The source trusts the target.",
+      "category": "Kinship & personal ties",
+      "forward_template": "{source} trusts {target}.",
+      "reverse_template": "{target} is trusted by {source}."
+    },
+    {
+      "key": "confides_in",
+      "forward_label": "Confides in",
+      "reverse_label": "Confidant of",
+      "description": "The source confides in the target.",
+      "category": "Kinship & personal ties",
+      "forward_template": "{source} confides in {target}.",
+      "reverse_template": "{target} is a confidant of {source}."
+    }
+  ]
+}

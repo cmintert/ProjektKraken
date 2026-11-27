@@ -1,0 +1,80 @@
+{
+  "format": "kraken-relation-preset",
+  "version": 1,
+  "definitions": [
+    {
+      "key": "owes_debt_to",
+      "forward_label": "Owes a debt to",
+      "reverse_label": "Debtors",
+      "description": "The source owes a debt to the target.",
+      "category": "Obligations & exchange",
+      "forward_template": "{source} owes a debt to {target}.",
+      "reverse_template": "{target} is owed a debt by {source}."
+    },
+    {
+      "key": "funds",
+      "forward_label": "Funds",
+      "reverse_label": "Funded by",
+      "description": "The source funds the target.",
+      "category": "Obligations & exchange",
+      "forward_template": "{source} funds {target}.",
+      "reverse_template": "{target} is funded by {source}."
+    },
+    {
+      "key": "supplies",
+      "forward_label": "Supplies",
+      "reverse_label": "Supplied by",
+      "description": "The source supplies the target.",
+      "category": "Obligations & exchange",
+      "forward_template": "{source} supplies {target}.",
+      "reverse_template": "{target} is supplied by {source}."
+    },
+    {
+      "key": "trades_with",
+      "forward_label": "Trades with",
+      "reverse_label": "Trades with",
+      "description": "The source trades with the target.",
+      "category": "Obligations & exchange",
+      "symmetric": true,
+      "forward_template": "{source} trades with {target}.",
+      "reverse_template": "{target} trades with {source}."
+    },
+    {
+      "key": "employs",
+      "forward_label": "Employs",
+      "reverse_label": "Employed by",
+      "description": "The source employs the target.",
+      "category": "Obligations & exchange",
+      "forward_template": "{source} employs {target}.",
+      "reverse_template": "{target} is employed by {source}."
+    },
+    {
+      "key": "sponsors",
+      "forward_label": "Sponsors",
+      "reverse_label": "Sponsored by",
+      "description": "The source sponsors the target.",
+      "category": "Obligations & exchange",
+      "forward_template": "{source} sponsors {target}.",
+      "reverse_template": "{target} is sponsored by {source}."
+    },
+    {
+      "key": "pays_tribute_to",
+      "forward_label": "Pays tribute to",
+      "reverse_label": "Receives tribute from",
+      "description": "The source pays tribute to the target.",
+      "category": "Obligations & exchange",
+      "forward_template": "{source} pays tribute to {target}.",
+      "reverse_template": "{target} receives tribute from {source}."
+    },
+    {
+      "key": "bound_by_agreement_to",
+      "forward_label": "Bound by agreement to",
+      "reverse_label": "Bound by agreement to",
+      "description": "The source is bound by agreement to the target.",
+      "category": "Obligations & exchange",
+      "symmetric": true,
+      "forward_template": "{source} is bound by agreement to {target}.",
+      "reverse_template": "{target} is bound by agreement to {source}."
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "format": "kraken-relation-preset",
+  "version": 1,
+  "definitions": [
+    {
+      "key": "rules",
+      "forward_label": "Governs",
+      "reverse_label": "Governed by",
+      "description": "The source governs the target.",
+      "category": "Authority & allegiance",
+      "forward_template": "{source} governs {target}.",
+      "reverse_template": "{target} is governed by {source}."
+    },
+    {
+      "key": "reports_to",
+      "forward_label": "Reports to",
+      "reverse_label": "Direct reports",
+      "description": "The source reports to the target.",
+      "category": "Authority & allegiance",
+      "forward_template": "{source} reports to {target}.",
+      "reverse_template": "{target} supervises {source}."
+    },
+    {
+      "key": "commands",
+      "forward_label": "Commands",
+      "reverse_label": "Commanded by",
+      "description": "The source commands the target.",
+      "category": "Authority & allegiance",
+      "forward_template": "{source} commands {target}.",
+      "reverse_template": "{target} is commanded by {source}."
+    },
+    {
+      "key": "appointed_by",
+      "forward_label": "Appointed by",
+      "reverse_label": "Appointed",
+      "description": "The source was appointed by the target.",
+      "category": "Authority & allegiance",
+      "forward_template": "{source} was appointed by {target}.",
+      "reverse_template": "{target} appointed {source}."
+    },
+    {
+      "key": "acts_on_behalf_of",
+      "forward_label": "Acts on behalf of",
+      "reverse_label": "Represented by",
+      "description": "The source acts on behalf of the target.",
+      "category": "Authority & allegiance",
+      "forward_template": "{source} acts on behalf of {target}.",
+      "reverse_template": "{target} is represented by {source}."
+    },
+    {
+      "key": "sworn_to",
+      "forward_label": "Sworn to",
+      "reverse_label": "Sworn followers",
+      "description": "The source has sworn allegiance to the target.",
+      "category": "Authority & allegiance",
+      "forward_template": "{source} has sworn allegiance to {target}.",
+      "reverse_template": "{target} receives allegiance from {source}."
+    },
+    {
+      "key": "claims_authority_over",
+      "forward_label": "Claims authority over",
+      "reverse_label": "Subject of claim",
+      "description": "The source claims authority over the target.",
+      "category": "Authority & allegiance",
+      "forward_template": "{source} claims authority over {target}.",
+      "reverse_template": "{target} is the subject of an authority claim by {source}."
+    },
+    {
+      "key": "has_jurisdiction_over",
+      "forward_label": "Has jurisdiction over",
+      "reverse_label": "Under jurisdiction of",
+      "description": "The source has jurisdiction over the target.",
+      "category": "Authority & allegiance",
+      "forward_template": "{source} has jurisdiction over {target}.",
+      "reverse_template": "{target} falls under the jurisdiction of {source}."
+    }
+  ]
+}
