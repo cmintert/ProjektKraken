@@ -6912,6 +6912,16 @@
       "kind": "QLineEdit"
     },
     {
+      "id": "sheet-edit-layout",
+      "topic_id": "authoring.details",
+      "target": "help-inspect-sheet-edit-layout",
+      "source": "src/gui/widgets/sheet_builder.py",
+      "symbol": "SheetBuilderWidget.__init__",
+      "binding": "self.layout_button",
+      "label": "Edit layout",
+      "kind": "StandardButton"
+    },
+    {
       "id": "src-gui-widgets-sheet-builder-sheetbuilderwidget-init-self-act-add-row",
       "topic_id": "authoring.details",
       "target": "help-inspect-src-gui-widgets-sheet-builder-sheetbuilderwidget-init-self-act-add-row",
@@ -13023,8 +13033,8 @@
     {
       "source": "src/gui/widgets/editor_presentation.py",
       "symbol": "EditorPresentation._install_toolbar_menus",
-      "sha256": "89fae8185e120e551ff7f4735c954ec3263da5c6991b40ca0de47127eea5b324",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "166afdde94a9b569eebf9fe33ec892642c52fc3d59b17ecb941c5c39aaa8cba8",
+      "review_note": "KRT-186: The existing Add commands have the same meaning in the narrow overflow route, which appears only while editing layout."
     },
     {
       "source": "src/gui/widgets/editor_presentation.py",
@@ -16215,20 +16225,20 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "AttributePairWidget.__init__",
-      "sha256": "fd743ec8c4ec9dd83b55b580928beb521b7564ac0c6294863dce39fa89b1be04",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
+      "sha256": "bad3b1c88eb008eb00e85be91ed969f9b103cd45af0b9cb933b061900798cad0",
+      "review_note": "KRT-186: The editable value still has its associated key and its Tab route. Long keys and grouped units wrap without shifting the value's first line."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "AttributePairWidget._adjust_height",
-      "sha256": "88410a491000624d6b5e06786d7e5a1a586f5acca91ff711102738363686bf3e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "0f6992633c0d3e9842feedda1aeeb10df317374c9848fa2f9e01ea0e18c545db",
+      "review_note": "KRT-186: Inline value height uses the actual editor insets. Multiline content and its scroll limit retain their meaning."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "AttributePairWidget._apply_theme",
-      "sha256": "bf88ce64e9dc330ee3082836b890cc6d65bff0509427fb1affe111c5c5ad0b79",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "74519ebb4b6ad10d09b3d5e10d2d8ebc18c2af71072c3608858b13b74281a267",
+      "review_note": "KRT-186: Inline values use a complete hover and focus outline. Styling does not change value parsing or editing behavior."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16245,8 +16255,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "HeaderWidget.__init__",
-      "sha256": "7c6937f020ebad71f8654d1574a932725042b80bceae7ee8e14b1c1603e3ec4f",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
+      "sha256": "bb089211d149b3c7709a44c814228162142e0d004050249876feb5636e41fc98",
+      "review_note": "KRT-186: The heading is readable in the sheet and editable after opening Edit layout."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16263,14 +16273,14 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget.__init__",
-      "sha256": "d0d5e01194de07a4b336267714cb914af685f497cf95c85f51089c24bb79102e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
+      "sha256": "54db78f81e151a5c569161587677183adbd414ef96b17c36977ee5d6e8d24fe6",
+      "review_note": "KRT-186: Edit layout reveals the existing sheet tools. The contextual explanation describes the draft when the tools are closed."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._add_row",
-      "sha256": "0b90b7993ab02aef0d93e6f7690e1ceb3368ccca73e638d4a722f8f485e3b059",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "eb383c57b30ee47b82a14781d018eff1cb2f060ab674ad419e756626cbb011c5",
+      "review_note": "KRT-186: New rows respect the current presentation mode. The Add commands still insert the same authored elements."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16281,8 +16291,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._apply_theme",
-      "sha256": "daeccf2ac760c0da75d5b733f4fa03a5c4b7552d13e52f3e24cd73d8a7cf57a8",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "1591eb84b3b1ce850832b0fd9fe05ee07e68b7725294a9d191864ff5550eac10",
+      "review_note": "KRT-186: The reading surface and layout toolbar retain theme-owned styling. The controls have the same operations."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16449,8 +16459,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._rebuild_resize_handles",
-      "sha256": "4ca8fd1080ee5dc660c5da18d468c9b9c759bd65819261c239651c458ce2b912",
-      "review_note": "Skips unavailable layout items during enumeration. Resize handles still follow eligible columns."
+      "sha256": "7d5589df6db3b2cceffa97da8f7c09ca529486f8604d57e7f025c2abb1525cd0",
+      "review_note": "KRT-186: Resize handles are presented in layout editing. Their existing resize and weight semantics remain accurate."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16479,8 +16489,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._show_context_menu",
-      "sha256": "17106d7be3061468b1a83c9b04460615297ea128e43d84914982937c074f0845",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "9a71de1bf59f2912720624156c0e067263bc47281a863f884461f06a3bbb56a2",
+      "review_note": "KRT-186: The row layout menu opens in layout editing. The sheet guide points readers to Edit layout first."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16509,8 +16519,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "TextBlockWidget.__init__",
-      "sha256": "287632f6e5d7eab0a7e49528a588b292c44de8cd53bc45581723031106e8e36e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
+      "sha256": "3b6b517e5f3ba08c660dd9334cf63baac24dd9fc9e00978993bb9e65da32855c",
+      "review_note": "KRT-186: Text blocks are visible in the sheet and editable in layout editing. Their content remains separate from attribute values."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-27
-**Commit:** 5fd3d5e3
+**Commit:** 97207ed2
 ---
 
 # Changelog
@@ -85,6 +85,11 @@ All notable changes to this project will be documented in this file.
   conflicting editor saves.
 
 ### Changed
+
+- *(2026-11-27)* **Sheet tab (KRT-186)**: Aligned inline keys and values in
+  Entity and Event sheets, added a single-column view for narrow inspectors,
+  and moved arrangement controls into **Edit layout**. Updated contextual
+  Help and covered wrapped labels, keyboard editing, and layout state.
 
 - *(2026-11-24)* **Relations and Help (KRT-70)**: Made each creation action save
   one directed relation visible from either endpoint. Retired the CLI

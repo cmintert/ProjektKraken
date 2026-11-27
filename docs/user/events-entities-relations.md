@@ -655,6 +655,14 @@ for each world.
 
 (help-authoring-templates)=
 
+## Use and arrange a sheet
+
+Open an Entity or Event and choose **Details → Sheet**. Click a value or Tab to
+it to make a change. To arrange the sheet, choose **Edit layout**. Use the Add
+commands or **More Sheet actions** at narrow widths, and right-click a row for
+its layout commands. Choose **Done editing layout** to return to the sheet.
+Use the editor's **Save Changes** to save your draft.
+
 ## Insert structured content with Fast Inject
 
 Fast Inject applies a selected structured template to an entry. For an Event, open
@@ -1426,6 +1434,12 @@ fields first; opening Help does not accept them.
 
 **Cancel** — Cancel this Relation Type Picker operation without accepting its pending
 changes. This is separate from applying or saving them.
+
+(help-inspect-sheet-edit-layout)=
+
+**Edit layout / Done editing layout** — Show or hide the controls for arranging
+the sheet. You can edit attribute values in either view. Leaving layout editing
+keeps changes in your draft.
 
 (help-inspect-src-gui-widgets-sheet-builder-attributepairwidget-init-self-value-edit)=
 

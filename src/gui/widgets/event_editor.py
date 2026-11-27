@@ -1105,6 +1105,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             if not self.relation_authoring.prepare_to_leave():
                 return
             self.relation_authoring.cancel()
+            self.sheet_builder.set_layout_editing(False, restore_focus=False)
             self.temporal_widget.reset_options()
             self._presentation.writing_disclosure.setChecked(False)
         focus = getattr(self, "_focus_controller", None)

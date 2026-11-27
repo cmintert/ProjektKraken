@@ -857,6 +857,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             if not self.relation_authoring.prepare_to_leave():
                 return
             self.relation_authoring.cancel()
+            self.sheet_builder.set_layout_editing(False, restore_focus=False)
         focus = getattr(self, "_focus_controller", None)
         if (
             focus is not None

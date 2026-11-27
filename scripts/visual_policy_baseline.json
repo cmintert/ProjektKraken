@@ -437,20 +437,6 @@
       "source": "border_color = theme.get(\"border\", \"#333344\")"
     },
     {
-      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_attribute_style|literal-color|5e8e3e7489fb069e",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_attribute_style; migrate this expression when its presentation path is next touched.",
-      "source": "primary = theme.get(\"primary\", \"#5C82FF\")"
-    },
-    {
-      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_attribute_style|literal-color|c1cf462f2c9a8a30",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_attribute_style; migrate this expression when its presentation path is next touched.",
-      "source": "border = theme.get(\"border\", \"#333333\")"
-    },
-    {
       "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_divider_style|literal-color|5e8e3e7489fb069e",
       "count": 1,
       "category": "legacy",
@@ -463,76 +449,6 @@
       "category": "legacy",
       "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_divider_style; migrate this expression when its presentation path is next touched.",
       "source": "border = theme.get(\"border\", \"#333333\")"
-    },
-    {
-      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_header_style|literal-color|5e8e3e7489fb069e",
-      "count": 2,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_header_style; migrate this expression when its presentation path is next touched.",
-      "source": "accent = theme.get(\"accent_secondary\", theme.get(\"primary\", \"#5C82FF\"))"
-    },
-    {
-      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_header_style|literal-color|d139cb99d3390891",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_header_style; migrate this expression when its presentation path is next touched.",
-      "source": "text = theme.get(\"text\", \"#E0E0E0\")"
-    },
-    {
-      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_resize_handle_style|literal-color|5e8e3e7489fb069e",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_resize_handle_style; migrate this expression when its presentation path is next touched.",
-      "source": "primary = theme.get(\"primary\", \"#5C82FF\")"
-    },
-    {
-      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_spacer_style|literal-color|5e8e3e7489fb069e",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_spacer_style; migrate this expression when its presentation path is next touched.",
-      "source": "primary = theme.get(\"primary\", \"#5C82FF\")"
-    },
-    {
-      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_spacer_style|literal-color|a9b70348305d8e94",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_spacer_style; migrate this expression when its presentation path is next touched.",
-      "source": "border: 1px solid {primary};"
-    },
-    {
-      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_spacer_style|literal-color|c1cf462f2c9a8a30",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_spacer_style; migrate this expression when its presentation path is next touched.",
-      "source": "border = theme.get(\"border\", \"#333333\")"
-    },
-    {
-      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_spacer_style|literal-color|f777e31cf075e6a9",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_spacer_style; migrate this expression when its presentation path is next touched.",
-      "source": "border: 1px solid {primary};"
-    },
-    {
-      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_text_block_style|literal-color|5e8e3e7489fb069e",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_text_block_style; migrate this expression when its presentation path is next touched.",
-      "source": "primary = theme.get(\"primary\", \"#5C82FF\")"
-    },
-    {
-      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_text_block_style|literal-color|d139cb99d3390891",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_text_block_style; migrate this expression when its presentation path is next touched.",
-      "source": "text = theme.get(\"text\", \"#E0E0E0\")"
-    },
-    {
-      "key": "src/gui/utils/style_helper.py|StyleHelper.get_sheet_text_block_style|literal-color|dad8252028023902",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in StyleHelper.get_sheet_text_block_style; migrate this expression when its presentation path is next touched.",
-      "source": "text_dim = theme.get(\"text_dim\", \"#808080\")"
     },
     {
       "key": "src/gui/utils/style_helper.py|StyleHelper.get_table_widget_style|literal-color|128f2f8c392eb402",
@@ -1695,27 +1611,6 @@
       "category": "legacy",
       "reason": "KRT-54 legacy presentation in RelationTypePicker._apply_theme; migrate this expression when its presentation path is next touched.",
       "source": "text_main = theme.get(\"text_main\", \"#E0E0E0\")"
-    },
-    {
-      "key": "src/gui/widgets/sheet_builder.py|AttributePairWidget._apply_theme|literal-color|5e8e3e7489fb069e",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in AttributePairWidget._apply_theme; migrate this expression when its presentation path is next touched.",
-      "source": "primary = theme.get(\"primary\", \"#5C82FF\")"
-    },
-    {
-      "key": "src/gui/widgets/sheet_builder.py|SheetBuilderWidget._apply_theme|literal-color|217395977d074a07",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in SheetBuilderWidget._apply_theme; migrate this expression when its presentation path is next touched.",
-      "source": "surface = theme.get(\"surface\", \"#1A1A1A\")"
-    },
-    {
-      "key": "src/gui/widgets/sheet_builder.py|SheetBuilderWidget._apply_theme|literal-color|c1cf462f2c9a8a30",
-      "count": 1,
-      "category": "legacy",
-      "reason": "KRT-54 legacy presentation in SheetBuilderWidget._apply_theme; migrate this expression when its presentation path is next touched.",
-      "source": "border = theme.get(\"border\", \"#333333\")"
     },
     {
       "key": "src/gui/widgets/sheet_builder.py|_GhostWidget._apply_theme|literal-color|5e8e3e7489fb069e",

@@ -1,8 +1,7 @@
 """Sheet Builder Widget Module.
 
-Provides a visual "Stat Block" builder for entity/event attributes. The sheet
-presents attributes as draggable key-value boxes arranged in a flex-row grid,
-and supports serialization of the spatial layout to a 2D list for persistence.
+Displays Entity and Event attributes in authored rows and columns. Layout
+editing exposes the tools for arranging and saving that structure.
 """
 
 import logging
@@ -22,9 +21,11 @@ from PySide6.QtGui import (
     QDropEvent,
     QKeySequence,
     QMouseEvent,
+    QResizeEvent,
     QShortcut,
 )
 from PySide6.QtWidgets import (
+    QBoxLayout,
     QFrame,
     QHBoxLayout,
     QInputDialog,
@@ -45,11 +46,15 @@ from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.utils.theme_connections import connect_theme, disconnect_theme
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
+from src.gui.widgets.standard_buttons import StandardButton
 
 logger = logging.getLogger(__name__)
 
 _DRAG_START_DISTANCE_PX = 10
 _MINIMUM_RESIZABLE_ROW_ITEMS = 2
+_SHEET_COLUMN_WIDTH = 160
+_SHEET_LABEL_WIDTH = 132
+_SHEET_VALUE_WIDTH = 62
 
 # Internal MIME type for drag-and-drop within the sheet builder
 _SHEET_DRAG_MIME = "application/x-kraken-sheet-key"
@@ -75,9 +80,9 @@ class _FocusState:
 
 
 class AttributePairWidget(QFrame):
-    """A single key-value attribute box for the Sheet Builder.
+    """An inline key and editable value for the Sheet tab.
 
-    Displays a bold key label on top and an editable value line-edit below,
+    Aligns the key with the first line of the value,
     with an optional type toggle (String / Number / Boolean).
 
     Signals:
@@ -111,19 +116,33 @@ class AttributePairWidget(QFrame):
 
         self.setFrameShape(QFrame.Shape.StyledPanel)
         self.setObjectName("AttributePairWidget")
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
 
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 4, 8, 4)
-        layout.setSpacing(8)
+        self._layout_editing = False
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(4, 2, 4, 2)
+        layout.setSpacing(2)
+        inline = QHBoxLayout()
+        inline.setSpacing(6)
+        layout.addLayout(inline)
 
         # Bold key label — aligned to top for multiline value support
-        self.key_label = QLabel(f"<b>{key}:</b>")
+        label, suffix_separator, suffix = key.rpartition(" (")
+        display_key = (
+            f"{label}\u00a0({suffix}"
+            if suffix_separator and " " in label and suffix.endswith(")")
+            else key
+        )
+        self.key_label = QLabel(display_key)
+        self.key_label.setTextFormat(Qt.TextFormat.PlainText)
+        self.key_label.setWordWrap(True)
+        self.key_label.setIndent(0)
+        self.key_label.setFixedWidth(_SHEET_LABEL_WIDTH)
         self.key_label.setAlignment(
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
         )
         self.key_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        layout.addWidget(self.key_label)
+        inline.addWidget(self.key_label, alignment=Qt.AlignmentFlag.AlignTop)
 
         # Value editor — multiline plain-text, autosizes up to SHEET_VALUE_MAX_LINES
         self.value_edit = declare_inspection(
@@ -131,7 +150,10 @@ class AttributePairWidget(QFrame):
             "src-gui-widgets-sheet-builder-attributepairwidget-init-self-value-edit|authoring.details|help-inspect-src-gui-widgets-sheet-builder-attributepairwidget-init-self-value-edit",
         )
         self.value_edit.setAcceptRichText(False)
-        self.value_edit.setPlaceholderText("Value…")
+        self.value_edit.setAccessibleName(key)
+        self.value_edit.setTabChangesFocus(True)
+        self.value_edit.setPlaceholderText("—")
+        self.value_edit.document().setDocumentMargin(0)
         self.value_edit.setPlainText(value)
         self.value_edit.setHorizontalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff
@@ -145,7 +167,9 @@ class AttributePairWidget(QFrame):
         )
         self.value_edit.textChanged.connect(self._on_value_changed)
         self.value_edit.textChanged.connect(self._adjust_height)
-        layout.addWidget(self.value_edit)
+        inline.addWidget(
+            self.value_edit, stretch=1, alignment=Qt.AlignmentFlag.AlignTop
+        )
 
         # Type toggle (compact combo) - Hidden by default
         self.type_combo = declare_inspection(
@@ -170,34 +194,28 @@ class AttributePairWidget(QFrame):
         """Apply current theme colors to the widget."""
         if not shiboken6.isValid(self):
             return
-        theme = self._theme_mgr.get_theme()
-        text = theme["text_main"]
+        self.setStyleSheet(StyleHelper.get_sheet_inline_value_style())
 
-        # Base input style handles border, radius, bg, text color
-        input_style = StyleHelper.get_input_field_style()
-        primary = theme.get("primary", "#5C82FF")
-
-        self.setStyleSheet(
-            StyleHelper.get_sheet_attribute_style()
-            + f"""
-            AttributePairWidget QLabel {{
-                color: {text};
-                background-color: transparent;
-            }}
-            AttributePairWidget QTextEdit, AttributePairWidget QComboBox {{
-                {input_style}
-            }}
-            QTextEdit:focus, QComboBox:focus {{
-                border: 1px solid {primary};
-            }}
-            QComboBox::drop-down {{
-                border: none;
-            }}
-            QComboBox::down-arrow {{
-                image: none;
-            }}
-        """
+    def set_layout_editing(self, editing: bool) -> None:
+        """Allow drag and type controls only during layout editing."""
+        self._layout_editing = editing
+        self._drag_start_pos = None
+        if not editing:
+            self.type_combo.hide()
+        self.setCursor(
+            Qt.CursorShape.OpenHandCursor if editing else Qt.CursorShape.ArrowCursor
         )
+        self.value_edit.setCursor(Qt.CursorShape.IBeamCursor)
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        """Align labels across wide rows and reserve room for values in narrow cells."""
+        super().resizeEvent(event)
+        if event.size().width() != event.oldSize().width():
+            label_width = min(
+                _SHEET_LABEL_WIDTH, max(48, self.width() - _SHEET_VALUE_WIDTH)
+            )
+            self.key_label.setFixedWidth(label_width)
+            self._adjust_height()
 
     # ------------------------------------------------------------------
     # Public API
@@ -249,7 +267,7 @@ class AttributePairWidget(QFrame):
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Record the drag start position on left-click."""
-        if event.button() == Qt.MouseButton.LeftButton:
+        if self._layout_editing and event.button() == Qt.MouseButton.LeftButton:
             self._drag_start_pos = event.pos()
         super().mousePressEvent(event)
 
@@ -257,6 +275,7 @@ class AttributePairWidget(QFrame):
         """Initiate a drag if the mouse moves far enough from the press point."""
         if (
             self._drag_start_pos is not None
+            and event.buttons() & Qt.MouseButton.LeftButton
             and (event.pos() - self._drag_start_pos).manhattanLength()
             > _DRAG_START_DISTANCE_PX
         ):
@@ -285,8 +304,7 @@ class AttributePairWidget(QFrame):
             fm = self.value_edit.fontMetrics()
             line_h = fm.lineSpacing()
             margins = self.value_edit.contentsMargins()
-            frame_w = self.value_edit.frameWidth()
-            padding = margins.top() + margins.bottom() + 2 * frame_w + 4
+            padding = margins.top() + margins.bottom()
 
             min_h = line_h + padding
             max_h = SHEET_VALUE_MAX_LINES * line_h + padding
@@ -315,6 +333,18 @@ class AttributePairWidget(QFrame):
             disconnect_theme(self, self._apply_theme)
         except (RuntimeError, TypeError):
             pass
+
+
+def _sheet_block_preview(layout: QHBoxLayout, editor: QLineEdit) -> QLabel:
+    """Add a wrapping preview for a layout-only text editor."""
+    preview = QLabel(editor.text())
+    preview.setTextFormat(Qt.TextFormat.PlainText)
+    preview.setWordWrap(True)
+    preview.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+    editor.textChanged.connect(preview.setText)
+    layout.addWidget(preview)
+    preview.hide()
+    return preview
 
 
 class TextBlockWidget(QFrame):
@@ -353,11 +383,13 @@ class TextBlockWidget(QFrame):
             "src-gui-widgets-sheet-builder-textblockwidget-init-self-text-edit|authoring.details|help-inspect-src-gui-widgets-sheet-builder-textblockwidget-init-self-text-edit",
         )
         self.text_edit.setPlaceholderText("Enter flavour text…")
+        self.text_edit.setAccessibleName("Sheet text")
         self.text_edit.textChanged.connect(lambda: self.text_changed.emit())
         self.text_edit.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
         )
         layout.addWidget(self.text_edit)
+        self._preview = _sheet_block_preview(layout, self.text_edit)
 
         self._theme_mgr = ThemeManager()
         self._apply_theme()
@@ -373,6 +405,12 @@ class TextBlockWidget(QFrame):
         self.text_edit.blockSignals(True)
         self.text_edit.setText(text)
         self.text_edit.blockSignals(False)
+        self._preview.setText(text)
+
+    def set_layout_editing(self, editing: bool) -> None:
+        """Present authored text until the layout tools are opened."""
+        self.text_edit.setVisible(editing)
+        self._preview.setVisible(not editing)
 
     def _apply_theme(self) -> None:
         """Apply current theme colors."""
@@ -453,7 +491,7 @@ class HeaderWidget(QFrame):
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(6, 3, 6, 3)
+        layout.setContentsMargins(4, 12, 4, 2)
         layout.setSpacing(0)
 
         self.text_edit = declare_inspection(
@@ -461,9 +499,10 @@ class HeaderWidget(QFrame):
             "src-gui-widgets-sheet-builder-headerwidget-init-self-text-edit|authoring.details|help-inspect-src-gui-widgets-sheet-builder-headerwidget-init-self-text-edit",
         )
         self.text_edit.setPlaceholderText("Section name…")
-        self.text_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.text_edit.setAccessibleName("Section name")
         self.text_edit.textChanged.connect(lambda: self.text_changed.emit())
         layout.addWidget(self.text_edit)
+        self._preview = _sheet_block_preview(layout, self.text_edit)
 
         self._theme_mgr = ThemeManager()
         self._apply_theme()
@@ -483,6 +522,12 @@ class HeaderWidget(QFrame):
         self.text_edit.blockSignals(True)
         self.text_edit.setText(text)
         self.text_edit.blockSignals(False)
+        self._preview.setText(text)
+
+    def set_layout_editing(self, editing: bool) -> None:
+        """Present a heading until the layout tools are opened."""
+        self.text_edit.setVisible(editing)
+        self._preview.setVisible(not editing)
 
     def _apply_theme(self) -> None:
         """Apply current theme colors."""
@@ -542,6 +587,16 @@ class SpacerWidget(QFrame):
     # Drag support
     # ------------------------------------------------------------------
 
+    def set_layout_editing(self, editing: bool) -> None:
+        """Keep authored space while exposing the spacer only in layout mode."""
+        self._drag_start_pos = None
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, not editing)
+        self.setFocusPolicy(
+            Qt.FocusPolicy.ClickFocus if editing else Qt.FocusPolicy.NoFocus
+        )
+        self.setProperty("layoutEditing", editing)
+        self._apply_theme()
+
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Record the drag-start point and claim keyboard focus on left-click."""
         if event.button() == Qt.MouseButton.LeftButton:
@@ -553,6 +608,7 @@ class SpacerWidget(QFrame):
         """Initiate a drag once the mouse has moved far enough."""
         if (
             self._drag_start_pos is not None
+            and event.buttons() & Qt.MouseButton.LeftButton
             and (event.pos() - self._drag_start_pos).manhattanLength()
             > _DRAG_START_DISTANCE_PX
         ):
@@ -681,7 +737,7 @@ class _InsertionLine(QWidget):
 
 
 class _ResizeHandle(QWidget):
-    """Invisible drag handle between adjacent items in a row.
+    """Layout editing handle between adjacent items in a row.
 
     Allows mouse-drag to redistribute stretch weights between the item
     to the left and the item to the right.
@@ -917,11 +973,20 @@ class SheetBuilderWidget(QWidget):
             parent: Optional parent widget.
         """
         super().__init__(parent)
-        self.setAcceptDrops(True)
+        self._layout_editing = False
+        self._layout_overflow: QWidget | None = None
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
+
+        self.layout_button = declare_inspection(
+            StandardButton("Edit layout"),
+            "sheet-edit-layout|authoring.details|help-inspect-sheet-edit-layout",
+        )
+        self.layout_button.setCheckable(True)
+        self.layout_button.toggled.connect(self.set_layout_editing)
+        outer.addWidget(self.layout_button, alignment=Qt.AlignmentFlag.AlignRight)
 
         # ── Toolbar ──────────────────────────────────────────────────────
         self._toolbar = QToolBar()
@@ -979,12 +1044,13 @@ class SheetBuilderWidget(QWidget):
 
         # Inner container
         self._container = QWidget()
+        self._container.setObjectName("SheetContent")
         self._container.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self._container.customContextMenuRequested.connect(self._show_context_menu)
         self._grid_layout = QVBoxLayout(self._container)
         self._grid_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self._grid_layout.setSpacing(4)
-        self._grid_layout.setContentsMargins(4, 4, 4, 4)
+        self._grid_layout.setSpacing(3)
+        self._grid_layout.setContentsMargins(8, 2, 8, 8)
         self._scroll.setWidget(self._container)
 
         # Pair widget lookup: key -> AttributePairWidget
@@ -1011,10 +1077,15 @@ class SheetBuilderWidget(QWidget):
 
         # ── Keyboard reordering shortcuts ────────────────────────────────
         ctx = Qt.ShortcutContext.WidgetWithChildrenShortcut
-        self._make_shortcut("Alt+Up", self._move_focused_row_up, ctx)
-        self._make_shortcut("Alt+Down", self._move_focused_row_down, ctx)
-        self._make_shortcut("Alt+Left", self._move_focused_item_left, ctx)
-        self._make_shortcut("Alt+Right", self._move_focused_item_right, ctx)
+        self._layout_shortcuts = (
+            self._make_shortcut("Alt+Up", self._move_focused_row_up, ctx),
+            self._make_shortcut("Alt+Down", self._move_focused_row_down, ctx),
+            self._make_shortcut("Alt+Left", self._move_focused_item_left, ctx),
+            self._make_shortcut("Alt+Right", self._move_focused_item_right, ctx),
+        )
+        for shortcut in self._layout_shortcuts:
+            shortcut.setEnabled(False)
+        self._toolbar.hide()
 
         logger.debug("SheetBuilderWidget initialized.")
 
@@ -1023,13 +1094,15 @@ class SheetBuilderWidget(QWidget):
         if not shiboken6.isValid(self):
             return
         theme = self._theme_mgr.get_theme()
-        surface = theme.get("surface", "#1A1A1A")
+        surface = theme["surface"]
         surface_alt = theme.get("surface_alt", theme["app_bg"])
-        border = theme.get("border", "#333333")
+        border = theme["border"]
 
         # Style the scroll area and container to match the app's surface
         self._scroll.setStyleSheet(StyleHelper.get_scroll_area_style())
-        self._container.setStyleSheet(f"QWidget {{ background-color: {surface}; }}")
+        self._container.setStyleSheet(
+            f"QWidget#SheetContent {{ background-color: {surface}; }}"
+        )
 
         # Style the toolbar
         tool_button_style = StyleHelper.get_tool_button_style()
@@ -1047,6 +1120,86 @@ class SheetBuilderWidget(QWidget):
                 padding: 5px 10px;
             }}
         """
+        )
+
+    def set_layout_overflow(self, overflow: QWidget) -> None:
+        """Register the inspector's narrow route to the existing sheet actions."""
+        self._layout_overflow = overflow
+        self._update_layout_toolbar()
+
+    def set_layout_editing(self, editing: bool, *, restore_focus: bool = True) -> None:
+        """Switch layout tools without changing the sheet draft."""
+        if self._layout_editing == editing:
+            return
+        scrollbar = self._scroll.verticalScrollBar()
+        scroll_value = scrollbar.value()
+        self._layout_editing = editing
+        self.layout_button.setChecked(editing)
+        self.layout_button.setText("Done editing layout" if editing else "Edit layout")
+        self.setAcceptDrops(editing)
+        for shortcut in self._layout_shortcuts:
+            shortcut.setEnabled(editing)
+        self._update_layout_toolbar()
+        for index in range(self._grid_layout.count()):
+            row = self._grid_layout.itemAt(index)
+            if isinstance(row, QHBoxLayout):
+                self._prepare_layout_row(row)
+        if not editing and restore_focus and self.isVisible():
+            self.layout_button.setFocus(Qt.FocusReason.OtherFocusReason)
+        if self.isVisible() and (layout := self.layout()) is not None:
+            self._grid_layout.activate()
+            layout.activate()
+            scrollbar.setValue(scroll_value)
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        """Reflow the sheet and its actions for the new viewport width."""
+        super().resizeEvent(event)
+        self._update_layout_toolbar()
+        for index in range(self._grid_layout.count()):
+            row = self._grid_layout.itemAt(index)
+            if isinstance(row, QHBoxLayout):
+                self._reflow_row(row)
+
+    def _update_layout_toolbar(self) -> None:
+        """Use one action route at a time."""
+        use_overflow = (
+            self._layout_overflow is not None
+            and self.width() < self._toolbar.sizeHint().width()
+        )
+        self._toolbar.setVisible(self._layout_editing and not use_overflow)
+        if self._layout_overflow is not None:
+            self._layout_overflow.setVisible(self._layout_editing and use_overflow)
+
+    def _prepare_layout_row(self, row: QHBoxLayout) -> None:
+        """Apply the current mode to each item in a new or changed row."""
+        for index in range(row.count()):
+            item = row.itemAt(index)
+            widget = item.widget() if item else None
+            if isinstance(
+                widget,
+                (AttributePairWidget, HeaderWidget, TextBlockWidget, SpacerWidget),
+            ):
+                widget.set_layout_editing(self._layout_editing)
+            elif isinstance(widget, _ResizeHandle):
+                widget.setVisible(self._layout_editing)
+        self._reflow_row(row)
+
+    def _reflow_row(self, row: QHBoxLayout) -> None:
+        """Stack narrow reading rows without changing their order or weights."""
+        columns = sum(
+            isinstance(item.widget(), AttributePairWidget)
+            for i in range(row.count())
+            if (item := row.itemAt(i)) is not None
+        )
+        stack = (
+            not self._layout_editing
+            and columns > 1
+            and columns * _SHEET_COLUMN_WIDTH > self.width() - 36
+        )
+        row.setDirection(
+            QBoxLayout.Direction.TopToBottom
+            if stack
+            else QBoxLayout.Direction.LeftToRight
         )
 
     # ------------------------------------------------------------------
@@ -1594,6 +1747,7 @@ class SheetBuilderWidget(QWidget):
             self._insert_resize_handles(hlayout, widget_indices)
 
         self._grid_layout.addLayout(hlayout)
+        self._prepare_layout_row(hlayout)
 
     def _insert_resize_handles(
         self, hlayout: QHBoxLayout, widget_indices: List[int]
@@ -1642,6 +1796,7 @@ class SheetBuilderWidget(QWidget):
         hlayout.setContentsMargins(0, 0, 0, 0)
         hlayout.addWidget(widget, stretch=weight)
         self._grid_layout.addLayout(hlayout)
+        self._prepare_layout_row(hlayout)
 
     def _detach_widget(self, widget: QWidget) -> None:
         """Remove any widget from its current row layout, cleaning up empty rows.
@@ -2115,6 +2270,8 @@ class SheetBuilderWidget(QWidget):
 
     def _show_context_menu(self, pos: QPoint) -> None:
         """Show a context menu for the clicked row/item."""
+        if not self._layout_editing:
+            return
         clicked_row, clicked_col, clicked_widget = self._find_clicked_item(pos)
 
         menu = declare_inspection(
@@ -2417,3 +2574,4 @@ class SheetBuilderWidget(QWidget):
             and not isinstance(item.widget(), _ResizeHandle)
         ]
         self._insert_resize_handles(hlayout, widget_indices)
+        self._prepare_layout_row(hlayout)
