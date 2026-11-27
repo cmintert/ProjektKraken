@@ -392,7 +392,9 @@ class SettingsCenter(QDialog):
                 if read_control(control) != rendered:
                     write_control(control, rendered)
 
-    def render_complex(self, values: dict[str, Any]) -> None:
+    def render_complex(
+        self, values: dict[str, Any], *, relation_types: list[str] | None = None
+    ) -> None:
         """Hydrate changed complex snapshots, preserving untouched live editors."""
         if not self.world_forms_ready:
             return
@@ -413,14 +415,16 @@ class SettingsCenter(QDialog):
                 if name in self.grouping.colors:
                     widget.tag_color = self.grouping.colors[name]
                     widget.color_button.set_color(widget.tag_color)
-        if (
-            "world.lexicon" in values
-            and self.readers["world.lexicon"]() != values["world.lexicon"]
+        if relation_types is None:
+            relation_types = self.lexicon._relation_types
+        if "world.lexicon" in values and (
+            self.readers["world.lexicon"]() != values["world.lexicon"]
+            or self.lexicon._relation_types != relation_types
         ):
             data = {
                 "values": {"world.lexicon": values["world.lexicon"]},
                 "entity_types": self.lexicon._entity_types,
-                "relation_types": self.lexicon._relation_types,
+                "relation_types": relation_types,
                 "assets_dir": self.lexicon._assets_dir,
             }
             self.lexicon = LexiconSettingsForm(data, self)

@@ -100,6 +100,11 @@ class SettingsCoordinator(QObject):
         if self.credential_warnings:
             self.view.message.setText("\n".join(self.credential_warnings))
 
+    def has_pending_world_settings(self) -> bool:
+        """Guard a world operation against stale drafts in Settings."""
+        self._capture()
+        return any(name.startswith("world.") for name in self.draft.changes())
+
     def refresh_world(self) -> None:
         """Request only snapshots for the active database and request generation."""
         context = self._context()
@@ -140,6 +145,9 @@ class SettingsCoordinator(QObject):
             return
         self.relation_vocabulary_changed.emit(payload.get("relation_vocabulary", {}))
         previous = self.world_values
+        relation_types_changed = self.world_data.get("relation_types") != payload.get(
+            "relation_types"
+        )
         self.world_data = deepcopy(payload)
         values = payload["values"]
         # Absent AI preferences are seeded through the existing AI lifecycle.
@@ -156,7 +164,7 @@ class SettingsCoordinator(QObject):
         if values != previous:
             self.world_changed.emit(deepcopy(values))
         self._install_world_forms()
-        if values != previous:
+        if values != previous or relation_types_changed:
             self._render_clean_world(values)
         self._set_world_enabled(
             bool(payload["writable"]),
@@ -192,7 +200,7 @@ class SettingsCoordinator(QObject):
                 view.ai.set_task_templates(templates)
         clean = {key: value for key, value in values.items() if key not in dirty}
         view.render_values(clean)
-        view.render_complex(clean)
+        view.render_complex(clean, relation_types=self.world_data.get("relation_types"))
 
     def _attach_graph_form(self, form: Any) -> None:
         form.icon_picker_created.connect(self.icon_picker_created.emit)
@@ -409,6 +417,7 @@ class SettingsCoordinator(QObject):
                 "SetActiveCalendarCommand",
                 "EditRelationDefinitionCommand",
                 "ImportRelationPresetCommand",
+                "RemoveRelationDefinitionCommand",
             )
         ) or (self.view is not None and self.view.isVisible()):
             self.refresh_world()

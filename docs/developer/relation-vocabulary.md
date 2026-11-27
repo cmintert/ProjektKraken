@@ -121,7 +121,7 @@ data. Inverse wording and symmetry never create a new relation or inference.
 | Connections, timeline and detail snapshots | Connections uses exact caption and grouping tables. Timeline shows relation types and detail snapshots recognize normalized lifecycle keys. | Resolve presentation by key. Reject a rename that changes classification or lifecycle behavior without an agreed compatibility rule. |
 | Lifecycle, temporal analyzer and dependencies | Lifecycle and lifespan analysis recognize trimmed, case-folded `birth`, `death` and `revival`. Temporal binding and dependency calculations use relation IDs and attributes. | Protect lifecycle keys and aliases recognized by normalization. Preserve relation IDs, event anchors, timing and payloads. |
 | Graph, lexicon and settings | Edge text and lexicon style use the stored key. Graph filtering has exact and case-insensitive paths. Settings snapshots expose saved types. | Audit and update persisted lexicon keys and any persisted type filters or settings that reference the renamed key. Refresh projected data after commit. |
-| World Context, MCP, RAG and Intelligence Analyzer | Authoring context uses exact sets such as `involved`, `participated_in`, and `member_of` for participant selection in applicable paths. MCP queries and structured/indexed context carry predicates. RAG and analyzer text can include the raw key. | Preserve app-owned classification, rebuild or invalidate derived context and indexes, and retain the canonical key in structured output alongside captions. |
+| World Context, MCP, RAG and Intelligence Analyzer | Authoring context uses `involved` and `participated_in` for event participation. MCP queries and structured/indexed context carry predicates. RAG and analyzer text can include the raw key. | Preserve app-owned classification, rebuild or invalidate derived context and indexes, and retain the canonical key in structured output alongside captions. |
 | CLI, import/export and validation | CLI operates on saved keys. Row exchange includes `rel_type`, import identity compares it exactly, and world validation groups duplicates by endpoint IDs and type. Markdown and native notes can carry relation text. | Keep external snapshots as historical exports. Review mapping and collisions when importing them later. Do not treat arbitrary prose as a key reference. |
 | World backup and full transfer | Database snapshots carry relation rows and `system_meta`. | Include vocabulary and rename history in the world snapshot. Past backups keep their original world revision. |
 
@@ -134,6 +134,21 @@ cannot be updated safely. Recheck the preview on the worker and update durable
 references and world-local rename history together in one transaction. Record
 old and new keys and the applied revision or timestamp. Publish invalidations
 after commit. A failed or stale migration leaves the world intact.
+
+KRT-76 enables migration for custom keys. The protected set includes lifecycle
+transitions, generated and generic keys, compatibility captions, authoring
+defaults, World Context participant and location keys, and state-change keys.
+The GraphView lexicon stores its edge styles in world metadata. GraphView's
+relation-type filters are session state and follow the new key after commit.
+World Context, MCP and RAG relation formatting resolve keys from current
+relation rows. Embeddings index object text. Existing free text and external
+snapshots keep their original content. An unsupported structured relation-key
+reference in world settings blocks the operation.
+
+The verified checkpoint is a SQLite backup in the configured backup directory.
+The commit changes the reviewed rows, dictionary, lexicon, migration log and
+history manifest together. Earlier history rows remain available as historical
+records. Restore the checkpoint to reverse the migration.
 
 ## Compatibility matrix
 

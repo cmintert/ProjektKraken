@@ -2,6 +2,7 @@
 
 import logging
 from collections.abc import Callable
+from pathlib import Path
 from sqlite3 import Connection
 from typing import Any
 
@@ -9,6 +10,10 @@ from PySide6.QtCore import QObject, Signal, Slot
 
 from src.core.relation_vocabulary import VOCABULARY_KEY, load_document
 from src.services.db_service import DatabaseService
+from src.services.relation_identifier_migration import (
+    migrate_identifier,
+    preview_migration,
+)
 from src.services.repositories.settings_repository import SettingsRepository
 
 logger = logging.getLogger(__name__)
@@ -45,11 +50,19 @@ class RelationDictionaryReader(QObject):
     """Serve detached editor snapshots on the existing database thread."""
 
     finished = Signal(dict)
+    migration_finished = Signal(dict)
 
-    def __init__(self, database: Callable[[], DatabaseService | None]) -> None:
+    def __init__(
+        self,
+        database: Callable[[], DatabaseService | None],
+        world_identity: Callable[[], str] = lambda: "",
+        invalidate: Callable[[], None] = lambda: None,
+    ) -> None:
         """Accept the database provider owned by worker composition."""
         super().__init__()
         self._database = database
+        self._world_identity = world_identity
+        self._invalidate = invalidate
 
     @Slot(dict)
     def load(self, request: dict[str, Any]) -> None:
@@ -64,7 +77,18 @@ class RelationDictionaryReader(QObject):
                 raw = SettingsRepository(connection).raw(VOCABULARY_KEY)
                 document = load_document(raw)
                 result.update(raw=raw, writable=not db.read_only)
-                if "key" in request:
+                if "migration" in request:
+                    old, new = request["migration"]
+                    identity = self._world_identity()
+                    if not identity:
+                        raise ValueError("The world's history is unavailable.")
+                    result.update(
+                        world_id=identity,
+                        migration_review=preview_migration(
+                            connection, identity, old, new
+                        ),
+                    )
+                elif "key" in request:
                     result["usage"] = usage(connection, request["key"])
                 elif "preset_keys" in request:
                     result["preset_usage"] = {
@@ -83,3 +107,40 @@ class RelationDictionaryReader(QObject):
                 logger.exception("Could not read the relation dictionary")
                 result["error"] = "The relation dictionary could not be loaded."
         self.finished.emit(result)
+
+    @Slot(dict)
+    def migrate(self, request: dict[str, Any]) -> None:
+        """Verify the active world and apply the requested migration on its thread."""
+        old, new = request["migration"]
+        response = {"token": request["token"], "old": old, "new": new}
+        try:
+            db = self._database()
+            identity = self._world_identity()
+            if (
+                db is None
+                or db.db_path != request["database"]
+                or identity != request["world_id"]
+            ):
+                raise ValueError("The active world changed.")
+            checkpoint = migrate_identifier(
+                db,
+                identity,
+                old,
+                new,
+                request["migration_review"],
+                Path(request["backup_directory"]),
+            )
+        except ValueError as exc:
+            response["error"] = str(exc)
+        except Exception:
+            logger.exception("Relation identifier migration failed")
+            response["error"] = "The migration failed. The world was not changed."
+        else:
+            response.update(checkpoint=str(checkpoint), world_id=identity)
+            try:
+                self._invalidate()
+            except Exception:
+                logger.exception(
+                    "Could not refresh derived relation data after migration"
+                )
+        self.migration_finished.emit(response)

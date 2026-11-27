@@ -24,6 +24,7 @@ from src.gui.utils.style_helper import StyleHelper
 from src.gui.utils.theme_connections import connect_theme
 from src.gui.utils.theme_presentation import register_theme_scope
 from src.gui.widgets.action_flow_layout import ActionFlowLayout
+from src.gui.widgets.relation_migration_review import RelationMigrationReview
 from src.gui.widgets.relation_preset_review import RelationPresetReview
 from src.gui.widgets.responsive_form import ResponsiveFormLayout, scrollable_form_page
 from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
@@ -43,6 +44,8 @@ class RelationDictionaryDialog(QDialog):
     close_requested = Signal()
     export_requested = Signal()
     import_requested = Signal()
+    removal_requested = Signal()
+    migration_requested = Signal()
 
     def __init__(self, world: str, parent: QWidget) -> None:
         """Create a scrollable editor with an always reachable action row."""
@@ -56,6 +59,9 @@ class RelationDictionaryDialog(QDialog):
         self.pages = QStackedWidget()
         layout.addWidget(self.pages, 1)
         self.message = self._text()
+        self.message.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+        )
         self.message.hide()
         layout.addWidget(self.message)
         self._build_list()
@@ -63,6 +69,8 @@ class RelationDictionaryDialog(QDialog):
         self._build_review()
         self.preset_review = RelationPresetReview()
         self.pages.addWidget(self.preset_review)
+        self.migration_review = RelationMigrationReview()
+        self.pages.addWidget(self.migration_review)
         connect_theme(self, self._apply_theme)
         register_theme_scope(self, priority=True)
         self._apply_theme()
@@ -171,11 +179,21 @@ class RelationDictionaryDialog(QDialog):
         self._add_field(
             advanced_form, "reverse_template", "Reverse sentence (optional)"
         )
-        self.migration = StandardButton("Migrate identifier…")
+        self.migration = declare_inspection(
+            StandardButton("Migrate identifier…"),
+            "settings.dictionary.migration|settings.relation-dictionary|help-inspect-relation-migration",
+        )
         self.migration.setEnabled(False)
         advanced_form.addRow(self.migration)
         self.migration_note = self._text()
         advanced_form.addRow(self.migration_note)
+        self.remove_definition = declare_inspection(
+            StandardButton("Remove definition…"),
+            "settings.dictionary.remove|settings.relation-dictionary|help-inspect-relation-removal",
+        )
+        advanced_form.addRow(self.remove_definition)
+        self.migration.clicked.connect(self.migration_requested.emit)
+        self.remove_definition.clicked.connect(self.removal_requested.emit)
         advanced.hide()
         self.advanced.toggled.connect(advanced.setVisible)
         form_layout.addRow(advanced)
@@ -284,7 +302,7 @@ class RelationDictionaryDialog(QDialog):
             checkbox.setChecked(definition.get(key, key == "enabled") is True)
             checkbox.setEnabled(writable)
         self.migration_note.setText(
-            "Identifier migration is unavailable in this version."
+            "Kraken protects keys used for built-in behavior."
             if locked
             else "The key becomes read-only after saving."
         )
@@ -293,6 +311,13 @@ class RelationDictionaryDialog(QDialog):
         self.pages.setCurrentWidget(self.edit_page)
         self.form_scroll.verticalScrollBar().setValue(0)
         self.fields["forward_label" if locked else "key"].setFocus()
+
+    def set_definition_actions(self, *, removable: bool, migratable: bool) -> None:
+        """Expose cleanup for saved definitions and migration for eligible keys."""
+        self.remove_definition.setVisible(removable)
+        self.migration.setEnabled(migratable)
+        if migratable:
+            self.migration_note.setText("Migrate the saved key across this world.")
 
     def definition(self) -> dict[str, Any]:
         """Collect the current definition without altering an existing key."""

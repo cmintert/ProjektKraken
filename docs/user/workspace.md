@@ -210,6 +210,16 @@ connections with that exact key in the current world use the saved wording.
 
 Saved definitions travel with the world in full-world packages and backups.
 
+#### Membership and event participation
+
+Use **Member of** (`member_of`) for membership between Entities. For example,
+a character can be a member of a guild. Use **Involves** (`involved`) or
+**Participated in** (`participated_in`) for an Event and its participants.
+
+When a **Member of** connection starts at an Event, World Context shows it as
+a direct connection and the Event editor lists it under **Other connections**.
+Kraken protects the `member_of` key from migration.
+
 (help-inspect-relation-dictionary-list)=
 
 **Relation definitions** — Choose from definitions saved in this world, types
@@ -248,6 +258,32 @@ world, including connections outside the current view.
 **Save definition** — Save the reviewed change to the named world as one Undo
 action. If the dictionary or reviewed usage changes before the save completes,
 return to the definition and review the current impact before saving.
+
+(help-inspect-relation-removal)=
+
+#### Remove a saved relation definition
+
+Open the definition and choose **Advanced → Remove definition…**. Review the
+number of connections that use the key and the fallback wording, then choose
+**Remove definition**. The connections still use their saved key. Undo restores
+the definition. Use **Definition enabled** to keep a definition for later.
+
+(help-inspect-relation-migration)=
+
+#### Change a custom relation key across a world
+
+1. In the Relation Dictionary, open the custom key and choose
+   **Advanced → Migrate identifier…**.
+2. Enter an unused key and choose **Review migration**. Check the exact mapping,
+   the number of stored connections and the settings Kraken will update.
+3. Choose **Back up and migrate**. Kraken verifies the checkpoint before updating
+   the world. Open an affected connection to check its new key.
+
+Connections keep their original IDs, endpoints, direction, dates and notes.
+The confirmation starts fresh Undo and Redo stacks. To reverse the change, use
+**Restore from backup** with the checkpoint path shown after migration. Restoring
+the checkpoint also rolls back later changes. Keys used by built-in behavior
+are protected.
 
 (help-inspect-relation-preset-export)=
 

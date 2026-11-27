@@ -68,15 +68,13 @@ and temporal evidence.
 | Transfer/import/export (`transfer_exchange`, `import_service`, `obsidian_exporter`) | Serialized keys/endpoints/attributes; Obsidian related sections currently expose raw relation types | Audit each format before vocabulary integration or identifier migration. Display-label changes cannot silently rewrite exported keys. |
 | Commands/history (`relation_commands`, `base_command`) | Exact UUIDs, endpoints, keys, attributes and timestamps; expected snapshots, transactions, serialized undo/redo state | New adds create one row. Legacy reciprocal commands replay both recorded identities as one operation. |
 
-### Known classification differences
+### Event participation
 
-Connections' Event groups classify explicit `involved`/`participated_in` as
-Participants and leave `member_of` in Other connections. World Context's
-`PARTICIPANT_REL_TYPES` still includes `member_of`. These are separate current
-consumer contracts, not a rule unified by this extraction. Characterize both
-before deliberately changing either. Target object kind alone does not establish
-relation meaning. Display renaming preserves lifespan analysis, graph filter
-values, and generated-mentions policy.
+The Event editor and World Context use `involved` and `participated_in` for
+event participation. Event-sourced `member_of` relations appear under Other
+connections in the Event editor and among direct relations in World Context.
+Display renaming preserves lifespan analysis, graph filter values, and
+generated-mentions policy.
 
 ## Resolver contract
 

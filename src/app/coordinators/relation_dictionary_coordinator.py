@@ -11,20 +11,29 @@ from PySide6.QtWidgets import QFileDialog, QMessageBox, QWidget
 
 from src.commands.relation_dictionary_command import EditRelationDefinitionCommand
 from src.commands.relation_preset_command import ImportRelationPresetCommand
+from src.commands.remove_relation_definition_command import (
+    RemoveRelationDefinitionCommand,
+)
 from src.core.command import CommandResult
 from src.core.relation_dictionary import (
     CATALOG_VERSION,
     edit_document,
     kraken_defaults,
     may_define,
+    remove_definition,
     wording_examples,
 )
 from src.core.relation_presets import candidate, read_preset, write_preset
 from src.core.relation_vocabulary import ENDPOINTS, load_document
 from src.gui.widgets.relation_dictionary import RelationDictionaryDialog
+from src.services.relation_identifier_migration import is_custom_key
 from src.services.transfer_files import staged_output
 
-DictionaryCommand = EditRelationDefinitionCommand | ImportRelationPresetCommand
+DictionaryCommand = (
+    EditRelationDefinitionCommand
+    | ImportRelationPresetCommand
+    | RemoveRelationDefinitionCommand
+)
 _PRESET_FILTER = "Relation presets (*.json)"
 
 
@@ -83,12 +92,14 @@ class RelationDictionaryCoordinator(QObject):
         execute: Callable[[DictionaryCommand], bool],
         reader: QObject,
         parent: QObject,
+        migrate: Callable[[dict[str, Any]], bool] = lambda _request: False,
     ) -> None:
         """Bind narrow context and command dependencies."""
         super().__init__(parent)
         self._context = context
         self._execute = execute
         self._reader = reader
+        self._migrate = migrate
         self.view: RelationDictionaryDialog | None = None
         self._database = ""
         self._request = ""
@@ -106,6 +117,8 @@ class RelationDictionaryCoordinator(QObject):
         self._preset: list[dict[str, Any]] = []
         self._preset_snapshot: dict[str, Any] = {}
         self._exporting = False
+        self._removing = False
+        self._migration: dict[str, Any] = {}
 
     def open(self, parent: QWidget) -> None:
         """Open one editor and request current world data."""
@@ -129,6 +142,14 @@ class RelationDictionaryCoordinator(QObject):
         view.close_requested.connect(self.allow_transition)
         view.export_requested.connect(self._select_export)
         view.import_requested.connect(self._open_preset)
+        view.removal_requested.connect(self._review_removal)
+        view.migration_requested.connect(self._open_migration)
+        view.migration_review.back.clicked.connect(self._return_to_definition)
+        view.migration_review.destination.textChanged.connect(
+            self._clear_migration_review
+        )
+        view.migration_review.review.clicked.connect(self._request_migration_review)
+        view.migration_review.apply.clicked.connect(self._confirm_migration)
         view.preset_review.cancel.clicked.connect(lambda: self._load_list())
         view.preset_review.confirm.clicked.connect(self._confirm_preset)
         view.show()
@@ -186,6 +207,8 @@ class RelationDictionaryCoordinator(QObject):
             self._preset = []
             self._preset_snapshot = {}
             self._exporting = False
+            self._removing = False
+            self._migration = {}
             self._list_message = message
             view.show_entries([], False, "")
             view.show_message(message or "Loading relation definitions…")
@@ -212,6 +235,9 @@ class RelationDictionaryCoordinator(QObject):
             return
         if "preset_usage" in payload:
             self._show_preset(view, payload)
+            return
+        if "migration_review" in payload:
+            self._show_migration_review(view, payload)
             return
         if "usage" in payload:
             self._show_review(view, payload)
@@ -266,6 +292,8 @@ class RelationDictionaryCoordinator(QObject):
         if view is None:
             return
         self._request = ""
+        self._removing = False
+        self._migration = {}
         self._selected = key
         self._original = key if source == "world" else None
         entry = (
@@ -275,6 +303,10 @@ class RelationDictionaryCoordinator(QObject):
         )
         with QSignalBlocker(view):
             view.show_definition(entry or {"key": key}, bool(key), self._writable)
+            view.set_definition_actions(
+                removable=self._writable and source == "world" and entry is not None,
+                migratable=self._writable and source == "world" and is_custom_key(key),
+            )
         self._baseline = view.definition()
         self._draft_changed()
 
@@ -311,12 +343,31 @@ class RelationDictionaryCoordinator(QObject):
 
     def _edit(self) -> None:
         if self.view is not None and not self._pending:
+            self._removing = False
+            self.view.save.setText("Save definition")
             self.view.return_to_edit()
             self._draft_changed()
+
+    def _review_removal(self) -> None:
+        view = self.view
+        key = self._original
+        if (
+            view is not None
+            and key is not None
+            and key in self._definitions
+            and self._may_discard(view)
+        ):
+            self._select("world", key)
+            self._removing = True
+            self._reviewed = None
+            view.save.setEnabled(False)
+            view.show_message("Checking current relation usage…")
+            self._load(key)
 
     def _review(self) -> None:
         view = self.view
         if view is not None and view.review.isEnabled():
+            self._removing = False
             self._reviewed = None
             view.save.setEnabled(False)
             view.show_message("Checking current relation usage…")
@@ -331,6 +382,9 @@ class RelationDictionaryCoordinator(QObject):
                 error=True,
             )
             return
+        if self._removing and self._original is not None:
+            self._show_removal_review(view, payload, self._original)
+            return
         definition = view.definition()
         key = definition["key"]
         updated = edit_document(self._raw, definition, self._original)
@@ -343,6 +397,7 @@ class RelationDictionaryCoordinator(QObject):
         )
         self._reviewed = evidence
         view.show_message()
+        view.save.setText("Save definition")
         view.save.setEnabled(True)
         count = evidence["count"]
         noun = "connection" if count == 1 else "connections"
@@ -351,13 +406,141 @@ class RelationDictionaryCoordinator(QObject):
             f"Before\n{before}\n\nAfter\n{after}"
         )
 
+    def _show_removal_review(
+        self, view: RelationDictionaryDialog, payload: dict[str, Any], key: str
+    ) -> None:
+        evidence = payload["usage"]
+        updated = remove_definition(self._raw, key)
+        before = _preview_text(
+            self._raw, key, self._definitions[key], evidence["sample"]
+        )
+        after = _preview_text(updated, key, {}, evidence["sample"])
+        self._reviewed = evidence
+        view.show_message()
+        view.save.setText("Remove definition")
+        view.save.setEnabled(True)
+        view.show_review(
+            f"{key}\nStored connections: {evidence['count']}\n\n"
+            f"Current\n{before}\n\nAfter removal\n{after}\n\n"
+            "The existing connections keep their saved key. Undo restores this definition."
+        )
+
+    def _return_to_definition(self) -> None:
+        if self._original is not None and not self._pending:
+            self._select("world", self._original)
+
+    def _open_migration(self) -> None:
+        view = self.view
+        if view is None or self._original is None or not self._may_discard(view):
+            return
+        self._select("world", self._original)
+        view.pages.setCurrentWidget(view.migration_review)
+        view.migration_review.reset(self._original)
+        self._clear_migration_review()
+
+    def _clear_migration_review(self) -> None:
+        if self.view is not None and not self._pending:
+            self._migration = {}
+            self._request = ""
+            self.view.migration_review.show_preview("")
+            self.view.show_message()
+
+    def _request_migration_review(self) -> None:
+        if self.view is None or self._original is None:
+            return
+        self._request = uuid4().hex
+        self.view.show_message("Checking migration impact…")
+        self.requested.emit(
+            {
+                "database": self._database,
+                "token": self._request,
+                "migration": [
+                    self._original,
+                    self.view.migration_review.destination.text(),
+                ],
+            }
+        )
+
+    def _show_migration_review(
+        self, view: RelationDictionaryDialog, payload: dict[str, Any]
+    ) -> None:
+        if not payload["writable"]:
+            view.show_message("This world is read-only.", error=True)
+            return
+        self._migration = payload
+        old, new = payload["migration"]
+        review = payload["migration_review"]
+        definition = (
+            "Move the saved definition."
+            if review["definition"]
+            else "Connections use fallback wording."
+        )
+        style = (
+            "Move the saved GraphView style."
+            if review["graph_style"]
+            else "GraphView uses its default style."
+        )
+        history = review["history"]
+        view.show_message()
+        view.migration_review.show_preview(
+            f"{old} → {new}\nStored connections: {review['count']}\n\n"
+            f"{definition}\n{style}\nGraphView and World Context refresh after migration.\n\n"
+            f"Start fresh Undo and Redo stacks ({len(history['undo'])} undo, "
+            f"{len(history['redo'])} redo entries in the saved history).\n"
+            "Kraken will verify a backup before changing the key. To reverse the migration, "
+            "restore that backup. Restoring also rolls back later edits."
+        )
+        view.migration_review.apply.setFocus()
+
+    def _confirm_migration(self) -> None:
+        view = self.view
+        if view is None or not self._migration or self._pending:
+            return
+        self._pending = self._migration["token"]
+        view.migration_review.setEnabled(False)
+        view.show_message("Creating and verifying the migration checkpoint…")
+        if not self._migrate(self._migration):
+            self.on_migration_finished(
+                {
+                    "token": self._pending,
+                    "error": "Wait for pending commands to finish, then review again.",
+                }
+            )
+
+    @Slot(dict)
+    def on_migration_finished(self, result: dict[str, Any]) -> None:
+        """Publish the checkpoint location only after a committed migration."""
+        view = self.view
+        if view is None or not self._pending or self._pending != result["token"]:
+            return
+        self._pending = ""
+        view.migration_review.setEnabled(True)
+        if error := result.get("error"):
+            self._clear_migration_review()
+            view.show_message(error, error=True)
+        else:
+            self._selected = result["new"]
+            self._load_list(
+                f"Migrated {result['old']} → {result['new']}. Checkpoint: {result['checkpoint']}"
+            )
+
     def _save(self) -> None:
         view = self.view
         if view is None or self._reviewed is None or self._pending:
             return
-        command = EditRelationDefinitionCommand(
-            self._database, self._raw, view.definition(), self._original, self._reviewed
-        )
+        command: DictionaryCommand
+        if self._removing and self._original is not None and self._raw is not None:
+            command = RemoveRelationDefinitionCommand(
+                self._database, self._raw, self._original, self._reviewed
+            )
+        else:
+            command = EditRelationDefinitionCommand(
+                self._database,
+                self._raw,
+                view.definition(),
+                self._original,
+                self._reviewed,
+            )
         self._pending = command.command_id
         view.edit.setEnabled(False)
         view.save.setEnabled(False)
@@ -537,5 +720,7 @@ class RelationDictionaryCoordinator(QObject):
             self._selected = view.definition()["key"]
             self._load_list(result.message)
         else:
+            self._removing = False
+            view.save.setText("Save definition")
             view.return_to_edit()
             view.show_message(result.message, error=True)

@@ -522,6 +522,7 @@ class DataHandler(QObject):
         dictionary_commands = {
             "EditRelationDefinitionCommand",
             "ImportRelationPresetCommand",
+            "RemoveRelationDefinitionCommand",
         }
         if command in dictionary_commands or (
             result.success

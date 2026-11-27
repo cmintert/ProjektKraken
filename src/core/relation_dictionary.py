@@ -104,6 +104,17 @@ def may_define(key: str, *, existing_key: bool = False) -> bool:
     )
 
 
+def remove_definition(raw: str | None, key: str) -> str:
+    """Remove a saved definition without changing its stored predicate."""
+    document = load_document(raw)
+    entries = document["definitions"]
+    remaining = [entry for entry in entries if entry["key"] != key]
+    if len(remaining) == len(entries):
+        raise ValueError("This key has no saved definition.")
+    document["definitions"] = remaining
+    return json.dumps(document, ensure_ascii=True)
+
+
 def edit_document(
     raw: str | None, definition: dict[str, Any], original_key: str | None
 ) -> str:

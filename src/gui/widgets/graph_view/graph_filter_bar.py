@@ -6,7 +6,7 @@ Private internal component providing filter controls for the graph view.
 import logging
 from typing import Optional
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QSignalBlocker, Signal
 from PySide6.QtWidgets import (
     QComboBox,
     QLabel,
@@ -202,6 +202,13 @@ class GraphFilterBar(QWidget):
                 self._rel_type_combo.setCurrentIndex(idx)
 
         self._rel_type_combo.blockSignals(False)
+
+    def select_relation_type(self, key: str) -> None:
+        """Restore a remapped toolbar selection without emitting a reload."""
+        with QSignalBlocker(self._rel_type_combo):
+            self._rel_type_combo.setCurrentIndex(
+                max(0, self._rel_type_combo.findData(key))
+            )
 
     def get_selected_tags(self) -> list[str]:
         """Returns the currently selected tags for filtering.

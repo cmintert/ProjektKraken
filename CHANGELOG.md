@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-27
-**Commit:** 7ff5787a
+**Commit:** eac25e37
 ---
 
 # Changelog
@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-11-27)* **Relation Dictionary maintenance (KRT-185, KRT-76)**:
+  Added undoable definition removal with a wording preview and custom key
+  migration with a verified backup, impact review, and recovery instructions.
+  Added contextual Help and regression coverage for both operations.
 
 - *(2026-11-27)* **Relation presets (KRT-75)**: Added portable import and
   export in the Relation Dictionary, with per-key conflict review and one
@@ -41,6 +46,10 @@ All notable changes to this project will be documented in this file.
   share one undo step, and the graph retains node positions during authoring.
 
 ### Fixed
+
+- *(2026-11-27)* **World Context participation**. Event membership links
+  appear as direct connections. Event participation uses explicit participation
+  keys. Updated the manual and regression coverage.
 
 - *(2026-11-24)* **Help (KRT-71)**: Made the relation direction explanation
   reachable from the wording preview.

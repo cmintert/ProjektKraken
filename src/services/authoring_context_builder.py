@@ -50,7 +50,7 @@ from src.services.spatial_context_builder import SpatialContextBuilder
 
 logger = logging.getLogger(__name__)
 
-PARTICIPANT_REL_TYPES = frozenset({"involved", "participated_in", "member_of"})
+PARTICIPANT_REL_TYPES = frozenset({"involved", "participated_in"})
 MAX_PARTICIPANTS = 12
 MAX_LOCATIONS = 6
 MAX_MENTIONS = 12

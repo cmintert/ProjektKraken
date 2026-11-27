@@ -9152,6 +9152,36 @@
       "kind": "QComboBox"
     },
     {
+      "id": "settings.dictionary.migration",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-migration",
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_editor",
+      "binding": "self.migration",
+      "label": "Migrate identifier",
+      "kind": "StandardButton"
+    },
+    {
+      "id": "settings.dictionary.remove",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-removal",
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_editor",
+      "binding": "self.remove_definition",
+      "label": "Remove definition",
+      "kind": "StandardButton"
+    },
+    {
+      "id": "settings.dictionary.migration-key",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-migration",
+      "source": "src/gui/widgets/relation_migration_review.py",
+      "symbol": "RelationMigrationReview.__init__",
+      "binding": "self.destination",
+      "label": "New relation key",
+      "kind": "QLineEdit"
+    },
+    {
       "id": "workspace.activity",
       "topic_id": "workspace.navigation",
       "target": "help-inspect-workspace-activity",
@@ -17589,8 +17619,8 @@
     {
       "source": "src/gui/widgets/relation_dictionary.py",
       "symbol": "RelationDictionaryDialog._build_editor",
-      "sha256": "7ca7b3a59cf590efd50a954052d9921b4b450ae4ab660fbf603579a88d53b9ec",
-      "review_note": "KRT-73: Shows advisory endpoint kinds, enabled state and symmetry without changing relation rows."
+      "sha256": "47db02f72190599926a14cf6caf3f36dac5e8830fbae6297638122d0dbedc751",
+      "review_note": "KRT-73: Shows advisory endpoint kinds, enabled state and symmetry without changing relation rows. KRT-76 and KRT-185 add separate advanced review actions."
     },
     {
       "source": "src/gui/widgets/relation_dictionary.py",
@@ -17603,6 +17633,12 @@
       "symbol": "RelationPresetReview.__init__",
       "sha256": "b19f6a2c06dfaee8708b3755c8df5ff2506b47a1c6a903d1e19783105cdf4ea5",
       "review_note": "KRT-75: reviewed the key list, per-key choices and explicit batch confirmation."
+    },
+    {
+      "source": "src/gui/widgets/relation_migration_review.py",
+      "symbol": "RelationMigrationReview.__init__",
+      "sha256": "05ee81bdf9f3bda4dd2b97f91751afe437b7321d5267af63ae7212dfacdbe9da",
+      "review_note": "KRT-76: reviewed exact destination entry, distinct confirmation, and checkpoint recovery."
     },
     {
       "source": "src/gui/workspace/activity_bar.py",

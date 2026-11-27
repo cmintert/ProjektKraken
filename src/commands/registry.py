@@ -123,6 +123,9 @@ def _init_registry() -> None:
     )
     from src.commands.relation_dictionary_command import EditRelationDefinitionCommand
     from src.commands.relation_preset_command import ImportRelationPresetCommand
+    from src.commands.remove_relation_definition_command import (
+        RemoveRelationDefinitionCommand,
+    )
     from src.commands.settings_commands import ApplyWorldSettingsCommand
     from src.commands.temporal_entity_edit_command import TemporalEntityEditCommand
     from src.commands.timeline_grouping_commands import (
@@ -168,6 +171,7 @@ def _init_registry() -> None:
             "ApplyWorldSettingsCommand": ApplyWorldSettingsCommand,
             "EditRelationDefinitionCommand": EditRelationDefinitionCommand,
             "ImportRelationPresetCommand": ImportRelationPresetCommand,
+            "RemoveRelationDefinitionCommand": RemoveRelationDefinitionCommand,
             "TimelineMoveCommand": TimelineMoveCommand,
             "CreateCalendarConfigCommand": CreateCalendarConfigCommand,
             "SetActiveCalendarCommand": SetActiveCalendarCommand,

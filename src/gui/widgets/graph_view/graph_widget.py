@@ -780,6 +780,26 @@ class GraphWidget(QWidget):
         if self._all_nodes:
             self._refresh_display_locally(self._last_focus_node_id)
 
+    def remap_relation_filter(self, old: str, new: str) -> None:
+        """Keep active graph filters attached to the migrated relation key."""
+        config = self._advanced_filter_config.get("rel_types", {})
+        for field in ("include", "exclude"):
+            if field in config:
+                config[field] = [
+                    new
+                    if key == old
+                    or (not config.get("case_sensitive") and key.lower() == old.lower())
+                    else key
+                    for key in config[field]
+                ]
+        selected = self._filter_bar.get_selected_relation_types()
+        self.set_available_relation_types(
+            [new if key == old else key for key in self._available_rel_types]
+        )
+        if old in selected:
+            self._filter_bar.select_relation_type(new)
+        self._invalidate_interaction()
+
     def set_available_relation_types(self, rel_types: list[str]) -> None:
         """Sets the list of available relation types.
 
