@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-27
-**Commit:** 09adb6c5
+**Commit:** 8c3a9b48
 ---
 
 # Changelog
@@ -10,6 +10,11 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Maintenance
+
+- *(2026-11-27)* **Tests**: Reconciled the reviewed inventory with three
+  obsolete hover tests replaced by Sheet behavior checks.
 
 ### Added
 
