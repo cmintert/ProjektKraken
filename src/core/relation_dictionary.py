@@ -109,7 +109,7 @@ def edit_document(
 ) -> str:
     """Validate a single edit, retaining unrelated entries and extension fields."""
     document = load_document(raw)
-    validate_structure(definition, editing=True)
+    validate_definition(definition)
     key = definition["key"]
     if original_key is not None and original_key != key:
         raise ValueError("A saved relation key cannot be edited here.")
@@ -117,6 +117,23 @@ def edit_document(
         raise ValueError("Remove leading and trailing spaces from the new key.")
     if not may_define(key, existing_key=original_key is not None):
         raise ValueError("This key is reserved by Kraken.")
+    entries: list[dict[str, Any]] = document["definitions"]
+    for index, entry in enumerate(entries):
+        if entry["key"] == key:
+            if original_key is None:
+                raise ValueError(
+                    "This key already has a definition. Select it to edit."
+                )
+            entries[index] = merge_definition(entry, definition)
+            break
+    else:
+        entries.append(definition)
+    return json.dumps(document, ensure_ascii=True)
+
+
+def validate_definition(definition: Any) -> None:
+    """Validate editable fields and literal sentence placeholders."""
+    validate_structure(definition, editing=True)
     for field, label in (
         ("forward_template", "Forward template"),
         ("reverse_template", "Reverse template"),
@@ -126,21 +143,16 @@ def edit_document(
             or not valid_template(definition[field])
         ):
             raise ValueError(f"{label} may use only {{source}} and {{target}}.")
-    entries: list[dict[str, Any]] = document["definitions"]
-    for index, entry in enumerate(entries):
-        if entry["key"] == key:
-            if original_key is None:
-                raise ValueError(
-                    "This key already has a definition. Select it to edit."
-                )
-            known_fields = {"key", *REQUIRED_TEXT, *OPTIONAL_TEXT, *ENDPOINTS, *FLAGS}
-            entries[index] = {
-                name: value for name, value in entry.items() if name not in known_fields
-            } | definition
-            break
-    else:
-        entries.append(definition)
-    return json.dumps(document, ensure_ascii=True)
+
+
+def merge_definition(
+    current: dict[str, Any], proposed: dict[str, Any]
+) -> dict[str, Any]:
+    """Replace known fields while retaining destination extension fields."""
+    known_fields = {"key", *REQUIRED_TEXT, *OPTIONAL_TEXT, *ENDPOINTS, *FLAGS}
+    return {
+        name: value for name, value in current.items() if name not in known_fields
+    } | proposed
 
 
 def wording_examples(

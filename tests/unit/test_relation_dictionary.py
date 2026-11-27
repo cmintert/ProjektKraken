@@ -6,12 +6,13 @@ from pathlib import Path
 import pytest
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from src.app.coordinators.relation_dictionary_coordinator import (
     RelationDictionaryCoordinator,
 )
 from src.commands.relation_dictionary_command import EditRelationDefinitionCommand
+from src.commands.relation_preset_command import ImportRelationPresetCommand
 from src.core.entities import Entity
 from src.core.relation_dictionary import (
     edit_document,
@@ -19,8 +20,10 @@ from src.core.relation_dictionary import (
     wording_examples,
 )
 from src.core.relation_guidance import relation_hint
+from src.core.relation_presets import read_preset, write_preset
 from src.core.relation_vocabulary import VOCABULARY_KEY, load_document, parse_vocabulary
 from src.core.theme_manager import ThemeManager
+from src.gui.widgets.relation_dictionary import RelationDictionaryDialog
 from src.gui.widgets.settings_center import SettingsCenter
 from src.services.backup_service import BackupConfig, BackupService
 from src.services.db_service import DatabaseService
@@ -58,6 +61,287 @@ def _seed(db_service, count=1):
             ],
         )
     return connection
+
+
+def test_portable_preset_review_history_and_world_isolation(db_service, tmp_path):
+    source = _seed(db_service)
+    source_raw = json.dumps(
+        {
+            "version": 1,
+            "definitions": [
+                _definition(),
+                _definition(key="Member_Of", enabled=False),
+                _definition(key="new"),
+                _definition(key="skip"),
+            ],
+        }
+    )
+    with db_service.transaction():
+        SettingsRepository(source).restore(VOCABULARY_KEY, source_raw)
+    path = tmp_path / "words.json"
+    path.write_text(
+        write_preset(load_document(source_raw)["definitions"]), encoding="utf-8"
+    )
+    incoming = read_preset(path.read_text(encoding="utf-8"))
+    root = tmp_path / "destination"
+    root.mkdir()
+    destination = DatabaseService(str(root / "world.kraken"))
+    destination.connect()
+    try:
+        conn = _seed(destination, 240)
+        repository = SettingsRepository(conn)
+        raw = edit_document(None, _definition(forward_label="Old"), None)
+        with destination.transaction():
+            repository.restore(VOCABULARY_KEY, raw)
+        rows = conn.execute("SELECT * FROM relations ORDER BY id").fetchall()
+        evidence = {entry["key"]: usage(conn, entry["key"]) for entry in incoming}
+        choices = {
+            "member_of": "replace",
+            "Member_Of": "import",
+            "new": "import",
+            "skip": "keep",
+        }
+        command = ImportRelationPresetCommand(
+            destination.db_path, raw, incoming, choices, evidence
+        )
+        assert command.execute(destination).success
+        applied = repository.raw(VOCABULARY_KEY)
+        assert [d["key"] for d in load_document(applied)["definitions"]] == [
+            "member_of",
+            "Member_Of",
+            "new",
+        ]
+        restored = ImportRelationPresetCommand.from_dict(command.to_dict())
+        restored.undo(destination)
+        assert repository.raw(VOCABULARY_KEY) == raw
+        assert restored.execute(destination).success
+        assert repository.raw(VOCABULARY_KEY) == applied
+        assert conn.execute("SELECT * FROM relations ORDER BY id").fetchall() == rows
+        assert "Member_Of" not in parse_vocabulary(applied)
+        edited = edit_document(
+            applied, _definition(forward_label="New wording"), "member_of"
+        )
+        with destination.transaction():
+            repository.restore(VOCABULARY_KEY, edited)
+        assert SettingsRepository(source).raw(VOCABULARY_KEY) == source_raw
+        assert read_preset(path.read_text(encoding="utf-8")) == incoming
+
+        package = tmp_path / "world.krakenworld"
+        export_world(
+            conn,
+            {"path": str(root), "manifest": {"name": "World", "id": "world"}},
+            package,
+            lambda: False,
+        )
+    finally:
+        destination.close()
+    backups = BackupService(BackupConfig(backup_dir=tmp_path / "backups"))
+    backup = backups.create_backup(Path(destination.db_path))
+    assert backup is not None
+    restored_db = tmp_path / "restored.kraken"
+    assert backups.restore_backup(backup.backup_path, restored_db)
+    imported = import_world(package, tmp_path / "imports", "Imported", lambda: False)
+    for db_path in (Path(destination.db_path), restored_db, imported / "world.kraken"):
+        reopened = DatabaseService(str(db_path), read_only=True)
+        reopened.connect()
+        try:
+            repo = SettingsRepository(reopened.require_connection())
+            assert repo.raw(VOCABULARY_KEY) == edited
+            assert (
+                not ImportRelationPresetCommand(
+                    reopened.db_path, edited, incoming, choices, evidence
+                )
+                .execute(reopened)
+                .success
+            )
+        finally:
+            reopened.close()
+
+
+def test_preset_stale_review_and_failed_write_preserve_dictionary(
+    db_service, monkeypatch
+):
+    conn = _seed(db_service)
+    repository = SettingsRepository(conn)
+    incoming = [_definition()]
+    evidence = {"member_of": usage(conn, "member_of")}
+    choices = {"member_of": "import"}
+    assert (
+        not ImportRelationPresetCommand(
+            "another-world", None, incoming, choices, evidence
+        )
+        .execute(db_service)
+        .success
+    )
+    with db_service.transaction():
+        conn.execute("UPDATE entities SET name = 'Revised' WHERE id = 'source'")
+    assert (
+        not ImportRelationPresetCommand(
+            db_service.db_path, None, incoming, choices, evidence
+        )
+        .execute(db_service)
+        .success
+    )
+    evidence["member_of"] = usage(conn, "member_of")
+    original_restore = SettingsRepository.restore
+
+    def interrupted(self, key, raw):
+        original_restore(self, key, raw)
+        raise RuntimeError("Write interrupted")
+
+    monkeypatch.setattr(SettingsRepository, "restore", interrupted)
+    with pytest.raises(RuntimeError, match="Write interrupted"):
+        ImportRelationPresetCommand(
+            db_service.db_path,
+            None,
+            incoming,
+            choices,
+            evidence,
+        ).execute(db_service)
+    assert repository.raw(VOCABULARY_KEY) is None
+
+
+@pytest.mark.parametrize(
+    "definitions, message",
+    [
+        ([_definition(), _definition()], "Duplicate"),
+        ([_definition(reverse_template="{target.name}")], "Reverse template"),
+    ],
+)
+def test_preset_invalid_definitions_are_rejected_before_review(definitions, message):
+    with pytest.raises(ValueError, match=message):
+        read_preset(
+            json.dumps(
+                {
+                    "format": "kraken-relation-preset",
+                    "version": 1,
+                    "definitions": definitions,
+                }
+            )
+        )
+
+
+def test_preset_routes_review_conflicts_and_export_selection(
+    qtbot, qapp, db_service, tmp_path, monkeypatch
+):
+    connection = _seed(db_service, 240)
+    repository = SettingsRepository(connection)
+    before = edit_document(None, _definition(forward_label="Old"), None)
+    before = edit_document(before, _definition(key="match"), None)
+    with db_service.transaction():
+        repository.restore(VOCABULARY_KEY, before)
+    source_path = tmp_path / "incoming.json"
+    source_path.write_text(
+        write_preset(
+            [
+                _definition(),
+                _definition(key="later"),
+                _definition(key="match"),
+                _definition(key="mentions"),
+            ]
+        ),
+        encoding="utf-8",
+    )
+    destination = tmp_path / "export.json"
+    monkeypatch.setattr(
+        QFileDialog, "getOpenFileName", lambda *args: (str(source_path), "")
+    )
+    monkeypatch.setattr(
+        QFileDialog, "getSaveFileName", lambda *args: (str(destination), "")
+    )
+    parent = SettingsCenter()
+    qtbot.addWidget(parent)
+    parent.show()
+    reader = RelationDictionaryReader(lambda: db_service)
+
+    def execute(command):
+        result = command.execute(db_service)
+        result.data["command_id"] = command.command_id
+        coordinator.on_command_finished(result)
+        return True
+
+    coordinator = RelationDictionaryCoordinator(
+        lambda: {"database": db_service.db_path, "name": "Preset test"},
+        execute,
+        reader,
+        parent,
+    )
+    coordinator.requested.connect(reader.load, Qt.ConnectionType.QueuedConnection)
+    reader.finished.connect(coordinator.on_snapshot, Qt.ConnectionType.QueuedConnection)
+    coordinator.open(parent)
+    view = coordinator.view
+    assert isinstance(view, RelationDictionaryDialog)
+    qtbot.waitUntil(view.import_preset.isEnabled)
+    view.import_preset.click()
+    panel = view.preset_review
+    qtbot.waitUntil(lambda: panel.keys.count() == 4)
+    assert "240" in panel.details.text()
+    assert not panel.confirm.isEnabled()
+    panel.cancel.click()
+    qtbot.waitUntil(view.import_preset.isEnabled)
+    assert repository.raw(VOCABULARY_KEY) == before
+    view.import_preset.click()
+    qtbot.waitUntil(lambda: panel.keys.count() == 4)
+    panel.keys.setCurrentRow(1)
+    panel.decision.setCurrentIndex(panel.decision.findData("keep"))
+    panel.keys.setCurrentRow(0)
+    manager = ThemeManager()
+    prior_sheet, prior_palette = qapp.styleSheet(), qapp.palette()
+    try:
+        manager.apply_theme(
+            qapp, Path("src/resources/main.qss").read_text(encoding="utf-8")
+        )
+        for theme in manager.get_available_themes():
+            manager.set_theme(theme, persist=False)
+            for width in (620, 360):
+                view.resize(width, 600)
+                qtbot.waitUntil(lambda: view.width() == width)
+                assert panel.details_scroll.horizontalScrollBar().maximum() == 0
+                assert panel.decision.isVisible()
+                assert view.grab().save(str(tmp_path / f"preset-{theme}-{width}.png"))
+    finally:
+        qapp.setStyleSheet(prior_sheet)
+        qapp.setPalette(prior_palette)
+    panel.decision.setFocus()
+    qtbot.keyClick(panel.decision, Qt.Key.Key_End)
+    assert panel.confirm.isEnabled()
+    assert repository.raw(VOCABULARY_KEY) == before
+    with db_service.transaction():
+        connection.execute("UPDATE entities SET name = 'Revised' WHERE id = 'source'")
+    panel.confirm.click()
+    qtbot.waitUntil(lambda: panel.keys.count() == 4)
+    assert not panel.confirm.isEnabled()
+    assert "Review the preset again" in view.message.text()
+    assert repository.raw(VOCABULARY_KEY) == before
+    panel.keys.setCurrentRow(1)
+    panel.decision.setCurrentIndex(panel.decision.findData("keep"))
+    panel.keys.setCurrentRow(0)
+    panel.decision.setCurrentIndex(panel.decision.findData("replace"))
+    panel.confirm.click()
+    qtbot.waitUntil(view.export_preset.isEnabled)
+    assert set(parse_vocabulary(repository.raw(VOCABULARY_KEY))) == {
+        "member_of",
+        "match",
+    }
+    view.export_preset.click()
+    panel.keys.setCurrentRow(1)
+    panel.decision.setCurrentIndex(panel.decision.findData("keep"))
+    wrong_path = tmp_path / "world.kraken"
+    wrong_path.write_bytes(b"existing world")
+    monkeypatch.setattr(
+        QFileDialog, "getSaveFileName", lambda *args: (str(wrong_path), "")
+    )
+    panel.confirm.click()
+    assert wrong_path.read_bytes() == b"existing world"
+    assert ".json filename" in view.message.text()
+    monkeypatch.setattr(
+        QFileDialog, "getSaveFileName", lambda *args: (str(destination), "")
+    )
+    panel.confirm.click()
+    assert [d["key"] for d in read_preset(destination.read_text(encoding="utf-8"))] == [
+        "member_of"
+    ]
+    assert coordinator.allow_transition()
 
 
 def test_counted_edit_undo_and_redo_keep_relation_rows(db_service):

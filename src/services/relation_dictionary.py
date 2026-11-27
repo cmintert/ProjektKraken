@@ -66,6 +66,10 @@ class RelationDictionaryReader(QObject):
                 result.update(raw=raw, writable=not db.read_only)
                 if "key" in request:
                     result["usage"] = usage(connection, request["key"])
+                elif "preset_keys" in request:
+                    result["preset_usage"] = {
+                        key: usage(connection, key) for key in request["preset_keys"]
+                    }
                 else:
                     result["definitions"] = document["definitions"]
                     result["counts"] = dict(

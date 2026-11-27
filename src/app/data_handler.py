@@ -519,10 +519,14 @@ class DataHandler(QObject):
             logger.warning("[DataHandler] Received non-CommandResult object")
             return False
         command = result.command_name
-        if command == "EditRelationDefinitionCommand" or (
+        dictionary_commands = {
+            "EditRelationDefinitionCommand",
+            "ImportRelationPresetCommand",
+        }
+        if command in dictionary_commands or (
             result.success
             and command.removeprefix("Undo_").removeprefix("Redo_")
-            == "EditRelationDefinitionCommand"
+            in dictionary_commands
         ):
             # Settings publishes committed wording without rebuilding lore editors.
             return False

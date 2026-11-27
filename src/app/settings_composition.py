@@ -9,10 +9,10 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
 from src.app.coordinators.relation_dictionary_coordinator import (
+    DictionaryCommand,
     RelationDictionaryCoordinator,
 )
 from src.app.coordinators.settings_coordinator import SettingsCoordinator
-from src.commands.relation_dictionary_command import EditRelationDefinitionCommand
 from src.core.calendar import CalendarConfig
 from src.core.theme_manager import ThemeManager
 from src.core.timeline_visibility import DEPENDENCY_VISIBILITY_KEY
@@ -127,7 +127,7 @@ def _attach_relation_dictionary(
 ) -> None:
     commands = window.command_coordinator
 
-    def execute(command: EditRelationDefinitionCommand) -> bool:
+    def execute(command: DictionaryCommand) -> bool:
         if commands.mutations_suspended:
             return False
         commands.execute_command(command)

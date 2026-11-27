@@ -9112,6 +9112,46 @@
       "kind": "PrimaryButton"
     },
     {
+      "id": "settings.dictionary.export-preset",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-preset-export",
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_list",
+      "binding": "self.export_preset",
+      "label": "Export preset",
+      "kind": "StandardButton"
+    },
+    {
+      "id": "settings.dictionary.import-preset",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-preset-import",
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_list",
+      "binding": "self.import_preset",
+      "label": "Import preset",
+      "kind": "StandardButton"
+    },
+    {
+      "id": "settings.dictionary.preset-keys",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-preset-review",
+      "source": "src/gui/widgets/relation_preset_review.py",
+      "symbol": "RelationPresetReview.__init__",
+      "binding": "self.keys",
+      "label": "Preset definitions",
+      "kind": "QListWidget"
+    },
+    {
+      "id": "settings.dictionary.preset-decision",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-preset-review",
+      "source": "src/gui/widgets/relation_preset_review.py",
+      "symbol": "RelationPresetReview.__init__",
+      "binding": "self.decision",
+      "label": "Decision for a key",
+      "kind": "QComboBox"
+    },
+    {
       "id": "workspace.activity",
       "topic_id": "workspace.navigation",
       "target": "help-inspect-workspace-activity",
@@ -17537,7 +17577,7 @@
     {
       "source": "src/gui/widgets/relation_dictionary.py",
       "symbol": "RelationDictionaryDialog._build_list",
-      "sha256": "1850aefadcf0c6ff079009c81423e3b194f50fabf4f9b32b0787a374f5b88a48",
+      "sha256": "ffc2eabb64bf6f36bbf3e095012bda4055bf7a0861f9e9c9b6e84b4aa8acd0f3",
       "review_note": "KRT-73: Selects existing world entries or a copied catalog suggestion."
     },
     {
@@ -17557,6 +17597,12 @@
       "symbol": "RelationDictionaryDialog._build_review",
       "sha256": "82cc5c3655717f51e27a3cf88ee183a430c8196164067e530b0b45c578eaf1d6",
       "review_note": "KRT-73: Commits one reviewed definition. The worker checks evidence and preserves the key."
+    },
+    {
+      "source": "src/gui/widgets/relation_preset_review.py",
+      "symbol": "RelationPresetReview.__init__",
+      "sha256": "b19f6a2c06dfaee8708b3755c8df5ff2506b47a1c6a903d1e19783105cdf4ea5",
+      "review_note": "KRT-75: reviewed the key list, per-key choices and explicit batch confirmation."
     },
     {
       "source": "src/gui/workspace/activity_bar.py",

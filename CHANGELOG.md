@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-11-25
-**Commit:** e0a317b8
+**Last Updated:** 2026-11-27
+**Commit:** 7ff5787a
 ---
 
 # Changelog
@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-11-27)* **Relation presets (KRT-75)**: Added portable import and
+  export in the Relation Dictionary, with per-key conflict review and one
+  undo action for each import. Added contextual Help and regression coverage.
 
 - *(2026-11-25)* **Relation Dictionary (KRT-73)**: Added a world-local editor
   in Settings → This World. Each undoable edit previews the affected count and

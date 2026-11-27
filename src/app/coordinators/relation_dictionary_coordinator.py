@@ -1,13 +1,16 @@
 """Coordinate one world dictionary draft and its worker-reviewed save."""
 
+import json
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
 from PySide6.QtCore import QObject, QSignalBlocker, Signal, Slot
-from PySide6.QtWidgets import QMessageBox, QWidget
+from PySide6.QtWidgets import QFileDialog, QMessageBox, QWidget
 
 from src.commands.relation_dictionary_command import EditRelationDefinitionCommand
+from src.commands.relation_preset_command import ImportRelationPresetCommand
 from src.core.command import CommandResult
 from src.core.relation_dictionary import (
     CATALOG_VERSION,
@@ -16,8 +19,13 @@ from src.core.relation_dictionary import (
     may_define,
     wording_examples,
 )
-from src.core.relation_vocabulary import ENDPOINTS
+from src.core.relation_presets import candidate, read_preset, write_preset
+from src.core.relation_vocabulary import ENDPOINTS, load_document
 from src.gui.widgets.relation_dictionary import RelationDictionaryDialog
+from src.services.transfer_files import staged_output
+
+DictionaryCommand = EditRelationDefinitionCommand | ImportRelationPresetCommand
+_PRESET_FILTER = "Relation presets (*.json)"
 
 
 def _preview_text(
@@ -45,6 +53,25 @@ def _preview_text(
     return f"{text}\n{guidance}" if guidance else text
 
 
+def _preset_definition_text(
+    key: str, definition: dict[str, Any] | None, sample: dict[str, str] | None
+) -> str:
+    raw = (
+        json.dumps({"version": 1, "definitions": [definition]}) if definition else None
+    )
+    result = _preview_text(raw, key, definition or {}, sample)
+    if not definition:
+        return result
+    for field, label in (
+        ("description", "Description"),
+        ("category", "Category"),
+        ("forward_template", "Forward template"),
+        ("reverse_template", "Reverse template"),
+    ):
+        result += f"\n{label}: {definition.get(field) or 'None'}"
+    return result
+
+
 class RelationDictionaryCoordinator(QObject):
     """Keep drafts and requests pinned to the world that opened the editor."""
 
@@ -53,7 +80,7 @@ class RelationDictionaryCoordinator(QObject):
     def __init__(
         self,
         context: Callable[[], dict[str, Any]],
-        execute: Callable[[EditRelationDefinitionCommand], bool],
+        execute: Callable[[DictionaryCommand], bool],
         reader: QObject,
         parent: QObject,
     ) -> None:
@@ -76,6 +103,9 @@ class RelationDictionaryCoordinator(QObject):
         self._baseline: dict[str, Any] | None = None
         self._reviewed: dict[str, Any] | None = None
         self._list_message = ""
+        self._preset: list[dict[str, Any]] = []
+        self._preset_snapshot: dict[str, Any] = {}
+        self._exporting = False
 
     def open(self, parent: QWidget) -> None:
         """Open one editor and request current world data."""
@@ -97,6 +127,10 @@ class RelationDictionaryCoordinator(QObject):
         view.save_requested.connect(self._save)
         view.back_requested.connect(self._back)
         view.close_requested.connect(self.allow_transition)
+        view.export_requested.connect(self._select_export)
+        view.import_requested.connect(self._open_preset)
+        view.preset_review.cancel.clicked.connect(lambda: self._load_list())
+        view.preset_review.confirm.clicked.connect(self._confirm_preset)
         view.show()
         self._load_list()
 
@@ -106,7 +140,7 @@ class RelationDictionaryCoordinator(QObject):
         if view is None:
             return True
         if self._pending:
-            view.show_message("Wait for the definition to finish saving.")
+            view.show_message("Wait for the dictionary change to finish saving.")
             return False
         if not self._may_discard(view):
             return False
@@ -149,6 +183,9 @@ class RelationDictionaryCoordinator(QObject):
         if view is not None:
             self._baseline = None
             self._reviewed = None
+            self._preset = []
+            self._preset_snapshot = {}
+            self._exporting = False
             self._list_message = message
             view.show_entries([], False, "")
             view.show_message(message or "Loading relation definitions…")
@@ -172,6 +209,9 @@ class RelationDictionaryCoordinator(QObject):
             return
         if error := payload.get("error"):
             view.show_message(error, error=True)
+            return
+        if "preset_usage" in payload:
+            self._show_preset(view, payload)
             return
         if "usage" in payload:
             self._show_review(view, payload)
@@ -213,9 +253,11 @@ class RelationDictionaryCoordinator(QObject):
             for key, definition in self._defaults.items()
             if key not in self._definitions
         )
-        view.show_entries(rows, self._writable, self._selected)
+        view.show_entries(
+            rows, self._writable, self._selected, exportable=bool(self._definitions)
+        )
         view.show_message(
-            self._list_message if self._writable else "This world is read-only."
+            self._list_message or ("" if self._writable else "This world is read-only.")
         )
 
     @Slot(str, str)
@@ -329,6 +371,148 @@ class RelationDictionaryCoordinator(QObject):
                 )
             )
 
+    def _select_export(self) -> None:
+        view = self.view
+        if view is None:
+            return
+        self._exporting = True
+        rows = {
+            key: (
+                "export",
+                f"{key}\n\n{_preset_definition_text(key, definition, None)}",
+            )
+            for key, definition in self._definitions.items()
+        }
+        view.pages.setCurrentWidget(view.preset_review)
+        view.preset_review.show_rows(rows, exporting=True)
+        view.show_message()
+
+    def _open_preset(self) -> None:
+        view = self.view
+        if view is None:
+            return
+        path, _ = QFileDialog.getOpenFileName(
+            view, "Open relation preset", "", _PRESET_FILTER
+        )
+        if not path or view is not self.view:
+            return
+        try:
+            self._preset = read_preset(Path(path).read_text(encoding="utf-8-sig"))
+        except (OSError, ValueError) as exc:
+            view.show_message(str(exc), error=True)
+            return
+        self._request_preset()
+
+    def _request_preset(self, feedback: str = "") -> None:
+        view = self.view
+        if view is None:
+            return
+        self._request = uuid4().hex
+        self._preset_snapshot = {}
+        view.pages.setCurrentWidget(view.preset_review)
+        view.preset_review.show_rows({}, exporting=False)
+        view.show_message(
+            feedback or "Checking destination usage…", error=bool(feedback)
+        )
+        self.requested.emit(
+            {
+                "database": self._database,
+                "token": self._request,
+                "preset_keys": [entry["key"] for entry in self._preset],
+            }
+        )
+
+    def _show_preset(
+        self, view: RelationDictionaryDialog, payload: dict[str, Any]
+    ) -> None:
+        if not payload["writable"]:
+            view.show_message("This world is read-only.", error=True)
+            return
+        self._preset_snapshot = payload
+        existing = {
+            entry["key"]: entry
+            for entry in load_document(payload["raw"])["definitions"]
+        }
+        rows = {}
+        for incoming in self._preset:
+            key = incoming["key"]
+            evidence = payload["preset_usage"][key]
+            current = existing.get(key)
+            status, proposed = candidate(key, current, incoming, evidence["count"])
+            sample = evidence["sample"]
+            before = _preset_definition_text(key, current, sample)
+            after = (
+                _preset_definition_text(key, proposed, sample)
+                if proposed is not None
+                else "This key is protected or requires an exact existing key in this world."
+            )
+            rows[key] = (
+                status,
+                f"{key}\nStored connections: {evidence['count']}\n\n"
+                f"Current\n{before}\n\nPreset\n{after}",
+            )
+        view.preset_review.show_rows(rows, exporting=False)
+        if not view.message.property("dictionary_error"):
+            view.show_message()
+
+    def _confirm_preset(self) -> None:
+        view = self.view
+        if view is None or self._pending or not view.preset_review.confirm.isEnabled():
+            return
+        choices = view.preset_review.choices
+        if self._exporting:
+            self._write_preset(view, choices)
+        elif self._preset_snapshot:
+            self._import_preset(view, choices)
+
+    def _write_preset(
+        self, view: RelationDictionaryDialog, choices: dict[str, str]
+    ) -> None:
+        try:
+            contents = write_preset(
+                [
+                    self._definitions[key]
+                    for key, choice in choices.items()
+                    if choice == "export"
+                ]
+            )
+            path, _ = QFileDialog.getSaveFileName(
+                view, "Save relation preset", "relation-preset.json", _PRESET_FILTER
+            )
+            if not path or view is not self.view:
+                return
+            destination = Path(path)
+            if destination.suffix.casefold() != ".json":
+                raise ValueError("Use a .json filename for the relation preset.")
+            with staged_output(destination) as output:
+                output.write_text(contents, encoding="utf-8")
+        except (OSError, ValueError) as exc:
+            view.show_message(str(exc), error=True)
+            return
+        self._load_list("Relation preset exported.")
+
+    def _import_preset(
+        self, view: RelationDictionaryDialog, choices: dict[str, str]
+    ) -> None:
+        command = ImportRelationPresetCommand(
+            self._database,
+            self._preset_snapshot["raw"],
+            self._preset,
+            choices,
+            self._preset_snapshot["preset_usage"],
+        )
+        self._pending = command.command_id
+        view.preset_review.setEnabled(False)
+        view.show_message("Importing relation definitions…")
+        if not self._execute(command):
+            self.on_command_finished(
+                CommandResult(
+                    False,
+                    "The destination world is unavailable for editing.",
+                    data={"command_id": command.command_id},
+                )
+            )
+
     @Slot(object)
     def on_command_finished(self, result: CommandResult) -> None:
         """Acknowledge only the editor's outstanding save."""
@@ -340,6 +524,13 @@ class RelationDictionaryCoordinator(QObject):
         ):
             return
         self._pending = ""
+        if self._preset:
+            view.preset_review.setEnabled(True)
+            if result.success:
+                self._load_list(result.message)
+            else:
+                self._request_preset(result.message)
+            return
         self._reviewed = None
         view.edit.setEnabled(True)
         if result.success:

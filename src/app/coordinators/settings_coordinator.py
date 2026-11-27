@@ -408,6 +408,7 @@ class SettingsCoordinator(QObject):
                 "UpdateTagColorCommand",
                 "SetActiveCalendarCommand",
                 "EditRelationDefinitionCommand",
+                "ImportRelationPresetCommand",
             )
         ) or (self.view is not None and self.view.isVisible()):
             self.refresh_world()

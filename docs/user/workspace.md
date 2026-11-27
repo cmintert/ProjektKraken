@@ -249,6 +249,35 @@ world, including connections outside the current view.
 action. If the dictionary or reviewed usage changes before the save completes,
 return to the definition and review the current impact before saving.
 
+(help-inspect-relation-preset-export)=
+
+#### Reuse relation definitions in another world
+
+1. In the source world's **Relation Dictionary**, choose **Export preset…**.
+   Use **Skip** for any definitions you want to leave out, then choose
+   **Save preset…** and name the JSON file.
+2. Open the destination world's **Relation Dictionary**. Choose **Import preset…**
+   and open that file.
+3. Select each key to review its wording and the number of connections that use it
+   in this world. For a conflict, choose **Keep existing** or **Replace**. Use
+   **Skip** to leave out an addition.
+4. Choose **Import definitions**. Open an imported definition to verify its
+   wording. Undo restores the dictionary from before the import in one step.
+
+The destination stores its own copies. Later edits apply to that world. The
+source definitions and preset file retain their saved wording.
+
+(help-inspect-relation-preset-import)=
+
+**Import preset…** — Open a Kraken relation preset for review. If the destination
+changes during review, check the refreshed preview and choose again.
+
+(help-inspect-relation-preset-review)=
+
+**Preset review** — Select a key to compare its current and proposed wording and
+see its usage count. A conflict requires a choice. An unavailable key includes
+a reason. **Import definitions** saves the selected changes together.
+
 (help-inspect-settings-center-search)=
 
 **Search all settings** — Find configuration by its name, category or aliases in

@@ -24,6 +24,7 @@ from src.gui.utils.style_helper import StyleHelper
 from src.gui.utils.theme_connections import connect_theme
 from src.gui.utils.theme_presentation import register_theme_scope
 from src.gui.widgets.action_flow_layout import ActionFlowLayout
+from src.gui.widgets.relation_preset_review import RelationPresetReview
 from src.gui.widgets.responsive_form import ResponsiveFormLayout, scrollable_form_page
 from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
 
@@ -40,6 +41,8 @@ class RelationDictionaryDialog(QDialog):
     save_requested = Signal()
     back_requested = Signal()
     close_requested = Signal()
+    export_requested = Signal()
+    import_requested = Signal()
 
     def __init__(self, world: str, parent: QWidget) -> None:
         """Create a scrollable editor with an always reachable action row."""
@@ -58,6 +61,8 @@ class RelationDictionaryDialog(QDialog):
         self._build_list()
         self._build_editor()
         self._build_review()
+        self.preset_review = RelationPresetReview()
+        self.pages.addWidget(self.preset_review)
         connect_theme(self, self._apply_theme)
         register_theme_scope(self, priority=True)
         self._apply_theme()
@@ -83,8 +88,22 @@ class RelationDictionaryDialog(QDialog):
         actions = ActionFlowLayout()
         self.open_button = PrimaryButton("Open definition")
         self.add_button = StandardButton("Add definition")
+        self.export_preset = declare_inspection(
+            StandardButton("Export preset…"),
+            "settings.dictionary.export-preset|settings.relation-dictionary|help-inspect-relation-preset-export",
+        )
+        self.import_preset = declare_inspection(
+            StandardButton("Import preset…"),
+            "settings.dictionary.import-preset|settings.relation-dictionary|help-inspect-relation-preset-import",
+        )
         close = StandardButton("Close")
-        for button in (self.open_button, self.add_button, close):
+        for button in (
+            self.open_button,
+            self.add_button,
+            self.export_preset,
+            self.import_preset,
+            close,
+        ):
             button.setAutoDefault(False)
             actions.addWidget(button)
         layout.addLayout(actions)
@@ -92,6 +111,8 @@ class RelationDictionaryDialog(QDialog):
         self.open_button.clicked.connect(self._open_selected)
         self.entries.itemActivated.connect(self._open_selected)
         self.add_button.clicked.connect(lambda: self.selected.emit("new", ""))
+        self.export_preset.clicked.connect(self.export_requested.emit)
+        self.import_preset.clicked.connect(self.import_requested.emit)
         self.pages.addWidget(self.list_page)
 
     def _build_editor(self) -> None:
@@ -225,7 +246,12 @@ class RelationDictionaryDialog(QDialog):
             self.selected.emit(source, key)
 
     def show_entries(
-        self, rows: list[tuple[str, str, str]], writable: bool, selected_key: str
+        self,
+        rows: list[tuple[str, str, str]],
+        writable: bool,
+        selected_key: str,
+        *,
+        exportable: bool = False,
     ) -> None:
         """List world entries and explicitly labelled catalog suggestions."""
         self.entries.clear()
@@ -239,6 +265,8 @@ class RelationDictionaryDialog(QDialog):
             self.entries.setCurrentRow(0)
         self.open_button.setEnabled(bool(rows))
         self.add_button.setEnabled(writable)
+        self.import_preset.setEnabled(writable)
+        self.export_preset.setEnabled(exportable)
         self.pages.setCurrentWidget(self.list_page)
         self.entries.setFocus()
 
