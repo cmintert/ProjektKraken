@@ -221,8 +221,9 @@ def test_ok_hide_and_destroyed_scopes_do_not_strand_work(
     connect_theme(panel, lambda _: observed.append("current"))
     ThemeManager().set_theme("light_mode", persist=False)
     settings.hide()
-    assert observed == ["current"]
+    # A paint may already have scheduled delivery for the next frame.
     qtbot.waitUntil(lambda: not runtime.is_pending)
+    assert observed == ["current"]
     settings.show()
     ThemeManager().set_theme("dark_mode", persist=False)
     panel.deleteLater()

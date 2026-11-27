@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-27
-**Commit:** 8c3a9b48
+**Commit:** 9c660a0e
 ---
 
 # Changelog
@@ -12,6 +12,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Maintenance
+
+- *(2026-11-27)* **Tests**: Checked theme delivery after pending frame work
+  drains, including when a paint schedules delivery before a window hides.
 
 - *(2026-11-27)* **Tests**: Reconciled the reviewed inventory with three
   obsolete hover tests replaced by Sheet behavior checks.
