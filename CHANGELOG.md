@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-27
-**Commit:** 7858caf6
+**Commit:** 09adb6c5
 ---
 
 # Changelog
@@ -12,6 +12,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-11-27)* **FastInject templates**: Added a D&D 5e (2024) monster
+  stat block and a Delta Green Agent character sheet.
 
 - *(2026-11-27)* **World Relations preset pack**. Added 63 genre-neutral
   relation definitions as a complete preset and eight category presets,
