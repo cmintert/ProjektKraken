@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-27
-**Commit:** eac25e37
+**Commit:** fce7804d
 ---
 
 # Changelog
@@ -46,6 +46,10 @@ All notable changes to this project will be documented in this file.
   share one undo step, and the graph retains node positions during authoring.
 
 ### Fixed
+
+- *(2026-11-27)* **Relation preview (KRT-74)**. Keep the perspective button
+  readable in narrow inspectors. The tooltip retains the full entry name.
+  Updated contextual Help for the button.
 
 - *(2026-11-27)* **World Context participation**. Event membership links
   appear as direct connections. Event participation uses explicit participation

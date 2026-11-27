@@ -13,7 +13,7 @@ from PySide6.QtCore import (
     QSignalBlocker,
     Qt,
 )
-from PySide6.QtGui import QKeyEvent, QResizeEvent
+from PySide6.QtGui import QKeyEvent
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
@@ -232,19 +232,5 @@ class RelationGuide(QWidget):
         other = self._names[not self._alternate]
         self.preview.setAccessibleDescription(f"Viewed from {viewed}")
         caption = f"View from {other}"
-        metrics = self.other.fontMetrics()
-        chrome = self.other.sizeHint().width() - metrics.horizontalAdvance(
-            self.other.text()
-        )
-        self.other.setText(
-            metrics.elidedText(
-                caption, Qt.TextElideMode.ElideRight, max(0, self.width() - chrome)
-            )
-        )
         self.other.setAccessibleName(caption)
         self.other.setToolTip(f"<p>{escape(caption)}</p>")
-
-    def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
-        """Fit the perspective label to the available preview width."""
-        super().resizeEvent(event)
-        self._render()

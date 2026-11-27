@@ -417,7 +417,7 @@ the preference. You can still apply a valid relation.
 
 (help-inspect-relation-preview-other-entry)=
 
-**View from [entry]** shows how the same draft reads from the named entry.
+**View from other entry** shows how the same draft reads from the other end.
 Use the same button to switch back. The direction and timing of the draft
 stay the same when you switch views.
 
