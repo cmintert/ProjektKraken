@@ -152,6 +152,50 @@ class AttributeEditorWidget(QWidget):
 
         self._block_signals = False
 
+    def refresh_attributes(self, attributes: dict[str, Any]) -> None:
+        """Refresh resolved values in place when the table structure is unchanged."""
+        visible = [
+            (key, value) for key, value in attributes.items() if not key.startswith("_")
+        ]
+        if [key for key, _ in visible] != self._row_keys():
+            self.load_attributes(attributes)
+            return
+        self._hidden_attributes = {
+            key: value for key, value in attributes.items() if key.startswith("_")
+        }
+        previous = self._block_signals
+        self._block_signals = True
+        try:
+            for row, (_, value) in enumerate(visible):
+                self._set_row_value(row, value)
+        finally:
+            self._block_signals = previous
+
+    def _row_keys(self) -> list[str]:
+        keys: list[str] = []
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 0)
+            keys.append(item.text() if item is not None else "")
+        return keys
+
+    def _set_row_value(self, row: int, value: Any) -> None:
+        value_type, text = self._display_value(value)
+        item = self.table.item(row, 1)
+        combo = self.table.cellWidget(row, 2)
+        if item is not None and item.text() != text:
+            item.setText(text)
+        if isinstance(combo, QComboBox) and combo.currentText() != value_type:
+            combo.setCurrentText(value_type)
+
+    def _display_value(self, value: Any) -> tuple[str, str]:
+        if value is None and self._allow_null:
+            return "Null", ""
+        if isinstance(value, bool):
+            return "Boolean", str(value)
+        if isinstance(value, (int, float)):
+            return "Number", str(value)
+        return "String", str(value) if value is not None else ""
+
     def get_attributes(self) -> Dict[str, Any]:
         """Returns a dictionary representing the current table state."""
         attrs = dict(self._hidden_attributes)
@@ -193,14 +237,22 @@ class AttributeEditorWidget(QWidget):
                     else f"{source.get('event_name') or 'Event'} "
                     f"(event payload at {source.get('event_date')})"
                 )
+                text = (
+                    str(source.get("event_name") or "Event")
+                    if source.get("kind") == "relation"
+                    else "Base"
+                )
+                current = self.table.item(row, 3)
+                if (
+                    current is not None
+                    and current.text() == text
+                    and current.toolTip() == label
+                ):
+                    continue
                 name_item.setToolTip(label)
                 if value_item is not None:
                     value_item.setToolTip(label)
-                source_item = QTableWidgetItem(
-                    "Base"
-                    if source.get("kind") != "relation"
-                    else str(source.get("event_name") or "Event")
-                )
+                source_item = QTableWidgetItem(text)
                 source_item.setToolTip(label)
                 source_item.setFlags(source_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 self.table.setItem(row, 3, source_item)
@@ -214,18 +266,15 @@ class AttributeEditorWidget(QWidget):
             key (str): The attribute key.
             value (Any): The new value.
         """
+        previous = self._block_signals
         self._block_signals = True
         try:
-            for row in range(self.table.rowCount()):
-                key_item = self.table.item(row, 0)
-                if key_item and key_item.text().strip() == key:
-                    val_item = self.table.item(row, 1)
-                    if val_item:
-                        str_val = str(value) if value is not None else ""
-                        val_item.setText(str_val)
+            for row, name in enumerate(self._row_keys()):
+                if name.strip() == key:
+                    self._set_row_value(row, value)
                     break
         finally:
-            self._block_signals = False
+            self._block_signals = previous
 
     def _add_row(self, key: str = "", value: Optional[Any] = None) -> None:
         """Adds a new row to the attribute table.
@@ -238,19 +287,7 @@ class AttributeEditorWidget(QWidget):
         row = self.table.rowCount()
         self.table.insertRow(row)
 
-        # Determine strict type
-        val_type = "String"
-        if value is None and self._allow_null:
-            val_type = "Null"
-            str_val = ""
-        elif isinstance(value, bool):
-            val_type = "Boolean"
-            str_val = str(value)  # "True"/"False"
-        elif isinstance(value, (int, float)):
-            val_type = "Number"
-            str_val = str(value)
-        else:
-            str_val = str(value) if value is not None else ""
+        val_type, str_val = self._display_value(value)
 
         # Key
         self.table.setItem(row, 0, QTableWidgetItem(key))

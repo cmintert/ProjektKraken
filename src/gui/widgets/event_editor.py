@@ -742,6 +742,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
     def _on_sheet_changed(self) -> None:
         """Handle changes from the sheet builder."""
+        if self.sheet_builder.has_pending_snapshot:
+            return
         self.set_dirty(True)
         self._sync_attributes(source="sheet")
 
@@ -755,37 +757,24 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         if self._is_loading:
             return
 
-        if source == "sheet":
-            sheet_attrs = self.sheet_builder.get_attributes()
-            attr_attrs = self.attribute_editor.get_attributes()
+        if source == "table":
+            self.sheet_builder.sync_from_table(
+                self._current_event_id, self.attribute_editor.get_attributes()
+            )
+            return
 
-            for key, val in sheet_attrs.items():
-                if key in attr_attrs and attr_attrs[key] != val:
-                    self.attribute_editor.update_attribute_value(key, val)
-                elif key not in attr_attrs:
-                    self.attribute_editor._block_signals = True
-                    self.attribute_editor._add_row(key, val)
+        table_values = self.attribute_editor.get_attributes()
+        for key, value in self.sheet_builder.get_attributes().items():
+            if key not in table_values:
+                self.attribute_editor._block_signals = True
+                try:
+                    self.attribute_editor._add_row(key, value)
+                finally:
                     self.attribute_editor._block_signals = False
-
-            for key in list(attr_attrs.keys()):
-                if key not in sheet_attrs and key in self.sheet_builder._pairs:
-                    pass
-        elif source == "table":
-            sheet_attrs = self.sheet_builder.get_attributes()
-            attr_attrs = self.attribute_editor.get_attributes()
-
-            for key, val in attr_attrs.items():
-                if key in sheet_attrs and sheet_attrs[key] != val:
-                    self.sheet_builder.update_attribute_value(key, val)
-                elif key not in sheet_attrs and key in self.sheet_builder._pairs:
-                    pass
-
-            # If removed from table, remove from sheet
-            for key in list(sheet_attrs.keys()):
-                if key not in attr_attrs:
-                    setattr(self.sheet_builder, "_block_signals", True)
-                    self.sheet_builder.remove_attribute(key)
-                    setattr(self.sheet_builder, "_block_signals", False)
+            elif (
+                type(table_values[key]) is not type(value) or table_values[key] != value
+            ):
+                self.attribute_editor.update_attribute_value(key, value)
 
     def set_calendar_converter(self, converter: Any) -> None:
         """Sets the calendar converter for date formatting.
@@ -1121,6 +1110,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         # Handle missing event (e.g., item was deleted)
         if event is None:
             self._current_event_id = None
+            self.sheet_builder.stage_attributes(None, {})
             self.show_world_at_event_action.setEnabled(False)
             if focus is not None:
                 focus._update_action()
@@ -1381,13 +1371,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.attribute_editor.load_attributes(display_attrs)
         self.attribute_editor.blockSignals(False)
 
-        # Load sheet builder with the same display attributes + stored layout
-        sheet_layout = event.attributes.get("_sheet_layout")
-        self.sheet_builder.blockSignals(True)
-        try:
-            self.sheet_builder.load_attributes(display_attrs, sheet_layout)
-        finally:
-            self.sheet_builder.blockSignals(False)
+        self.sheet_builder.stage_attributes(
+            event.id, display_attrs, event.attributes.get("_sheet_layout")
+        )
 
         # Load Summary
         self.summary_widget.clear_summary()

@@ -283,6 +283,12 @@ def test_sheet_builder_data_loss(editor, qtbot):
     assert "Focus" in editor.sheet_builder.get_attributes()
     assert editor.sheet_builder.get_attributes()["Focus"] == 10
 
+    assert not editor.sheet_builder._pairs
+    editor.parentWidget().show()
+    editor.show()
+    editor.inspector.activate_section_id("sheet")
+    qtbot.waitUntil(editor.sheet_builder.isVisible)
+
     # Modify "Focus" in Sheet Builder
     focus_pair = editor.sheet_builder._pairs["Focus"]
     focus_pair.value_edit.setText("20")
@@ -296,3 +302,28 @@ def test_sheet_builder_data_loss(editor, qtbot):
 
     saved_data = blocker.args[0]
     assert saved_data["attributes"]["Focus"] == 20
+
+
+def test_hidden_sheet_template_uses_discarded_record_layout(editor, qtbot, monkeypatch):
+    from unittest.mock import Mock
+
+    layout = [[{"type": "header", "text": "Stats"}, {"key": "HP", "weight": 2}]]
+    event = Event(
+        name="Skirmish", lore_date=1.0, attributes={"HP": 8, "_sheet_layout": layout}
+    )
+    editor.load_event(event)
+    editor.attribute_editor.table.item(0, 1).setText("9")
+    with qtbot.waitSignal(editor.discard_requested) as discarded:
+        editor._on_discard()
+    assert discarded.args == [event.id]
+    editor.load_event(event)
+
+    dialog = Mock()
+    dialog.return_value.exec.return_value = False
+    monkeypatch.setattr(
+        "src.gui.dialogs.create_template_dialog.CreateTemplateDialog", dialog
+    )
+    editor._open_create_template_dialog()
+    assert dialog.call_args.kwargs["source_attributes"] == {"HP": 8}
+    assert dialog.call_args.kwargs["source_layout"] == layout
+    assert not editor.sheet_builder._pairs

@@ -462,6 +462,7 @@ def test_tags_and_sheet_edits_remain_dirty_through_view_changes(editor, qtbot):
     qtbot.keyClicks(editor.tag_editor.tag_input, "historical")
     qtbot.keyClick(editor.tag_editor.tag_input, Qt.Key.Key_Return)
     assert editor.tag_editor.get_tags() == ["historical"]
+    editor.inspector.activate_section_id("sheet")
     editor.sheet_builder._pairs["rank"].value_edit.setPlainText("Master")
     editor.inspector.open_auxiliary_below("sheet")
     editor.inspector.return_auxiliary("sheet")

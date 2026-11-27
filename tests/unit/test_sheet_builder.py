@@ -938,7 +938,9 @@ class TestResizeHandle:
         handle = _ResizeHandle(layout, 0, 1)
         qtbot.addWidget(handle)
 
-        theme = handle._theme_mgr.get_theme()
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
 
         stylesheet = handle.styleSheet()
         assert "_ResizeHandle:hover" in stylesheet

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-11-27
-**Commit:** 97207ed2
+**Commit:** 7858caf6
 ---
 
 # Changelog
@@ -85,6 +85,11 @@ All notable changes to this project will be documented in this file.
   conflicting editor saves.
 
 ### Changed
+
+- *(2026-11-27)* **Sheet performance (KRT-187)**: Deferred hidden Sheet rows,
+  reduced the cost of building them, and reused attribute controls during
+  playhead updates. Updated contextual Help and added regression coverage for
+  saving before opening the Sheet, playhead refresh, and template creation.
 
 - *(2026-11-27)* **Sheet tab (KRT-186)**: Aligned inline keys and values in
   Entity and Event sheets, added a single-column view for narrow inspectors,

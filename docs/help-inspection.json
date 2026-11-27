@@ -6886,8 +6886,8 @@
       "topic_id": "authoring.details",
       "target": "help-inspect-src-gui-widgets-sheet-builder-attributepairwidget-init-self-type-combo",
       "source": "src/gui/widgets/sheet_builder.py",
-      "symbol": "AttributePairWidget.__init__",
-      "binding": "self.type_combo",
+      "symbol": "AttributePairWidget.type_combo",
+      "binding": "combo",
       "label": "type_combo",
       "kind": "ScrollSafeComboBox"
     },
@@ -12751,8 +12751,8 @@
     {
       "source": "src/gui/widgets/attribute_editor.py",
       "symbol": "AttributeEditorWidget._add_row",
-      "sha256": "09ec4dd09f30fd87b5480616486a28d546e3d368179290de1ae94025c1c476f0",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "4c6149154648a0cfbb53687f2eedc7c925872f044d3ab6b8408cb68850ea5dfa",
+      "review_note": "KRT-187: Table rows keep the same editable columns and value types. Value formatting is shared with in-place refresh."
     },
     {
       "source": "src/gui/widgets/attribute_editor.py",
@@ -16225,8 +16225,14 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "AttributePairWidget.__init__",
-      "sha256": "bad3b1c88eb008eb00e85be91ed969f9b103cd45af0b9cb933b061900798cad0",
-      "review_note": "KRT-186: The editable value still has its associated key and its Tab route. Long keys and grouped units wrap without shifting the value's first line."
+      "sha256": "ef583622b1b1041f320c204d78902c439bd01489a5f6b842bc88af5b202cad05",
+      "review_note": "KRT-187: Inline values keep their key, multiline editing and Tab route. Sheet rows inherit the existing field styles."
+    },
+    {
+      "source": "src/gui/widgets/sheet_builder.py",
+      "symbol": "AttributePairWidget.type_combo",
+      "sha256": "cbb3ed570957153d019eacc8526deb651d59ae378be43b295e20a49e582c2d3d",
+      "review_note": "KRT-187: The existing Change type action creates the same selector on demand, with the existing Help target."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16273,26 +16279,26 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget.__init__",
-      "sha256": "54db78f81e151a5c569161587677183adbd414ef96b17c36977ee5d6e8d24fe6",
-      "review_note": "KRT-186: Edit layout reveals the existing sheet tools. The contextual explanation describes the draft when the tools are closed."
+      "sha256": "e7336ac36272f0cbd11029328fc9cf96d742bcc8a10cb823904e548edda0dd29",
+      "review_note": "KRT-187: The existing Edit layout button and toolbar are available when Sheet is visible. Pending rows are stored as values and layout."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._add_row",
-      "sha256": "eb383c57b30ee47b82a14781d018eff1cb2f060ab674ad419e756626cbb011c5",
-      "review_note": "KRT-186: New rows respect the current presentation mode. The Add commands still insert the same authored elements."
+      "sha256": "83ddd54db01c3b7455fcf015c70c7c3e47df0b7b496806606d2af117e34e2fc5",
+      "review_note": "KRT-187: Preparented rows keep the existing controls, their order, and the same authored layout elements."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
-      "symbol": "SheetBuilderWidget._add_unplaced_attributes",
-      "sha256": "484a093682cb7eb84481e45516ea93cceb97ed8847f43eaa455e898fc6321c5c",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "symbol": "_normalize_layout",
+      "sha256": "4c77a8a1bf493796c228fd5ec9a3e542baaa2162c069ceee4cef0aa7b89838e5",
+      "review_note": "KRT-187: The same normalized row arrangement is used for drawing and for saving an unopened Sheet. Unplaced fields still get default rows."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._apply_theme",
-      "sha256": "1591eb84b3b1ce850832b0fd9fe05ee07e68b7725294a9d191864ff5550eac10",
-      "review_note": "KRT-186: The reading surface and layout toolbar retain theme-owned styling. The controls have the same operations."
+      "sha256": "af471f2b2336f017b803e31db0c045145b5972695bacb1476cb68dee950aa0e4",
+      "review_note": "KRT-187: The Sheet shares the existing semantic field and handle styles at the content container. Focus, hover and disabled roles stay the same."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16309,8 +16315,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._clear",
-      "sha256": "0c25f483066c296def21e108b64f1a3824b27c51db72219823e6781c9888fd8b",
-      "review_note": "Checks layout items before disposal. Clearing the sheet still releases its widgets and nested row layouts."
+      "sha256": "04980338fc0f9feb84d782194e2d2aa5d09b5e76438e2985b86c29b2e7c778ba",
+      "review_note": "KRT-187: The existing control and its Help destination retain the same behavior."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16327,8 +16333,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._ctx_insert_row",
-      "sha256": "e0358a8ea49b2fd36dccab56076815373070d711166b62dc9253f8f849d5db65",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "69241be3ec4812edb910b3b1744f201f23978d3626c8f623b61a6dd08ea01e87",
+      "review_note": "KRT-187: The existing control and its Help destination retain the same behavior."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16369,8 +16375,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._insert_resize_handles",
-      "sha256": "9ab8d3a4b9eb1a3511e47d363b58d3e828bf26d27353b97ba4abaeaafa387b20",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "0a5c45f39e67f5dee271826c82fc0bfaa4cdc91ca8e50f81973022714c94b574",
+      "review_note": "KRT-187: The existing control and its Help destination retain the same behavior."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16411,8 +16417,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._on_child_drag_finished",
-      "sha256": "eb335a2940db756d6defc5781d1fa0ab1d4795334cc6d364514ade6d9ec24793",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "343933649b8872c47b349a35937128e8fe4b191a894150f7bfc4b94ee5a10cf3",
+      "review_note": "KRT-187: The existing control and its Help destination retain the same behavior."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16513,8 +16519,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget.load_attributes",
-      "sha256": "490e4e3b94b7f1b37709fd68fd8a88d195acf0e73cdb2c93f431fd7e00d2aec7",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "f1b8102bfeaa6909d2668ba6e9d6d7e775914a0f2c8878ffcc35188c25d22605",
+      "review_note": "KRT-187: The existing control and its Help destination retain the same behavior."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -17449,8 +17455,8 @@
     {
       "source": "src/gui/widgets/entity_editor.py",
       "symbol": "EntityEditorWidget.finish_temporal_save",
-      "sha256": "383ab8576ec409c5a7abd4a2d86e45770979cd45e6bf56b5f046d9fd0753f424",
-      "review_note": "KRT-40: Reviewed extracted preparation/acknowledgement dependency. Existing historical editing, Save Changes and Discard explanations remain accurate: corrections retain source ownership, explicit dated intent remains distinct, and acknowledgements preserve newer drafts. No new UI or Help destination."
+      "sha256": "40e84a1720c2186a37af80f953c59d1ec492eaa2d0f62720249ffd76f057bfcd",
+      "review_note": "KRT-187: Acknowledgement refreshes provenance in both attribute views without changing newer drafts or focus."
     },
     {
       "source": "src/services/temporal_entity_draft_service.py",
