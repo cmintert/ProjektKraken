@@ -6,7 +6,7 @@ from types import MappingProxyType
 
 import pytest
 
-from src.core.relation_policy import has_direction_sensitive_attributes
+from src.core.relation_policy import endpoint_change_error
 from src.core.relation_presentation import (
     authoring_caption,
     authoring_choices,
@@ -152,5 +152,8 @@ def test_reversal_assessment_preserves_truthiness_and_string_compatibility(
     attributes, expected
 ):
     before = deepcopy(attributes)
-    assert has_direction_sensitive_attributes(MappingProxyType(attributes)) is expected
+    saved = {"source_id": "a", "target_id": "b", "attributes": attributes}
+    assert (
+        bool(endpoint_change_error(saved, "b", "a", MappingProxyType({}))) is expected
+    )
     assert attributes == before

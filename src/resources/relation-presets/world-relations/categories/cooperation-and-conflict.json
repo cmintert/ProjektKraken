@@ -1,0 +1,81 @@
+{
+  "format": "kraken-relation-preset",
+  "version": 1,
+  "definitions": [
+    {
+      "key": "allied_with",
+      "forward_label": "Allied with",
+      "reverse_label": "Allied with",
+      "description": "The source is allied with the target.",
+      "category": "Cooperation & conflict",
+      "symmetric": true,
+      "forward_template": "{source} is allied with {target}.",
+      "reverse_template": "{target} is allied with {source}."
+    },
+    {
+      "key": "rival_of",
+      "forward_label": "Rival of",
+      "reverse_label": "Rival of",
+      "description": "The source is a rival of the target.",
+      "category": "Cooperation & conflict",
+      "symmetric": true,
+      "forward_template": "{source} is a rival of {target}.",
+      "reverse_template": "{target} is a rival of {source}."
+    },
+    {
+      "key": "negotiates_with",
+      "forward_label": "Negotiates with",
+      "reverse_label": "Negotiates with",
+      "description": "The source negotiates with the target.",
+      "category": "Cooperation & conflict",
+      "symmetric": true,
+      "forward_template": "{source} negotiates with {target}.",
+      "reverse_template": "{target} negotiates with {source}."
+    },
+    {
+      "key": "opposes",
+      "forward_label": "Opposes",
+      "reverse_label": "Opposed by",
+      "description": "The source opposes the target.",
+      "category": "Cooperation & conflict",
+      "forward_template": "{source} opposes {target}.",
+      "reverse_template": "{target} is opposed by {source}."
+    },
+    {
+      "key": "protects",
+      "forward_label": "Protects",
+      "reverse_label": "Protected by",
+      "description": "The source protects the target.",
+      "category": "Cooperation & conflict",
+      "forward_template": "{source} protects {target}.",
+      "reverse_template": "{target} is protected by {source}."
+    },
+    {
+      "key": "surveils",
+      "forward_label": "Surveils",
+      "reverse_label": "Under surveillance by",
+      "description": "The source surveils the target.",
+      "category": "Cooperation & conflict",
+      "forward_template": "{source} surveils {target}.",
+      "reverse_template": "{target} is under surveillance by {source}."
+    },
+    {
+      "key": "infiltrates",
+      "forward_label": "Infiltrates",
+      "reverse_label": "Infiltrated by",
+      "description": "The source infiltrates the target.",
+      "category": "Cooperation & conflict",
+      "forward_template": "{source} infiltrates {target}.",
+      "reverse_template": "{target} is infiltrated by {source}."
+    },
+    {
+      "key": "betrayed",
+      "forward_label": "Betrayed",
+      "reverse_label": "Betrayed by",
+      "description": "The source betrayed the target.",
+      "category": "Cooperation & conflict",
+      "forward_template": "{source} betrayed {target}.",
+      "reverse_template": "{target} was betrayed by {source}."
+    }
+  ]
+}

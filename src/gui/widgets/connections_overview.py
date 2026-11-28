@@ -36,6 +36,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.calendar import CalendarConverter
+from src.core.relation_vocabulary import Vocabulary
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.utils.theme_connections import connect_theme
@@ -76,10 +77,12 @@ class ConnectionsOverview(QWidget):
     navigate_requested = Signal(str)
     connect_requested = Signal(str)
     selection_changed = Signal(str)
+    relation_vocabulary_changed = Signal(dict)
 
     def __init__(self, kind: str, parent: QWidget | None = None) -> None:
         """Create one browser, with a guard supplied by its draft owner."""
         super().__init__(parent)
+        self.relation_vocabulary: Vocabulary = {}
         self.kind = kind
         self.selected_id = ""
         self.object_id = ""
@@ -275,6 +278,13 @@ class ConnectionsOverview(QWidget):
         self._time, self._calendar = time, calendar
         self._project()
 
+    def set_relation_vocabulary(self, vocabulary: Vocabulary) -> None:
+        """Refresh wording while preserving the selected assertion and draft."""
+        if vocabulary != self.relation_vocabulary:
+            self.relation_vocabulary = vocabulary
+            self.relation_vocabulary_changed.emit(dict(vocabulary))
+            self._project()
+
     def _project(self) -> None:
         self.rows = project_connections(
             *self._snapshots,
@@ -283,6 +293,7 @@ class ConnectionsOverview(QWidget):
             self.object_name,
             self._time,
             self._calendar,
+            vocabulary=self.relation_vocabulary,
         )
         self._render()
 

@@ -45,6 +45,7 @@ from src.gui.widgets.wrapping_buttons import WrappingPushButton
 from src.gui.widgets.wrapping_choices import WrappingCheckBox as QCheckBox
 
 _NARROW_SETTINGS_WIDTH = 800
+RELATION_DICTIONARY_CATEGORY = "Relation Dictionary"
 
 
 def read_control(control: Any) -> Any:
@@ -98,6 +99,7 @@ class SettingsCenter(QDialog):
     operation_requested = Signal(str)
     connection_requested = Signal(dict)
     graph_form_created = Signal(object)
+    relation_dictionary_requested = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize detached settings state and explicit dependencies."""
@@ -314,6 +316,24 @@ class SettingsCenter(QDialog):
             layout_of(advanced).addWidget(button)
         cast(QVBoxLayout, layout_of(advanced)).addStretch()
 
+    def _build_dictionary_page(self) -> None:
+        page = self._simple_page("world", RELATION_DICTIONARY_CATEGORY)
+        layout = layout_of(page)
+        description = QLabel(
+            "Customize how connections read in this world. Review and save each "
+            "definition in the dictionary."
+        )
+        description.setWordWrap(True)
+        layout.addWidget(description)
+        self.relation_dictionary_button = declare_inspection(
+            WrappingPushButton("Open Relation Dictionary"),
+            "settings.dictionary.open|settings.relation-dictionary|help-inspect-relation-dictionary-open",
+        )
+        self.relation_dictionary_button.clicked.connect(
+            self.relation_dictionary_requested.emit
+        )
+        layout.addWidget(self.relation_dictionary_button)
+
     def build_world_pages(self, snapshot: dict[str, Any]) -> None:
         """Replace world forms only for a new world/session, never on polling."""
         appearance = self._simple_page("world", "Appearance")
@@ -357,6 +377,7 @@ class SettingsCenter(QDialog):
             if self.lexicon.get_lexicon_config() == initial_lexicon
             else self.lexicon.get_lexicon_config()
         )
+        self._build_dictionary_page()
         self.world_forms_ready = True
         self._refresh_navigation()
 
@@ -371,7 +392,9 @@ class SettingsCenter(QDialog):
                 if read_control(control) != rendered:
                     write_control(control, rendered)
 
-    def render_complex(self, values: dict[str, Any]) -> None:
+    def render_complex(
+        self, values: dict[str, Any], *, relation_types: list[str] | None = None
+    ) -> None:
         """Hydrate changed complex snapshots, preserving untouched live editors."""
         if not self.world_forms_ready:
             return
@@ -392,14 +415,16 @@ class SettingsCenter(QDialog):
                 if name in self.grouping.colors:
                     widget.tag_color = self.grouping.colors[name]
                     widget.color_button.set_color(widget.tag_color)
-        if (
-            "world.lexicon" in values
-            and self.readers["world.lexicon"]() != values["world.lexicon"]
+        if relation_types is None:
+            relation_types = self.lexicon._relation_types
+        if "world.lexicon" in values and (
+            self.readers["world.lexicon"]() != values["world.lexicon"]
+            or self.lexicon._relation_types != relation_types
         ):
             data = {
                 "values": {"world.lexicon": values["world.lexicon"]},
                 "entity_types": self.lexicon._entity_types,
-                "relation_types": self.lexicon._relation_types,
+                "relation_types": relation_types,
                 "assets_dir": self.lexicon._assets_dir,
             }
             self.lexicon = LexiconSettingsForm(data, self)
@@ -512,6 +537,18 @@ class SettingsCenter(QDialog):
                 for word in ("mcp", "integration", "sharing", "local ai")
             ):
                 entries.append(("kraken", "Integrations", "", "Local AI access (MCP)"))
+            if ("world", RELATION_DICTIONARY_CATEGORY) in self.pages and any(
+                query.casefold() in term
+                for term in ("relation dictionary", "connection wording", "vocabulary")
+            ):
+                entries.append(
+                    (
+                        "world",
+                        RELATION_DICTIONARY_CATEGORY,
+                        "",
+                        "Relation Dictionary · This World",
+                    )
+                )
         else:
             entries = [
                 (s, category, "", category) for s, category in self.pages if s == scope
@@ -538,7 +575,9 @@ class SettingsCenter(QDialog):
             else "Kraken — local preferences. Connections and credentials stay on this computer."
         )
         self.reset_setting.setEnabled(bool(key and BY_ID[key].resettable))
-        self.reset_page.setEnabled(category != "Integrations")
+        self.reset_page.setEnabled(
+            category not in {"Integrations", RELATION_DICTIONARY_CATEGORY}
+        )
         if key in self.controls:
             self.controls[key].setFocus()
 

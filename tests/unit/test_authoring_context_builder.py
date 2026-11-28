@@ -47,6 +47,7 @@ def test_snapshot_round_trip_and_event_classification(db_service) -> None:
     place = _entity(db_service, "Bay", entity_id="place")
     mentioned = _entity(db_service, "Cipher", entity_id="mentioned")
     backlink = _entity(db_service, "Backlink", entity_id="backlink")
+    guild = _entity(db_service, "Guild", entity_id="guild")
     db_service.insert_relation(
         root.id,
         person.id,
@@ -57,6 +58,7 @@ def test_snapshot_round_trip_and_event_classification(db_service) -> None:
     occurrence = {"field": "description", "start_offset": 0, "end_offset": 8}
     db_service.reconcile_mentions(root.id, "description", {mentioned.id: [occurrence]})
     db_service.insert_relation(backlink.id, root.id, "involved")
+    db_service.insert_relation(root.id, guild.id, "member_of")
     db_service.reconcile_mentions(mentioned.id, "description", {root.id: [occurrence]})
 
     result = AuthoringContextBuilder(db_service).build_event_context(root.id)
@@ -65,9 +67,10 @@ def test_snapshot_round_trip_and_event_classification(db_service) -> None:
     assert [item.id for item in result.participants] == [person.id]
     assert [item.id for item in result.locations] == [place.id]
     assert [item.id for item in result.mentions] == [mentioned.id]
-    assert [(rel.source.id, rel.rel_type) for rel in result.direct_relations] == [
-        (backlink.id, "involved")
-    ]
+    assert {(rel.source.id, rel.rel_type) for rel in result.direct_relations} == {
+        (backlink.id, "involved"),
+        (root.id, "member_of"),
+    }
     assert EventAuthoringContext.from_dict(result.to_dict()) == result
 
 

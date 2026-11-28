@@ -83,8 +83,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
     Signals:
         save_requested(dict): Emitted when user clicks Save; payload is the event data.
         discard_requested(str): Emitted when user discards changes; payload is item_id.
-        add_relation_requested(str, str, str, dict, bool): Request to create a relation
-            (source_id, target_id, rel_type, attributes, bidirectional).
+        add_relation_requested(str, str, str, dict): Request to create a relation
+            (source_id, target_id, rel_type, attributes).
         remove_relation_requested(str): Request to delete a relation by rel_id.
         update_relation_requested(str, str, str, dict): Request to update a relation
             (rel_id, target_id, rel_type, attributes).
@@ -106,7 +106,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
     btn_edit_rel: StandardButton
     btn_remove_rel: DestructiveButton
 
-    add_relation_requested = Signal(str, str, str, dict, bool)
+    add_relation_requested = Signal(str, str, str, dict)
     remove_relation_requested = Signal(str)
     update_relation_requested = Signal(str, str, str, dict)
     relation_authoring_requested = Signal(dict)
@@ -742,6 +742,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
     def _on_sheet_changed(self) -> None:
         """Handle changes from the sheet builder."""
+        if self.sheet_builder.has_pending_snapshot:
+            return
         self.set_dirty(True)
         self._sync_attributes(source="sheet")
 
@@ -755,37 +757,24 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         if self._is_loading:
             return
 
-        if source == "sheet":
-            sheet_attrs = self.sheet_builder.get_attributes()
-            attr_attrs = self.attribute_editor.get_attributes()
+        if source == "table":
+            self.sheet_builder.sync_from_table(
+                self._current_event_id, self.attribute_editor.get_attributes()
+            )
+            return
 
-            for key, val in sheet_attrs.items():
-                if key in attr_attrs and attr_attrs[key] != val:
-                    self.attribute_editor.update_attribute_value(key, val)
-                elif key not in attr_attrs:
-                    self.attribute_editor._block_signals = True
-                    self.attribute_editor._add_row(key, val)
+        table_values = self.attribute_editor.get_attributes()
+        for key, value in self.sheet_builder.get_attributes().items():
+            if key not in table_values:
+                self.attribute_editor._block_signals = True
+                try:
+                    self.attribute_editor._add_row(key, value)
+                finally:
                     self.attribute_editor._block_signals = False
-
-            for key in list(attr_attrs.keys()):
-                if key not in sheet_attrs and key in self.sheet_builder._pairs:
-                    pass
-        elif source == "table":
-            sheet_attrs = self.sheet_builder.get_attributes()
-            attr_attrs = self.attribute_editor.get_attributes()
-
-            for key, val in attr_attrs.items():
-                if key in sheet_attrs and sheet_attrs[key] != val:
-                    self.sheet_builder.update_attribute_value(key, val)
-                elif key not in sheet_attrs and key in self.sheet_builder._pairs:
-                    pass
-
-            # If removed from table, remove from sheet
-            for key in list(sheet_attrs.keys()):
-                if key not in attr_attrs:
-                    setattr(self.sheet_builder, "_block_signals", True)
-                    self.sheet_builder.remove_attribute(key)
-                    setattr(self.sheet_builder, "_block_signals", False)
+            elif (
+                type(table_values[key]) is not type(value) or table_values[key] != value
+            ):
+                self.attribute_editor.update_attribute_value(key, value)
 
     def set_calendar_converter(self, converter: Any) -> None:
         """Sets the calendar converter for date formatting.
@@ -1105,6 +1094,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             if not self.relation_authoring.prepare_to_leave():
                 return
             self.relation_authoring.cancel()
+            self.sheet_builder.set_layout_editing(False, restore_focus=False)
             self.temporal_widget.reset_options()
             self._presentation.writing_disclosure.setChecked(False)
         focus = getattr(self, "_focus_controller", None)
@@ -1120,6 +1110,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         # Handle missing event (e.g., item was deleted)
         if event is None:
             self._current_event_id = None
+            self.sheet_builder.stage_attributes(None, {})
             self.show_world_at_event_action.setEnabled(False)
             if focus is not None:
                 focus._update_action()
@@ -1380,13 +1371,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.attribute_editor.load_attributes(display_attrs)
         self.attribute_editor.blockSignals(False)
 
-        # Load sheet builder with the same display attributes + stored layout
-        sheet_layout = event.attributes.get("_sheet_layout")
-        self.sheet_builder.blockSignals(True)
-        try:
-            self.sheet_builder.load_attributes(display_attrs, sheet_layout)
-        finally:
-            self.sheet_builder.blockSignals(False)
+        self.sheet_builder.stage_attributes(
+            event.id, display_attrs, event.attributes.get("_sheet_layout")
+        )
 
         # Load Summary
         self.summary_widget.clear_summary()
@@ -1751,6 +1738,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
         dlg = RelationEditDialog(
             parent=self,
+            relation_vocabulary=self.connections.relation_vocabulary,
+            source_kind="event",
             playhead_time=getattr(self, "_relation_playhead_time", None),
             rel_type=rel_type,
             suggestion_items=getattr(self, "_suggestion_items", []),
@@ -1762,15 +1751,15 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             known_types=getattr(self, "_suggestion_types", []),
         )
 
+        dlg.bind_vocabulary(self.connections.relation_vocabulary_changed)
         if dlg.exec():
-            target_id, rel_type, is_bidirectional, attributes = dlg.get_data()
+            target_id, rel_type, attributes = dlg.get_data()
             if target_id:
                 self.add_relation_requested.emit(
                     self._current_event_id,
                     target_id,
                     rel_type,
                     attributes,
-                    is_bidirectional,
                 )
 
     def _on_remove_relation_item(self, item: dict[str, Any]) -> None:
@@ -1811,10 +1800,13 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         dlg = RelationEditDialog(
             parent=self,
             playhead_time=getattr(self, "_relation_playhead_time", None),
+            relation_vocabulary=self.connections.relation_vocabulary,
+            source_kind=rel_data.get("source_kind")
+            or ("event" if rel_data.get("source_id") == self._current_event_id else ""),
+            incoming=rel_data.get("source_id") != self._current_event_id,
             source_name=rel_data.get("source_name") or self.name_edit.text(),
             target_id=rel_data["target_id"],
             rel_type=rel_data["rel_type"],
-            is_bidirectional=False,  # Editing existing
             attributes=rel_data.get("attributes"),  # Pass existing attributes
             suggestion_items=getattr(self, "_suggestion_items", []),
             calendar_converter=self._calendar_converter,
@@ -1828,11 +1820,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             target_kind=rel_data.get("target_kind"),
         )
 
-        # Hide bidirectional check for editing
-        dlg.bi_check.setVisible(False)
-
+        dlg.bind_vocabulary(self.connections.relation_vocabulary_changed)
         if dlg.exec():
-            target_id, rel_type, _, attributes = dlg.get_data()
+            target_id, rel_type, attributes = dlg.get_data()
             if target_id:
                 self.update_relation_requested.emit(
                     rel_data["id"], target_id, rel_type, attributes

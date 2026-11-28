@@ -32,6 +32,13 @@ logger = logging.getLogger(__name__)
 
 def add_relation(args: argparse.Namespace) -> int:
     """Add a relation between two entities/events."""
+    if args.bidirectional:
+        print(
+            "ERROR --bidirectional is retired. Run relation add once per direction "
+            "with the type intended for each.",
+            file=sys.stderr,
+        )
+        return 2
     db_service = None
     try:
         db_service = DatabaseService(args.database)
@@ -49,9 +56,7 @@ def add_relation(args: argparse.Namespace) -> int:
             print(f"ERROR Target not found: {args.target}", file=sys.stderr)
             return 1
 
-        cmd = AddRelationCommand(
-            args.source, args.target, args.type, bidirectional=args.bidirectional
-        )
+        cmd = AddRelationCommand(args.source, args.target, args.type)
         result = cmd.execute(db_service)
 
         if result.success:
@@ -61,8 +66,6 @@ def add_relation(args: argparse.Namespace) -> int:
             print(f"  Source: {source_name} ({source_short}...)")
             print(f"  Target: {target_name} ({target_short}...)")
             print(f"  Type: {args.type}")
-            if args.bidirectional:
-                print("  (bidirectional)")
             return 0
         else:
             print("ERROR Failed to add relation", file=sys.stderr)
@@ -252,7 +255,7 @@ def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: 
         "--bidirectional",
         "-b",
         action="store_true",
-        help="Create bidirectional relation",
+        help="Retired. Run relation add once per intended direction.",
     )
     add_parser.set_defaults(func=add_relation)
 
@@ -314,7 +317,7 @@ def main() -> None:
         logging.getLogger().setLevel(logging.DEBUG)
 
     # Validate database path (relations always require existing database)
-    if hasattr(args, "database"):
+    if hasattr(args, "database") and not getattr(args, "bidirectional", False):
         if not validate_database_path(args.database, allow_create=False):
             sys.exit(1)
 

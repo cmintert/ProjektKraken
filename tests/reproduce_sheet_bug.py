@@ -27,6 +27,10 @@ def test_sheet_builder_data_loss(editor, qtbot):
     assert editor.sheet_builder.get_attributes()["Strength"] == 10
 
     # 3. Modify "Strength" in Sheet Builder
+    editor.parentWidget().show()
+    editor.show()
+    editor.inspector.activate_section_id("sheet")
+    qtbot.waitUntil(editor.sheet_builder.isVisible)
     # We'll simulate editing the value edit within the AttributePairWidget
     strength_pair = editor.sheet_builder._pairs["Strength"]
     strength_pair.value_edit.setText("15")

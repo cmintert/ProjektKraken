@@ -1,0 +1,80 @@
+{
+  "format": "kraken-relation-preset",
+  "version": 1,
+  "definitions": [
+    {
+      "key": "based_in",
+      "forward_label": "Based in",
+      "reverse_label": "Home base for",
+      "description": "The source is based in the target.",
+      "category": "Place, access & custody",
+      "forward_template": "{source} is based in {target}.",
+      "reverse_template": "{target} serves as a base for {source}."
+    },
+    {
+      "key": "borders",
+      "forward_label": "Borders",
+      "reverse_label": "Borders",
+      "description": "The source borders the target.",
+      "category": "Place, access & custody",
+      "symmetric": true,
+      "forward_template": "{source} borders {target}.",
+      "reverse_template": "{target} borders {source}."
+    },
+    {
+      "key": "connects_to",
+      "forward_label": "Connects to",
+      "reverse_label": "Connects to",
+      "description": "The source connects to the target.",
+      "category": "Place, access & custody",
+      "symmetric": true,
+      "forward_template": "{source} connects to {target}.",
+      "reverse_template": "{target} connects to {source}."
+    },
+    {
+      "key": "has_access_to",
+      "forward_label": "Has access to",
+      "reverse_label": "Accessible to",
+      "description": "The source has access to the target.",
+      "category": "Place, access & custody",
+      "forward_template": "{source} has access to {target}.",
+      "reverse_template": "{target} is accessible to {source}."
+    },
+    {
+      "key": "controls_access_to",
+      "forward_label": "Controls access to",
+      "reverse_label": "Access controlled by",
+      "description": "The source controls access to the target.",
+      "category": "Place, access & custody",
+      "forward_template": "{source} controls access to {target}.",
+      "reverse_template": "{target} has access controlled by {source}."
+    },
+    {
+      "key": "owns",
+      "forward_label": "Owns",
+      "reverse_label": "Owned by",
+      "description": "The source owns the target.",
+      "category": "Place, access & custody",
+      "forward_template": "{source} owns {target}.",
+      "reverse_template": "{target} is owned by {source}."
+    },
+    {
+      "key": "holds_in_custody",
+      "forward_label": "Holds in custody",
+      "reverse_label": "Held in custody by",
+      "description": "The source holds the target in custody.",
+      "category": "Place, access & custody",
+      "forward_template": "{source} holds {target} in custody.",
+      "reverse_template": "{target} is held in custody by {source}."
+    },
+    {
+      "key": "hidden_in",
+      "forward_label": "Hidden in",
+      "reverse_label": "Conceals",
+      "description": "The source is hidden in the target.",
+      "category": "Place, access & custody",
+      "forward_template": "{source} is hidden in {target}.",
+      "reverse_template": "{target} conceals {source}."
+    }
+  ]
+}

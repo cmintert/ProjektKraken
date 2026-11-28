@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-11-24
-**Commit:** 0d548f8f
+**Last Updated:** 2026-11-27
+**Commit:** 9c660a0e
 ---
 
 # Changelog
@@ -11,7 +11,47 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Maintenance
+
+- *(2026-11-27)* **Tests**: Checked theme delivery after pending frame work
+  drains, including when a paint schedules delivery before a window hides.
+
+- *(2026-11-27)* **Tests**: Reconciled the reviewed inventory with three
+  obsolete hover tests replaced by Sheet behavior checks.
+
 ### Added
+
+- *(2026-11-27)* **FastInject templates**: Added a D&D 5e (2024) monster
+  stat block and a Delta Green Agent character sheet.
+
+- *(2026-11-27)* **World Relations preset pack**. Added 63 genre-neutral
+  relation definitions as a complete preset and eight category presets,
+  with an import guide.
+
+- *(2026-11-27)* **Relation Dictionary maintenance (KRT-185, KRT-76)**:
+  Added undoable definition removal with a wording preview and custom key
+  migration with a verified backup, impact review, and recovery instructions.
+  Added contextual Help and regression coverage for both operations.
+
+- *(2026-11-27)* **Relation presets (KRT-75)**: Added portable import and
+  export in the Relation Dictionary, with per-key conflict review and one
+  undo action for each import. Added contextual Help and regression coverage.
+
+- *(2026-11-25)* **Relation Dictionary (KRT-73)**: Added a world-local editor
+  in Settings → This World. Each undoable edit previews the affected count and
+  wording from both ends. Added contextual Help and regression coverage for
+  world packages, backups, and narrow layouts across all six themes.
+
+- *(2026-11-24)* **Relation authoring (KRT-72)**: Added searchable type
+  suggestions, a preview from either entry, and inline endpoint and lifecycle
+  guidance. Preserved free-text types and one-step loose capture. Updated Help
+  and added mouse, keyboard, and narrow-layout regression coverage.
+
+- *(2026-11-24)* **Relation wording (KRT-71)**: Added directional wording from
+  saved world definitions to Connections, relation previews, GraphView,
+  filters, and World Context. Preserved stored types, direction, and timing.
+  Updated Help and added regression coverage for both perspectives, caption
+  collisions, and world switching.
 
 - *(2026-11-23)* **Authoring (KRT-184)**: Added per-world tag scopes across
   Explorer, Timeline, Relations, and Search, with independent creation tags and
@@ -21,6 +61,25 @@ All notable changes to this project will be documented in this file.
   share one undo step, and the graph retains node positions during authoring.
 
 ### Fixed
+
+- *(2026-11-27)* **Relation preview (KRT-74)**. Keep the perspective button
+  readable in narrow inspectors. The tooltip retains the full entry name.
+  Updated contextual Help for the button.
+
+- *(2026-11-27)* **World Context participation**. Event membership links
+  appear as direct connections. Event participation uses explicit participation
+  keys. Updated the manual and regression coverage.
+
+- *(2026-11-24)* **Help (KRT-71)**: Made the relation direction explanation
+  reachable from the wording preview.
+
+- *(2026-11-24)* **Testing (KRT-70)**: Aligned the relation dependency check
+  with the shared core temporal validator used by endpoint safety.
+
+- *(2026-11-24)* **Relation safety (KRT-70)**: Protected source-bound timing and
+  state-change recipients during endpoint edits, while preserving legacy
+  reciprocal rows and history. Added regression coverage for undo, redo,
+  transfer, and narrow keyboard authoring.
 
 - *(2026-11-24)* **Scoped authoring (KRT-184)**: Used the focused graph node
   as the Connect source, refreshed Timeline group counts and occurrence marks
@@ -37,6 +96,23 @@ All notable changes to this project will be documented in this file.
   conflicting editor saves.
 
 ### Changed
+
+- *(2026-11-27)* **Sheet performance (KRT-187)**: Deferred hidden Sheet rows,
+  reduced the cost of building them, and reused attribute controls during
+  playhead updates. Updated contextual Help and added regression coverage for
+  saving before opening the Sheet, playhead refresh, and template creation.
+
+- *(2026-11-27)* **Sheet tab (KRT-186)**: Aligned inline keys and values in
+  Entity and Event sheets, added a single-column view for narrow inspectors,
+  and moved arrangement controls into **Edit layout**. Updated contextual
+  Help and covered wrapped labels, keyboard editing, and layout state.
+
+- *(2026-11-24)* **Relations and Help (KRT-70)**: Made each creation action save
+  one directed relation visible from either endpoint. Retired the CLI
+  `--bidirectional` flag with guidance for entering each fact separately.
+- *(2026-11-24)* **Architecture (KRT-69)**: Drafted the world relation
+  vocabulary schema, consumer audit, and compatibility matrix. Defined how
+  world-wide display labels preserve stored keys and lifecycle behavior.
 
 - *(2026-11-24)* **Windows packaging**: Logged the successful package
   world-data check.

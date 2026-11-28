@@ -178,6 +178,17 @@ class CommandCoordinator(QObject):
         self.undo_stack, self.redo_stack = undo, redo
         self._emit_history_changed()
 
+    def begin_exclusive_mutation(self) -> bool:
+        """Reserve mutation dispatch after earlier commands have settled."""
+        if (
+            self.mutations_suspended
+            or self._pending_commands
+            or self._undo_redo_in_progress
+        ):
+            return False
+        self.mutations_suspended = True
+        return True
+
     def execute_command(self, command: "BaseCommand") -> None:
         """Execute a command via the worker thread.
 

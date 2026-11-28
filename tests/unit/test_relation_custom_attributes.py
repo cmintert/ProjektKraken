@@ -22,7 +22,7 @@ def test_ordinary_relation_attributes_are_not_promoted_to_payload(app):
 
     dialog = RelationEditDialog(attributes=initial_attributes)
 
-    _, _, _, result_attributes = dialog.get_data()
+    _, _, result_attributes = dialog.get_data()
 
     assert result_attributes.get("weight") == 2.5
     assert "payload" not in result_attributes

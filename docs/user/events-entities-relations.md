@@ -403,6 +403,24 @@ to the inspector when you want to work on her attributes or connections.
 
 ## Create relations
 
+Connections can show different wording at each end of a saved relation when
+the world has a vocabulary definition for its type. A marriage may read “Ada
+is married to Ben” from Ada and “Ben is married to Ada” from Ben. Both views
+show the same relation and timing. Without a definition, Connections displays
+the saved type in the original direction. The relation editor shows the saved
+type in **Meaning** and the resolved wording in its preview.
+
+When you refine a connection, search **Meaning** by its saved type or its
+label. Choose a suggestion to fill in the saved type, or type your own phrase.
+If a type usually connects different kinds of entries, the preview explains
+the preference. You can still apply a valid relation.
+
+(help-inspect-relation-preview-other-entry)=
+
+**View from other entry** shows how the same draft reads from the other end.
+Use the same button to switch back. The direction and timing of the draft
+stay the same when you switch views.
+
 Relations record named, directional connections between Events and Entities. Use them
 when you want to express something beyond a value or a reference in prose.
 
@@ -487,7 +505,11 @@ draft guard and confirmation. It does not delete either endpoint. System-managed
 References cannot be removed here; change their originating prose instead.
 
 A relation does not automatically change a similarly named attribute or wiki link.
-Creating a reverse connection is a separate deliberate choice.
+Save a connection once and find it in **Connections** from either entry. In
+GraphView, choose **From → To** or **To → From** to set the saved direction.
+If a second fact is true in the opposite direction, create a separate connection
+with its own direction, type and timing. To do so from the inspector, start
+from the other entry.
 
 **Example:** Record Ada’s membership in a dynasty as a relation. Read the source, target
 and meaning together to ensure the connection expresses the intended direction.
@@ -632,6 +654,14 @@ Context Tags** to set an independent list. Kraken restores the selected policy
 for each world.
 
 (help-authoring-templates)=
+
+## Use and arrange a sheet
+
+Open an Entity or Event and choose **Details → Sheet**. Click a value or Tab to
+it to make a change. To arrange the sheet, choose **Edit layout**. Use the Add
+commands or **More Sheet actions** at narrow widths, and right-click a row for
+its layout commands. Choose **Done editing layout** to return to the sheet.
+Use the editor's **Save Changes** to save your draft.
 
 ## Insert structured content with Fast Inject
 
@@ -1307,8 +1337,8 @@ determines when it stops applying.
 
 (help-inspect-src-gui-widgets-relation-form-relationform-init-self-bi-check)=
 
-**Bidirectional (Create reverse link)** — Also create a reverse connection when
-accepting this new relation. This is a deliberate choice, not automatic synchronization.
+**Creating a reciprocal fact** — Save the first connection. Start a separate
+connection in the opposite direction and choose the type that describes it.
 
 (help-inspect-src-gui-widgets-relation-form-relationform-group-boundaries-disclosure)=
 
@@ -1404,6 +1434,12 @@ fields first; opening Help does not accept them.
 
 **Cancel** — Cancel this Relation Type Picker operation without accepting its pending
 changes. This is separate from applying or saving them.
+
+(help-inspect-sheet-edit-layout)=
+
+**Edit layout / Done editing layout** — Show or hide the controls for arranging
+the sheet. You can edit attribute values in either view. Leaving layout editing
+keeps changes in your draft.
 
 (help-inspect-src-gui-widgets-sheet-builder-attributepairwidget-init-self-value-edit)=
 

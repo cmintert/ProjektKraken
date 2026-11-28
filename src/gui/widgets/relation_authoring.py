@@ -8,7 +8,6 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QKeyEvent
 from PySide6.QtWidgets import (
     QApplication,
-    QComboBox,
     QFormLayout,
     QFrame,
     QLabel,
@@ -20,12 +19,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.core.relation_policy import has_direction_sensitive_attributes
+from src.core.relation_policy import endpoint_change_error
 from src.core.relation_presentation import (
-    authoring_caption,
     authoring_choices,
-    inline_relation_preview,
 )
+from src.core.relation_vocabulary import filter_labels, relation_label
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.utils.theme_connections import connect_theme
@@ -34,6 +32,7 @@ from src.gui.widgets.editor_presentation import DisclosureButton
 from src.gui.widgets.overflow_toolbar import OverflowToolBar
 from src.gui.widgets.relation_drop_target import RelationDropTarget
 from src.gui.widgets.relation_form import RelationForm, take_form_row
+from src.gui.widgets.relation_guidance import RelationTypeField
 from src.gui.widgets.relation_target import RelationTargetEdit
 from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
 
@@ -74,6 +73,7 @@ class RelationAuthoring(QFrame):
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
         self.heading = QLabel("Edit relationship")
+        self.heading.setTextFormat(Qt.TextFormat.PlainText)
         self.heading.setWordWrap(True)
         self.heading.setStyleSheet(StyleHelper.get_section_header_style())
         self._layout.addWidget(self.heading)
@@ -262,14 +262,19 @@ class RelationAuthoring(QFrame):
             f"{self.source_name} → {self.editor.name_edit.text()}: "
             "connection — kind not specified"
         )
+        preview.setTextFormat(Qt.TextFormat.PlainText)
         preview.setWordWrap(True)
         self.body_layout.insertWidget(0, preview)
         meaning = declare_inspection(
             ScrollSafeComboBox(),
             "src-gui-widgets-relation-authoring-relationauthoring-stage-drop-meaning|relations.create|help-inspect-src-gui-widgets-relation-authoring-relationauthoring-stage-drop-meaning",
         )
-        for value, title in authoring_choices():
-            meaning.addItem(title, value)
+        labels = filter_labels(
+            (value for value, _ in authoring_choices()),
+            self.editor.connections.relation_vocabulary,
+        )
+        for value, label in labels.items():
+            meaning.addItem(label, value)
         self.body_layout.insertWidget(1, meaning)
         meaning.currentIndexChanged.connect(
             lambda: self._set_drop_meaning(str(meaning.currentData()), preview)
@@ -283,7 +288,7 @@ class RelationAuthoring(QFrame):
         self.capture_type = kind
         preview.setText(
             f"{self.source_name} → {self.editor.name_edit.text()}: "
-            f"{authoring_caption(kind)}"
+            f"{relation_label(kind, self.editor.connections.relation_vocabulary)}"
         )
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
@@ -372,9 +377,7 @@ class RelationAuthoring(QFrame):
         self._take_widget(fields, form.target_edit)
         form.target_edit.hide()
         self._take_widget(fields, form.type_edit)
-        self._take_widget(fields, form.preview_label)
-        self._take_widget(fields, form.bi_check)
-        form.bi_check.hide()
+        self._take_widget(fields, form.relation_guide)
         attributes = form.attributes_group.layout()
         assert isinstance(attributes, QFormLayout)
         self._take_widget(attributes, form.notes_edit)
@@ -406,25 +409,19 @@ class RelationAuthoring(QFrame):
         )
 
         self.meaning = declare_inspection(
-            ScrollSafeComboBox(),
+            RelationTypeField(),
             "src-gui-widgets-relation-authoring-relationauthoring-progressive-form-self-meaning|relations.create|help-inspect-src-gui-widgets-relation-authoring-relationauthoring-progressive-form-self-meaning",
         )
-        self.meaning.setEditable(True)
-        self.meaning.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
-        self.meaning.setToolTip("Choose an existing meaning or type a new phrase.")
-        for value, title in authoring_choices(
-            getattr(self.editor, "_suggestion_types", []), self.relation["rel_type"]
-        ):
-            self.meaning.addItem(title, value)
-        self.meaning.setCurrentIndex(self.meaning.findData(self.relation["rel_type"]))
+        self.meaning.setToolTip("Choose an existing type or type a new phrase.")
+        self.meaning.setEditText(self.relation["rel_type"])
         self.meaning.currentTextChanged.connect(self._meaning_changed)
         self.meaning.currentIndexChanged.connect(self._meaning_changed)
         line_edit = self.meaning.lineEdit()
         assert line_edit is not None
         line_edit.installEventFilter(self)
         fields.addRow("Meaning", self.meaning)
-        fields.addRow(form.preview_label)
-        form.preview_label.show()
+        fields.addRow(form.relation_guide)
+        form.relation_guide.show()
         self.reverse_button = declare_inspection(
             StandardButton("Reverse direction"),
             "src-gui-widgets-relation-authoring-relationauthoring-progressive-form-self-reverse-button|relations.create|help-inspect-src-gui-widgets-relation-authoring-relationauthoring-progressive-form-self-reverse-button",
@@ -502,41 +499,75 @@ class RelationAuthoring(QFrame):
 
     def _meaning_changed(self, *_args: Any) -> None:
         assert self.form is not None
-        index = self.meaning.currentIndex()
-        text = self.meaning.currentText()
-        # Display captions never become stable keys merely by opening/refocusing.
-        value = (
-            self.meaning.itemData(index)
-            if index >= 0 and text == self.meaning.itemText(index)
-            else text.strip()
-        )
-        self.form.type_edit.setCurrentText(str(value))
+        self.form.type_edit.setCurrentText(self.meaning.currentText().strip())
+        self._preview()
+
+    def refresh_wording(self) -> None:
+        """Refresh the active draft's read-only wording."""
         self._preview()
 
     def _preview(self, *args: Any) -> None:
         if self.form is None or self.relation is None:
             return
         target_name = self.relation.get("target_name") or self.form.target_edit.text()
-        preview = inline_relation_preview(
-            self.source_name,
-            target_name,
-            self.form.type_edit.currentText(),
-            source_is_event=self.form.source_event_date is not None,
-            reversed_direction=self.reversed,
+        source_id, target_id = self.source_id, self.relation["target_id"]
+        source_name = self.source_name
+        source_kind, target_kind = self._endpoint_kinds(source_id, target_id)
+        if self.reversed:
+            source_id, target_id = target_id, source_id
+            source_name, target_name = target_name, source_name
+            source_kind, target_kind = target_kind, source_kind
+        vocabulary = self.editor.connections.relation_vocabulary
+        keys = (
+            value
+            for value, _ in authoring_choices(
+                getattr(self.editor, "_suggestion_types", []), self.relation["rel_type"]
+            )
         )
-        self.form.preview_label.setText(preview.text)
-        self._assertion_caption = preview.assertion
+        self.meaning.set_suggestions(keys, vocabulary, source_kind, target_kind)
+        wording = self.form.relation_guide.set_draft(
+            {
+                "id": self.relation["id"],
+                "rel_type": self.form.type_edit.currentText(),
+                "source_id": source_id,
+                "target_id": target_id,
+                "source_name": source_name,
+                "target_name": target_name,
+            },
+            vocabulary,
+            source_kind,
+            target_kind,
+            incoming=target_id == self._current_id() and source_id != target_id,
+        )
+        self._assertion_caption = wording.assertion
+        if wording.label != wording.key:
+            self._assertion_caption += f" · {wording.key}"
         self._draft_caption()
+
+    def _endpoint_kinds(self, source_id: str, target_id: str) -> tuple[str, str]:
+        assert self.relation is not None and self.form is not None
+        kinds = self.form.target_edit.id_to_kind
+        current = self._current_id()
+        current_kind = (
+            "event" if getattr(self.editor, "_current_event_id", None) else "entity"
+        )
+        return (
+            self.relation.get("source_kind")
+            or (current_kind if source_id == current else kinds.get(source_id, "")),
+            self.relation.get("target_kind")
+            or (current_kind if target_id == current else kinds.get(target_id, "")),
+        )
 
     def _reverse(self) -> None:
         assert self.form is not None and self.relation is not None
-        attrs = self.form.get_data()[3]
-        if has_direction_sensitive_attributes(attrs):
-            self._status(
-                "This relation uses its source event for timing or state changes. "
-                "Refine those details before reversing its direction."
+        if not self.reversed:
+            target, _, attributes = self.form.get_data()
+            error = endpoint_change_error(
+                self.relation, target, self.source_id, attributes
             )
-            return
+            if error:
+                self._status(error)
+                return
         self.reversed = not self.reversed
         self.reverse_button.setText(
             "Restore direction" if self.reversed else "Reverse direction"
@@ -643,11 +674,13 @@ class RelationAuthoring(QFrame):
                 return
             if not self.form.validate():
                 return
-            target, kind, _, attrs = self.form.get_data()
-            if self.reversed and has_direction_sensitive_attributes(attrs):
-                self._status(
-                    "Keep the source direction for source-event timing or state changes."
-                )
+            target, kind, attrs = self.form.get_data()
+            source_id, target_id = (
+                (target, self.source_id) if self.reversed else (self.source_id, target)
+            )
+            error = endpoint_change_error(self.relation, source_id, target_id, attrs)
+            if error:
+                self._status(error)
                 return
             if not kind:
                 self._status("Choose a meaning or enter a custom type.")
@@ -655,13 +688,13 @@ class RelationAuthoring(QFrame):
             request.update(
                 operation="refine",
                 id=self.relation["id"],
-                target_id=target,
+                target_id=target_id,
                 rel_type=kind,
                 attributes=attrs,
                 expected=deepcopy(self.relation),
             )
             if self.reversed:
-                request["source_id"], request["target_id"] = target, self.source_id
+                request["source_id"] = source_id
         else:
             return
         self.pending_id = str(uuid4())
@@ -758,6 +791,12 @@ class RelationAuthoring(QFrame):
         from PySide6.QtCore import QEvent
 
         if event.type() == QEvent.Type.KeyPress and event.key() == Qt.Key.Key_Escape:
+            meaning = getattr(self, "meaning", None)
+            if meaning is not None and obj is meaning.lineEdit():
+                completer = meaning.completer()
+                if completer is not None and completer.popup().isVisible():
+                    completer.popup().hide()
+                    return True
             self.cancel()
             return True
         return super().eventFilter(obj, event)

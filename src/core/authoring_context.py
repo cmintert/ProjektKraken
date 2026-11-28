@@ -91,6 +91,7 @@ class ContextRelation:
     temporal_behavior: str = ""
     temporal_summary: str = ""
     temporal_evidence: dict[str, Any] | None = None
+    display_text: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-safe representation."""
@@ -107,6 +108,7 @@ class ContextRelation:
             "temporal_behavior": self.temporal_behavior,
             "temporal_summary": self.temporal_summary,
             "temporal_evidence": self.temporal_evidence,
+            **({"display_text": self.display_text} if self.display_text else {}),
         }
 
     @classmethod
@@ -130,6 +132,7 @@ class ContextRelation:
             temporal_behavior=str(data.get("temporal_behavior", "")),
             temporal_summary=str(data.get("temporal_summary", "")),
             temporal_evidence=data.get("temporal_evidence"),
+            display_text=data.get("display_text"),
             valid_from=(
                 float(data["valid_from"])
                 if data.get("valid_from") is not None

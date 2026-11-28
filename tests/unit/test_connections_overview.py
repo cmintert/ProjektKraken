@@ -71,7 +71,7 @@ def test_both_overview_perspectives_preserve_canonical_assertion(predicate):
     before = deepcopy(snapshot)
     outgoing = project_connections([snapshot], [], "entity", "source", "Tasgillia")[0]
     incoming = project_connections([], [snapshot], "entity", "target-0", "House 0")[0]
-    caption = "Member of" if predicate == "member_of" else predicate
+    caption = predicate
     assert outgoing.meaning == incoming.meaning == caption
     assert (
         outgoing.assertion == incoming.assertion == f"Tasgillia → {caption} → House 0"
@@ -326,16 +326,27 @@ def test_group_keyboard_never_removes_a_previously_selected_relation(inspector, 
 
 
 def test_minimum_height_uses_wrapped_content_without_overlap(
-    inspector, qtbot, qapp, monkeypatch
+    inspector, qtbot, qapp, monkeypatch, tmp_path
 ):
     QFontDatabase.addApplicationFont("C:/Windows/Fonts/segoeui.ttf")
     inspector.setFont(QFont("Segoe UI", 10))
     inspector.resize(360, 720)
     long_row = saved(
-        0, target_name="House Bjornaer of the Northern Forest and Forgotten Marshes"
+        0,
+        "member_of",
+        target_name="House Bjornaer of the Northern Forest and Forgotten Marshes",
     )
     refresh(inspector, [long_row])
     view = inspector.connections
+    view.set_relation_vocabulary(
+        {
+            "member_of": {
+                "forward_label": "Associated with",
+                "reverse_label": "Associations",
+                "forward_template": "{source} is associated with {target}.",
+            }
+        }
+    )
     view.select_relation("relation-0")
     view.edit_selected()
     panel = inspector.relation_authoring
@@ -361,6 +372,8 @@ def test_minimum_height_uses_wrapped_content_without_overlap(
             assert (
                 panel.body_scroll.geometry().bottom() < panel.footer.geometry().top()
             ), theme
+            assert "is associated with" in panel.form.preview_label.text(), theme
+            assert inspector.grab().save(str(tmp_path / f"{theme}.png")), theme
     finally:
         qapp.setStyleSheet(previous_style)
 
@@ -397,7 +410,7 @@ def test_meaning_is_editable_and_reuses_known_keys_without_custom_mode(inspector
     inspector.connections.edit_selected()
     panel = inspector.relation_authoring
     assert panel.meaning.isEditable()
-    assert panel.meaning.currentText() == "Member of"
+    assert panel.meaning.currentText() == "member_of"
     assert panel.form.type_edit.currentText() == "member_of"
     assert panel.form.type_edit.isHidden()
     assert panel.meaning.findText("Custom type…") == -1
@@ -425,6 +438,41 @@ def test_editable_display_caption_does_not_rewrite_stable_type_on_notes_edit(ins
     inspector.relation_authoring_requested.connect(requests.append)
     panel.apply()
     assert requests[0]["rel_type"] == "member_of"
+
+
+def test_narrow_perspective_switch_and_popup_escape_keep_inline_draft(inspector, qtbot):
+    inspector.resize(360, 720)
+    inspector.connections.set_relation_vocabulary(
+        {
+            "member_of": {
+                "forward_label": "Member of",
+                "reverse_label": "Members",
+                "forward_template": "{source} is a member of {target}.",
+                "reverse_template": "{target} has {source} as a member.",
+            }
+        }
+    )
+    refresh(inspector, [saved(0, "member_of")])
+    inspector.connections.select_relation("relation-0")
+    inspector.connections.edit_selected()
+    panel = inspector.relation_authoring
+    guide = panel.form.relation_guide
+    assert guide.preview.text() == "Tasgillia is a member of House 0."
+    button = guide.other
+    button.setFocus()
+    qtbot.keyClick(button, Qt.Key.Key_Space)
+    assert guide.preview.text() == "House 0 has Tasgillia as a member."
+    assert not panel.reversed and not panel.is_dirty()
+
+    line = panel.meaning.lineEdit()
+    line.setFocus()
+    line.selectAll()
+    qtbot.keyClicks(line, "Member of")
+    popup = panel.meaning.completer().popup()
+    qtbot.waitUntil(popup.isVisible)
+    qtbot.keyClick(line, Qt.Key.Key_Escape)
+    assert not popup.isVisible()
+    assert panel.form.type_edit.currentText() == "Member of"
 
 
 def test_editor_heading_is_plain_and_empty_meaning_stays_local(inspector):

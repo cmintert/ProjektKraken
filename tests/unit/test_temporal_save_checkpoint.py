@@ -676,6 +676,10 @@ def test_acknowledgement_keeps_newer_attribute_edits(
     editor, db_service, qtbot, event_owned
 ):
     entity, state = _setup(editor, db_service, event_owned=event_owned)
+    editor.parentWidget().show()
+    editor.show()
+    editor.inspector.activate_section_id("sheet")
+    qtbot.waitUntil(editor.sheet_builder.isVisible)
     value = editor.sheet_builder._pairs["owner"].value_edit
     value.setPlainText("Navy")
     with qtbot.waitSignal(editor.temporal_save_requested) as request:

@@ -92,8 +92,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         save_requested(dict): Emitted when user clicks Save; payload is entity data.
         discard_requested(str): Emitted when user discards changes; payload is item_id.
         inject_requested(dict): Request to run inject command with given data.
-        add_relation_requested(str, str, str, dict, bool): Request to create a relation
-            (source_id, target_id, rel_type, attributes, bidirectional).
+        add_relation_requested(str, str, str, dict): Request to create a relation
+            (source_id, target_id, rel_type, attributes).
         remove_relation_requested(str): Request to delete a relation by rel_id.
         update_relation_requested(str, str, str, dict): Request to update a relation
             (rel_id, target_id, rel_type, attributes).
@@ -114,7 +114,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
     btn_edit_rel: StandardButton
     btn_remove_rel: DestructiveButton
 
-    add_relation_requested = Signal(str, str, str, dict, bool)
+    add_relation_requested = Signal(str, str, str, dict)
     remove_relation_requested = Signal(str)
     update_relation_requested = Signal(str, str, str, dict)
     relation_authoring_requested = Signal(dict)
@@ -690,6 +690,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
     def _on_sheet_changed(self) -> None:
         """Handle changes from the sheet builder."""
+        if self.sheet_builder.has_pending_snapshot:
+            return
         self.set_dirty(True)
         self._sync_attributes(source="sheet")
 
@@ -703,40 +705,24 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         if self._is_loading:
             return
 
-        if source == "sheet":
-            sheet_attrs = self.sheet_builder.get_attributes()
-            attr_attrs = self.attribute_editor.get_attributes()
+        if source == "table":
+            self.sheet_builder.sync_from_table(
+                self._current_entity_id, self.attribute_editor.get_attributes()
+            )
+            return
 
-            for key, val in sheet_attrs.items():
-                if key in attr_attrs and attr_attrs[key] != val:
-                    self.attribute_editor.update_attribute_value(key, val)
-                elif key not in attr_attrs:
-                    self.attribute_editor._block_signals = True
-                    self.attribute_editor._add_row(key, val)
+        table_values = self.attribute_editor.get_attributes()
+        for key, value in self.sheet_builder.get_attributes().items():
+            if key not in table_values:
+                self.attribute_editor._block_signals = True
+                try:
+                    self.attribute_editor._add_row(key, value)
+                finally:
                     self.attribute_editor._block_signals = False
-
-            for key in list(attr_attrs.keys()):
-                if key not in sheet_attrs and key in self.sheet_builder._pairs:
-                    # User removed an attribute from the table?
-                    pass
-        elif source == "table":
-            sheet_attrs = self.sheet_builder.get_attributes()
-            attr_attrs = self.attribute_editor.get_attributes()
-
-            for key, val in attr_attrs.items():
-                if key in sheet_attrs and sheet_attrs[key] != val:
-                    self.sheet_builder.update_attribute_value(key, val)
-                elif key not in sheet_attrs and key in self.sheet_builder._pairs:
-                    # Attribute was added to the table, but the sheet only shows
-                    # things in its layout. We don't auto-add to the sheet layout.
-                    pass
-
-            # If removed from table, remove from sheet
-            for key in list(sheet_attrs.keys()):
-                if key not in attr_attrs:
-                    setattr(self.sheet_builder, "_block_signals", True)
-                    self.sheet_builder.remove_attribute(key)
-                    setattr(self.sheet_builder, "_block_signals", False)
+            elif (
+                type(table_values[key]) is not type(value) or table_values[key] != value
+            ):
+                self.attribute_editor.update_attribute_value(key, value)
 
     def update_suggestions(
         self,
@@ -857,6 +843,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             if not self.relation_authoring.prepare_to_leave():
                 return
             self.relation_authoring.cancel()
+            self.sheet_builder.set_layout_editing(False, restore_focus=False)
         focus = getattr(self, "_focus_controller", None)
         if (
             focus is not None
@@ -869,6 +856,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self._pending_temporal_submission = None
             self._temporal_checkpoint_invalid = False
             self._current_entity_id = None
+            self.sheet_builder.stage_attributes(None, {})
             self._temporal_state = None
             self._temporal_time = None
             if focus is not None:
@@ -1081,13 +1069,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         finally:
             self.attribute_editor.blockSignals(False)
 
-        # Load sheet builder with the same display attributes + stored layout
-        sheet_layout = entity.attributes.get("_sheet_layout")
-        self.sheet_builder.blockSignals(True)
-        try:
-            self.sheet_builder.load_attributes(display_attrs, sheet_layout)
-        finally:
-            self.sheet_builder.blockSignals(False)
+        self.sheet_builder.stage_attributes(
+            entity.id, display_attrs, entity.attributes.get("_sheet_layout")
+        )
 
         self.tag_editor.blockSignals(True)
         try:
@@ -1322,6 +1306,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self.desc_edit.clear()
         self.connections.set_relations([], [], "", "")
         self._content_widget.hide()
+        self.sheet_builder.stage_attributes(None, {})
         self._empty_state.show()
 
     def set_relation_time_context(self, time: float, converter: Any) -> None:
@@ -1343,7 +1328,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         Launches :class:`~src.gui.dialogs.relation_dialog.RelationEditDialog`
         pre-populated with known entity/event items and relation types for
         autocompletion.  On acceptance, emits :attr:`add_relation_requested`
-        with the chosen target, type, bidirectional flag, and extra attributes.
+        with the chosen target, type, and extra attributes.
 
         Returns early if no entity is currently loaded.
 
@@ -1355,21 +1340,23 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         dlg = RelationEditDialog(
             parent=self,
+            relation_vocabulary=self.connections.relation_vocabulary,
+            source_kind="entity",
             calendar_converter=getattr(self, "_relation_calendar", None),
             playhead_time=getattr(self, "_relation_playhead_time", None),
             suggestion_items=getattr(self, "_suggestion_items", []),
             known_types=getattr(self, "_suggestion_types", []),
         )
 
+        dlg.bind_vocabulary(self.connections.relation_vocabulary_changed)
         if dlg.exec():
-            target_id, rel_type, is_bidirectional, attributes = dlg.get_data()
+            target_id, rel_type, attributes = dlg.get_data()
             if target_id:
                 self.add_relation_requested.emit(
                     self._current_entity_id,
                     target_id,
                     rel_type,
                     attributes,
-                    is_bidirectional,
                 )
 
     def _on_remove_relation_item(self, item: dict[str, Any]) -> None:
@@ -1422,22 +1409,24 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             parent=self,
             calendar_converter=getattr(self, "_relation_calendar", None),
             playhead_time=getattr(self, "_relation_playhead_time", None),
+            relation_vocabulary=self.connections.relation_vocabulary,
+            source_kind=rel_data.get("source_kind")
+            or (
+                "entity" if rel_data.get("source_id") == self._current_entity_id else ""
+            ),
+            incoming=rel_data.get("source_id") != self._current_entity_id,
             source_name=rel_data.get("source_name") or self.name_edit.text(),
             target_id=rel_data["target_id"],
             rel_type=rel_data["rel_type"],
-            is_bidirectional=False,
             attributes=rel_data.get("attributes"),
             # Editing existing relation implies directional update typically
             suggestion_items=getattr(self, "_suggestion_items", []),
             known_types=getattr(self, "_suggestion_types", []),
         )
 
-        # Hide bidirectional check for editing as logic might be complex
-        # handling existing reverse links
-        dlg.bi_check.setVisible(False)
-
+        dlg.bind_vocabulary(self.connections.relation_vocabulary_changed)
         if dlg.exec():
-            target_id, rel_type, _, attributes = dlg.get_data()
+            target_id, rel_type, attributes = dlg.get_data()
             if target_id:
                 self.update_relation_requested.emit(
                     rel_data["id"], target_id, rel_type, attributes
@@ -1563,23 +1552,27 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self._is_loading = True
         self.desc_edit.blockSignals(True)
         self.attribute_editor.blockSignals(True)
-        self.sheet_builder.blockSignals(True)
         try:
             if not same_temporal_context or description_changed:
                 self.desc_edit.set_wiki_text(state["description"])
-            self.attribute_editor.load_attributes(state["attributes"])
+            self.attribute_editor.refresh_attributes(state["attributes"])
             display_attrs = {
                 key: value
                 for key, value in state["attributes"].items()
                 if not key.startswith("_")
             }
-            self.sheet_builder.load_attributes(
-                display_attrs, self.sheet_builder.get_layout()
+            sources = state.get("attribute_sources", {})
+            self.sheet_builder.stage_attributes(
+                entity_id,
+                display_attrs,
+                self.sheet_builder.get_layout(),
+                source_labels={
+                    key: self._source_caption(sources.get(key)) for key in display_attrs
+                },
             )
         finally:
             self.desc_edit.blockSignals(False)
             self.attribute_editor.blockSignals(False)
-            self.sheet_builder.blockSignals(False)
             self._is_loading = False
         if not same_temporal_context or description_changed:
             editor = self.desc_edit.editor
@@ -1623,10 +1616,6 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self.temporal_snapshot_label.setToolTip("")
         self.temporal_snapshot_banner.show()
         self.attribute_editor.set_source_labels(state.get("attribute_sources", {}))
-        for key, pair in self.sheet_builder._pairs.items():
-            pair.setToolTip(
-                self._source_caption(state.get("attribute_sources", {}).get(key))
-            )
 
     @staticmethod
     def _possible_effects_text(effects: list[dict[str, Any]]) -> str:
@@ -1935,6 +1924,13 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             )
             self.attribute_editor.set_source_labels(
                 self._temporal_state["attribute_sources"]
+            )
+            sources = self._temporal_state["attribute_sources"]
+            self.sheet_builder.set_source_labels(
+                {
+                    key: self._source_caption(sources.get(key))
+                    for key in self.sheet_builder.get_attributes()
+                }
             )
             if self._pending_new_description_event == submitted.description_event:
                 self._pending_new_description_event = None

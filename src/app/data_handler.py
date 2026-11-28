@@ -513,6 +513,34 @@ class DataHandler(QObject):
             return True
         return False
 
+    def _needs_command_refresh(self, result: CommandResult) -> bool:
+        """Route dictionary acknowledgements and generic command failures."""
+        if not isinstance(result, CommandResult):
+            logger.warning("[DataHandler] Received non-CommandResult object")
+            return False
+        command = result.command_name
+        dictionary_commands = {
+            "EditRelationDefinitionCommand",
+            "ImportRelationPresetCommand",
+            "RemoveRelationDefinitionCommand",
+        }
+        if command in dictionary_commands or (
+            result.success
+            and command.removeprefix("Undo_").removeprefix("Redo_")
+            in dictionary_commands
+        ):
+            # Settings publishes committed wording without rebuilding lore editors.
+            return False
+        if result.success:
+            return True
+        if "temporal_dependencies" in result.data:
+            # CommandCoordinator owns this preflight confirmation.
+            return False
+        logger.warning("[DataHandler] Command failed: %s", result.message)
+        if result.message:
+            self.command_failed.emit(result.message)
+        return False
+
     @Slot(CommandResult)
     def on_command_finished(self, result: CommandResult) -> None:  # noqa: C901
         """Handles completion of async commands, emitting signals for necessary UI
@@ -522,30 +550,10 @@ class DataHandler(QObject):
             result: CommandResult object containing execution status.
 
         """
-        logger.info(
-            f"[DataHandler] on_command_finished: {result.command_name} "
-            f"success={result.success}"
-        )
-
-        if not isinstance(result, CommandResult):
-            logger.warning("[DataHandler] Received non-CommandResult object")
+        if not self._needs_command_refresh(result):
             return
-
         command_name = result.command_name
-        success = result.success
-        message = result.message
-
-        # Determine what to reload based on command
-        if not success:
-            if "temporal_dependencies" in result.data:
-                # CommandCoordinator handles the confirmation snapshot on the UI
-                # thread; preflight has made no mutation and is not a save error.
-                return
-            logger.warning(f"[DataHandler] Command failed: {message}")
-            if message:
-                # Emit failure signal for MainWindow to show dialog
-                self.command_failed.emit(message)
-            return
+        logger.info("[DataHandler] on_command_finished: %s", command_name)
 
         try:
             if command_name in {

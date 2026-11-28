@@ -2,6 +2,16 @@
   "schema_version": 1,
   "bindings": [
     {
+      "id": "relation-preview-other-entry",
+      "topic_id": "relations.create",
+      "target": "help-inspect-relation-preview-other-entry",
+      "source": "src/gui/widgets/relation_guidance.py",
+      "symbol": "RelationGuide.__init__",
+      "binding": "self.other",
+      "label": "View from other entry",
+      "kind": "StandardButton"
+    },
+    {
       "id": "map-smooth-path",
       "topic_id": "map.historical-geometry",
       "target": "help-inspect-map-smooth-path",
@@ -6519,7 +6529,7 @@
       "symbol": "RelationAuthoring._progressive_form",
       "binding": "self.meaning",
       "label": "Meaning",
-      "kind": "ScrollSafeComboBox"
+      "kind": "RelationTypeField"
     },
     {
       "id": "src-gui-widgets-relation-authoring-relationauthoring-progressive-form-self-reverse-button",
@@ -6609,7 +6619,7 @@
       "symbol": "RelationForm.__init__",
       "binding": "self.type_edit",
       "label": "Type:",
-      "kind": "ScrollSafeComboBox"
+      "kind": "RelationTypeField"
     },
     {
       "id": "src-gui-widgets-relation-form-relationform-init-self-weight-spin",
@@ -6699,16 +6709,6 @@
       "symbol": "RelationForm.__init__",
       "binding": "self.check_to",
       "label": "Valid To:",
-      "kind": "QCheckBox"
-    },
-    {
-      "id": "src-gui-widgets-relation-form-relationform-init-self-bi-check",
-      "topic_id": "relations.create",
-      "target": "help-inspect-src-gui-widgets-relation-form-relationform-init-self-bi-check",
-      "source": "src/gui/widgets/relation_form.py",
-      "symbol": "RelationForm.__init__",
-      "binding": "self.bi_check",
-      "label": "Bidirectional (Create reverse link)",
       "kind": "QCheckBox"
     },
     {
@@ -6886,8 +6886,8 @@
       "topic_id": "authoring.details",
       "target": "help-inspect-src-gui-widgets-sheet-builder-attributepairwidget-init-self-type-combo",
       "source": "src/gui/widgets/sheet_builder.py",
-      "symbol": "AttributePairWidget.__init__",
-      "binding": "self.type_combo",
+      "symbol": "AttributePairWidget.type_combo",
+      "binding": "combo",
       "label": "type_combo",
       "kind": "ScrollSafeComboBox"
     },
@@ -6910,6 +6910,16 @@
       "binding": "self.text_edit",
       "label": "text_edit",
       "kind": "QLineEdit"
+    },
+    {
+      "id": "sheet-edit-layout",
+      "topic_id": "authoring.details",
+      "target": "help-inspect-sheet-edit-layout",
+      "source": "src/gui/widgets/sheet_builder.py",
+      "symbol": "SheetBuilderWidget.__init__",
+      "binding": "self.layout_button",
+      "label": "Edit layout",
+      "kind": "StandardButton"
     },
     {
       "id": "src-gui-widgets-sheet-builder-sheetbuilderwidget-init-self-act-add-row",
@@ -9042,6 +9052,146 @@
       "kind": "QAction"
     },
     {
+      "id": "settings.dictionary.open",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-dictionary-open",
+      "source": "src/gui/widgets/settings_center.py",
+      "symbol": "SettingsCenter._build_dictionary_page",
+      "binding": "self.relation_dictionary_button",
+      "label": "Open Relation Dictionary",
+      "kind": "WrappingPushButton"
+    },
+    {
+      "id": "settings.dictionary.list",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-dictionary-list",
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_list",
+      "binding": "self.entries",
+      "label": "Relation definitions",
+      "kind": "QListWidget"
+    },
+    {
+      "id": "settings.dictionary.wording",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-dictionary-wording",
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._add_field",
+      "binding": "field",
+      "label": "Definition fields",
+      "kind": "QLineEdit"
+    },
+    {
+      "id": "settings.dictionary.endpoints",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-dictionary-endpoints",
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_editor",
+      "binding": "field",
+      "label": "Preferred source and target",
+      "kind": "QComboBox"
+    },
+    {
+      "id": "settings.dictionary.flags",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-dictionary-flags",
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_editor",
+      "binding": "checkbox",
+      "label": "Definition enabled and symmetric meaning",
+      "kind": "QCheckBox"
+    },
+    {
+      "id": "settings.dictionary.review",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-dictionary-review",
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_editor",
+      "binding": "self.review",
+      "label": "Review impact",
+      "kind": "PrimaryButton"
+    },
+    {
+      "id": "settings.dictionary.save",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-dictionary-save",
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_review",
+      "binding": "self.save",
+      "label": "Save definition",
+      "kind": "PrimaryButton"
+    },
+    {
+      "id": "settings.dictionary.export-preset",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-preset-export",
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_list",
+      "binding": "self.export_preset",
+      "label": "Export preset",
+      "kind": "StandardButton"
+    },
+    {
+      "id": "settings.dictionary.import-preset",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-preset-import",
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_list",
+      "binding": "self.import_preset",
+      "label": "Import preset",
+      "kind": "StandardButton"
+    },
+    {
+      "id": "settings.dictionary.preset-keys",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-preset-review",
+      "source": "src/gui/widgets/relation_preset_review.py",
+      "symbol": "RelationPresetReview.__init__",
+      "binding": "self.keys",
+      "label": "Preset definitions",
+      "kind": "QListWidget"
+    },
+    {
+      "id": "settings.dictionary.preset-decision",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-preset-review",
+      "source": "src/gui/widgets/relation_preset_review.py",
+      "symbol": "RelationPresetReview.__init__",
+      "binding": "self.decision",
+      "label": "Decision for a key",
+      "kind": "QComboBox"
+    },
+    {
+      "id": "settings.dictionary.migration",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-migration",
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_editor",
+      "binding": "self.migration",
+      "label": "Migrate identifier",
+      "kind": "StandardButton"
+    },
+    {
+      "id": "settings.dictionary.remove",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-removal",
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_editor",
+      "binding": "self.remove_definition",
+      "label": "Remove definition",
+      "kind": "StandardButton"
+    },
+    {
+      "id": "settings.dictionary.migration-key",
+      "topic_id": "settings.relation-dictionary",
+      "target": "help-inspect-relation-migration",
+      "source": "src/gui/widgets/relation_migration_review.py",
+      "symbol": "RelationMigrationReview.__init__",
+      "binding": "self.destination",
+      "label": "New relation key",
+      "kind": "QLineEdit"
+    },
+    {
       "id": "workspace.activity",
       "topic_id": "workspace.navigation",
       "target": "help-inspect-workspace-activity",
@@ -9990,6 +10140,12 @@
   ],
   "source_reviews": [
     {
+      "source": "src/gui/widgets/relation_guidance.py",
+      "symbol": "RelationGuide.__init__",
+      "sha256": "b96c07506974b7f4d221708428bca4a0b3c3b4151a502600d27e0a39b3120b1b",
+      "review_note": "KRT-72: The perspective action changes only the draft preview and exposes its opposite endpoint to keyboard users."
+    },
+    {
       "source": "src/gui/widgets/analysis/_analysis_utils.py",
       "symbol": "make_analysis_table",
       "sha256": "2c349d619e0d1fcbdc6a0675bf9154fd676e881b05f260044b85714d8ab3634c",
@@ -10760,14 +10916,14 @@
     {
       "source": "src/commands/relation_commands.py",
       "symbol": "AddRelationCommand.execute",
-      "sha256": "224f8eae36992d65aa46969a350d734ee160fb663b40dd1904024e555d589df6",
-      "review_note": "KRT-184. Reciprocal connections create two directed assertions and evaluate timing against each source. Existing relation meaning and type controls retain their wording."
+      "sha256": "bf6cb696e704d73cada3e9cc21faa69e7c4c95d6056c9caec677020047fa797e",
+      "review_note": "KRT-70: New creation saves one assertion. Legacy reciprocal history replays its two recorded IDs."
     },
     {
       "source": "src/commands/relation_commands.py",
       "symbol": "AddRelationCommand.undo",
-      "sha256": "a7b464218835562433907d7bc1b89897b8a98d54b53f4f3f802d4979758d10f4",
-      "review_note": "World command effect/undo contract used by interface task explanations."
+      "sha256": "7ef2605ec086763fda2b36f22c4db7cd44baa43e06976c5ec49ecfbaf1fa9a30",
+      "review_note": "KRT-70: Undo removes this command's recorded rows within the transaction."
     },
     {
       "source": "src/commands/relation_commands.py",
@@ -10784,8 +10940,8 @@
     {
       "source": "src/commands/relation_commands.py",
       "symbol": "UpdateRelationCommand.execute",
-      "sha256": "c4a6b24c077105d76609f4a0e8816e76ef2f90df520604f52ad62ff98d6c579c",
-      "review_note": "KRT-111: Apply validates temporal edits against worker-owned events; relation Help now distinguishes empty states from deliberate occurrences."
+      "sha256": "434bbf899de933564f35fab7b42fc166feb954baae3e91efbc46b85a550435c0",
+      "review_note": "KRT-70: Endpoint changes protect saved and proposed timing bindings and state effects."
     },
     {
       "source": "src/commands/relation_commands.py",
@@ -11653,8 +11809,8 @@
     {
       "source": "src/gui/dialogs/graph_filter_dialog.py",
       "symbol": "GraphFilterDialog.__init__",
-      "sha256": "d98b9b806b77359d0154713e17c92a0c9faa20f972c3c70c50bc113501630f69",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "6cf6b931efe85782136149abfa0e9434076734f613ed24f276bfeaddddcdcbad",
+      "review_note": "KRT-71: Relation filters show vocabulary captions and retain exact filter values."
     },
     {
       "source": "src/gui/dialogs/grouping_config_dialog.py",
@@ -12595,8 +12751,8 @@
     {
       "source": "src/gui/widgets/attribute_editor.py",
       "symbol": "AttributeEditorWidget._add_row",
-      "sha256": "09ec4dd09f30fd87b5480616486a28d546e3d368179290de1ae94025c1c476f0",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "4c6149154648a0cfbb53687f2eedc7c925872f044d3ab6b8408cb68850ea5dfa",
+      "review_note": "KRT-187: Table rows keep the same editable columns and value types. Value formatting is shared with in-place refresh."
     },
     {
       "source": "src/gui/widgets/attribute_editor.py",
@@ -12877,8 +13033,8 @@
     {
       "source": "src/gui/widgets/editor_presentation.py",
       "symbol": "EditorPresentation._install_toolbar_menus",
-      "sha256": "89fae8185e120e551ff7f4735c954ec3263da5c6991b40ca0de47127eea5b324",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "166afdde94a9b569eebf9fe33ec892642c52fc3d59b17ecb941c5c39aaa8cba8",
+      "review_note": "KRT-186: The existing Add commands have the same meaning in the narrow overflow route, which appears only while editing layout."
     },
     {
       "source": "src/gui/widgets/editor_presentation.py",
@@ -13309,8 +13465,8 @@
     {
       "source": "src/gui/widgets/filter_widget.py",
       "symbol": "FilterWidget._populate_list",
-      "sha256": "1a8dc8bb109ae721cde7d6ea0573faa9d3a77883e70f6a86a66e029fcce888bc",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "7673054d6a3fb1f2a4679c7d66f6816dd59527a1d18c79defdd37b6523288c80",
+      "review_note": "KRT-71: Display captions are separate from checked item keys."
     },
     {
       "source": "src/gui/widgets/filter_widget.py",
@@ -13483,8 +13639,8 @@
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
       "symbol": "GraphWidget.__init__",
-      "sha256": "7c9ea8060629bb721f3876a754cb386c66526af10bed3645c413c472f10f58ed",
-      "review_note": "KRT-184. Retains the Graph view and adds session layout memory, visible actions, and saved relationship feedback."
+      "sha256": "5f039686f13891c890f831732762acb567d499a9dddd300f0b60d6ce2cbe14ad",
+      "review_note": "KRT-71: An empty vocabulary is used until the active world snapshot arrives."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
@@ -13573,8 +13729,8 @@
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
       "symbol": "GraphWidget.show_filter_dialog",
-      "sha256": "b1633b4e1f1550f0f1e4c98fd2cb1d8a4b2f80815f71fa244d2bf946ca4b9e8f",
-      "review_note": "KRT-184. Applying Graph filters preserves the world scope and dismisses any previous temporary result reveal."
+      "sha256": "0466ac05de57d69070608e625e333cb6e6a0d100f4c293575de5d97872e00a49",
+      "review_note": "KRT-71: The dialog renders qualified labels without replacing filter keys."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_widget.py",
@@ -15763,8 +15919,8 @@
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring.__init__",
-      "sha256": "0d6db967a2261eaddd157d16905009de10ab9f1cd12469104250beec8dac4006",
-      "review_note": "KRT-93 owner refinements: Meaning is one editable dropdown with stable-key suggestion data and deliberate free phrases; no Custom field. The editor heading is plain text within a neutral frame. Scrollbars refresh with the theme. Edit shares the selection row; guarded navigation/removal remain under More actions. Updated task/control explanations describe these behaviors. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
+      "sha256": "d4b26d5ffc532cf0662ca4e07de71cfa15a7f5ef86f411f150ea34d263dd2dd5",
+      "review_note": "KRT-71: The heading renders resolved wording as plain text."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
@@ -15811,32 +15967,32 @@
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._meaning_changed",
-      "sha256": "4794bf3be36eaa6339f429b8bbefe6c0f636173116965d004787b22776149428",
-      "review_note": "KRT-93 owner refinements: Meaning is one editable dropdown with stable-key suggestion data and deliberate free phrases; no Custom field. The editor heading is plain text within a neutral frame. Scrollbars refresh with the theme. Edit shares the selection row; guarded navigation/removal remain under More actions. Updated task/control explanations describe these behaviors."
+      "sha256": "dccb0509eaa01737e0b158bd39f983d8a09c8465a0539769cea8fe5f499b236c",
+      "review_note": "KRT-71: The editable field contains the saved key and updates the separate preview."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._preview",
-      "sha256": "7067d2f43484d88d80c0fbd0432dad3ec451ddac712ff03743c2ce25e622cc4c",
-      "review_note": "KRT-98: Reviewed relations.create and its Meaning, Connection type, Reverse direction and Apply excerpts against the pure-helper extraction. Captions, exact stored keys, suggestion ordering, source-event preview wording and both reversal checks remain unchanged. Existing explanations remain accurate; no new UI or prose. Pure dependencies have their own scoped source reviews."
+      "sha256": "2a4d4f81ddf3f541f28de927f06a85ff3a5160f85b09497351c110f4563fb58e",
+      "review_note": "KRT-72: The live draft resolves both perspectives and updates the endpoint guidance without saving."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._progressive_form",
-      "sha256": "3ca0e973235bb421015e9107bba33128eaa92519455125520a6cf2be8ca41a31",
-      "review_note": "KRT-98: Reviewed relations.create and its Meaning, Connection type, Reverse direction and Apply excerpts against the pure-helper extraction. Captions, exact stored keys, suggestion ordering, source-event preview wording and both reversal checks remain unchanged. Existing explanations remain accurate; no new UI or prose. Pure dependencies have their own scoped source reviews."
+      "sha256": "3ee17cdbaa013456680a428476cd434ed43c9ab492aacb47a707647eb8fef52a",
+      "review_note": "KRT-72: The key field provides readable suggestions, and the preview can switch perspectives."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._reverse",
-      "sha256": "8f3130b434bd5e1747c1074fea6cba48010f0cc3f1bdbc8216f8d39b957d0095",
-      "review_note": "KRT-98: Reviewed relations.create and its Meaning, Connection type, Reverse direction and Apply excerpts against the pure-helper extraction. Captions, exact stored keys, suggestion ordering, source-event preview wording and both reversal checks remain unchanged. Existing explanations remain accurate; no new UI or prose. Pure dependencies have their own scoped source reviews."
+      "sha256": "a8a31e66e9c109ca7714a0ecae5fc07f413d5dc08ab1782817a4aa183408bc65",
+      "review_note": "KRT-70: Reverse previews the change only when the endpoint policy allows it."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring._set_drop_meaning",
-      "sha256": "5c1617bbebe074671b64567f163fc7227bf4f592da9461482c3e234770c3d78e",
-      "review_note": "KRT-98: Reviewed relations.create and its Meaning, Connection type, Reverse direction and Apply excerpts against the pure-helper extraction. Captions, exact stored keys, suggestion ordering, source-event preview wording and both reversal checks remain unchanged. Existing explanations remain accurate; no new UI or prose. Pure dependencies have their own scoped source reviews."
+      "sha256": "4dd5021aaf0227ce2236351219e3aee57965922f3889a16163712189ba99a05a",
+      "review_note": "KRT-71: The drop preview uses the world's compact forward label."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
@@ -15853,8 +16009,8 @@
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring.apply",
-      "sha256": "7385f25eb1623a605ea7f3951a18dcd9514c687ac6a9a90895dd9e86cf830e64",
-      "review_note": "KRT-98: Reviewed relations.create and its Meaning, Connection type, Reverse direction and Apply excerpts against the pure-helper extraction. Captions, exact stored keys, suggestion ordering, source-event preview wording and both reversal checks remain unchanged. Existing explanations remain accurate; no new UI or prose. Pure dependencies have their own scoped source reviews."
+      "sha256": "ad6afb8db04fabc463c94ecdefb8ee42a0747f24c117755ba2fb3d9c28c10f9e",
+      "review_note": "KRT-70: Apply checks saved and proposed endpoint-sensitive metadata before dispatch."
     },
     {
       "source": "src/gui/widgets/relation_authoring.py",
@@ -15889,14 +16045,14 @@
     {
       "source": "src/gui/widgets/relation_authoring.py",
       "symbol": "RelationAuthoring.stage_drop",
-      "sha256": "5a4fc0d7fc0f70fcf1e753ac5d17361293b14c195f0f6ab15f5a7d5f140fa754",
-      "review_note": "Handles the optional layout item before hiding its label. The dropped relation preview and confirmation work as documented."
+      "sha256": "58371bc3b6f088fca749c9dd025336294edeaefbb7600189046f46ba65ecd71b",
+      "review_note": "KRT-71: The directed draft offers qualified wording backed by the saved keys."
     },
     {
       "source": "src/gui/widgets/relation_form.py",
       "symbol": "RelationForm.__init__",
-      "sha256": "d2d4f57d15aae354f16f7686263e96e9e423236e4a7f0da543c8e49032ce0921",
-      "review_note": "KRT-111: Shared form receives immutable context for complete event precision and endpoint previews; unrelated form controls retain their meanings."
+      "sha256": "94d0f40caba51454cee492e86e657f609403025e1fe370e7b014d7d9f1a38edb",
+      "review_note": "KRT-72: The full editor uses the shared suggestion field and perspective preview."
     },
     {
       "source": "src/gui/widgets/relation_form.py",
@@ -16009,8 +16165,8 @@
     {
       "source": "src/gui/widgets/relation_form.py",
       "symbol": "RelationForm._update_preview",
-      "sha256": "2d5238d028a2374476fa1ce38aa2f7d810352eba949d47076158c27fe13b7341",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "777b033b04071d748f6f3a3278356d1436a5fa38226457f6a1582089910e4767",
+      "review_note": "KRT-72: The preview uses the resolved draft endpoints and keeps the entered key."
     },
     {
       "source": "src/gui/widgets/relation_form.py",
@@ -16069,20 +16225,26 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "AttributePairWidget.__init__",
-      "sha256": "fd743ec8c4ec9dd83b55b580928beb521b7564ac0c6294863dce39fa89b1be04",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
+      "sha256": "ef583622b1b1041f320c204d78902c439bd01489a5f6b842bc88af5b202cad05",
+      "review_note": "KRT-187: Inline values keep their key, multiline editing and Tab route. Sheet rows inherit the existing field styles."
+    },
+    {
+      "source": "src/gui/widgets/sheet_builder.py",
+      "symbol": "AttributePairWidget.type_combo",
+      "sha256": "cbb3ed570957153d019eacc8526deb651d59ae378be43b295e20a49e582c2d3d",
+      "review_note": "KRT-187: The existing Change type action creates the same selector on demand, with the existing Help target."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "AttributePairWidget._adjust_height",
-      "sha256": "88410a491000624d6b5e06786d7e5a1a586f5acca91ff711102738363686bf3e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "0f6992633c0d3e9842feedda1aeeb10df317374c9848fa2f9e01ea0e18c545db",
+      "review_note": "KRT-186: Inline value height uses the actual editor insets. Multiline content and its scroll limit retain their meaning."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "AttributePairWidget._apply_theme",
-      "sha256": "bf88ce64e9dc330ee3082836b890cc6d65bff0509427fb1affe111c5c5ad0b79",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "74519ebb4b6ad10d09b3d5e10d2d8ebc18c2af71072c3608858b13b74281a267",
+      "review_note": "KRT-186: Inline values use a complete hover and focus outline. Styling does not change value parsing or editing behavior."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16099,8 +16261,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "HeaderWidget.__init__",
-      "sha256": "7c6937f020ebad71f8654d1574a932725042b80bceae7ee8e14b1c1603e3ec4f",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
+      "sha256": "bb089211d149b3c7709a44c814228162142e0d004050249876feb5636e41fc98",
+      "review_note": "KRT-186: The heading is readable in the sheet and editable after opening Edit layout."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16117,26 +16279,26 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget.__init__",
-      "sha256": "d0d5e01194de07a4b336267714cb914af685f497cf95c85f51089c24bb79102e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
+      "sha256": "e7336ac36272f0cbd11029328fc9cf96d742bcc8a10cb823904e548edda0dd29",
+      "review_note": "KRT-187: The existing Edit layout button and toolbar are available when Sheet is visible. Pending rows are stored as values and layout."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._add_row",
-      "sha256": "0b90b7993ab02aef0d93e6f7690e1ceb3368ccca73e638d4a722f8f485e3b059",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "83ddd54db01c3b7455fcf015c70c7c3e47df0b7b496806606d2af117e34e2fc5",
+      "review_note": "KRT-187: Preparented rows keep the existing controls, their order, and the same authored layout elements."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
-      "symbol": "SheetBuilderWidget._add_unplaced_attributes",
-      "sha256": "484a093682cb7eb84481e45516ea93cceb97ed8847f43eaa455e898fc6321c5c",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "symbol": "_normalize_layout",
+      "sha256": "4c77a8a1bf493796c228fd5ec9a3e542baaa2162c069ceee4cef0aa7b89838e5",
+      "review_note": "KRT-187: The same normalized row arrangement is used for drawing and for saving an unopened Sheet. Unplaced fields still get default rows."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._apply_theme",
-      "sha256": "daeccf2ac760c0da75d5b733f4fa03a5c4b7552d13e52f3e24cd73d8a7cf57a8",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "af471f2b2336f017b803e31db0c045145b5972695bacb1476cb68dee950aa0e4",
+      "review_note": "KRT-187: The Sheet shares the existing semantic field and handle styles at the content container. Focus, hover and disabled roles stay the same."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16153,8 +16315,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._clear",
-      "sha256": "0c25f483066c296def21e108b64f1a3824b27c51db72219823e6781c9888fd8b",
-      "review_note": "Checks layout items before disposal. Clearing the sheet still releases its widgets and nested row layouts."
+      "sha256": "04980338fc0f9feb84d782194e2d2aa5d09b5e76438e2985b86c29b2e7c778ba",
+      "review_note": "KRT-187: The existing control and its Help destination retain the same behavior."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16171,8 +16333,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._ctx_insert_row",
-      "sha256": "e0358a8ea49b2fd36dccab56076815373070d711166b62dc9253f8f849d5db65",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "69241be3ec4812edb910b3b1744f201f23978d3626c8f623b61a6dd08ea01e87",
+      "review_note": "KRT-187: The existing control and its Help destination retain the same behavior."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16213,8 +16375,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._insert_resize_handles",
-      "sha256": "9ab8d3a4b9eb1a3511e47d363b58d3e828bf26d27353b97ba4abaeaafa387b20",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "0a5c45f39e67f5dee271826c82fc0bfaa4cdc91ca8e50f81973022714c94b574",
+      "review_note": "KRT-187: The existing control and its Help destination retain the same behavior."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16255,8 +16417,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._on_child_drag_finished",
-      "sha256": "eb335a2940db756d6defc5781d1fa0ab1d4795334cc6d364514ade6d9ec24793",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "343933649b8872c47b349a35937128e8fe4b191a894150f7bfc4b94ee5a10cf3",
+      "review_note": "KRT-187: The existing control and its Help destination retain the same behavior."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16303,8 +16465,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._rebuild_resize_handles",
-      "sha256": "4ca8fd1080ee5dc660c5da18d468c9b9c759bd65819261c239651c458ce2b912",
-      "review_note": "Skips unavailable layout items during enumeration. Resize handles still follow eligible columns."
+      "sha256": "7d5589df6db3b2cceffa97da8f7c09ca529486f8604d57e7f025c2abb1525cd0",
+      "review_note": "KRT-186: Resize handles are presented in layout editing. Their existing resize and weight semantics remain accurate."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16333,8 +16495,8 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget._show_context_menu",
-      "sha256": "17106d7be3061468b1a83c9b04460615297ea128e43d84914982937c074f0845",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "9a71de1bf59f2912720624156c0e067263bc47281a863f884461f06a3bbb56a2",
+      "review_note": "KRT-186: The row layout menu opens in layout editing. The sheet guide points readers to Edit layout first."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -16357,14 +16519,14 @@
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "SheetBuilderWidget.load_attributes",
-      "sha256": "490e4e3b94b7f1b37709fd68fd8a88d195acf0e73cdb2c93f431fd7e00d2aec7",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes."
+      "sha256": "f1b8102bfeaa6909d2668ba6e9d6d7e775914a0f2c8878ffcc35188c25d22605",
+      "review_note": "KRT-187: The existing control and its Help destination retain the same behavior."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
       "symbol": "TextBlockWidget.__init__",
-      "sha256": "287632f6e5d7eab0a7e49528a588b292c44de8cd53bc45581723031106e8e36e",
-      "review_note": "Explicit UI helper/handler dependency; review explanation impact when behavior changes. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
+      "sha256": "3b6b517e5f3ba08c660dd9334cf63baac24dd9fc9e00978993bb9e65da32855c",
+      "review_note": "KRT-186: Text blocks are visible in the sheet and editable in layout editing. Their content remains separate from attribute values."
     },
     {
       "source": "src/gui/widgets/sheet_builder.py",
@@ -17263,8 +17425,8 @@
     {
       "source": "src/gui/widgets/connections_overview.py",
       "symbol": "ConnectionsOverview.__init__",
-      "sha256": "64c0aa04f530d7afb3c6b4827680644178c002a20cad2370d999af53771eeefd",
-      "review_note": "Reviewed single-line connection rows with right elision and full assertion/timing tooltips. Updated the overview explanation. Selection, Edit/Enter/double-click, filtering, direction, navigation and guarded removal retain their existing meanings. KRT-120 2026-10-31: presentation subscriptions now coalesce hidden-view themes and refresh before Show; visible delivery belongs to its panel. Reviewed controls, labels, actions, input ownership and Help destinations are unchanged, so the existing explanation remains accurate."
+      "sha256": "95b489bb187b890eed1199ba2bae87ca023bbebb587e35494ab3ac7abaaee01b",
+      "review_note": "KRT-71: The view starts with the raw type fallback until its vocabulary arrives."
     },
     {
       "source": "src/gui/widgets/entity_editor.py",
@@ -17293,8 +17455,8 @@
     {
       "source": "src/gui/widgets/entity_editor.py",
       "symbol": "EntityEditorWidget.finish_temporal_save",
-      "sha256": "383ab8576ec409c5a7abd4a2d86e45770979cd45e6bf56b5f046d9fd0753f424",
-      "review_note": "KRT-40: Reviewed extracted preparation/acknowledgement dependency. Existing historical editing, Save Changes and Discard explanations remain accurate: corrections retain source ownership, explicit dated intent remains distinct, and acknowledgements preserve newer drafts. No new UI or Help destination."
+      "sha256": "40e84a1720c2186a37af80f953c59d1ec492eaa2d0f62720249ffd76f057bfcd",
+      "review_note": "KRT-187: Acknowledgement refreshes provenance in both attribute views without changing newer drafts or focus."
     },
     {
       "source": "src/services/temporal_entity_draft_service.py",
@@ -17340,9 +17502,9 @@
     },
     {
       "source": "src/core/relation_policy.py",
-      "symbol": "has_direction_sensitive_attributes",
-      "sha256": "06d17923285ece29cfd5396f136e330e664eba361b3a988d7a64bfdd78c34757",
-      "review_note": "KRT-98: Extracted compatibility calculation for existing relation controls. Preserve separate captions, raw key fallback and choices, original-endpoint previews and the existing truthy/string reversal assessment. Existing relations.create explanations remain accurate; schema, inverse wording and command enforcement are deferred."
+      "symbol": "endpoint_change_error",
+      "sha256": "9cf3ba72a833a172db13ec6979a95d12d278ead8a31bff3f8fc3e0c83987a21e",
+      "review_note": "KRT-70: The endpoint policy preserves source timing and payload recipients."
     },
     {
       "source": "src/commands/temporal_entity_edit_command.py",
@@ -17449,8 +17611,50 @@
     {
       "source": "src/gui/widgets/settings_center.py",
       "symbol": "SettingsCenter.build_world_pages",
-      "sha256": "553dab7f09523e6ab01d2233270f21f0b7872d8dd9509859c697533977091cd8",
-      "review_note": "KRT-55: reviewed actual embedded calendar/grouping/graph/AI forms and world index exclusions. Qt.Widget embedding prevents independent dialogs; page navigation retains drafts and external writes require Apply."
+      "sha256": "683a8dcfee9971d39f17e5014c46ad2e2dc5ebf01b85b89c33d046c29709db65",
+      "review_note": "KRT-73: added the Relation Dictionary launcher with an independent review and save. The embedded world index exclusions retain their existing Apply and explicit rebuild workflow."
+    },
+    {
+      "source": "src/gui/widgets/settings_center.py",
+      "symbol": "SettingsCenter._build_dictionary_page",
+      "sha256": "7152230272027d17187e3409972e1b3f214bec5760e01b8862490c4423a0f188",
+      "review_note": "KRT-73: Opens a world-scoped editor with an independent review and save."
+    },
+    {
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_list",
+      "sha256": "ffc2eabb64bf6f36bbf3e095012bda4055bf7a0861f9e9c9b6e84b4aa8acd0f3",
+      "review_note": "KRT-73: Selects existing world entries or a copied catalog suggestion."
+    },
+    {
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._add_field",
+      "sha256": "2ec50816bb982bd280c1bfc53ba77833d1ac1b11927f9f2d303b799757b1ed87",
+      "review_note": "KRT-73: Edits labels, optional sentences and a new key. Saved keys are read-only."
+    },
+    {
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_editor",
+      "sha256": "47db02f72190599926a14cf6caf3f36dac5e8830fbae6297638122d0dbedc751",
+      "review_note": "KRT-73: Shows advisory endpoint kinds, enabled state and symmetry without changing relation rows. KRT-76 and KRT-185 add separate advanced review actions."
+    },
+    {
+      "source": "src/gui/widgets/relation_dictionary.py",
+      "symbol": "RelationDictionaryDialog._build_review",
+      "sha256": "82cc5c3655717f51e27a3cf88ee183a430c8196164067e530b0b45c578eaf1d6",
+      "review_note": "KRT-73: Commits one reviewed definition. The worker checks evidence and preserves the key."
+    },
+    {
+      "source": "src/gui/widgets/relation_preset_review.py",
+      "symbol": "RelationPresetReview.__init__",
+      "sha256": "b19f6a2c06dfaee8708b3755c8df5ff2506b47a1c6a903d1e19783105cdf4ea5",
+      "review_note": "KRT-75: reviewed the key list, per-key choices and explicit batch confirmation."
+    },
+    {
+      "source": "src/gui/widgets/relation_migration_review.py",
+      "symbol": "RelationMigrationReview.__init__",
+      "sha256": "05ee81bdf9f3bda4dd2b97f91751afe437b7321d5267af63ae7212dfacdbe9da",
+      "review_note": "KRT-76: reviewed exact destination entry, distinct confirmation, and checkpoint recovery."
     },
     {
       "source": "src/gui/workspace/activity_bar.py",
@@ -17533,8 +17737,8 @@
     {
       "source": "src/app/help_composition.py",
       "symbol": "HelpSurfaceBindings.bind",
-      "sha256": "17ee8f5dc16cf5854612bae06d9bdd0e23bdc45f661c40df9c6f12901d45ffe4",
-      "review_note": "KRT-119: register the MCP settings composite for integrations.mcp; existing surface meanings stay intact. New enable, stop and activity excerpts explain immediate session effects, provider disclosure and revocation limits."
+      "sha256": "4b84a3482a032004bdfe468837d1eb3f7ef51419222a2fbedff8d780b935ef93",
+      "review_note": "KRT-70: The retired reciprocal creation checkbox has no live Help binding."
     },
     {
       "source": "src/gui/workspace/focus_navigation.py",
@@ -18038,8 +18242,8 @@
     {
       "source": "src/gui/dialogs/graph_connection_dialog.py",
       "symbol": "GraphConnectionDialog.__init__",
-      "sha256": "404c8f5ae27eb4f9439eeffb6aeb9c76f76d5da6f0a4e436a92d3e81617b12b0",
-      "review_note": "KRT-184. Fixed start captures the viewing date. Create Relationship saves the draft and new endpoint together. A failed pair lookup offers a retry in the same draft."
+      "sha256": "cf7224a50d7b0d812035fd59185482bee5e73b150b4c57bee71061a78b10f214",
+      "review_note": "KRT-72: The graph draft offers suggestions and a view from either proposed endpoint."
     },
     {
       "source": "src/gui/widgets/graph_view/graph_feedback.py",

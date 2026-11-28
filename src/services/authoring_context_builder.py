@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from collections import deque
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Callable
 
@@ -44,11 +45,12 @@ from src.services.entity_context_projection import (
     public_value,
 )
 from src.services.map_nesting_service import MapNestingService
+from src.services.relation_vocabulary_reader import read_vocabulary, with_display_text
 from src.services.spatial_context_builder import SpatialContextBuilder
 
 logger = logging.getLogger(__name__)
 
-PARTICIPANT_REL_TYPES = frozenset({"involved", "participated_in", "member_of"})
+PARTICIPANT_REL_TYPES = frozenset({"involved", "participated_in"})
 MAX_PARTICIPANTS = 12
 MAX_LOCATIONS = 6
 MAX_MENTIONS = 12
@@ -214,7 +216,7 @@ class AuthoringContextBuilder:
             resolve_item=resolve_item,
         )
 
-        return EventAuthoringContext(
+        context = EventAuthoringContext(
             event_id=event.id,
             context_date=effective_date,
             participants=tuple(participants),
@@ -227,6 +229,39 @@ class AuthoringContextBuilder:
             neighborhood_relations=tuple(neighborhood),
             spatial=tuple(spatial),
             omitted_counts=tuple(sorted(omitted.items())),
+        )
+
+        return self._with_relation_wording(context, event.id)
+
+    def _with_relation_wording[
+        Context: (EventAuthoringContext, EntityAuthoringContext)
+    ](self, context: Context, root_id: str) -> Context:
+        vocabulary = read_vocabulary(self._db.require_connection())
+        if not vocabulary:
+            return context
+
+        def project(
+            relations: tuple[ContextRelation, ...],
+        ) -> tuple[ContextRelation, ...]:
+            return tuple(
+                with_display_text(relation, root_id, vocabulary)
+                for relation in relations
+            )
+
+        direct = project(context.direct_relations)
+        neighborhood = project(context.neighborhood_relations)
+        if isinstance(context, EntityAuthoringContext):
+            return replace(
+                context,
+                direct_relations=direct,
+                neighborhood_relations=neighborhood,
+                linked_references=project(context.linked_references),
+                temporal_history=project(context.temporal_history),
+            )
+        return replace(
+            context,
+            direct_relations=direct,
+            neighborhood_relations=neighborhood,
         )
 
     def build_entity_context(
@@ -436,8 +471,8 @@ class AuthoringContextBuilder:
         )
 
         if self._entity_projection is not None:
-            return self._entity_projection.finish(context, bounded=self._bounded)
-        return context
+            context = self._entity_projection.finish(context, bounded=self._bounded)
+        return self._with_relation_wording(context, entity.id)
 
     def description_changes_for_display(self) -> dict[str, Any]:
         """Return a human-only sidecar without changing the bounded AI context."""
@@ -1442,8 +1477,11 @@ def _format_context_attribute(attribute: ContextAttribute) -> str:
 
 def _format_relation(relation: ContextRelation) -> str:
     return (
-        f"- {relation.source.name} --{relation.rel_type}--> "
-        f"{relation.target.name}"
+        "- "
+        + (
+            relation.display_text
+            or f"{relation.source.name} --{relation.rel_type}--> {relation.target.name}"
+        )
         + (
             " (timing uncertain; do not treat as an established fact)"
             if relation.temporal_status in {"possible", "indeterminate"}

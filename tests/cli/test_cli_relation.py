@@ -54,6 +54,33 @@ def test_relation_add(mock_db, mock_validate, capsys):
         assert args[2] == "friend"
 
 
+def test_retired_bidirectional_flag_fails_before_database_access(
+    mock_db, mock_validate, capsys, monkeypatch
+):
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "relation.py",
+            "add",
+            "-d",
+            "test.db",
+            "-s",
+            "a",
+            "-t",
+            "b",
+            "--type",
+            "knows",
+            "--bidirectional",
+        ],
+    )
+    with pytest.raises(SystemExit) as error:
+        relation_main()
+    assert error.value.code == 2
+    assert "once per direction" in capsys.readouterr().err
+    mock_validate.assert_not_called()
+    mock_db.connect.assert_not_called()
+
+
 def test_relation_list(mock_db, mock_validate, capsys):
     mock_db.get_relations.return_value = [
         {"id": "r1", "target_id": "e2", "rel_type": "friend", "attributes": {}}

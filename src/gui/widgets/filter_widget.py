@@ -32,6 +32,7 @@ class FilterWidget(QWidget):
         current_config: Optional[Dict[str, Any]] = None,
         title_include: str = "Include:",
         title_exclude: str = "Exclude:",
+        item_labels: dict[str, str] | None = None,
     ) -> None:
         """Initialize the filter widget.
 
@@ -45,6 +46,7 @@ class FilterWidget(QWidget):
         """
         super().__init__(parent)
         self.items = sorted(available_items or [])
+        self._item_labels = item_labels or {}
         self.current_config = current_config or {}
         self.title_include = title_include
         self.title_exclude = title_exclude
@@ -160,7 +162,8 @@ class FilterWidget(QWidget):
         """Populates a list widget with checkboxes for each item."""
         list_widget.clear()
         for item_text in self.items:
-            item = QListWidgetItem(item_text)
+            item = QListWidgetItem(self._item_labels.get(item_text, item_text))
+            item.setData(Qt.ItemDataRole.UserRole, item_text)
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             item.setCheckState(Qt.CheckState.Unchecked)
             list_widget.addItem(item)
@@ -195,7 +198,7 @@ class FilterWidget(QWidget):
         for i in range(list_widget.count()):
             item = list_widget.item(i)
             if item.checkState() == Qt.CheckState.Checked:
-                checked.append(item.text())
+                checked.append(item.data(Qt.ItemDataRole.UserRole))
         return checked
 
     def _set_checked_items(
@@ -204,7 +207,7 @@ class FilterWidget(QWidget):
         """Sets checked state for items present in the set."""
         for i in range(list_widget.count()):
             item = list_widget.item(i)
-            if item.text() in items_to_check:
+            if item.data(Qt.ItemDataRole.UserRole) in items_to_check:
                 item.setCheckState(Qt.CheckState.Checked)
             else:
                 item.setCheckState(Qt.CheckState.Unchecked)

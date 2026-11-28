@@ -1,13 +1,13 @@
 """Sheet Builder Widget Module.
 
-Provides a visual "Stat Block" builder for entity/event attributes. The sheet
-presents attributes as draggable key-value boxes arranged in a flex-row grid,
-and supports serialization of the spatial layout to a 2D list for persistence.
+Displays Entity and Event attributes in authored rows and columns. Layout
+editing exposes the tools for arranging and saving that structure.
 """
 
 import logging
 import math
 import uuid
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Union, cast
 
@@ -22,9 +22,13 @@ from PySide6.QtGui import (
     QDropEvent,
     QKeySequence,
     QMouseEvent,
+    QResizeEvent,
     QShortcut,
+    QShowEvent,
+    QTextCursor,
 )
 from PySide6.QtWidgets import (
+    QBoxLayout,
     QFrame,
     QHBoxLayout,
     QInputDialog,
@@ -45,11 +49,15 @@ from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.utils.theme_connections import connect_theme, disconnect_theme
 from src.gui.widgets.choice_inputs import ScrollSafeComboBox
+from src.gui.widgets.standard_buttons import StandardButton
 
 logger = logging.getLogger(__name__)
 
 _DRAG_START_DISTANCE_PX = 10
 _MINIMUM_RESIZABLE_ROW_ITEMS = 2
+_SHEET_COLUMN_WIDTH = 160
+_SHEET_LABEL_WIDTH = 132
+_SHEET_VALUE_WIDTH = 62
 
 # Internal MIME type for drag-and-drop within the sheet builder
 _SHEET_DRAG_MIME = "application/x-kraken-sheet-key"
@@ -74,10 +82,67 @@ class _FocusState:
     had_focus: bool = False
 
 
-class AttributePairWidget(QFrame):
-    """A single key-value attribute box for the Sheet Builder.
+@dataclass
+class _SheetSnapshot:
+    """Detached presentation for the selected record while the Sheet is hidden."""
 
-    Displays a bold key label on top and an editable value line-edit below,
+    owner: str | None
+    attributes: dict[str, Any]
+    layout: list[list[Any]]
+    source_labels: dict[str, str]
+
+
+def _normalize_layout(
+    attributes: dict[str, Any], layout: list[list[Any]] | None
+) -> list[list[Any]]:
+    """Resolve saved rows into the same layout used for display and saving."""
+    rows: list[list[Any]] = []
+    placed: set[str] = set()
+    for row in layout or []:
+        items: list[Any] = []
+        for item in row:
+            kind = item.get("type") if isinstance(item, dict) else None
+            weight = int(item.get("weight", 1)) if isinstance(item, dict) else 1
+            if kind in ("text", "header"):
+                items.append({"type": kind, "text": item.get("text", "")})
+            elif kind == "divider":
+                items.append({"type": kind})
+            elif isinstance(item, dict) and (
+                kind == "spacer" or item.get("spacer") is True
+            ):
+                items.append({"type": "spacer", "weight": weight})
+            else:
+                key = item.get("key") if isinstance(item, dict) else item
+                if isinstance(key, str) and key in attributes and key not in placed:
+                    items.append(key if weight == 1 else {"key": key, "weight": weight})
+                    placed.add(key)
+        if items:
+            rows.append(items)
+    rows.extend([key] for key in attributes if key not in placed)
+    return rows
+
+
+def _sheet_value(value: Any) -> tuple[str, str]:
+    """Return the display type and text used by the inline editor."""
+    if isinstance(value, bool):
+        return "Boolean", str(value)
+    if isinstance(value, (int, float)):
+        return "Number", str(value)
+    return "String", str(value) if value is not None else ""
+
+
+def _row_config(item: Any, attributes: dict[str, Any]) -> dict[str, Any]:
+    if isinstance(item, str):
+        return {"key": item, "value": attributes[item]}
+    if "key" in item:
+        return {**item, "value": attributes[item["key"]]}
+    return item
+
+
+class AttributePairWidget(QFrame):
+    """An inline key and editable value for the Sheet tab.
+
+    Aligns the key with the first line of the value,
     with an optional type toggle (String / Number / Boolean).
 
     Signals:
@@ -111,19 +176,33 @@ class AttributePairWidget(QFrame):
 
         self.setFrameShape(QFrame.Shape.StyledPanel)
         self.setObjectName("AttributePairWidget")
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
 
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 4, 8, 4)
-        layout.setSpacing(8)
+        self._layout_editing = False
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(4, 2, 4, 2)
+        layout.setSpacing(2)
+        inline = QHBoxLayout()
+        inline.setSpacing(6)
+        layout.addLayout(inline)
 
         # Bold key label — aligned to top for multiline value support
-        self.key_label = QLabel(f"<b>{key}:</b>")
+        label, suffix_separator, suffix = key.rpartition(" (")
+        display_key = (
+            f"{label}\u00a0({suffix}"
+            if suffix_separator and " " in label and suffix.endswith(")")
+            else key
+        )
+        self.key_label = QLabel(display_key)
+        self.key_label.setTextFormat(Qt.TextFormat.PlainText)
+        self.key_label.setWordWrap(True)
+        self.key_label.setIndent(0)
+        self.key_label.setFixedWidth(_SHEET_LABEL_WIDTH)
         self.key_label.setAlignment(
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
         )
         self.key_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        layout.addWidget(self.key_label)
+        inline.addWidget(self.key_label, alignment=Qt.AlignmentFlag.AlignTop)
 
         # Value editor — multiline plain-text, autosizes up to SHEET_VALUE_MAX_LINES
         self.value_edit = declare_inspection(
@@ -131,7 +210,10 @@ class AttributePairWidget(QFrame):
             "src-gui-widgets-sheet-builder-attributepairwidget-init-self-value-edit|authoring.details|help-inspect-src-gui-widgets-sheet-builder-attributepairwidget-init-self-value-edit",
         )
         self.value_edit.setAcceptRichText(False)
-        self.value_edit.setPlaceholderText("Value…")
+        self.value_edit.setAccessibleName(key)
+        self.value_edit.setTabChangesFocus(True)
+        self.value_edit.setPlaceholderText("—")
+        self.value_edit.document().setDocumentMargin(0)
         self.value_edit.setPlainText(value)
         self.value_edit.setHorizontalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff
@@ -145,59 +227,66 @@ class AttributePairWidget(QFrame):
         )
         self.value_edit.textChanged.connect(self._on_value_changed)
         self.value_edit.textChanged.connect(self._adjust_height)
-        layout.addWidget(self.value_edit)
-
-        # Type toggle (compact combo) - Hidden by default
-        self.type_combo = declare_inspection(
-            ScrollSafeComboBox(),
-            "src-gui-widgets-sheet-builder-attributepairwidget-init-self-type-combo|authoring.details|help-inspect-src-gui-widgets-sheet-builder-attributepairwidget-init-self-type-combo",
+        inline.addWidget(
+            self.value_edit, stretch=1, alignment=Qt.AlignmentFlag.AlignTop
         )
-        self.type_combo.addItems(["String", "Number", "Boolean"])
-        self.type_combo.setCurrentText(value_type)
-        self.type_combo.currentTextChanged.connect(self._on_value_changed)
-        self.type_combo.setMaximumWidth(90)
-        self.type_combo.setVisible(False)
-        layout.addWidget(self.type_combo)
 
-        # Apply initial theme and connect to changes
-        self._theme_mgr = ThemeManager()
-        self._apply_theme()
-        connect_theme(self, self._apply_theme)
-        self.destroyed.connect(self._on_destroyed)
+        self._value_type = value_type
+        self._type_combo: ScrollSafeComboBox | None = None
+        # Standalone pairs still own their style. Sheet rows inherit it.
+        if parent is None:
+            self._apply_theme()
+            connect_theme(self, self._apply_theme)
+            self.destroyed.connect(self._on_destroyed)
         self._adjust_height()
+
+    @property
+    def type_combo(self) -> ScrollSafeComboBox:
+        """Create the type control when the layout action first exposes it."""
+        if self._type_combo is None:
+            combo = declare_inspection(
+                ScrollSafeComboBox(self),
+                "src-gui-widgets-sheet-builder-attributepairwidget-init-self-type-combo|authoring.details|help-inspect-src-gui-widgets-sheet-builder-attributepairwidget-init-self-type-combo",
+            )
+            combo.addItems(["String", "Number", "Boolean"])
+            combo.setCurrentText(self._value_type)
+            combo.currentTextChanged.connect(self._on_type_changed)
+            combo.setMaximumWidth(90)
+            combo.hide()
+            cast(QVBoxLayout, self.layout()).addWidget(combo)
+            self._type_combo = combo
+        return self._type_combo
+
+    def _on_type_changed(self, value_type: str) -> None:
+        self._value_type = value_type
+        self.value_changed.emit()
 
     def _apply_theme(self) -> None:
         """Apply current theme colors to the widget."""
         if not shiboken6.isValid(self):
             return
-        theme = self._theme_mgr.get_theme()
-        text = theme["text_main"]
+        self.setStyleSheet(StyleHelper.get_sheet_inline_value_style())
 
-        # Base input style handles border, radius, bg, text color
-        input_style = StyleHelper.get_input_field_style()
-        primary = theme.get("primary", "#5C82FF")
-
-        self.setStyleSheet(
-            StyleHelper.get_sheet_attribute_style()
-            + f"""
-            AttributePairWidget QLabel {{
-                color: {text};
-                background-color: transparent;
-            }}
-            AttributePairWidget QTextEdit, AttributePairWidget QComboBox {{
-                {input_style}
-            }}
-            QTextEdit:focus, QComboBox:focus {{
-                border: 1px solid {primary};
-            }}
-            QComboBox::drop-down {{
-                border: none;
-            }}
-            QComboBox::down-arrow {{
-                image: none;
-            }}
-        """
+    def set_layout_editing(self, editing: bool) -> None:
+        """Allow drag and type controls only during layout editing."""
+        self._layout_editing = editing
+        self._drag_start_pos = None
+        if not editing and self._type_combo is not None:
+            self._type_combo.hide()
+        self.setCursor(
+            Qt.CursorShape.OpenHandCursor if editing else Qt.CursorShape.ArrowCursor
         )
+        self.value_edit.setCursor(Qt.CursorShape.IBeamCursor)
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        """Align labels across wide rows and reserve room for values in narrow cells."""
+        super().resizeEvent(event)
+        if event.size().width() != event.oldSize().width():
+            label_width = min(
+                _SHEET_LABEL_WIDTH, max(48, self.width() - _SHEET_VALUE_WIDTH)
+            )
+            self.key_label.setFixedWidth(label_width)
+            self._adjust_height()
 
     # ------------------------------------------------------------------
     # Public API
@@ -214,25 +303,38 @@ class AttributePairWidget(QFrame):
 
     def set_value(self, value: str) -> None:
         """Set the value without emitting value_changed."""
-        self.value_edit.blockSignals(True)
-        self.value_edit.setPlainText(value)
-        self.value_edit.blockSignals(False)
-        self._adjust_height()
+        editor = self.value_edit
+        cursor = editor.textCursor()
+        anchor, position = cursor.anchor(), cursor.position()
+        scroll = editor.verticalScrollBar().value()
+        previous = editor.blockSignals(True)
+        try:
+            editor.setPlainText(value)
+            self._adjust_height()
+            maximum = editor.document().characterCount() - 1
+            cursor.setPosition(min(anchor, maximum))
+            cursor.setPosition(min(position, maximum), QTextCursor.MoveMode.KeepAnchor)
+            editor.setTextCursor(cursor)
+            editor.verticalScrollBar().setValue(scroll)
+        finally:
+            editor.blockSignals(previous)
 
     def get_type(self) -> str:
         """Return the selected type string."""
-        return self.type_combo.currentText()
+        return self._value_type
 
     def set_type(self, value_type: str) -> None:
         """Set the type combo without emitting value_changed."""
-        self.type_combo.blockSignals(True)
-        self.type_combo.setCurrentText(value_type)
-        self.type_combo.blockSignals(False)
+        self._value_type = value_type
+        if self._type_combo is not None:
+            previous = self._type_combo.blockSignals(True)
+            self._type_combo.setCurrentText(value_type)
+            self._type_combo.blockSignals(previous)
 
     def get_parsed_value(self) -> Union[str, int, float, bool]:
         """Return the value parsed according to the selected type."""
         raw = self.value_edit.toPlainText()
-        vtype = self.type_combo.currentText()
+        vtype = self._value_type
         if vtype == "Number":
             try:
                 stripped = raw.strip()
@@ -249,7 +351,7 @@ class AttributePairWidget(QFrame):
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Record the drag start position on left-click."""
-        if event.button() == Qt.MouseButton.LeftButton:
+        if self._layout_editing and event.button() == Qt.MouseButton.LeftButton:
             self._drag_start_pos = event.pos()
         super().mousePressEvent(event)
 
@@ -257,6 +359,7 @@ class AttributePairWidget(QFrame):
         """Initiate a drag if the mouse moves far enough from the press point."""
         if (
             self._drag_start_pos is not None
+            and event.buttons() & Qt.MouseButton.LeftButton
             and (event.pos() - self._drag_start_pos).manhattanLength()
             > _DRAG_START_DISTANCE_PX
         ):
@@ -285,8 +388,7 @@ class AttributePairWidget(QFrame):
             fm = self.value_edit.fontMetrics()
             line_h = fm.lineSpacing()
             margins = self.value_edit.contentsMargins()
-            frame_w = self.value_edit.frameWidth()
-            padding = margins.top() + margins.bottom() + 2 * frame_w + 4
+            padding = margins.top() + margins.bottom()
 
             min_h = line_h + padding
             max_h = SHEET_VALUE_MAX_LINES * line_h + padding
@@ -315,6 +417,18 @@ class AttributePairWidget(QFrame):
             disconnect_theme(self, self._apply_theme)
         except (RuntimeError, TypeError):
             pass
+
+
+def _sheet_block_preview(layout: QHBoxLayout, editor: QLineEdit) -> QLabel:
+    """Add a wrapping preview for a layout-only text editor."""
+    preview = QLabel(editor.text())
+    preview.setTextFormat(Qt.TextFormat.PlainText)
+    preview.setWordWrap(True)
+    preview.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+    editor.textChanged.connect(preview.setText)
+    layout.addWidget(preview)
+    preview.hide()
+    return preview
 
 
 class TextBlockWidget(QFrame):
@@ -353,11 +467,13 @@ class TextBlockWidget(QFrame):
             "src-gui-widgets-sheet-builder-textblockwidget-init-self-text-edit|authoring.details|help-inspect-src-gui-widgets-sheet-builder-textblockwidget-init-self-text-edit",
         )
         self.text_edit.setPlaceholderText("Enter flavour text…")
+        self.text_edit.setAccessibleName("Sheet text")
         self.text_edit.textChanged.connect(lambda: self.text_changed.emit())
         self.text_edit.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
         )
         layout.addWidget(self.text_edit)
+        self._preview = _sheet_block_preview(layout, self.text_edit)
 
         self._theme_mgr = ThemeManager()
         self._apply_theme()
@@ -373,6 +489,12 @@ class TextBlockWidget(QFrame):
         self.text_edit.blockSignals(True)
         self.text_edit.setText(text)
         self.text_edit.blockSignals(False)
+        self._preview.setText(text)
+
+    def set_layout_editing(self, editing: bool) -> None:
+        """Present authored text until the layout tools are opened."""
+        self.text_edit.setVisible(editing)
+        self._preview.setVisible(not editing)
 
     def _apply_theme(self) -> None:
         """Apply current theme colors."""
@@ -453,7 +575,7 @@ class HeaderWidget(QFrame):
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(6, 3, 6, 3)
+        layout.setContentsMargins(4, 12, 4, 2)
         layout.setSpacing(0)
 
         self.text_edit = declare_inspection(
@@ -461,9 +583,10 @@ class HeaderWidget(QFrame):
             "src-gui-widgets-sheet-builder-headerwidget-init-self-text-edit|authoring.details|help-inspect-src-gui-widgets-sheet-builder-headerwidget-init-self-text-edit",
         )
         self.text_edit.setPlaceholderText("Section name…")
-        self.text_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.text_edit.setAccessibleName("Section name")
         self.text_edit.textChanged.connect(lambda: self.text_changed.emit())
         layout.addWidget(self.text_edit)
+        self._preview = _sheet_block_preview(layout, self.text_edit)
 
         self._theme_mgr = ThemeManager()
         self._apply_theme()
@@ -483,6 +606,12 @@ class HeaderWidget(QFrame):
         self.text_edit.blockSignals(True)
         self.text_edit.setText(text)
         self.text_edit.blockSignals(False)
+        self._preview.setText(text)
+
+    def set_layout_editing(self, editing: bool) -> None:
+        """Present a heading until the layout tools are opened."""
+        self.text_edit.setVisible(editing)
+        self._preview.setVisible(not editing)
 
     def _apply_theme(self) -> None:
         """Apply current theme colors."""
@@ -542,6 +671,16 @@ class SpacerWidget(QFrame):
     # Drag support
     # ------------------------------------------------------------------
 
+    def set_layout_editing(self, editing: bool) -> None:
+        """Keep authored space while exposing the spacer only in layout mode."""
+        self._drag_start_pos = None
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, not editing)
+        self.setFocusPolicy(
+            Qt.FocusPolicy.ClickFocus if editing else Qt.FocusPolicy.NoFocus
+        )
+        self.setProperty("layoutEditing", editing)
+        self._apply_theme()
+
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Record the drag-start point and claim keyboard focus on left-click."""
         if event.button() == Qt.MouseButton.LeftButton:
@@ -553,6 +692,7 @@ class SpacerWidget(QFrame):
         """Initiate a drag once the mouse has moved far enough."""
         if (
             self._drag_start_pos is not None
+            and event.buttons() & Qt.MouseButton.LeftButton
             and (event.pos() - self._drag_start_pos).manhattanLength()
             > _DRAG_START_DISTANCE_PX
         ):
@@ -681,7 +821,7 @@ class _InsertionLine(QWidget):
 
 
 class _ResizeHandle(QWidget):
-    """Invisible drag handle between adjacent items in a row.
+    """Layout editing handle between adjacent items in a row.
 
     Allows mouse-drag to redistribute stretch weights between the item
     to the left and the item to the right.
@@ -719,10 +859,10 @@ class _ResizeHandle(QWidget):
         self.setCursor(QCursor(Qt.CursorShape.SplitHCursor))
         self.setToolTip("Drag to resize")
 
-        self._theme_mgr = ThemeManager()
-        self._apply_theme()
-        connect_theme(self, self._apply_theme)
-        self.destroyed.connect(self._on_destroyed)
+        if parent is None:
+            self._apply_theme()
+            connect_theme(self, self._apply_theme)
+            self.destroyed.connect(self._on_destroyed)
 
     def _apply_theme(self) -> None:
         """Apply current theme colors."""
@@ -917,11 +1057,20 @@ class SheetBuilderWidget(QWidget):
             parent: Optional parent widget.
         """
         super().__init__(parent)
-        self.setAcceptDrops(True)
+        self._layout_editing = False
+        self._layout_overflow: QWidget | None = None
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
+
+        self.layout_button = declare_inspection(
+            StandardButton("Edit layout"),
+            "sheet-edit-layout|authoring.details|help-inspect-sheet-edit-layout",
+        )
+        self.layout_button.setCheckable(True)
+        self.layout_button.toggled.connect(self.set_layout_editing)
+        outer.addWidget(self.layout_button, alignment=Qt.AlignmentFlag.AlignRight)
 
         # ── Toolbar ──────────────────────────────────────────────────────
         self._toolbar = QToolBar()
@@ -979,12 +1128,13 @@ class SheetBuilderWidget(QWidget):
 
         # Inner container
         self._container = QWidget()
+        self._container.setObjectName("SheetContent")
         self._container.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self._container.customContextMenuRequested.connect(self._show_context_menu)
         self._grid_layout = QVBoxLayout(self._container)
         self._grid_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self._grid_layout.setSpacing(4)
-        self._grid_layout.setContentsMargins(4, 4, 4, 4)
+        self._grid_layout.setSpacing(3)
+        self._grid_layout.setContentsMargins(8, 2, 8, 8)
         self._scroll.setWidget(self._container)
 
         # Pair widget lookup: key -> AttributePairWidget
@@ -998,6 +1148,9 @@ class SheetBuilderWidget(QWidget):
 
         # Reentrance-safe signal suppression counter (> 0 means suppressed)
         self._block_depth: int = 0
+        self._pending_sheet: _SheetSnapshot | None = None
+        self._rendered_owner: str | None = None
+        self._source_labels: dict[str, str] = {}
 
         # Drag safety: defer destructive reloads while a QDrag.exec() is active
         self._drag_active: bool = False
@@ -1011,10 +1164,15 @@ class SheetBuilderWidget(QWidget):
 
         # ── Keyboard reordering shortcuts ────────────────────────────────
         ctx = Qt.ShortcutContext.WidgetWithChildrenShortcut
-        self._make_shortcut("Alt+Up", self._move_focused_row_up, ctx)
-        self._make_shortcut("Alt+Down", self._move_focused_row_down, ctx)
-        self._make_shortcut("Alt+Left", self._move_focused_item_left, ctx)
-        self._make_shortcut("Alt+Right", self._move_focused_item_right, ctx)
+        self._layout_shortcuts = (
+            self._make_shortcut("Alt+Up", self._move_focused_row_up, ctx),
+            self._make_shortcut("Alt+Down", self._move_focused_row_down, ctx),
+            self._make_shortcut("Alt+Left", self._move_focused_item_left, ctx),
+            self._make_shortcut("Alt+Right", self._move_focused_item_right, ctx),
+        )
+        for shortcut in self._layout_shortcuts:
+            shortcut.setEnabled(False)
+        self._toolbar.hide()
 
         logger.debug("SheetBuilderWidget initialized.")
 
@@ -1023,13 +1181,17 @@ class SheetBuilderWidget(QWidget):
         if not shiboken6.isValid(self):
             return
         theme = self._theme_mgr.get_theme()
-        surface = theme.get("surface", "#1A1A1A")
+        surface = theme["surface"]
         surface_alt = theme.get("surface_alt", theme["app_bg"])
-        border = theme.get("border", "#333333")
+        border = theme["border"]
 
         # Style the scroll area and container to match the app's surface
         self._scroll.setStyleSheet(StyleHelper.get_scroll_area_style())
-        self._container.setStyleSheet(f"QWidget {{ background-color: {surface}; }}")
+        self._container.setStyleSheet(
+            f"QWidget#SheetContent {{ background-color: {surface}; }}"
+            + StyleHelper.get_sheet_inline_value_style()
+            + StyleHelper.get_sheet_resize_handle_style()
+        )
 
         # Style the toolbar
         tool_button_style = StyleHelper.get_tool_button_style()
@@ -1047,6 +1209,86 @@ class SheetBuilderWidget(QWidget):
                 padding: 5px 10px;
             }}
         """
+        )
+
+    def set_layout_overflow(self, overflow: QWidget) -> None:
+        """Register the inspector's narrow route to the existing sheet actions."""
+        self._layout_overflow = overflow
+        self._update_layout_toolbar()
+
+    def set_layout_editing(self, editing: bool, *, restore_focus: bool = True) -> None:
+        """Switch layout tools without changing the sheet draft."""
+        if self._layout_editing == editing:
+            return
+        scrollbar = self._scroll.verticalScrollBar()
+        scroll_value = scrollbar.value()
+        self._layout_editing = editing
+        self.layout_button.setChecked(editing)
+        self.layout_button.setText("Done editing layout" if editing else "Edit layout")
+        self.setAcceptDrops(editing)
+        for shortcut in self._layout_shortcuts:
+            shortcut.setEnabled(editing)
+        self._update_layout_toolbar()
+        for index in range(self._grid_layout.count()):
+            row = self._grid_layout.itemAt(index)
+            if isinstance(row, QHBoxLayout):
+                self._prepare_layout_row(row)
+        if not editing and restore_focus and self.isVisible():
+            self.layout_button.setFocus(Qt.FocusReason.OtherFocusReason)
+        if self.isVisible() and (layout := self.layout()) is not None:
+            self._grid_layout.activate()
+            layout.activate()
+            scrollbar.setValue(scroll_value)
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        """Reflow the sheet and its actions for the new viewport width."""
+        super().resizeEvent(event)
+        self._update_layout_toolbar()
+        for index in range(self._grid_layout.count()):
+            row = self._grid_layout.itemAt(index)
+            if isinstance(row, QHBoxLayout):
+                self._reflow_row(row)
+
+    def _update_layout_toolbar(self) -> None:
+        """Use one action route at a time."""
+        use_overflow = (
+            self._layout_overflow is not None
+            and self.width() < self._toolbar.sizeHint().width()
+        )
+        self._toolbar.setVisible(self._layout_editing and not use_overflow)
+        if self._layout_overflow is not None:
+            self._layout_overflow.setVisible(self._layout_editing and use_overflow)
+
+    def _prepare_layout_row(self, row: QHBoxLayout) -> None:
+        """Apply the current mode to each item in a new or changed row."""
+        for index in range(row.count()):
+            item = row.itemAt(index)
+            widget = item.widget() if item else None
+            if isinstance(
+                widget,
+                (AttributePairWidget, HeaderWidget, TextBlockWidget, SpacerWidget),
+            ):
+                widget.set_layout_editing(self._layout_editing)
+            elif isinstance(widget, _ResizeHandle):
+                widget.setVisible(self._layout_editing)
+        self._reflow_row(row)
+
+    def _reflow_row(self, row: QHBoxLayout) -> None:
+        """Stack narrow reading rows without changing their order or weights."""
+        columns = sum(
+            isinstance(item.widget(), AttributePairWidget)
+            for i in range(row.count())
+            if (item := row.itemAt(i)) is not None
+        )
+        stack = (
+            not self._layout_editing
+            and columns > 1
+            and columns * _SHEET_COLUMN_WIDTH > self.width() - 36
+        )
+        row.setDirection(
+            QBoxLayout.Direction.TopToBottom
+            if stack
+            else QBoxLayout.Direction.LeftToRight
         )
 
     # ------------------------------------------------------------------
@@ -1069,109 +1311,121 @@ class SheetBuilderWidget(QWidget):
             return True
         return False
 
+    def stage_attributes(
+        self,
+        owner: str | None,
+        attributes: dict[str, Any],
+        layout: list[list[Any]] | None = None,
+        *,
+        source_labels: dict[str, str] | None = None,
+    ) -> None:
+        """Keep the current record ready to render without constructing hidden rows."""
+        self._pending_sheet = _SheetSnapshot(
+            owner,
+            deepcopy(attributes),
+            _normalize_layout(attributes, layout),
+            dict(source_labels or {}),
+        )
+        if self.isVisible():
+            self._render_pending_sheet()
+
+    @property
+    def has_pending_snapshot(self) -> bool:
+        """Whether the live widgets are behind the current record snapshot."""
+        return self._pending_sheet is not None
+
+    def sync_from_table(self, owner: str | None, attributes: dict[str, Any]) -> None:
+        """Update the Sheet snapshot from the table without emitting an edit."""
+        shown_keys = (
+            self._pending_sheet.attributes.keys()
+            if self._pending_sheet is not None
+            else self._pairs.keys()
+        )
+        # The table may add fields independently. Newly added fields acquire a
+        # default Sheet row on the next record load, as before.
+        visible = {key: value for key, value in attributes.items() if key in shown_keys}
+        labels = (
+            self._pending_sheet.source_labels
+            if self._pending_sheet is not None
+            else self._source_labels
+        )
+        self.stage_attributes(owner, visible, self.get_layout(), source_labels=labels)
+
+    def showEvent(self, event: QShowEvent) -> None:
+        """Materialize the newest snapshot on the normal Qt visibility route."""
+        super().showEvent(event)
+        self._render_pending_sheet()
+
+    def _render_pending_sheet(self) -> None:
+        snapshot = self._pending_sheet
+        if snapshot is None or self._drag_active:
+            return
+        self._pending_sheet = None
+        if self._can_reuse_rows(snapshot):
+            for key, value in snapshot.attributes.items():
+                _, text = _sheet_value(value)
+                pair = self._pairs[key]
+                if pair.get_value() != text:
+                    pair.set_value(text)
+        else:
+            self._replace_rows(snapshot.attributes, snapshot.layout)
+        self._rendered_owner = snapshot.owner
+        self.set_source_labels(snapshot.source_labels)
+
+    def set_source_labels(self, labels: dict[str, str]) -> None:
+        """Refresh provenance without touching values, layout, or editor focus."""
+        if self._pending_sheet is not None:
+            self._pending_sheet.source_labels = dict(labels)
+            return
+        self._source_labels = dict(labels)
+        for key, pair in self._pairs.items():
+            label = labels.get(key, "")
+            if pair.toolTip() != label:
+                pair.setToolTip(label)
+
+    def _can_reuse_rows(self, snapshot: _SheetSnapshot) -> bool:
+        return (
+            self._rendered_owner == snapshot.owner
+            and self._pairs.keys() == snapshot.attributes.keys()
+            and self.get_layout() == snapshot.layout
+            and all(
+                self._pairs[key].get_type() == _sheet_value(value)[0]
+                for key, value in snapshot.attributes.items()
+            )
+        )
+
     def load_attributes(
         self,
         attributes: Dict[str, Any],
         layout: Optional[List[List[Any]]] = None,
     ) -> None:
-        """Populate the sheet from an attributes dict and optional layout.
-
-        Focus, cursor position, and scroll position are preserved across
-        reloads so that auto-save does not disrupt the user's editing flow.
-
-        Args:
-            attributes: Key-value attribute pairs (user-visible, no ``_`` prefix).
-            layout: Optional 2D list describing the row arrangement. Items can be
-                string keys, dicts like ``{"key": "str", "weight": 2}``,
-                ``{"type": "spacer", "weight": 1}``,
-                ``{"type": "text", "text": "…"}``, or
-                ``{"type": "divider"}``.
-                If ``None``, each attribute gets its own row.
-        """
-        logger.debug(
-            f"Loading {len(attributes)} attributes with layout={layout is not None}"
-        )
-
-        # Defer reload if a child drag is active to avoid destroying the
-        # widget that owns the running QDrag (causes C++ access violation).
+        """Populate the Sheet immediately for callers using it as a standalone view."""
         if self._defer_if_dragging(attributes, layout):
             return
+        self._pending_sheet = None
+        self._rendered_owner = None
+        self._source_labels = {}
+        self._replace_rows(attributes, _normalize_layout(attributes, layout))
 
-        # Save focus/scroll state before clearing
+    def _replace_rows(
+        self, attributes: dict[str, Any], layout: list[list[Any]]
+    ) -> None:
         focus_state = self._save_focus_state()
-
+        # Tab changes already suspend updates on an ancestor. Leave that state
+        # alone so Qt can re-enable painting when the tab change finishes.
+        updates_enabled = self.updatesEnabled()
+        if updates_enabled:
+            self.setUpdatesEnabled(False)
         self._block_depth += 1
         try:
             self._clear()
-
-            if layout is not None:
-                # Build rows according to layout, skipping keys not in attributes
-                placed_keys: set[str] = set()
-                for row_items in layout:
-                    row_configs = []
-                    for item in row_items:
-                        if isinstance(item, str):
-                            if item in attributes:
-                                row_configs.append(
-                                    {
-                                        "key": item,
-                                        "value": attributes[item],
-                                        "weight": 1,
-                                    }
-                                )
-                                placed_keys.add(item)
-                        elif isinstance(item, dict):
-                            item_type = item.get("type", "")
-                            is_spacer = (
-                                item_type == "spacer" or item.get("spacer") is True
-                            )
-                            weight = int(item.get("weight", 1))
-                            if item_type == "text":
-                                row_configs.append(
-                                    {"type": "text", "text": item.get("text", "")}
-                                )
-                            elif item_type == "header":
-                                row_configs.append(
-                                    {"type": "header", "text": item.get("text", "")}
-                                )
-                            elif item_type == "divider":
-                                row_configs.append({"type": "divider"})
-                            elif is_spacer:
-                                row_configs.append({"spacer": True, "weight": weight})
-                            else:
-                                key = item.get("key")
-                                if key and key in attributes:
-                                    row_configs.append(
-                                        {
-                                            "key": key,
-                                            "value": attributes[key],
-                                            "weight": weight,
-                                        }
-                                    )
-                                    placed_keys.add(key)
-                    if row_configs:
-                        self._add_row(row_configs)
-
-                # Append any remaining attributes not referenced by the layout
-                self._add_unplaced_attributes(attributes, placed_keys)
-            else:
-                # No layout – one attribute per row
-                for key, value in attributes.items():
-                    self._add_row([{"key": key, "value": value, "weight": 1}])
+            for row in layout:
+                self._add_row([_row_config(item, attributes) for item in row])
         finally:
             self._block_depth -= 1
-
-        # Restore focus/scroll state after rebuild
+            if updates_enabled:
+                self.setUpdatesEnabled(True)
         self._restore_focus_state(focus_state)
-        logger.debug("Attributes loaded count=%d", len(self._pairs))
-
-    def _add_unplaced_attributes(
-        self, attributes: Dict[str, Any], placed_keys: set[str]
-    ) -> None:
-        """Append attributes omitted by the saved layout."""
-        for key, value in attributes.items():
-            if key not in placed_keys:
-                self._add_row([{"key": key, "value": value, "weight": 1}])
 
     def get_attributes(self) -> Dict[str, Any]:
         """Return the current attribute values as a dict.
@@ -1179,6 +1433,8 @@ class SheetBuilderWidget(QWidget):
         Returns:
             Dict mapping attribute keys to their parsed values.
         """
+        if self._pending_sheet is not None:
+            return deepcopy(self._pending_sheet.attributes)
         return {key: pair.get_parsed_value() for key, pair in self._pairs.items()}
 
     def get_layout(self) -> List[List[Any]]:
@@ -1188,6 +1444,8 @@ class SheetBuilderWidget(QWidget):
             List of rows, where each row is a list of attribute key strings,
             or dicts describing items with custom weights, spacers, text, or dividers.
         """
+        if self._pending_sheet is not None:
+            return deepcopy(self._pending_sheet.layout)
         rows: List[List[Any]] = []
         for row_idx in range(self._grid_layout.count()):
             row_layout = self._grid_layout.itemAt(row_idx)
@@ -1486,9 +1744,6 @@ class SheetBuilderWidget(QWidget):
     def _clear(self) -> None:
         """Remove all rows and pair/spacer widgets."""
         logger.debug(f"Clearing sheet builder. Currently has {len(self._pairs)} pairs.")
-        for pair in list(self._pairs.values()):
-            pair.setParent(None)
-            pair.deleteLater()
         self._pairs.clear()
         self._spacers.clear()
 
@@ -1526,7 +1781,7 @@ class SheetBuilderWidget(QWidget):
             weight = int(config.get("weight", 1))
 
             if item_type == "text":
-                tb = TextBlockWidget(config.get("text", ""))
+                tb = TextBlockWidget(config.get("text", ""), self._container)
                 tb.text_changed.connect(self._on_pair_changed)
                 idx = hlayout.count()
                 hlayout.addWidget(tb, stretch=1)
@@ -1534,7 +1789,7 @@ class SheetBuilderWidget(QWidget):
                 continue
 
             if item_type == "header":
-                hw = HeaderWidget(config.get("text", ""))
+                hw = HeaderWidget(config.get("text", ""), self._container)
                 hw.text_changed.connect(self._on_pair_changed)
                 idx = hlayout.count()
                 hlayout.addWidget(hw, stretch=1)
@@ -1542,14 +1797,14 @@ class SheetBuilderWidget(QWidget):
                 continue
 
             if item_type == "divider":
-                dw = DividerWidget()
+                dw = DividerWidget(self._container)
                 idx = hlayout.count()
                 hlayout.addWidget(dw, stretch=1)
                 widget_indices.append(idx)
                 continue
 
-            if config.get("spacer"):
-                sw = SpacerWidget()
+            if item_type == "spacer" or config.get("spacer"):
+                sw = SpacerWidget(self._container)
                 sw.weight = weight
                 sw.drag_started.connect(self._on_child_drag_started)
                 sw.drag_finished.connect(self._on_child_drag_finished)
@@ -1569,17 +1824,8 @@ class SheetBuilderWidget(QWidget):
                     )
                 continue
 
-            vtype = "String"
-            if isinstance(value, bool):
-                vtype = "Boolean"
-                str_val = str(value)
-            elif isinstance(value, (int, float)):
-                vtype = "Number"
-                str_val = str(value)
-            else:
-                str_val = str(value) if value is not None else ""
-
-            pair = AttributePairWidget(key, str_val, vtype)
+            vtype, str_val = _sheet_value(value)
+            pair = AttributePairWidget(key, str_val, vtype, self._container)
             pair.weight = weight
             pair.value_changed.connect(self._on_pair_changed)
             pair.drag_started.connect(self._on_child_drag_started)
@@ -1594,6 +1840,7 @@ class SheetBuilderWidget(QWidget):
             self._insert_resize_handles(hlayout, widget_indices)
 
         self._grid_layout.addLayout(hlayout)
+        self._prepare_layout_row(hlayout)
 
     def _insert_resize_handles(
         self, hlayout: QHBoxLayout, widget_indices: List[int]
@@ -1621,7 +1868,9 @@ class SheetBuilderWidget(QWidget):
             left_actual = left_orig + offset
             right_actual = right_orig + offset
             insert_at = left_actual + 1
-            handle = _ResizeHandle(hlayout, left_actual, right_actual + 1)
+            handle = _ResizeHandle(
+                hlayout, left_actual, right_actual + 1, self._container
+            )
             handle.resize_done.connect(self._on_pair_changed)
             hlayout.insertWidget(insert_at, handle, stretch=0)
             offset += 1
@@ -1642,6 +1891,7 @@ class SheetBuilderWidget(QWidget):
         hlayout.setContentsMargins(0, 0, 0, 0)
         hlayout.addWidget(widget, stretch=weight)
         self._grid_layout.addLayout(hlayout)
+        self._prepare_layout_row(hlayout)
 
     def _detach_widget(self, widget: QWidget) -> None:
         """Remove any widget from its current row layout, cleaning up empty rows.
@@ -1774,8 +2024,11 @@ class SheetBuilderWidget(QWidget):
         if self._deferred_reload is not None:
             attrs, layout = self._deferred_reload
             self._deferred_reload = None
-            logger.debug("Replaying deferred load_attributes.")
-            self.load_attributes(attrs, layout)
+            if self._pending_sheet is None:
+                logger.debug("Replaying deferred load_attributes.")
+                self.load_attributes(attrs, layout)
+        if self.isVisible():
+            self._render_pending_sheet()
 
     def _on_builder_destroyed(self) -> None:
         """Disconnect theme signal when destroyed."""
@@ -2115,6 +2368,8 @@ class SheetBuilderWidget(QWidget):
 
     def _show_context_menu(self, pos: QPoint) -> None:
         """Show a context menu for the clicked row/item."""
+        if not self._layout_editing:
+            return
         clicked_row, clicked_col, clicked_widget = self._find_clicked_item(pos)
 
         menu = declare_inspection(
@@ -2281,7 +2536,7 @@ class SheetBuilderWidget(QWidget):
             hlayout = QHBoxLayout()
             hlayout.setSpacing(0)
             hlayout.setContentsMargins(0, 0, 0, 0)
-            pair = AttributePairWidget(key, "", "String")
+            pair = AttributePairWidget(key, "", "String", self._container)
             pair.value_changed.connect(self._on_pair_changed)
             pair.drag_started.connect(self._on_child_drag_started)
             pair.drag_finished.connect(self._on_child_drag_finished)
@@ -2417,3 +2672,4 @@ class SheetBuilderWidget(QWidget):
             and not isinstance(item.widget(), _ResizeHandle)
         ]
         self._insert_resize_handles(hlayout, widget_indices)
+        self._prepare_layout_row(hlayout)

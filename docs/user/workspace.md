@@ -142,6 +142,7 @@ result's scope. Pending edits survive page, scope and search changes.
 | Analysis | Editorial checks | — |
 | AI | Providers, models, connections, automatic indexing and summary settings | Creative preferences, prompts, templates and index exclusions |
 | Graph | — | Visual lexicon: node and relation styles |
+| Relation Dictionary | — | Connection wording and guidance for this world |
 | Backups & storage | Backup interval, retention and locations | — |
 | Advanced | Targeted preference and workspace resets | — |
 
@@ -151,6 +152,7 @@ changes offers **Apply / Discard / Keep editing**. World changes appear as one
 undoable history action; local preferences and credentials are saved separately.
 If a backend fails, the failed edits remain pending and the message explains the
 failure. Successfully saved groups are not undone by a later Cancel.
+The Relation Dictionary saves definitions through its own review.
 
 **Pending** identifies unsaved edits; **Customized** identifies saved non-default
 values. Inline controls such as Snap to Events apply immediately. If another
@@ -186,6 +188,131 @@ auto-relations off and no additional excluded attributes. Moving a world retains
 its saved policy. Changing exclusions does not remove already indexed material:
 apply the setting, then explicitly rebuild the complete index. Index rebuilding
 and backup creation/restoration are operations, not effects of Apply.
+
+(help-inspect-relation-dictionary-open)=
+
+### Customize how connections read in this world
+
+Use the Relation Dictionary to give a relation type a forward label and a
+reverse label. A relation type has a stable key, such as `member_of`. All
+connections with that exact key in the current world use the saved wording.
+
+1. Open **Settings**, select **This World → Relation Dictionary**, and choose
+   **Open Relation Dictionary**.
+2. Select a saved definition, a used key, or a suggestion from **Kraken defaults**,
+   then choose **Open definition**. Choose **Add definition** to enter a new key.
+3. Enter the labels and description. Expand **Advanced** if you want to write
+   complete sentences for either end of the connection.
+4. Choose **Review impact**. Check the number of saved connections that use
+   this key and compare the before and after wording.
+5. Choose **Save definition**, then open a connection that uses the key to
+   see the new wording. The save creates one Undo action.
+
+Saved definitions travel with the world in full-world packages and backups.
+
+#### Membership and event participation
+
+Use **Member of** (`member_of`) for membership between Entities. For example,
+a character can be a member of a guild. Use **Involves** (`involved`) or
+**Participated in** (`participated_in`) for an Event and its participants.
+
+When a **Member of** connection starts at an Event, World Context shows it as
+a direct connection and the Event editor lists it under **Other connections**.
+Kraken protects the `member_of` key from migration.
+
+(help-inspect-relation-dictionary-list)=
+
+**Relation definitions** — Choose from definitions saved in this world, types
+already used by its connections, and suggestions from Kraken defaults.
+Saving a suggestion gives this world its own copy.
+
+(help-inspect-relation-dictionary-wording)=
+
+**Definition fields** — The stable key becomes read-only after saving. The
+forward label reads from the saved source and the reverse label reads from the
+saved target. In **Advanced**, templates can use `{source}` and `{target}` in
+either sentence. Both placeholders refer to the original ends of the saved
+connection. If you leave a sentence blank, Kraken uses the applicable label.
+
+(help-inspect-relation-dictionary-endpoints)=
+
+**Preferred source and target** — Choose Entity, Event, or Any kind for each
+end. These preferences affect suggestions and advisory messages during relation
+authoring. Authors can still save connections between other kinds of entries.
+
+(help-inspect-relation-dictionary-flags)=
+
+**Definition enabled** and **Symmetric meaning** — Disable a definition to
+restore wording based on the saved key. Enable it to use the definition again.
+Symmetry records that the meaning applies in either direction. Each connection
+keeps its original direction and identity.
+
+(help-inspect-relation-dictionary-review)=
+
+**Review impact** — Compare the current and proposed wording, preferred
+endpoint kinds, and symmetry. The count covers saved connections across the
+world, including connections outside the current view.
+
+(help-inspect-relation-dictionary-save)=
+
+**Save definition** — Save the reviewed change to the named world as one Undo
+action. If the dictionary or reviewed usage changes before the save completes,
+return to the definition and review the current impact before saving.
+
+(help-inspect-relation-removal)=
+
+#### Remove a saved relation definition
+
+Open the definition and choose **Advanced → Remove definition…**. Review the
+number of connections that use the key and the fallback wording, then choose
+**Remove definition**. The connections still use their saved key. Undo restores
+the definition. Use **Definition enabled** to keep a definition for later.
+
+(help-inspect-relation-migration)=
+
+#### Change a custom relation key across a world
+
+1. In the Relation Dictionary, open the custom key and choose
+   **Advanced → Migrate identifier…**.
+2. Enter an unused key and choose **Review migration**. Check the exact mapping,
+   the number of stored connections and the settings Kraken will update.
+3. Choose **Back up and migrate**. Kraken verifies the checkpoint before updating
+   the world. Open an affected connection to check its new key.
+
+Connections keep their original IDs, endpoints, direction, dates and notes.
+The confirmation starts fresh Undo and Redo stacks. To reverse the change, use
+**Restore from backup** with the checkpoint path shown after migration. Restoring
+the checkpoint also rolls back later changes. Keys used by built-in behavior
+are protected.
+
+(help-inspect-relation-preset-export)=
+
+#### Reuse relation definitions in another world
+
+1. In the source world's **Relation Dictionary**, choose **Export preset…**.
+   Use **Skip** for any definitions you want to leave out, then choose
+   **Save preset…** and name the JSON file.
+2. Open the destination world's **Relation Dictionary**. Choose **Import preset…**
+   and open that file.
+3. Select each key to review its wording and the number of connections that use it
+   in this world. For a conflict, choose **Keep existing** or **Replace**. Use
+   **Skip** to leave out an addition.
+4. Choose **Import definitions**. Open an imported definition to verify its
+   wording. Undo restores the dictionary from before the import in one step.
+
+The destination stores its own copies. Later edits apply to that world. The
+source definitions and preset file retain their saved wording.
+
+(help-inspect-relation-preset-import)=
+
+**Import preset…** — Open a Kraken relation preset for review. If the destination
+changes during review, check the refreshed preview and choose again.
+
+(help-inspect-relation-preset-review)=
+
+**Preset review** — Select a key to compare its current and proposed wording and
+see its usage count. A conflict requires a choice. An unavailable key includes
+a reason. **Import definitions** saves the selected changes together.
 
 (help-inspect-settings-center-search)=
 

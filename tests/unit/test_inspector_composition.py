@@ -350,7 +350,9 @@ def test_same_object_and_new_object_keep_destination_and_details_view(editor):
     editor._presentation.composition.details_views.setCurrentIndex(1)
     inspector.open_auxiliary_below("world_context")
     editor._presentation.context_disclosure.setChecked(True)
-    for item_id in (editor._get_current_item_id(), "next"):
+    editor.sheet_builder.set_layout_editing(True)
+    current_id = editor._get_current_item_id()
+    for item_id in (current_id, "next"):
         if isinstance(editor, EntityEditorWidget):
             editor.load_entity(
                 Entity(
@@ -374,6 +376,7 @@ def test_same_object_and_new_object_keep_destination_and_details_view(editor):
             is editor._presentation.composition.details
         )
         assert editor._presentation.composition.details_views.currentIndex() == 1
+        assert editor.sheet_builder.layout_button.isChecked() == (item_id == current_id)
         assert editor._presentation.composition.context_home.detached
         assert editor._presentation.context_disclosure.isChecked()
         assert not editor.has_unsaved_changes()
@@ -459,6 +462,7 @@ def test_tags_and_sheet_edits_remain_dirty_through_view_changes(editor, qtbot):
     qtbot.keyClicks(editor.tag_editor.tag_input, "historical")
     qtbot.keyClick(editor.tag_editor.tag_input, Qt.Key.Key_Return)
     assert editor.tag_editor.get_tags() == ["historical"]
+    editor.inspector.activate_section_id("sheet")
     editor.sheet_builder._pairs["rank"].value_edit.setPlainText("Master")
     editor.inspector.open_auxiliary_below("sheet")
     editor.inspector.return_auxiliary("sheet")
@@ -601,7 +605,9 @@ def test_narrow_toolbar_menus_reuse_authored_actions(editor, qtbot):
     qtbot.waitUntil(writing.menu_row.isVisible)
     assert editor.desc_edit.action_toggle_mode in writing._menus["View"].actions()
     editor.inspector.activate_section_id("sheet")
-    assert sheet.isVisible()
+    assert not sheet.isVisible()
+    editor.sheet_builder.layout_button.click()
+    qtbot.waitUntil(sheet.isVisible)
     assert editor.sheet_builder._act_add_header in sheet.menu().actions()
     sheet.menu().actions()[2].trigger()  # The existing Add Divider action.
     assert any("divider" in str(row) for row in editor.sheet_builder.get_layout())

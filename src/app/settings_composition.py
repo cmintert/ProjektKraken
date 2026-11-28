@@ -2,21 +2,32 @@
 
 from __future__ import annotations
 
+import logging
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QObject, Qt, Signal, Slot
 from PySide6.QtWidgets import QApplication
 
+from src.app.coordinators.relation_dictionary_coordinator import (
+    DictionaryCommand,
+    RelationDictionaryCoordinator,
+)
 from src.app.coordinators.settings_coordinator import SettingsCoordinator
 from src.core.calendar import CalendarConfig
+from src.core.paths import get_backup_directory
 from src.core.theme_manager import ThemeManager
 from src.core.timeline_visibility import DEPENDENCY_VISIBILITY_KEY
 from src.gui.utils.settings_navigation import settings_navigation
+from src.gui.widgets.settings_center import SettingsCenter
 from src.gui.widgets.spell_check_controller import SpellCheckController
+from src.services.relation_dictionary import RelationDictionaryReader
 from src.services.settings_snapshot import SettingsSnapshotWorker
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
+
+logger = logging.getLogger(__name__)
 
 
 def compose_settings(window: MainWindow) -> SettingsCoordinator:
@@ -34,6 +45,7 @@ def compose_settings(window: MainWindow) -> SettingsCoordinator:
     coordinator = SettingsCoordinator(
         context, window.command_coordinator.execute_command, window
     )
+    _attach_relation_dictionary(window, coordinator, context)
     database_worker = window.worker
     endpoint = SettingsSnapshotWorker(lambda: database_worker.db_service)
     endpoint.moveToThread(window.worker_thread)
@@ -77,6 +89,14 @@ def compose_settings(window: MainWindow) -> SettingsCoordinator:
 
     coordinator.preferences_changed.connect(local_changed)
     coordinator.world_changed.connect(world_changed)
+
+    def relation_vocabulary_changed(vocabulary: dict[str, Any]) -> None:
+        for editor in (window.entity_editor, window.event_editor):
+            editor.connections.set_relation_vocabulary(vocabulary)
+            editor.relation_authoring.refresh_wording()
+        window.graph_widget.set_relation_vocabulary(vocabulary)
+
+    coordinator.relation_vocabulary_changed.connect(relation_vocabulary_changed)
     coordinator.world_form_created.connect(
         window.app_coordinator.icon_library.attach_draft
     )
@@ -102,6 +122,134 @@ def compose_settings(window: MainWindow) -> SettingsCoordinator:
     if window.worker_manager.database_initialized is True:
         coordinator.refresh_world()
     return coordinator
+
+
+def _attach_relation_dictionary(
+    window: MainWindow,
+    coordinator: SettingsCoordinator,
+    context: Callable[[], dict[str, Any]],
+) -> None:
+    commands = window.command_coordinator
+
+    def execute(command: DictionaryCommand) -> bool:
+        if commands.mutations_suspended:
+            return False
+        commands.execute_command(command)
+        return True
+
+    worker = window.worker
+
+    def invalidate_temporal_cache() -> None:
+        if worker.temporal_manager is not None:
+            worker.temporal_manager.clear_all_cache()
+
+    ports = _RelationMigrationPorts(window, coordinator)
+    endpoint = RelationDictionaryReader(
+        lambda: worker.db_service,
+        lambda: worker.history_service.world_id if worker.history_service else "",
+        invalidate_temporal_cache,
+    )
+    ports.requested.connect(endpoint.migrate, Qt.ConnectionType.QueuedConnection)
+    endpoint.migration_finished.connect(
+        ports.finished, Qt.ConnectionType.QueuedConnection
+    )
+    controller = RelationDictionaryCoordinator(
+        context, execute, endpoint, coordinator, ports.migrate
+    )
+    ports.completed.connect(controller.on_migration_finished)
+    endpoint.moveToThread(window.worker_thread)
+    window.worker_thread.finished.connect(endpoint.deleteLater)
+    controller.requested.connect(endpoint.load, Qt.ConnectionType.QueuedConnection)
+    endpoint.finished.connect(
+        controller.on_snapshot, Qt.ConnectionType.QueuedConnection
+    )
+    worker.command_finished.connect(
+        controller.on_command_finished, Qt.ConnectionType.QueuedConnection
+    )
+
+    def bind(view: SettingsCenter) -> None:
+        view.relation_dictionary_requested.connect(lambda: controller.open(view))
+
+    coordinator.view_created.connect(bind)
+    coordinator.dictionary_transition = controller.allow_transition
+    coordinator.dictionary_has_pending = controller.has_pending_changes
+
+
+class _RelationMigrationPorts(QObject):
+    """Hold dispatch while the worker checkpoints and migrates one world."""
+
+    requested = Signal(dict)
+    completed = Signal(dict)
+
+    def __init__(self, window: MainWindow, settings: SettingsCoordinator) -> None:
+        super().__init__(settings)
+        self._window = window
+        self._settings = settings
+        self._token = ""
+
+    def migrate(self, review: dict[str, Any]) -> bool:
+        """Queue an exclusive operation against the configured backup directory."""
+        window = self._window
+        if self._settings.has_pending_world_settings():
+            self.completed.emit(
+                {
+                    "token": review["token"],
+                    "error": "Apply or discard pending world settings first.",
+                }
+            )
+            return True
+        try:
+            service = window.backup_service
+            directory = (
+                service.config.backup_dir if service is not None else None
+            ) or get_backup_directory()
+        except OSError:
+            logger.exception("Could not open the migration backup directory")
+            self.completed.emit(
+                {
+                    "token": review["token"],
+                    "error": "The backup directory is unavailable.",
+                }
+            )
+            return True
+        if not window.command_coordinator.begin_exclusive_mutation():
+            return False
+        self._token = review["token"]
+        self.requested.emit(review | {"backup_directory": str(directory)})
+        return True
+
+    @Slot(dict)
+    def finished(self, result: dict[str, Any]) -> None:
+        """Restore dispatch and refresh affected views after commit."""
+        if result["token"] != self._token:
+            return
+        self._token = ""
+        window = self._window
+        commands = window.command_coordinator
+        commands.mutations_suspended = False
+        try:
+            if "checkpoint" in result:
+                self._refresh(result)
+        except Exception:
+            logger.exception("Could not refresh views after relation migration")
+        finally:
+            self.completed.emit(result)
+
+    def _refresh(self, result: dict[str, Any]) -> None:
+        window = self._window
+        commands = window.command_coordinator
+        commands.load_history_payloads(
+            {"world_id": result["world_id"], "undo": [], "redo": []}
+        )
+        window.graph_widget.remap_relation_filter(result["old"], result["new"])
+        self._settings.refresh_world()
+        data = window.data_coordinator
+        data.on_reload_active_editor_relations()
+        data.load_completer_data()
+        data.load_graph_data()
+        context = window.app_coordinator.authoring_context
+        context.schedule_refresh()
+        context.schedule_entity_refresh()
 
 
 def _apply_effective_theme(coordinator: SettingsCoordinator) -> None:

@@ -320,6 +320,10 @@ def test_temporal_sheet_edit_autosaves_only_the_sourced_attribute(editor, qtbot)
         },
         playhead_time=15.0,
     )
+    editor.parentWidget().show()
+    editor.show()
+    editor.inspector.activate_section_id("sheet")
+    qtbot.waitUntil(editor.sheet_builder.isVisible)
     editor.sheet_builder._pairs["owner"].value_edit.setPlainText("Navy")
     assert editor.attribute_editor.get_attributes()["owner"] == "Navy"
     assert editor.attribute_editor.table.item(0, 3).text() == "Occupation"
@@ -359,7 +363,7 @@ def test_add_relation_flow(editor, qtbot, monkeypatch):
 
     mock_dialog = MagicMock()
     mock_dialog.exec.return_value = True
-    mock_dialog.get_data.return_value = ("target_id", "caused", True, {})
+    mock_dialog.get_data.return_value = ("target_id", "caused", {})
 
     # Patch the class where it is defined
     monkeypatch.setattr(
@@ -373,8 +377,8 @@ def test_add_relation_flow(editor, qtbot, monkeypatch):
     with qtbot.waitSignal(editor.add_relation_requested) as blocker:
         action.trigger()
 
-    # Signal: source, target, type, attributes, bidirectional
-    assert blocker.args == ["1", "target_id", "caused", {}, True]
+    # Signal: source, target, type, attributes
+    assert blocker.args == ["1", "target_id", "caused", {}]
     mock_dialog.exec.assert_called_once_with()
     mock_dialog.get_data.assert_called_once_with()
 
@@ -440,10 +444,7 @@ def test_edit_relation_flow(editor, qtbot, monkeypatch):
 
     mock_dialog = MagicMock()
     mock_dialog.exec.return_value = True
-    mock_dialog.get_data.return_value = ("new_target", "related_to", True, {})
-
-    # Mock bi_check for setVisible call
-    mock_dialog.bi_check = MagicMock()
+    mock_dialog.get_data.return_value = ("new_target", "related_to", {})
 
     # Patch the class
     monkeypatch.setattr(
@@ -461,7 +462,6 @@ def test_edit_relation_flow(editor, qtbot, monkeypatch):
     assert blocker.args == ["r1", "new_target", "related_to", {}]
     mock_dialog.exec.assert_called_once_with()
     mock_dialog.get_data.assert_called_once_with()
-    mock_dialog.bi_check.setVisible.assert_called_once_with(False)
 
 
 def test_wikilink_insertion_has_no_immediate_relation_writer(editor):
@@ -482,6 +482,12 @@ def test_sheet_builder_data_loss(editor, qtbot):
     assert "Strength" in editor.sheet_builder.get_attributes()
     assert editor.sheet_builder.get_attributes()["Strength"] == 10
 
+    assert not editor.sheet_builder._pairs
+    editor.parentWidget().show()
+    editor.show()
+    editor.inspector.activate_section_id("sheet")
+    qtbot.waitUntil(editor.sheet_builder.isVisible)
+
     # Modify "Strength" in Sheet Builder
     strength_pair = editor.sheet_builder._pairs["Strength"]
     strength_pair.value_edit.setText("15")
@@ -495,3 +501,71 @@ def test_sheet_builder_data_loss(editor, qtbot):
 
     saved_data = blocker.args[0]
     assert saved_data["attributes"]["Strength"] == 15
+
+
+def test_hidden_sheet_saves_layout_and_opens_latest_record(editor, qtbot):
+    editor.parentWidget().show()
+    editor.show()
+    editor.load_entity(Entity(name="Earlier", type="Character", attributes={"Old": 1}))
+    layout = [[{"type": "header", "text": "Stats"}], [{"key": "HP", "weight": 2}]]
+    entity = Entity(
+        name="Latest",
+        type="Character",
+        attributes={"HP": 8, "Hidden": False, "_sheet_layout": layout},
+    )
+    editor.load_entity(entity)
+    assert not editor.sheet_builder._pairs
+
+    editor.attribute_editor.table.item(0, 1).setText("9")
+    with qtbot.waitSignal(editor.save_requested) as submitted:
+        editor.btn_save.click()
+    attributes = submitted.args[0]["attributes"]
+    assert attributes["HP"] == 9
+    assert attributes["_sheet_layout"] == [*layout, ["Hidden"]]
+    assert not editor.sheet_builder._pairs
+
+    editor.inspector.activate_section_id("sheet")
+    qtbot.waitUntil(editor.sheet_builder.isVisible)
+    assert editor.sheet_builder.get_attributes() == {"HP": 9, "Hidden": False}
+    assert editor.sheet_builder.get_layout() == attributes["_sheet_layout"]
+    assert editor.sheet_builder._pairs["HP"].value_edit.updatesEnabled()
+
+
+def test_playhead_refresh_reuses_unchanged_attribute_widgets(editor, qtbot):
+    editor.parentWidget().show()
+    editor.show()
+    entity = Entity(name="Harbor", type="Location", attributes={"Ships": 1})
+    editor.load_entity(entity)
+    editor.inspector.activate_section_id("sheet")
+    qtbot.waitUntil(editor.sheet_builder.isVisible)
+    pair = editor.sheet_builder._pairs["Ships"]
+    table_item = editor.attribute_editor.table.item(0, 1)
+    state = {"description": "", "attributes": {"Ships": 1}}
+
+    editor.display_temporal_state(entity.id, state, 10.0)
+    editor.display_temporal_state(entity.id, state, 11.0)
+    assert editor.sheet_builder._pairs["Ships"] is pair
+    assert editor.attribute_editor.table.item(0, 1) is table_item
+    pair.value_edit.selectAll()
+
+    sources = {"Ships": {"kind": "relation", "event_name": "Fleet", "event_date": 12.0}}
+    editor.display_temporal_state(
+        entity.id, {**state, "attribute_sources": sources}, 12.0
+    )
+    assert editor.sheet_builder._pairs["Ships"] is pair
+    assert "Fleet" in pair.toolTip()
+    assert editor.attribute_editor.table.item(0, 3).text() == "Fleet"
+
+    editor.display_temporal_state(
+        entity.id, {**state, "attributes": {"Ships": 2}}, 13.0
+    )
+    assert editor.sheet_builder._pairs["Ships"] is pair
+    assert pair.value_edit.textCursor().selectedText() == "2"
+    assert table_item.text() == "2"
+
+    editor.display_temporal_state(
+        entity.id, {**state, "attributes": {"Ships": True}}, 14.0
+    )
+    assert editor.sheet_builder._pairs["Ships"] is not pair
+    assert editor.sheet_builder.get_attributes()["Ships"] is True
+    assert editor.attribute_editor.get_attributes()["Ships"] is True

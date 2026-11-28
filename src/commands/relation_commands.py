@@ -14,11 +14,13 @@ import uuid
 from typing import Any, Dict, Optional
 
 from src.commands.base_command import BaseCommand, CommandResult
+from src.core.relation_policy import endpoint_change_error
 from src.services.authored_relation_service import AuthoredRelationService
 from src.services.db_service import DatabaseService
 from src.services.temporal_edit_validation import validate_temporal_edit
 
 logger = logging.getLogger(__name__)
+_RECIPROCAL_ROW_COUNT = 2
 
 
 def _relation_service(db_service: DatabaseService) -> AuthoredRelationService:
@@ -44,7 +46,7 @@ class AddRelationCommand(BaseCommand):
             target_id (str): The ID of the target object.
             rel_type (str): The type of relationship (e.g. "caused").
             attributes (Dict[str, Any]): Optional metadata for the relationship.
-            bidirectional (bool): If True, also creates target->source relation.
+            bidirectional (bool): Legacy option retained for command history.
 
         """
         super().__init__()
@@ -56,6 +58,7 @@ class AddRelationCommand(BaseCommand):
 
         self._created_rel_ids: list[str] = []  # Store for Undo (list of IDs)
         self._created_at = time.time()
+        self._legacy_reciprocal_replay = False
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Executes insertion of the relation(s).
@@ -65,6 +68,8 @@ class AddRelationCommand(BaseCommand):
 
         """
         try:
+            if self.bidirectional and not self._legacy_reciprocal_replay:
+                raise ValueError("Create each direction as a separate relation.")
             logger.info(
                 f"Add rel: {self.source_id}->{self.target_id} ({self.rel_type})"
             )
@@ -77,8 +82,8 @@ class AddRelationCommand(BaseCommand):
             service.validate_endpoint(self.source_id)
             service.validate_endpoint(self.target_id)
             validate_temporal_edit(db_service, self.attributes, self.source_id)
-            count = 2 if self.bidirectional else 1
-            if not self._created_rel_ids:
+            count = _RECIPROCAL_ROW_COUNT if self.bidirectional else 1
+            if not self._created_rel_ids and not self.bidirectional:
                 self._created_rel_ids = [str(uuid.uuid4()) for _ in range(count)]
             if len(self._created_rel_ids) != count:
                 raise ValueError("Relation history has inconsistent identities")
@@ -86,15 +91,18 @@ class AddRelationCommand(BaseCommand):
             if self.bidirectional:
                 endpoints.append((self.target_id, self.source_id))
                 validate_temporal_edit(db_service, self.attributes, self.target_id)
-            for rel_id, (source, target) in zip(self._created_rel_ids, endpoints):
-                service.create(
-                    source,
-                    target,
-                    self.rel_type,
-                    self.attributes,
-                    relation_id=rel_id,
-                    created_at=self._created_at,
-                )
+            with db_service.transaction():
+                for rel_id, (source, target) in zip(
+                    self._created_rel_ids, endpoints, strict=True
+                ):
+                    service.create(
+                        source,
+                        target,
+                        self.rel_type,
+                        self.attributes,
+                        relation_id=rel_id,
+                        created_at=self._created_at,
+                    )
 
             self._is_executed = True
             return CommandResult(
@@ -117,9 +125,10 @@ class AddRelationCommand(BaseCommand):
     def undo(self, db_service: DatabaseService) -> None:
         """Reverts the action by deleting the created relation(s)."""
         if self._is_executed and self._created_rel_ids:
-            for rel_id in self._created_rel_ids:
-                logger.info(f"Undoing AddRelation: Deleting {rel_id}")
-                db_service.delete_relation(rel_id)
+            with db_service.transaction():
+                for rel_id in self._created_rel_ids:
+                    logger.info(f"Undoing AddRelation: Deleting {rel_id}")
+                    db_service.delete_relation(rel_id)
             self._is_executed = False
 
     def to_dict(self) -> Dict:
@@ -146,6 +155,18 @@ class AddRelationCommand(BaseCommand):
             bidirectional=data.get("bidirectional", False),
         )
         cmd._created_rel_ids = data.get("created_rel_ids", [])
+        cmd._legacy_reciprocal_replay = (
+            cmd.bidirectional
+            and isinstance(cmd._created_rel_ids, list)
+            and len(cmd._created_rel_ids) == _RECIPROCAL_ROW_COUNT
+            and all(isinstance(value, str) and value for value in cmd._created_rel_ids)
+            and cmd._created_rel_ids[0] != cmd._created_rel_ids[1]
+        )
+        if cmd.bidirectional and not cmd._legacy_reciprocal_replay:
+            raise ValueError(
+                "Reciprocal relation history requires two saved identities"
+            )
+        cmd._created_rel_ids = list(cmd._created_rel_ids)
         cmd._created_at = data.get("created_at", cmd._created_at)
         cmd._is_executed = data.get("is_executed", False)
         return cmd
@@ -289,10 +310,18 @@ class UpdateRelationCommand(BaseCommand):
 
         try:
             logger.info(f"Updating relation {self.rel_id}")
+            source_id = self.source_id or current["source_id"]
+            # Legacy redo may restore an edit that was valid under the old policy.
+            if current != self._previous_state:
+                error = endpoint_change_error(
+                    current, source_id, self.target_id, self.attributes
+                )
+                if error:
+                    raise ValueError(error)
             validate_temporal_edit(
                 db_service,
                 self.attributes or {},
-                self.source_id or current["source_id"],
+                source_id,
             )
             service = _relation_service(db_service)
             if self.source_id is not None:

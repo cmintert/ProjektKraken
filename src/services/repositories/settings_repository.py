@@ -6,6 +6,7 @@ import json
 from copy import deepcopy
 from typing import Any
 
+from src.core.relation_vocabulary import VOCABULARY_KEY
 from src.services.repositories.base_repository import BaseRepository
 
 META_KEYS = {
@@ -31,7 +32,7 @@ class SettingsRepository(BaseRepository):
 
     def restore(self, key: str, value: str | None) -> None:
         """Restore a row within the caller's transaction."""
-        if key not in {*META_KEYS.values(), POLICY_KEY}:
+        if key not in {*META_KEYS.values(), POLICY_KEY, VOCABULARY_KEY}:
             raise ValueError("Unknown settings metadata")
         connection = self._require_connection()
         if value is None:

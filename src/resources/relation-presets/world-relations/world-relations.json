@@ -1,0 +1,593 @@
+{
+  "format": "kraken-relation-preset",
+  "version": 1,
+  "definitions": [
+    {
+      "key": "rules",
+      "forward_label": "Governs",
+      "reverse_label": "Governed by",
+      "description": "The source governs the target.",
+      "category": "Authority & allegiance",
+      "forward_template": "{source} governs {target}.",
+      "reverse_template": "{target} is governed by {source}."
+    },
+    {
+      "key": "reports_to",
+      "forward_label": "Reports to",
+      "reverse_label": "Direct reports",
+      "description": "The source reports to the target.",
+      "category": "Authority & allegiance",
+      "forward_template": "{source} reports to {target}.",
+      "reverse_template": "{target} supervises {source}."
+    },
+    {
+      "key": "commands",
+      "forward_label": "Commands",
+      "reverse_label": "Commanded by",
+      "description": "The source commands the target.",
+      "category": "Authority & allegiance",
+      "forward_template": "{source} commands {target}.",
+      "reverse_template": "{target} is commanded by {source}."
+    },
+    {
+      "key": "appointed_by",
+      "forward_label": "Appointed by",
+      "reverse_label": "Appointed",
+      "description": "The source was appointed by the target.",
+      "category": "Authority & allegiance",
+      "forward_template": "{source} was appointed by {target}.",
+      "reverse_template": "{target} appointed {source}."
+    },
+    {
+      "key": "acts_on_behalf_of",
+      "forward_label": "Acts on behalf of",
+      "reverse_label": "Represented by",
+      "description": "The source acts on behalf of the target.",
+      "category": "Authority & allegiance",
+      "forward_template": "{source} acts on behalf of {target}.",
+      "reverse_template": "{target} is represented by {source}."
+    },
+    {
+      "key": "sworn_to",
+      "forward_label": "Sworn to",
+      "reverse_label": "Sworn followers",
+      "description": "The source has sworn allegiance to the target.",
+      "category": "Authority & allegiance",
+      "forward_template": "{source} has sworn allegiance to {target}.",
+      "reverse_template": "{target} receives allegiance from {source}."
+    },
+    {
+      "key": "claims_authority_over",
+      "forward_label": "Claims authority over",
+      "reverse_label": "Subject of claim",
+      "description": "The source claims authority over the target.",
+      "category": "Authority & allegiance",
+      "forward_template": "{source} claims authority over {target}.",
+      "reverse_template": "{target} is the subject of an authority claim by {source}."
+    },
+    {
+      "key": "has_jurisdiction_over",
+      "forward_label": "Has jurisdiction over",
+      "reverse_label": "Under jurisdiction of",
+      "description": "The source has jurisdiction over the target.",
+      "category": "Authority & allegiance",
+      "forward_template": "{source} has jurisdiction over {target}.",
+      "reverse_template": "{target} falls under the jurisdiction of {source}."
+    },
+    {
+      "key": "parent_of",
+      "forward_label": "Parent of",
+      "reverse_label": "Child of",
+      "description": "The source is a parent of the target.",
+      "category": "Kinship & personal ties",
+      "forward_template": "{source} is a parent of {target}.",
+      "reverse_template": "{target} is a child of {source}."
+    },
+    {
+      "key": "sibling_of",
+      "forward_label": "Sibling of",
+      "reverse_label": "Sibling of",
+      "description": "The source is a sibling of the target.",
+      "category": "Kinship & personal ties",
+      "symmetric": true,
+      "forward_template": "{source} is a sibling of {target}.",
+      "reverse_template": "{target} is a sibling of {source}."
+    },
+    {
+      "key": "partnered_with",
+      "forward_label": "Partnered with",
+      "reverse_label": "Partnered with",
+      "description": "The source is partnered with the target.",
+      "category": "Kinship & personal ties",
+      "symmetric": true,
+      "forward_template": "{source} is partnered with {target}.",
+      "reverse_template": "{target} is partnered with {source}."
+    },
+    {
+      "key": "guardian_of",
+      "forward_label": "Guardian of",
+      "reverse_label": "Ward of",
+      "description": "The source is a guardian of the target.",
+      "category": "Kinship & personal ties",
+      "forward_template": "{source} is a guardian of {target}.",
+      "reverse_template": "{target} is a ward of {source}."
+    },
+    {
+      "key": "mentors",
+      "forward_label": "Mentors",
+      "reverse_label": "Mentored by",
+      "description": "The source mentors the target.",
+      "category": "Kinship & personal ties",
+      "forward_template": "{source} mentors {target}.",
+      "reverse_template": "{target} is mentored by {source}."
+    },
+    {
+      "key": "estranged_from",
+      "forward_label": "Estranged from",
+      "reverse_label": "Estranged from",
+      "description": "The source is estranged from the target.",
+      "category": "Kinship & personal ties",
+      "symmetric": true,
+      "forward_template": "{source} is estranged from {target}.",
+      "reverse_template": "{target} is estranged from {source}."
+    },
+    {
+      "key": "trusts",
+      "forward_label": "Trusts",
+      "reverse_label": "Trusted by",
+      "description": "The source trusts the target.",
+      "category": "Kinship & personal ties",
+      "forward_template": "{source} trusts {target}.",
+      "reverse_template": "{target} is trusted by {source}."
+    },
+    {
+      "key": "confides_in",
+      "forward_label": "Confides in",
+      "reverse_label": "Confidant of",
+      "description": "The source confides in the target.",
+      "category": "Kinship & personal ties",
+      "forward_template": "{source} confides in {target}.",
+      "reverse_template": "{target} is a confidant of {source}."
+    },
+    {
+      "key": "allied_with",
+      "forward_label": "Allied with",
+      "reverse_label": "Allied with",
+      "description": "The source is allied with the target.",
+      "category": "Cooperation & conflict",
+      "symmetric": true,
+      "forward_template": "{source} is allied with {target}.",
+      "reverse_template": "{target} is allied with {source}."
+    },
+    {
+      "key": "rival_of",
+      "forward_label": "Rival of",
+      "reverse_label": "Rival of",
+      "description": "The source is a rival of the target.",
+      "category": "Cooperation & conflict",
+      "symmetric": true,
+      "forward_template": "{source} is a rival of {target}.",
+      "reverse_template": "{target} is a rival of {source}."
+    },
+    {
+      "key": "negotiates_with",
+      "forward_label": "Negotiates with",
+      "reverse_label": "Negotiates with",
+      "description": "The source negotiates with the target.",
+      "category": "Cooperation & conflict",
+      "symmetric": true,
+      "forward_template": "{source} negotiates with {target}.",
+      "reverse_template": "{target} negotiates with {source}."
+    },
+    {
+      "key": "opposes",
+      "forward_label": "Opposes",
+      "reverse_label": "Opposed by",
+      "description": "The source opposes the target.",
+      "category": "Cooperation & conflict",
+      "forward_template": "{source} opposes {target}.",
+      "reverse_template": "{target} is opposed by {source}."
+    },
+    {
+      "key": "protects",
+      "forward_label": "Protects",
+      "reverse_label": "Protected by",
+      "description": "The source protects the target.",
+      "category": "Cooperation & conflict",
+      "forward_template": "{source} protects {target}.",
+      "reverse_template": "{target} is protected by {source}."
+    },
+    {
+      "key": "surveils",
+      "forward_label": "Surveils",
+      "reverse_label": "Under surveillance by",
+      "description": "The source surveils the target.",
+      "category": "Cooperation & conflict",
+      "forward_template": "{source} surveils {target}.",
+      "reverse_template": "{target} is under surveillance by {source}."
+    },
+    {
+      "key": "infiltrates",
+      "forward_label": "Infiltrates",
+      "reverse_label": "Infiltrated by",
+      "description": "The source infiltrates the target.",
+      "category": "Cooperation & conflict",
+      "forward_template": "{source} infiltrates {target}.",
+      "reverse_template": "{target} is infiltrated by {source}."
+    },
+    {
+      "key": "betrayed",
+      "forward_label": "Betrayed",
+      "reverse_label": "Betrayed by",
+      "description": "The source betrayed the target.",
+      "category": "Cooperation & conflict",
+      "forward_template": "{source} betrayed {target}.",
+      "reverse_template": "{target} was betrayed by {source}."
+    },
+    {
+      "key": "owes_debt_to",
+      "forward_label": "Owes a debt to",
+      "reverse_label": "Debtors",
+      "description": "The source owes a debt to the target.",
+      "category": "Obligations & exchange",
+      "forward_template": "{source} owes a debt to {target}.",
+      "reverse_template": "{target} is owed a debt by {source}."
+    },
+    {
+      "key": "funds",
+      "forward_label": "Funds",
+      "reverse_label": "Funded by",
+      "description": "The source funds the target.",
+      "category": "Obligations & exchange",
+      "forward_template": "{source} funds {target}.",
+      "reverse_template": "{target} is funded by {source}."
+    },
+    {
+      "key": "supplies",
+      "forward_label": "Supplies",
+      "reverse_label": "Supplied by",
+      "description": "The source supplies the target.",
+      "category": "Obligations & exchange",
+      "forward_template": "{source} supplies {target}.",
+      "reverse_template": "{target} is supplied by {source}."
+    },
+    {
+      "key": "trades_with",
+      "forward_label": "Trades with",
+      "reverse_label": "Trades with",
+      "description": "The source trades with the target.",
+      "category": "Obligations & exchange",
+      "symmetric": true,
+      "forward_template": "{source} trades with {target}.",
+      "reverse_template": "{target} trades with {source}."
+    },
+    {
+      "key": "employs",
+      "forward_label": "Employs",
+      "reverse_label": "Employed by",
+      "description": "The source employs the target.",
+      "category": "Obligations & exchange",
+      "forward_template": "{source} employs {target}.",
+      "reverse_template": "{target} is employed by {source}."
+    },
+    {
+      "key": "sponsors",
+      "forward_label": "Sponsors",
+      "reverse_label": "Sponsored by",
+      "description": "The source sponsors the target.",
+      "category": "Obligations & exchange",
+      "forward_template": "{source} sponsors {target}.",
+      "reverse_template": "{target} is sponsored by {source}."
+    },
+    {
+      "key": "pays_tribute_to",
+      "forward_label": "Pays tribute to",
+      "reverse_label": "Receives tribute from",
+      "description": "The source pays tribute to the target.",
+      "category": "Obligations & exchange",
+      "forward_template": "{source} pays tribute to {target}.",
+      "reverse_template": "{target} receives tribute from {source}."
+    },
+    {
+      "key": "bound_by_agreement_to",
+      "forward_label": "Bound by agreement to",
+      "reverse_label": "Bound by agreement to",
+      "description": "The source is bound by agreement to the target.",
+      "category": "Obligations & exchange",
+      "symmetric": true,
+      "forward_template": "{source} is bound by agreement to {target}.",
+      "reverse_template": "{target} is bound by agreement to {source}."
+    },
+    {
+      "key": "based_in",
+      "forward_label": "Based in",
+      "reverse_label": "Home base for",
+      "description": "The source is based in the target.",
+      "category": "Place, access & custody",
+      "forward_template": "{source} is based in {target}.",
+      "reverse_template": "{target} serves as a base for {source}."
+    },
+    {
+      "key": "borders",
+      "forward_label": "Borders",
+      "reverse_label": "Borders",
+      "description": "The source borders the target.",
+      "category": "Place, access & custody",
+      "symmetric": true,
+      "forward_template": "{source} borders {target}.",
+      "reverse_template": "{target} borders {source}."
+    },
+    {
+      "key": "connects_to",
+      "forward_label": "Connects to",
+      "reverse_label": "Connects to",
+      "description": "The source connects to the target.",
+      "category": "Place, access & custody",
+      "symmetric": true,
+      "forward_template": "{source} connects to {target}.",
+      "reverse_template": "{target} connects to {source}."
+    },
+    {
+      "key": "has_access_to",
+      "forward_label": "Has access to",
+      "reverse_label": "Accessible to",
+      "description": "The source has access to the target.",
+      "category": "Place, access & custody",
+      "forward_template": "{source} has access to {target}.",
+      "reverse_template": "{target} is accessible to {source}."
+    },
+    {
+      "key": "controls_access_to",
+      "forward_label": "Controls access to",
+      "reverse_label": "Access controlled by",
+      "description": "The source controls access to the target.",
+      "category": "Place, access & custody",
+      "forward_template": "{source} controls access to {target}.",
+      "reverse_template": "{target} has access controlled by {source}."
+    },
+    {
+      "key": "owns",
+      "forward_label": "Owns",
+      "reverse_label": "Owned by",
+      "description": "The source owns the target.",
+      "category": "Place, access & custody",
+      "forward_template": "{source} owns {target}.",
+      "reverse_template": "{target} is owned by {source}."
+    },
+    {
+      "key": "holds_in_custody",
+      "forward_label": "Holds in custody",
+      "reverse_label": "Held in custody by",
+      "description": "The source holds the target in custody.",
+      "category": "Place, access & custody",
+      "forward_template": "{source} holds {target} in custody.",
+      "reverse_template": "{target} is held in custody by {source}."
+    },
+    {
+      "key": "hidden_in",
+      "forward_label": "Hidden in",
+      "reverse_label": "Conceals",
+      "description": "The source is hidden in the target.",
+      "category": "Place, access & custody",
+      "forward_template": "{source} is hidden in {target}.",
+      "reverse_template": "{target} conceals {source}."
+    },
+    {
+      "key": "organized",
+      "forward_label": "Organized",
+      "reverse_label": "Organized by",
+      "description": "The source organized the target.",
+      "category": "Events & responsibility",
+      "preferred_source_kind": "entity",
+      "preferred_target_kind": "event",
+      "forward_template": "{source} organized {target}.",
+      "reverse_template": "{target} was organized by {source}."
+    },
+    {
+      "key": "commissioned",
+      "forward_label": "Commissioned",
+      "reverse_label": "Commissioned by",
+      "description": "The source commissioned the target.",
+      "category": "Events & responsibility",
+      "forward_template": "{source} commissioned {target}.",
+      "reverse_template": "{target} was commissioned by {source}."
+    },
+    {
+      "key": "carried_out",
+      "forward_label": "Carried out",
+      "reverse_label": "Carried out by",
+      "description": "The source carried out the target.",
+      "category": "Events & responsibility",
+      "preferred_source_kind": "entity",
+      "preferred_target_kind": "event",
+      "forward_template": "{source} carried out {target}.",
+      "reverse_template": "{target} was carried out by {source}."
+    },
+    {
+      "key": "prevented",
+      "forward_label": "Prevented",
+      "reverse_label": "Prevented by",
+      "description": "The source prevented the target.",
+      "category": "Events & responsibility",
+      "forward_template": "{source} prevented {target}.",
+      "reverse_template": "{target} was prevented by {source}."
+    },
+    {
+      "key": "caused",
+      "forward_label": "Caused",
+      "reverse_label": "Caused by",
+      "description": "The source caused the target.",
+      "category": "Events & responsibility",
+      "forward_template": "{source} caused {target}.",
+      "reverse_template": "{target} was caused by {source}."
+    },
+    {
+      "key": "investigated",
+      "forward_label": "Investigated",
+      "reverse_label": "Investigated by",
+      "description": "The source investigated the target.",
+      "category": "Events & responsibility",
+      "preferred_source_kind": "entity",
+      "preferred_target_kind": "event",
+      "forward_template": "{source} investigated {target}.",
+      "reverse_template": "{target} was investigated by {source}."
+    },
+    {
+      "key": "rescued",
+      "forward_label": "Rescued",
+      "reverse_label": "Rescued by",
+      "description": "The source rescued the target.",
+      "category": "Events & responsibility",
+      "forward_template": "{source} rescued {target}.",
+      "reverse_template": "{target} was rescued by {source}."
+    },
+    {
+      "key": "harmed_by",
+      "forward_label": "Harmed by",
+      "reverse_label": "Harmed",
+      "description": "The source was harmed by the target.",
+      "category": "Events & responsibility",
+      "forward_template": "{source} was harmed by {target}.",
+      "reverse_template": "{target} harmed {source}."
+    },
+    {
+      "key": "witnessed",
+      "forward_label": "Witnessed",
+      "reverse_label": "Witnessed by",
+      "description": "The source witnessed the target.",
+      "category": "Knowledge & evidence",
+      "preferred_source_kind": "entity",
+      "preferred_target_kind": "event",
+      "forward_template": "{source} witnessed {target}.",
+      "reverse_template": "{target} was witnessed by {source}."
+    },
+    {
+      "key": "informed",
+      "forward_label": "Informed",
+      "reverse_label": "Informed by",
+      "description": "The source informed the target.",
+      "category": "Knowledge & evidence",
+      "forward_template": "{source} informed {target}.",
+      "reverse_template": "{target} was informed by {source}."
+    },
+    {
+      "key": "recorded_in",
+      "forward_label": "Recorded in",
+      "reverse_label": "Records",
+      "description": "The source is recorded in the target.",
+      "category": "Knowledge & evidence",
+      "preferred_target_kind": "entity",
+      "forward_template": "{source} is recorded in {target}.",
+      "reverse_template": "{target} contains a record of {source}."
+    },
+    {
+      "key": "knows_about",
+      "forward_label": "Knows about",
+      "reverse_label": "Known to",
+      "description": "The source knows about the target.",
+      "category": "Knowledge & evidence",
+      "forward_template": "{source} knows about {target}.",
+      "reverse_template": "{target} is known to {source}."
+    },
+    {
+      "key": "suspects",
+      "forward_label": "Suspects",
+      "reverse_label": "Suspected by",
+      "description": "The source suspects the target.",
+      "category": "Knowledge & evidence",
+      "forward_template": "{source} suspects {target}.",
+      "reverse_template": "{target} is suspected by {source}."
+    },
+    {
+      "key": "corroborates",
+      "forward_label": "Corroborates",
+      "reverse_label": "Corroborated by",
+      "description": "The source corroborates the target.",
+      "category": "Knowledge & evidence",
+      "forward_template": "{source} corroborates {target}.",
+      "reverse_template": "{target} is corroborated by {source}."
+    },
+    {
+      "key": "contradicts",
+      "forward_label": "Contradicts",
+      "reverse_label": "Contradicts",
+      "description": "The source contradicts the target.",
+      "category": "Knowledge & evidence",
+      "symmetric": true,
+      "forward_template": "{source} contradicts {target}.",
+      "reverse_template": "{target} contradicts {source}."
+    },
+    {
+      "key": "concealed_from",
+      "forward_label": "Concealed from",
+      "reverse_label": "Kept unaware of",
+      "description": "The source was concealed from the target.",
+      "category": "Knowledge & evidence",
+      "forward_template": "{source} was concealed from {target}.",
+      "reverse_template": "{target} was kept unaware of {source}."
+    },
+    {
+      "key": "member_of",
+      "forward_label": "Member of",
+      "reverse_label": "Members",
+      "description": "The source is a member of the target.",
+      "category": "Belief & affiliation",
+      "forward_template": "{source} is a member of {target}.",
+      "reverse_template": "{target} counts {source} among its members."
+    },
+    {
+      "key": "founded",
+      "forward_label": "Founded",
+      "reverse_label": "Founded by",
+      "description": "The source founded the target.",
+      "category": "Belief & affiliation",
+      "forward_template": "{source} founded {target}.",
+      "reverse_template": "{target} was founded by {source}."
+    },
+    {
+      "key": "follows_teachings_of",
+      "forward_label": "Follows the teachings of",
+      "reverse_label": "Followers",
+      "description": "The source follows the teachings of the target.",
+      "category": "Belief & affiliation",
+      "forward_template": "{source} follows the teachings of {target}.",
+      "reverse_template": "{target} has a follower in {source}."
+    },
+    {
+      "key": "venerates",
+      "forward_label": "Venerates",
+      "reverse_label": "Venerated by",
+      "description": "The source venerates the target.",
+      "category": "Belief & affiliation",
+      "forward_template": "{source} venerates {target}.",
+      "reverse_template": "{target} is venerated by {source}."
+    },
+    {
+      "key": "initiated_by",
+      "forward_label": "Initiated by",
+      "reverse_label": "Initiated",
+      "description": "The source was initiated by the target.",
+      "category": "Belief & affiliation",
+      "forward_template": "{source} was initiated by {target}.",
+      "reverse_template": "{target} initiated {source}."
+    },
+    {
+      "key": "bound_by_oath_to",
+      "forward_label": "Bound by oath to",
+      "reverse_label": "Receives oath from",
+      "description": "The source is bound by oath to the target.",
+      "category": "Belief & affiliation",
+      "forward_template": "{source} is bound by oath to {target}.",
+      "reverse_template": "{target} receives an oath from {source}."
+    },
+    {
+      "key": "excommunicated_by",
+      "forward_label": "Excommunicated by",
+      "reverse_label": "Excommunicated",
+      "description": "The source was excommunicated by the target.",
+      "category": "Belief & affiliation",
+      "forward_template": "{source} was excommunicated by {target}.",
+      "reverse_template": "{target} excommunicated {source}."
+    }
+  ]
+}

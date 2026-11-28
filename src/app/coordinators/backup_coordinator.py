@@ -177,6 +177,11 @@ class BackupCoordinator(BaseCoordinator):
         if self.restore_in_progress or self.restart_required:
             return
         window = self.main_window
+        if window.command_coordinator.mutations_suspended:
+            QMessageBox.information(
+                window, "Restore Pending", "Wait for the current world operation."
+            )
+            return
         directory = self.backup_service.config.backup_dir or get_backup_directory()
         try:
             DatabaseRestoreService.validate(

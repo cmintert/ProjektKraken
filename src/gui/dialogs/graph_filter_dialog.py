@@ -32,6 +32,7 @@ class GraphFilterDialog(QDialog):
         available_tags: Optional[List[str]] = None,
         available_rel_types: Optional[List[str]] = None,
         current_config: Optional[Dict[str, Any]] = None,
+        relation_labels: dict[str, str] | None = None,
     ) -> None:
         """Initialize the graph filter dialog.
 
@@ -78,6 +79,7 @@ class GraphFilterDialog(QDialog):
         self.rel_filter_widget = FilterWidget(
             self,
             available_items=available_rel_types,
+            item_labels=relation_labels,
             current_config=rel_config,
             title_include="Include Relation Types:",
             title_exclude="Exclude Relation Types:",

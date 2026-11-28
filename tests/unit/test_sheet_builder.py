@@ -117,28 +117,10 @@ class TestAttributePairWidget:
         assert widget.get_type() == "String"
 
     def test_inline_layout_and_hidden_type(self, pair):
-        """Test that the widget uses horizontal layout and hides the type selector."""
-        # Check layout type
-        from PySide6.QtWidgets import QHBoxLayout
-
-        assert isinstance(pair.layout(), QHBoxLayout)
-
-        # Check type selector visibility
+        """The value has a visible label and an accessible name in use mode."""
+        assert pair.layout().itemAt(0).layout().itemAt(0).widget() is pair.key_label
         assert not pair.type_combo.isVisible()
-
-        # Check label has colon
-        assert ":" in pair.key_label.text()
-
-    def test_hover_styling(self, pair):
-        """Test that the widget has hover styling applied with the primary color."""
-        # We want the entire AttributePairWidget to lightly border or highlight on hover
-        # Or just checking that :hover is in the stylesheet
-        theme = pair._theme_mgr.get_theme()
-        primary = theme.get("primary", "#FF9900")
-
-        stylesheet = pair.styleSheet()
-        assert "AttributePairWidget:hover" in stylesheet
-        assert primary in stylesheet
+        assert pair.value_edit.accessibleName() == pair.key_label.text()
 
     def test_label_is_transparent_to_mouse_events(self, pair):
         """Test that the key label ignores mouse events to allow dragging."""
@@ -224,6 +206,7 @@ class TestSheetBuilderWidget:
         """Toolbar actions use standard controls and allocate room for their text."""
         sheet.show()
         qtbot.waitExposed(sheet)
+        sheet.layout_button.click()
 
         theme = sheet._theme_mgr.get_theme()
         toolbar_style = sheet._toolbar.styleSheet()
@@ -257,6 +240,61 @@ class TestSheetBuilderWidget:
         """Test that the sheet starts empty."""
         assert sheet.get_attributes() == {}
         assert sheet.get_layout() == []
+
+    def test_inline_edit_and_layout_mode_preserve_the_draft(self, sheet, qtbot):
+        """Use mode edits values, while layout mode exposes structure controls."""
+        layout = [[{"type": "header", "text": "Condition"}], ["HP", "SAN"]]
+        sheet.load_attributes({"HP": 11, "SAN": 58}, layout)
+        sheet.resize(360, 420)
+        sheet.show()
+        sheet.activateWindow()
+        qtbot.waitExposed(sheet)
+        qtbot.waitUntil(sheet.isActiveWindow)
+        assert not sheet._toolbar.isVisible()
+        assert not sheet.acceptDrops()
+
+        value = sheet._pairs["HP"].value_edit
+        value.setFocus()
+        value.selectAll()
+        qtbot.keyClicks(value, "10")
+        assert sheet.get_attributes() == {"HP": 10, "SAN": 58}
+        qtbot.keyClick(value, Qt.Key.Key_Tab)
+        assert sheet._pairs["SAN"].value_edit.hasFocus()
+
+        with qtbot.assertNotEmitted(sheet.attributes_changed):
+            sheet.layout_button.click()
+            assert sheet._toolbar.isVisible()
+            assert sheet.acceptDrops()
+            assert sheet.layout_button.text() == "Done editing layout"
+            sheet.layout_button.click()
+            assert sheet.layout_button.hasFocus()
+        assert not sheet._toolbar.isVisible()
+        assert sheet.get_attributes()["HP"] == 10
+        assert sheet.get_layout() == layout
+
+    def test_narrow_reflow_does_not_change_the_authored_row(self, sheet, qtbot):
+        """Narrow cells stack and wrapped keys align with their value's first line."""
+        from PySide6.QtWidgets import QBoxLayout
+
+        long_key = "A long label that wraps across more than one line"
+        layout = [[{"key": long_key, "weight": 2}, "B", "C"]]
+        sheet.load_attributes({long_key: 36, "B": "", "C": ""}, layout)
+        sheet.resize(360, 400)
+        sheet.show()
+        qtbot.waitExposed(sheet)
+        row = sheet._grid_layout.itemAt(0).layout()
+        assert row.direction() == QBoxLayout.Direction.TopToBottom
+        pair = sheet._pairs[long_key]
+        label, value = pair.key_label, pair.value_edit
+        assert label.height() > label.fontMetrics().lineSpacing()
+        label_top = label.mapTo(pair, label.contentsRect().topLeft()).y()
+        value_top = value.viewport().mapTo(pair, value.cursorRect().topLeft()).y()
+        assert label_top + label.fontMetrics().ascent() == (
+            value_top + value.fontMetrics().ascent()
+        )
+        sheet.resize(640, 400)
+        assert row.direction() == QBoxLayout.Direction.LeftToRight
+        assert sheet.get_layout() == layout
 
     def test_load_attributes_no_layout(self, sheet):
         """Test loading attributes without a layout gives one row per attr."""
@@ -440,50 +478,49 @@ class TestSheetBuilderWidget:
         result = sheet.get_layout()
         assert len(result) == 2
 
-    def test_calc_drop_position_with_spacers(self, sheet):
+    def test_calc_drop_position_with_spacers(self, sheet, qtbot):
         """Test drop position calculation works correctly with spacers."""
+        sheet.set_layout_editing(True)
         # Create a layout with a spacer
         attrs = {"A": 1, "B": 2, "C": 3}
         layout = [["A", {"type": "spacer", "weight": 2}, "B"], ["C"]]
         sheet.load_attributes(attrs, layout)
 
-        # Force layout to compute geometries
-        sheet._container.adjustSize()
-        sheet._grid_layout.invalidate()
-        sheet._grid_layout.activate()
+        sheet.resize(640, 300)
+        sheet.show()
+        qtbot.waitExposed(sheet)
 
         # Get geometries of widgets in the first row
         row_layout = sheet._grid_layout.itemAt(0).layout()
         item_A = row_layout.itemAt(0)
-        item_spacer = row_layout.itemAt(1)
-        item_B = row_layout.itemAt(2)
+        item_spacer = row_layout.itemAt(2)
+        item_B = row_layout.itemAt(4)
 
         # 1. Drop before 'A'
         pos = item_A.geometry().center()
         pos.setX(item_A.geometry().left() + 2)
-        pos = sheet.mapFrom(sheet._container, pos)
+        pos = sheet._container.mapTo(sheet, pos)
         row, col, new_row = sheet._calc_drop_position(pos)
         assert row == 0
         assert col == 0
         assert not new_row
 
-        # 2. Drop on the spacer (inserts before 'B' if passed center)
-        # exact drop col depends on center().x(), so we test right side of spacer
+        # 2. Drop just after the spacer, before the second resize handle.
         pos = item_spacer.geometry().center()
         pos.setX(item_spacer.geometry().right() - 2)
-        pos = sheet.mapFrom(sheet._container, pos)
+        pos = sheet._container.mapTo(sheet, pos)
         row, col, new_row = sheet._calc_drop_position(pos)
         assert row == 0
-        assert col == 2  # After A(0), Spacer(1)
+        assert col == 3
         assert not new_row
 
         # 3. Drop on 'B' right side
         pos = item_B.geometry().center()
         pos.setX(item_B.geometry().right() - 2)
-        pos = sheet.mapFrom(sheet._container, pos)
+        pos = sheet._container.mapTo(sheet, pos)
         row, col, new_row = sheet._calc_drop_position(pos)
         assert row == 0
-        assert col == 3
+        assert col == 5
         assert not new_row  # End of row
 
     def test_row_accepts_columns(self, sheet, qtbot):
@@ -588,21 +625,17 @@ class TestTextBlockWidget:
         tb.set_text("silent")
         assert not emitted
 
-    def test_hover_styling(self, qtbot):
-        """Test that the text block widget has hover styling applied."""
+    def test_text_preview_tracks_the_editor(self, qtbot):
+        """An authored text block is presented in use mode."""
         from src.gui.widgets.sheet_builder import TextBlockWidget
 
         tb = TextBlockWidget("")
         qtbot.addWidget(tb)
 
-        theme = tb._theme_mgr.get_theme()
-        primary = theme.get("primary", "#FF9900")
-
-        stylesheet = tb.styleSheet()
-        # Needs StyledPanel for border, and hover state
-        assert tb.frameShape() == QFrame.Shape.StyledPanel
-        assert "TextBlockWidget:hover" in stylesheet
-        assert primary in stylesheet
+        tb.text_edit.setText("Witness notes")
+        tb.set_layout_editing(False)
+        assert tb.text_edit.isHidden()
+        assert tb._preview.text() == "Witness notes"
 
 
 class TestDividerWidget:
@@ -635,19 +668,17 @@ class TestDividerWidget:
 class TestSpacerWidget:
     """Tests for the SpacerWidget."""
 
-    def test_hover_styling(self, qtbot):
-        """Test that the spacer widget has hover styling applied."""
+    def test_spacer_only_accepts_input_in_layout_mode(self, qtbot):
+        """A spacer keeps its space without intercepting input in use mode."""
         from src.gui.widgets.sheet_builder import SpacerWidget
 
         sw = SpacerWidget()
         qtbot.addWidget(sw)
 
-        theme = sw._theme_mgr.get_theme()
-        primary = theme.get("primary", "#FF9900")
-
-        stylesheet = sw.styleSheet()
-        assert "SpacerWidget:hover" in stylesheet
-        assert primary in stylesheet
+        sw.set_layout_editing(False)
+        assert sw.testAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        sw.set_layout_editing(True)
+        assert not sw.testAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -895,7 +926,7 @@ class TestResizeHandle:
         assert signal_count == 1
 
     def test_hover_styling(self, qtbot):
-        """Test that the resize handle has hover styling with primary color."""
+        """The layout handle uses the shared control boundary in both states."""
         from PySide6.QtWidgets import QHBoxLayout, QWidget
 
         from src.gui.widgets.sheet_builder import _ResizeHandle
@@ -907,12 +938,14 @@ class TestResizeHandle:
         handle = _ResizeHandle(layout, 0, 1)
         qtbot.addWidget(handle)
 
-        theme = handle._theme_mgr.get_theme()
-        primary = theme.get("primary", "#FF9900")
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
 
         stylesheet = handle.styleSheet()
         assert "_ResizeHandle:hover" in stylesheet
-        assert primary in stylesheet
+        assert theme["action_secondary_normal_border"] in stylesheet
+        assert theme["action_secondary_hover_border"] in stylesheet
         # Ensure it doesn't just use border color on hover anymore
         border = theme.get("border", "#333333")
         assert f"background-color: {border};" not in stylesheet
@@ -1429,6 +1462,7 @@ class TestFocusPreservation:
         from PySide6.QtWidgets import QApplication
 
         attrs = {"A": "1"}
+        sheet.set_layout_editing(True)
         layout = [["A"], [{"type": "text", "text": "some lore"}]]
         sheet.load_attributes(attrs, layout)
         sheet.show()

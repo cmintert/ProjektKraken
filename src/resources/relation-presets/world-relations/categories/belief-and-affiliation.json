@@ -1,0 +1,69 @@
+{
+  "format": "kraken-relation-preset",
+  "version": 1,
+  "definitions": [
+    {
+      "key": "member_of",
+      "forward_label": "Member of",
+      "reverse_label": "Members",
+      "description": "The source is a member of the target.",
+      "category": "Belief & affiliation",
+      "forward_template": "{source} is a member of {target}.",
+      "reverse_template": "{target} counts {source} among its members."
+    },
+    {
+      "key": "founded",
+      "forward_label": "Founded",
+      "reverse_label": "Founded by",
+      "description": "The source founded the target.",
+      "category": "Belief & affiliation",
+      "forward_template": "{source} founded {target}.",
+      "reverse_template": "{target} was founded by {source}."
+    },
+    {
+      "key": "follows_teachings_of",
+      "forward_label": "Follows the teachings of",
+      "reverse_label": "Followers",
+      "description": "The source follows the teachings of the target.",
+      "category": "Belief & affiliation",
+      "forward_template": "{source} follows the teachings of {target}.",
+      "reverse_template": "{target} has a follower in {source}."
+    },
+    {
+      "key": "venerates",
+      "forward_label": "Venerates",
+      "reverse_label": "Venerated by",
+      "description": "The source venerates the target.",
+      "category": "Belief & affiliation",
+      "forward_template": "{source} venerates {target}.",
+      "reverse_template": "{target} is venerated by {source}."
+    },
+    {
+      "key": "initiated_by",
+      "forward_label": "Initiated by",
+      "reverse_label": "Initiated",
+      "description": "The source was initiated by the target.",
+      "category": "Belief & affiliation",
+      "forward_template": "{source} was initiated by {target}.",
+      "reverse_template": "{target} initiated {source}."
+    },
+    {
+      "key": "bound_by_oath_to",
+      "forward_label": "Bound by oath to",
+      "reverse_label": "Receives oath from",
+      "description": "The source is bound by oath to the target.",
+      "category": "Belief & affiliation",
+      "forward_template": "{source} is bound by oath to {target}.",
+      "reverse_template": "{target} receives an oath from {source}."
+    },
+    {
+      "key": "excommunicated_by",
+      "forward_label": "Excommunicated by",
+      "reverse_label": "Excommunicated",
+      "description": "The source was excommunicated by the target.",
+      "category": "Belief & affiliation",
+      "forward_template": "{source} was excommunicated by {target}.",
+      "reverse_template": "{target} excommunicated {source}."
+    }
+  ]
+}

@@ -251,29 +251,39 @@ class StyleHelper:
     # -------------------------------------------------------------------------
 
     @staticmethod
-    def get_sheet_attribute_style() -> str:
-        """Returns QSS for AttributePairWidget and GhostWidget in Sheet Builder.
-
-        Returns:
-            str: QSS stylesheet string.
-        """
+    def get_sheet_inline_value_style() -> str:
+        """Keep sheet values quiet at rest with visible hover and focus boundaries."""
         theme = ThemeManager().get_theme()
-        surface_alt = theme.get("surface_alt", theme["app_bg"])
-        border = theme.get("border", "#333333")
-        primary = theme.get("primary", "#5C82FF")
-
         return f"""
             AttributePairWidget {{
-                background-color: {surface_alt};
-                border: 1px solid {border};
-                border-radius: 4px;
+                background: transparent;
+                border: none;
             }}
-            AttributePairWidget:hover {{
-                border: 1px solid {primary};
+            AttributePairWidget QLabel {{
+                color: {theme["text_main"]};
+                background: transparent;
+                padding-top: 1px;
             }}
             AttributePairWidget QTextEdit {{
-                background-color: transparent;
-                border: none;
+                background: transparent;
+                color: {theme["text_main"]};
+                font-weight: 600;
+                padding: 0 3px;
+                border: 1px solid transparent;
+                border-radius: 3px;
+            }}
+            AttributePairWidget QTextEdit:hover {{
+                border-color: {theme["action_secondary_hover_border"]};
+            }}
+            AttributePairWidget QTextEdit:focus, AttributePairWidget QComboBox:focus {{
+                border-color: {theme["focus_ring"]};
+            }}
+            AttributePairWidget QTextEdit:disabled {{
+                color: {theme["action_secondary_disabled_text"]};
+                border-color: transparent;
+            }}
+            AttributePairWidget QComboBox {{
+                {StyleHelper.get_input_field_style()}
             }}
         """
 
@@ -285,27 +295,19 @@ class StyleHelper:
             str: QSS stylesheet string.
         """
         theme = ThemeManager().get_theme()
-        text_dim = theme.get("text_dim", "#808080")
-        text = theme.get("text", "#E0E0E0")
-        primary = theme.get("primary", "#5C82FF")
-
         return f"""
             TextBlockWidget {{
-                border: 1px solid transparent;
-                border-radius: 4px;
+                background: transparent;
+                border: none;
             }}
-            TextBlockWidget:hover {{
-                border: 1px solid {primary};
+            TextBlockWidget QLabel {{
+                color: {theme["text_main"]};
             }}
             TextBlockWidget QLineEdit {{
-                background-color: transparent;
-                border: none;
-                color: {text_dim};
-                font-style: italic;
-                padding: 4px;
+                {StyleHelper.get_input_field_style()}
             }}
             TextBlockWidget QLineEdit:focus {{
-                color: {text};
+                border-color: {theme["focus_ring"]};
             }}
         """
 
@@ -339,59 +341,43 @@ class StyleHelper:
             str: QSS stylesheet string.
         """
         theme = ThemeManager().get_theme()
-        border = theme.get("border", "#333333")
-        primary = theme.get("primary", "#5C82FF")
-
         return f"""
             SpacerWidget {{
                 background-color: transparent;
-                border: 1px dashed {border};
+                border: 1px solid transparent;
                 border-radius: 4px;
             }}
-            SpacerWidget:hover {{
-                border: 1px dashed {primary};
+            SpacerWidget[layoutEditing="true"] {{
+                border: 1px dashed {theme["action_secondary_normal_border"]};
             }}
-            SpacerWidget:focus {{
-                border: 1px solid {primary};
-                background-color: rgba(92, 130, 255, 0.08);
+            SpacerWidget[layoutEditing="true"]:hover {{
+                border: 1px dashed {theme["action_secondary_hover_border"]};
             }}
-            SpacerWidget:focus:hover {{
-                border: 1px solid {primary};
-                background-color: rgba(92, 130, 255, 0.14);
+            SpacerWidget[layoutEditing="true"]:focus {{
+                border: 1px solid {theme["focus_ring"]};
             }}
         """
 
     @staticmethod
     def get_sheet_header_style() -> str:
-        """Returns QSS for HeaderWidget in Sheet Builder.
-
-        Headers use the accent colour as a bottom border to visually separate
-        sections, matching the TTRPG stat-block convention.
-
-        Returns:
-            str: QSS stylesheet string.
-        """
+        """Mark sheet sections with type and spacing."""
         theme = ThemeManager().get_theme()
-        accent = theme.get("accent_secondary", theme.get("primary", "#5C82FF"))
-        text = theme.get("text", "#E0E0E0")
-        primary = theme.get("primary", "#5C82FF")
-
         return f"""
             HeaderWidget {{
+                background: transparent;
                 border: none;
-                border-bottom: 2px solid {accent};
-                border-radius: 0px;
             }}
-            HeaderWidget:hover {{
-                border-bottom: 2px solid {primary};
+            HeaderWidget QLabel {{
+                color: {theme["text_main"]};
+                font-weight: bold;
+                font-size: 14px;
             }}
             HeaderWidget QLineEdit {{
-                background-color: transparent;
-                border: none;
-                color: {text};
+                {StyleHelper.get_input_field_style()}
                 font-weight: bold;
-                letter-spacing: 1px;
-                padding: 2px 4px;
+            }}
+            HeaderWidget QLineEdit:focus {{
+                border-color: {theme["focus_ring"]};
             }}
         """
 
@@ -478,20 +464,15 @@ class StyleHelper:
 
     @staticmethod
     def get_sheet_resize_handle_style() -> str:
-        """Returns QSS for _ResizeHandle in Sheet Builder.
-
-        Returns:
-            str: QSS stylesheet string.
-        """
+        """Make the resize boundary visible while the layout tools are open."""
         theme = ThemeManager().get_theme()
-        primary = theme.get("primary", "#5C82FF")
-
         return f"""
             _ResizeHandle {{
                 background-color: transparent;
+                border-left: 1px solid {theme["action_secondary_normal_border"]};
             }}
             _ResizeHandle:hover {{
-                background-color: {primary};
+                background-color: {theme["action_secondary_hover_border"]};
                 border-radius: 2px;
             }}
         """

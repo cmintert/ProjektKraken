@@ -216,7 +216,7 @@ def test_reported_empty_start_does_not_become_unknown(qtbot, width):
     dialog.notes_edit.setFocus()
     qtbot.waitUntil(dialog.notes_edit.hasFocus)
     before = dialog.get_data()
-    assert before[3] == {}
+    assert before[2] == {}
     previous = scroll.value()
     changed = QSignalSpy(combo.currentIndexChanged)
     send_wheel(combo, 120)
@@ -269,7 +269,7 @@ def test_choices_preserve_event_binding_fixed_boundary_and_undo(qtbot, db_servic
         assert dialog.get_data() == before
         assert dialog.notes_edit.hasFocus()
     dialog.notes_edit.setPlainText("Revised note")
-    target_id, rel_type, _, saved = dialog.get_data()
+    target_id, rel_type, saved = dialog.get_data()
     assert saved["temporal"]["start"] == {"binding": "source_event"}
     assert saved["temporal"]["end"] == {"exact": 125.5}
     assert saved["custom"] == attributes["custom"]
@@ -295,7 +295,7 @@ def test_expanded_manual_boundaries_remain_scroll_safe(qtbot, width):
     dialog.starts_now_button.click()
     qtbot.wait(50)
     assert dialog.valid_from.isVisible()
-    assert dialog.get_data()[3]["temporal"]["start"] == {"exact": 125.5}
+    assert dialog.get_data()[2]["temporal"]["start"] == {"exact": 125.5}
     dialog.notes_edit.setFocus()
     qtbot.waitUntil(dialog.notes_edit.hasFocus)
     combo = dialog._boundary_choices["start"]

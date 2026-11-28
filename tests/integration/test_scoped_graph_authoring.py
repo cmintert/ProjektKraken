@@ -1,6 +1,7 @@
 """Graph authoring, scoped projections, and transactional history."""
 
 from types import SimpleNamespace
+from uuid import uuid4
 
 import numpy as np
 import pytest
@@ -52,9 +53,7 @@ def test_create_connect_restore_undo_redo(db_service, tmp_path, kind):
         target_data["lore_date"] = 36.0
     target, added = tags.graph_creation(kind, target_data)
     target_id = target.entity_id if kind == "entity" else target.event_id
-    relation = AddRelationCommand(
-        source.entity_id, target_id, "related", bidirectional=True
-    )
+    relation = AddRelationCommand(source.entity_id, target_id, "related")
     command = GraphConnectionCommand([target, relation], "Create and Connect")
     command.recovery = {
         "command_id": command.command_id,
@@ -70,7 +69,7 @@ def test_create_connect_restore_undo_redo(db_service, tmp_path, kind):
     result = execute_with_history(db_service, history, command, "execute")
     assert result.success
     ids = set(result.data["graph_relation_ids"])
-    assert len(ids) == 2
+    assert len(ids) == 1
     assert not tags.snapshot()["history_count"]
     stacks = history.load_stacks()
     tags.restore_graph_recovery({**stacks, "world_id": owner.current_world.id})
@@ -109,6 +108,9 @@ def test_reciprocal_insert_failure_rolls_back_object_and_first_edge(
     )
     relation = AddRelationCommand(
         source.id, target.event_id, "related", bidirectional=True
+    )
+    relation = AddRelationCommand.from_dict(
+        {**relation.to_dict(), "created_rel_ids": [str(uuid4()), str(uuid4())]}
     )
     command = GraphConnectionCommand([target, relation])
     original = AuthoredRelationService.create

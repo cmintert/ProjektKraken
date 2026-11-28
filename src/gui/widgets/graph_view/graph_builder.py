@@ -10,6 +10,7 @@ import logging
 import os
 import re
 import tempfile
+from html import escape
 from pathlib import Path
 from typing import Any, Optional
 
@@ -180,6 +181,7 @@ class GraphBuilder:
 
         """
         rel_type = edge.get("rel_type", "")
+        label = edge.get("display_label", rel_type)
 
         # Defaults
         color = edge_color
@@ -200,8 +202,8 @@ class GraphBuilder:
             "id": edge.get("id"),
             "from": edge["source_id"],
             "to": edge["target_id"],
-            "label": rel_type,
-            "title": rel_type,
+            "label": label,
+            "title": escape(label),
             "color": color,
         }
 
@@ -211,10 +213,10 @@ class GraphBuilder:
             result["dashes"] = dashes
         if "validity_status" in edge:
             status = edge["validity_status"]
-            result["title"] = f"{rel_type}: {edge.get('temporal_summary', '')}"
+            result["title"] = escape(f"{label}: {edge.get('temporal_summary', '')}")
             result["dashes"] = status in {"possible", "indeterminate", "inactive"}
             if status in {"possible", "indeterminate"}:
-                result["label"] = f"{rel_type} (?)"
+                result["label"] = f"{label} (?)"
                 result["width"] = 1
 
         has_projection_metadata = "parallel_count" in edge or "parallel_index" in edge

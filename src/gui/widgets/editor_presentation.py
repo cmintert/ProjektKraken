@@ -594,7 +594,9 @@ class EditorPresentation(QObject):
             row_layout = ActionFlowLayout(row)
             row_layout.setContentsMargins(0, 0, 0, 0)
             row_layout.addWidget(button)
-            toolbar.parentWidget().layout().insertWidget(0, row)
+            layout = toolbar.parentWidget().layout()
+            layout.insertWidget(layout.indexOf(toolbar), row)
+            self.editor.sheet_builder.set_layout_overflow(row)
             self._toolbar_more_buttons.append(button)
 
     @staticmethod

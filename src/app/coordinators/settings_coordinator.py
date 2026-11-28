@@ -15,7 +15,7 @@ from src.core.ai_generation import AIGenerationPreferences
 from src.core.calendar import CalendarConfig
 from src.core.command import CommandResult
 from src.core.settings_registry import BY_ID, SETTINGS, SettingsDraft
-from src.gui.widgets.settings_center import SettingsCenter
+from src.gui.widgets.settings_center import RELATION_DICTIONARY_CATEGORY, SettingsCenter
 from src.services.lmstudio_config import normalize_lmstudio_base_url
 from src.services.local_settings import LocalSettingsAdapter
 
@@ -26,6 +26,7 @@ class SettingsCoordinator(QObject):
     snapshot_requested = Signal(dict)
     preferences_changed = Signal(dict)
     world_changed = Signal(dict)
+    relation_vocabulary_changed = Signal(dict)
     operation_requested = Signal(str)
     connection_requested = Signal(dict)
     world_form_created = Signal(object)
@@ -63,6 +64,8 @@ class SettingsCoordinator(QObject):
         self._pending: tuple[str, dict[str, Any], bool] | None = None
         self._reset_workspace = False
         self._after_apply: Callable[[], None] | None = None
+        self.dictionary_transition: Callable[[], bool] | None = None
+        self.dictionary_has_pending: Callable[[], bool] | None = None
         self._apply_errors: list[str] = []
         self._poll = QTimer(self)
         self._poll.setInterval(400)
@@ -97,14 +100,21 @@ class SettingsCoordinator(QObject):
         if self.credential_warnings:
             self.view.message.setText("\n".join(self.credential_warnings))
 
+    def has_pending_world_settings(self) -> bool:
+        """Guard a world operation against stale drafts in Settings."""
+        self._capture()
+        return any(name.startswith("world.") for name in self.draft.changes())
+
     def refresh_world(self) -> None:
         """Request only snapshots for the active database and request generation."""
         context = self._context()
         database = context.get("database", "")
         if not database:
+            self.relation_vocabulary_changed.emit({})
             self._set_world_enabled(False, "No world is loaded.")
             return
         if database != self._database:
+            self.relation_vocabulary_changed.emit({})
             self._database = database
             self._token = str(uuid.uuid4())
         seed = (
@@ -126,13 +136,18 @@ class SettingsCoordinator(QObject):
         if (
             payload.get("token") != self._token
             or payload.get("database") != self._database
+            or self._context().get("database") != self._database
         ):
             return
         if payload.get("error"):
             self.world_data["writable"] = False
             self._set_world_enabled(False, payload["error"])
             return
+        self.relation_vocabulary_changed.emit(payload.get("relation_vocabulary", {}))
         previous = self.world_values
+        relation_types_changed = self.world_data.get("relation_types") != payload.get(
+            "relation_types"
+        )
         self.world_data = deepcopy(payload)
         values = payload["values"]
         # Absent AI preferences are seeded through the existing AI lifecycle.
@@ -149,11 +164,12 @@ class SettingsCoordinator(QObject):
         if values != previous:
             self.world_changed.emit(deepcopy(values))
         self._install_world_forms()
-        if values != previous:
+        if values != previous or relation_types_changed:
             self._render_clean_world(values)
         self._set_world_enabled(
             bool(payload["writable"]),
             "This world is read-only." if not payload["writable"] else "",
+            allow_dictionary_inspection=True,
         )
 
     def _install_world_forms(self) -> None:
@@ -184,18 +200,24 @@ class SettingsCoordinator(QObject):
                 view.ai.set_task_templates(templates)
         clean = {key: value for key, value in values.items() if key not in dirty}
         view.render_values(clean)
-        view.render_complex(clean)
+        view.render_complex(clean, relation_types=self.world_data.get("relation_types"))
 
     def _attach_graph_form(self, form: Any) -> None:
         form.icon_picker_created.connect(self.icon_picker_created.emit)
         self.world_form_created.emit(form)
 
-    def _set_world_enabled(self, enabled: bool, message: str) -> None:
+    def _set_world_enabled(
+        self, enabled: bool, message: str, *, allow_dictionary_inspection: bool = False
+    ) -> None:
         self.world_availability_changed.emit(enabled, message)
         if self.view is not None:
-            for (scope, _), page in self.view.pages.items():
+            for (scope, category), page in self.view.pages.items():
                 if scope == "world":
-                    page.setEnabled(enabled)
+                    inspect_dictionary = (
+                        allow_dictionary_inspection
+                        and category == RELATION_DICTIONARY_CATEGORY
+                    )
+                    page.setEnabled(enabled or inspect_dictionary)
                     page.setToolTip(message)
             if message:
                 self.view.message.setText(message)
@@ -261,6 +283,7 @@ class SettingsCoordinator(QObject):
             self._pending
             or self.draft.changes()
             or self._reset_workspace
+            or (self.dictionary_has_pending and self.dictionary_has_pending())
             or (
                 self.view
                 and (self.view.invalid_fields or self.view.ai._template_editor_dirty)
@@ -392,6 +415,9 @@ class SettingsCoordinator(QObject):
                 "TimelineGroupingCommand",
                 "UpdateTagColorCommand",
                 "SetActiveCalendarCommand",
+                "EditRelationDefinitionCommand",
+                "ImportRelationPresetCommand",
+                "RemoveRelationDefinitionCommand",
             )
         ) or (self.view is not None and self.view.isVisible()):
             self.refresh_world()
@@ -418,7 +444,7 @@ class SettingsCoordinator(QObject):
 
     def cancel(self) -> None:
         """Discard only unacknowledged settings edits, preserving authoring state."""
-        if self._pending is not None:
+        if self._pending is not None or not self._allow_dictionary_transition():
             return
         self.draft.replace(self.draft.baseline)
         self._reset_workspace = False
@@ -439,11 +465,14 @@ class SettingsCoordinator(QObject):
         """Protect world edits while retaining independent Kraken drafts."""
         self._request_transition(continuation, world_only=True)
 
+    def _allow_dictionary_transition(self) -> bool:
+        return self.dictionary_transition is None or self.dictionary_transition()
+
     def _request_transition(
         self, continuation: Callable[[], None], *, world_only: bool
     ) -> None:
         self._capture()
-        if self._pending is not None:
+        if self._pending is not None or not self._allow_dictionary_transition():
             return
         changes = self.draft.changes()
         pending = (

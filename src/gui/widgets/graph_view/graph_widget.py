@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 
 from src.core.authoring_scope import AuthoringScope
 from src.core.logging_config import get_logger
+from src.core.relation_vocabulary import Vocabulary, filter_labels, relation_label
 from src.core.search_utils import SearchUtils
 from src.gui.utils.help_context import declare_inspection
 from src.gui.utils.style_helper import StyleHelper
@@ -66,6 +67,7 @@ class GraphWidget(QWidget):
     connection_requested = Signal(dict)
     interaction_changed = Signal()
     snapshot_presented = Signal()
+    relation_vocabulary_changed = Signal(dict)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the GraphWidget.
@@ -89,6 +91,7 @@ class GraphWidget(QWidget):
             "view.src-gui-widgets-graph-view-graph-widget-graphwidget-init-self-web-view|graph.exploring|help-inspect-view-src-gui-widgets-graph-view-graph-widget-graphwidget-init-self-web-view",
         )
         self._builder = GraphBuilder()
+        self._relation_vocabulary: Vocabulary = {}
 
         # Data Cache
         self._all_nodes: list[dict[str, Any]] = []
@@ -352,6 +355,9 @@ class GraphWidget(QWidget):
             available_tags=self._available_tags,
             available_rel_types=self._available_rel_types,
             current_config=self._advanced_filter_config,
+            relation_labels=filter_labels(
+                self._available_rel_types, self._relation_vocabulary
+            ),
         )
 
         if dialog.exec() == QDialog.DialogCode.Accepted:
@@ -617,6 +623,15 @@ class GraphWidget(QWidget):
     def _render_projection(
         self, nodes: list[dict], edges: list[dict], focus_id: str | None
     ) -> None:
+        edges = [
+            dict(
+                edge,
+                display_label=relation_label(
+                    edge.get("rel_type", ""), self._relation_vocabulary
+                ),
+            )
+            for edge in edges
+        ]
         self._web_view.set_theme_data(nodes, edges, self._resolved_lexicon)
         if not nodes and not self._is_renderer_ready:
             return
@@ -750,6 +765,41 @@ class GraphWidget(QWidget):
         self._available_tags = tags
         self._filter_bar.set_available_tags(tags)
 
+    @property
+    def relation_vocabulary(self) -> Vocabulary:
+        """Expose read-only wording to graph authoring details."""
+        return self._relation_vocabulary
+
+    def set_relation_vocabulary(self, vocabulary: Vocabulary) -> None:
+        """Redraw captions against the current graph without requerying edges."""
+        if vocabulary == self._relation_vocabulary:
+            return
+        self._relation_vocabulary = vocabulary
+        self.relation_vocabulary_changed.emit(dict(vocabulary))
+        self.set_available_relation_types(self._available_rel_types)
+        if self._all_nodes:
+            self._refresh_display_locally(self._last_focus_node_id)
+
+    def remap_relation_filter(self, old: str, new: str) -> None:
+        """Keep active graph filters attached to the migrated relation key."""
+        config = self._advanced_filter_config.get("rel_types", {})
+        for field in ("include", "exclude"):
+            if field in config:
+                config[field] = [
+                    new
+                    if key == old
+                    or (not config.get("case_sensitive") and key.lower() == old.lower())
+                    else key
+                    for key in config[field]
+                ]
+        selected = self._filter_bar.get_selected_relation_types()
+        self.set_available_relation_types(
+            [new if key == old else key for key in self._available_rel_types]
+        )
+        if old in selected:
+            self._filter_bar.select_relation_type(new)
+        self._invalidate_interaction()
+
     def set_available_relation_types(self, rel_types: list[str]) -> None:
         """Sets the list of available relation types.
 
@@ -758,7 +808,9 @@ class GraphWidget(QWidget):
 
         """
         self._available_rel_types = rel_types
-        self._filter_bar.set_available_relation_types(rel_types)
+        self._filter_bar.set_available_relation_types(
+            rel_types, filter_labels(rel_types, self._relation_vocabulary)
+        )
 
     def set_lexicon_config(
         self,

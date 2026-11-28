@@ -22,6 +22,7 @@ class HelpSurfaceBindings(QObject):
     DIALOG_TOPICS = {
         "BatchMetadataDialog": "explorer.batch-edit",
         "SettingsCenter": "settings.center",
+        "RelationDictionaryDialog": "settings.relation-dictionary",
         "GoToDateDialog": "timeline.viewing",
         "RelationEditDialog": "relations.create",
         "TemporalValidityDialog": "map.visibility",
@@ -65,7 +66,6 @@ class HelpSurfaceBindings(QObject):
                 ("temporal_behavior", "relations.timing"),
                 ("logic_group", "relations.timing"),
                 ("type_edit", "relations.create"),
-                ("bi_check", "relations.create"),
             ):
                 control = getattr(widget, attribute, None)
                 if isinstance(control, QWidget):

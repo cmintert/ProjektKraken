@@ -287,8 +287,8 @@ modes. A hidden edge has not been deleted.
 1. Hover over the starting node and click **+** to open a draft, or drag **+**
    onto another node to start with both entries filled in. You can also select
    **Connect…** and use the entry picker from the keyboard.
-2. Review the existing relationships, then select a type and direction. **Both
-   directions** records two relationships of the selected type.
+2. Review the existing relationships, then select a type and choose **From → To**
+   or **To → From**. Each direction saves one relationship.
 3. Leave timing **Undated** or select **Start at Playhead** to capture a fixed
    start date. Choose **Create Relationship**.
 
@@ -324,7 +324,14 @@ fixed start. The recorded date stays fixed if the playhead moves.
 (help-inspect-graph-save-relationship)=
 
 **Create Relationship** saves the directed relationship and any new endpoint as
-one undoable operation.
+one undoable operation. To record a separate fact in the opposite direction,
+start another connection and choose the type and direction for that fact.
+
+The graph uses the world's forward wording for a defined relation type. Type
+filters show that wording and add the saved type when two choices share a label.
+In the creation draft, search and select a type or enter your own. Use
+**View from other entry** to inspect the wording before saving. Use
+**Direction** when you want to change which entry is the source.
 
 (help-inspect-graph-retry-pair)=
 
